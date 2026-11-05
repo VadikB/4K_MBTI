@@ -1,5 +1,17 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Последний шаг: [PATH-AC-AUDIT-01](../path-final-acceptance.md), бесплатная сверка
+  после a7d7a9d. Подтверждён foreign readback другой организации с тем же program ID:
+ 2 browser FAIL before →2 PASS after. Локальный JS predicate сверяет оба ID в command,
+ normal/recovery GET; реальные нормы/backend/источники/БД не менялись.
+  Итоговый auth/admin100 PASS, frontend140 PASS, HTTP+M3 25 PASS,lint/build/idempotency
+  и4 viewport assertions PASS. Прежний fixture-name mismatch сохранён (99/1) и
+  исправлен чтением M3 source; все6 options проверены. Старый paid PASS только e63.
+  Новый UI candidate локальный: release number/PR/CI/review/merge/deploy пока нет;
+  предлагаемый2.0.67 не согласован. Main свежий e63; test — последний подтверждённый e63.
+  Остатки AC02 repeat org/полный AC05 slow-error browser matrix не выданы за PASS.
+  Новой генерации, рабочей активации, DB/cleanup/публикации не было.
+  Следующий шаг — решение владельца о выпуске candidate/PR/CI/review.
 - Текущая неизменяемая база runtime: `e63eba67d77fb73f7fb9bb219bc3fe5d3807a909` /2.0.66.
   PR171 принят/merged/deployed; [release closure](https://github.com/VadikB/4K_MBTI/pull/171#issuecomment-6660961795).
 - Текущая ветка: `codex/pilot-1.2-path` от1ee2ec4; actual paid PATH/evidence.

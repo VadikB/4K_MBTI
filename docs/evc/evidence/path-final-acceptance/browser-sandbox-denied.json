@@ -1,0 +1,855 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/node_modules/.bin/playwright",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "PROGRAM01 R10|PATH-START|UX-ADM27|ADM19-01 adds|PILOT31-03|UX-ADM28-02|F22-04|ADM28 confirmation|ADM28 lost POST|UX-FIX20-04 keeps readiness"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/pilot-1.2-path/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/pilot-1.2-path/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/pilot-1.2-path/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/pilot-1.2-path/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ADM28 confirmation finishes before supplementary GET and offers a retry on GET failure",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 0,
+                  "error": {
+                    "message": "Error: listen EPERM: operation not permitted 127.0.0.1:18764",
+                    "stack": "Error: listen EPERM: operation not permitted 127.0.0.1:18764"
+                  },
+                  "errors": [
+                    {
+                      "message": "Error: listen EPERM: operation not permitted 127.0.0.1:18764"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.247Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/pilot-1.2-path/.test-stand/browser-output/auth-r03-ADM28-confirmatio-2c3cd-fers-a-retry-on-GET-failure/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/pilot-1.2-path/.test-stand/browser-output/auth-r03-ADM28-confirmatio-2c3cd-fers-a-retry-on-GET-failure/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-a434b0ac1a59adb03f94",
+          "file": "auth-r03.spec.mjs",
+          "line": 81,
+          "column": 1
+        },
+        {
+          "title": "ADM28 lost POST response checks exact revision and recipients without republishing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.348Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-e8bc9491ef33b109d52d",
+          "file": "auth-r03.spec.mjs",
+          "line": 99,
+          "column": 1
+        },
+        {
+          "title": "PROGRAM01 R10 finishes exact program connection while questionnaire refresh is pending",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.348Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-cdb779a029ebb4985c5c",
+          "file": "auth-r03.spec.mjs",
+          "line": 277,
+          "column": 1
+        },
+        {
+          "title": "PROGRAM01 R10 shows a terminal error when exact readback is null",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.348Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-903e51a32d78d0526d75",
+          "file": "auth-r03.spec.mjs",
+          "line": 328,
+          "column": 1
+        },
+        {
+          "title": "PROGRAM01 R10 confirms a committed connection after the PUT response is lost",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.349Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-8101c2ce1fb4c107fbb1",
+          "file": "auth-r03.spec.mjs",
+          "line": 369,
+          "column": 1
+        },
+        {
+          "title": "PROGRAM01 R10 restores the exact connected program after reopening the card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.349Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9a69901cc4d292552452",
+          "file": "auth-r03.spec.mjs",
+          "line": 412,
+          "column": 1
+        },
+        {
+          "title": "PROGRAM01 R10 does not render the old connection result after logout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.349Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6233c6152bf2ca88af00",
+          "file": "auth-r03.spec.mjs",
+          "line": 456,
+          "column": 1
+        },
+        {
+          "title": "PATH-START ST-R1 card: local view or refusal is not a pending mutation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.350Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9be8568c4d0401f9fef5",
+          "file": "auth-r03.spec.mjs",
+          "line": 559,
+          "column": 3
+        },
+        {
+          "title": "PATH-START ST-R1 cancel-dialog: local view or refusal is not a pending mutation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.350Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-4032e31177acec7625be",
+          "file": "auth-r03.spec.mjs",
+          "line": 559,
+          "column": 3
+        },
+        {
+          "title": "PATH-START ST-R1: confirmed cancellation has local loading and a terminal error",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.350Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-d7f0397d654d8c9476c5",
+          "file": "auth-r03.spec.mjs",
+          "line": 588,
+          "column": 1
+        },
+        {
+          "title": "PATH-START ST-R4: authorized read-only preparation action survives renderer",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.350Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-53cd301b5b954fb5d716",
+          "file": "auth-r03.spec.mjs",
+          "line": 622,
+          "column": 1
+        },
+        {
+          "title": "PATH-START viewport 1440: long facts, unknown questionnaire, read-only action",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-8f983854267a1cdd3f02",
+          "file": "auth-r03.spec.mjs",
+          "line": 639,
+          "column": 3
+        },
+        {
+          "title": "PATH-START viewport 320: long facts, unknown questionnaire, read-only action",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-bed3b45b4ee976a4e7fa",
+          "file": "auth-r03.spec.mjs",
+          "line": 639,
+          "column": 3
+        },
+        {
+          "title": "PATH-START viewport 390: long facts, unknown questionnaire, read-only action",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-0493d9c98c2dbebd8ef6",
+          "file": "auth-r03.spec.mjs",
+          "line": 639,
+          "column": 3
+        },
+        {
+          "title": "PATH-START viewport 768: long facts, unknown questionnaire, read-only action",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-e54747c1c68139dfcc27",
+          "file": "auth-r03.spec.mjs",
+          "line": 639,
+          "column": 3
+        },
+        {
+          "title": "PATH-START PG-R1: participant sees the exact missing-position reason and can recheck",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-f2db8f1973617ba6d8c3",
+          "file": "auth-r03.spec.mjs",
+          "line": 678,
+          "column": 1
+        },
+        {
+          "title": "UX-FIX20-04 keeps readiness separated when org-admin switches assessment",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-166c37b23ac4ef580f67",
+          "file": "auth-r03.spec.mjs",
+          "line": 1247,
+          "column": 1
+        },
+        {
+          "title": "UX-ADM28-02 reports questionnaire load failure separately and offers retry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-69d1572241e7ade2f906",
+          "file": "auth-r03.spec.mjs",
+          "line": 1274,
+          "column": 1
+        },
+        {
+          "title": "F22-04 keeps a newer confirmed revision and input entered after confirm started",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-05875a75b5685330dceb",
+          "file": "auth-r03.spec.mjs",
+          "line": 1681,
+          "column": 1
+        },
+        {
+          "title": "ADM19-01 adds a participant with only email, name and role",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-db351c3182254df1f468",
+          "file": "auth-r03.spec.mjs",
+          "line": 1732,
+          "column": 1
+        },
+        {
+          "title": "UX-ADM27 org-admin assigns the selected assessment to self and a colleague",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.351Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-a6f26b54c71091e9a2d2",
+          "file": "auth-r03.spec.mjs",
+          "line": 1753,
+          "column": 1
+        },
+        {
+          "title": "PILOT31-03 explains every visible readiness blocker before assignment",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T20:30:03.352Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-a63a16a200e3456f77fa",
+          "file": "auth-r03.spec.mjs",
+          "line": 1826,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-05T20:30:01.363Z",
+    "duration": 2012.8779999999997,
+    "expected": 0,
+    "skipped": 21,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
