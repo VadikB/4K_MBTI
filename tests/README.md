@@ -23,8 +23,30 @@ Default `functional-diagnostic` остаётся исторической synthe
 Полный M2=61 сохраняется, план=39/22 вне; любой LIMITED автоматически не допускается.
 Runner требует `m7_start_readiness/1` и exact frozen binding, обязательные стадии,
 конечную допущенную AS и lineage. Новая программа пока не опубликована, прежний
-release fixture 1.1 не заменён. Новый paid PATH, публикация и выпуск не выполнялись.
+release fixture1.1 не заменён. Код T1 выпущен main3385145/2.0.65 (PR170), но новая
+программа и новый paid PATH не запускались; нынешняя доработка harness пока локальная.
 Исторический PREP-DIAG-01 остаётся UNKNOWN и не отождествляется с покрытием.
+
+Harness теперь допускает явный внешний published receipt только полным selector
+`--program-receipt /absolute/file.json --program-receipt-sha256 <bytes_sha256>
+--program-version <exact_version>` вместе с `--program-source published-pilot`.
+Legacy default1.1 сохранён побайтово, latest/fallback нет; proposed draft не является
+receipt публикации. Подробности в [профиле](../docs/evc/assessment-first-case-profile.md),
+реализация/проверки — [PATH-PILOT-HARNESS-01](../docs/evc/tasks/pilot-program-harness.md).
+Saved exact bytes и program refs перепроверяются после cleanup в summary.
+Согласование нового selector не разрешает publication/активацию/paid run.
+
+Бесплатные SQL-регрессии самого release seed:
+
+```sh
+# Только собственный localhost PostgreSQL, maintenance URL и отдельная test/pytest reference DB:
+.venv/bin/python -m pytest -q --run-integration tests/integration/test_published_release_seed_db.py
+```
+
+Нужны одновременно `STAND_ADMIN_URL` и `TEST_DATABASE_URL` одного изолированного
+PostgreSQL. Тест создаёт/удаляет новые owned-БД, проверяет минимальную загрузку и
+неизменность исходных27 Case QA. Метаданные будущей программы — явная SYNTHETIC
+подстановка, не реальная публикация или новый human review. Provider disabled.
 
 Бесплатные проверки нового контракта:
 

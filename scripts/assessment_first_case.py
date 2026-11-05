@@ -54,6 +54,17 @@ def code_identity():
         'files': {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in paths}}
 
 
+def select_release(program_source, *, path=None, sha256=None, version=None):
+    """Select inputs before reading credentials or opening a stand/database."""
+    explicit = any(value is not None for value in (path, sha256, version))
+    if program_source != 'published-pilot':
+        if explicit:
+            raise ValueError('RELEASE_RECEIPT_REQUIRES_PUBLISHED_PILOT')
+        return None
+    from tests.path_start_release_source import load_release_receipt
+    return load_release_receipt(path=path, sha256=sha256, version=version)[1]
+
+
 def check_bootstrap(directory, port, python, env):
     """Repeat ownership/source lifecycle without paying for another generation."""
     from uuid import uuid4
@@ -69,6 +80,9 @@ def check_bootstrap(directory, port, python, env):
         state = json.loads(state_path.read_text())
         (run_directory / 'run.json').write_text(json.dumps({
             'run_id': state['run_id'], 'database': state['database'], 'scope': 'bootstrap_repeat',
+            'program_source': env.get('P4K_PROGRAM_SOURCE'),
+            'published_release_ref': json.loads(env['P4K_PUBLISHED_RELEASE_REF'])
+                if env.get('P4K_PUBLISHED_RELEASE_REF') else None,
             'llm_calls': 0}, indent=2) + '\n')
         cli('bootstrap')
         subprocess.run([python, str(ROOT / 'tests/path29_browser_inputs.py'), '--state', str(state_path)],
@@ -128,6 +142,30 @@ def summarize_runs(directory, exit_code):
         if (completion.get('receipt_file') != receipt_path.name or not receipt_digest
                 or completion.get('receipt_sha256') != receipt_digest):
             errors.append('COMPLETION_RECEIPT_MISMATCH')
+        selected = run.get('published_release_ref')
+        source_path = None
+        source = None
+        before = read('source-to-runtime-receipt') if not bootstrap else {}
+        program = receipt.get('program_definition')
+        before_program = before.get('program_definition')
+        provenance_source = receipt.get('release')
+        provenance_program = provenance_source.get('program') if isinstance(provenance_source, dict) else None
+        is_published = (run.get('program_source') == 'published-pilot'
+                        or isinstance(program, dict) and program.get('code') == 'specialist_pilot'
+                        or isinstance(before_program, dict) and before_program.get('code') == 'specialist_pilot'
+                        or isinstance(provenance_program, dict) and provenance_program.get('code') == 'specialist_pilot'
+                        or selected is not None)
+        if is_published:
+            try:
+                from tests.path_start_release_source import load_release_receipt
+                source_path = run_directory / 'published-release-source.json'
+                source, actual = load_release_receipt(path=source_path, sha256=selected['sha256'],
+                                                     version=selected['program']['version'])
+                if actual['program'] != selected['program']:
+                    raise ValueError('RELEASE_REFERENCE_MISMATCH')
+            except (ValueError, TypeError, KeyError):
+                errors.append('PUBLISHED_RELEASE_EVIDENCE_INVALID')
+                source_path = None
         if bootstrap:
             case = receipt.get('case') if isinstance(receipt.get('case'), dict) else {}
             def digest(value):
@@ -141,12 +179,15 @@ def summarize_runs(directory, exit_code):
                     or any(not isinstance(row, dict) or digest(row.get('evidence_json')) != row.get('evidence_checksum')
                            for row in qa)):
                 errors.append('SOURCE_PROVENANCE_INVALID')
+            if is_published and (source is None or receipt.get('release') != source
+                                 or receipt.get('release_receipt_sha256') != selected['sha256']):
+                errors.append('PUBLISHED_RELEASE_PROVENANCE_MISMATCH')
         else:
-            before = read('source-to-runtime-receipt')
             if receipt and before:
                 try:
                     checked = subprocess.run(['node', str(ROOT / 'tests/browser/fixtures/preparation-receipt.mjs'),
-                        str(receipt_path), str(run_directory / 'source-to-runtime-receipt.json')],
+                        str(receipt_path), str(run_directory / 'source-to-runtime-receipt.json')]
+                        + ([str(source_path)] if source_path else []),
                         capture_output=True, timeout=30)
                     if checked.returncode:
                         errors.append('FIRST_CASE_EVIDENCE_INVALID')
@@ -191,6 +232,9 @@ def main()->int:
     p.add_argument('--check-bootstrap', action='store_true', help='Repeat create/bootstrap/minimal seed/destroy without LLM')
     p.add_argument('--program-source', choices=('functional-diagnostic', 'published-pilot'),
         default='functional-diagnostic', help='Explicit approved nine-case PATH release, or historical one-case diagnostic')
+    p.add_argument('--program-receipt', type=Path, help='Exact published source receipt; requires SHA256 and program version')
+    p.add_argument('--program-receipt-sha256', help='Expected SHA256 of the receipt bytes, not the program definition')
+    p.add_argument('--program-version', help='Expected program version in the selected published receipt; never latest')
     p.add_argument('--summarize-only', action='store_true', help='Rebuild normalized summary from existing evidence; no credentials or LLM')
     a=p.parse_args()
     if a.summarize_only:
@@ -199,7 +243,15 @@ def main()->int:
         (a.directory / 'runner-result.normalized.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return summary['exit_code']
+    try:
+        selected = select_release(a.program_source, path=a.program_receipt,
+                                  sha256=a.program_receipt_sha256, version=a.program_version)
+    except ValueError as exc:
+        p.error(str(exc))
     env=os.environ.copy()
+    env.pop('P4K_PUBLISHED_RELEASE_REF', None)
+    if selected is not None:
+        env['P4K_PUBLISHED_RELEASE_REF'] = json.dumps(selected)
     env['P4K_PROGRAM_SOURCE'] = a.program_source
     if a.env_file:
         from dotenv import dotenv_values

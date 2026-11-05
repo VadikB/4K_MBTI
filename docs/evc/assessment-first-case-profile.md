@@ -16,7 +16,9 @@ Validator требует серверный `m7_start_readiness/1`, точный
 условия старта, а не просто READY или LIMITED. Источник published-pilot пока
 зеркалит прежний release1.1 и не получает этот допуск автоматически: после отдельно
 разрешённой публикации требуется новый проверенный exact-version source receipt.
-Новый paid PATH и публикация/выпуск не выполняются. PREP-DIAG-01 отдельно UNKNOWN.
+Код T1 выпущен в main3385145/2.0.65 (PR170); публикация новой программы и новый
+paid PATH не выполнялись. Текущий harness fix передаётся отдельно, не находится
+в main автоматически. PREP-DIAG-01 отдельно UNKNOWN.
 Рабочая БД — серверный Agent4K-Test/.env: по указанию владельца только read-only
 сверка схемы в конце, перед возможным main; не активация и не цель cleanup/tests.
 Старые статусы ниже — история.
@@ -78,6 +80,33 @@ read-only receipt `tests/browser/fixtures/path-start-release.json` провер�
 7221671. Сохраняются оригинальные QA JSON/checksum/owner decision, не используется
 synthetic human_review. Source mismatch останавливает seed до LLM. Default без
 параметра сохраняет историческую однокейсовую диагностику и её ограничения ниже.
+
+### Явный выбор следующей опубликованной версии
+
+После отдельной разрешённой публикации и независимого read-only экспорта новой
+версии существующий `published-pilot` принимает **все три** параметра:
+
+```sh
+--program-receipt /absolute/path/to/verified-published-release.json \
+--program-receipt-sha256 <RECEIPT_BYTES_SHA256> \
+--program-version <EXACT_PROGRAM_VERSION>
+```
+
+Это дополнение к существующей команде, не команда публикации или разрешение LLM.
+Неполный selector, неверные bytes/hash/version/refs останавливают runner до чтения
+env-файла и открытия БД. Значения проверяются снова в seed; default остаётся
+неизменённым byte-pinned receipt1.1, автоматического `latest` нет.
+В `functional-diagnostic` эти параметры запрещены. Рецепт proposed1.2 не является
+published source receipt и не заменяет его; отдельного разрешения на1.2 пока нет.
+
+Выбранные version/id/code/assignment/status/config/catalog/definition checksum
+передаются в state/run; точные байты сохраняются с fsync/readback в
+`published-release-source.json` внутри evidence каждого run до cleanup.
+Browser сверяет выбранную программу до и после start; offline summary заново
+проверяет saved bytes/version/программу, не зависит от сохранившегося внешнего пути.
+Проверки final AS/stages/lineage/time не заменяются этими refs. Bootstrap остаётся
+только `PASS_BOOTSTRAP_ONLY`, не PATH. Исправление allowlist ID-reservation и
+бесплатные проверки — [PATH-PILOT-HARNESS-01](tasks/pilot-program-harness.md).
 
 ## Сценарий и границы подмен
 

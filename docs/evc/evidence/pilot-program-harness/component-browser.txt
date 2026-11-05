@@ -1,0 +1,11 @@
+command: env -i PATH="$PATH" AGENT4K_ISOLATED_STAND=1 AGENT4K_STAND_MARKER=stand-10.2:harness DB_HOST=127.0.0.1 DB_NAME=product4k_pytest_offline_harness DB_USER=offline DB_PASSWORD=unused DB_POOL_MIN_SIZE=0 PYTHONPATH="$PWD" STAND_ADMIN_URL=postgresql://postgres@127.0.0.1:54382/postgres BROWSER_PYTHON=/Users/vadim_bogachev/Developer/4K/.venv/bin/python P4K_PORT=18879 P4K_EVIDENCE_DIRECTORY=/Users/vadim_bogachev/Developer/4K/worktrees/pilot-program-release-plan/.test-stand/pilot-harness-final /Users/vadim_bogachev/Developer/4K/node_modules/.bin/playwright test tests/browser/path29-participant.spec.mjs --workers=1 --reporter=line
+exit_code: 0
+
+
+Running 1 test using 1 worker
+
+[1/1] tests/browser/path29-participant.spec.mjs:18:1 › PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case
+tests/browser/path29-participant.spec.mjs:18:1 › PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case
+PATH29 owned screenshots and server log: /Users/vadim_bogachev/Developer/4K/worktrees/pilot-program-release-plan/.test-stand/pilot-harness-final/08fe138e-018d-4ce7-88c4-a3d57333d586
+
+  1 passed (49.8s)

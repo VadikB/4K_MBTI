@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { persistReceipt, isTerminalPreparationReceipt } from './fixtures/receipt-file.mjs';
-import { verifyPreparation, verifyFirstCase } from './fixtures/preparation-receipt.mjs';
+import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from './fixtures/preparation-receipt.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -26,6 +26,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const statePath = path.join(dir, 'state.json'), base = 'http://127.0.0.1:' + port;
   const fullPath = process.env.P4K_FULL_PATH === '1';
   const realProvider = process.env.P4K_REAL_PROVIDER === '1';
+  const requestedRelease = process.env.P4K_PUBLISHED_RELEASE_REF
+    ? JSON.parse(process.env.P4K_PUBLISHED_RELEASE_REF) : undefined;
   if (fullPath && !realProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_REAL_PROVIDER');
   if (realProvider) test.info().annotations.push({ type: 'llm', description: 'Explicit real DeepSeek synthetic diagnostic' });
   const run = (script, args) => {
@@ -51,6 +53,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     runId = initialState.run_id;
     save('run', { run_id: initialState.run_id, database: initialState.database, port,
       provider_mode: initialState.provider_mode,
+      program_source: fullPath ? process.env.P4K_PROGRAM_SOURCE : undefined,
+      published_release_ref: fullPath ? requestedRelease : undefined,
       code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
     initialState.browser_case = 'specialist';
     if (!fullPath && !realProvider) {
@@ -64,6 +68,16 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     cli('bootstrap');
     run('tests/path29_browser_inputs.py', ['--state', statePath]);
     const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+    const selectedRelease = state.path29.published_release_ref;
+    if (fullPath && state.path29.input_mode === 'published-pilot') {
+      expect(selectedRelease).toBeTruthy();
+      if (requestedRelease) {
+        expect(selectedRelease.sha256).toBe(requestedRelease.sha256);
+        expect(selectedRelease.program).toEqual(requestedRelease.program);
+      }
+      save('run', { ...JSON.parse(fs.readFileSync(path.join(dir, 'run.json'), 'utf8')),
+        program_source: 'published-pilot', published_release_ref: selectedRelease });
+    }
     step = 'superadmin_create_organization';
     const fd = fs.openSync(path.join(dir, 'server.log'), 'a');
     server = spawn(python, ['tests/path29_browser_server.py', '--state', statePath], { stdio: ['ignore', fd, fd] });
@@ -307,7 +321,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       });
     }
     expect(await page.locator('#onboarding-title').innerText()).toBe('Можно приступать к оценке');
-    if (fullPath) verifyPreparation(preparationReceipt);
+    if (fullPath) {
+      if (state.path29.input_mode === 'published-pilot') verifyPublishedProgram(preparationReceipt, selectedRelease);
+      verifyPreparation(preparationReceipt);
+    }
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
     const freshContext = await browser.newContext(); extraContexts.push(freshContext);
@@ -374,7 +391,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
           dom_introduction_matched: true, screenshot: 'first-case.png',
         } };
       save('first-case-receipt', finalReceipt);
-      verifyFirstCase(finalReceipt, preparationReceipt);
+      verifyFirstCase(finalReceipt, preparationReceipt, selectedRelease);
       expect(['functional-diagnostic', 'published-pilot']).toContain(state.path29.input_mode);
       expect(receipt.program_definition.id).toBe(state.path29.program_id);
       expect(receipt.program_definition.assessment_configuration_id).toBe(state.path29.configuration_id);
@@ -382,7 +399,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       expect(receipt.assessment_configuration.catalog_version_id).toBe(receipt.catalog.id);
       if (state.path29.input_mode === 'published-pilot') {
         expect(receipt.program_definition.code).toBe('specialist_pilot');
-        expect(receipt.program_definition.version).toBe('1.1');
+        verifyPublishedProgram(receipt, selectedRelease);
         expect(receipt.case_versions.map((item) => item.case_id)).toEqual(
           Array.from({ length: 9 }, (_, i) => 'CASE.SPEC.' + String(i + 1).padStart(2, '0')));
       } else {
