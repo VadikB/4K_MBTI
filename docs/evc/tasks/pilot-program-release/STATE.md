@@ -1,5 +1,15 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- AS-PRESENTATION-R1: владелец подтвердил2.0.71 PATCH → bump/push/PR/mandatory CI/
+  human review. [Карточка](../as-presentation-release-2071.md). Отдельная release-ветка
+  `codex/as-presentation-2071` от6f5681e, source36ef230a, fresh main e9639ed/2.0.70.
+  Штатный preflight+повтор PASS,49 files identical; новые backend937/HTTP108/
+  frontend145/targeted50/browser4/lint/CHECK35+39 PASS. Primary results в release
+  evidence. Активно: commit/push/Ready PR и обязательный CI exact head/base.
+  merge/deploy/программа/рабочая БД/LLM=false, human review нового head NOT_DONE.
+  Исходный пакет/ветка и чужая TG-работа сохранены. Старый source validation PASS
+  не заменяет новый mandatory CI. Новый AC18 NOT_RUN; PREP UNKNOWN отдельно.
+
 - AS-PRESENTATION-DIAG-01: прямой допуск «делаем», отдельная локальная ветка
   `codex/as-presentation-fix` от fresh main e9639ed/2.0.70. [Отчёт](../../reports/as-presentation-fix.md),
   [карточка](../as-presentation-fix.md), [evidence](../../evidence/as-presentation-fix/README.md).
