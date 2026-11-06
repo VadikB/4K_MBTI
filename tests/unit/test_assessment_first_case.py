@@ -1,6 +1,13 @@
 from scripts.assessment_first_case import preflight
 
 
+def test_code_identity_includes_readonly_viewport_collector():
+    import hashlib
+    from scripts.assessment_first_case import ROOT, code_identity
+    relative = 'tests/browser/fixtures/path-viewports.mjs'
+    assert code_identity()['files'][relative] == hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+
+
 def test_source_selection_cannot_leak_into_functional_diagnostic():
     import pytest
     from scripts.assessment_first_case import select_release

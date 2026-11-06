@@ -1,5 +1,13 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Активен [PATH-AC06/07/09/10](../path-ac06-ac10-proof.md): прямое разрешение владельца
+  на локальные free HTTP/real PostgreSQL проверки и подтверждённые fixes. Fresh
+  main/origin-main `3f42bba` /2.0.69; AUTH/R10 закрыт PR174, не новая release-задача.
+  Отдельный worktree/ветка `codex/path-ac06-ac10-proof`; чужие изменения сохранены.
+  Ни push/PR/bump/merge/deploy, ни рабочая БД/публикация/письма/LLM не разрешены.
+  AC18 только план к отдельному разрешению; PREP-DIAG-01 исторический UNKNOWN.
+  Старые release WAITING ниже — история, не нынешнее состояние 2.0.69.
+
 - Разрешён [PATH-FEEDBACK-R1](../path-feedback-release-2069.md): владелец подтвердил
   2.0.69 PATCH → push/Ready PR/mandatory CI/human review, без merge/deploy/БД/LLM/
   программы. Отдельная release-ветка `codex/path-feedback-2069` отc59b024; исходная
