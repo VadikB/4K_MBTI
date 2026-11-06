@@ -13,8 +13,13 @@ PASS; на отдельном восстановленном shallow checkout be
 проверяет новый offline CHECK. Старый CHECK355/пакет1cd replay только на его
 immutable snapshot; их hashes не переписаны ради текущего теста. Финальный
 review head будет новым, прежний1cd/CI не обозначается зелёным кандидатом.
-Полные backend/HTTP нового source и новый mandatory CI — следующий gate;
-пять browser на4510 применимы, их исполняемые bytes не изменились.
+Локальный повтор backend922 PASS/354 deselected (343.80s),HTTP108 PASS/12
+deselected (94.65s). Python/test bytes равны source db79007c, commit зафиксирован
+во время full run без изменения этих bytes; после фиксации35 tests повторены
+на SHA. Final evidence commit не меняет исполняемый код. Новый mandatory CI
+final head/base — следующий gate. Пять browser4510 применимы по прежним bytes.
+Integration/все5 browser lanes/full-verification первого1cd тоже PASS,
+не заменяют новый CI; единственный FAIL первого CI — описанный unit.
 Следующие разделы сохраняют состояние первого head до этой CI-поправки.
 
 ## Результат

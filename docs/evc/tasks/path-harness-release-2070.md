@@ -8,6 +8,9 @@ pytest FAIL920/1 из-за отсутствующего origin/main в shallow c
 Primary и объяснение сохранены отдельно: path-harness-release-2070-ci.
 Нижние CI NOT_RUN/активно создать PR относятся к прежним commits, не к текущему
 состоянию. Без второго bump; merge/deploy/LLM не разрешены.
+Локально922 backend/108 HTTP PASS по bytes source db79007c,35 targeted повторены
+на SHA. Сначала source commit, теперь только docs/evidence перед push; новый CI
+нужен exact final head/base. Старый full-verification1cd PASS, не новый CI.
 
 ## Результат и основание
 

@@ -1,5 +1,13 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- CI fix source `db79007c4ab13780591f027ae4f38c0cc453c89d`: backend922/HTTP108
+  PASS по тем же Python/test bytes,35 runner/release/CI повторены на SHA PASS;
+  новый CHECK355/immutable134/negative/shallow2 PASS. Финальная дельта только
+  docs/evidence, активен push этого final head и новый mandatory CI. Старый
+  full-verification1cd (integration+5 browser lanes) PASS, pytest1cd FAIL —
+  сохранённая история, не основание принять новый head без CI. Human review
+  NOT_DONE; main/последнее test3f42bba/2.0.69, merge/deploy/AC18 не разрешены.
+
 - PR175 Ready создан для1cd972f/2.0.70. Первый mandatory pytest FAIL920/1:
   новый hash unit ошибочно требовал origin/main в shallow CI checkout.
   Исправление только unit fixture +fail-closed regression,35 targeted и shallow2

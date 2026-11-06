@@ -1,5 +1,13 @@
 # PR175 — исправление изоляции нового unit-теста
 
+Завершён локальный повтор: backend922 PASS/354 deselected,343.80s; HTTP108
+PASS/12 deselected,94.65s. Python/test bytes совпадают с source
+`db79007c4ab13780591f027ae4f38c0cc453c89d`; full run начат до фиксации commit
+без последующего изменения исполняемых bytes. После фиксации source отдельно
+повторены35 runner/release/CI PASS (verified-on-db790.xml). Final commit только
+docs/evidence; новый обязательный CI exact head/base ещё требуется.
+Новый CHECK проверяет local JUnit и checksum manifest; старые134 files immutable.
+
 Предыдущий head1cd972f, CI [42212416209](https://github.com/VadikB/4K_MBTI/actions/runs/42212416209/job/127874041662):
 Unit tests **1 FAIL/920 PASS**, HTTP SKIP после отказа. Raw primary log сохранён
 lossless gzip без временного signed download URL; публичный checks-before.json
@@ -29,7 +37,7 @@ shallow-layout-negative.xml.gz сохранён, не выдан за product/CI
 от него отличается ровно новым unit-файлом и docs/evidence. Новый CHECK здесь
 проверяет остальные354 source hashes и известный новый hash unit-файла, а также
 сохранность134 primary files; не маскирует изменение unit как byte equality.
-Полные backend/HTTP и новый CI должны быть повторены на новом source/head.
+Полные backend/HTTP повторены как указано выше; новый CI нужен для final head.
 Main/последнее подтверждённое test3f42bba/2.0.69; merge/deploy/paid AC18 запрещены.
 PREP-DIAG-01 исторический UNKNOWN, отдельно от этой установленной ошибки теста.
 
