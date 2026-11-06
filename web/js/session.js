@@ -4,6 +4,8 @@ import { isAdminUserPayload } from './utils/format.js';
 import { resetChatScreen } from './screen-loaders.js';
 import { returnToStart } from './router.js';
 import { applyLogoutButtonPendingState, resetLogoutButtonsState } from './logout-ui.js';
+import { authError } from './dom.js';
+import { showError } from './components/errors.js';
 
 const clearProfileDisplay = () => {
   document.getElementById('profile-avatar-image')?.removeAttribute('src');
@@ -71,10 +73,16 @@ export const resetStaleUserState = async ({ advance = true, broadcast = true } =
   state.assessmentSessionCode = null;
   state.assessmentTotalCases = 0;
   returnToStart();
+  // Clear old feedback synchronously. The caller may render the current 401
+  // error while the lazy chat module is still loading; cleanup must retain it.
+  showError(authError, '');
   // A late 401 can belong to another tab's old session. Never revoke the
   // current shared-cookie session here; explicit logout owns that operation.
   try {
-    await resetChatScreen({ shouldReset: () => getSessionGeneration() === recoveryGeneration });
+    await resetChatScreen({
+      shouldReset: () => getSessionGeneration() === recoveryGeneration,
+      preserveAuthFeedback: true,
+    });
   } catch (_error) {
     // Expired sessions must still return to auth if lazy screen cleanup fails.
   }

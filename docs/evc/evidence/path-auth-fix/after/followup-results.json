@@ -1,0 +1,190 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "restores the exact connected program after reopening|keeps superadmin participant cards readable on narrow viewports",
+      "--output",
+      ".test-stand/auth-fix-followup"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-followup",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PROGRAM01 R10 restores the exact connected program after reopening the card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 840,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T00:24:54.748Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9a69901cc4d292552452",
+          "file": "auth-r03.spec.mjs",
+          "line": 628,
+          "column": 1
+        },
+        {
+          "title": "ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "timedOut",
+                  "duration": 3612260,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 150000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 150000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 150000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+                        "column": 38,
+                        "line": 754
+                      },
+                      "message": "Error: locator.fill: Test timeout of 150000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#email-input')\u001b[22m\n\u001b[2m    - locator resolved to <input required=\"\" name=\"email\" type=\"email\" id=\"email-input\" placeholder=\"name@company.ru\" autocomplete=\"username email\" aria-describedby=\"auth-error\"/>\u001b[22m\n\u001b[2m    - fill(\"admin@example.test\")\u001b[22m\n\u001b[2m  - attempting fill action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and editable\u001b[22m\n\n\n  752 |   });\n  753 |   await page.goto(base);\n> 754 |   await page.locator('#email-input').fill(adminUser.email);\n      |                                      ^\n  755 |   await page.locator('#request-magic-link-button').click();\n  756 |   await page.locator('#magic-token-input').fill('legacy-password');\n  757 |   await page.locator('#verify-magic-link-button').click();\n    at openAdminOrganizations (/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs:754:38)\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs:1321:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T00:24:56.221Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-followup/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-followup/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-followup/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports/error-context.md"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-3ba40c966a45d9f54e48",
+          "file": "auth-r03.spec.mjs",
+          "line": 1312,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T00:24:53.905Z",
+    "duration": 3614784.6739999996,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

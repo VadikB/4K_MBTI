@@ -1,0 +1,174 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/auth-recovery.spec.mjs",
+      "--grep",
+      "delayed cleanup",
+      "--output",
+      ".test-stand/auth-fix-before"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-before",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-recovery.spec.mjs",
+      "file": "auth-recovery.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AUTH-DIAG-01 delayed cleanup retains error and fails closed",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "No real auth/DB/provider; real built UI and cleanup."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5884,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#auth-error')\nExpected substring: \u001b[32m\"Сессия входа не сохранилась\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#auth-error') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-error')\u001b[22m\n\u001b[2m    14 × locator resolved to <p hidden=\"\" class=\"error\" id=\"auth-error\"></p>\u001b[22m\n\u001b[2m       - unexpected value \"\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#auth-error')\nExpected substring: \u001b[32m\"Сессия входа не сохранилась\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#auth-error') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-error')\u001b[22m\n\u001b[2m    14 × locator resolved to <p hidden=\"\" class=\"error\" id=\"auth-error\"></p>\u001b[22m\n\u001b[2m       - unexpected value \"\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery.spec.mjs:117:49",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery.spec.mjs",
+                      "column": 49,
+                      "line": 117
+                    },
+                    "snippet": "  115 |       }\n  116 |       await finishChat(page);\n> 117 |       await expect(page.locator('#auth-error')).toContainText(missingSession);\n      |                                                 ^\n  118 |       await expect(page.locator('#auth-error')).toBeVisible();\n  119 |       await expect(page.locator('#auth-status')).toBeHidden();\n  120 |       await assertClosed(page);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery.spec.mjs",
+                        "column": 49,
+                        "line": 117
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#auth-error')\nExpected substring: \u001b[32m\"Сессия входа не сохранилась\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#auth-error') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-error')\u001b[22m\n\u001b[2m    14 × locator resolved to <p hidden=\"\" class=\"error\" id=\"auth-error\"></p>\u001b[22m\n\u001b[2m       - unexpected value \"\"\u001b[22m\n\n\n  115 |       }\n  116 |       await finishChat(page);\n> 117 |       await expect(page.locator('#auth-error')).toContainText(missingSession);\n      |                                                 ^\n  118 |       await expect(page.locator('#auth-error')).toBeVisible();\n  119 |       await expect(page.locator('#auth-status')).toBeHidden();\n  120 |       await assertClosed(page);\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery.spec.mjs:117:49"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T23:18:28.897Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "No real auth/DB/provider; real built UI and cleanup."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-before/auth-recovery-AUTH-DIAG-01-9f77f-ains-error-and-fails-closed/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-before/auth-recovery-AUTH-DIAG-01-9f77f-ains-error-and-fails-closed/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-before/auth-recovery-AUTH-DIAG-01-9f77f-ains-error-and-fails-closed/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery.spec.mjs",
+                    "column": 49,
+                    "line": 117
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "14ac83f041d6380b70b4-40f10de0704d039e2e91",
+          "file": "auth-recovery.spec.mjs",
+          "line": 102,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-05T23:18:28.045Z",
+    "duration": 7757.27,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

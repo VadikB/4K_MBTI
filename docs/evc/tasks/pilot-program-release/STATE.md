@@ -1,5 +1,15 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- AUTH-DIAG-01: владелец разрешил только локальный fix; [реализация/проверки](../path-auth-fix.md),
+  [отчёт](../../reports/path-auth-fix.md). Синхронная очистка старого auth feedback,
+  delayed resetChat сохраняет новое сообщение; fail-closed/generation guards сохранены.
+  Before1 FAIL → targeted4 PASS, frontend142/backend920/HTTP108/lint/build45 PASS.
+  Широкий auth/admin browser:117 PASS/2 timeout; повтор двух:1 PASS/1 timeout,
+  причины UNKNOWN, не полный PASS и не готовность выпуска. Evidence сохранены.
+  Локальная дельта поверх dea8c44, версия2.0.68 не менялась; main/origin-main/test
+  последний подтверждённый946a46c. Новый CI/PR/review/push/merge/deploy/БД/LLM0.
+  Исторический auth114/1 causality NOT_ESTABLISHED; PREP-DIAG-01 UNKNOWN отдельно.
+  Старый audit170 immutable dea8c44 не пересчитывался. Нижняя диагностика — история.
 - Текущий [PATH-FINAL-AUDIT-01](../path-final-audit.md) после выпуска2.0.68:
   ветка `codex/path-final-audit` от946a46c; [единая матрица18 AC](../../reports/path-final-audit-2068.md),
   13 PASS в оговорённом накопленном scope /5 NOT_RUN(06/07/09/10/18), не human acceptance.
