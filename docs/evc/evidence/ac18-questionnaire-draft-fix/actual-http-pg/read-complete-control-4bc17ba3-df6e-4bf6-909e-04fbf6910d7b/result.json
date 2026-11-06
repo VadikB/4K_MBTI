@@ -1,0 +1,73 @@
+{
+  "status": "PASS_UI_HTTP_PG_NOT_AC18",
+  "scenario": {
+    "name": "read-complete-control",
+    "count": 0,
+    "width": 1440
+  },
+  "retained_fields": 0,
+  "refill_count": 0,
+  "all_12_after_reload": true,
+  "preview_status": 201,
+  "confirm_status": 200,
+  "readback_status": 200,
+  "provider_operations": 0,
+  "real_get_response_unmodified": true,
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/users/version"
+    },
+    {
+      "method": "GET",
+      "path": "/users/session/restore"
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/request-link"
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/preview"
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/1/confirm"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    },
+    {
+      "method": "GET",
+      "path": "/users/version"
+    },
+    {
+      "method": "GET",
+      "path": "/users/4/session-bootstrap"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    }
+  ],
+  "historical_ac18_causality": "NOT_PROVEN",
+  "timeout_cleanup_cause": "UNKNOWN",
+  "prep_diag_01": "UNKNOWN"
+}

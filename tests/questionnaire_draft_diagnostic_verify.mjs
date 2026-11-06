@@ -3,10 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 
 const root = process.cwd();
+const sourceRef = process.argv[2] === '--source-ref' ? process.argv[3] : null;
+assert(process.argv.length === 2 || (process.argv.length === 4 && /^[a-f0-9]{40}$/.test(sourceRef || '')),
+  'Use no arguments or --source-ref <exact 40-character historical SHA>');
+const sourceBytes = (source) => sourceRef
+  ? execFileSync('git', ['show', `${sourceRef}:${source}`], { cwd: root, maxBuffer: 16 * 1024 * 1024 })
+  : fs.readFileSync(path.join(root, source));
 const directory = path.join(root, 'docs/evc/evidence/ac18-questionnaire-draft-diagnosis');
-const fixture = JSON.parse(fs.readFileSync(path.join(root, 'tests/browser/fixtures/questionnaire-it-synthetic-v1.json')));
+const fixture = JSON.parse(sourceBytes('tests/browser/fixtures/questionnaire-it-synthetic-v1.json'));
 const cases = fs.readdirSync(directory).filter((name) => fs.statSync(path.join(directory, name)).isDirectory()).sort();
 assert.equal(cases.length, 4);
 const seen = new Set();
@@ -36,7 +43,7 @@ for (const name of cases) {
   assert.equal(result.historical_timeout_cleanup_cause, 'UNKNOWN'); assert.equal(result.prep_diag_01, 'UNKNOWN');
   assert.deepEqual(run.scenario, result.scenario);
   for (const [source, expected] of Object.entries(run.source_sha256)) {
-    assert.equal(createHash('sha256').update(fs.readFileSync(path.join(root, source))).digest('hex'), expected, source);
+    assert.equal(createHash('sha256').update(sourceBytes(source)).digest('hex'), expected, source);
   }
   const entered = Object.entries(fixture.fields).slice(0, run.scenario.count);
   for (const [field, value] of entered) assert.equal(before.values[field], value);
@@ -87,6 +94,7 @@ for (const name of cases) {
 }
 assert.equal(defects, 3); assert.equal(controls, 1);
 console.log(JSON.stringify({ evidence_consistency: 'PASS', files, cases: seen.size,
+  source_ref: sourceRef || 'current_worktree',
   product_defect_reproductions: defects, product_control_pass: controls,
   product_fixed: false, ac18: 'BLOCKED_NOT_REPEATED', cleanup_pass: seen.size,
   provider_operations: 0, historical_causality: 'NOT_PROVEN',

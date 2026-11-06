@@ -30,6 +30,7 @@ const staleQuestionnairePreviews = new Set();
 const questionnairePreviewRequestGenerations = new Map();
 const organizationViews = new Map();
 const managementDrafts = new Map();
+let renderedFormSignatures = new WeakMap();
 const selectedAssessmentRefs = new Map();
 const questionnaireConfirmRequestGenerations = new Map();
 const questionnaireConfirmRequestsInFlight = new Set();
@@ -165,7 +166,11 @@ const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverr
   if (updateSelected && assignmentRef && !view?.classList.contains('hidden')) {
     selectedAssessmentRefs.set(organizationKey(organizationId), assignmentRef.trim());
   }
-  managementDrafts.set(formDraftKey(organizationId, form, storageRef), {
+  const draftKey = formDraftKey(organizationId, form, storageRef);
+  // A pristine form is not a user draft. In particular, an untouched empty form
+  // must not mask the confirmed revision returned by the initial async GET.
+  if (!managementDrafts.has(draftKey) && renderedFormSignatures.get(form) === formSignature(form)) return;
+  managementDrafts.set(draftKey, {
     fields: Object.fromEntries(fields.map((field) => [field.name + ':' + field.value,
       { name: field.name, value: field === assignmentField && (assessmentOverride !== null || changedActiveScope)
         ? storageRef : field.value, checked: field.checked, type: field.type }])),
@@ -199,10 +204,14 @@ export const captureAdminOrganizationsDraft = () => {
   if (adminOrganizationsPanel.classList.contains('hidden')) return;
   adminOrganizationsList.querySelectorAll('[data-organization-id]').forEach((card) => {
     const organizationId = Number(card.getAttribute('data-organization-id'));
-    card.querySelectorAll('form[data-action]').forEach((form) => captureFormDraft(organizationId, form));
+    const questionnaireAccessDenied = questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied;
+    card.querySelectorAll('form[data-action]').forEach((form) => {
+      if (questionnaireAccessDenied && ['preview-early-data', 'preview-questionnaire'].includes(form.dataset.action)) return;
+      captureFormDraft(organizationId, form);
+    });
     captureParticipantSelection(organizationId, card);
     const preview = card.querySelector('.admin-questionnaire-preview');
-    if (preview) captureFormDraft(organizationId, preview);
+    if (preview && !questionnaireAccessDenied) captureFormDraft(organizationId, preview);
   });
 };
 
@@ -289,6 +298,7 @@ const clearAdminOrganizationsSessionState = () => {
   questionnairePreviewRequestGenerations.clear();
   organizationViews.clear();
   managementDrafts.clear();
+  renderedFormSignatures = new WeakMap();
   selectedAssessmentRefs.clear();
   questionnaireConfirmRequestGenerations.clear();
   questionnaireConfirmRequestsInFlight.clear();
@@ -474,6 +484,9 @@ const requestOrganizations = async (url, options, fallbackMessage) => {
   const data = await readApiResponse(response, fallbackMessage);
   if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
       requestGeneration !== organizationsRequestGeneration) return null;
+  // Preserve live input, not the earlier draft captured before this request.
+  // Keep this after the identity/generation guard and before replacing the data.
+  captureAdminOrganizationsDraft();
   organizationsReadStale = false;
   organizationsReadStaleReason = '';
   state.adminOrganizations = data;
@@ -538,6 +551,7 @@ export const loadAdminOrganizations = async () => {
     org.id, { identityEpoch, identityKey, render: false },
   )));
   if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  captureAdminOrganizationsDraft();
   renderAdminOrganizations();
   return data;
 };
@@ -545,11 +559,15 @@ export const loadAdminOrganizations = async () => {
 const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
   const identityEpoch = context.identityEpoch ?? state.identityEpoch;
   const identityKey = context.identityKey ?? currentIdentityKey();
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   const key = organizationKey(organizationId);
   const generation = (questionnaireLoadGenerations.get(key) || 0) + 1;
   questionnaireLoadGenerations.set(key, generation);
   questionnaireLoadStates.set(key, { status: 'loading' });
-  if (context.render !== false) renderAdminOrganizations();
+  if (context.render !== false) {
+    captureAdminOrganizationsDraft();
+    renderAdminOrganizations();
+  }
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire', {
       credentials: 'same-origin',
@@ -565,7 +583,10 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
     }
     questionnaireRevisions.set(key, [...merged.values()]);
     questionnaireLoadStates.set(key, { status: items.length ? 'ready' : 'empty' });
-    if (context.render !== false) renderAdminOrganizations();
+    if (context.render !== false) {
+      captureAdminOrganizationsDraft();
+      renderAdminOrganizations();
+    }
     return items;
   } catch (error) {
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
@@ -573,16 +594,24 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
     const accessDenied = error?.status === 401 || error?.status === 403;
     if (accessDenied) {
       questionnaireRevisions.delete(key);
+      // A denied read must not resurrect the snapshot captured before the GET.
+      for (const draftKey of managementDrafts.keys()) {
+        if (['preview-early-data', 'preview-questionnaire', 'questionnaire-preview']
+          .some((action) => String(draftKey).startsWith(key + ':' + action + ':'))) managementDrafts.delete(draftKey);
+      }
       for (const scopeKey of questionnairePreviews.keys()) {
         if (String(scopeKey).startsWith(key + ':')) questionnairePreviews.delete(scopeKey);
       }
     }
     questionnaireLoadStates.set(key, {
-      status: 'error', message: accessDenied
+      status: 'error', accessDenied, message: accessDenied
         ? 'Нет доступа к сохранённым анкетам этой организации.'
         : error.message || 'Не удалось загрузить сохранённые анкеты.',
     });
-    if (context.render !== false) renderAdminOrganizations();
+    if (context.render !== false) {
+      if (!accessDenied) captureAdminOrganizationsDraft();
+      renderAdminOrganizations();
+    }
     return null;
   }
 };
@@ -657,6 +686,7 @@ export const selectAdminOrganizationAssessment = (organizationId, form, assessme
       });
       const restoredDraft = restoreFormDraft(organizationId, assessmentForm);
       if (!restoredDraft) restoreConfirmedRevisionForm(assessmentForm, revision);
+      renderedFormSignatures.set(assessmentForm, formSignature(assessmentForm));
     });
   card?.querySelectorAll('.admin-questionnaire-preview').forEach((preview) => preview.remove());
   card?.querySelectorAll('.admin-readiness-panel').forEach((panel) => {
@@ -2199,9 +2229,13 @@ export const renderAdminOrganizations = () => {
     .join('');
   restoreAdminOrganizationsDraft();
   restoreProgramConnectionFeedback();
+  adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')
+    .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));
 };
 
 export const openAdminOrganizations = async () => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
   state.activeArea = 'management';
   state.isAdmin = Boolean(state.canAdmin || state.isAdmin);
   setCurrentScreen('admin-organizations');
@@ -2212,8 +2246,10 @@ export const openAdminOrganizations = async () => {
   setStatus('');
   adminOrganizationsList.innerHTML = '<p class="report-empty-state">Загружаем организации...</p>';
   try {
-    await loadAdminOrganizations();
+    const data = await loadAdminOrganizations();
+    if (!data || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
   } catch (error) {
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
     return;
   }

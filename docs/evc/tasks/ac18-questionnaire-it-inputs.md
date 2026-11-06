@@ -137,3 +137,48 @@ Q-DRAFT-01 имеет воспроизведённый механизм; точ�
 AC18 не доказана. Исторические root UNKNOWN и timeout cleanup UNKNOWN не меняются.
 Текущий шаг не исправляет продукт; следующий зависимый шаг ожидает отдельного
 согласования узкой UI-правки и регрессий. Все флаги выпуска false, LLM0.
+
+## Согласованная локальная правка Q-DRAFT-01
+
+Владелец ответил «да» на отдельное предложение узкой локальной правки сохранения
+черновика с регрессиями, без выпуска и платного прогона. Начало шага: d8ecd81d,
+fresh origin/main61f34aa/2.0.71, ветка чистая, чужая корневая ветка сохранена.
+
+Применимые AGENTS/README/CONTRIBUTING, workflow/matrix/recipe/context/Registry/
+Change01/manifest/M1 и профиль переиспользуются: со времени чтения не менялись.
+Дополнительно прочитаны capture/restore/clear/async-read/confirm ветки
+`web/js/screens/admin/organizations.js`, `web/js/wiring.js`, draft-key,
+ADM28/auth-r03/R10 browser fixtures и регрессии recipient scope. Пробел нормы — нет:
+техническое сохранение ввода, не изменение смысла анкеты/допуска. Все предметные,
+контрактные, schema/migration/права стоп-условия — нет; выпуск/LLM вне допуска.
+
+Активный шаг: захват текущих scoped drafts перед асинхронной перерисовкой **после**
+identity/generation guards, без глобального capture в renderer (он нарушил бы
+намеренный reset draft при confirm). Существующие ключи user/org/assessment/revision
+и очистка недоступного контекста сохраняются. Server, runner, admission/repair не меняются.
+
+План проверок: regressions preservation на настоящем HTTP/PostgreSQL (первые3/
+все12 до GET, контроль после GET, без refill), synthetic HTTP browser guards для
+identity/org/assessment, existing ADM28/auth/R10, lint/build/dist/frontend suite,
+применимые backend/HTTP проверки, diff/check и ссылки. Изолированный PostgreSQL16,
+provider disabled, никаких реальных писем. Исторические diagnostic JSON/PNG и их
+product FAIL не переписываются; offline verifier получает явный source-ref для
+проверки сохранённого d8ecd81d после изменения текущего кода.
+
+Все флаги выпуска false. Откат: адресный revert новой JS-правки и пересобранного dist;
+server/API/схема/постоянные данные не меняются. После локальной проверки — передача
+результата владельцу, не автоматический PR/release или AC18.
+
+Согласованная локальная правка завершена: [результат](../reports/ac18-questionnaire-draft-fix.md).
+Новый JS diff52 lines (44+/8-), rebuilt45 assets без bump. Проверки:145 frontend,
+937 backend,108 HTTP,140 browser PASS; новые4 actual HTTP/PG preservation без refill
+и7 synthetic HTTP scope/lifecycle regressions входят в140. Старые43 отрицательных
+evidence неизменны, новый verifier36 primary files /4 PASS; поддерживающие actual
+ADM28/ИТ-анкета дают ещё2 owner cleanup. Все6 owned-БД/state штатно удалены,
+независимый maintenance count0, task-container остановлен. LLM0.
+
+Передача: локальная реализация проверена, человеческая приёмка/выпуск не присваиваются.
+Следующий согласуемый этап — кандидат версии и PR/CI/review; merge/deploy и real AC18
+требуют своих отдельных разрешений. Main/test61f34aa/2.0.71 не обновлялись.
+Fail-fast runner/timeout cleanup не включены; PREP-DIAG-01 и исторические root UNKNOWN
+не переписываются. Текущее состояние: `docs/evc/evidence/ac18-questionnaire-draft-fix/STATE.md`.
