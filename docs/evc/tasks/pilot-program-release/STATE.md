@@ -1,5 +1,17 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Разрешён [PATH-FEEDBACK-R1](../path-feedback-release-2069.md): владелец подтвердил
+  2.0.69 PATCH → push/Ready PR/mandatory CI/human review, без merge/deploy/БД/LLM/
+  программы. Отдельная release-ветка `codex/path-feedback-2069` отc59b024; исходная
+  `codex/path-final-audit` и пакеты сохранены. Fresh main946a46c/2.0.68, preflight
+  и повтор PASS,4 metadata/45 assets identical. Candidate lint/145 frontend/
+  22 release+CI/920 backend/108 HTTP/129 browser PASS (retry0/skip0/flaky0).
+  Runtime/tests кроме APP_RELEASE не менялись после c59, старые manifests immutable;
+  [новое evidence](../../evidence/path-feedback-release-2069/README.md).
+  Активны commit/push/PR/CI; новый head/human review ещё не принят, точная передача
+  будет в PR без status-only commit. Main и последнее подтверждённое test946a46c,
+  нового server readback/deploy нет. PREP UNKNOWN/auth114-1 NOT_ESTABLISHED/старые
+  timeout UNKNOWN сохраняются отдельно. Нижние запреты release — история до допуска.
 - [R10-STATUS-FIX](../r10-status-fix.md) локально завершён по допуску владельца:
   base4f2e884, scoped in-memory outcome user/epoch/org/selected+connected program,
   invalidation новых intent/selection/identity и позднего feedback. Exact PUT/GET,
