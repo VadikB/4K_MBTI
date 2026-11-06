@@ -1,0 +1,340 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "restores the exact connected program after reopening|keeps superadmin participant cards readable on narrow viewports",
+      "--trace",
+      "on",
+      "--global-timeout",
+      "60000",
+      "--repeat-each",
+      "3",
+      "--workers",
+      "1",
+      "--retries",
+      "0",
+      "--output",
+      ".test-stand/timeout-diag-current"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 60000,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/timeout-diag-current",
+        "repeatEach": 3,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PROGRAM01 R10 restores the exact connected program after reopening the card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1946,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T05:45:45.915Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/timeout-diag-current/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-9a69901cc4d292552452",
+          "file": "auth-r03.spec.mjs",
+          "line": 628,
+          "column": 1
+        },
+        {
+          "title": "ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1167,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T05:45:48.580Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/timeout-diag-current/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-3ba40c966a45d9f54e48",
+          "file": "auth-r03.spec.mjs",
+          "line": 1312,
+          "column": 1
+        },
+        {
+          "title": "PROGRAM01 R10 restores the exact connected program after reopening the card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1650,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T05:45:50.648Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/timeout-diag-current/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card-repeat1/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-99445dd8a78bdf351449",
+          "file": "auth-r03.spec.mjs",
+          "line": 628,
+          "column": 1
+        },
+        {
+          "title": "ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1411,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T05:45:52.808Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/timeout-diag-current/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports-repeat1/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-657eab9548190b94b1b4",
+          "file": "auth-r03.spec.mjs",
+          "line": 1312,
+          "column": 1
+        },
+        {
+          "title": "PROGRAM01 R10 restores the exact connected program after reopening the card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1514,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T05:45:55.345Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/timeout-diag-current/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card-repeat2/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-2e9f75f6b5410213b40c",
+          "file": "auth-r03.spec.mjs",
+          "line": 628,
+          "column": 1
+        },
+        {
+          "title": "ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1242,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T05:45:57.283Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/timeout-diag-current/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports-repeat2/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-a8e1f8694be00f3fec62",
+          "file": "auth-r03.spec.mjs",
+          "line": 1312,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T05:45:44.644Z",
+    "duration": 14097.589,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

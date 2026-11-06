@@ -1,5 +1,15 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Завершена [BROWSER-TIMEOUT-DIAG-01](../browser-timeout-diagnostic.md): current bf637af
+  и comparison dea8c44 по6 PASS с traces; старые timeout сейчас не воспроизведены,
+  root UNKNOWN. Уточнение первичного JSON: ADM full click757, followup fill754.
+  Свежий полный browser118 PASS/1 FAIL; [R10-STATUS-DIAG-01](../r10-status-diag-01.md):
+  initial load re-render стирает DOM-only итог подключения после анкеты503,
+  соединение сохраняется;3/3 FAIL до AUTH fix. Product fix NOT_AUTHORIZED,
+  [отчёт](../../reports/browser-timeout-diagnostic.md); code/test/config/dist после
+  bf637af не менялись, gate остаётся FAIL. Новая локальная дельта только docs/evidence;
+  main/test946a46c/2.0.68, нового CI/PR/bump/merge/deploy/БД/LLM нет.
+  PREP UNKNOWN/auth114-1 NOT_ESTABLISHED отдельно. Нижнее — история, не новый PASS.
 - AUTH-DIAG-01: владелец разрешил только локальный fix; [реализация/проверки](../path-auth-fix.md),
   [отчёт](../../reports/path-auth-fix.md). Синхронная очистка старого auth feedback,
   delayed resetChat сохраняет новое сообщение; fail-closed/generation guards сохранены.
