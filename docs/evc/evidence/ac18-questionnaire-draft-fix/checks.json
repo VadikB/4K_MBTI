@@ -1,5 +1,6 @@
 {
   "scope": "local_ui_fix_free_checks_not_release",
+  "implementation_commit": "df9bdf8b3a3f86fb77ba4d295da292c5ace9d233",
   "base_head": "d8ecd81d27a0633cbdc5f4d707804c32900e99d5",
   "origin_main": "61f34aa2151a4f9364eac28bf33895d10f91d50b",
   "local_development_version": "2.0.71",
@@ -15,6 +16,7 @@
   "new_synthetic_http_guards": {"status": "PASS", "cases": 7, "real_db_or_path_claim": false},
   "core_evidence": {"files": 36, "tree_sha256": "93e2dc1322537fd5c48df8d3e697592737d149f6c433d879ad594a7abfc82d0d"},
   "historical_evidence": {"files": 43, "status": "UNCHANGED", "tree_sha256": "f0d742e438b7c642237c25675ec1e523ef3d6c3c2736b7e616fe7da9d480661c"},
+  "historical_status_pngs": {"originals_restored_from": "d8ecd81d27a0633cbdc5f4d707804c32900e99d5", "current_run_copies_preserved": true},
   "cleanup": {"owned_databases": 6, "status": "PASS", "force": false, "independent_maintenance_count": 0, "container_stopped": true, "persistent_volume": false},
   "provider_operations": 0,
   "ac18": "NOT_RUN",

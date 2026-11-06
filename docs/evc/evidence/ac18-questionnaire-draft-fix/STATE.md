@@ -3,6 +3,8 @@
 - Branch `codex/ac18-questionnaire-it-inputs`, шаг от d8ecd81d, product base/main61f34aa/2.0.71.
 - Реализация и бесплатная проверка завершены: scoped draft capture, pristine signature,
   old identity guard,403 не восстанавливает отозванные buffers. Общий confirm reset сохранён.
+- Локальный implementation commit: df9bdf8b3a3f86fb77ba4d295da292c5ace9d233;
+  заключительное дополнение передачи меняет только docs/два сохранённых PNG.
 - Изменён только product JS organizations.js и rebuilt dist; API/scripts/definitions
   и постоянный PATH runner не меняются. Проверено diff от d8ecd81d.
 - Product JS SHA256: `23a8ef4a4db6d4496df4cbe19fb8372a193e8ded07980a9e2c1253249a12081d`.
@@ -15,6 +17,8 @@
   одноразовый PostgreSQL16/task-container остановлен, постоянных томов нет.
 - Исторические43 отрицательных files и их f0d742… checksum неизменны;
   verifier принимает явный source-ref d8ecd81d27a0633cbdc5f4d707804c32900e99d5.
+- Два status-list PNG, перезаписанные existing auth-r03, сохранены в existing-status-views;
+  исторические пути восстановлены по d8ecd81d, source-код теста не менялся.
 - Нет LLM, working DB access, публикации/активации программы, bump/push/PR/merge/deploy.
 - Fresh origin/main61f34aa. Новое CI NOT_RUN; последнее проверенное test deployment2.0.71,
   живой readback в этом локальном шаге не повторялся. Чужая root branch сохранена.
