@@ -1,5 +1,22 @@
 # PATH-HARNESS-R1 — передача кандидата 2.0.70 на PR/CI/review
 
+## Уточнение после первого CI PR175
+
+PR175 создан Ready для head1cd972f. CI42212416209: frontend PASS, pytest
+**1 FAIL/920 PASS**, HTTP после него SKIP. Точная причина — новый hash unit test
+зависел от origin/main, отсутствующего в shallow CI checkout. Исправлена только
+изоляция unit Git metadata, actual file hash сохраняется; добавлен runtime
+fail-closed regression. Код runner/API/browser/PG не меняется. Новый35 targeted
+PASS; на отдельном восстановленном shallow checkout before1 FAIL →after2 PASS.
+[Primary CI/negative/probes](../evidence/path-harness-release-2070-ci/README.md).
+Неизменённые134 первичных файла и354 source hashes +один явно обновлённый unit
+проверяет новый offline CHECK. Старый CHECK355/пакет1cd replay только на его
+immutable snapshot; их hashes не переписаны ради текущего теста. Финальный
+review head будет новым, прежний1cd/CI не обозначается зелёным кандидатом.
+Полные backend/HTTP нового source и новый mandatory CI — следующий gate;
+пять browser на4510 применимы, их исполняемые bytes не изменились.
+Следующие разделы сохраняют состояние первого head до этой CI-поправки.
+
 ## Результат
 
 Владелец отдельно подтвердил 2.0.70 PATCH, bump →push →PR →mandatory CI →human

@@ -1,5 +1,15 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- PR175 Ready создан для1cd972f/2.0.70. Первый mandatory pytest FAIL920/1:
+  новый hash unit ошибочно требовал origin/main в shallow CI checkout.
+  Исправление только unit fixture +fail-closed regression,35 targeted и shallow2
+  PASS, before1 FAIL; raw CI и оба отрицательных probe сохранены в отдельном
+  path-harness-release-2070-ci. Browser/runner/API/PG bytes прежние4510aa4.
+  Старые manifests355/134 immutable; новый CHECK явно проверяет один unit delta.
+  Активно: source commit, полный backend/HTTP, push и новый mandatory CI exact
+  head/base; human review NOT_DONE. Main/последнее test3f42bba/2.0.69.
+  Без нового bump/merge/deploy/программы/рабочей БД/paid AC18; PREP UNKNOWN отдельно.
+
 - Активен [PATH-HARNESS-R1](../path-harness-release-2070.md): владелец отдельно
   подтвердил2.0.70 PATCH →bump/push/PR/mandatory CI/human review. Merge/deploy,
   публикация/активация программы, рабочая БД и paid AC18 не разрешены.

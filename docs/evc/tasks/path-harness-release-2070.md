@@ -1,5 +1,14 @@
 # PATH-HARNESS-R1 — кандидат 2.0.70, PR/CI/review
 
+Текущее дополнение: Ready PR175 создан, head1cd972f, первый frontend PASS,
+pytest FAIL920/1 из-за отсутствующего origin/main в shallow checkout. Узко
+исправлен новый unit (Git metadata fixture только в unit), runtime fail-closed
+не меняется и отдельно проверяется;35 targeted и shallow2 PASS/before1 FAIL.
+Новый source требует повтор backend/HTTP и CI, review пока NOT_DONE.
+Primary и объяснение сохранены отдельно: path-harness-release-2070-ci.
+Нижние CI NOT_RUN/активно создать PR относятся к прежним commits, не к текущему
+состоянию. Без второго bump; merge/deploy/LLM не разрешены.
+
 ## Результат и основание
 
 Владелец ответил «да» на отдельный вопрос о выпуске harness 2.0.70:

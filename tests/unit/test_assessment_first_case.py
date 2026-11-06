@@ -1,11 +1,36 @@
 from scripts.assessment_first_case import preflight
 
 
-def test_code_identity_includes_readonly_viewport_collector():
+def test_code_identity_includes_readonly_viewport_collector(monkeypatch):
     import hashlib
-    from scripts.assessment_first_case import ROOT, code_identity
+    from scripts import assessment_first_case as runner
+    # Unit-only Git metadata fixture: a shallow CI checkout need not have
+    # origin/main. File bytes/hash stay real; runtime still requires that ref.
+    metadata = {('rev-parse', 'HEAD'): '1' * 40,
+                ('branch', '--show-current'): 'synthetic-unit',
+                ('rev-parse', 'origin/main'): '2' * 40,
+                ('status', '--short'): ''}
+    def git_output(command, **kwargs):
+        assert command[0] == 'git' and kwargs['cwd'] == runner.ROOT
+        return metadata[tuple(command[1:])]
+    monkeypatch.setattr(runner.subprocess, 'check_output', git_output)
     relative = 'tests/browser/fixtures/path-viewports.mjs'
-    assert code_identity()['files'][relative] == hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+    assert runner.code_identity()['files'][relative] == hashlib.sha256((runner.ROOT / relative).read_bytes()).hexdigest()
+
+
+def test_code_identity_missing_origin_main_still_fails_closed(monkeypatch):
+    import subprocess
+    import pytest
+    from scripts import assessment_first_case as runner
+    def git_output(command, **kwargs):
+        if command == ['git', 'rev-parse', 'origin/main']:
+            raise subprocess.CalledProcessError(128, command)
+        return 'synthetic-unit'
+    monkeypatch.setattr(runner.subprocess, 'check_output', git_output)
+    with pytest.raises(subprocess.CalledProcessError) as stopped:
+        runner.code_identity()
+    assert stopped.value.cmd == ['git', 'rev-parse', 'origin/main']
+    assert stopped.value.returncode == 128
 
 
 def test_source_selection_cannot_leak_into_functional_diagnostic():
