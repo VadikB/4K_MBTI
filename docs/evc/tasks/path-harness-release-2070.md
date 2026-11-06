@@ -41,7 +41,7 @@ Merge/deploy/AC18 остаются за открытым отдельным gate
 1. Активно: свежий main, штатный ready:prepare --candidate 2.0.70,
    повтор для проверки идемпотентности, diff/точные asset hashes.
 2. До PR: lint/build,145 frontend, backend/HTTP,22 release+CI regressions,
-   адресный actual HTTP/owned-PG, две затронутые browser проверки и две
+   адресный actual HTTP/owned-PG, две затронутые browser проверки и три
    collector-only DOM регрессии.
    Только новый собственный PostgreSQL16, синтетика, provider/mail disabled.
    240 integration исходного source переиспользуются для неизменных Python/Api
@@ -62,6 +62,15 @@ visible/active/trial проверки. Негативные offscreen/clipping/o
 два новых actual Chromium DOM теста PASS, не подмена actual HTTP/PG/AS.
 Повтор итогового browser набора после этого изменения обязателен. Номер тот же
 2.0.70, повторного bump нет. Методология/критерии/admission/repair не меняются.
+
+Source `ef0cc87cf947ad7c6a89ad341144d1f520a30ce8`: component AS/4 widths и две
+DOM регрессии PASS, admin collector FAIL — DOM detached при предварительном
+scrollIntoViewIfNeeded, во время штатного questionnaire re-render карточки.
+У enabled-контролов убран лишний предварительный scroll: trial action сам
+повторно находит элемент и прокручивает, не кликает. Добавлена actual DOM
+регрессия12 последовательных замен элемента. Для disabled контроль не включается
+насильно, прежний отдельный scroll сохраняется. Оба отрицательных run сохранены;
+это не новые отказы AS и не причина PREP-DIAG-01.
 
 Проверки фиксируются в [отчёте выпуска](../reports/path-harness-release-2070.md).
 AC18 NOT_RUN: [план](path-ac18-final-plan.md) сохраняется, окончательный deployed

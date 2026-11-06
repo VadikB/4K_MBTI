@@ -14,7 +14,7 @@ AUTH/R10 закрыт, повторная release-задача для него �
 Отдельно согласованный владельцем кандидат инструмента 2.0.70 подготовлен в
 `codex/path-harness-2070`; точный source и финальный PR head фиксируются в
 отчёте выпуска/передаче review. От handoff изменены metadata/build, docs/evidence
-и viewport collector с двумя DOM регрессиями; Api/runner/артефакты прежние.
+и viewport collector с тремя DOM регрессиями; Api/runner/артефакты прежние.
 Этот локальный source **не является окончательным deployed SHA для AC18**.
 
 Порядок: отдельный прямой допуск release → штатный preflight/согласованный PATCH →

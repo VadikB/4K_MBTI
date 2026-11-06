@@ -52,13 +52,13 @@ export async function capturePathViewports(page, directory, phase, controls) {
       records.push(record);
       for (const { name, locator } of controls) {
         await expect(locator).toBeVisible();
-        await locator.scrollIntoViewIfNeeded();
         const enabled = await locator.isEnabled();
         const control = { name, enabled };
         record.controls.push(control);
         // Trial performs pointer actionability but never clicks. Preserve disabled
         // controls: do not force-enable them just to collect evidence.
         if (enabled) await locator.click({ trial: true });
+        else await locator.scrollIntoViewIfNeeded();
         const geometry = await viewportGeometry(locator);
         Object.assign(control, { box: geometry.box, geometry });
         const ancestors = await locator.evaluate((el) => {

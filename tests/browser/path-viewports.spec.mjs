@@ -48,3 +48,24 @@ test('viewport geometry rejects offscreen, ancestor clipping and horizontal over
   }
   assertViewportGeometry(await viewportGeometry(page.locator('#visible')), 'visible');
 });
+
+test('viewport collector re-resolves enabled control during DOM rerender', async ({ page }, testInfo) => {
+  await page.setContent('<div style="height:2200px">collector fixture</div><button id="target">target</button>');
+  await page.evaluate(() => {
+    let remaining = 12;
+    const replace = () => {
+      const old = document.querySelector('#target');
+      old.replaceWith(old.cloneNode(true));
+      document.body.dataset.replacements = String(12 - --remaining);
+      if (remaining) requestAnimationFrame(replace);
+    };
+    requestAnimationFrame(replace);
+  });
+  const directory = testInfo.outputPath('rerender');
+  fs.mkdirSync(directory, { recursive: true });
+  const records = await capturePathViewports(page, directory, 'rerender', [
+    { name: 'target', locator: page.locator('#target') },
+  ]);
+  expect(records).toHaveLength(4);
+  expect(await page.locator('body').getAttribute('data-replacements')).toBe('12');
+});
