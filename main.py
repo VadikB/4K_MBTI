@@ -16,6 +16,7 @@ from starlette.concurrency import run_in_threadpool
 
 from Api.database import ensure_core_schema, get_connection, get_connection_pool_stats
 from Api.routes import router as users_router
+from Api.integration_routes import router as integration_router
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
@@ -26,6 +27,7 @@ from Api.m5_generation_lab import ensure_lab_schema
 app = FastAPI(title="Agent_4K API", docs_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.include_router(users_router)
+app.include_router(integration_router)
 logger = logging.getLogger("agent4k")
 
 BASE_DIR = Path(__file__).resolve().parent
