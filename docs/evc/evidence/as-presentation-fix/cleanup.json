@@ -1,0 +1,20 @@
+{
+  "task": "AS-PRESENTATION-DIAG-01",
+  "scope": "LOCAL_OWNED_POSTGRESQL_ONLY",
+  "container_name": "4k-as-presentation-pytest-20261106",
+  "container_id": "86b3ac01efc9b9f6c0c3ed5135074ede1a329c34aa949aa59be4b3ee3dd62497",
+  "labels": {"codex.owned": "true", "codex.task": "AS-PRESENTATION-DIAG-01"},
+  "database": "product4k_pytest_as_presentation",
+  "listen": "127.0.0.1:58645",
+  "host_mounts": [],
+  "anonymous_volume": "84832d9dfc2b65de030506e2e0890b3dc0d6eb98eadd05f85d311dd52ac2b61a",
+  "before_removal": {"remaining_task_schemas": 0, "other_connections": 0, "exported_primary_readbacks": 5},
+  "evidence_copied_before_removal": true,
+  "stop_exit_code": 0,
+  "remove_exit_code": 0,
+  "force": false,
+  "after_removal": {"owned_containers": 0, "exact_anonymous_volume": 0},
+  "permanent_database_accessed": false,
+  "database_schema_changed": false,
+  "recovery": "Ephemeral synthetic data removed irreversibly; primary readbacks and tests preserved. No working data was present."
+}

@@ -362,7 +362,7 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
     ],
 )
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
-        product_db, monkeypatch, explicit_profile, close_during_provider, crash_phase):
+        product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -579,7 +579,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             JOIN m5_cycles c ON c.id=d.cycle_db_id WHERE c.cycle_id=%s ORDER BY d.created_at DESC LIMIT 1""",
             (prepared["plan"]["cycle_id"],)).fetchone()
         assert decision["selected_case_id"].startswith("CASE.SPEC.")
-        situation = connection.execute("""SELECT s.snapshot_json,s.execution_payload_json
+        situation = connection.execute("""SELECT s.snapshot_json,s.snapshot_checksum,s.execution_payload_json
             FROM m5_assessment_situations s JOIN m7_route_assignments a ON a.assessment_situation_db_id=s.id
             WHERE a.decision_id=%s""", (decision["id"],)).fetchone()
         assignment_count = connection.execute(
@@ -598,6 +598,20 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         assert generated_trace["tester_input_checksum"] == generated_trace["tester"]["provider_operation"]["input_checksum"]
         assert generated_trace["source_snapshot"]["author_as_example"]["CaseID"] == decision["selected_case_id"]
         assert generated_trace["source_snapshot"]["profile_checksum"] == situation["snapshot_json"]["profile_ref"]["checksum"]
+        # AS-PRESENTATION-DIAG-01: real persisted snapshot from the existing
+        # controlled-provider pipeline, not an injected successful resolver.
+        public = situation["snapshot_json"]["participant_payload"]
+        accepted = generated_trace["accepted_as"]
+        public_p00 = next(item for item in accepted["Материалы"] if item["MaterialID"] == "P00")
+        assert public["introduction"] == public_p00["Текст"]
+        assert [item["material_id"] for item in public["initial_materials"]] == [
+            item for item in accepted["Стартовые MaterialIDs"] if item != "P00"]
+        assert not set(public) & {"initial_situation", "trigger", "assessee_position",
+            "participants_and_positions", "assessee_task", "conditions_and_constraints"}
+        assert "определяются в AS" not in json.dumps(public, ensure_ascii=False)
+        frozen_public = copy.deepcopy(public)
+        assert checksum(situation['snapshot_json']) == situation['snapshot_checksum']
+        assert checksum(situation['execution_payload_json']) == situation['snapshot_json']['execution_payload_ref']['checksum']
         assert "planned case durations do not constrain selection" in prepared["plan"]["plan"]["duration_semantics"]
         selected_case = connection.execute("SELECT case_version_id FROM m5_assessment_situations WHERE id=%s",
             (connection.execute("SELECT assessment_situation_db_id FROM m7_route_assignments WHERE decision_id=%s",
@@ -645,6 +659,45 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
 
     with product_db() as connection:
         start_prepared(connection, user_id=99, cycle_id=cycle_id, key="functional-cycle-start")
+        assert read_runtime(connection, cycle_id=cycle_id)["current_situation"]["participant_payload"] == frozen_public
+        # HTTP is a separate real transaction: publish the explicit start first,
+        # exactly as the product request does before a subsequent runtime GET.
+        connection.commit()
+        # A separate HTTP read uses the actual owner SQL guard/runtime resolver
+        # and PostgreSQL connection; only the authentication token lookup is a
+        # controlled identity fixture. This is NOT an auth acceptance test.
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from Api import routes
+        monkeypatch.setattr(routes, "get_connection", product_db)
+        monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                            lambda token: SimpleNamespace(id=99) if token == "projection-fixture" else None)
+        app = FastAPI()
+        app.include_router(routes.router)
+        with TestClient(app) as http:
+            http.cookies.set(routes.SESSION_COOKIE_NAME, "projection-fixture")
+            response = http.get(f"/users/assessment/cycles/{cycle_id}/runtime")
+            assert response.status_code == 200, response.text
+            assert response.json()["current_situation"]["participant_payload"] == frozen_public
+            assert not [turn for turn in response.json()['trace']['turns'] if turn['speaker_type'] == 'assessee']
+            # Allowlisted primary readback saved before fixture DROP SCHEMA.
+            # Source QA/provider/start permission are synthetic substitutions;
+            # persistence, owner SQL guard and HTTP runtime are real PostgreSQL.
+            (tmp_path / 'as-presentation-persistence.json').write_text(json.dumps({
+                'scope': 'SYNTHETIC_PROVIDER_AND_UPSTREAM_ADMISSION_REAL_POSTGRESQL_HTTP',
+                'parameters': {'explicit_profile': explicit_profile, 'crash_phase': crash_phase},
+                'cycle_id': cycle_id, 'assessment_situation_id': first_as,
+                'assignment_count': assignment_count, 'snapshot_checksum': situation['snapshot_checksum'],
+                'candidate_checksum': generated_trace['candidate_checksum'],
+                'accepted_as_checksum': functional_checksum(accepted),
+                'case_ref': situation['snapshot_json']['case_ref'],
+                'profile_ref': situation['snapshot_json']['profile_ref'],
+                'execution_payload_ref': situation['snapshot_json']['execution_payload_ref'],
+                'compiler': generated_trace['source_snapshot']['refs']['package']['compiler'],
+                'persisted_public': frozen_public, 'http_public': response.json()['current_situation']['participant_payload'],
+                'http_status': response.status_code, 'assessment_answers_at_readback': 0,
+                'snapshot_checksum_verified': True, 'execution_checksum_verified': True,
+            }, ensure_ascii=False, indent=2) + '\n', encoding='utf8')
         submit_turn(connection, assessment_situation_id=first_as,
                     request_id="functional-cycle-turn", turn_id=str(uuid4()),
                     content="Контролируемый ответ для перехода ко второй ситуации.",

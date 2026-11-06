@@ -58,6 +58,7 @@ def _replace_casefold(value: str, source: str, replacement: str) -> str:
 
 def _materialize_v3_presentation(
     case: CaseVersionV3, profile_snapshot: dict, profile_ref: dict, substitutions: list[dict],
+    *, source_schema_profile: str | None = None,
 ) -> dict:
     presentation = case.participant_presentation.model_dump()
     targets: dict[str, list] = {}
@@ -94,6 +95,16 @@ def _materialize_v3_presentation(
             material = presentation["initial_materials"][int(match.group(1))]
             material["text"] = _replace_casefold(material["text"], target.source_value, replacement)
     presentation.pop("substitution_targets", None)
+    if source_schema_profile in {
+        "functional-personalization-indicator-v1", "functional-personalization-indicator-v2",
+    }:
+        # Functional AS defines its public copy in P00 + explicit start materials
+        # (Generation_contract_v0.2 / 05_participant). Passport 8–13 describes the
+        # author construction, not the personalized scene. Preserve that closed
+        # provenance in the compiled Case/trace, never duplicate it in public copy.
+        presentation = {key: presentation[key] for key in (
+            "assessment_situation_id", "version", "source", "title", "introduction", "initial_materials",
+        )}
     presentation["case_id"] = case.case_id
     presentation["case_version"] = case.version
     presentation["substitutions"] = deepcopy(substitutions)
@@ -120,7 +131,15 @@ def build_assessment_situation(
     evidence = [QAEvidenceV2.model_validate(x) for x in qa_evidence]
     admission = evaluate_admission(case, evidence, policy)
     if isinstance(case, CaseVersionV3):
-        participant_payload = _materialize_v3_presentation(case, profile_snapshot, profile_ref, substitutions)
+        # The generating operation's frozen source, not current config or a
+        # guessed profession, selects the existing presentation contract.
+        functional = (ai_operations or {}).get("functional_personalization") or {}
+        source_refs = (functional.get("source_snapshot") or {}).get("refs") or {}
+        compiler = (source_refs.get("package") or {}).get("compiler") or {}
+        participant_payload = _materialize_v3_presentation(
+            case, profile_snapshot, profile_ref, substitutions,
+            source_schema_profile=compiler.get("source_schema_profile"),
+        )
     else:
         participant_payload = {
             "case_id": case.case_id,
