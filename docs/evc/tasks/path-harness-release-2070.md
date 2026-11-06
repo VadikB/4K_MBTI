@@ -41,13 +41,27 @@ Merge/deploy/AC18 остаются за открытым отдельным gate
 1. Активно: свежий main, штатный ready:prepare --candidate 2.0.70,
    повтор для проверки идемпотентности, diff/точные asset hashes.
 2. До PR: lint/build,145 frontend, backend/HTTP,22 release+CI regressions,
-   адресный actual HTTP/owned-PG и две затронутые browser проверки.
+   адресный actual HTTP/owned-PG, две затронутые browser проверки и две
+   collector-only DOM регрессии.
    Только новый собственный PostgreSQL16, синтетика, provider/mail disabled.
    240 integration исходного source переиспользуются для неизменных Python/Api
    bytes; полный новый integration/browser CI обязателен для release head/base.
 3. Локальный commit с отчётом, push, Ready PR, обязательные frontend/pytest/
    full-verification. Сохранить exact head/base/CI без status-only перебора SHA.
 4. Передать точный head человеку для review. Не выполнять merge/deploy.
+
+Первый source выпуска `c972a88af085ea12520aae9380d2564984933054`:
+921 backend/108 HTTP/145 frontend/22 release+CI и18 child HTTP/PG PASS;
+browser 1 PASS/1 FAIL. Отрицательный result/failure/geometry/PNG/cleanup сохранён.
+Collector измерял box до trial scroll и зависел от отдельного IO-based
+toBeInViewport: получен ratio0 при box внутри viewport и успешной trial action.
+Исторический механизм конкретного IO callback UNKNOWN, не product root cause.
+В разрешённом scope исправления harness: текущая геометрия после trial scroll,
+пересечение с viewport и clipping каждого ancestor, прежний горизонтальный gate,
+visible/active/trial проверки. Негативные offscreen/clipping/overflow сохранены;
+два новых actual Chromium DOM теста PASS, не подмена actual HTTP/PG/AS.
+Повтор итогового browser набора после этого изменения обязателен. Номер тот же
+2.0.70, повторного bump нет. Методология/критерии/admission/repair не меняются.
 
 Проверки фиксируются в [отчёте выпуска](../reports/path-harness-release-2070.md).
 AC18 NOT_RUN: [план](path-ac18-final-plan.md) сохраняется, окончательный deployed

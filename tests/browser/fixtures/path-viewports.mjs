@@ -3,6 +3,41 @@ import { expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Read current geometry AFTER Playwright's trial scroll. Account for each
+// clipping ancestor, not only getBoundingClientRect() or a stale IO callback.
+export async function viewportGeometry(locator) {
+  return locator.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    let left = Math.max(0, rect.left), right = Math.min(innerWidth, rect.right);
+    let top = Math.max(0, rect.top), bottom = Math.min(innerHeight, rect.bottom);
+    for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+      const style = getComputedStyle(parent), r = parent.getBoundingClientRect();
+      if (/^(auto|scroll|hidden|clip)$/.test(style.overflowX)) {
+        left = Math.max(left, r.left + parent.clientLeft);
+        right = Math.min(right, r.left + parent.clientLeft + parent.clientWidth);
+      }
+      if (/^(auto|scroll|hidden|clip)$/.test(style.overflowY)) {
+        top = Math.max(top, r.top + parent.clientTop);
+        bottom = Math.min(bottom, r.top + parent.clientTop + parent.clientHeight);
+      }
+    }
+    const area = Math.max(0, right - left) * Math.max(0, bottom - top);
+    return { box: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      viewport: { width: innerWidth, height: innerHeight },
+      clipped: { left, right, top, bottom }, visible_area: area,
+      visible_ratio: rect.width * rect.height > 0 ? area / (rect.width * rect.height) : 0,
+      visibility: document.visibilityState };
+  });
+}
+
+export function assertViewportGeometry(geometry, label) {
+  expect(geometry.visibility, `${label}: active page`).toBe('visible');
+  expect(geometry.visible_ratio, `${label}: clipped viewport intersection`).toBeGreaterThan(0);
+  expect(geometry.box.x, `${label}: left`).toBeGreaterThanOrEqual(-1);
+  expect(geometry.box.x + geometry.box.width, `${label}: right`)
+    .toBeLessThanOrEqual(geometry.viewport.width + 1);
+}
+
 export async function capturePathViewports(page, directory, phase, controls) {
   const original = page.viewportSize();
   const records = [];
@@ -18,8 +53,14 @@ export async function capturePathViewports(page, directory, phase, controls) {
       for (const { name, locator } of controls) {
         await expect(locator).toBeVisible();
         await locator.scrollIntoViewIfNeeded();
-        const box = await locator.boundingBox();
         const enabled = await locator.isEnabled();
+        const control = { name, enabled };
+        record.controls.push(control);
+        // Trial performs pointer actionability but never clicks. Preserve disabled
+        // controls: do not force-enable them just to collect evidence.
+        if (enabled) await locator.click({ trial: true });
+        const geometry = await viewportGeometry(locator);
+        Object.assign(control, { box: geometry.box, geometry });
         const ancestors = await locator.evaluate((el) => {
           const values = [];
           for (let node = el; node && values.length < 8; node = node.parentElement) {
@@ -30,14 +71,9 @@ export async function capturePathViewports(page, directory, phase, controls) {
           }
           return values;
         });
-        record.controls.push({ name, box, enabled, ancestors });
+        control.ancestors = ancestors;
         fs.writeFileSync(receipt, JSON.stringify(records, null, 2) + '\n');
-        // Trial performs the real pointer actionability checks but never clicks.
-        // A disabled pre-answer finish/submit is expected, not forced enabled.
-        if (enabled) await locator.click({ trial: true });
-        await expect(locator).toBeInViewport();
-        expect(box.x, `${phase}/${name}/${width}: left`).toBeGreaterThanOrEqual(-1);
-        expect(box.x + box.width, `${phase}/${name}/${width}: right`).toBeLessThanOrEqual(width + 1);
+        assertViewportGeometry(geometry, `${phase}/${name}/${width}`);
       }
       record.document = await page.evaluate(() => ({
         viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth,
