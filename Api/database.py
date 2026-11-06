@@ -3792,7 +3792,7 @@ def ensure_organization_membership_admission_source_constraint(connection) -> No
                 FROM pg_constraint
                 WHERE conname = 'organization_memberships_admission_source_check'
                   AND conrelid = 'organization_memberships'::regclass
-                  AND pg_get_constraintdef(oid) NOT LIKE '%superadmin_transfer%'
+                  AND pg_get_constraintdef(oid) NOT LIKE '%integration_api%'
             ) THEN
                 ALTER TABLE organization_memberships
                 DROP CONSTRAINT organization_memberships_admission_source_check;
@@ -3807,7 +3807,7 @@ def ensure_organization_membership_admission_source_constraint(connection) -> No
                 ADD CONSTRAINT organization_memberships_admission_source_check
                 CHECK (admission_source IN (
                     'legacy_unclassified', 'admin_add', 'csv_import', 'configured_admin',
-                    'superadmin_transfer'
+                    'superadmin_transfer', 'integration_api'
                 ));
             END IF;
         END $$
@@ -4840,6 +4840,8 @@ def ensure_core_schema() -> None:
         ensure_assignment_source_schema(connection)
         from Api.assessment_programs import ensure_schema as ensure_assessment_program_schema
         ensure_assessment_program_schema(connection)
+        from Api.educational_contexts import ensure_schema as ensure_educational_context_schema
+        ensure_educational_context_schema(connection)
         from Api.deletion_ledger import ensure_receipt_schema
         ensure_receipt_schema(connection)
         from Api.acquaintance_state_store import ensure_schema as ensure_acquaintance_scope_schema

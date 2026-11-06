@@ -11,6 +11,7 @@ from Api.config import settings
 from Api.database import get_connection
 from Api.integration_identity_service import resolve_or_provision_participant
 from Api.assessment_role_profiles import load_published_role_profile
+from Api import educational_contexts
 
 
 router = APIRouter(prefix="/integration/v1", tags=["integration"])
@@ -45,6 +46,21 @@ class PublishedRoleProfileResponse(BaseModel):
     version: int
     methodology_version: str
     checksum: str
+
+
+class EducationalContextPrepareRequest(BaseModel):
+    snapshot: dict
+    checksum: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+class EducationalContextPrepareResponse(BaseModel):
+    operation_id: str
+    status: Literal["awaiting_admission", "preparing", "prepared"]
+    organization_id: int
+    assignment_id: int
+    assignment_ref: str
+    reasons: list[str]
+    cycle_id: str | None
 
 
 def _require_integration_token(authorization: str | None) -> None:
@@ -104,3 +120,25 @@ def get_published_role_profile(
         methodology_version=str(role["definition"]["methodology_version"]),
         checksum=str(role["checksum"]),
     )
+
+
+@router.post(
+    "/educational-contexts/prepare",
+    response_model=EducationalContextPrepareResponse,
+)
+def prepare_educational_context(
+    payload: EducationalContextPrepareRequest,
+    authorization: str | None = Header(default=None),
+) -> EducationalContextPrepareResponse:
+    _require_integration_token(authorization)
+    try:
+        with get_connection() as connection:
+            result = educational_contexts.prepare(
+                connection,
+                snapshot=payload.snapshot,
+                snapshot_checksum=payload.checksum,
+            )
+            connection.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return EducationalContextPrepareResponse(**result)

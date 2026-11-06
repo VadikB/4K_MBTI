@@ -123,3 +123,51 @@ def test_role_profile_endpoint_hides_draft_or_missing_version(monkeypatch) -> No
         headers={"Authorization": f"Bearer {VALID_TOKEN}"},
     )
     assert response.status_code == 404
+
+
+def test_educational_context_prepare_returns_admission_reasons(monkeypatch) -> None:
+    captured = {}
+
+    def prepare(_connection, **kwargs):
+        captured.update(kwargs)
+        return {
+            "operation_id": "educational-context:9",
+            "status": "awaiting_admission",
+            "organization_id": 4,
+            "assignment_id": 12,
+            "assignment_ref": "edu:4k-tg-bot:p1:a2",
+            "reasons": ["PROGRAM_NOT_CONNECTED", "QUESTIONNAIRE_NOT_CONFIRMED"],
+            "cycle_id": None,
+        }
+
+    monkeypatch.setattr(integration_routes.educational_contexts, "prepare", prepare)
+    http = client(monkeypatch)
+    snapshot = {
+        "schema_version": 1,
+        "kind": "educational_project_assessment_context",
+        "assignment_ref": "edu:4k-tg-bot:p1:a2",
+    }
+    response = http.post(
+        "/integration/v1/educational-contexts/prepare",
+        json={"snapshot": snapshot, "checksum": "a" * 64},
+        headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "awaiting_admission"
+    assert response.json()["cycle_id"] is None
+    assert captured == {"snapshot": snapshot, "snapshot_checksum": "a" * 64}
+
+
+def test_educational_context_prepare_maps_contract_conflict(monkeypatch) -> None:
+    def reject(_connection, **_kwargs):
+        raise ValueError("EDUCATIONAL_CONTEXT_CHECKSUM_MISMATCH")
+
+    monkeypatch.setattr(integration_routes.educational_contexts, "prepare", reject)
+    response = client(monkeypatch).post(
+        "/integration/v1/educational-contexts/prepare",
+        json={"snapshot": {}, "checksum": "a" * 64},
+        headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "EDUCATIONAL_CONTEXT_CHECKSUM_MISMATCH"
