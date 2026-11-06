@@ -33,6 +33,11 @@ def educational_db(test_database_url, monkeypatch):
     connection.execute("""CREATE TABLE assessment_personalized_profiles(
         id BIGINT,user_id BIGINT,organization_id BIGINT,assessment_configuration_id BIGINT,
         role_profile_version_id BIGINT,status TEXT)""")
+    connection.execute("""CREATE TABLE assessment_program_definitions(
+        id BIGINT PRIMARY KEY,code TEXT,version TEXT,name TEXT,assignment_ref TEXT,
+        status TEXT,definition_checksum TEXT)""")
+    connection.execute("""CREATE TABLE assessment_program_allowed_roles(
+        program_definition_id BIGINT,role_profile_version_id BIGINT)""")
     connection.execute("INSERT INTO users VALUES(42)")
     monkeypatch.setattr(educational_contexts, "load_published_role_profile", lambda _c, _id: {
         "id": 17, "checksum": "b" * 64,
@@ -147,3 +152,43 @@ def test_prepare_uses_admitted_active_assignment(educational_db, monkeypatch):
     assert admitted["assignment_id"] == active["id"]
     assert admitted["reasons"] == []
     assert admitted["preparation_request"]["personalized_profile_id"] == 71
+
+
+def test_program_options_and_explicit_connection(educational_db, monkeypatch):
+    value = snapshot()
+    prepared = educational_contexts.prepare(
+        educational_db, snapshot=value, snapshot_checksum=checksum(value)
+    )
+    educational_db.execute(
+        """INSERT INTO assessment_program_definitions VALUES(
+             55,'student-4k','1.0','Студенческая оценка',%s,'published',%s)""",
+        (prepared["assignment_ref"], "c" * 64),
+    )
+    educational_db.execute("INSERT INTO assessment_program_allowed_roles VALUES(55,17)")
+    assert educational_contexts.compatible_programs(
+        educational_db, assignment_ref=prepared["assignment_ref"]
+    )[0]["id"] == 55
+    monkeypatch.setattr(
+        educational_contexts.assessment_programs,
+        "connect",
+        lambda *_args, **_kwargs: {
+            "program_definition_id": 55,
+            "program_code": "student-4k",
+            "program_version": "1.0",
+        },
+    )
+    connected = educational_contexts.connect_program(
+        educational_db,
+        assignment_ref=prepared["assignment_ref"],
+        program_definition_id=55,
+        operation_id="explicit-program-55",
+    )
+    assert connected["status"] == "connected"
+
+    with pytest.raises(ValueError, match="PROGRAM_NOT_COMPATIBLE"):
+        educational_contexts.connect_program(
+            educational_db,
+            assignment_ref=prepared["assignment_ref"],
+            program_definition_id=999,
+            operation_id="explicit-program-999",
+        )

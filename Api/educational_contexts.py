@@ -234,3 +234,60 @@ def record_preparation(
            WHERE id=%s""",
         (target, cycle_id, json.dumps(reasons or []), context_id),
     )
+
+
+def compatible_programs(connection, *, assignment_ref: str) -> list[dict]:
+    context = connection.execute(
+        "SELECT snapshot_json FROM external_educational_contexts WHERE assignment_ref=%s",
+        (assignment_ref,),
+    ).fetchone()
+    if context is None:
+        raise ValueError("EDUCATIONAL_CONTEXT_NOT_FOUND")
+    role_version_id = int(context["snapshot_json"]["role"]["agent4k_role_profile_version_id"])
+    rows = connection.execute(
+        """SELECT p.id,p.code,p.version,p.name,p.assignment_ref,p.definition_checksum
+           FROM assessment_program_definitions p
+           JOIN assessment_program_allowed_roles role ON role.program_definition_id=p.id
+           WHERE p.status='published' AND p.assignment_ref=%s
+             AND role.role_profile_version_id=%s
+           ORDER BY p.code,p.version,p.id""",
+        (assignment_ref, role_version_id),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def connect_program(
+    connection, *, assignment_ref: str, program_definition_id: int, operation_id: str
+) -> dict:
+    context = connection.execute(
+        """SELECT id,organization_id,snapshot_json FROM external_educational_contexts
+           WHERE assignment_ref=%s FOR UPDATE""",
+        (assignment_ref,),
+    ).fetchone()
+    if context is None:
+        raise ValueError("EDUCATIONAL_CONTEXT_NOT_FOUND")
+    role_version_id = int(context["snapshot_json"]["role"]["agent4k_role_profile_version_id"])
+    compatible = connection.execute(
+        """SELECT p.id FROM assessment_program_definitions p
+           JOIN assessment_program_allowed_roles role ON role.program_definition_id=p.id
+           WHERE p.id=%s AND p.status='published' AND p.assignment_ref=%s
+             AND role.role_profile_version_id=%s""",
+        (program_definition_id, assignment_ref, role_version_id),
+    ).fetchone()
+    if compatible is None:
+        raise ValueError("EDUCATIONAL_CONTEXT_PROGRAM_NOT_COMPATIBLE")
+    connected = assessment_programs.connect(
+        connection,
+        organization_id=int(context["organization_id"]),
+        program_definition_id=program_definition_id,
+        actor_user_id=None,
+        operation_id=operation_id,
+    )
+    return {
+        "assignment_ref": assignment_ref,
+        "organization_id": int(context["organization_id"]),
+        "program_definition_id": int(connected["program_definition_id"]),
+        "program_code": str(connected["program_code"]),
+        "program_version": str(connected["program_version"]),
+        "status": "connected",
+    }

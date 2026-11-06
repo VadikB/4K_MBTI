@@ -64,6 +64,33 @@ class EducationalContextPrepareResponse(BaseModel):
     cycle_id: str | None
 
 
+class EducationalContextRefRequest(BaseModel):
+    assignment_ref: str = Field(min_length=1, max_length=200)
+
+
+class EducationalProgramOption(BaseModel):
+    id: int
+    code: str
+    version: str
+    name: str
+    assignment_ref: str
+    definition_checksum: str
+
+
+class EducationalProgramConnectRequest(EducationalContextRefRequest):
+    program_definition_id: int = Field(gt=0)
+    operation_id: str = Field(min_length=1, max_length=200)
+
+
+class EducationalProgramConnectionResponse(BaseModel):
+    assignment_ref: str
+    organization_id: int
+    program_definition_id: int
+    program_code: str
+    program_version: str
+    status: Literal["connected"]
+
+
 def _require_integration_token(authorization: str | None) -> None:
     configured = settings.tg_bot_integration_token
     if not configured:
@@ -179,3 +206,45 @@ def prepare_educational_context(
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return EducationalContextPrepareResponse(**result)
+
+
+@router.post(
+    "/educational-contexts/program-options",
+    response_model=list[EducationalProgramOption],
+)
+def list_educational_program_options(
+    payload: EducationalContextRefRequest,
+    authorization: str | None = Header(default=None),
+) -> list[EducationalProgramOption]:
+    _require_integration_token(authorization)
+    try:
+        with get_connection() as connection:
+            rows = educational_contexts.compatible_programs(
+                connection, assignment_ref=payload.assignment_ref.strip()
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return [EducationalProgramOption(**row) for row in rows]
+
+
+@router.post(
+    "/educational-contexts/connect-program",
+    response_model=EducationalProgramConnectionResponse,
+)
+def connect_educational_program(
+    payload: EducationalProgramConnectRequest,
+    authorization: str | None = Header(default=None),
+) -> EducationalProgramConnectionResponse:
+    _require_integration_token(authorization)
+    try:
+        with get_connection() as connection:
+            result = educational_contexts.connect_program(
+                connection,
+                assignment_ref=payload.assignment_ref.strip(),
+                program_definition_id=payload.program_definition_id,
+                operation_id=payload.operation_id,
+            )
+            connection.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return EducationalProgramConnectionResponse(**result)

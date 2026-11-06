@@ -255,7 +255,7 @@ def validate_questionnaire_assignment(connection, *, organization_id: int,
 
 
 def connect(connection, *, organization_id: int, program_definition_id: int,
-            actor_user_id: int, operation_id: str) -> dict:
+            actor_user_id: int | None, operation_id: str) -> dict:
     connection.execute("SELECT id FROM organizations WHERE id=%s FOR UPDATE", (organization_id,))
     program = connection.execute("""SELECT * FROM assessment_program_definitions
         WHERE id=%s""", (program_definition_id,)).fetchone()

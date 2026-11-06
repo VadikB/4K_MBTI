@@ -218,3 +218,54 @@ def test_educational_context_enqueues_cycle_after_admission(monkeypatch) -> None
     assert response.json()["status"] == "prepared"
     assert response.json()["cycle_id"] == "cycle-77"
     assert captured["context_id"] == 9
+
+
+def test_educational_program_options_are_scoped_to_context(monkeypatch) -> None:
+    monkeypatch.setattr(
+        integration_routes.educational_contexts,
+        "compatible_programs",
+        lambda _connection, **_kwargs: [{
+            "id": 55,
+            "code": "student-4k",
+            "version": "1.0",
+            "name": "Студенческая оценка 4К",
+            "assignment_ref": "edu:4k-tg-bot:p1:a2",
+            "definition_checksum": "c" * 64,
+        }],
+    )
+    response = client(monkeypatch).post(
+        "/integration/v1/educational-contexts/program-options",
+        json={"assignment_ref": "edu:4k-tg-bot:p1:a2"},
+        headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+    )
+    assert response.status_code == 200
+    assert response.json()[0]["id"] == 55
+
+
+def test_educational_program_connection_is_explicit(monkeypatch) -> None:
+    captured = {}
+
+    def connect(_connection, **kwargs):
+        captured.update(kwargs)
+        return {
+            "assignment_ref": kwargs["assignment_ref"],
+            "organization_id": 4,
+            "program_definition_id": kwargs["program_definition_id"],
+            "program_code": "student-4k",
+            "program_version": "1.0",
+            "status": "connected",
+        }
+
+    monkeypatch.setattr(integration_routes.educational_contexts, "connect_program", connect)
+    response = client(monkeypatch).post(
+        "/integration/v1/educational-contexts/connect-program",
+        json={
+            "assignment_ref": "edu:4k-tg-bot:p1:a2",
+            "program_definition_id": 55,
+            "operation_id": "tg-connect-program-55",
+        },
+        headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+    )
+    assert response.status_code == 200
+    assert captured["program_definition_id"] == 55
+    assert response.json()["status"] == "connected"
