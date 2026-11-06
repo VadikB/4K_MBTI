@@ -1,5 +1,61 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Разрешён [PATH-FEEDBACK-R1](../path-feedback-release-2069.md): владелец подтвердил
+  2.0.69 PATCH → push/Ready PR/mandatory CI/human review, без merge/deploy/БД/LLM/
+  программы. Отдельная release-ветка `codex/path-feedback-2069` отc59b024; исходная
+  `codex/path-final-audit` и пакеты сохранены. Fresh main946a46c/2.0.68, preflight
+  и повтор PASS,4 metadata/45 assets identical. Candidate lint/145 frontend/
+  22 release+CI/920 backend/108 HTTP/129 browser PASS (retry0/skip0/flaky0).
+  Runtime/tests кроме APP_RELEASE не менялись после c59, старые manifests immutable;
+  [новое evidence](../../evidence/path-feedback-release-2069/README.md).
+  Активны commit/push/PR/CI; новый head/human review ещё не принят, точная передача
+  будет в PR без status-only commit. Main и последнее подтверждённое test946a46c,
+  нового server readback/deploy нет. PREP UNKNOWN/auth114-1 NOT_ESTABLISHED/старые
+  timeout UNKNOWN сохраняются отдельно. Нижние запреты release — история до допуска.
+- [R10-STATUS-FIX](../r10-status-fix.md) локально завершён по допуску владельца:
+  base4f2e884, scoped in-memory outcome user/epoch/org/selected+connected program,
+  invalidation новых intent/selection/identity и позднего feedback. Exact PUT/GET,
+  operation_id/server admission не менялись. Before1 FAIL → targeted10 PASS,
+  frontend145/backend920/HTTP108/full browser129 PASS, lint/build45/idempotency PASS.
+  [Отчёт](../../reports/r10-status-fix.md), новый evidence отдельно; historical
+  manifests170/183/76 неизменны. Локальные UI/tests/dist/docs, версия2.0.68 без bump;
+  main/test последний946a46c, нового CI/PR/review/push/merge/deploy/БД/LLM нет.
+  Следующий gate — отдельный допуск release candidate/CI/review, пока закрыт.
+  Старые timeout UNKNOWN/auth114-1 NOT_ESTABLISHED/PREP UNKNOWN не закрываются fix.
+  Нижние FIX_NOT_AUTHORIZED/красный gate — сохранённая история прошлых commits.
+- Завершена [BROWSER-TIMEOUT-DIAG-01](../browser-timeout-diagnostic.md): current bf637af
+  и comparison dea8c44 по6 PASS с traces; старые timeout сейчас не воспроизведены,
+  root UNKNOWN. Уточнение первичного JSON: ADM full click757, followup fill754.
+  Свежий полный browser118 PASS/1 FAIL; [R10-STATUS-DIAG-01](../r10-status-diag-01.md):
+  initial load re-render стирает DOM-only итог подключения после анкеты503,
+  соединение сохраняется;3/3 FAIL до AUTH fix. Product fix NOT_AUTHORIZED,
+  [отчёт](../../reports/browser-timeout-diagnostic.md); code/test/config/dist после
+  bf637af не менялись, gate остаётся FAIL. Новая локальная дельта только docs/evidence;
+  main/test946a46c/2.0.68, нового CI/PR/bump/merge/deploy/БД/LLM нет.
+  PREP UNKNOWN/auth114-1 NOT_ESTABLISHED отдельно. Нижнее — история, не новый PASS.
+- AUTH-DIAG-01: владелец разрешил только локальный fix; [реализация/проверки](../path-auth-fix.md),
+  [отчёт](../../reports/path-auth-fix.md). Синхронная очистка старого auth feedback,
+  delayed resetChat сохраняет новое сообщение; fail-closed/generation guards сохранены.
+  Before1 FAIL → targeted4 PASS, frontend142/backend920/HTTP108/lint/build45 PASS.
+  Широкий auth/admin browser:117 PASS/2 timeout; повтор двух:1 PASS/1 timeout,
+  причины UNKNOWN, не полный PASS и не готовность выпуска. Evidence сохранены.
+  Локальная дельта поверх dea8c44, версия2.0.68 не менялась; main/origin-main/test
+  последний подтверждённый946a46c. Новый CI/PR/review/push/merge/deploy/БД/LLM0.
+  Исторический auth114/1 causality NOT_ESTABLISHED; PREP-DIAG-01 UNKNOWN отдельно.
+  Старый audit170 immutable dea8c44 не пересчитывался. Нижняя диагностика — история.
+- Текущий [PATH-FINAL-AUDIT-01](../path-final-audit.md) после выпуска2.0.68:
+  ветка `codex/path-final-audit` от946a46c; [единая матрица18 AC](../../reports/path-final-audit-2068.md),
+  13 PASS в оговорённом накопленном scope /5 NOT_RUN(06/07/09/10/18), не human acceptance.
+  Whole final-SHA/post-deploy PATH NOT_RUN; новый paid run не разрешён.
+  [PREP review](../prep-diag-01-review.md) завершён по сохранившимся данным,
+  root UNKNOWN/BLOCKED missing primary details, без нового product defect.
+  [AUTH-DIAG-01](../path-auth-diagnostic.md) reproduced:1 opt-in FAIL, lazy resetChat
+  стирает error после401; старый auth114/1 root UNKNOWN/causality NOT_ESTABLISHED.
+  Продукт не менялся; fix отдельно. Offline actual PATH34/11 PASS, unit11+17 PASS.
+  Новые PR/CI/version/merge/deploy/публикация/активация/рабочая БД/LLM не запускались.
+  Main/test946a46c /2.0.68, обязательный CI/deploy/readback завершённого выпуска PASS.
+  [Закрытие PR173](https://github.com/VadikB/4K_MBTI/pull/173#issuecomment-6671510137)
+  — актуальная точка выпуска; нижние прежние WAITING/NOT_DONE/main/test — история.
 - Разрешён [PATH-AC02/05-R1](../path-ac02-ac05-release-2068.md):2.0.68 PATCH →
   push/Ready PR/CI/human review, пока без merge/deploy/активации/paid LLM/рабочей БД.
   Working ffca29c от main bb3b5cb /2.0.67; preflight + повтор2.0.68 PASS,

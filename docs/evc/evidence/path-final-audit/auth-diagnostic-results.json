@@ -1,0 +1,176 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/node_modules/@playwright/test/cli.js",
+      "test",
+      "--config",
+      "docs/evc/evidence/path-final-audit/auth-diagnostic.config.mjs"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/docs/evc/evidence/path-final-audit/auth-diagnostic.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-diagnostic-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "auth-recovery-race.diagnostic.mjs"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/auth-diagnostic-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-recovery-race.diagnostic.mjs",
+      "file": "auth-recovery-race.diagnostic.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AUTH-DIAG-01: unauthorized cleanup must retain the missing-session error",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Explicitly delayed chat asset; no real auth/provider/DB; not evidence of historical timing."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6357,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#auth-error')\nExpected substring: \u001b[32m\"Сессия входа не сохранилась\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#auth-error') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-error')\u001b[22m\n\u001b[2m    14 × locator resolved to <p hidden=\"\" class=\"error\" id=\"auth-error\"></p>\u001b[22m\n\u001b[2m       - unexpected value \"\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#auth-error')\nExpected substring: \u001b[32m\"Сессия входа не сохранилась\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#auth-error') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-error')\u001b[22m\n\u001b[2m    14 × locator resolved to <p hidden=\"\" class=\"error\" id=\"auth-error\"></p>\u001b[22m\n\u001b[2m       - unexpected value \"\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery-race.diagnostic.mjs:74:47",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery-race.diagnostic.mjs",
+                      "column": 47,
+                      "line": 74
+                    },
+                    "snippet": "  72 |     }, null, 2), contentType: 'application/json' });\n  73 |     // The final assertion intentionally exposes the current product defect.\n> 74 |     await expect(page.locator('#auth-error')).toContainText('Сессия входа не сохранилась');\n     |                                               ^\n  75 |   } finally { releaseChat(); }\n  76 | });\n  77 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery-race.diagnostic.mjs",
+                        "column": 47,
+                        "line": 74
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#auth-error')\nExpected substring: \u001b[32m\"Сессия входа не сохранилась\"\u001b[39m\nReceived string:    \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#auth-error') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-error')\u001b[22m\n\u001b[2m    14 × locator resolved to <p hidden=\"\" class=\"error\" id=\"auth-error\"></p>\u001b[22m\n\u001b[2m       - unexpected value \"\"\u001b[22m\n\n\n  72 |     }, null, 2), contentType: 'application/json' });\n  73 |     // The final assertion intentionally exposes the current product defect.\n> 74 |     await expect(page.locator('#auth-error')).toContainText('Сессия входа не сохранилась');\n     |                                               ^\n  75 |   } finally { releaseChat(); }\n  76 | });\n  77 |\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery-race.diagnostic.mjs:74:47"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T22:53:23.422Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Explicitly delayed chat asset; no real auth/provider/DB; not evidence of historical timing."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "diagnostic-observation",
+                      "contentType": "application/json",
+                      "body": "ewogICJzY29wZSI6ICJkZXRlcm1pbmlzdGljX3N5bnRoZXRpY190cmFuc3BvcnRfcmVwcm9kdWN0aW9uIiwKICAiYmVmb3JlIjogItCh0LXRgdGB0LjRjyDQstGF0L7QtNCwINC90LUg0YHQvtGF0YDQsNC90LjQu9Cw0YHRjC4g0J/QvtCy0YLQvtGA0LjRgtC1INCy0YXQvtC0OyDQtdGB0LvQuCDQvtGI0LjQsdC60LAg0L/QvtCy0YLQvtGA0LjRgtGB0Y8sINC+0LHRgNCw0YLQuNGC0LXRgdGMINC6INCw0LTQvNC40L3QuNGB0YLRgNCw0YLQvtGA0YMg0YHRgtC10L3QtNCwLiIsCiAgImFmdGVyIjogIiIsCiAgImpvdXJuZXk0MDEiOiAxLAogICJoZWxkQ2hhdFJlcXVlc3RzIjogMSwKICAiZXhwZWN0ZWQiOiAiTWlzc2luZy1zZXNzaW9uIGVycm9yIHJlbWFpbnMgYWZ0ZXIgbGF6eSB1bmF1dGhvcml6ZWQgY2xlYW51cCIsCiAgImFjdHVhbCI6ICJFcnJvciB3YXMgY2xlYXJlZCBieSB0aGUgZGVsYXllZCByZWFsIGNoYXQgbW9kdWxlIGNsZWFudXAiLAogICJoaXN0b3JpY2FsX2NhdXNhbGl0eSI6ICJOT1RfRVNUQUJMSVNIRUQiLAogICJwcm9kdWN0X2NoYW5nZWQiOiBmYWxzZQp9"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-diagnostic-output/auth-recovery-race.diagnos-82667-n-the-missing-session-error/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-diagnostic-output/auth-recovery-race.diagnos-82667-n-the-missing-session-error/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-diagnostic-output/auth-recovery-race.diagnos-82667-n-the-missing-session-error/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-recovery-race.diagnostic.mjs",
+                    "column": 47,
+                    "line": 74
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "4f2ed1b0a53300989075-5aa9a86c7b6f2729d980",
+          "file": "auth-recovery-race.diagnostic.mjs",
+          "line": 25,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-05T22:53:21.999Z",
+    "duration": 8764.283000000001,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

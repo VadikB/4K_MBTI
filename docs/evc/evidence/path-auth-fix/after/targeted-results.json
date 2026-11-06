@@ -1,0 +1,256 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/auth-recovery.spec.mjs",
+      "--output",
+      ".test-stand/auth-fix-after"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/auth-fix-after",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-recovery.spec.mjs",
+      "file": "auth-recovery.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AUTH-DIAG-01 delayed cleanup retains error and fails closed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "No real auth/DB/provider; real built UI and cleanup."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1332,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T23:19:31.556Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "No real auth/DB/provider; real built UI and cleanup."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "recovery-observation",
+                      "contentType": "application/json",
+                      "body": "eyJ0aW1pbmciOiJkZWxheWVkIiwiam91cm5leTQwMSI6MSwibG9nb3V0IjowLCJlcnJvciI6ItCh0LXRgdGB0LjRjyDQstGF0L7QtNCwINC90LUg0YHQvtGF0YDQsNC90LjQu9Cw0YHRjC4g0J/QvtCy0YLQvtGA0LjRgtC1INCy0YXQvtC0OyDQtdGB0LvQuCDQvtGI0LjQsdC60LAg0L/QvtCy0YLQvtGA0LjRgtGB0Y8sINC+0LHRgNCw0YLQuNGC0LXRgdGMINC6INCw0LTQvNC40L3QuNGB0YLRgNCw0YLQvtGA0YMg0YHRgtC10L3QtNCwLiIsImNsZWFudXBfbW9kdWxlX3NldHRsZWQiOnRydWUsInNjb3BlIjoic3ludGhldGljX2h0dHBfcmVhbF9idWlsdF91aSIsImhpc3RvcmljYWxfY2F1c2FsaXR5IjoiTk9UX0VTVEFCTElTSEVEIn0="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14ac83f041d6380b70b4-40f10de0704d039e2e91",
+          "file": "auth-recovery.spec.mjs",
+          "line": 102,
+          "column": 3
+        },
+        {
+          "title": "AUTH-DIAG-01 eager cleanup retains error and fails closed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "No real auth/DB/provider; real built UI and cleanup."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 839,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T23:19:33.808Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "No real auth/DB/provider; real built UI and cleanup."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "recovery-observation",
+                      "contentType": "application/json",
+                      "body": "eyJ0aW1pbmciOiJlYWdlciIsImpvdXJuZXk0MDEiOjEsImxvZ291dCI6MCwiZXJyb3IiOiLQodC10YHRgdC40Y8g0LLRhdC+0LTQsCDQvdC1INGB0L7RhdGA0LDQvdC40LvQsNGB0YwuINCf0L7QstGC0L7RgNC40YLQtSDQstGF0L7QtDsg0LXRgdC70Lgg0L7RiNC40LHQutCwINC/0L7QstGC0L7RgNC40YLRgdGPLCDQvtCx0YDQsNGC0LjRgtC10YHRjCDQuiDQsNC00LzQuNC90LjRgdGC0YDQsNGC0L7RgNGDINGB0YLQtdC90LTQsC4iLCJjbGVhbnVwX21vZHVsZV9zZXR0bGVkIjp0cnVlLCJzY29wZSI6InN5bnRoZXRpY19odHRwX3JlYWxfYnVpbHRfdWkiLCJoaXN0b3JpY2FsX2NhdXNhbGl0eSI6Ik5PVF9FU1RBQkxJU0hFRCJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14ac83f041d6380b70b4-3d467c23544b2e2af318",
+          "file": "auth-recovery.spec.mjs",
+          "line": 102,
+          "column": 3
+        },
+        {
+          "title": "AUTH-DIAG-01 late cleanup cannot erase a newer account in the same tab",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 918,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T23:19:34.664Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14ac83f041d6380b70b4-eef56259b5ff5f898ada",
+          "file": "auth-recovery.spec.mjs",
+          "line": 130,
+          "column": 1
+        },
+        {
+          "title": "AUTH-DIAG-01 another tab changes generation while cleanup is pending",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1365,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-05T23:19:35.610Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "14ac83f041d6380b70b4-894945aac774cf005059",
+          "file": "auth-recovery.spec.mjs",
+          "line": 149,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-05T23:19:29.061Z",
+    "duration": 8048.804,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "PREP-DIAG-01",
+  "historical_code_sha": "4bab7230d8fa484fb8d922ee7d8b49b63674268d",
+  "operation_id": "c570a030-a47a-4eed-81f9-37c92e1441d8",
+  "candidate_checksum": "5754161d86d31192ce1eca6c0f20d7fd3eb6b0884730379953675d4f370f1fad",
+  "actual": "M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE",
+  "root_cause": "UNKNOWN",
+  "failed_check_ids": null,
+  "individual_check_reasons": null,
+  "investigation": "BLOCKED_BY_MISSING_PRIMARY_CHECK_DETAILS",
+  "saved_as": null,
+  "started": false,
+  "assessment_answers": 0,
+  "repair_used": false,
+  "current_export_unit_tests": {"passed": 11, "exit_code": 0},
+  "historical_sql_export_regression": "REUSED_SYNTHETIC_NOT_HISTORICAL_CAUSE",
+  "later_actual_path": "DIFFERENT_OPERATION_CANDIDATE_SOURCE_NOT_CAUSAL_PROOF",
+  "product_fix": "NOT_PERFORMED",
+  "new_paid_calls": 0,
+  "database_access": false
+}

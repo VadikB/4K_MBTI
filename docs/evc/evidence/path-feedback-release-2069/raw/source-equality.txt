@@ -1,0 +1,15 @@
+{
+  "comparison": "PASS",
+  "base": "c59b024ebfae98790e545eae16d043a2280b9384",
+  "source_paths": [
+    "Api",
+    "scripts",
+    "assessment_definitions",
+    "tests",
+    "web/js",
+    "web/styles"
+  ],
+  "only_source_change": "APP_RELEASE 2.0.68 -> 2.0.69",
+  "historical_evidence": "UNCHANGED",
+  "Api_scripts_artifacts_tests_styles": "BYTE_IDENTICAL"
+}

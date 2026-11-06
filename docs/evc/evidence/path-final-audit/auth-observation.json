@@ -1,0 +1,11 @@
+{
+  "scope": "deterministic_synthetic_transport_reproduction",
+  "before": "Сессия входа не сохранилась. Повторите вход; если ошибка повторится, обратитесь к администратору стенда.",
+  "after": "",
+  "journey401": 1,
+  "heldChatRequests": 1,
+  "expected": "Missing-session error remains after lazy unauthorized cleanup",
+  "actual": "Error was cleared by the delayed real chat module cleanup",
+  "historical_causality": "NOT_ESTABLISHED",
+  "product_changed": false
+}
