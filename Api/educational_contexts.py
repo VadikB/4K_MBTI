@@ -5,6 +5,7 @@ import hashlib
 import json
 
 from Api import assessment_programs
+from Api import acquaintance
 from Api.assessment_role_profiles import load_published_role_profile
 
 
@@ -151,28 +152,40 @@ def prepare(connection, *, snapshot: dict, snapshot_checksum: str) -> dict:
         reasons.append("PERSONALIZED_PROFILE_NOT_CONFIRMED")
 
     assignment = connection.execute(
-        """INSERT INTO organization_assessment_assignments(
-             organization_id,recipient_user_id,assignment_ref,status,operation_id,request_fingerprint)
-           VALUES(%s,%s,%s,'pending_admission',%s,%s)
-           ON CONFLICT(organization_id,recipient_user_id,assignment_ref) DO NOTHING
-           RETURNING id""",
-        (organization_id, int(user_id), assignment_ref, f"tg:{checksum}", checksum),
+        """SELECT id,status FROM organization_assessment_assignments
+           WHERE organization_id=%s AND recipient_user_id=%s AND assignment_ref=%s
+             AND (status='active' AND revoked_at IS NULL OR status='pending_admission')
+           ORDER BY (status='active') DESC,id DESC LIMIT 1 FOR UPDATE""",
+        (organization_id, int(user_id), assignment_ref),
     ).fetchone()
     if assignment is None:
         assignment = connection.execute(
-            """SELECT id FROM organization_assessment_assignments
-               WHERE organization_id=%s AND recipient_user_id=%s AND assignment_ref=%s""",
-            (organization_id, int(user_id), assignment_ref),
+            """INSERT INTO organization_assessment_assignments(
+                 organization_id,recipient_user_id,assignment_ref,status,operation_id,request_fingerprint)
+               VALUES(%s,%s,%s,'pending_admission',%s,%s) RETURNING id,status""",
+            (organization_id, int(user_id), assignment_ref, f"tg:{checksum}", checksum),
         ).fetchone()
     assignment_id = int(assignment["id"])
+    if assignment["status"] != "active":
+        reasons.append("ASSIGNMENT_NOT_ACTIVE")
+
+    preparation_scope = None
+    if not reasons:
+        try:
+            preparation_scope = acquaintance.preparation_scope(
+                connection, user_id=int(user_id), profile_id=int(profile["id"])
+            )
+        except ValueError as exc:
+            reasons.append(str(exc))
+    target_status = "preparing" if preparation_scope is not None else "awaiting_admission"
     if existing is None:
         row = connection.execute(
             """INSERT INTO external_educational_contexts(
                  source_system,assignment_ref,organization_id,recipient_user_id,
                  assessment_assignment_id,status,snapshot_json,snapshot_checksum,admission_reasons_json)
-               VALUES('4k_tg_bot',%s,%s,%s,%s,'awaiting_admission',%s::jsonb,%s,%s::jsonb)
+               VALUES('4k_tg_bot',%s,%s,%s,%s,%s,%s::jsonb,%s,%s::jsonb)
                RETURNING id""",
-            (assignment_ref, organization_id, int(user_id), assignment_id,
+            (assignment_ref, organization_id, int(user_id), assignment_id, target_status,
              json.dumps(snapshot, ensure_ascii=False), checksum, json.dumps(reasons)),
         ).fetchone()
         context_id = int(row["id"])
@@ -180,16 +193,44 @@ def prepare(connection, *, snapshot: dict, snapshot_checksum: str) -> dict:
         context_id = int(existing["id"])
         connection.execute(
             """UPDATE external_educational_contexts
-               SET assessment_assignment_id=%s,status='awaiting_admission',
+               SET assessment_assignment_id=%s,status=%s,
                    admission_reasons_json=%s::jsonb,updated_at=NOW() WHERE id=%s""",
-            (assignment_id, json.dumps(reasons), context_id),
+            (assignment_id, target_status, json.dumps(reasons), context_id),
         )
-    return {
+    result = {
         "operation_id": f"educational-context:{context_id}",
-        "status": "awaiting_admission",
+        "status": target_status,
         "organization_id": organization_id,
         "assignment_id": assignment_id,
         "assignment_ref": assignment_ref,
         "reasons": reasons,
         "cycle_id": None,
     }
+    if preparation_scope is not None:
+        result["preparation_request"] = {
+            "personalized_profile_id": int(profile["id"]),
+            "idempotency_key": f"educational-cycle:{context_id}:{checksum[:16]}",
+            "selected_skills": ["K1", "K2", "K3", "K4"],
+            **preparation_scope,
+        }
+        result["recipient_user_id"] = int(user_id)
+        result["context_id"] = context_id
+    return result
+
+
+def record_preparation(
+    connection, *, context_id: int, operation_id: str, status: str, cycle_id: str | None,
+    reasons: list[str] | None = None,
+) -> None:
+    del operation_id
+    target = (
+        "prepared" if status == "completed" and cycle_id
+        else "awaiting_admission" if status == "failed"
+        else "preparing"
+    )
+    connection.execute(
+        """UPDATE external_educational_contexts
+           SET status=%s,external_cycle_id=%s,admission_reasons_json=%s::jsonb,updated_at=NOW()
+           WHERE id=%s""",
+        (target, cycle_id, json.dumps(reasons or []), context_id),
+    )

@@ -171,3 +171,50 @@ def test_educational_context_prepare_maps_contract_conflict(monkeypatch) -> None
     )
     assert response.status_code == 409
     assert response.json()["detail"] == "EDUCATIONAL_CONTEXT_CHECKSUM_MISMATCH"
+
+
+def test_educational_context_enqueues_cycle_after_admission(monkeypatch) -> None:
+    monkeypatch.setattr(
+        integration_routes.educational_contexts,
+        "prepare",
+        lambda *_args, **_kwargs: {
+            "operation_id": "educational-context:9",
+            "status": "preparing",
+            "organization_id": 4,
+            "assignment_id": 12,
+            "assignment_ref": "edu:4k-tg-bot:p1:a2",
+            "reasons": [],
+            "cycle_id": None,
+            "recipient_user_id": 42,
+            "context_id": 9,
+            "preparation_request": {
+                "personalized_profile_id": 71,
+                "idempotency_key": "educational-cycle:9:checksum",
+                "selected_skills": ["K1", "K2", "K3", "K4"],
+            },
+        },
+    )
+    monkeypatch.setattr(
+        integration_routes.product_cycle_preparation_queue,
+        "enqueue",
+        lambda **_kwargs: {
+            "operation_id": "educational-cycle:9:checksum",
+            "status": "completed",
+            "result_json": {"plan": {"cycle_id": "cycle-77"}},
+        },
+    )
+    captured = {}
+    monkeypatch.setattr(
+        integration_routes.educational_contexts,
+        "record_preparation",
+        lambda _connection, **kwargs: captured.update(kwargs),
+    )
+    response = client(monkeypatch).post(
+        "/integration/v1/educational-contexts/prepare",
+        json={"snapshot": {}, "checksum": "a" * 64},
+        headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "prepared"
+    assert response.json()["cycle_id"] == "cycle-77"
+    assert captured["context_id"] == 9

@@ -12,6 +12,7 @@ from Api.database import get_connection
 from Api.integration_identity_service import resolve_or_provision_participant
 from Api.assessment_role_profiles import load_published_role_profile
 from Api import educational_contexts
+from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
 
 
 router = APIRouter(prefix="/integration/v1", tags=["integration"])
@@ -139,6 +140,42 @@ def prepare_educational_context(
                 snapshot_checksum=payload.checksum,
             )
             connection.commit()
+        preparation_request = result.pop("preparation_request", None)
+        recipient_user_id = result.pop("recipient_user_id", None)
+        context_id = result.pop("context_id", None)
+        if preparation_request is not None:
+            operation = product_cycle_preparation_queue.enqueue(
+                operation_id=str(preparation_request["idempotency_key"]),
+                user_id=int(recipient_user_id),
+                request=preparation_request,
+            )
+            cycle_id = None
+            if operation.get("status") == "completed":
+                cycle_id = str(
+                    (((operation.get("result_json") or {}).get("plan") or {}).get("cycle_id"))
+                    or ""
+                ) or None
+            operation_reasons = (
+                ["CYCLE_PREPARATION_FAILED"] if operation.get("status") == "failed" else []
+            )
+            with get_connection() as connection:
+                educational_contexts.record_preparation(
+                    connection,
+                    context_id=int(context_id),
+                    operation_id=str(operation["operation_id"]),
+                    status=str(operation["status"]),
+                    cycle_id=cycle_id,
+                    reasons=operation_reasons,
+                )
+                connection.commit()
+            result["operation_id"] = str(operation["operation_id"])
+            result["status"] = (
+                "prepared" if cycle_id
+                else "awaiting_admission" if operation.get("status") == "failed"
+                else "preparing"
+            )
+            result["reasons"] = operation_reasons
+            result["cycle_id"] = cycle_id
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return EducationalContextPrepareResponse(**result)

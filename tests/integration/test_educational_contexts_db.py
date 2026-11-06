@@ -27,8 +27,7 @@ def educational_db(test_database_url, monkeypatch):
         UNIQUE(organization_id,user_id))""")
     connection.execute("""CREATE TABLE organization_assessment_assignments(
         id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_user_id BIGINT,assignment_ref TEXT,
-        status TEXT,operation_id TEXT,request_fingerprint TEXT,
-        UNIQUE(organization_id,recipient_user_id,assignment_ref))""")
+        status TEXT,operation_id TEXT,request_fingerprint TEXT,revoked_at TIMESTAMP)""")
     connection.execute("""CREATE TABLE questionnaire_response_revisions(
         id BIGINT,organization_id BIGINT,assignment_ref TEXT,status TEXT)""")
     connection.execute("""CREATE TABLE assessment_personalized_profiles(
@@ -85,6 +84,7 @@ def test_prepare_registers_immutable_context_and_is_idempotent(educational_db):
         "QUESTIONNAIRE_NOT_CONFIRMED",
         "PROGRAM_NOT_CONNECTED",
         "PERSONALIZED_PROFILE_NOT_CONFIRMED",
+        "ASSIGNMENT_NOT_ACTIVE",
     }
     membership = educational_db.execute(
         "SELECT admission_source FROM organization_memberships"
@@ -102,3 +102,48 @@ def test_prepare_rejects_contact_identity(educational_db):
         educational_contexts.prepare(
             educational_db, snapshot=value, snapshot_checksum=checksum(value)
         )
+
+
+def test_prepare_uses_admitted_active_assignment(educational_db, monkeypatch):
+    value = snapshot()
+    first = educational_contexts.prepare(
+        educational_db, snapshot=value, snapshot_checksum=checksum(value)
+    )
+    educational_db.execute(
+        "INSERT INTO questionnaire_response_revisions VALUES(81,%s,%s,'confirmed')",
+        (first["organization_id"], first["assignment_ref"]),
+    )
+    educational_db.execute(
+        "INSERT INTO assessment_personalized_profiles VALUES(71,42,%s,61,17,'ready')",
+        (first["organization_id"],),
+    )
+    active = educational_db.execute(
+        """INSERT INTO organization_assessment_assignments(
+             organization_id,recipient_user_id,assignment_ref,status,operation_id,request_fingerprint)
+           VALUES(%s,42,%s,'active','human-admission','fingerprint') RETURNING id""",
+        (first["organization_id"], first["assignment_ref"]),
+    ).fetchone()
+    monkeypatch.setattr(
+        educational_contexts.assessment_programs,
+        "resolve",
+        lambda *_args, **_kwargs: {"assessment_configuration_id": 61},
+    )
+    monkeypatch.setattr(
+        educational_contexts.acquaintance,
+        "preparation_scope",
+        lambda *_args, **_kwargs: {
+            "personalized_profile_id": 71,
+            "organization_id": first["organization_id"],
+            "assignment_ref": first["assignment_ref"],
+            "questionnaire_revision_id": 81,
+            "profile_checksum": "profile-checksum",
+        },
+    )
+
+    admitted = educational_contexts.prepare(
+        educational_db, snapshot=value, snapshot_checksum=checksum(value)
+    )
+    assert admitted["status"] == "preparing"
+    assert admitted["assignment_id"] == active["id"]
+    assert admitted["reasons"] == []
+    assert admitted["preparation_request"]["personalized_profile_id"] == 71
