@@ -1,0 +1,229 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/node_modules/.bin/playwright",
+      "test",
+      "tests/browser/path-admin-contract.spec.mjs",
+      "tests/browser/path29-participant.spec.mjs",
+      "--workers=1"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "path-admin-contract.spec.mjs",
+      "file": "path-admin-contract.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload and repeat",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 40248,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T10:47:11.897Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "995d42b89cd35edb86d1-c877e8de415976ed7089",
+          "file": "path-admin-contract.spec.mjs",
+          "line": 8,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "path29-participant.spec.mjs",
+      "file": "path29-participant.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "synthetic_upstream",
+                  "description": "Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 65069,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "PATH29 owned screenshots and server log: /Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/path29/67d7d774-a152-4c70-861d-93ab55ab53c3\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T10:47:52.750Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_upstream",
+                      "description": "Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "path29-browser-and-geometry",
+                      "contentType": "application/json",
+                      "body": "eyJicm93c2VyIjoiMTUzLjAuODAxMC4xMiIsImdlb21ldHJ5IjpbeyJ3aWR0aCI6MTQ0MCwib3ZlcmZsb3ciOmZhbHNlLCJmb250IjoiT25lc3QsIEludGVyLCBcIlNlZ29lIFVJXCIsIEFyaWFsLCBzYW5zLXNlcmlmIiwiYmFja2dyb3VuZCI6InJnYigyNDYsIDI0OSwgMjQ5KSIsImJhY2siOls0NCw0NF0sImdhcCI6MTZ9LHsid2lkdGgiOjEyODAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjo3NjgsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjozOTAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjozNjAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjozMjAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fV19"
+                    },
+                    {
+                      "name": "path29-question-1440",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-1440-2ff0b8f046528faf4f65381fc0e12457d11f177a.png"
+                    },
+                    {
+                      "name": "path29-question-1280",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-1280-930988dbcec76369fba9b234fcd2258956a1e84c.png"
+                    },
+                    {
+                      "name": "path29-question-768",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-768-705de55206526a4b6404f5ec03528a3e5fed04e1.png"
+                    },
+                    {
+                      "name": "path29-question-390",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-390-7dd1d90ac8a7ea113b20caf37ff8d30552ae1b69.png"
+                    },
+                    {
+                      "name": "path29-question-360",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-360-f7e116cbde2c8cd0c77ce2c5d306d1d16974b605.png"
+                    },
+                    {
+                      "name": "path29-question-320",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-320-02b01cf1d4cca87b878edb730ad379b4aeb4567f.png"
+                    },
+                    {
+                      "name": "path29-question-short-zoom200",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-short-zoom200-27bac036089839f1d22c0218a3160ee96a9816b8.png"
+                    },
+                    {
+                      "name": "path29-ready",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-ready-a5e21eac18fbda8f0c235670bdae907679c56b1b.png"
+                    },
+                    {
+                      "name": "path29-first-case",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-ac06-ac10-proof/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-first-case-78512b0e0d91fdf5be32e9e02839798b9431d1cd.png"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fa9ee0bf487cdda4a2b3-399c5fd476e4d8416d7f",
+          "file": "path29-participant.spec.mjs",
+          "line": 19,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T10:47:10.840Z",
+    "duration": 107109.55200000001,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

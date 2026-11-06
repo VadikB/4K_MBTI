@@ -1,0 +1,79 @@
+[
+  {
+    "phase": "double_click",
+    "actual_post_requests": 1,
+    "sql": {
+      "assignments": [
+        {
+          "id": 1
+        }
+      ],
+      "bindings": [
+        {
+          "id": 1,
+          "assignment_id": 1
+        }
+      ],
+      "cycles": 0
+    }
+  },
+  {
+    "phase": "committed_response_aborted",
+    "real_response": {
+      "status": 200,
+      "items": [
+        {
+          "user_id": 6,
+          "status": "assigned",
+          "assignment_id": 2,
+          "error": null
+        }
+      ]
+    },
+    "sql": {
+      "assignments": [
+        {
+          "id": 1
+        },
+        {
+          "id": 2
+        }
+      ],
+      "bindings": [
+        {
+          "id": 1,
+          "assignment_id": 1
+        },
+        {
+          "id": 2,
+          "assignment_id": 2
+        }
+      ],
+      "cycles": 0
+    }
+  },
+  {
+    "phase": "reload_repeat_readback",
+    "sql": {
+      "assignments": [
+        {
+          "id": 1
+        },
+        {
+          "id": 2
+        }
+      ],
+      "bindings": [
+        {
+          "id": 1,
+          "assignment_id": 1
+        },
+        {
+          "id": 2,
+          "assignment_id": 2
+        }
+      ],
+      "cycles": 0
+    }
+  }
+]

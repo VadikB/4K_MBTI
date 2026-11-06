@@ -7,6 +7,17 @@
   Ни push/PR/bump/merge/deploy, ни рабочая БД/публикация/письма/LLM не разрешены.
   AC18 только план к отдельному разрешению; PREP-DIAG-01 исторический UNKNOWN.
   Старые release WAITING ниже — история, не нынешнее состояние 2.0.69.
+  Source candidate `2a868e5f909b0493e1e3b936e5407b07c73e811a` локальный:18 actual
+  HTTP/PG checks и31 event/25 no-write,921 backend/108 HTTP/240 integration/
+  145 frontend и2 free browser PASS. Api/web/предметные источники без diff;
+  только harness/regressions/read-only viewport collector. [Отчёт](../../reports/path-ac06-ac10-proof.md),
+  [AC18 plan](../path-ac18-final-plan.md) NOT_RUN; ready не значит разрешённый run.
+  Финальный handoff добавляет только docs/evidence; CI нового кандидата NOT_RUN.
+  Повтор на source SHA:18 child checks/2 browser/921 backend/108 HTTP PASS;
+  offline CHECK31/25/20 и27 links PASS. Собственный контейнер удалён штатно после
+  export;0 owned DB/connections, working DB untouched. Fresh main снова3f42bba.
+  Следующий шаг владельца — отдельный выпуск harness, не повтор AUTH/R10;
+  окончательный real-provider AC18 только после выпуска и отдельного разрешения.
 
 - Разрешён [PATH-FEEDBACK-R1](../path-feedback-release-2069.md): владелец подтвердил
   2.0.69 PATCH → push/Ready PR/mandatory CI/human review, без merge/deploy/БД/LLM/

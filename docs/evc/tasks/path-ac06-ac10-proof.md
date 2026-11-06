@@ -52,10 +52,20 @@ HTTP/sessions/SQL); adm27_assignment_http использует fake Connection/r
 ## План
 
 - Завершено: fresh Git, отдельный worktree, чтение источников, карта пробелов.
-- **Активно:** настоящие HTTP/PG baseline и регрессии AC06/07/09/10; сохранять
-  ожидание → actual → причина → fix → rerun до cleanup.
-- Затем: применимый локальный минимум матрицы, проверка отсутствия внешних вызовов.
-- Затем: AC18 exact-source/command/limits/viewports plan; итоговый отчёт и пакет.
+- Завершено: AC06/07/09/10 на actual HTTP/PG,18 child checks PASS/31 event/25 no-write;
+  product bugs не подтверждены, чужие источники не менялись. Исправлены новые
+  fixtures и collector; негативные попытки сохранены, не выданы за product root cause.
+- Завершено: локальный минимум 921 backend/108 HTTP/240 integration/145 frontend,
+  lint/build/no web diff; новые2 browser PASS, viewport collector read-only.
+- Завершено: AC18 plan, источники/лимиты/команда/5 фаз ×4 widths. AC18 NOT_RUN.
+- Source candidate `2a868e5f909b0493e1e3b936e5407b07c73e811a` локально зафиксирован;
+  адресный HTTP/PG и browser/backend/HTTP повтор на SHA, evidence до cleanup.
+- Завершено: offline CHECK PASS (31 events/25 denials/20 viewport frames),27 local
+  links PASS, secret/token pattern scan0 matches, owned container cleanup PASS,
+ 0 owned DB/connections. Fresh origin/main остался3f42bba, чужие3 docs не затронуты.
+- **Активно:** финальная техническая передача доступного пакета и его restore/VERIFY.
+- Следующий внешний gate: отдельный release допуск нового harness и CI/review,
+  merge/test отдельно, затем разрешение одного AC18. AUTH/R10 не переоткрывается.
 
 ## Проверки и приёмка
 

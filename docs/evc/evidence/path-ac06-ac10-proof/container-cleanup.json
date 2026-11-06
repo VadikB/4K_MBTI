@@ -1,0 +1,15 @@
+{
+  "container": "4k-ac0610-pytest-20261106",
+  "container_id": "a25bdbdc36bcc6841b7e39ce0208ff19cfa9fb253c9dc22a1d8c8b4f47b6411a",
+  "owner_label": "task=path-ac06-ac10-proof",
+  "owner_label_verified": true,
+  "owned_database_count": 0,
+  "owned_connection_count": 0,
+  "database_cleanup": "Existing test_stand destroy with name+marker guard; no FORCE; primary receipts persisted before destroy",
+  "container_cleanup": "docker stop then docker rm exact owned name; task-label inventory empty",
+  "container_removed": true,
+  "storage": "disposable tmpfs only; no user volume removed",
+  "reference_database": "agent4k_pytest inside this task-owned container only",
+  "working_database_touched": false,
+  "other_containers_touched": false
+}

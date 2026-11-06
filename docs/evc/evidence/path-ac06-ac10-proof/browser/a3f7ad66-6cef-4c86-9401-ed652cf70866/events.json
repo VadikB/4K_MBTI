@@ -1,0 +1,20 @@
+[
+  {
+    "phase": "double_click",
+    "actual_post_requests": 1,
+    "sql": {
+      "assignments": [
+        {
+          "id": 1
+        }
+      ],
+      "bindings": [
+        {
+          "id": 1,
+          "assignment_id": 1
+        }
+      ],
+      "cycles": 0
+    }
+  }
+]
