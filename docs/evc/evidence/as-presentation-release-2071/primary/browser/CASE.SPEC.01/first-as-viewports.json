@@ -1,0 +1,2474 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "home",
+        "enabled": true,
+        "box": {
+          "x": 1136.109375,
+          "y": 12,
+          "width": 76.5625,
+          "height": 36
+        },
+        "geometry": {
+          "box": {
+            "x": 1136.109375,
+            "y": 12,
+            "width": 76.5625,
+            "height": 36
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 1136.109375,
+            "right": 1212.671875,
+            "top": 12,
+            "bottom": 48
+          },
+          "visible_area": 2756.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-profile-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 36,
+            "scrollHeight": 36
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 36,
+            "scrollHeight": 36
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 108,
+            "scrollTop": 0,
+            "clientHeight": 108,
+            "scrollHeight": 108
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1313
+          }
+        ]
+      },
+      {
+        "name": "answer-input",
+        "enabled": true,
+        "box": {
+          "x": 256,
+          "y": 784.328125,
+          "width": 635.453125,
+          "height": 216
+        },
+        "geometry": {
+          "box": {
+            "x": 256,
+            "y": 784.328125,
+            "width": 635.453125,
+            "height": 216
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 256,
+            "right": 891.453125,
+            "top": 784.328125,
+            "bottom": 1000
+          },
+          "visible_area": 137049.36694335938,
+          "visible_ratio": 0.9984809027777778,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "TEXTAREA",
+            "id": "interview-textarea",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 784.328125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 768.328125,
+            "height": 248,
+            "scrollTop": 0,
+            "clientHeight": 248,
+            "scrollHeight": 248
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 186,
+            "clientHeight": 1000,
+            "scrollHeight": 1313
+          }
+        ]
+      },
+      {
+        "name": "pause",
+        "enabled": true,
+        "box": {
+          "x": 907.453125,
+          "y": 784.328125,
+          "width": 276.546875,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 907.453125,
+            "y": 784.328125,
+            "width": 276.546875,
+            "height": 48
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 907.453125,
+            "right": 1184,
+            "top": 784.328125,
+            "bottom": 832.328125
+          },
+          "visible_area": 13274.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-pause-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 784.328125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 784.328125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 784.328125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 768.328125,
+            "height": 248,
+            "scrollTop": 0,
+            "clientHeight": 248,
+            "scrollHeight": 248
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          }
+        ]
+      },
+      {
+        "name": "finish",
+        "enabled": true,
+        "box": {
+          "x": 907.453125,
+          "y": 896.328125,
+          "width": 276.546875,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 907.453125,
+            "y": 896.328125,
+            "width": 276.546875,
+            "height": 48
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 907.453125,
+            "right": 1184,
+            "top": 896.328125,
+            "bottom": 944.328125
+          },
+          "visible_area": 13274.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-finish-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 896.328125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 784.328125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 784.328125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 768.328125,
+            "height": 248,
+            "scrollTop": 0,
+            "clientHeight": 248,
+            "scrollHeight": 248
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          }
+        ]
+      },
+      {
+        "name": "answer-submit",
+        "enabled": true,
+        "box": {
+          "x": 907.453125,
+          "y": 952.328125,
+          "width": 200,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 907.453125,
+            "y": 952.328125,
+            "width": 200,
+            "height": 48
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 907.453125,
+            "right": 1107.453125,
+            "top": 952.328125,
+            "bottom": 1000
+          },
+          "visible_area": 9534.375,
+          "visible_ratio": 0.9931640625,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-submit-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 952.328125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 784.328125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 784.328125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 768.328125,
+            "height": 248,
+            "scrollTop": 0,
+            "clientHeight": 248,
+            "scrollHeight": 248
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -54,
+            "height": 1117.171875,
+            "scrollTop": 0,
+            "clientHeight": 1117,
+            "scrollHeight": 1117
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -186,
+            "height": 1313.171875,
+            "scrollTop": 0,
+            "clientHeight": 1313,
+            "scrollHeight": 1313
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "visibleTextLength": 1549,
+      "visibility": "visible"
+    },
+    "screenshot": "first-as-1440.png"
+  },
+  {
+    "width": 320,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "home",
+        "enabled": true,
+        "box": {
+          "x": 160.109375,
+          "y": 39.5,
+          "width": 76.5625,
+          "height": 36
+        },
+        "geometry": {
+          "box": {
+            "x": 160.109375,
+            "y": 39.5,
+            "width": 76.5625,
+            "height": 36
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 160.109375,
+            "right": 236.671875,
+            "top": 39.5,
+            "bottom": 75.5
+          },
+          "visible_area": 2756.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-profile-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 39.5,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 39.5,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 36,
+            "scrollHeight": 36
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 91,
+            "scrollTop": 0,
+            "clientHeight": 91,
+            "scrollHeight": 91
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 155,
+            "scrollTop": 0,
+            "clientHeight": 155,
+            "scrollHeight": 155
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 2076
+          }
+        ]
+      },
+      {
+        "name": "answer-input",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 610.203125,
+          "width": 276.546875,
+          "height": 64
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 610.203125,
+            "width": 276.546875,
+            "height": 64
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 300.546875,
+            "top": 610.203125,
+            "bottom": 674.203125
+          },
+          "visible_area": 17699,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "TEXTAREA",
+            "id": "interview-textarea",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 610.203125,
+            "height": 64,
+            "scrollTop": 0,
+            "clientHeight": 64,
+            "scrollHeight": 64
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 602.203125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 1076,
+            "clientHeight": 1000,
+            "scrollHeight": 2076
+          }
+        ]
+      },
+      {
+        "name": "pause",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 690.203125,
+          "width": 276.546875,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 690.203125,
+            "width": 276.546875,
+            "height": 48
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 300.546875,
+            "top": 690.203125,
+            "bottom": 738.203125
+          },
+          "visible_area": 13274.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-pause-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 690.203125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 690.203125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 682.203125,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 602.203125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          }
+        ]
+      },
+      {
+        "name": "finish",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 802.203125,
+          "width": 276.546875,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 802.203125,
+            "width": 276.546875,
+            "height": 48
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 300.546875,
+            "top": 802.203125,
+            "bottom": 850.203125
+          },
+          "visible_area": 13274.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-finish-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 802.203125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 690.203125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 682.203125,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 602.203125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          }
+        ]
+      },
+      {
+        "name": "answer-submit",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 858.203125,
+          "width": 276.546875,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 858.203125,
+            "width": 276.546875,
+            "height": 48
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 300.546875,
+            "top": 858.203125,
+            "bottom": 906.203125
+          },
+          "visible_area": 13274.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-submit-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 858.203125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 690.203125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 682.203125,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 602.203125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -897,
+            "height": 1872.890625,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1076,
+            "height": 2075.890625,
+            "scrollTop": 0,
+            "clientHeight": 2076,
+            "scrollHeight": 2076
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 320,
+      "scrollWidth": 320,
+      "visibleTextLength": 1505,
+      "visibility": "visible"
+    },
+    "screenshot": "first-as-320.png"
+  },
+  {
+    "width": 390,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "home",
+        "enabled": true,
+        "box": {
+          "x": 230.109375,
+          "y": 31,
+          "width": 76.5625,
+          "height": 36
+        },
+        "geometry": {
+          "box": {
+            "x": 230.109375,
+            "y": 31,
+            "width": 76.5625,
+            "height": 36
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 230.109375,
+            "right": 306.671875,
+            "top": 31,
+            "bottom": 67
+          },
+          "visible_area": 2756.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-profile-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 31,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 31,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 36,
+            "scrollHeight": 36
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 74,
+            "scrollTop": 0,
+            "clientHeight": 74,
+            "scrollHeight": 74
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 138,
+            "scrollTop": 0,
+            "clientHeight": 138,
+            "scrollHeight": 138
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1751
+          }
+        ]
+      },
+      {
+        "name": "answer-input",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 609.859375,
+          "width": 342,
+          "height": 64
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 609.859375,
+            "width": 342,
+            "height": 64
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 366,
+            "top": 609.859375,
+            "bottom": 673.859375
+          },
+          "visible_area": 21888,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "TEXTAREA",
+            "id": "interview-textarea",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 609.859375,
+            "height": 64,
+            "scrollTop": 0,
+            "clientHeight": 64,
+            "scrollHeight": 64
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 601.859375,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 751,
+            "clientHeight": 1000,
+            "scrollHeight": 1751
+          }
+        ]
+      },
+      {
+        "name": "pause",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 689.859375,
+          "width": 342,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 689.859375,
+            "width": 342,
+            "height": 48
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 366,
+            "top": 689.859375,
+            "bottom": 737.859375
+          },
+          "visible_area": 16416,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-pause-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 689.859375,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 689.859375,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 681.859375,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 601.859375,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          }
+        ]
+      },
+      {
+        "name": "finish",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 801.859375,
+          "width": 342,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 801.859375,
+            "width": 342,
+            "height": 48
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 366,
+            "top": 801.859375,
+            "bottom": 849.859375
+          },
+          "visible_area": 16416,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-finish-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 801.859375,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 689.859375,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 681.859375,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 601.859375,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          }
+        ]
+      },
+      {
+        "name": "answer-submit",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 857.859375,
+          "width": 342,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 857.859375,
+            "width": 342,
+            "height": 48
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 366,
+            "top": 857.859375,
+            "bottom": 905.859375
+          },
+          "visible_area": 16416,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-submit-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 857.859375,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 689.859375,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 681.859375,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 601.859375,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -589,
+            "height": 1564.546875,
+            "scrollTop": 0,
+            "clientHeight": 1565,
+            "scrollHeight": 1565
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -751,
+            "height": 1750.546875,
+            "scrollTop": 0,
+            "clientHeight": 1751,
+            "scrollHeight": 1751
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 390,
+      "scrollWidth": 390,
+      "visibleTextLength": 1505,
+      "visibility": "visible"
+    },
+    "screenshot": "first-as-390.png"
+  },
+  {
+    "width": 768,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "home",
+        "enabled": true,
+        "box": {
+          "x": 608.109375,
+          "y": 12,
+          "width": 76.5625,
+          "height": 36
+        },
+        "geometry": {
+          "box": {
+            "x": 608.109375,
+            "y": 12,
+            "width": 76.5625,
+            "height": 36
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 608.109375,
+            "right": 684.671875,
+            "top": 12,
+            "bottom": 48
+          },
+          "visible_area": 2756.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-profile-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 36,
+            "scrollHeight": 36
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 12,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 36,
+            "scrollHeight": 36
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 100,
+            "scrollTop": 0,
+            "clientHeight": 100,
+            "scrollHeight": 100
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1286
+          }
+        ]
+      },
+      {
+        "name": "answer-input",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 911.125,
+          "width": 720,
+          "height": 64
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 911.125,
+            "width": 720,
+            "height": 64
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 744,
+            "top": 911.125,
+            "bottom": 975.125
+          },
+          "visible_area": 46080,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "TEXTAREA",
+            "id": "interview-textarea",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 911.125,
+            "height": 64,
+            "scrollTop": 0,
+            "clientHeight": 64,
+            "scrollHeight": 64
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 903.125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 124,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 124,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "BODY",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "HTML",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1286
+          }
+        ]
+      },
+      {
+        "name": "pause",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 952.125,
+          "width": 720,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 952.125,
+            "width": 720,
+            "height": 48
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 744,
+            "top": 952.125,
+            "bottom": 1000
+          },
+          "visible_area": 34470,
+          "visible_ratio": 0.9973958333333334,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-pause-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 952.125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 952.125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 944.125,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 864.125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 85,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 85,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -39,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -39,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          }
+        ]
+      },
+      {
+        "name": "finish",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 817.125,
+          "width": 720,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 817.125,
+            "width": 720,
+            "height": 48
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 744,
+            "top": 817.125,
+            "bottom": 865.125
+          },
+          "visible_area": 34560,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-finish-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 817.125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 46,
+            "scrollHeight": 46
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 705.125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 697.125,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 617.125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -162,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -162,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -286,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -286,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          }
+        ]
+      },
+      {
+        "name": "answer-submit",
+        "enabled": true,
+        "box": {
+          "x": 24,
+          "y": 873.125,
+          "width": 720,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 24,
+            "y": 873.125,
+            "width": 720,
+            "height": 48
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 24,
+            "right": 744,
+            "top": 873.125,
+            "bottom": 921.125
+          },
+          "visible_area": 34560,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "interview-submit-button",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 873.125,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 705.125,
+            "height": 216,
+            "scrollTop": 0,
+            "clientHeight": 216,
+            "scrollHeight": 216
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 697.125,
+            "height": 224,
+            "scrollTop": 0,
+            "clientHeight": 224,
+            "scrollHeight": 224
+          },
+          {
+            "tag": "FORM",
+            "id": "interview-form",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 617.125,
+            "height": 312,
+            "scrollTop": 0,
+            "clientHeight": 312,
+            "scrollHeight": 312
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -162,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -162,
+            "height": 1137.96875,
+            "scrollTop": 0,
+            "clientHeight": 1138,
+            "scrollHeight": 1138
+          },
+          {
+            "tag": "SECTION",
+            "id": "interview-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -286,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -286,
+            "height": 1285.96875,
+            "scrollTop": 0,
+            "clientHeight": 1286,
+            "scrollHeight": 1286
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 768,
+      "scrollWidth": 768,
+      "visibleTextLength": 1505,
+      "visibility": "visible"
+    },
+    "screenshot": "first-as-768.png"
+  }
+]

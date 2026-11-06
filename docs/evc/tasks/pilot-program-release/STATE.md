@@ -1,5 +1,30 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- AS-PRESENTATION-R1: владелец подтвердил2.0.71 PATCH → bump/push/PR/mandatory CI/
+  human review. [Карточка](../as-presentation-release-2071.md). Отдельная release-ветка
+  `codex/as-presentation-2071` от6f5681e, source36ef230a, fresh main e9639ed/2.0.70.
+  Штатный preflight+повтор PASS,49 files identical; новые backend937/HTTP108/
+  frontend145/targeted50/browser4/lint/CHECK35+39 PASS. Primary results в release
+  evidence. Активно: commit/push/Ready PR и обязательный CI exact head/base.
+  merge/deploy/программа/рабочая БД/LLM=false, human review нового head NOT_DONE.
+  Исходный пакет/ветка и чужая TG-работа сохранены. Старый source validation PASS
+  не заменяет новый mandatory CI. Новый AC18 NOT_RUN; PREP UNKNOWN отдельно.
+
+- AS-PRESENTATION-DIAG-01: прямой допуск «делаем», отдельная локальная ветка
+  `codex/as-presentation-fix` от fresh main e9639ed/2.0.70. [Отчёт](../../reports/as-presentation-fix.md),
+  [карточка](../as-presentation-fix.md), [evidence](../../evidence/as-presentation-fix/README.md).
+  Новый functional public snapshot — конкретные P00/start materials, без author
+  passport repr; legacy/saved AS/admission/prompts/repair/artifacts unchanged.
+  Исправлен repeated DOM render/scroll jump при одинаковом poll; timer/actions и
+  новые trace обновляются. Backend937/HTTP108/frontend145/PG6/lint/build PASS,
+  browser subset12/final expanded120 PASS (retry0/skip0), исходный
+  119/1 AC05 UNKNOWN сохранён. Owned PG очищена после5 exports, working DB untouched.
+  Локальный рабочий commit/byte hashes — code-identity.json пакета; нового bump,
+  push/PR/CI/merge/deploy/публикации/LLM нет. Main/последний подтверждённый test
+  e9639ed/2.0.70; чужая TG-ветка/3 untracked docs сохранены. Нижние старые статусы —
+  история. Paid AC18 runner e963 PASS, visual acceptance BLOCKED; на новом released
+  SHA AC18 NOT_RUN до выпуска и отдельного допуска. PREP-DIAG-01 UNKNOWN отдельно.
+
 - CI fix source `db79007c4ab13780591f027ae4f38c0cc453c89d`: backend922/HTTP108
   PASS по тем же Python/test bytes,35 runner/release/CI повторены на SHA PASS;
   новый CHECK355/immutable134/negative/shallow2 PASS. Финальная дельта только

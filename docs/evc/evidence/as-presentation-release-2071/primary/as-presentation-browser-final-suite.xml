@@ -1,0 +1,314 @@
+<testsuites id="" name="" tests="120" failures="0" skipped="0" errors="0" time="196.069725">
+<testsuite name="auth-r03.spec.mjs" timestamp="2026-11-06T14:56:27.156Z" hostname="" tests="117" failures="0" skipped="0" time="187.147" errors="0">
+<testcase name="AS projection CASE.SPEC.01: concrete public materials, no author passport, four widths" classname="auth-r03.spec.mjs" time="10.468">
+<properties>
+<property name="synthetic_component" value="Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission">
+</property>
+</properties>
+</testcase>
+<testcase name="AS projection CASE.SPEC.02: concrete public materials, no author passport, four widths" classname="auth-r03.spec.mjs" time="11.739">
+<properties>
+<property name="synthetic_component" value="Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission">
+</property>
+</properties>
+</testcase>
+<testcase name="ADM28 confirmation finishes before supplementary GET and offers a retry on GET failure" classname="auth-r03.spec.mjs" time="1.031">
+</testcase>
+<testcase name="ADM28 lost POST response checks exact revision and recipients without republishing" classname="auth-r03.spec.mjs" time="2.098">
+</testcase>
+<testcase name="ADM28 recipients stay checked and editable after navigation, and errors stay beside confirm" classname="auth-r03.spec.mjs" time="1.757">
+</testcase>
+<testcase name="ADM28 old confirmation cannot delete a newly created preview or newer input" classname="auth-r03.spec.mjs" time="1.147">
+</testcase>
+<testcase name="ADM28 late confirmation cannot replace another selected assessment" classname="auth-r03.spec.mjs" time="1.279">
+</testcase>
+<testcase name="ADM28 late confirmation after account change cannot populate the new account" classname="auth-r03.spec.mjs" time="1.428">
+</testcase>
+<testcase name="ADM28 session restoration hides credentials and loads each admin resource once" classname="auth-r03.spec.mjs" time="0.46">
+</testcase>
+<testcase name="ADM28 temporary restore failure offers retry and does not show login credentials" classname="auth-r03.spec.mjs" time="0.352">
+</testcase>
+<testcase name="ADM28 initial HTML has a complete frontend version before JavaScript" classname="auth-r03.spec.mjs" time="0.28">
+</testcase>
+<testcase name="ADM28 invalid JSON leaves a finite unknown outcome and restores confirm controls" classname="auth-r03.spec.mjs" time="0.86">
+</testcase>
+<testcase name="ADM28 superadmin still restores its global dashboard" classname="auth-r03.spec.mjs" time="0.412">
+</testcase>
+<testcase name="PATH-START AC02 repeats organization creation after confirmed response without a duplicate" classname="auth-r03.spec.mjs" time="2.564">
+<properties>
+<property name="synthetic_http" value="Stateful HTTP fixture; real entry/dist; no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC02 repeats organization creation after lost response without a duplicate" classname="auth-r03.spec.mjs" time="1.728">
+<properties>
+<property name="synthetic_http" value="Stateful HTTP fixture; real entry/dist; no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC02 repeats organization creation after service-error response without a duplicate" classname="auth-r03.spec.mjs" time="1.612">
+<properties>
+<property name="synthetic_http" value="Stateful HTTP fixture; real entry/dist; no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 deadline GET after confirmed PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="16.564">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 http503 GET after confirmed PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="2.064">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 network GET after confirmed PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="1.463">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 invalid-json GET after confirmed PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="1.754">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 null GET after confirmed PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="3.141">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 foreign-program GET after confirmed PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="2.532">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 deadline GET after lost PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="17.201">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 http503 GET after lost PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="1.683">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 network GET after lost PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="1.74">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 invalid-json GET after lost PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="1.73">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 null GET after lost PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="1.513">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PATH-START AC05 foreign-program GET after lost PUT is finite, unknown and safely repeatable" classname="auth-r03.spec.mjs" time="1.291">
+<properties>
+<property name="synthetic_http" value="Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.">
+</property>
+</properties>
+</testcase>
+<testcase name="PROGRAM01 R10 finishes exact program connection while questionnaire refresh is pending" classname="auth-r03.spec.mjs" time="0.92">
+</testcase>
+<testcase name="PROGRAM01 R10 shows a terminal error when exact readback is null" classname="auth-r03.spec.mjs" time="1.431">
+</testcase>
+<testcase name="PATH-START AC05 rejects a foreign organization readback after confirmed command" classname="auth-r03.spec.mjs" time="1.301">
+</testcase>
+<testcase name="PATH-START AC05 rejects a foreign organization readback after lost command" classname="auth-r03.spec.mjs" time="1.324">
+</testcase>
+<testcase name="PROGRAM01 R10 confirms a committed connection after the PUT response is lost" classname="auth-r03.spec.mjs" time="1.181">
+</testcase>
+<testcase name="PROGRAM01 R10 restores the exact connected program after reopening the card" classname="auth-r03.spec.mjs" time="1.275">
+</testcase>
+<testcase name="PROGRAM01 R10 does not render the old connection result after logout" classname="auth-r03.spec.mjs" time="1.162">
+</testcase>
+<testcase name="QA19-03 keeps the participant section available with no members" classname="auth-r03.spec.mjs" time="0.732">
+</testcase>
+<testcase name="PATH-START ST-R1 card: local view or refusal is not a pending mutation" classname="auth-r03.spec.mjs" time="0.863">
+</testcase>
+<testcase name="PATH-START ST-R1 cancel-dialog: local view or refusal is not a pending mutation" classname="auth-r03.spec.mjs" time="1.201">
+</testcase>
+<testcase name="PATH-START ST-R1: confirmed cancellation has local loading and a terminal error" classname="auth-r03.spec.mjs" time="1.415">
+</testcase>
+<testcase name="PATH-START ST-R4: authorized read-only preparation action survives renderer" classname="auth-r03.spec.mjs" time="1.114">
+</testcase>
+<testcase name="PATH-START viewport 1440: long facts, unknown questionnaire, read-only action" classname="auth-r03.spec.mjs" time="1.458">
+</testcase>
+<testcase name="PATH-START viewport 320: long facts, unknown questionnaire, read-only action" classname="auth-r03.spec.mjs" time="1.184">
+</testcase>
+<testcase name="PATH-START viewport 390: long facts, unknown questionnaire, read-only action" classname="auth-r03.spec.mjs" time="1.118">
+</testcase>
+<testcase name="PATH-START viewport 768: long facts, unknown questionnaire, read-only action" classname="auth-r03.spec.mjs" time="1.13">
+</testcase>
+<testcase name="PATH-START PG-R1: participant sees the exact missing-position reason and can recheck" classname="auth-r03.spec.mjs" time="1.141">
+</testcase>
+<testcase name="ADM-STATUS-01 shows the current participant stage and opens known facts in the participant card" classname="auth-r03.spec.mjs" time="2.237">
+</testcase>
+<testcase name="ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from assignment cancellation" classname="auth-r03.spec.mjs" time="1.814">
+</testcase>
+<testcase name="PROGRAM01 R08 refreshes actions and explains a revoke conflict after acquaintance starts" classname="auth-r03.spec.mjs" time="2.426">
+</testcase>
+<testcase name="PROGRAM01 R06 marks a confirmed cancellation stale when readback fails and restores the action" classname="auth-r03.spec.mjs" time="2.148">
+</testcase>
+<testcase name="PROGRAM01 R06 refreshes an exact assignment after 409 and removes an invalid cancellation" classname="auth-r03.spec.mjs" time="1.102">
+</testcase>
+<testcase name="PROGRAM01 R06 resolves a lost cancellation response by exact readback without a new intent" classname="auth-r03.spec.mjs" time="1.089">
+</testcase>
+<testcase name="PROGRAM01 R06 does not render an old cancellation result after identity changes" classname="auth-r03.spec.mjs" time="1.482">
+</testcase>
+<testcase name="PROGRAM01 R06 restores cancellation after 403" classname="auth-r03.spec.mjs" time="1.028">
+</testcase>
+<testcase name="PROGRAM01 R06 restores cancellation after 500" classname="auth-r03.spec.mjs" time="0.945">
+</testcase>
+<testcase name="PROGRAM01 R05 keeps privileged password reset in the card and exposes only an authorized exact report" classname="auth-r03.spec.mjs" time="1.031">
+</testcase>
+<testcase name="ARCH30 offers an explicit one-way legacy profile copy into an empty C01 draft" classname="auth-r03.spec.mjs" time="1.701">
+</testcase>
+<testcase name="QA19-03 keeps long participant rows readable and actions associated after view changes" classname="auth-r03.spec.mjs" time="2.052">
+</testcase>
+<testcase name="ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports" classname="auth-r03.spec.mjs" time="1.563">
+</testcase>
+<testcase name="ADM19-01 exposes three keyboard-operable management blocks without horizontal overflow" classname="auth-r03.spec.mjs" time="2.842">
+</testcase>
+<testcase name="UX-FIX20-04 shows server readiness and routes to missing roles without blocking member add" classname="auth-r03.spec.mjs" time="1.137">
+</testcase>
+<testcase name="F22-07 explains participant acquaintance wait without a false roles action" classname="auth-r03.spec.mjs" time="1.178">
+</testcase>
+<testcase name="UX-FIX20-04 org-admin edits the attached card and never sees free tenant creation" classname="auth-r03.spec.mjs" time="0.933">
+</testcase>
+<testcase name="UX-FIX20-04 keeps readiness separated when org-admin switches assessment" classname="auth-r03.spec.mjs" time="0.978">
+</testcase>
+<testcase name="UX-ADM28-02 reports questionnaire load failure separately and offers retry" classname="auth-r03.spec.mjs" time="1.123">
+</testcase>
+<testcase name="F22-06 restores confirmed fields when the selected assessment has no local draft" classname="auth-r03.spec.mjs" time="1.264">
+</testcase>
+<testcase name="UX-FIX20-02 preserves named drafts across all management views" classname="auth-r03.spec.mjs" time="2.044">
+</testcase>
+<testcase name="UX-FIX20-02 clears account A drafts and ignores its late preview after account B login" classname="auth-r03.spec.mjs" time="2.115">
+</testcase>
+<testcase name="UX-FIX20-02 keeps newer input when an older preview response arrives" classname="auth-r03.spec.mjs" time="1.519">
+</testcase>
+<testcase name="ADM19-02 routes org-admin own assessment by server journey and preserves management capability" classname="auth-r03.spec.mjs" time="2.207">
+</testcase>
+<testcase name="ADM19-02 opens the own saved M8 report and returns to management" classname="auth-r03.spec.mjs" time="0.983">
+</testcase>
+<testcase name="ADM19-01 saves early organization data through the versioned product form contract" classname="auth-r03.spec.mjs" time="0.939">
+</testcase>
+<testcase name="UX-ADM28-01 changes recipients without invalidating content preview and applies confirmation immediately" classname="auth-r03.spec.mjs" time="1.151">
+</testcase>
+<testcase name="F22-04 keeps a newer confirmed revision and input entered after confirm started" classname="auth-r03.spec.mjs" time="1.341">
+</testcase>
+<testcase name="ADM19-01 adds a participant with only email, name and role" classname="auth-r03.spec.mjs" time="0.947">
+</testcase>
+<testcase name="UX-ADM27 org-admin assigns the selected assessment to self and a colleague" classname="auth-r03.spec.mjs" time="1.223">
+</testcase>
+<testcase name="PILOT31-03 explains every visible readiness blocker before assignment" classname="auth-r03.spec.mjs" time="0.812">
+</testcase>
+<testcase name="QA19-02 resolves palette tokens in visible auth and admin states" classname="auth-r03.spec.mjs" time="1.225">
+</testcase>
+<testcase name="R03 personal invitation has priority and exposes an explicit account choice" classname="auth-r03.spec.mjs" time="0.398">
+</testcase>
+<testcase name="R03 verification pending renders one mail-check heading without password copy" classname="auth-r03.spec.mjs" time="0.707">
+</testcase>
+<testcase name="R03 reset returns to AUTH 03 with known email and no autologin" classname="auth-r03.spec.mjs" time="0.649">
+</testcase>
+<testcase name="R03 mutating auth locks the complete step" classname="auth-r03.spec.mjs" time="0.62">
+</testcase>
+<testcase name="R03 tooltip toggles on tap and stays inside a low viewport" classname="auth-r03.spec.mjs" time="0.575">
+</testcase>
+<testcase name="R03 AUTH 01 and password creation keep canonical R01 metrics" classname="auth-r03.spec.mjs" time="0.91">
+</testcase>
+<testcase name="R04 shared footer stays in document flow and stacks on mobile" classname="auth-r03.spec.mjs" time="0.437">
+</testcase>
+<testcase name="REL-VERSION-01 shows one build number on auth and common areas, with a safe fallback" classname="auth-r03.spec.mjs" time="0.436">
+</testcase>
+<testcase name="R03 refresh obeys server journey and fails closed on journey outage" classname="auth-r03.spec.mjs" time="0.581">
+</testcase>
+<testcase name="R03 successful password response reports a missing browser session as auth failure" classname="auth-r03.spec.mjs" time="0.661">
+</testcase>
+<testcase name="LK01 renders selected Cycle cards without catalogue or horizontal overflow" classname="auth-r03.spec.mjs" time="0.604">
+</testcase>
+<testcase name="RAD01 renders saved scores, gaps and mobile competency view" classname="auth-r03.spec.mjs" time="1.382">
+</testcase>
+<testcase name="UI02 full overview keeps every radar label separate" classname="auth-r03.spec.mjs" time="1.441">
+</testcase>
+<testcase name="QA19-04 keeps four M8 competency radars readable across mobile and desktop widths" classname="auth-r03.spec.mjs" time="2.334">
+</testcase>
+<testcase name="R03 late login cannot replace a password-reset step" classname="auth-r03.spec.mjs" time="0.773">
+</testcase>
+<testcase name="R03 first mouse click keeps tooltip open and second closes it" classname="auth-r03.spec.mjs" time="0.825">
+</testcase>
+<testcase name="R03 expired reset opens explicit recovery email entry" classname="auth-r03.spec.mjs" time="0.958">
+</testcase>
+<testcase name="R03 queued batch is not reported as provider accepted" classname="auth-r03.spec.mjs" time="0.958">
+</testcase>
+<testcase name="R03 network retry reuses invitation operation id" classname="auth-r03.spec.mjs" time="0.896">
+</testcase>
+<testcase name="R03 processing deep link obeys server journey before local state" classname="auth-r03.spec.mjs" time="0.473">
+</testcase>
+<testcase name="R03 direct interview URL uses journey and keeps Cycle failure visible" classname="auth-r03.spec.mjs" time="0.508">
+</testcase>
+<testcase name="E02 shows ready Cycle without automatic navigation and keeps mobile actions usable" classname="auth-r03.spec.mjs" time="0.41">
+</testcase>
+<testcase name="E02 falls back to journey polling when detailed Cycle status stalls" classname="auth-r03.spec.mjs" time="0.484">
+</testcase>
+<testcase name="R03 fresh login persists journey assessment identifiers" classname="auth-r03.spec.mjs" time="0.676">
+</testcase>
+<testcase name="P03 return card hides stopped AS and keeps explicit continue in the same chat" classname="auth-r03.spec.mjs" time="0.561">
+</testcase>
+<testcase name="P03 fresh login opens explicit return card without reading blocked runtime" classname="auth-r03.spec.mjs" time="0.704">
+</testcase>
+<testcase name="E01 renders accepted active assessment copy, colors and AS-scoped draft" classname="auth-r03.spec.mjs" time="0.835">
+</testcase>
+<testcase name="R03 null journey removes stale legacy and Cycle identifiers" classname="auth-r03.spec.mjs" time="0.465">
+</testcase>
+<testcase name="W02 blocks direct entry on missing participant briefing and supports readiness retry on mobile" classname="auth-r03.spec.mjs" time="0.785">
+</testcase>
+<testcase name="PARTICIPANT-LAYOUT-01 keeps waiting states content-sized and responsive" classname="auth-r03.spec.mjs" time="0.854">
+</testcase>
+<testcase name="W02 does not present plan cards before the prepared plan exists" classname="auth-r03.spec.mjs" time="0.635">
+</testcase>
+<testcase name="UX-AUD29-03 grows the answer and submits desktop Enter only once" classname="auth-r03.spec.mjs" time="0.845">
+</testcase>
+<testcase name="R08 shows the frozen program budget instead of the planned duration sum" classname="auth-r03.spec.mjs" time="0.464">
+</testcase>
+<testcase name="R03 reset request locks every visible credential action" classname="auth-r03.spec.mjs" time="0.56">
+</testcase>
+<testcase name="PATH29 readiness distinguishes 403 without a fake ready plan" classname="auth-r03.spec.mjs" time="0.563">
+</testcase>
+<testcase name="PATH29 readiness distinguishes 409 without a fake ready plan" classname="auth-r03.spec.mjs" time="0.492">
+</testcase>
+<testcase name="PATH29 readiness distinguishes 503 without a fake ready plan" classname="auth-r03.spec.mjs" time="0.599">
+</testcase>
+<testcase name="PATH29 readiness distinguishes network without a fake ready plan" classname="auth-r03.spec.mjs" time="0.565">
+</testcase>
+<testcase name="PATH29 readiness distinguishes failed without a fake ready plan" classname="auth-r03.spec.mjs" time="0.607">
+</testcase>
+<testcase name="PATH29 readiness distinguishes organization without a fake ready plan" classname="auth-r03.spec.mjs" time="0.497">
+</testcase>
+</testsuite>
+<testsuite name="path-viewports.spec.mjs" timestamp="2026-11-06T14:56:27.156Z" hostname="" tests="3" failures="0" skipped="0" time="4.101" errors="0">
+<testcase name="viewport collector measures final scroll geometry on active tab without clicks or enabling controls" classname="path-viewports.spec.mjs" time="2.108">
+</testcase>
+<testcase name="viewport geometry rejects offscreen, ancestor clipping and horizontal overflow" classname="path-viewports.spec.mjs" time="0.42">
+</testcase>
+<testcase name="viewport collector re-resolves enabled control during DOM rerender" classname="path-viewports.spec.mjs" time="1.573">
+</testcase>
+</testsuite>
+</testsuites>

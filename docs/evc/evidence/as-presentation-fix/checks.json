@@ -1,0 +1,35 @@
+{
+  "task": "AS-PRESENTATION-DIAG-01",
+  "base_sha": "e9639edef400e2c36425f0d1c3ca98b646fdb0c2",
+  "scope": "LOCAL_FREE_FIX_NOT_FINAL_AC18",
+  "final": {
+    "backend": {"passed": 937, "deselected": 354, "exit_code": 0, "primary": "primary/as-presentation-backend-final.xml"},
+    "http": {"passed": 108, "deselected": 12, "exit_code": 0, "primary": "primary/as-presentation-http.xml"},
+    "postgresql_http_component": {"passed": 6, "deselected": 10, "exit_code": 0, "readbacks_before_cleanup": 5, "primary": "primary/as-presentation-pg-primary.xml"},
+    "frontend": {"passed": 145, "exit_code": 0, "primary": "primary/frontend.xml"},
+    "browser": {"passed": 120, "retries": 0, "skipped": 0, "exit_code": 0, "primary": "primary/as-presentation-browser-final-suite.xml"},
+    "browser_capture_only_followup": {"passed": 2, "exit_code": 0, "primary": "primary/as-presentation-browser-viewport-only.xml", "reason": "Actual viewport screenshot avoids fullPage resize of dvh inner scroller; geometry checked again after capture. Product bytes unchanged from 36ef230a7205bbbab533b878a44d8d0a37dbfbde."},
+    "lint": {"exit_code": 0, "primary": "primary/lint.json"},
+    "build": {"exit_code": 0, "assets": 45, "repeated_build_same_bytes": true},
+    "source_immutability": {"files": 22, "unchanged": true, "case_refs": 9},
+    "diff_check": {"exit_code": 0}
+  },
+  "negative_history": [
+    {"primary": "primary/as-presentation-before.xml", "passed": 2, "failed": 9, "exit_code": 1, "cause": "AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT"},
+    {"primary": "primary/as-presentation-targeted-final.xml", "passed": 14, "failed": 1, "exit_code": 1, "cause": "New fixture test incorrectly assumed allowed organization substitution. Product correctly rejected undeclared slot; test now asserts this prohibition."},
+    {"primary": "primary/as-presentation-integration.xml", "exit_code": 2, "cause": "Interrupted own HTTP probe before publishing start transaction; committed start before separate HTTP transaction in final fixture."},
+    {"primary": "primary/as-presentation-integration-after.xml", "errors": 6, "exit_code": 1, "cause": "Sandbox EPERM denied loopback; escalated rerun used exact owned isolated PostgreSQL."},
+    {"primary": "primary/as-presentation-browser-final.xml", "passed": 11, "failed": 2, "exit_code": 1, "cause": "Waiting for settled geometry alone did not fix DOM recreation/poll scroll reset. Interim collector change removed from final diff."},
+    {"primary": "primary/as-presentation-browser-suite.xml", "passed": 119, "failed": 1, "exit_code": 1, "cause": "UNKNOWN: AC05 invalid-json GET after lost PUT assertion missing element. Not reproduced in final120 PASS; not attributed to AS fix or PREP."},
+    {"primary": "primary/as-presentation-browser-final-readback.xml", "failed": 1, "not_run": 1, "exit_code": 1, "cause": "Own concurrent browser invocation collided with loopback port18764 (EADDRINUSE); final suite run sequentially."}
+  ],
+  "postgresql_scope": "REAL_CONNECTION_SQL_RUNTIME_HTTP; provider, source QA, upstream start permission and authentication identity are controlled component fixtures, NOT human/pilot admission or full PATH",
+  "browser_scope": "SOURCE_BACKED_PUBLIC_MATERIALIZER_AND_REAL_UI_WITH_SYNTHETIC_HTTP; NOT real-provider/SQL end-to-end",
+  "real_llm_calls": 0,
+  "permanent_database_accessed": false,
+  "new_ci": "NOT_RUN",
+  "new_deploy": "NOT_RUN",
+  "final_released_sha_ac18": "NOT_RUN",
+  "historical_e9639ed_ac18": {"runner": "PASS", "visual_acceptance": "BLOCKED"},
+  "prep_diag_01_root_cause": "UNKNOWN"
+}

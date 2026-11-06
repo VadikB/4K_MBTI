@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { capturePathViewports, viewportGeometry, assertViewportGeometry } from './fixtures/path-viewports.mjs';
 
 const root = process.cwd();
 const port = 18764;
@@ -51,6 +53,109 @@ async function baseRoutes(page, restore = { authenticated: false }) {
 }
 
 const adminUser = { id: 18, email: 'admin@example.test', full_name: 'Admin' };
+
+for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
+  test(`AS projection ${caseId}: concrete public materials, no author passport, four widths`, async ({ page }) => {
+    test.info().annotations.push({ type: 'synthetic_component', description:
+      'Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission' });
+    const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');
+    const fixture = JSON.parse(execFileSync(python, ['-m', 'tests.m5_participant_projection_inputs', caseId], {
+      cwd: root, encoding: 'utf8', timeout: 30000,
+    }));
+    expect(fixture.scope).toBe('SYNTHETIC_COMPONENT_PRESENTATION_NOT_PILOT_ADMISSION');
+    const payload = fixture.participant_payload;
+    const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+    const writes = [];
+    let reads = 0;
+    let remainingSeconds = 7200;
+    let extraTurns = [];
+    await page.route('**/users/**', (route) => {
+      if (route.request().method() !== 'GET') writes.push(route.request().method() + ' ' + new URL(route.request().url()).pathname);
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+      if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+      if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+      if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+        next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+        assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'projection-cycle',
+          cycle_session_id: 'projection-session', assessment_situation_id: 'projection-as' },
+      });
+      if (pathname === '/users/assessment/m7/cycles/projection-cycle/return-state') {
+        return fulfillJson(route, { detail: 'M7_RETURN_POLICY_NOT_SNAPSHOTTED' }, 409);
+      }
+      if (pathname === '/users/assessment/cycles/projection-cycle/runtime') { reads += 1; return fulfillJson(route, {
+        cycle_id: 'projection-cycle', status: { collection_status: 'active', remaining_seconds: remainingSeconds },
+        return_policy_enabled: false,
+        route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'projection-as' }], progress: { total_positions: 8 } },
+        current_situation: { assessment_situation_id: 'projection-as', status: 'active', participant_payload: payload },
+        trace: { turns: extraTurns, events: [] },
+      }); }
+      return fulfillJson(route, {}, 404);
+    });
+    await page.goto(`${base}/?screen=interview`);
+    const situation = page.locator('.interview-message--situation');
+    await expect(situation).toHaveCount(1);
+    await expect(situation).toContainText(payload.introduction);
+    for (const item of payload.initial_materials) await expect(situation).toContainText(item.text);
+    await expect(situation).not.toContainText('определяются в AS');
+    await expect(situation).not.toContainText("[{'Функция'");
+    // renderProductRuntime schedules bottom alignment at RAF + 80/220ms.
+    // Let those existing initial effects finish before trial scroll measurement;
+    // do not alter CSS, clipping assertions, enabled state or scroll behavior.
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    // Keep polling real UI code: an unchanged AS must retain its DOM and user
+    // scroll, while timer updates still apply. Do not pause/intercept poll timers.
+    const originalNode = await situation.elementHandle();
+    const beforeReads = reads;
+    await page.locator('#interview-finish-button').click({ trial: true });
+    const beforeY = await page.evaluate(() => scrollY);
+    remainingSeconds = 7100;
+    await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeReads + 2);
+    expect(await originalNode.evaluate((node) => node.isConnected)).toBe(true);
+    expect(await page.evaluate(() => scrollY)).toBeCloseTo(beforeY, 0);
+    await expect(page.locator('#interview-timer-badge')).toContainText('118:20');
+    const dir = path.join(process.env.AS_PRESENTATION_EVIDENCE_DIRECTORY || path.join(root, '.test-stand/as-presentation'), caseId);
+    await fs.mkdir(dir, { recursive: true });
+    await capturePathViewports(page, dir, 'first-as', [
+      { name: 'home', locator: page.locator('#interview-profile-button') },
+      { name: 'answer-input', locator: page.locator('#interview-textarea') },
+      { name: 'pause', locator: page.locator('#interview-pause-button') },
+      { name: 'finish', locator: page.locator('#interview-finish-button') },
+      { name: 'answer-submit', locator: page.locator('#interview-submit-button') },
+    ]);
+    // Desktop intentionally has an inner message scroller. Prove its last
+    // material remains reachable across live polls, not merely present in DOM.
+    const lastMaterial = situation.locator('li').last();
+    await lastMaterial.scrollIntoViewIfNeeded();
+    await expect.poll(async () => (await viewportGeometry(lastMaterial)).visible_ratio).toBeGreaterThan(0);
+    const beforeMaterialReads = reads;
+    await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeMaterialReads + 2);
+    const lastMaterialGeometry = await viewportGeometry(lastMaterial);
+    assertViewportGeometry(lastMaterialGeometry, 'last-material-after-poll');
+    // fullPage capture resizes the layout viewport and can reset a dvh-sized
+    // inner scroller. This evidence must show the actual reading viewport.
+    await page.screenshot({ path: path.join(dir, 'last-material.png'), fullPage: false });
+    const afterCapture = await viewportGeometry(lastMaterial);
+    assertViewportGeometry(afterCapture, 'last-material-after-viewport-capture');
+    await fs.writeFile(path.join(dir, 'last-material-geometry.json'), JSON.stringify({
+      ...afterCapture, screenshot_mode: 'viewport', material_text: await lastMaterial.innerText(),
+    }, null, 2) + '\n');
+    await page.reload();
+    await expect(situation).toHaveCount(1);
+    await expect(situation).toContainText(payload.introduction);
+    await expect(page.locator('#interview-textarea')).toHaveValue('');
+    // A genuinely changed trace still renders; caching must not hide updates.
+    extraTurns = [{ sequence_no: 1, turn_id: 'synthetic-public-update', speaker_type: 'character',
+      speaker_name: 'Контролируемый персонаж', content_text: 'Новый публичный материал из synthetic fixture' }];
+    await expect(situation.locator('h3')).toHaveText(payload.title);
+    await expect(page.locator('[data-speaker-label="Контролируемый персонаж"]')).toContainText('Новый публичный материал');
+    expect(writes).toEqual([]);
+    await fs.writeFile(path.join(dir, 'readback.json'), JSON.stringify({ scope: fixture.scope,
+      case_id: caseId, participant_payload: payload, reload_same_payload: true,
+      mutation_requests: writes, assessment_answers: 0 }, null, 2) + '\n');
+  });
+}
 
 async function adm28Preview(page) {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), {

@@ -1,0 +1,20 @@
+<testsuites id="" name="" tests="4" failures="0" skipped="0" errors="0" time="36.04406800000001">
+<testsuite name="auth-r03.spec.mjs" timestamp="2026-11-06T15:23:13.200Z" hostname="" tests="4" failures="0" skipped="0" time="30.382" errors="0">
+<testcase name="AS projection CASE.SPEC.01: concrete public materials, no author passport, four widths" classname="auth-r03.spec.mjs" time="15.046">
+<properties>
+<property name="synthetic_component" value="Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission">
+</property>
+</properties>
+</testcase>
+<testcase name="AS projection CASE.SPEC.02: concrete public materials, no author passport, four widths" classname="auth-r03.spec.mjs" time="12.784">
+<properties>
+<property name="synthetic_component" value="Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission">
+</property>
+</properties>
+</testcase>
+<testcase name="REL-VERSION-01 shows one build number on auth and common areas, with a safe fallback" classname="auth-r03.spec.mjs" time="0.987">
+</testcase>
+<testcase name="E01 renders accepted active assessment copy, colors and AS-scoped draft" classname="auth-r03.spec.mjs" time="1.565">
+</testcase>
+</testsuite>
+</testsuites>

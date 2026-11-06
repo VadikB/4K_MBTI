@@ -1,0 +1,83 @@
+{
+  "source_sha": "6f5681e1dda369a11892865b34cf3fe137f61585",
+  "product_source_sha": "36ef230a7205bbbab533b878a44d8d0a37dbfbde",
+  "unchanged_product_test_paths": true,
+  "allowed_release_delta": [
+    "pyproject.toml",
+    "uv.lock",
+    "web/index.html",
+    "web/js/config.js",
+    "web/dist/",
+    "docs/evc/"
+  ],
+  "files": [
+    {
+      "path": "Api/m5_case_runtime.py",
+      "sha256": "4918cd198b76d4ef93661a6b920138e5283a04d26ed74f2d4a98e57b2e8bac48"
+    },
+    {
+      "path": "Api/assessment_case_contracts.py",
+      "sha256": "2d853afa96e795fcb9a350f710b6067d936ee5600f6404a6a143417738f4678b"
+    },
+    {
+      "path": "Api/m5_storage.py",
+      "sha256": "13498fae1aa20683cd59a25bafee05eee432bbe7b563bc25f7b1b9b17b19885b"
+    },
+    {
+      "path": "Api/m5_functional_generation_service.py",
+      "sha256": "14fdedf1f0e12eb1c5f0e740fece0a03b49a18070edb94ce59fcaae4193836f6"
+    },
+    {
+      "path": "Api/m10_product_flow.py",
+      "sha256": "8f41361fe996534df5cdd362ff393c6b555f806182eb605a361ec825ce10f3db"
+    },
+    {
+      "path": "Api/routes.py",
+      "sha256": "526fc52e1f1ecd1d4df214a2a588b6a97f3ae88926574ad341ef6017f0bf3767"
+    },
+    {
+      "path": "web/js/screens/interview.js",
+      "sha256": "609f612d2a4d4a7df1be958b82ca6b5e8c28b818895a7960a4bada1b9e73fc2a"
+    },
+    {
+      "path": "web/styles/screens/interview.css",
+      "sha256": "b429cfb8ad7a7603c3c7cf1573049801025d0ed450fd5838966859701d37647e"
+    },
+    {
+      "path": "tests/m5_participant_projection_inputs.py",
+      "sha256": "e89e92abd363f4de8c174d225a8bcc4b950a32aa26ad4c783e99552fd96b94b3"
+    },
+    {
+      "path": "tests/unit/test_m5_participant_projection.py",
+      "sha256": "54a32809f61f971f1b9814b0a08da265df92095ae12bee7df23735df7275a9b9"
+    },
+    {
+      "path": "tests/integration/test_m10_product_path_db.py",
+      "sha256": "2f78de2e9017782b8ad9d64dbf9773a921054ff604cf42b18ea60a95ae26971b"
+    },
+    {
+      "path": "tests/browser/auth-r03.spec.mjs",
+      "sha256": "3483f7fc19b643cc887971c5dc59697fc02e58e2e0c164982942d96983862a01"
+    },
+    {
+      "path": "tests/browser/fixtures/path-viewports.mjs",
+      "sha256": "c2ba2c435c7aac1af0b20dc01765c320f60c65a4d1b1f3c8b58b507be4562311"
+    },
+    {
+      "path": "tests/browser/path-viewports.spec.mjs",
+      "sha256": "0c8fa5e7d2797dc2e49bf65c5062eecbb41b9566ed35490c0a1a9816e56b9741"
+    },
+    {
+      "path": "scripts/build_m5_sales_package.py",
+      "sha256": "31c87ea981db38e140968b49d287f72e5a0c9aaefc9822e547e53331ab9a6c67"
+    },
+    {
+      "path": "scripts/assessment_first_case.py",
+      "sha256": "fc93837eb2d266856687b455e2fa7779d7b60a6f8d7aec455d68f9cbf30518ef"
+    },
+    {
+      "path": "docs/evc/assessment-first-case-profile.md",
+      "sha256": "5b831260e3d772be79b3f6ca5defa0f2d2106c0242aa802751d236633d702ee7"
+    }
+  ]
+}
