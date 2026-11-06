@@ -46,6 +46,7 @@ def code_identity():
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
         'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs',
         'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs',
+        'tests/browser/fixtures/path-viewports.mjs',
         'tests/path_start_release_source.py', 'tests/path_start_release_inputs.py',
         'tests/browser/fixtures/path-start-release.json']
     return {'sha': git('rev-parse', 'HEAD'), 'branch': git('branch', '--show-current'),

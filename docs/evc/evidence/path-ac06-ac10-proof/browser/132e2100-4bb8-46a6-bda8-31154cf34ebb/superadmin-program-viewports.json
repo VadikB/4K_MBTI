@@ -1,0 +1,130 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 202,
+          "y": 471.984375,
+          "width": 906.484375,
+          "height": 57
+        },
+        "enabled": true
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 1124.484375,
+          "y": 481.984375,
+          "width": 113.515625,
+          "height": 36
+        },
+        "enabled": true
+      }
+    ],
+    "document": {
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "visibleTextLength": 3083
+    },
+    "screenshot": "superadmin-program-1440.png"
+  },
+  {
+    "width": 320,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 50,
+          "y": 471.484375,
+          "width": 220,
+          "height": 57
+        },
+        "enabled": true
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 50,
+          "y": 482.484375,
+          "width": 220,
+          "height": 36
+        },
+        "enabled": true
+      }
+    ],
+    "document": {
+      "viewport": 320,
+      "scrollWidth": 320,
+      "visibleTextLength": 3041
+    },
+    "screenshot": "superadmin-program-320.png"
+  },
+  {
+    "width": 390,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 50,
+          "y": 471.890625,
+          "width": 290,
+          "height": 57
+        },
+        "enabled": true
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 50,
+          "y": 481.890625,
+          "width": 290,
+          "height": 36
+        },
+        "enabled": true
+      }
+    ],
+    "document": {
+      "viewport": 390,
+      "scrollWidth": 390,
+      "visibleTextLength": 3041
+    },
+    "screenshot": "superadmin-program-390.png"
+  },
+  {
+    "width": 768,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 82,
+          "y": 471.6875,
+          "width": 604,
+          "height": 57
+        },
+        "enabled": true
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 82,
+          "y": 481.6875,
+          "width": 604,
+          "height": 36
+        },
+        "enabled": true
+      }
+    ],
+    "document": {
+      "viewport": 768,
+      "scrollWidth": 768,
+      "visibleTextLength": 3041
+    },
+    "screenshot": "superadmin-program-768.png"
+  }
+]

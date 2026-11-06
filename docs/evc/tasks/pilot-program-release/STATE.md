@@ -1,5 +1,61 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- CI fix source `db79007c4ab13780591f027ae4f38c0cc453c89d`: backend922/HTTP108
+  PASS по тем же Python/test bytes,35 runner/release/CI повторены на SHA PASS;
+  новый CHECK355/immutable134/negative/shallow2 PASS. Финальная дельта только
+  docs/evidence, активен push этого final head и новый mandatory CI. Старый
+  full-verification1cd (integration+5 browser lanes) PASS, pytest1cd FAIL —
+  сохранённая история, не основание принять новый head без CI. Human review
+  NOT_DONE; main/последнее test3f42bba/2.0.69, merge/deploy/AC18 не разрешены.
+
+- PR175 Ready создан для1cd972f/2.0.70. Первый mandatory pytest FAIL920/1:
+  новый hash unit ошибочно требовал origin/main в shallow CI checkout.
+  Исправление только unit fixture +fail-closed regression,35 targeted и shallow2
+  PASS, before1 FAIL; raw CI и оба отрицательных probe сохранены в отдельном
+  path-harness-release-2070-ci. Browser/runner/API/PG bytes прежние4510aa4.
+  Старые manifests355/134 immutable; новый CHECK явно проверяет один unit delta.
+  Активно: source commit, полный backend/HTTP, push и новый mandatory CI exact
+  head/base; human review NOT_DONE. Main/последнее test3f42bba/2.0.69.
+  Без нового bump/merge/deploy/программы/рабочей БД/paid AC18; PREP UNKNOWN отдельно.
+
+- Активен [PATH-HARNESS-R1](../path-harness-release-2070.md): владелец отдельно
+  подтвердил2.0.70 PATCH →bump/push/PR/mandatory CI/human review. Merge/deploy,
+  публикация/активация программы, рабочая БД и paid AC18 не разрешены.
+  Fresh main/base3f42bba/2.0.69, исходный handoff2fa1ed6/пакет сохранены;
+  release-ветка `codex/path-harness-2070`, source4510aa4. Backend921/HTTP108/
+  frontend145/child PG18 наc972a88 применимы по неизменным bytes;5 browser и34
+  runner/release/CI PASS на4510aa4. Два новых collector сбоя сохранены как
+  отрицательные и исправлены без изменения продукта/приёмки; три DOM регрессии.
+  [Отчёт](../../reports/path-harness-release-2070.md),
+  [первичное evidence](../../evidence/path-harness-release-2070/README.md),
+  offline CHECK134+355 hashes и исходный CHECK PASS. Все7 marker-owned runs
+  экспортированы до cleanup; container ID/label/0 DB/0 connections подтверждены,
+  собственный container удалён без FORCE. Чужие worktrees/3 docs сохранены.
+  Активны commit/push/Ready PR/CI; review точного нового head NOT_DONE, deploy
+  NOT_RUN. Main и последнее подтверждённое test3f42bba/2.0.69. AUTH/R10 закрыт
+  PR174; PREP-DIAG-01 UNKNOWN отдельно; [AC18](../path-ac18-final-plan.md) NOT_RUN.
+  Нижние «активен», запреты и release WAITING — состояние предыдущих commits,
+  не текущий допуск. Exact head/CI передаются в PR без status-only смены SHA.
+
+- Активен [PATH-AC06/07/09/10](../path-ac06-ac10-proof.md): прямое разрешение владельца
+  на локальные free HTTP/real PostgreSQL проверки и подтверждённые fixes. Fresh
+  main/origin-main `3f42bba` /2.0.69; AUTH/R10 закрыт PR174, не новая release-задача.
+  Отдельный worktree/ветка `codex/path-ac06-ac10-proof`; чужие изменения сохранены.
+  Ни push/PR/bump/merge/deploy, ни рабочая БД/публикация/письма/LLM не разрешены.
+  AC18 только план к отдельному разрешению; PREP-DIAG-01 исторический UNKNOWN.
+  Старые release WAITING ниже — история, не нынешнее состояние 2.0.69.
+  Source candidate `2a868e5f909b0493e1e3b936e5407b07c73e811a` локальный:18 actual
+  HTTP/PG checks и31 event/25 no-write,921 backend/108 HTTP/240 integration/
+  145 frontend и2 free browser PASS. Api/web/предметные источники без diff;
+  только harness/regressions/read-only viewport collector. [Отчёт](../../reports/path-ac06-ac10-proof.md),
+  [AC18 plan](../path-ac18-final-plan.md) NOT_RUN; ready не значит разрешённый run.
+  Финальный handoff добавляет только docs/evidence; CI нового кандидата NOT_RUN.
+  Повтор на source SHA:18 child checks/2 browser/921 backend/108 HTTP PASS;
+  offline CHECK31/25/20 и27 links PASS. Собственный контейнер удалён штатно после
+  export;0 owned DB/connections, working DB untouched. Fresh main снова3f42bba.
+  Следующий шаг владельца — отдельный выпуск harness, не повтор AUTH/R10;
+  окончательный real-provider AC18 только после выпуска и отдельного разрешения.
+
 - Разрешён [PATH-FEEDBACK-R1](../path-feedback-release-2069.md): владелец подтвердил
   2.0.69 PATCH → push/Ready PR/mandatory CI/human review, без merge/deploy/БД/LLM/
   программы. Отдельная release-ветка `codex/path-feedback-2069` отc59b024; исходная

@@ -1,0 +1,6 @@
+{
+  "step": "explicit_start_and_first_as",
+  "expected": "Согласованный шаг завершён штатно",
+  "actual": "expect(locator).toBeInViewport() failed\n\nLocator:  locator('#interview-submit-button')\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toBeInViewport\" locator('#interview-submit-button') with timeout 5000ms\n  - waiting for locator('#interview-submit-button')\n    13 × locator resolved to <button type=\"button\" class=\"primary-button\" id=\"interview-submit-button\">…</button>\n       - unexpected value \"viewport ratio 0\"\n",
+  "classification": "diagnostic_assertion_or_environment_failure"
+}

@@ -1,0 +1,854 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 202,
+          "y": 471.984375,
+          "width": 906.484375,
+          "height": 57
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "SELECT",
+            "id": "",
+            "position": "static",
+            "overflowY": "clip",
+            "y": 471.984375,
+            "height": 57,
+            "scrollTop": 0,
+            "clientHeight": 55,
+            "scrollHeight": 55
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 447.984375,
+            "height": 81,
+            "scrollTop": 0,
+            "clientHeight": 81,
+            "scrollHeight": 81
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 447.984375,
+            "height": 153,
+            "scrollTop": 0,
+            "clientHeight": 153,
+            "scrollHeight": 153
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 303.484375,
+            "height": 3391.609375,
+            "scrollTop": 0,
+            "clientHeight": 3390,
+            "scrollHeight": 3390
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 192.484375,
+            "height": 3502.609375,
+            "scrollTop": 0,
+            "clientHeight": 3503,
+            "scrollHeight": 3503
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -16.8125,
+            "height": 3744.90625,
+            "scrollTop": 0,
+            "clientHeight": 3743,
+            "scrollHeight": 3743
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -477,
+            "height": 4229.09375,
+            "scrollTop": 0,
+            "clientHeight": 4229,
+            "scrollHeight": 4229
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -557,
+            "height": 4309.09375,
+            "scrollTop": 0,
+            "clientHeight": 4309,
+            "scrollHeight": 4309
+          }
+        ]
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 1124.484375,
+          "y": 492.984375,
+          "width": 113.515625,
+          "height": 36
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 492.984375,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 447.984375,
+            "height": 153,
+            "scrollTop": 0,
+            "clientHeight": 153,
+            "scrollHeight": 153
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 303.484375,
+            "height": 3391.609375,
+            "scrollTop": 0,
+            "clientHeight": 3390,
+            "scrollHeight": 3390
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 192.484375,
+            "height": 3502.609375,
+            "scrollTop": 0,
+            "clientHeight": 3503,
+            "scrollHeight": 3503
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -16.8125,
+            "height": 3744.90625,
+            "scrollTop": 0,
+            "clientHeight": 3743,
+            "scrollHeight": 3743
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -477,
+            "height": 4229.09375,
+            "scrollTop": 0,
+            "clientHeight": 4229,
+            "scrollHeight": 4229
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -557,
+            "height": 4309.09375,
+            "scrollTop": 0,
+            "clientHeight": 4309,
+            "scrollHeight": 4309
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -557,
+            "height": 4437.09375,
+            "scrollTop": 0,
+            "clientHeight": 4437,
+            "scrollHeight": 4437
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "visibleTextLength": 3083,
+      "visibility": "visible"
+    },
+    "screenshot": "superadmin-program-1440.png"
+  },
+  {
+    "width": 320,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 50,
+          "y": 943.484375,
+          "width": 220,
+          "height": 57
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "SELECT",
+            "id": "",
+            "position": "static",
+            "overflowY": "clip",
+            "y": 943.484375,
+            "height": 57,
+            "scrollTop": 0,
+            "clientHeight": 55,
+            "scrollHeight": 55
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 919.484375,
+            "height": 81,
+            "scrollTop": 0,
+            "clientHeight": 81,
+            "scrollHeight": 81
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 919.484375,
+            "height": 229,
+            "scrollTop": 0,
+            "clientHeight": 229,
+            "scrollHeight": 229
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 593.484375,
+            "height": 6935.984375,
+            "scrollTop": 0,
+            "clientHeight": 6934,
+            "scrollHeight": 6934
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 437.484375,
+            "height": 7091.984375,
+            "scrollTop": 0,
+            "clientHeight": 7092,
+            "scrollHeight": 7092
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 215.390625,
+            "height": 7331.078125,
+            "scrollTop": 0,
+            "clientHeight": 7329,
+            "scrollHeight": 7329
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -468,
+            "height": 8030.46875,
+            "scrollTop": 0,
+            "clientHeight": 8030,
+            "scrollHeight": 8030
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -585,
+            "height": 8147.46875,
+            "scrollTop": 0,
+            "clientHeight": 8147,
+            "scrollHeight": 8147
+          }
+        ]
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 50,
+          "y": 482.484375,
+          "width": 220,
+          "height": 36
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 482.484375,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 385.484375,
+            "height": 229,
+            "scrollTop": 0,
+            "clientHeight": 229,
+            "scrollHeight": 229
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 59.484375,
+            "height": 6935.984375,
+            "scrollTop": 0,
+            "clientHeight": 6934,
+            "scrollHeight": 6934
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -96.515625,
+            "height": 7091.984375,
+            "scrollTop": 0,
+            "clientHeight": 7092,
+            "scrollHeight": 7092
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -318.609375,
+            "height": 7331.078125,
+            "scrollTop": 0,
+            "clientHeight": 7329,
+            "scrollHeight": 7329
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1002,
+            "height": 8030.46875,
+            "scrollTop": 0,
+            "clientHeight": 8030,
+            "scrollHeight": 8030
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 8147.46875,
+            "scrollTop": 0,
+            "clientHeight": 8147,
+            "scrollHeight": 8147
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 8319.46875,
+            "scrollTop": 0,
+            "clientHeight": 8319,
+            "scrollHeight": 8319
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 320,
+      "scrollWidth": 320,
+      "visibleTextLength": 3041,
+      "visibility": "visible"
+    },
+    "screenshot": "superadmin-program-320.png"
+  },
+  {
+    "width": 390,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 50,
+          "y": 309.890625,
+          "width": 290,
+          "height": 57
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "SELECT",
+            "id": "",
+            "position": "static",
+            "overflowY": "clip",
+            "y": 309.890625,
+            "height": 57,
+            "scrollTop": 0,
+            "clientHeight": 55,
+            "scrollHeight": 55
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 285.890625,
+            "height": 81,
+            "scrollTop": 0,
+            "clientHeight": 81,
+            "scrollHeight": 81
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 285.890625,
+            "height": 229,
+            "scrollTop": 0,
+            "clientHeight": 229,
+            "scrollHeight": 229
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -40.109375,
+            "height": 6513.390625,
+            "scrollTop": 0,
+            "clientHeight": 6511,
+            "scrollHeight": 6511
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -175.109375,
+            "height": 6648.390625,
+            "scrollTop": 0,
+            "clientHeight": 6648,
+            "scrollHeight": 6648
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -368.40625,
+            "height": 6858.6875,
+            "scrollTop": 0,
+            "clientHeight": 6857,
+            "scrollHeight": 6857
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1002,
+            "height": 7508.28125,
+            "scrollTop": 0,
+            "clientHeight": 7508,
+            "scrollHeight": 7508
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 7625.28125,
+            "scrollTop": 0,
+            "clientHeight": 7625,
+            "scrollHeight": 7625
+          }
+        ]
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 50,
+          "y": 382.890625,
+          "width": 290,
+          "height": 36
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 382.890625,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 285.890625,
+            "height": 229,
+            "scrollTop": 0,
+            "clientHeight": 229,
+            "scrollHeight": 229
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -40.109375,
+            "height": 6513.390625,
+            "scrollTop": 0,
+            "clientHeight": 6511,
+            "scrollHeight": 6511
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -175.109375,
+            "height": 6648.390625,
+            "scrollTop": 0,
+            "clientHeight": 6648,
+            "scrollHeight": 6648
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -368.40625,
+            "height": 6858.6875,
+            "scrollTop": 0,
+            "clientHeight": 6857,
+            "scrollHeight": 6857
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1002,
+            "height": 7508.28125,
+            "scrollTop": 0,
+            "clientHeight": 7508,
+            "scrollHeight": 7508
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 7625.28125,
+            "scrollTop": 0,
+            "clientHeight": 7625,
+            "scrollHeight": 7625
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 7781.28125,
+            "scrollTop": 0,
+            "clientHeight": 7781,
+            "scrollHeight": 7781
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 390,
+      "scrollWidth": 390,
+      "visibleTextLength": 3041,
+      "visibility": "visible"
+    },
+    "screenshot": "superadmin-program-390.png"
+  },
+  {
+    "width": 768,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "program",
+        "box": {
+          "x": 82,
+          "y": 184.6875,
+          "width": 604,
+          "height": 57
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "SELECT",
+            "id": "",
+            "position": "static",
+            "overflowY": "clip",
+            "y": 184.6875,
+            "height": 57,
+            "scrollTop": 0,
+            "clientHeight": 55,
+            "scrollHeight": 55
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 160.6875,
+            "height": 81,
+            "scrollTop": 0,
+            "clientHeight": 81,
+            "scrollHeight": 81
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 160.6875,
+            "height": 205,
+            "scrollTop": 0,
+            "clientHeight": 205,
+            "scrollHeight": 205
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -63.8125,
+            "height": 5198.890625,
+            "scrollTop": 0,
+            "clientHeight": 5197,
+            "scrollHeight": 5197
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -174.8125,
+            "height": 5309.890625,
+            "scrollTop": 0,
+            "clientHeight": 5310,
+            "scrollHeight": 5310
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -384.109375,
+            "height": 5552.1875,
+            "scrollTop": 0,
+            "clientHeight": 5550,
+            "scrollHeight": 5550
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1002,
+            "height": 6170.078125,
+            "scrollTop": 0,
+            "clientHeight": 6170,
+            "scrollHeight": 6170
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 6287.078125,
+            "scrollTop": 0,
+            "clientHeight": 6287,
+            "scrollHeight": 6287
+          }
+        ]
+      },
+      {
+        "name": "connect",
+        "box": {
+          "x": 82,
+          "y": 257.6875,
+          "width": 604,
+          "height": 36
+        },
+        "enabled": true,
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 257.6875,
+            "height": 36,
+            "scrollTop": 0,
+            "clientHeight": 34,
+            "scrollHeight": 34
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 160.6875,
+            "height": 205,
+            "scrollTop": 0,
+            "clientHeight": 205,
+            "scrollHeight": 205
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -63.8125,
+            "height": 5198.890625,
+            "scrollTop": 0,
+            "clientHeight": 5197,
+            "scrollHeight": 5197
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -174.8125,
+            "height": 5309.890625,
+            "scrollTop": 0,
+            "clientHeight": 5310,
+            "scrollHeight": 5310
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -384.109375,
+            "height": 5552.1875,
+            "scrollTop": 0,
+            "clientHeight": 5550,
+            "scrollHeight": 5550
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1002,
+            "height": 6170.078125,
+            "scrollTop": 0,
+            "clientHeight": 6170,
+            "scrollHeight": 6170
+          },
+          {
+            "tag": "SECTION",
+            "id": "admin-organizations-panel",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 6287.078125,
+            "scrollTop": 0,
+            "clientHeight": 6287,
+            "scrollHeight": 6287
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1119,
+            "height": 6415.078125,
+            "scrollTop": 0,
+            "clientHeight": 6415,
+            "scrollHeight": 6415
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 768,
+      "scrollWidth": 768,
+      "visibleTextLength": 3041,
+      "visibility": "visible"
+    },
+    "screenshot": "superadmin-program-768.png"
+  }
+]

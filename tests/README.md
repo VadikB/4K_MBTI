@@ -1,5 +1,31 @@
 # Тесты backend
 
+## Бесплатные AC06/AC07/AC09/AC10
+
+Новая собственная localhost PostgreSQL16, без `.env`, почты и LLM. Задать
+`STAND_ADMIN_URL` (maintenance `postgres`) и `TEST_DATABASE_URL` (другая изолированная
+test/pytest БД, не DB_NAME) только этого экземпляра. Команды из корня checkout:
+
+```sh
+PYTHON_DOTENV_DISABLED=1 PYTHONPATH=. .venv/bin/python -m pytest -q -s \
+  --run-integration tests/integration/test_path_admin_contract_owned_stand.py
+BROWSER_PYTHON=.venv/bin/python npx playwright test \
+  tests/browser/path-admin-contract.spec.mjs --workers=1
+```
+
+Wrapper создаёт новую marker-owned БД, выполняет существующий bootstrap/seed,
+запускает 18 actual HTTP/PG checks и сохраняет evidence **до** cleanup. Для выгрузки
+задать `PATH_ADMIN_EVIDENCE_DIRECTORY=/absolute/owned/evidence`.
+Browser имеет отдельные настоящие contexts/sessions и PostgreSQL; transport abort
+происходит только после `route.fetch()`/commit, fake success отсутствует.
+Его экспорт — `PATH_ADMIN_BROWSER_EVIDENCE=/absolute/owned/evidence` либо `.test-stand`.
+Ни Connection, ни успешные resolver/readiness/authorization не подменяются.
+E10.2 Case QA — **синтетическая техническая подстановка**, не настоящий human review
+и не допуск целевой пилотной программы. AS/LLM в этих admin checks не запускаются.
+Не прикладывать `state.json`, session cookies, generated passwords или auth trace.
+Отдельный PATH29 component-test с viewport collector остаётся component-only;
+его upstream plan fixture запрещён для real/full PATH.
+
 Постоянный синтетический контур «суперадмин → первый Case» и его текущие границы
 описаны в [`docs/evc/assessment-first-case-profile.md`](../docs/evc/assessment-first-case-profile.md).
 
