@@ -10,6 +10,7 @@ from Api.auth_service import normalize_email
 from Api.config import settings
 from Api.database import get_connection
 from Api.integration_identity_service import resolve_or_provision_participant
+from Api.assessment_role_profiles import load_published_role_profile
 
 
 router = APIRouter(prefix="/integration/v1", tags=["integration"])
@@ -36,6 +37,14 @@ class ParticipantIdentityRequest(BaseModel):
 class ParticipantIdentityResponse(BaseModel):
     agent4k_user_id: int
     status: Literal["existing", "provisioned"]
+
+
+class PublishedRoleProfileResponse(BaseModel):
+    id: int
+    code: str
+    version: int
+    methodology_version: str
+    checksum: str
 
 
 def _require_integration_token(authorization: str | None) -> None:
@@ -71,4 +80,27 @@ def resolve_participant_identity(
     return ParticipantIdentityResponse(
         agent4k_user_id=resolved.agent4k_user_id,
         status="provisioned" if resolved.created else "existing",
+    )
+
+
+@router.get(
+    "/role-profile-versions/{version_id}",
+    response_model=PublishedRoleProfileResponse,
+)
+def get_published_role_profile(
+    version_id: int,
+    authorization: str | None = Header(default=None),
+) -> PublishedRoleProfileResponse:
+    _require_integration_token(authorization)
+    try:
+        with get_connection() as connection:
+            role = load_published_role_profile(connection, version_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="Опубликованная версия роли не найдена.") from exc
+    return PublishedRoleProfileResponse(
+        id=int(role["id"]),
+        code=str(role["code"]),
+        version=int(role["version"]),
+        methodology_version=str(role["definition"]["methodology_version"]),
+        checksum=str(role["checksum"]),
     )
