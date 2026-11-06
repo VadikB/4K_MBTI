@@ -92,6 +92,11 @@ Browser использует materializer на точных author examples и s
 Восемь кадров Case01/02 на4 ширинах просмотрены: конкретные вводная/материалы,
 читаемые переносы, без repr и horizontal overflow. Длинная desktop AS штатно
 имеет внутренний scroll; проверка последнего материала не заменена наличием в DOM.
+Контроль скриншотов выявил side effect fullPage capture для dvh-sized inner scroll:
+геометрия последнего материала PASS, но fullPage resize возвращал кадр к началу.
+Финальная test-only поправка снимает actual viewport и повторно проверяет геометрию
+после capture. Два затронутых browser tests повторены отдельно;120-suite и937
+backend применимы по неизменным product bytes, не объявлены повторёнными заново.
 
 ## Очистка, риски и откат
 

@@ -80,6 +80,9 @@ frontend145 PASS, lint/build PASS. Browser12 PASS на4 ширинах; расш
 (retry0/skip0), включая доступность последнего материала после2 polls. Первый119
 PASS/1 FAIL AC05 (UNKNOWN, не новый установленный дефект) сохранён; в повторе не
 воспроизведён.
+Test-only followup: actual-viewport вместо fullPage для кадра конца inner scroller,
+2 browser PASS, post-capture geometry PASS. Product bytes и прочие tests unchanged
+от рабочего36ef230a; их результаты переиспользуются. Точный handoff SHA в пакете.
 Один дополнительный unit ошибочно предполагал разрешённый organization slot в
 functional fixture: отказ правильный, тест исправлен на запрет undeclared slot.
 

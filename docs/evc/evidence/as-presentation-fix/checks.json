@@ -8,6 +8,7 @@
     "postgresql_http_component": {"passed": 6, "deselected": 10, "exit_code": 0, "readbacks_before_cleanup": 5, "primary": "primary/as-presentation-pg-primary.xml"},
     "frontend": {"passed": 145, "exit_code": 0, "primary": "primary/frontend.xml"},
     "browser": {"passed": 120, "retries": 0, "skipped": 0, "exit_code": 0, "primary": "primary/as-presentation-browser-final-suite.xml"},
+    "browser_capture_only_followup": {"passed": 2, "exit_code": 0, "primary": "primary/as-presentation-browser-viewport-only.xml", "reason": "Actual viewport screenshot avoids fullPage resize of dvh inner scroller; geometry checked again after capture. Product bytes unchanged from 36ef230a7205bbbab533b878a44d8d0a37dbfbde."},
     "lint": {"exit_code": 0, "primary": "primary/lint.json"},
     "build": {"exit_code": 0, "assets": 45, "repeated_build_same_bytes": true},
     "source_immutability": {"files": 22, "unchanged": true, "case_refs": 9},

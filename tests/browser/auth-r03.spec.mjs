@@ -133,8 +133,14 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
     await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeMaterialReads + 2);
     const lastMaterialGeometry = await viewportGeometry(lastMaterial);
     assertViewportGeometry(lastMaterialGeometry, 'last-material-after-poll');
-    await page.screenshot({ path: path.join(dir, 'last-material.png'), fullPage: true });
-    await fs.writeFile(path.join(dir, 'last-material-geometry.json'), JSON.stringify(lastMaterialGeometry, null, 2) + '\n');
+    // fullPage capture resizes the layout viewport and can reset a dvh-sized
+    // inner scroller. This evidence must show the actual reading viewport.
+    await page.screenshot({ path: path.join(dir, 'last-material.png'), fullPage: false });
+    const afterCapture = await viewportGeometry(lastMaterial);
+    assertViewportGeometry(afterCapture, 'last-material-after-viewport-capture');
+    await fs.writeFile(path.join(dir, 'last-material-geometry.json'), JSON.stringify({
+      ...afterCapture, screenshot_mode: 'viewport', material_text: await lastMaterial.innerText(),
+    }, null, 2) + '\n');
     await page.reload();
     await expect(situation).toHaveCount(1);
     await expect(situation).toContainText(payload.introduction);
