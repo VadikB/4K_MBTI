@@ -161,3 +161,59 @@ Fail-fast постоянного runner и его timeout cleanup в разре�
 кандидат версии, push/PR/CI/review, затем merge/test; платный AC18 — ещё отдельно
 на окончательном выпущенном SHA. Текущая локальная версия2.0.71 не является новым выпуском.
 Откат — адресный revert JS-правки и соответствующего rebuilt dist, без миграции данных.
+
+## Продолжение: согласованный кандидат 2.0.72
+
+После завершённой локальной передачи `78338568e117fd9003f3a82ff655b4708a3626f5`
+владелец отдельно ответил «да» на **2.0.72 PATCH: bump → push → PR → обязательный CI
+→ человеческое review**. Разрешены `version_bump/branch_push/pr`; `merge/deploy/
+artifact_publish=false`, новый платный AC18 запрещён до отдельного решения.
+Предыдущие разделы и `checks.json` — исторический snapshot локального шага без выпуска,
+а не текущее разрешение. Новый snapshot — [release-2072.json](../evidence/ac18-questionnaire-draft-fix/release-2072.json).
+
+Повторно прочитаны AGENTS/README, release-раздел CONTRIBUTING, workflow, matrix,
+recipe, review-checklist, PR template и release scripts; архитектурные источники и
+профиль повторно применены по неизменности, предметной нормы этот шаг не меняет.
+Все восемь стоп-категорий workflow — нет: предметный смысл, публичный контракт/PM,
+схема/миграция, источники, артефактный контур, чувствительные данные/права не меняются;
+откат определён; текущий release-кандидат прямо разрешён. Merge/deploy/AC18 остаются
+за границей. Человеческое code review этого нового кандидата ещё не выполнено.
+
+Fresh `origin/main=61f34aa2151a4f9364eac28bf33895d10f91d50b`, версия2.0.71.
+`npm run ready:prepare -- --candidate 2.0.72` → PASS, exit0; повтор → PASS без второго bump.
+Изменены только четыре release metadata (`pyproject.toml`, `uv.lock`, `web/js/config.js`,
+`web/index.html`) и rebuilt dist. Все49 metadata/assets после повторной сборки
+byte-identical испытанным. Runtime и tests относительно78338568, кроме release config,
+не менялись; product JS SHA256 прежний23a8ef4a… . Полный head указывается в PR после
+commit: этот отчёт не пытается записать hash содержащего его самого commit.
+
+Новые проверки кандидата:
+
+- `npm run lint:js` → PASS, exit0.
+- `node --test tests/frontend/*.test.mjs` →145 PASS, exit0.
+- `PYTHON_DOTENV_DISABLED=1 /Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q tests/unit/test_release_version.py tests/unit/test_ci_verification_workflows.py tests/unit/test_path_start_release_source.py` →64 PASS,8.37s, exit0.
+- `playwright test tests/browser/questionnaire-draft-guards.spec.mjs tests/browser/auth-r03.spec.mjs --grep 'Q-DRAFT|REL-VERSION-01|E01 renders' --workers=1` через абсолютный root binary →9 PASS,16.5s, retry0/skip0. Это synthetic HTTP через реальный dist2.0.72, не новая PostgreSQL/PATH-проверка.
+- Первый browser setup остановился до assertions на sandbox `listen EPERM` localhost18764/18768:2 failed setup/7 NOT_RUN. Повтор выполнен с узким разрешением localhost, без изменения кода или тестов. Ограничение инфраструктуры не выдано за product FAIL или скрытый retry.
+- `node tests/questionnaire_draft_fix_verify.mjs --source-ref df9bdf8b3a3f86fb77ba4d295da292c5ace9d233` →PASS36 core files/4 actual HTTP/PG,140 browser results,6 cleanup.
+- `node tests/questionnaire_draft_diagnostic_verify.mjs --source-ref d8ecd81d27a0633cbdc5f4d707804c32900e99d5` →PASS43 integrity; исторические3 product FAIL/1 control PASS не переименованы.
+- `git diff --check` и проверка локальных ссылок →PASS.
+
+Прежние937 backend/108 HTTP/140 browser (включая4 новых actual PostgreSQL cases
+без refill и2 supporting actual checks) **переиспользованы**, не новый release run:
+behavioral source и tests совпадают с implementation df9bdf8b; delta к handoff —
+metadata/build/docs. Новые9 scenarios проверяют rebuilt entry, номер версии,
+pristine/live draft и user/org/assessment/denied scope. Mandatory CI точного нового
+head/base всё равно обязателен, включая integration и browser; старый CI не заменяет его.
+
+Новой БД, обращений к рабочей БД/.env, реальной почты, provider/LLM —0.
+Последнее подтверждённое развёртывание test остаётся61f34aa/2.0.71; свежий server readback
+этим шагом не заявляется. Программа/подключения, sources/admission/repair и runner
+не меняются. Синтетический QA не становится human/methodological approval.
+PREP-DIAG-01 и timeout cleanup отдельно UNKNOWN; причинная идентичность Q-DRAFT-01
+с историческим AC18 — NOT_PROVEN. Новый AC18 NOT_RUN, baseline не назначен.
+
+Активный шаг: commit/push согласованного кандидата, Ready PR и ожидание обязательных
+frontend/pytest/full-verification. Результат CI и точный head сохраняются в PR без
+status-only commit, который сделал бы доказательства устаревшими. Следующий gate —
+человеческое review именно этого head. Merge/test и платный final-SHA AC18 требуют
+отдельных разрешений. Откат: revert своих commits через обычный PR/build, без миграции.

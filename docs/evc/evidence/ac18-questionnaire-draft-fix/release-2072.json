@@ -1,0 +1,250 @@
+{
+  "scope": "RELEASE_CANDIDATE_NOT_DEPLOYMENT_NOT_AC18",
+  "release": "2.0.72",
+  "release_type": "patch",
+  "source_handoff_commit": "78338568e117fd9003f3a82ff655b4708a3626f5",
+  "implementation_commit": "df9bdf8b3a3f86fb77ba4d295da292c5ace9d233",
+  "origin_main": "61f34aa2151a4f9364eac28bf33895d10f91d50b",
+  "owner_decision": "Владелец ответил «да» на 2.0.72: bump → push → PR → обязательный CI → человеческое review; merge/deploy и новый платный AC18 исключены.",
+  "authorized_release_flags": {
+    "branch_push": true,
+    "pr": true,
+    "version_bump": true,
+    "merge": false,
+    "deploy": false,
+    "artifact_publish": false
+  },
+  "completed_at_preparation": {
+    "version_bump": true,
+    "branch_push": false,
+    "pr": false,
+    "merge": false,
+    "deploy": false
+  },
+  "product_js_sha256": "23a8ef4a4db6d4496df4cbe19fb8372a193e8ded07980a9e2c1253249a12081d",
+  "release_delta_from_handoff": {
+    "non_dist_paths": [
+      "pyproject.toml",
+      "uv.lock",
+      "web/index.html",
+      "web/js/config.js"
+    ],
+    "runtime_and_tests_unchanged_except_release_config": true
+  },
+  "checks": {
+    "ready_prepare": {
+      "command": "npm run ready:prepare -- --candidate 2.0.72",
+      "status": "PASS",
+      "exit_code": 0,
+      "repeat_pass": true,
+      "metadata_and_dist_files": 49,
+      "repeat_hashes_equal": true
+    },
+    "lint": {
+      "command": "npm run lint:js",
+      "status": "PASS",
+      "exit_code": 0
+    },
+    "frontend": {
+      "command": "node --test tests/frontend/*.test.mjs",
+      "status": "PASS",
+      "exit_code": 0,
+      "passed": 145
+    },
+    "targeted_python": {
+      "command": "PYTHON_DOTENV_DISABLED=1 /Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q tests/unit/test_release_version.py tests/unit/test_ci_verification_workflows.py tests/unit/test_path_start_release_source.py",
+      "status": "PASS",
+      "exit_code": 0,
+      "passed": 64,
+      "duration_seconds": 8.37
+    },
+    "candidate_browser": {
+      "command": "/Users/vadim_bogachev/Developer/4K/node_modules/.bin/playwright test tests/browser/questionnaire-draft-guards.spec.mjs tests/browser/auth-r03.spec.mjs --grep 'Q-DRAFT|REL-VERSION-01|E01 renders' --workers=1",
+      "status": "PASS",
+      "exit_code": 0,
+      "scope": "SYNTHETIC_HTTP_NOT_PG_NOT_PATH",
+      "stats": {
+        "startTime": "2026-11-06T20:58:31.582Z",
+        "duration": 16525.895999999997,
+        "expected": 9,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "file": "auth-r03.spec.mjs",
+          "title": "REL-VERSION-01 shows one build number on auth and common areas, with a safe fallback",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1074
+        },
+        {
+          "file": "auth-r03.spec.mjs",
+          "title": "E01 renders accepted active assessment copy, colors and AS-scoped draft",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1954
+        },
+        {
+          "file": "questionnaire-draft-guards.spec.mjs",
+          "title": "Q-DRAFT pristine initial form does not mask a confirmed server revision",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1413
+        },
+        {
+          "file": "questionnaire-draft-guards.spec.mjs",
+          "title": "Q-DRAFT live input wins over a delayed confirmed revision in the same scope",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1987
+        },
+        {
+          "file": "questionnaire-draft-guards.spec.mjs",
+          "title": "Q-DRAFT pending read of organization A cannot overwrite organization B draft",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1216
+        },
+        {
+          "file": "questionnaire-draft-guards.spec.mjs",
+          "title": "Q-DRAFT pending read cannot clone a draft into a different connected assessment",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1273
+        },
+        {
+          "file": "questionnaire-draft-guards.spec.mjs",
+          "title": "Q-DRAFT old account read cannot erase or restore drafts after re-login",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1692
+        },
+        {
+          "file": "questionnaire-draft-guards.spec.mjs",
+          "title": "Q-DRAFT retry 503 retains live edits",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1364
+        },
+        {
+          "file": "questionnaire-draft-guards.spec.mjs",
+          "title": "Q-DRAFT retry 403 clears denied scope",
+          "expected_status": "passed",
+          "status": "passed",
+          "attempts": 1,
+          "duration_ms": 1371
+        }
+      ]
+    },
+    "initial_browser_sandbox_attempt": {
+      "status": "BLOCKED_INFRASTRUCTURE",
+      "exit_code": 1,
+      "failed_setup": 2,
+      "not_run": 7,
+      "safe_reason": "listen EPERM for localhost18764/18768 before test assertions; rerun with scoped sandbox permission, no code/test changes"
+    },
+    "reused_backend": {
+      "source_commit": "df9bdf8b3a3f86fb77ba4d295da292c5ace9d233",
+      "status": "APPLICABLE_NOT_NEW_RUN",
+      "passed": 937,
+      "http_passed": 108
+    },
+    "reused_browser": {
+      "source_commit": "df9bdf8b3a3f86fb77ba4d295da292c5ace9d233",
+      "status": "APPLICABLE_NOT_NEW_RUN",
+      "passed": 140,
+      "actual_http_pg_new": 4,
+      "supporting_actual_checks": 2,
+      "cleanup_pass": 6,
+      "refill": 0
+    },
+    "fix_offline_verifier": {
+      "command": "node tests/questionnaire_draft_fix_verify.mjs --source-ref df9bdf8b3a3f86fb77ba4d295da292c5ace9d233",
+      "status": "PASS",
+      "primary_files": 36,
+      "tree_sha256": "93e2dc1322537fd5c48df8d3e697592737d149f6c433d879ad594a7abfc82d0d"
+    },
+    "historical_offline_verifier": {
+      "command": "node tests/questionnaire_draft_diagnostic_verify.mjs --source-ref d8ecd81d27a0633cbdc5f4d707804c32900e99d5",
+      "status": "PASS_INTEGRITY_NOT_PRODUCT_PASS",
+      "primary_files": 43,
+      "tree_sha256": "f0d742e438b7c642237c25675ec1e523ef3d6c3c2736b7e616fe7da9d480661c",
+      "historical_defect_reproductions": 3,
+      "control_pass": 1
+    }
+  },
+  "release_file_sha256": {
+    "pyproject.toml": "c0fd61f8e69249e12deb7f500f6d450580d68207f1489dd274aa4a38ec630b3d",
+    "uv.lock": "66ad4756890a6fff2f8c9c1cf95f748e5a00ce1909412c91c72bdd9b32b4412b",
+    "web/js/config.js": "51f64d529c351b6f394a9fc6e56d7b969226803565ee8b8d68de1632f05edc97",
+    "web/index.html": "13a5ae5a1e48a36a16dd4b152eb68dca51e0cbb6d6c9a858a169aee668b7ede5",
+    "web/dist/admin-dashboard-TV43FMCK.js": "e6d0b4bc087a8b3f3d3344743bce35aad49658eee90549fb4f78819247997f91",
+    "web/dist/admin-methodology-XWB5E3PD.js": "e9cfa4a983c1fe6c75a1e83cd09913e4fbb266348b307467c61fba210a07284d",
+    "web/dist/admin-organizations-4KSL5J5H.js": "e291ad75e21bd2ae9728afc51ea1956889ae3164b73e5f6c2e837992bcc41806",
+    "web/dist/admin-prompt-lab-3D5W2OH3.js": "2747634b9f6ad53f4f24492efdb82259d3eafaa5e67af4547e6324303237252f",
+    "web/dist/admin-regression-tests-KXESJWRL.js": "a0f3d46bff21024d52d70b636721f3d6cf75bb6809829871d8744c0a399c3c93",
+    "web/dist/admin-report-detail-YYCBBFIY.js": "a91a9d4ff3b7d3c3628bc0cf72616941e5a0c11a261e46d4ab7607dcd9cd24f2",
+    "web/dist/admin-reports-DU7YBHAG.js": "77fe410e12ec975f9acd78638ff92719f260b1790aa6edcd8a1db04ee350049e",
+    "web/dist/ai-welcome-FLUEPA7C.js": "7572d20f6eb7a3019e058d481dad286c074649691bb1fc99106464fe616239d4",
+    "web/dist/assessment-WNILNNNQ.js": "8ec4aa80fb32343cfdbda8256d94b214e073caa587894e580657ae3e7e8b2915",
+    "web/dist/chat-EEGK7QI3.js": "b25e653eb2e16b5f63e5f0f42516997a9947adf46d8586f7d3b53f57a8d5e7f6",
+    "web/dist/chat-I7TLEBUV.js": "61ee1dd3b21d2d80e8e9b1d598b2b28ed1ea13d06cc3ee1ebcfb8bb4af3a4de3",
+    "web/dist/chunk-54MT6INF.js": "2694e22ab2ea7629a605366ee870e9dd626fea902872a1e45e20a86549c63456",
+    "web/dist/chunk-5XKLRMKF.js": "6a955f27cdce5b263bfe3e055f8ddcb71037401db14bbc85dc1d96ebfcc34938",
+    "web/dist/chunk-66QHEPKU.js": "b4c95f08cd78e843c9ffc2052ccb017037a69d522e4d13b3927057c6de1d3bb3",
+    "web/dist/chunk-EKRUZIR5.js": "f8c1403cf00815cc45ee74d3149403b420090c20df4c07cd85c68484f1d0ee19",
+    "web/dist/chunk-GAT6J624.js": "f9a384e13b6818905455cbd9aa83ebbc63a1192c8c579719b517ed133fd0d930",
+    "web/dist/chunk-HAB5VABG.js": "34a33c6369bd3cecc6228cf9de94c42245b611eaca7532bf98ef9cfd8b0f4a39",
+    "web/dist/chunk-HTY3YQPL.js": "86dcc9cc9f34baaaeccd9a4839d3d9b5a470539f03cfcdb6c2d3cc89f979acca",
+    "web/dist/chunk-JETT3GCC.js": "52da2c59ef09b3c3a08ece1851ad8fdb1667aa45c2f1d00a3ac55a5c02f671b2",
+    "web/dist/chunk-JNXYSQRG.js": "2b4d1d7e5010b9e6e9a34abc1dd7c4fa7b16d7e17ad6e0b807b0f9b8392f289b",
+    "web/dist/chunk-KX44Y7RV.js": "53736accd0b107db62b05460626b4c86f78b8189c00f91230cc2be032666243c",
+    "web/dist/chunk-LWKUZKHU.js": "69f417f4487f2dda917b6784a81574bbfa5c1c98905de058b9550c922a9298d0",
+    "web/dist/chunk-N76BSRWO.js": "ac012e34e50fb142b44b5d2ce4b57cca095e9121d18dd562ec41cfb41ef72bfe",
+    "web/dist/chunk-Q77DUWTI.js": "b037330b169d27773be6fad525e259f2fcba11fe3d6e7c3aa1f05f44b4d64601",
+    "web/dist/chunk-T3ZMB5EY.js": "ece446a05689182e54dcbfd776f024acc5b2f29097358be0f7ac07b9a6a6e707",
+    "web/dist/chunk-UHRTJPW5.js": "415fcbcef1926e7564cf1745142aab1f575ea5a9bfd8e4f68b66706aeb546514",
+    "web/dist/chunk-WCUYQU4E.js": "75637555320460bd876851df83d24c489567053f8ab7cfb35e25271da4093483",
+    "web/dist/chunk-XSMLWBDP.js": "19d12a50f359d40b8d508d68ea72fd862c9adbd179fc26812e23a7611a04709b",
+    "web/dist/chunk-ZGVPJLYQ.js": "8704af9e1885c4e22a337c5d35cd274eaffe7c02add6aa73f5fc7fc215815d42",
+    "web/dist/dashboard-2GTN5SJZ.js": "3c61ffbbd0f8c1f1a46a1db658a6fa79a75a189cd8d4f85515636560a51db48e",
+    "web/dist/dashboard-JC5JM5G7.js": "1e536999e3e9c9b75293d2bcc75dd2d3ff0cdc3f16981b8bd245c9c27cfb007f",
+    "web/dist/interview-6JMZD4ZZ.js": "07a696e9e6ae13cc1fdf343a968db9df8ec050cc4642bd60e22024b242fd196e",
+    "web/dist/main.js": "cacc3aa8ea01ed3b3e14822f021e2718b58b2488eb2acfd832f22b82b4ea095d",
+    "web/dist/onboarding-MY5A42PU.js": "339901b6869ddf9d08d5058b41dfb329f99674a7265b175d5f855110dbe2ddd0",
+    "web/dist/onboarding-VMKY64EQ.js": "bf81d40d6f0c04d2391ad5529b45f41a08d5583668d7ff53be4b366a9cc327ff",
+    "web/dist/organizations-NXXSETCR.js": "9c7c2a0b03dd64278d0abcc5d1c4b0a2a00aa8ced9153d2701c98109e725f75f",
+    "web/dist/processing-G2PFQYFJ.js": "6f67c0f9e489cb8b119c1972a6220047ee6c6b48db11fbaff6ec9a7ad2edb94d",
+    "web/dist/profile-HSMRVLT4.js": "6762ae6ec02d217bea4862da6ad4c61e3695f104b877f42201ca905d3ef41241",
+    "web/dist/profile-recovery-KTFG3WLH.js": "e1316bb7bed9218f5492273ec2193d88ea787f88f0f87ed1b5a14f41ecc288d4",
+    "web/dist/report-BXV7IBX7.js": "a9ce21082b015a84d79cbbdae2bea37362bbdd97c9c3f637c21553c5c34eff30",
+    "web/dist/report-J7UVD2RQ.js": "f347182306b81a0928fac35de8cf18825aba6c0856444d74822c054566bafc6b",
+    "web/dist/reports-YB5LLAUA.js": "aaa8e3be7450ab5d044fcac4d3bffa4928ce7909dc915233e2f83cbd2c1c2c4e",
+    "web/dist/router-AMZIPOTE.js": "ed2cf568ba5fae2dc626e4bd2f13ececef17420c51176ac54d1ad8f6219501ac",
+    "web/dist/screen-loaders-RY3ZVAUO.js": "ee43be918c479bb7c7abbba5180039faf21846860caee80baf7a8cd232d15bb9",
+    "web/dist/session-7VWKYGTA.js": "05be5631ee7fd70bebd07bafd0f45397d131742b336c0cee00c511cfc7ab3981"
+  },
+  "ci": "PENDING_PR_NOT_RUN_AT_PREPARATION",
+  "human_review": "NOT_DONE",
+  "deployment": "UNCHANGED_LAST_VERIFIED_2.0.71_61f34aa",
+  "new_database_created": false,
+  "working_database_access": false,
+  "provider_operations": 0,
+  "real_email_sends": 0,
+  "ac18": "NOT_RUN",
+  "historical_ac18_causality": "NOT_PROVEN",
+  "timeout_cleanup_cause": "UNKNOWN",
+  "prep_diag_01": "UNKNOWN",
+  "synthetic_fixture_is_human_or_methodological_approval": false,
+  "baseline_assigned": false
+}

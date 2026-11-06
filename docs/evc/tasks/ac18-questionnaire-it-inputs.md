@@ -182,3 +182,29 @@ ADM28/ИТ-анкета дают ещё2 owner cleanup. Все6 owned-БД/state
 требуют своих отдельных разрешений. Main/test61f34aa/2.0.71 не обновлялись.
 Fail-fast runner/timeout cleanup не включены; PREP-DIAG-01 и исторические root UNKNOWN
 не переписываются. Текущее состояние: `docs/evc/evidence/ac18-questionnaire-draft-fix/STATE.md`.
+
+## Согласованная передача кандидата 2.0.72
+
+Владелец отдельно ответил «да» на 2.0.72 PATCH: bump → push → PR → обязательный CI
+→ человеческое review. Это разрешает version_bump/branch_push/pr, но не merge,
+deploy, artifact_publish или новый платный AC18. Fresh base/main61f34aa/2.0.71;
+локальный handoff78338568 сохранён, чужая root branch и три untracked docs не затронуты.
+
+План: единый release preflight → проверка metadata/build и применимости прежних
+регрессий → один кандидат commit → push/Ready PR → обязательный CI → human review.
+Новый номер назначается только один раз. Все предметные/schema/security стоп-условия
+по-прежнему отсутствуют; расширение до main/test/LLM не выполняется.
+
+Preflight2.0.72 и повтор PASS;49 metadata/assets одинаковы. Runtime/tests от78338568,
+кроме release config, byte-identical. Новые проверки:145 frontend/64 targeted Python/
+9 synthetic HTTP browser, lint/diff-check/links PASS. Старые937 backend/108 HTTP/
+140 browser и actual owned-PG evidence переиспользованы явно по неизменности source;
+оба offline verifier PASS с точными исходными source-ref. Первый browser setup
+EPERM в sandbox отделён от успешного разрешённого localhost-прогона.
+
+Полная передача и ограничения — [отчёт](../reports/ac18-questionnaire-draft-fix.md#продолжение-согласованный-кандидат-2072),
+[release snapshot](../evidence/ac18-questionnaire-draft-fix/release-2072.json).
+Head/CI/принятие review записываются в PR, без status-only commits.
+Новая БД/working DB/email/provider0; main/test остаются61f34aa/2.0.71.
+Исторические UNKNOWN/NOT_PROVEN сохраняются. Следующий gate после CI — человеческое
+review точного head; merge/deploy и final AC18 — отдельные решения.
