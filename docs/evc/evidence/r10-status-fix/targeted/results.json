@@ -1,0 +1,472 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/program-connection-feedback.spec.mjs",
+      "--trace",
+      "retain-on-failure",
+      "--global-timeout",
+      "120000",
+      "--output",
+      ".test-stand/r10-fix-targeted"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 120000,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/r10-fix-targeted",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "program-connection-feedback.spec.mjs",
+      "file": "program-connection-feedback.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "R10-STATUS 200 confirmed survives completion and re-render",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real UI and render; no DB/provider or real program admission."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2270,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:09.313Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real UI and render; no DB/provider or real program admission."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-8f470f71aa3e395b8e33",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 92,
+          "column": 3
+        },
+        {
+          "title": "R10-STATUS 200 lost survives completion and re-render",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real UI and render; no DB/provider or real program admission."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1185,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:12.110Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real UI and render; no DB/provider or real program admission."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-ef7ea75b2d6db203138a",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 92,
+          "column": 3
+        },
+        {
+          "title": "R10-STATUS 503 confirmed survives completion and re-render",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real UI and render; no DB/provider or real program admission."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1106,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:13.312Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real UI and render; no DB/provider or real program admission."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-a706b47c75a17ef99b40",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 92,
+          "column": 3
+        },
+        {
+          "title": "R10-STATUS 503 lost survives completion and re-render",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real UI and render; no DB/provider or real program admission."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1041,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:14.432Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real UI and render; no DB/provider or real program admission."
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-b6eb427272afb0cd38ba",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 92,
+          "column": 3
+        },
+        {
+          "title": "R10-STATUS changing program clears the prior outcome without resurrection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1087,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:15.485Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-2be8d67c585ecf6d4df3",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 106,
+          "column": 1
+        },
+        {
+          "title": "R10-STATUS a new failed intent cannot revive success and its error survives render",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1048,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:16.587Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-6f0b283eb7302f652d09",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 115,
+          "column": 1
+        },
+        {
+          "title": "R10-STATUS same program in another organization never receives the old outcome",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 977,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:17.648Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-e8f0885cb6a9386b7d4f",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 126,
+          "column": 1
+        },
+        {
+          "title": "R10-STATUS logout and another account cannot restore the previous outcome",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1613,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:18.637Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-ddf481d515a9107b94e4",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 134,
+          "column": 1
+        },
+        {
+          "title": "R10-STATUS a late command cannot restore feedback after program selection changes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1210,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:20.263Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-bab8298a7fd29a701805",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 148,
+          "column": 1
+        },
+        {
+          "title": "R10-STATUS changed server program invalidates the saved outcome even with an old draft",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1223,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:09:21.489Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-175335a6114eb91b480c",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 161,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T06:09:08.542Z",
+    "duration": 14339.748,
+    "expected": 10,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,5 +1,16 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- [R10-STATUS-FIX](../r10-status-fix.md) локально завершён по допуску владельца:
+  base4f2e884, scoped in-memory outcome user/epoch/org/selected+connected program,
+  invalidation новых intent/selection/identity и позднего feedback. Exact PUT/GET,
+  operation_id/server admission не менялись. Before1 FAIL → targeted10 PASS,
+  frontend145/backend920/HTTP108/full browser129 PASS, lint/build45/idempotency PASS.
+  [Отчёт](../../reports/r10-status-fix.md), новый evidence отдельно; historical
+  manifests170/183/76 неизменны. Локальные UI/tests/dist/docs, версия2.0.68 без bump;
+  main/test последний946a46c, нового CI/PR/review/push/merge/deploy/БД/LLM нет.
+  Следующий gate — отдельный допуск release candidate/CI/review, пока закрыт.
+  Старые timeout UNKNOWN/auth114-1 NOT_ESTABLISHED/PREP UNKNOWN не закрываются fix.
+  Нижние FIX_NOT_AUTHORIZED/красный gate — сохранённая история прошлых commits.
 - Завершена [BROWSER-TIMEOUT-DIAG-01](../browser-timeout-diagnostic.md): current bf637af
   и comparison dea8c44 по6 PASS с traces; старые timeout сейчас не воспроизведены,
   root UNKNOWN. Уточнение первичного JSON: ADM full click757, followup fill754.

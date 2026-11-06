@@ -36,6 +36,8 @@ const questionnaireConfirmRequestsInFlight = new Set();
 const questionnaireLoadStates = new Map();
 const questionnaireLoadGenerations = new Map();
 const questionnaireConfirmOutcomes = new Map();
+let programConnectionOutcome = null;
+let programConnectionFeedbackGeneration = 0;
 let operationAnchor = null;
 let restoredManagementIdentity = null;
 let organizationsRequestGeneration = 0;
@@ -278,6 +280,8 @@ const clearAdminOrganizationsSessionState = () => {
   cancellationOperationIds.clear();
   cancellationRequestsInFlight.clear();
   programConnectionOperationIds.clear();
+  programConnectionOutcome = null;
+  programConnectionFeedbackGeneration += 1;
   unverifiedProgramConnections.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
@@ -300,6 +304,9 @@ window.addEventListener('agent4k:assessment-context-cleared', clearAdminOrganiza
 
 const clearInaccessibleOrganizationState = (organizations) => {
   const allowed = new Set(organizations.map((org) => organizationKey(org.id)));
+  if (programConnectionOutcome && !allowed.has(organizationKey(programConnectionOutcome.organizationId))) {
+    clearProgramConnectionFeedback();
+  }
   for (const drafts of [managementDrafts, selectedAssessmentRefs, questionnairePreviews, questionnaireRevisions,
     questionnairePreviewRequestGenerations]) {
     for (const key of drafts.keys()) {
@@ -363,34 +370,67 @@ const operationRoot = () => {
   return card?.querySelector(operationAnchor.selector) || card?.querySelector('.admin-questionnaire-confirmation') || null;
 };
 
-const setStatus = (message, tone = 'muted') => {
-  if (!adminOrganizationsStatus) {
-    return;
-  }
-  adminOrganizationsStatus.textContent = message || '';
-  adminOrganizationsStatus.classList.toggle('hidden', !message);
-  adminOrganizationsStatus.dataset.tone = tone;
-  let local = operationRoot()?.querySelector('[data-operation-status]');
-  if (!local && operationRoot()) {
+const setLocalOperationStatus = (root, message, tone) => {
+  let local = root?.querySelector('[data-operation-status]');
+  if (!local && root) {
     local = document.createElement('p');
     local.className = 'admin-organizations-status';
     local.dataset.operationStatus = '';
     local.setAttribute('aria-live', 'polite');
     local.setAttribute('role', 'status');
     local.tabIndex = -1;
-    operationRoot().append(local);
+    root.append(local);
   }
   if (local) {
     local.textContent = message || '';
     local.dataset.tone = tone;
     local.classList.toggle('hidden', !message);
   }
+  return local;
+};
+
+const setStatus = (message, tone = 'muted', root = operationRoot()) => {
+  if (!adminOrganizationsStatus) return;
+  adminOrganizationsStatus.textContent = message || '';
+  adminOrganizationsStatus.classList.toggle('hidden', !message);
+  adminOrganizationsStatus.dataset.tone = tone;
+  const local = setLocalOperationStatus(root, message, tone);
   adminOrganizationsStatus.classList.toggle('hidden', !message || Boolean(local));
   if (message && tone !== 'loading' && !adminOrganizationsPanel.classList.contains('hidden')) {
     const target = local || adminOrganizationsStatus;
     target.focus({ preventScroll: true });
     target.scrollIntoView({ block: 'nearest' });
   }
+};
+
+const programConnectionForm = (organizationId) => adminOrganizationsList?.querySelector(
+  '[data-organization-id="' + Number(organizationId) + '"] form[data-action="connect-assessment-program"]',
+);
+const connectedProgramId = (organizationId) => Number(state.adminOrganizations?.items
+  ?.find((org) => Number(org.id) === Number(organizationId))?.assessment_program?.program_definition_id || 0);
+const clearProgramConnectionFeedback = () => {
+  programConnectionFeedbackGeneration += 1;
+  if (programConnectionOutcome && adminOrganizationsStatus?.textContent === programConnectionOutcome.message) {
+    adminOrganizationsStatus.textContent = '';
+    adminOrganizationsStatus.classList.add('hidden');
+  }
+  programConnectionOutcome = null;
+  adminOrganizationsList?.querySelectorAll('form[data-action="connect-assessment-program"] [data-operation-status]')
+    .forEach((element) => element.remove());
+};
+const restoreProgramConnectionFeedback = () => {
+  const outcome = programConnectionOutcome;
+  if (!outcome) return;
+  const form = programConnectionForm(outcome.organizationId);
+  if (outcome.identityEpoch !== state.identityEpoch || outcome.identityKey !== currentIdentityKey() ||
+      Number(selectedOrganizationId) !== outcome.organizationId ||
+      Number(form?.elements.program_definition_id?.value) !== outcome.programDefinitionId ||
+      connectedProgramId(outcome.organizationId) !== outcome.connectedProgramDefinitionId) {
+    clearProgramConnectionFeedback();
+    return;
+  }
+  // Rehydrate only this exact form, without replaying focus/global messages.
+  setLocalOperationStatus(form, outcome.message, outcome.tone);
 };
 
 // Remember the action by stable DOM attributes: mutations re-render the card.
@@ -403,6 +443,7 @@ const trackOperation = (event) => {
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
+  clearProgramConnectionFeedback();
   const selector = form ? 'form[data-action="' + CSS.escape(form.dataset.action) + '"]'
     : root.matches('.admin-questionnaire-preview')
       ? '.admin-questionnaire-preview[data-questionnaire-revision-id="' + root.dataset.questionnaireRevisionId + '"]'
@@ -415,6 +456,11 @@ const trackOperation = (event) => {
 };
 adminOrganizationsPanel?.addEventListener('submit', trackOperation, true);
 adminOrganizationsPanel?.addEventListener('click', trackOperation, true);
+adminOrganizationsPanel?.addEventListener('change', (event) => {
+  if (event.target instanceof Element && event.target.matches(
+    'form[data-action="connect-assessment-program"] select[name="program_definition_id"]',
+  )) clearProgramConnectionFeedback();
+});
 
 const requestOrganizations = async (url, options, fallbackMessage) => {
   const identityEpoch = state.identityEpoch;
@@ -573,6 +619,7 @@ export const createAdminOrganization = async () => {
 };
 
 export const selectAdminOrganization = (organizationId) => {
+  clearProgramConnectionFeedback();
   captureAdminOrganizationsDraft();
   selectedOrganizationId = Number(organizationId) || null;
   saveManagementSelection();
@@ -1551,6 +1598,19 @@ const programConnectionStateMarkup = (organizationId, connection) =>
 export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  clearProgramConnectionFeedback();
+  const feedbackGeneration = programConnectionFeedbackGeneration;
+  const setOutcome = (message, tone) => {
+    const form = programConnectionForm(organizationId);
+    if (feedbackGeneration !== programConnectionFeedbackGeneration ||
+        identityEpoch !== state.identityEpoch || identityKey !== currentIdentityKey() ||
+        Number(selectedOrganizationId) !== Number(organizationId) ||
+        Number(form?.elements.program_definition_id?.value) !== Number(programDefinitionId)) return;
+    programConnectionOutcome = { identityEpoch, identityKey, organizationId: Number(organizationId),
+      programDefinitionId: Number(programDefinitionId), connectedProgramDefinitionId: connectedProgramId(organizationId),
+      message, tone };
+    setStatus(message, tone, form);
+  };
   const operationKey = organizationKey(organizationId) + ':' + Number(programDefinitionId);
   const operationId = programConnectionOperationIds.get(operationKey) || createOperationId();
   programConnectionOperationIds.set(operationKey, operationId);
@@ -1578,7 +1638,7 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
     unverifiedProgramConnections.delete(organizationKey(organizationId));
     applyAdminOrganizationProgramReadback(organizationId, readback);
     programConnectionOperationIds.delete(operationKey);
-    setStatus('Опубликованная версия программы подключена к организации.', 'success');
+    setOutcome('Опубликованная версия программы подключена к организации.', 'success');
     refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
     return true;
   } catch (error) {
@@ -1591,7 +1651,7 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
           unverifiedProgramConnections.delete(organizationKey(organizationId));
           applyAdminOrganizationProgramReadback(organizationId, readback);
           programConnectionOperationIds.delete(operationKey);
-          setStatus('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
+          setOutcome('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
           refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
           return true;
         }
@@ -1599,7 +1659,7 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
     }
     captureAdminOrganizationsDraft();
     renderAdminOrganizations();
-    setStatus('Результат подключения не подтверждён. ' +
+    setOutcome('Результат подключения не подтверждён. ' +
       (error.message || 'Не удалось подключить программу оценки.'), 'error');
     return false;
   }
@@ -2138,6 +2198,7 @@ export const renderAdminOrganizations = () => {
     })
     .join('');
   restoreAdminOrganizationsDraft();
+  restoreProgramConnectionFeedback();
 };
 
 export const openAdminOrganizations = async () => {
