@@ -38,17 +38,17 @@ Merge/deploy/AC18 остаются за открытым отдельным gate
 
 ## План и проверки
 
-1. Активно: свежий main, штатный ready:prepare --candidate 2.0.70,
+1. Завершено: свежий main, штатный ready:prepare --candidate 2.0.70,
    повтор для проверки идемпотентности, diff/точные asset hashes.
-2. До PR: lint/build,145 frontend, backend/HTTP,22 release+CI regressions,
+2. Завершено: lint/build,145 frontend,921 backend/108 HTTP,22 release+CI regressions,
    адресный actual HTTP/owned-PG, две затронутые browser проверки и три
    collector-only DOM регрессии.
    Только новый собственный PostgreSQL16, синтетика, provider/mail disabled.
    240 integration исходного source переиспользуются для неизменных Python/Api
    bytes; полный новый integration/browser CI обязателен для release head/base.
-3. Локальный commit с отчётом, push, Ready PR, обязательные frontend/pytest/
+3. Активно: локальный commit с отчётом, push, Ready PR, обязательные frontend/pytest/
    full-verification. Сохранить exact head/base/CI без status-only перебора SHA.
-4. Передать точный head человеку для review. Не выполнять merge/deploy.
+4. Ожидает CI: передать точный head человеку для review. Не выполнять merge/deploy.
 
 Первый source выпуска `c972a88af085ea12520aae9380d2564984933054`:
 921 backend/108 HTTP/145 frontend/22 release+CI и18 child HTTP/PG PASS;
@@ -71,6 +71,14 @@ scrollIntoViewIfNeeded, во время штатного questionnaire re-render
 регрессия12 последовательных замен элемента. Для disabled контроль не включается
 насильно, прежний отдельный scroll сохраняется. Оба отрицательных run сохранены;
 это не новые отказы AS и не причина PREP-DIAG-01.
+
+Финальный source `4510aa4b7ac3db87f44cd422862a549d8c72c9a7`:
+5 browser PASS,0 retry/skip/flaky;34 runner/release/CI PASS. Применимость
+921 backend/108 HTTP/145 frontend/18 child PG c972a88 — по прежним bytes;
+collector проверен заново. Новый offline CHECK:134 evidence files и355 source
+hashes PASS, исходный CHECK также PASS. После export всех7 owned runs,
+readback0 owned DB/0 connections, проверки ID/label собственный контейнер удалён
+без FORCE; рабочая БД не затронута. Итоговый PR head только docs/evidence.
 
 Проверки фиксируются в [отчёте выпуска](../reports/path-harness-release-2070.md).
 AC18 NOT_RUN: [план](path-ac18-final-plan.md) сохраняется, окончательный deployed

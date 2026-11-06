@@ -1,0 +1,341 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/node_modules/.bin/playwright",
+      "test",
+      "tests/browser/path-admin-contract.spec.mjs",
+      "tests/browser/path29-participant.spec.mjs",
+      "tests/browser/path-viewports.spec.mjs",
+      "--workers=1"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "path-admin-contract.spec.mjs",
+      "file": "path-admin-contract.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload and repeat",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 39157,
+                  "error": {
+                    "message": "Error: locator.scrollIntoViewIfNeeded: Element is not attached to the DOM\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n",
+                    "stack": "Error: locator.scrollIntoViewIfNeeded: Element is not attached to the DOM\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n\n    at capturePathViewports (/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs:55:23)\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/path-admin-contract.spec.mjs:44:5",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs",
+                      "column": 23,
+                      "line": 55
+                    },
+                    "snippet": "   at fixtures/path-viewports.mjs:55\n\n  53 |       for (const { name, locator } of controls) {\n  54 |         await expect(locator).toBeVisible();\n> 55 |         await locator.scrollIntoViewIfNeeded();\n     |                       ^\n  56 |         const enabled = await locator.isEnabled();\n  57 |         const control = { name, enabled };\n  58 |         record.controls.push(control);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs",
+                        "column": 23,
+                        "line": 55
+                      },
+                      "message": "Error: locator.scrollIntoViewIfNeeded: Element is not attached to the DOM\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    - waiting for element to be stable\u001b[22m\n\n\n   at fixtures/path-viewports.mjs:55\n\n  53 |       for (const { name, locator } of controls) {\n  54 |         await expect(locator).toBeVisible();\n> 55 |         await locator.scrollIntoViewIfNeeded();\n     |                       ^\n  56 |         const enabled = await locator.isEnabled();\n  57 |         const control = { name, enabled };\n  58 |         record.controls.push(control);\n    at capturePathViewports (/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs:55:23)\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/path-admin-contract.spec.mjs:44:5"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T11:24:12.007Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path-admin-contract-AC09-a-ef724--response-reload-and-repeat/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path-admin-contract-AC09-a-ef724--response-reload-and-repeat/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs",
+                    "column": 23,
+                    "line": 55
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "995d42b89cd35edb86d1-c877e8de415976ed7089",
+          "file": "path-admin-contract.spec.mjs",
+          "line": 8,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "path-viewports.spec.mjs",
+      "file": "path-viewports.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "viewport collector measures final scroll geometry on active tab without clicks or enabling controls",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4625,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T11:24:54.520Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e93dfe0bc874401e1e11-815bc11f3aad9057cc11",
+          "file": "path-viewports.spec.mjs",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "viewport geometry rejects offscreen, ancestor clipping and horizontal overflow",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 955,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T11:25:00.137Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e93dfe0bc874401e1e11-687ab2b932d41dfb884e",
+          "file": "path-viewports.spec.mjs",
+          "line": 38,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "path29-participant.spec.mjs",
+      "file": "path29-participant.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "synthetic_upstream",
+                  "description": "Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 77774,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "PATH29 owned screenshots and server log: /Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/release-2070/final-browser-component/b7506eee-8fcc-4bed-a5c4-d2428c0f25bd\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T11:25:01.413Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_upstream",
+                      "description": "Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "path29-browser-and-geometry",
+                      "contentType": "application/json",
+                      "body": "eyJicm93c2VyIjoiMTUzLjAuODAxMC4xMiIsImdlb21ldHJ5IjpbeyJ3aWR0aCI6MTQ0MCwib3ZlcmZsb3ciOmZhbHNlLCJmb250IjoiT25lc3QsIEludGVyLCBcIlNlZ29lIFVJXCIsIEFyaWFsLCBzYW5zLXNlcmlmIiwiYmFja2dyb3VuZCI6InJnYigyNDYsIDI0OSwgMjQ5KSIsImJhY2siOls0NCw0NF0sImdhcCI6MTZ9LHsid2lkdGgiOjEyODAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjo3NjgsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjozOTAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjozNjAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fSx7IndpZHRoIjozMjAsIm92ZXJmbG93IjpmYWxzZSwiZm9udCI6Ik9uZXN0LCBJbnRlciwgXCJTZWdvZSBVSVwiLCBBcmlhbCwgc2Fucy1zZXJpZiIsImJhY2tncm91bmQiOiJyZ2IoMjQ2LCAyNDksIDI0OSkiLCJiYWNrIjpbNDQsNDRdLCJnYXAiOjE2fV19"
+                    },
+                    {
+                      "name": "path29-question-1440",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-1440-cb1af9a86461c30b8fef34cd0feb00ea4b270e45.png"
+                    },
+                    {
+                      "name": "path29-question-1280",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-1280-5a7d36aef71d2976f4430281b603cc3f0bdf696a.png"
+                    },
+                    {
+                      "name": "path29-question-768",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-768-e4da34b2dedfd3c0825d102b6e35176cadccfd8b.png"
+                    },
+                    {
+                      "name": "path29-question-390",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-390-a422c59e0e126b52a52b79caa8051f8f55a75991.png"
+                    },
+                    {
+                      "name": "path29-question-360",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-360-b59022ff165ad680f19224a3a44aacf9f55db451.png"
+                    },
+                    {
+                      "name": "path29-question-320",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-320-909c7d4809b061d0541f16028c616805976487ab.png"
+                    },
+                    {
+                      "name": "path29-question-short-zoom200",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-question-short-zoom200-c89b2c05b21f8ec07cae5a61238feb883b757ae2.png"
+                    },
+                    {
+                      "name": "path29-ready",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-ready-aeed21d8f03deb511eb7c83a6683ffd2fd9bb0b5.png"
+                    },
+                    {
+                      "name": "path29-first-case",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/attachments/path29-first-case-523734effdad8d0eb5ac0ab12c13eba4f8d52986.png"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "fa9ee0bf487cdda4a2b3-399c5fd476e4d8416d7f",
+          "file": "path29-participant.spec.mjs",
+          "line": 19,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T11:24:10.632Z",
+    "duration": 128746.197,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

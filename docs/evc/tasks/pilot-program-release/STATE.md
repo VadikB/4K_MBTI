@@ -1,5 +1,24 @@
 # PATH-PILOT-PROGRAM-01 — состояние передачи
 
+- Активен [PATH-HARNESS-R1](../path-harness-release-2070.md): владелец отдельно
+  подтвердил2.0.70 PATCH →bump/push/PR/mandatory CI/human review. Merge/deploy,
+  публикация/активация программы, рабочая БД и paid AC18 не разрешены.
+  Fresh main/base3f42bba/2.0.69, исходный handoff2fa1ed6/пакет сохранены;
+  release-ветка `codex/path-harness-2070`, source4510aa4. Backend921/HTTP108/
+  frontend145/child PG18 наc972a88 применимы по неизменным bytes;5 browser и34
+  runner/release/CI PASS на4510aa4. Два новых collector сбоя сохранены как
+  отрицательные и исправлены без изменения продукта/приёмки; три DOM регрессии.
+  [Отчёт](../../reports/path-harness-release-2070.md),
+  [первичное evidence](../../evidence/path-harness-release-2070/README.md),
+  offline CHECK134+355 hashes и исходный CHECK PASS. Все7 marker-owned runs
+  экспортированы до cleanup; container ID/label/0 DB/0 connections подтверждены,
+  собственный container удалён без FORCE. Чужие worktrees/3 docs сохранены.
+  Активны commit/push/Ready PR/CI; review точного нового head NOT_DONE, deploy
+  NOT_RUN. Main и последнее подтверждённое test3f42bba/2.0.69. AUTH/R10 закрыт
+  PR174; PREP-DIAG-01 UNKNOWN отдельно; [AC18](../path-ac18-final-plan.md) NOT_RUN.
+  Нижние «активен», запреты и release WAITING — состояние предыдущих commits,
+  не текущий допуск. Exact head/CI передаются в PR без status-only смены SHA.
+
 - Активен [PATH-AC06/07/09/10](../path-ac06-ac10-proof.md): прямое разрешение владельца
   на локальные free HTTP/real PostgreSQL проверки и подтверждённые fixes. Fresh
   main/origin-main `3f42bba` /2.0.69; AUTH/R10 закрыт PR174, не новая release-задача.
