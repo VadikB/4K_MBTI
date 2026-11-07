@@ -20,8 +20,9 @@ P2-AC06 (повторная серверная проверка scope/admission)
 
 ## Источники и решение
 
-- База: `origin/main@157d77d1` (2.0.76), сверена с GitHub main 08.11.2026;
-  ветка `codex/ac18-fix02-start-unknown-readback`, отдельный worktree.
+- После #189 база: `origin/main@4566848a2d6454206cf40d1eec2ae807e4939c74`
+  (2.0.81), кандидат 2.0.82; ветка `codex/ac18-fix02-start-unknown-readback`,
+  отдельный PR #190.
 - Прочитаны `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, EVC workflow,
   verification matrix, artifact recipe, task template, review checklist,
   Product Architecture `context.md`/Registry, Change 01 README и адресные И-2/6/7,
@@ -60,7 +61,12 @@ P2-AC06 (повторная серверная проверка scope/admission)
 - Backend/БД/real-provider не меняются. Доказательство SQL допуска/двойного
   старта из `tests/integration/test_pilot_start_admission_db.py` применимо к
   неизменённому серверу базы, но не объявляется новым прогоном этого SHA.
-  Реальный LLM, физический телефон, стенд и CI — **NOT_RUN**.
+  Реальный LLM и физический телефон — **NOT_RUN**.
+- После обновления от #189: `npm run ready:prepare -- --candidate 2.0.82`,
+  `npm run lint:js`, frontend 154/154, backend 974 passed / 357 deselected,
+  HTTP e2e 108 passed / 12 deselected, адресный browser 4/4 — **PASS**.
+  Сохранены обе независимые browser-регрессии при совмещении веток. Полный CI
+  обновлённого head — **PENDING** перед merge.
 
 ## Риски, откат и передача
 
@@ -72,9 +78,7 @@ P2-AC06 (повторная серверная проверка scope/admission)
 Откат — revert клиентского адаптера, тестов и `web/dist`; сохранённые Cycle,
 AS и ответы не удалять.
 
-Локальный результат подготовлен, `branch_push=false`, `pr=false`, `merge=false`,
-`deploy=false`, `version_bump=false`, `artifact_publish=false`, `llm=false`.
-Следующий шаг: commit, отдельный draft PR после разрешения владельца; перед
-Ready назначить согласованный номер кандидата после ранее открытых PR и пройти
-полный CI на актуальном head/base. План владельца — подготовить все PR до
-финального последовательного merge.
+Владелец подтвердил приёмку #185–191 и последовательные `branch_push=true`,
+`pr=true`, `merge=true`, `deploy=true`, `version_bump=true`;
+`artifact_publish=false`, `llm=false`. Следующий шаг — commit/push кандидата,
+Ready, полный CI точного head и проверка свежего `main`, затем squash-merge.
