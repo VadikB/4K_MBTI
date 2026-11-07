@@ -149,3 +149,22 @@ def test_case_specific_applicability_is_derived_and_llm_cannot_override_it():
     normalized = normalize_results(plan02, raw)
     forced = next(item for item in normalized if item["check_id"] == "case02.attractive_feature")
     assert forced["status"] == "TECHNICAL_ERROR"
+
+
+@pytest.mark.parametrize(("review", "reason_fragment", "admitted"), [
+    (None, "без adversarial review", False),
+    ({"candidate_conflicts": [], "resolution": ""}, "неполным adversarial review", False),
+    ({"candidate_conflicts": [], "resolution": "проверено"}, "", True),
+])
+def test_protected_review_missing_partial_and_complete_are_distinguishable(review, reason_fragment, admitted):
+    plan = {"required_checks": [{"check_id": "common.confidentiality", "category": "confidentiality",
+                                  "mandatory": True, "protected": True}], "not_applicable_checks": []}
+    raw = {"check_id": "common.confidentiality", "status": "PASS", "reason": "synthetic fixture"}
+    if review is not None:
+        raw["adversarial_review"] = review
+    normalized = normalize_results(plan, [raw])
+    assert normalized[0]["check_id"] == "common.confidentiality"
+    assert normalized[0]["status"] == ("PASS" if admitted else "TECHNICAL_ERROR")
+    if reason_fragment:
+        assert reason_fragment in normalized[0]["reason"]
+    assert aggregate(_deterministic(), normalized)["admitted_for_participant"] is admitted

@@ -561,7 +561,8 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                 content = json.dumps(candidate, ensure_ascii=False)
             else:
                 required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
-                content = json.dumps({"checks": [{"check_id": item["check_id"],
+                content = json.dumps({"candidate_checksum": payload.get("candidate_checksum"),
+                                      "checks": [{"check_id": item["check_id"],
                         "status": ("TECHNICAL_ERROR" if tester_outcome == "INCOMPLETE" else "FAIL")
                                   if tester_outcome and ":tester:" in kwargs["routing_key"]
                                   and item["check_id"] == "common.confidentiality" else "PASS",

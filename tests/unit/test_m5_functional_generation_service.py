@@ -43,7 +43,10 @@ class Gateway:
             checks = [{"check_id": item["check_id"], "status": "PASS", "reason": "fixture", "findings": [],
                        "adversarial_review": {"candidate_conflicts": [], "resolution": "no conflict"}}
                       for item in required]
-            content = json.dumps({"checks": checks}, ensure_ascii=False)
+            envelope = {"checks": checks}
+            if "candidate_checksum" in payload:
+                envelope["candidate_checksum"] = payload["candidate_checksum"]
+            content = json.dumps(envelope, ensure_ascii=False)
         return SimpleNamespace(content=content, sent={"parameters": kwargs},
                                provider={"finish_reason": "stop", "request_id": kwargs["routing_key"]})
 
@@ -390,7 +393,8 @@ def test_two_layer_contract_rejects_semantic_substitution_from_independent_teste
                                       "requirement_ref": item["check_id"]}] if failed else []),
                         "adversarial_review": {"candidate_conflicts": [], "resolution": "checked"},
                     })
-                return SimpleNamespace(content=json.dumps({"checks": checks}), sent={},
+                return SimpleNamespace(content=json.dumps({"candidate_checksum": payload.get("candidate_checksum"),
+                                                           "checks": checks}), sent={},
                                        provider={"finish_reason": "stop"})
             return super().chat_with_trace(messages, **kwargs)
 
@@ -470,6 +474,46 @@ def test_tester_rejects_check_returned_by_wrong_batch():
     assert missing["status"] == "NOT_RUN", missing
 
 
+@pytest.mark.parametrize("stage", ["tester", "challenger"])
+@pytest.mark.parametrize("binding", ["missing", "foreign"])
+def test_protocol_v2_rejects_unbound_candidate_review(stage, binding):
+    class UnboundGateway(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            response = super().chat_with_trace(messages, **kwargs)
+            if f":{stage}:" in kwargs["routing_key"]:
+                body = json.loads(response.content)
+                if binding == "missing":
+                    body.pop("candidate_checksum")
+                else:
+                    body["candidate_checksum"] = service.checksum({"synthetic_candidate": "other"})
+                response.content = json.dumps(body)
+            return response
+
+    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"),
+                                            operation_id=f"candidate-binding-{stage}-{binding}")
+    result = service.prepare(snapshot, UnboundGateway())
+    assert snapshot["refs"]["protocol_package"]["version"] == "2.0.0"
+    assert result["admitted_for_participant"] is False
+    assert result["tester"]["aggregation"]["status"] == "INCOMPLETE"
+    confidentiality = next(item for item in result["tester"]["checks"]
+                           if item["check_id"] == "common.confidentiality")
+    assert confidentiality["status"] == "TECHNICAL_ERROR"
+    assert ("не содержит привязки" if binding == "missing" else "другому кандидату") in confidentiality["reason"]
+
+
+def test_frozen_protocol_v1_still_accepts_its_original_checks_only_envelope():
+    snapshot = service.build_input_snapshot(
+        case_id="CASE.SPEC.01", profile=profile("legacy"), operation_id="protocol-v1-compatibility",
+        protocol_package=service.ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1",
+    )
+    assert snapshot["refs"]["protocol_package"]["version"] == "1.0.0"
+    snapshot["refs"].pop("protocol_package")  # pre-v2 frozen snapshot shape
+    gateway = Gateway()
+    result = service.prepare(snapshot, gateway)
+    assert "candidate_checksum" not in gateway.tester_payloads[0]
+    assert result["admitted_for_participant"] is True
+
+
 def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
     class MalformedOnce(Gateway):
         def __init__(self): super().__init__(); self.calls = 0
@@ -506,7 +550,8 @@ def test_blocking_tester_failure_triggers_one_full_repair_and_retest():
                                 "paths": ["candidate_as.role"], "reason": "fixture",
                                 "requirement_ref": item["check_id"]}] if failed else []),
                             "adversarial_review": {"candidate_conflicts": [], "resolution": "fixture"}})
-                    return SimpleNamespace(content=json.dumps({"checks": checks}), sent={},
+                    return SimpleNamespace(content=json.dumps({"candidate_checksum": payload.get("candidate_checksum"),
+                                                               "checks": checks}), sent={},
                                            provider={"finish_reason": "stop"})
             return super().chat_with_trace(messages, **kwargs)
 
