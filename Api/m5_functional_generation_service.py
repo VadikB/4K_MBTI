@@ -389,6 +389,14 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
     raise AssertionError("unreachable")
 
 
+def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Only check IDs requested in this batch may satisfy it."""
+    ids = {item["check_id"] for item in batch_checks}
+    checks = raw.get("checks") if isinstance(raw, dict) else None
+    return [item for item in checks if isinstance(item, dict) and item.get("check_id") in ids] \
+        if isinstance(checks, list) else []
+
+
 def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
     contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
@@ -501,7 +509,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
         )
-        tester_raw_checks.extend(raw.get("checks") if isinstance(raw.get("checks"), list) else [])
+        tester_raw_checks.extend(_bound_batch_checks(raw, batch_checks))
         tester_operations.append({
             **_trace(response, operation_id=operation_id, kind="independent_tester_v2_batch",
                      input_checksum=input_checksum),
@@ -555,9 +563,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
         )
-        challenger_raw_checks.extend(
-            challenge_raw.get("checks") if isinstance(challenge_raw.get("checks"), list) else []
-        )
+        challenger_raw_checks.extend(_bound_batch_checks(challenge_raw, batch_checks))
         challenger_operations.append({
             **_trace(challenge_response, operation_id=challenge_operation_id,
                      kind="independent_tester_v2_challenger_batch",

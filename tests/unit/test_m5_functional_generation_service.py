@@ -442,6 +442,34 @@ def test_shared_service_closes_admission_when_tester_omits_required_checks():
     assert result["compiled_case"] is None and result["execution_rules"] is None
 
 
+def test_tester_rejects_check_returned_by_wrong_batch():
+    class MisroutedGateway(Gateway):
+        def __init__(self):
+            super().__init__()
+            self.first_check = None
+            self.returned_once = False
+
+        def chat_with_trace(self, messages, **kwargs):
+            response = super().chat_with_trace(messages, **kwargs)
+            if ":tester:" in kwargs["routing_key"]:
+                body = json.loads(response.content)
+                if self.first_check is None:
+                    self.first_check = body["checks"].pop(0)
+                elif not self.returned_once:
+                    body["checks"].append(self.first_check)
+                    self.returned_once = True
+                response.content = json.dumps(body)
+            return response
+
+    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"),
+                                            operation_id="tester-batch-binding")
+    result = service.prepare(snapshot, MisroutedGateway())
+    assert result["admitted_for_participant"] is False
+    missing = next(item for item in result["tester"]["checks"]
+                   if item["check_id"] == result["tester"]["provider_operation"]["batches"][0]["required_check_ids"][0])
+    assert missing["status"] == "NOT_RUN", missing
+
+
 def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
     class MalformedOnce(Gateway):
         def __init__(self): super().__init__(); self.calls = 0
