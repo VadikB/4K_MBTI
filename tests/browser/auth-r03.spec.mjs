@@ -3607,6 +3607,74 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
   await expect(page.getByText('189 мин.')).toBeHidden();
 });
 
+test('AC18-FIX-02 reconciles a committed first start after the POST response is lost', async ({ page }, testInfo) => {
+  const evidenceDirectory = process.env.AC18_FIX02_VISUAL_EVIDENCE;
+  if (evidenceDirectory) await fs.mkdir(evidenceDirectory, { recursive: true });
+  const capture = async (name) => {
+    const body = await page.screenshot({
+      fullPage: true, ...(evidenceDirectory ? { path: path.join(evidenceDirectory, `${name}.png`) } : {}),
+    });
+    await testInfo.attach(name, { body, contentType: 'image/png' });
+  };
+  const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+  const plan = { cycle_id: 'cycle-lost-start', revision_id: 'revision-lost-start', revision_no: 1,
+    start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-lost-start',
+      plan_revision_id: 'revision-lost-start', can_start: true, reasons: [] }, plan: {
+      status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], time_budget_seconds: 7200,
+      calendar_window_seconds: 259200,
+    } };
+  const acquaintance = {
+    readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+      briefing: { organizer: 'Synthetic', purpose: 'Synthetic', results_usage: 'Synthetic',
+        result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' }, consent_accepted_at: 'synthetic',
+      consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
+    onboarding: { status: 'completed', current_step: 8 }, late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    prepared_plan: plan,
+  };
+  const runtime = { runtime_kind: 'cycle', cycle_id: 'cycle-lost-start', between_situations: false,
+    return_policy_enabled: false, status: { collection_status: 'active', remaining_seconds: 7200 },
+    route: { positions: [{ position_no: 1, state: 'in_progress',
+      current_assessment_situation_id: 'as-lost-start' }], progress: { total_positions: 1 } },
+    situations: [{ assessment_situation_id: 'as-lost-start', status: 'active' }],
+    current_situation: { assessment_situation_id: 'as-lost-start', status: 'active', participant_payload: {
+      title: 'Синтетическая первая ситуация', situation: 'Проверьте сохранённое состояние после потери ответа.',
+      assessee_task: 'Опишите решение.',
+    } }, trace: { turns: [], events: [] }, clarification: null, continuation: null, pipeline: null };
+  let startPosts = 0;
+  await page.route('**/users/**', (route) => {
+    const request = route.request(); const pathname = new URL(request.url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_onboarding', acquaintance,
+      profile: { status: 'complete' }, onboarding: acquaintance.onboarding, assessment: { status: 'not_started' } });
+    if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) return fulfillJson(route, acquaintance);
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'completed', current_step: 8 });
+    if (pathname === '/users/assessment/cycles/start' && request.method() === 'POST') {
+      startPosts += 1; return route.abort('failed');
+    }
+    if (pathname === '/users/assessment/m7/cycles/cycle-lost-start/return-state') {
+      return fulfillJson(route, { detail: 'M7_RETURN_CURRENT_POSITION_NOT_FOUND' }, 409);
+    }
+    if (pathname === '/users/assessment/cycles/cycle-lost-start/runtime') return fulfillJson(route, runtime);
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'ac18-fix02-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base);
+  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  await page.getByRole('button', { name: 'Приступить к оценке' }).click();
+  await expect(page.locator('#interview-panel')).toBeVisible();
+  await expect(page.locator('#interview-case-title')).toHaveText('Синтетическая первая ситуация');
+  expect(startPosts).toBe(1);
+  await capture('ac18-fix02-lost-start-1440');
+  for (const width of [768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.locator('#interview-case-title')).toHaveText('Синтетическая первая ситуация');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await capture(`ac18-fix02-lost-start-${width}`);
+  }
+});
+
 test('R03 reset request locks every visible credential action', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { email: 'person@example.test', auth_mode: 'password' }));
