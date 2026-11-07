@@ -1,0 +1,41 @@
+{
+  "active_connections": 0,
+  "database": "product4k_pytest_2835475f27a64c89b273887ee3e38a76",
+  "database_count": 0,
+  "new_cleanup_performed": false,
+  "new_provider_calls": 0,
+  "observed_at_utc": "2026-11-07T08:09:29.730079+00:00",
+  "permanent_db_not_connected": true,
+  "port_free": true,
+  "read_only": true,
+  "run_id": "2835475f27a64c89b273887ee3e38a76",
+  "state_absent": true,
+  "terminal_receipts_before_cleanup": {
+    "failure-receipt.json": {
+      "mtime_utc": "2026-11-07T08:06:23.138403+00:00",
+      "saved_before_cleanup": true,
+      "sha256": "e062227e56a5c201fc263a81775a9dd08fac80006c10f4d99246f7a3e569d90d"
+    },
+    "failure.json": {
+      "mtime_utc": "2026-11-07T08:06:23.712409+00:00",
+      "saved_before_cleanup": true,
+      "sha256": "56607e5a0a203d7a3dc3b1119fdfcb271fc785d3c9481a0c241e6aaf56f2dca7"
+    },
+    "published-release-source.json": {
+      "mtime_utc": "2026-11-07T08:06:09.643273+00:00",
+      "saved_before_cleanup": true,
+      "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+    },
+    "run.json": {
+      "mtime_utc": "2026-11-07T08:06:11.898295+00:00",
+      "saved_before_cleanup": true,
+      "sha256": "f2abb5970a20ac5175a9f111f656a417f42ed77642e193af436bc306d931c649"
+    },
+    "source-provenance.json": {
+      "mtime_utc": "2026-11-07T08:06:11.775294+00:00",
+      "saved_before_cleanup": true,
+      "sha256": "b0d222155ef8474a0343db42d60ba7a89b6cf9abf4957e13973bf098a26dae5a"
+    }
+  },
+  "transaction_rolled_back": true
+}

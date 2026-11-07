@@ -61,4 +61,9 @@ password policy и валидируемую сервером identity. Секр�
 password/token inputs маскировать на failure PNG. Схемы/миграции нет.
 Откат — revert только нового локального commit, без изменения данных/main/test.
 
-Статус: активная локальная реализация. Итог проверок и точный SHA будут в отчёте.
+Статус: локальное исправление завершено. Implementation
+`c4a6a0cb1e28cda7a4188ac8d4efef33c237999c`; final browser127/frontend146/backend956/
+HTTP108 PASS, before2 FAIL, lint/build45/idempotency/diff PASS.
+Полный отчёт, промежуточные ошибки тестов и область применимости —
+[отчёт](../reports/ac18-auth-readiness.md). CI/release/real PATH не выполнялись.
+Ожидает решения владельца о локальной приёмке и отдельно о выпуске/следующем AC18.

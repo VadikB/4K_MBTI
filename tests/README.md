@@ -1,5 +1,19 @@
 # Тесты backend
 
+## Бесплатная регрессия готовности auth-формы AC18
+
+```sh
+npx playwright test tests/browser/auth-r03.spec.mjs \
+  --grep 'AC18 auth readiness|AC18 failure capture' --workers=1
+```
+
+Удерживается synthetic confirm/reset HTTP response: форма скрыта/disabled до
+валидации, затем штатный step2; отказ и network retry проверяются отдельно.
+Это UI component, не real PostgreSQL/PATH/LLM. PATH29 использует exact-email
+semantic-ready helper; failure capture сохраняет active actor/page и allowlisted
+context, маскирует password/token inputs, не экспортирует значения query/credentials.
+Результаты/границы: [AC18-AUTH-READY-01](../docs/evc/reports/ac18-auth-readiness.md).
+
 ## Модель из provider contract, не из env
 
 `DEEPSEEK_MODEL` не выбирает модель и не обязателен для runner. `.env` — только

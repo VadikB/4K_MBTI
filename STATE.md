@@ -9,10 +9,12 @@ PASS, исходные evidence сохранены. Причина именно 
 semantic-ready exact-email helper и safe failure capture активной вкладки.
 Before2 FAIL; первая targeted5 PASS; frontend146/backend956/HTTP108 PASS;
 широкий browser126 PASS/1 ошибка нового test expectation URL, исправлена только
-проверка; финальный полный повтор ещё выполняется. Build45 byte-idempotent/lint PASS.
+проверка; финальный полный повтор127 PASS, flaky0/retries0. Build45 byte-idempotent/lint PASS.
 Продуктовые Api/схема/артефакты/admission/repair не менялись; CI/новый deploy/LLM NOT_RUN.
-Карточка: docs/evc/tasks/ac18-auth-readiness.md. Следующий шаг — финальная бесплатная
-проверка и локальная передача; выпуск и новый AC18 требуют отдельных разрешений.
+Implementation c4a6a0cb1e28cda7a4188ac8d4efef33c237999c, итоговый handoff docs-only.
+Карточка/отчёт/evidence: ac18-auth-readiness. Локальная проверка и передача завершены;
+выпуск и новый AC18 требуют отдельных разрешений. Однократный run уже израсходован,
+heartbeat PAUSED. Main339aff9/test2.0.74 не содержат эту правку.
 
 # История — PROVIDER-ROLES-01
 

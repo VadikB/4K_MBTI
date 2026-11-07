@@ -1,0 +1,46 @@
+{
+  "observed_at_utc": "2026-11-07T08:00:50.264041+00:00",
+  "inference_requests": 0,
+  "observations": [
+    {
+      "url": "https://status.deepseek.com/",
+      "cache_bypass": true,
+      "http_status": 200,
+      "body_sha256": "05a0a313e79200fda97be07384a10d94f5004be0bb7e7a6f04bee73870c516a6",
+      "body_bytes": 221931,
+      "status_related_visible_text": [
+        "DeepSeek V4.1 Flash API服务(API Service)"
+      ],
+      "result": "PUBLIC_PAGE_READ"
+    },
+    {
+      "url": "https://status.deepseek.com/incidents/7219383236287",
+      "cache_bypass": true,
+      "http_status": 200,
+      "body_sha256": "2794a44714f9ea40144add830cea80ed1576832f4b9b088157e9806dbde3e45c",
+      "body_bytes": 68107,
+      "status_related_visible_text": [
+        "Resolved",
+        "Sat, Nov 7, 2026, 07:11 AM ~ Sat, Nov 7, 2026, 07:56 AM (45min)",
+        "The incident has been resolved and service has been restored.",
+        "07:11 AM",
+        "07:56 AM",
+        "DeepSeek V4.1 Flash API服务(API Service)",
+        "Resolved",
+        "Sat, Nov 7, 2026, 07:56 AM",
+        "The incident has been resolved and service has been restored.",
+        "Monitoring",
+        "Sat, Nov 7, 2026, 07:11 AM"
+      ],
+      "result": "PUBLIC_PAGE_READ"
+    }
+  ],
+  "gate": {
+    "incident": "7219383236287",
+    "status": "Resolved",
+    "resolved_at_utc": "2026-11-07T07:56:00Z",
+    "homepage_status": "All systems are operating as expected.",
+    "new_unresolved_flash_incident_visible": false,
+    "eligible_for_fresh_preflight": true
+  }
+}

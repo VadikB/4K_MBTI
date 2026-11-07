@@ -1,0 +1,232 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/node_modules/.bin/playwright",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "AC18 auth readiness: .*cannot submit",
+      "--workers=1",
+      "--output=/private/tmp/ac18-auth-readiness-before-valid",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/private/tmp/ac18-auth-readiness-before-valid",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AC18 auth readiness: email_verification cannot submit before validation, then reaches step2",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1471,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#auth-token-form')\nExpected: hidden\nReceived: visible\nTimeout:  1000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#auth-token-form') with timeout 1000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-token-form')\u001b[22m\n\u001b[2m    11 × locator resolved to <form class=\"stack\" autocomplete=\"on\" id=\"auth-token-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#auth-token-form')\nExpected: hidden\nReceived: visible\nTimeout:  1000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#auth-token-form') with timeout 1000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-token-form')\u001b[22m\n\u001b[2m    11 × locator resolved to <form class=\"stack\" autocomplete=\"on\" id=\"auth-token-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:81:52",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                      "column": 52,
+                      "line": 81
+                    },
+                    "snippet": "  79 |     await page.goto(`${base}/?auth_action=${action}&token=synthetic-readiness`);\n  80 |     await expect.poll(() => requested).toBe(true);\n> 81 |     await expect(page.locator('#auth-token-form')).toBeHidden({ timeout: 1000 });\n     |                                                    ^\n  82 |     await expect(page.locator('#magic-token-input')).toBeDisabled();\n  83 |     await expect(page.locator('#verify-magic-link-button')).toBeDisabled();\n  84 |     await page.evaluate(() => document.querySelector('#auth-token-form')"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                        "column": 52,
+                        "line": 81
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#auth-token-form')\nExpected: hidden\nReceived: visible\nTimeout:  1000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#auth-token-form') with timeout 1000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-token-form')\u001b[22m\n\u001b[2m    11 × locator resolved to <form class=\"stack\" autocomplete=\"on\" id=\"auth-token-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n\n\n  79 |     await page.goto(`${base}/?auth_action=${action}&token=synthetic-readiness`);\n  80 |     await expect.poll(() => requested).toBe(true);\n> 81 |     await expect(page.locator('#auth-token-form')).toBeHidden({ timeout: 1000 });\n     |                                                    ^\n  82 |     await expect(page.locator('#magic-token-input')).toBeDisabled();\n  83 |     await expect(page.locator('#verify-magic-link-button')).toBeDisabled();\n  84 |     await page.evaluate(() => document.querySelector('#auth-token-form')\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:81:52"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T08:17:46.778Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/private/tmp/ac18-auth-readiness-before-valid/auth-r03-AC18-auth-readine-38da7-lidation-then-reaches-step2/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/ac18-auth-readiness-before-valid/auth-r03-AC18-auth-readine-38da7-lidation-then-reaches-step2/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/ac18-auth-readiness-before-valid/auth-r03-AC18-auth-readine-38da7-lidation-then-reaches-step2/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                    "column": 52,
+                    "line": 81
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6e6a80584817570654d1",
+          "file": "auth-r03.spec.mjs",
+          "line": 63,
+          "column": 3
+        },
+        {
+          "title": "AC18 auth readiness: password_reset cannot submit before validation, then reaches step2",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1335,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#auth-token-form')\nExpected: hidden\nReceived: visible\nTimeout:  1000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#auth-token-form') with timeout 1000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-token-form')\u001b[22m\n\u001b[2m    11 × locator resolved to <form class=\"stack\" autocomplete=\"on\" id=\"auth-token-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#auth-token-form')\nExpected: hidden\nReceived: visible\nTimeout:  1000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#auth-token-form') with timeout 1000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-token-form')\u001b[22m\n\u001b[2m    11 × locator resolved to <form class=\"stack\" autocomplete=\"on\" id=\"auth-token-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:81:52",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                      "column": 52,
+                      "line": 81
+                    },
+                    "snippet": "  79 |     await page.goto(`${base}/?auth_action=${action}&token=synthetic-readiness`);\n  80 |     await expect.poll(() => requested).toBe(true);\n> 81 |     await expect(page.locator('#auth-token-form')).toBeHidden({ timeout: 1000 });\n     |                                                    ^\n  82 |     await expect(page.locator('#magic-token-input')).toBeDisabled();\n  83 |     await expect(page.locator('#verify-magic-link-button')).toBeDisabled();\n  84 |     await page.evaluate(() => document.querySelector('#auth-token-form')"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                        "column": 52,
+                        "line": 81
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeHidden\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#auth-token-form')\nExpected: hidden\nReceived: visible\nTimeout:  1000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeHidden\" locator('#auth-token-form') with timeout 1000ms\u001b[22m\n\u001b[2m  - waiting for locator('#auth-token-form')\u001b[22m\n\u001b[2m    11 × locator resolved to <form class=\"stack\" autocomplete=\"on\" id=\"auth-token-form\">…</form>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n\n\n  79 |     await page.goto(`${base}/?auth_action=${action}&token=synthetic-readiness`);\n  80 |     await expect.poll(() => requested).toBe(true);\n> 81 |     await expect(page.locator('#auth-token-form')).toBeHidden({ timeout: 1000 });\n     |                                                    ^\n  82 |     await expect(page.locator('#magic-token-input')).toBeDisabled();\n  83 |     await expect(page.locator('#verify-magic-link-button')).toBeDisabled();\n  84 |     await page.evaluate(() => document.querySelector('#auth-token-form')\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:81:52"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T08:17:49.590Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/private/tmp/ac18-auth-readiness-before-valid/auth-r03-AC18-auth-readine-1cd62-lidation-then-reaches-step2/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/ac18-auth-readiness-before-valid/auth-r03-AC18-auth-readine-1cd62-lidation-then-reaches-step2/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/private/tmp/ac18-auth-readiness-before-valid/auth-r03-AC18-auth-readine-1cd62-lidation-then-reaches-step2/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                    "column": 52,
+                    "line": 81
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6d5c4a959ab9308c6b8f",
+          "file": "auth-r03.spec.mjs",
+          "line": 63,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-07T08:17:45.416Z",
+    "duration": 5874.055,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}
