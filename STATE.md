@@ -1,4 +1,23 @@
-# STATE — PATH-PLAN-DIAGNOSTICS
+# STATE — PROVIDER-ROLES-01
+
+07.11.2026. Владелец: контракт управляет моделью, `.env` — секретами/инфраструктурой.
+Отдельная локальная `codex/provider-contract-env-roles`, база свежего main44802660/
+2.0.73. Модель default gateway/settings view берётся из существующего контракта;
+frozen explicit operation сохраняется. Runner/stand не копируют DEEPSEEK_MODEL,
+preflight показывает source/version/checksum и только boolean legacy presence.
+Ни серверный `.env`, ни опубликованные определения, snapshots, admission/repair
+не менялись. Foreign root branch/untracked files сохранены.
+
+Проверки: targeted52/backend956/HTTP108 PASS; scoped immutable diff и diff-check PASS.
+Синтетические ownership units/HTTP не являются actual machine/PG/real-provider PATH.
+Все release flags=false; CI/new machine/LLM NOT_RUN, этот diff NOT_DEPLOYED.
+Следующий шаг — локальная приёмка и отдельный release допуск. AC18 только после
+окончательного deploy/readback/preflight и нового прямого разрешения платного run.
+PREP-DIAG-01 UNKNOWN отдельно. Карточка: docs/evc/tasks/provider-contract-env-roles.md;
+evidence: docs/evc/evidence/provider-contract-env-roles. Старый2072 sidecar не использовать
+для нового кандидата. Ниже — унаследованная история, не активное разрешение.
+
+# История — PATH-PLAN-DIAGNOSTICS
 
 ## R1 — активная подготовка приложения2.0.65
 

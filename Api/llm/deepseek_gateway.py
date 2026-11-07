@@ -27,6 +27,7 @@ class DeepSeekGateway:
         self.api_keys = list(settings.deepseek_api_keys if api_keys is None else api_keys)
         self.base_url = str(base_url or settings.deepseek_base_url).rstrip("/")
         self.model = str(model or settings.deepseek_model)
+        self.model_source = "explicit_operation" if model else "provider_contract"
         self.request_slots = threading.BoundedSemaphore(max(1, settings.deepseek_max_concurrency))
 
     @property
@@ -204,7 +205,9 @@ class DeepSeekGateway:
             "ready": self.enabled and response_format in contract["supported_response_formats"],
             "secret_configured": self.enabled,
             "provider": "deepseek", "requested_model": self.model,
+            "model_source": self.model_source,
             "endpoint": f"{self.base_url}/chat/completions",
             "response_format": response_format, "thinking": contract["thinking"],
             "gateway_version": GATEWAY_VERSION, "contract_version": contract["version"],
+            "contract_checksum": contract["checksum"],
         }
