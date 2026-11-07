@@ -1,5 +1,26 @@
 # STATE — PROVIDER-ROLES-01
 
+## R2 — 07.11: кандидат2.0.74, разрешены bump/push/PR/CI/review
+
+Владелец «да» на конкретный scope2.0.74 PATCH. `version_bump/branch_push/pr=true`,
+`merge/deploy/artifact_publish=false`. `.env` сервера, рабочая БД, программа и paid
+AC18 исключены. Canonical ready preparation2.0.74 и повтор PASS,49 hashes одинаковы;
+frontend145/receipt66/Python116/lint/release/evidence checks PASS. Функциональные
+source bytes1666f921 неизменны; backend956/HTTP108 применимы. Активно: release commit,
+exact head push/Ready PR/mandatory CI, затем human review (ещё NOT_DONE). Source1666f921
+и handoff19bc6ad0 сохранены; release metadata не объявляет продуктовый PATH PASS.
+Вся история ниже сохраняется; старое ожидание номера R1 уже снято ответом владельца.
+
+## R1 — 07.11: подготовка выпуска, ожидание утверждённого номера
+
+Владелец «делаем» после локальной передачи19bc6ad0. Fresh origin/main44802660/2.0.73;
+штатный `npm run ready:prepare` exit2: требуется approved PATCH2.0.74. Bump/build,
+push/PR/CI/merge/deploy/публикация/БД/LLM не выполнялись. CHECK18 hashes/4 JUnit PASS.
+Ждём конкретное решение версии и scope PR/CI/review; merge/deploy и AC18 исключены.
+Новые R1 docs/evidence пока uncommitted поверх19bc6ad0, runtime не менялся.
+Карточка и первичный release-preflight receipt — в PROVIDER-ROLES-01. Ниже локальный
+implementation handoff; его тесты применимы к неизменённым исходным bytes.
+
 07.11.2026. Владелец: контракт управляет моделью, `.env` — секретами/инфраструктурой.
 Отдельная локальная `codex/provider-contract-env-roles`, база свежего main44802660/
 2.0.73. Implementation1666f92114c3118305324309bc3e922643865c23; handoff — только docs.

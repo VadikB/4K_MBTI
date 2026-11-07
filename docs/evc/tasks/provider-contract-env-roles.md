@@ -130,3 +130,73 @@ deploy/readback и бесплатного preflight на окончательн�
 платного AC18. Восстановление/замена DEEPSEEK_MODEL в рабочем `.env` не нужны.
 Прежний 2072 sidecar не применять к новому коду: его obsolete глобальное сравнение
 явно снято этим решением, сам исторический evidence не переписывается.
+
+## R1 — начата подготовка выпуска, ожидается номер
+
+После локальной передачи19bc6ad0 владелец: «делаем». Начата подготовка выпуска;
+07.11 свежий remote main повторно подтверждён44802660/2.0.73. Первый read-only
+запрос не запустился из-за timeout automatic permission review; один повтор PASS.
+Штатный `PYTHON_DOTENV_DISABLED=1 npm run ready:prepare` обновил origin/main,
+проверил актуальную базу и остановился с exit2:
+`requires an approved patch candidate: 2.0.73 → 2.0.74`.
+Это ожидаемый version gate, не новый дефект продукта. Номер не назначен,
+build/push/PR/CI/merge/deploy/БД/LLM не запускались; после preflight дерево чистое.
+18 hashes/4 JUnit повторно PASS. Первичный результат:
+[release-preflight.json](../evidence/provider-contract-env-roles/release-preflight.json).
+
+Активный шаг — решение владельца: PATCH2.0.74 и scope push/PR/обязательный CI/review.
+Merge/deploy, публикация программы, изменение серверного `.env` и платный AC18
+в этот запрос не входят. До ответа все release flags остаются false.
+Новые R1 docs/evidence — локальные незакоммиченные записи поверх19bc6ad0;
+проверенные implementation bytes не изменены.
+
+## R2 — разрешена подготовка кандидата2.0.74 для PR/CI/review
+
+07.11 владелец ответил «да» на конкретный вопрос: «2.0.74 (PATCH): bump → push ветки
+→ PR → обязательный CI → человеческое review». Основание — сообщение текущего чата,
+не текст документа/страницы. Разрешены `version_bump=true`, `branch_push=true`,
+`pr=true`. По-прежнему `merge=false`, `deploy=false`, `artifact_publish=false`;
+серверный `.env`/рабочая БД/публикация программы/платный AC18 исключены.
+
+Порядок: штатный ready preflight с approved candidate и fresh origin/main;
+lint/frontend/release+harness regression/evidence checks; reuse backend956/HTTP108
+только при неизменности функциональных source bytes; commit/push/Ready PR;
+mandatory frontend/pytest/full-verification точного head/base; человеческое review.
+Новый commit после CI требует новых проверок; status-only коммиты после зелёного CI
+не создаются. При изменении main/номера — штатный gate и адресная переоценка.
+
+README/CONTRIBUTING, workflow/matrix/recipe, source/Registry/Change01/manifest/M1,
+профиль и код контракта повторно используются как неизменённые; release scripts,
+PR template, CI workflows и текущая карточка перечитаны. Новых источников/норм
+или стоп-условий не выявлено. Только release metadata/build не даёт допуска AC18.
+Откат локального кандидата — адресный revert release commit; действующий main/test,
+артефакты и сохранённые данные не меняются. В будущем rollback выпуска — штатный PR,
+не откат/редактирование snapshots или рабочего `.env`.
+
+В новом worktree нет `.env`. Игнорируемые каталоги `.venv`/`node_modules` содержат
+ссылки на уже установленные локальные зависимости, package-lock byte-identical;
+установки нет. Первичные outer symlinks видны как untracked, поэтому они заменены
+только на эти собственные каталоги/вложенные ссылки; shared dependency files не менялись.
+Активный шаг — подготовка и бесплатные release-проверки; CI/human review ожидаются.
+
+### R2: локальный кандидат проверен, готов к push/PR
+
+Canonical ready preparation и повтор2.0.74 PASS,49 metadata/assets hashes идентичны,
+release gate PASS. Новые frontend145/receipt66/Python116 PASS; lint/diff/source
+checks PASS. Source1666f921 API/scripts/tests/templates/README/profile/артефакты
+byte-identical;956 backend/108 HTTP применимы в этой области. От19bc6ad0 меняются
+только approved release metadata/build и R1/R2 docs/evidence. Source definitions и
+рабочая БД не менялись. Полный mandatory CI **ещё не выполнялся**, human review
+NOT_DONE. Primary hashes/JUnit/commands/offline checker:
+[release2074](../evidence/provider-contract-env-roles/release-2074/README.md).
+
+Самостоятельное review diff агентом: env больше не authority модели, default и
+новые M6 snapshots читают обязательный контракт, explicit frozen model не заменяется;
+invalid/missing contract fail-closed, credentials по allowlist без экспорта значений,
+source selector/admission/repair/cleanup не ослабляются. Упаковка negative JUnit
+byte-preserving, не скрытие ошибок. Это не человеческое code review.
+
+Следующий активный шаг — commit/push/Ready PR с точным head, затем mandatory CI.
+Состояние CI публикуется в PR без изменения candidate commit. Старый общий
+`.env` model mismatch не используется как самостоятельный product blocker PM03.
+AC18 только на будущем окончательном deployed SHA после отдельного разрешения.
