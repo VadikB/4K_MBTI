@@ -15,7 +15,7 @@
 | P2-AC05 | POST start commit + потеря ответа → GET того же runtime, одна AS, исходное время | PASS | новый frontend contract/unit/browser test; SQL concurrent start; 0 ответов в SQL gate suite | не просмотрено |
 | P2-AC06 | revoked/stale scope и чужая область fail closed | PASS | `test_pilot_start_admission_db.py`, 7/7 | не просмотрено |
 | P2-AC07 | работающий browser: first AS после lost response; 1440/768/390/320; horizontal overflow guard | PASS | `visual/*.png`; Chromium emulator, не физические устройства | не просмотрено |
-| P2-AC08 | технический комплект передан; deploy/readback/owner acceptance | NOT_RUN | push/PR/deploy не разрешены; владелец ещё не принял визуально | не просмотрено |
+| P2-AC08 | технический комплект передан; deploy/readback/owner acceptance | PARTIAL | PR #182 создан; CI повторно запущен после release bump; deploy/readback/owner acceptance не выполнены | не просмотрено |
 
 ## Кадры
 
@@ -37,6 +37,8 @@
 - Frontend: `150 passed`, PASS.
 - Новый browser lost-start: `1 passed`, PASS.
 - `npm run lint:js`, `npm run build:web`, `git diff --check`: PASS.
+- Release candidate: 2.0.76; первый CI release gate корректно отклонил 2.0.75,
+  после штатного patch bump локальные build/lint/frontend 150/diff-check прошли.
 
 Первая попытка SQL была `NOT_RUN_ENV`: sandbox запретил localhost до соединения;
 повтор той же команды с разрешённым localhost завершился PASS. Первая попытка browser
@@ -47,5 +49,6 @@ locator исправлена без изменения продукта, фин�
 
 - real-provider M5 на текущем diff — NOT_RUN, отдельного разрешения нет;
 - физический телефон и Safari/Firefox — NOT_RUN;
-- CI, PR, merge, test deploy и опубликованный readback — NOT_RUN;
+- PR #182 — создан; повторный CI после release bump — IN_PROGRESS;
+- merge, test deploy и опубликованный readback — NOT_RUN;
 - визуальное решение владельца — не просмотрено.

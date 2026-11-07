@@ -1,18 +1,19 @@
 # AC18-FIX-02 — подготовка ситуации и надёжный первый старт
 
-Статус: локально проверенный кандидат; требуется review/разрешение на передачу. Основание: пакет
+Статус: PR #182; обязательный CI повторно запущен после patch release bump. Основание: пакет
 `P4K_AC18_FIX_02_Preparation_Start_2026-11-07.zip`, редакция 1.0 от 07.11.2026.
 
 ## Основание и границы
 
-- Base: `origin/main` = `65c1f4c04466b60d4c6ce4611346fc92c617ed74`, версия 2.0.75.
+- Base: `origin/main` = `65c1f4c04466b60d4c6ce4611346fc92c617ed74`, версия 2.0.75;
+  кандидат выпуска 2.0.76.
 - Ветка: `codex/ac18-fix02-preparation-start`; отдельный worktree `/tmp/4k-ac18-fix02`.
 - Прочитаны: `README.md`, `CONTRIBUTING.md`, `docs/evc/agent-workflow.md`,
   `docs/evc/verification-matrix.md`, `docs/evc/artifact-recipe.md`, Product Architecture,
   Registry, Change 01, task SourceSet manifest, `TASK.txt`, `SOURCES.md`,
   `VISUAL_ACCEPTANCE.txt` и адресные runtime/тесты подготовки и старта.
 - Не меняются: методология, published snapshots, prompts, admission/repair policy, схема БД.
-- Push, PR, merge, deploy и real-provider LLM этим запуском не разрешены.
+- Push и PR разрешены владельцем 07.11.2026; merge, deploy и real-provider LLM не разрешены.
 
 ## Таблица решений
 
@@ -43,7 +44,10 @@ projection не выдаётся за успешный старт; пользо�
 - PostgreSQL `test_pilot_start_admission_db.py` → PASS, 7; отдельный test-контейнер остановлен.
 - Browser lost-start + visual 1440/768/390/320 → PASS, 1; кадры и ограничения:
   `docs/evc/evidence/ac18-fix02-preparation-start/README.md`.
-- CI/deploy/real-provider/физические устройства/визуальное решение владельца → NOT_RUN.
+- Первый CI frontend release gate → FAIL: версия продукта оставалась 2.0.75.
+- Штатный `scripts/prepare_release.py patch --candidate 2.0.76`, повторные build/lint/frontend
+  150 и `git diff --check` → PASS; повторный CI ожидается.
+- Deploy/real-provider/физические устройства/визуальное решение владельца → NOT_RUN.
 
 ## Риски и откат
 
@@ -53,6 +57,5 @@ projection не выдаётся за успешный старт; пользо�
 
 ## Следующий шаг
 
-Выполнить финальный diff/review-check, зафиксировать commit и запросить отдельное
-разрешение на push/PR. Real-provider verification остаётся отдельным NOT_RUN без
-прямого разрешения; владелец отдельно принимает визуальный результат.
+Дождаться обязательного CI и review в PR #182. Merge/deploy и real-provider verification
+остаются отдельными действиями без разрешения; владелец отдельно принимает визуальный результат.
