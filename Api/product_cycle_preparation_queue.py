@@ -39,7 +39,7 @@ def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignm
     table = connection.execute("SELECT to_regclass(current_schema()||'.product_cycle_preparation_operations') AS relation").fetchone()
     if not table or not table.get('relation'):
         return None
-    row = connection.execute('''SELECT operation_id,status FROM product_cycle_preparation_operations
+    row = connection.execute('''SELECT operation_id,status,error_code,error_message FROM product_cycle_preparation_operations
         WHERE user_id=%s AND request_json->>'personalized_profile_id'=%s
           AND request_json->>'assignment_ref'=%s
           AND request_json->>'questionnaire_revision_id' IS NOT DISTINCT FROM %s
@@ -55,14 +55,31 @@ def _operation_lock_key(operation_id: str) -> int:
 
 PUBLIC_FAILURE = {
     "code": "ASSESSMENT_CYCLE_PREPARATION_FAILED",
-    "message": "Не удалось подготовить оценочный цикл. Повторите попытку.",
+    "message": "Подготовка завершилась с ошибкой. Обратитесь к ответственному за оценку.",
+}
+PUBLIC_TECHNICAL_FAILURE = {
+    "code": "ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE",
+    "message": "Подготовка завершилась технической ошибкой. Ваши ответы сохранены; можно запустить её повторно.",
 }
 PUBLIC_FAILURES_BY_PREFIX = {
     "M7_NO_ADMISSIBLE_CASE": {
         "code": "ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE",
         "message": "Для роли «Специалист» в назначенной конфигурации пока нет допущенной ситуации. Обратитесь к ответственному за настройку оценки.",
     },
+    "M5_FUNCTIONAL_AS_NOT_ADMITTED": {
+        "code": "ASSESSMENT_AS_NOT_ADMITTED",
+        "message": "Ситуация не прошла обязательную проверку. Ваши ответы сохранены; обратитесь к ответственному за оценку.",
+    },
 }
+RETRYABLE_TECHNICAL_ERRORS = frozenset({"TimeoutError", "ConnectionError", "LlmGatewayError"})
+
+
+def retry_allowed(operation: dict) -> bool:
+    """Only explicitly classified technical failures permit a new preparation command."""
+    return (operation.get("status") == "failed"
+            and operation.get("error_code") in RETRYABLE_TECHNICAL_ERRORS
+            and not any(str(operation.get("error_message") or "").startswith(prefix)
+                        for prefix in PUBLIC_FAILURES_BY_PREFIX))
 
 
 def public_operation(operation: dict) -> dict:
@@ -75,8 +92,10 @@ def public_operation(operation: dict) -> dict:
         payload["result"] = operation["result_json"]
     elif operation["status"] == "failed":
         internal_message = str(operation.get("error_message") or "")
+        payload["retry_allowed"] = retry_allowed(operation)
         payload["error"] = dict(next((value for prefix, value in PUBLIC_FAILURES_BY_PREFIX.items()
-                                      if internal_message.startswith(prefix)), PUBLIC_FAILURE))
+                                      if internal_message.startswith(prefix)),
+                                     PUBLIC_TECHNICAL_FAILURE if payload["retry_allowed"] else PUBLIC_FAILURE))
     return payload
 
 
@@ -139,7 +158,7 @@ class ProductCyclePreparationQueue:
             existing = connection.execute(
                 """SELECT operation_id,status,result_json,error_code,error_message,request_checksum,created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations
-                   WHERE user_id=%s AND status IN ('queued','running','completed')
+                   WHERE user_id=%s AND status IN ('queued','running','completed','failed')
                      AND (CASE WHEN request_json->>'kind'='next' THEN request_json
                           ELSE request_json - 'idempotency_key' END)=%s::jsonb
                    ORDER BY created_at DESC LIMIT 1""",
@@ -147,8 +166,12 @@ class ProductCyclePreparationQueue:
             ).fetchone()
             if existing:
                 result = dict(existing)
-                result.pop("request_checksum", None)
-                return result
+                if result["status"] == "failed":
+                    if not retry_allowed(result):
+                        raise ValueError("PRODUCT_CYCLE_PREPARATION_RETRY_NOT_ALLOWED")
+                else:
+                    result.pop("request_checksum", None)
+                    return result
             if connection.execute("""SELECT 1 FROM product_cycle_preparation_operations
                 WHERE user_id=%s AND status IN ('queued','running') LIMIT 1""", (user_id,)).fetchone():
                 raise ValueError('PRODUCT_CYCLE_PREPARATION_SCOPE_BUSY')

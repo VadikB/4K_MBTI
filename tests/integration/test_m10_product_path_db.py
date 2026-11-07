@@ -270,6 +270,70 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
 
 
 @pytest.mark.integration
+def test_http_preparation_retry_requires_server_classified_technical_failure(product_db, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+
+    factory = product_db
+    with factory() as connection:
+        connection.execute("""CREATE TABLE product_cycle_preparation_operations (
+            id BIGSERIAL PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
+            user_id BIGINT NOT NULL REFERENCES users(id), request_json JSONB NOT NULL,
+            request_checksum TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
+            attempts INTEGER NOT NULL DEFAULT 0, result_json JSONB, error_code TEXT,
+            error_message TEXT, worker_id TEXT, attempt_token UUID, locked_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMP)
+        """)
+    monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", factory)
+    monkeypatch.setattr(routes, "get_connection", factory)
+    monkeypatch.setattr(routes.acquaintance, "preparation_scope", lambda *args, **kwargs: None)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                        lambda token: SimpleNamespace(id=99) if token == "synthetic-owner" else None)
+    queue = ProductCyclePreparationQueue()
+    monkeypatch.setattr(routes, "product_cycle_preparation_queue", queue)
+    app = FastAPI()
+    app.include_router(routes.router)
+    request = {"personalized_profile_id": factory.profile_id,
+               "idempotency_key": "synthetic-initial", "selected_skills": ["K1", "K2", "K3", "K4"]}
+    queue.enqueue(operation_id=request["idempotency_key"], user_id=99, request=request)
+    with factory() as connection:
+        connection.execute("""UPDATE product_cycle_preparation_operations SET status='failed',
+            error_code='ValueError',error_message='M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE'
+            WHERE operation_id=%s""", (request["idempotency_key"],))
+
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, "synthetic-owner")
+        saved = client.get("/users/assessment/cycles/preparation/synthetic-initial")
+        assert saved.status_code == 200
+        assert saved.json()["retry_allowed"] is False
+        assert saved.json()["error"]["code"] == "ASSESSMENT_AS_NOT_ADMITTED"
+        same_key = client.post("/users/assessment/cycles/prepare", json=request)
+        assert same_key.status_code == 202 and same_key.json()["operation_id"] == "synthetic-initial"
+        blocked = client.post("/users/assessment/cycles/prepare",
+                              json={**request, "idempotency_key": "synthetic-forbidden"})
+        assert blocked.status_code == 409
+        assert blocked.json()["detail"] == "PRODUCT_CYCLE_PREPARATION_RETRY_NOT_ALLOWED"
+        with factory() as connection:
+            assert connection.execute("SELECT COUNT(*) AS n FROM product_cycle_preparation_operations").fetchone()["n"] == 1
+            connection.execute("""UPDATE product_cycle_preparation_operations SET
+                error_code='TimeoutError',error_message='synthetic private timeout'
+                WHERE operation_id='synthetic-initial'""")
+        technical = client.get("/users/assessment/cycles/preparation/synthetic-initial")
+        assert technical.json()["retry_allowed"] is True
+        assert "synthetic private timeout" not in technical.text
+        allowed = client.post("/users/assessment/cycles/prepare",
+                              json={**request, "idempotency_key": "synthetic-allowed"})
+        assert allowed.status_code == 202 and allowed.json()["status"] == "queued"
+        concurrent = client.post("/users/assessment/cycles/prepare",
+                                 json={**request, "idempotency_key": "synthetic-concurrent"})
+        assert concurrent.status_code == 202 and concurrent.json()["operation_id"] == "synthetic-allowed"
+    with factory() as connection:
+        assert connection.execute("SELECT COUNT(*) AS n FROM product_cycle_preparation_operations").fetchone()["n"] == 2
+
+
+@pytest.mark.integration
 def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkeypatch):
     factory = product_db
     with factory() as connection:
