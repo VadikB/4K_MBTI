@@ -25,7 +25,7 @@ DEFAULT_DEPENDENCIES: dict[str, str] = {
     "m5_functional_package": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5",
     "m5_functional_runtime": "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.2.0",
     "m5_functional_repair": "assessment_definitions/prompts/m5_functional_repair/v1",
-    "m5_functional_protocol": "assessment_definitions/prompts/m5_functional_protocol/v1",
+    "m5_functional_protocol": "assessment_definitions/prompts/m5_functional_protocol/v2",
     "m5_semantic_decision": "assessment_definitions/prompts/m5_semantic_decision/v2",
     "m5_character_response": "assessment_definitions/prompts/m5_character_response/v2",
     "m5_technical_c45": "assessment_definitions/prompts/m5_technical_c45/v1",

@@ -6,6 +6,7 @@ import pytest
 
 from Api.cycle_execution_manifest import (
     CHECKSUM_KIND,
+    DEFAULT_DEPENDENCIES,
     build_manifest,
     resolve_dependency,
     validate_manifest,
@@ -91,13 +92,16 @@ def test_manifest_checksum_rejects_runtime_ref_mutation(tmp_path: Path):
         validate_manifest(manifest, manifest_checksum)
 
 
-def test_functional_protocol_prompt_package_is_complete():
-    package = Path(__file__).resolve().parents[2] / "assessment_definitions/prompts/m5_functional_protocol/v1"
+@pytest.mark.parametrize(("directory", "version"), [("v1", "1.0.0"), ("v2", "2.0.0")])
+def test_functional_protocol_prompt_package_is_complete(directory, version):
+    package = Path(__file__).resolve().parents[2] / f"assessment_definitions/prompts/m5_functional_protocol/{directory}"
     manifest = json.loads((package / "manifest.json").read_text(encoding="utf-8"))
     assert (manifest["id"], manifest["version"], manifest["owner"]) == (
-        "m5_functional_protocol", "1.0.0", "PM-03",
+        "m5_functional_protocol", version, "PM-03",
     )
     assert manifest["artifacts"] == [
         {"name": name, "sha256": hashlib.sha256((package / name).read_bytes()).hexdigest()}
         for name in ("challenger.md", "json-retry.md", "tester-addendum.md")
     ]
+    if directory == "v2":
+        assert DEFAULT_DEPENDENCIES["m5_functional_protocol"] == str(package.relative_to(Path(__file__).resolve().parents[2]))

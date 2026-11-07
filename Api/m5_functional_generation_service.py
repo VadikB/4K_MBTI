@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.5"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 REPAIR_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_repair/v1"
-PROTOCOL_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1"
+PROTOCOL_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_protocol/v2"
 RUNTIME_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.2.0"
 
 AUTHOR_INDICATOR_FIELDS = (
@@ -75,6 +75,27 @@ def _load_repair_instruction(repair_package: Path = REPAIR_PACKAGE) -> tuple[str
     }
 
 
+def _protocol_package_ref(protocol_package: Path) -> dict[str, str]:
+    raw = (protocol_package / "manifest.json").read_bytes()
+    manifest = json.loads(raw)
+    expected_version = {"v1": "1.0.0", "v2": "2.0.0"}.get(protocol_package.name)
+    artifacts = manifest.get("artifacts")
+    expected_names = {"json-retry.md", "tester-addendum.md", "challenger.md"}
+    if (not expected_version or manifest.get("schema_version") != 1
+            or manifest.get("id") != "m5_functional_protocol"
+            or manifest.get("version") != expected_version
+            or manifest.get("status") != "draft"
+            or not isinstance(artifacts, list)
+            or {item.get("name") for item in artifacts if isinstance(item, dict)} != expected_names
+            or len(artifacts) != len(expected_names)):
+        raise ValueError("M5_FUNCTIONAL_PROTOCOL_PACKAGE_INVALID")
+    for item in artifacts:
+        if item.get("sha256") != checksum((protocol_package / item["name"]).read_bytes()):
+            raise ValueError("M5_FUNCTIONAL_PROTOCOL_PACKAGE_INVALID")
+    return {"id": manifest["id"], "version": manifest["version"],
+            "checksum": checksum(raw), "path": str(protocol_package.relative_to(ROOT))}
+
+
 def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id: str,
                          synthetic: bool = False, case_value: dict[str, Any] | None = None,
                          author_as_example: dict[str, Any] | None = None,
@@ -109,6 +130,7 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
         "generation_contract": {"path": str((source_root / "07_generation/Generation_contract_v0.2.json").relative_to(ROOT)),
                                 "sha256": checksum((source_root / "07_generation/Generation_contract_v0.2.json").read_bytes())},
         "repair_package": {"path": str(repair_package.relative_to(ROOT))},
+        "protocol_package": _protocol_package_ref(protocol_package),
         **{
             f"protocol_{name.replace('-', '_')}": {
                 "path": str((protocol_package / f"{name}.md").relative_to(ROOT)),
@@ -389,6 +411,22 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
     raise AssertionError("unreachable")
 
 
+def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
+                        expected_candidate_checksum: str | None = None) -> list[dict[str, Any]]:
+    """Only check IDs requested in this batch may satisfy it."""
+    ids = {item["check_id"] for item in batch_checks}
+    if expected_candidate_checksum is not None:
+        actual = raw.get("candidate_checksum") if isinstance(raw, dict) else None
+        if actual != expected_candidate_checksum:
+            reason = ("Tester review не содержит привязки к кандидату."
+                      if actual is None else "Tester review относится к другому кандидату.")
+            return [{"check_id": check_id, "status": "TECHNICAL_ERROR", "reason": reason}
+                    for check_id in ids]
+    checks = raw.get("checks") if isinstance(raw, dict) else None
+    return [item for item in checks if isinstance(item, dict) and item.get("check_id") in ids] \
+        if isinstance(checks, list) else []
+
+
 def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
     contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
@@ -451,8 +489,12 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     plan = build_applicability_plan(snapshot["case"])
     batch_size = 8
     concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
+    protocol_ref = (snapshot.get("refs") or {}).get("protocol_package") or {}
+    candidate_binding = protocol_ref.get("version") == "2.0.0"
+    candidate_checksum = checksum(concrete_candidate) if candidate_binding else None
     payload_base = {"case": snapshot["case"], "profile": snapshot["profile"],
                "candidate_as": concrete_candidate,
+               **({"candidate_checksum": candidate_checksum} if candidate_binding else {}),
                "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
                "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
                "deterministic_validation": generation["deterministic_validation"],
@@ -471,7 +513,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                  "missing_required_material_or_condition_is_fail_not_not_applicable": True,
                  "allowed_statuses": ["PASS", "FAIL", "NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"],
                  "do_not_return_overall_status": True},
-               "required_output": {"checks": [{
+               "required_output": {**({"candidate_checksum": "exact candidate_checksum from input"}
+                                     if candidate_binding else {}), "checks": [{
                    "check_id": "exact id from applicability_plan.required_checks",
                    "status": "PASS|FAIL|NOT_RUN|INDETERMINATE|TECHNICAL_ERROR",
                    "evidence_paths": ["JSON path"], "reason": "string",
@@ -501,7 +544,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
         )
-        tester_raw_checks.extend(raw.get("checks") if isinstance(raw.get("checks"), list) else [])
+        tester_raw_checks.extend(_bound_batch_checks(raw, batch_checks, candidate_checksum))
         tester_operations.append({
             **_trace(response, operation_id=operation_id, kind="independent_tester_v2_batch",
                      input_checksum=input_checksum),
@@ -513,6 +556,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     challenge_payload = {
         "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
         "candidate_as": concrete_candidate,
+        **({"candidate_checksum": candidate_checksum} if candidate_binding else {}),
         "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
         "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
         "protected_checks": protected,
@@ -555,9 +599,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
         )
-        challenger_raw_checks.extend(
-            challenge_raw.get("checks") if isinstance(challenge_raw.get("checks"), list) else []
-        )
+        challenger_raw_checks.extend(_bound_batch_checks(challenge_raw, batch_checks, candidate_checksum))
         challenger_operations.append({
             **_trace(challenge_response, operation_id=challenge_operation_id,
                      kind="independent_tester_v2_challenger_batch",
