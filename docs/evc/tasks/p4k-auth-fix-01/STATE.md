@@ -1,4 +1,15 @@
-# P4K_AUTH_FIX_01 — состояние передачи 07.11.2026
+# P4K_AUTH_FIX_01 — выпуск на test разрешён 07.11.2026
+
+Текущий этап: [карточка выпуска](../p4k-auth-fix-01-release.md).
+Прямое последующее разрешение владельца: branch_push/pr/version_bump/merge/deploy-test=true,
+merge только после CI и человеческого review; artifact_publish=false.
+Prod/pilot/реальная почта/продуктовые LLM/изменения рабочих данных не разрешены.
+Кандидат 2.0.76 относительно свежего main65c1f4c (2.0.75); ready:prepare и полный
+применимый локальный минимум, затем обязательные CI/review, PR squash и deploy-test.
+Точные SHA и результаты: outputs/p4k-auth-fix-01-release-20261107/ исходного workspace.
+Снимки ниже исторические: прежние запреты относятся к прежнему этапу.
+
+## Исторический срез локальной передачи 07.11.2026
 
 - Продолжение: `docs/evc/tasks/p4k-auth-fix-01-completion.md`.
 - Исходный f78cb4a сохранён в verified bundle;50 evidence-файлов — в постоянной
