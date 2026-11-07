@@ -1,0 +1,122 @@
+{
+  "profile": "assessment-first-case/1.1",
+  "scope": "synthetic_diagnostic",
+  "process_exit_code": 0,
+  "exit_code": 0,
+  "result": "PASS",
+  "runs": [
+    {
+      "run": {
+        "run_id": "8336eef355fc43b49c1837fc89e2868e",
+        "database": "product4k_pytest_8336eef355fc43b49c1837fc89e2868e",
+        "port": "18861",
+        "provider_mode": "real",
+        "program_source": "published-pilot",
+        "published_release_ref": {
+          "path": "/home/vadim_bogachev/evidence/ac18-branch38-run-20261107-48b27d91/f69393c0-1bb9-4617-894d-2904238adb49/published-release-source.json",
+          "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+          "program": {
+            "id": 2,
+            "code": "specialist_pilot",
+            "version": "1.2",
+            "assignment_ref": "specialist-pilot",
+            "status": "published",
+            "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+            "assessment_configuration_id": 11,
+            "catalog_version_id": 2
+          }
+        },
+        "code": {
+          "sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+          "branch": "",
+          "origin_main": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+          "worktree_status": "",
+          "files": {
+            "scripts/test_stand.py": "36ed60cd1121a98a1cf8d52f30a0ea55d14034d92612eb14df7eb426615cfed2",
+            "scripts/assessment_first_case.py": "25b731751f8b1b1ba0503e5b1abcfb97235c4908120e009ad27020df890f4101",
+            "Api/config.py": "496d174c74ec21ce5a6c760e7682b383df283b3619735047028ecf0945f59f7b",
+            "Api/llm/deepseek_gateway.py": "5d340c105596a993374647c9184ee36ecdc59259f31ccae1f03c29808b866265",
+            "Api/llm/provider_contract.py": "a3caa700a2f9b53a7201c24cf47b7ed292f01d21257f0b8bc3f76066891094d2",
+            "assessment_definitions/providers/deepseek/v1/manifest.json": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c",
+            "tests/path29_browser_inputs.py": "cf947cf38aa33ab301e3d0bcf1f55325db6095e4d55d38e87d4d862fd3de4b2e",
+            "tests/path29_browser_app.py": "66583a4c7abf4fa6bccc0da24c93d8efca977e0681b3df31f5fd98555214713c",
+            "tests/assessment_first_case_evidence.py": "36b1cbb9b29c8107f0557278546fe3e4f270d6c9f9f2886ad06deaa301408d70",
+            "tests/browser/path29-participant.spec.mjs": "325fb2cf1034db7c1529ee8e69547a440d3ca86bf106916d55c63ee0e94e69a0",
+            "tests/browser/fixtures/receipt-file.mjs": "71b454be2fb1dc09800f3f33be1d1e31692f512c3ac6ba657069937bb70ce627",
+            "tests/browser/fixtures/preparation-receipt.mjs": "5ffa75e9ab37b114c95747fd2e3ac12c3bf8c2ac4f38037603e50bad42903905",
+            "tests/browser/fixtures/path-viewports.mjs": "c2ba2c435c7aac1af0b20dc01765c320f60c65a4d1b1f3c8b58b507be4562311",
+            "tests/browser/fixtures/auth-password-form.mjs": "c59bba814fe4fff6d4dcc6a60be571d4b23a6ad3055fe248218093dd25a9bad0",
+            "tests/browser/fixtures/failure-page.mjs": "7b0ad9660d2918018d71016a20e24b1dea8bac9981c2d57a88c2f8cf1990e55e",
+            "tests/path_start_release_source.py": "feae3518fb700e96e47f4c5b3553da2c5301d2d91f20809a6ad1b49cb3767d06",
+            "tests/path_start_release_inputs.py": "cd1bfd41d3300575d217c63277e4bcbb4d3ddaeece3b5e0f6a6d2e368e86f1f3",
+            "tests/browser/fixtures/path-start-release.json": "a3175dda9675c476ae8636d26449e5ed17e0ef7940ea0412b7431882933ae1e6"
+          }
+        }
+      },
+      "cleanup": {
+        "run_id": "8336eef355fc43b49c1837fc89e2868e",
+        "database": "product4k_pytest_8336eef355fc43b49c1837fc89e2868e",
+        "owner_verified": true,
+        "database_absent": true,
+        "state_absent": true,
+        "force": false
+      },
+      "result": "PASS",
+      "completion": {
+        "run_id": "8336eef355fc43b49c1837fc89e2868e",
+        "status": "completed",
+        "exit_code": 0,
+        "receipt_file": "first-case-receipt.json",
+        "receipt_sha256": "30ca2a1bf1c228f9b10cb5cd46af071ce681d613c66359b6adcb12af13370b6c"
+      },
+      "process_exit_code": 0,
+      "validation_errors": [],
+      "evidence_directory": "/home/vadim_bogachev/evidence/ac18-branch38-run-20261107-48b27d91/f69393c0-1bb9-4617-894d-2904238adb49",
+      "failure": null,
+      "provider_completed_requests": 10,
+      "provider_completions": [
+        {
+          "duration_ms": 62628.72,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:generation:d0356d85c699"
+        },
+        {
+          "duration_ms": 15899.08,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:tester:01:a4895acccef1"
+        },
+        {
+          "duration_ms": 16211.12,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:tester:02:82664afb92e6"
+        },
+        {
+          "duration_ms": 11822.7,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:tester:03:418f7687ed45"
+        },
+        {
+          "duration_ms": 17143.57,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:tester:04:738dd8136ebe"
+        },
+        {
+          "duration_ms": 5727.39,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:tester:05:f8fcc036f682"
+        },
+        {
+          "duration_ms": 15482.91,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:challenger:01:560e484d1754"
+        },
+        {
+          "duration_ms": 14552.76,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:challenger:02:1db0c5cb804d"
+        },
+        {
+          "duration_ms": 13530.14,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:challenger:03:ced8e793291a"
+        },
+        {
+          "duration_ms": 14247.95,
+          "routing_key": "d0d381b4-915e-476d-a63a-6af97d8807ae:challenger:04:d9ad7320f64f"
+        }
+      ],
+      "usage_note": "Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace."
+    }
+  ]
+}

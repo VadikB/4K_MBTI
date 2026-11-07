@@ -1,0 +1,139 @@
+{
+  "auth_http_rows_no_query_or_body": [
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/request-link",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/assets/icons/auth-eye.svg",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/password-login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/request-link",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/assets/icons/auth-email-outline.svg",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/confirm",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/assets/icons/auth-eye.svg",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/password-register",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/assets/icons/auth-eye.svg",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/password-register",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/styles/screens/auth.css",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/request-link",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path_no_query": "/web/assets/icons/auth-eye.svg",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path_no_query": "/users/auth/email/password-login",
+      "status": 200
+    }
+  ],
+  "completed_provider_requests": 10,
+  "provider_http500_message_count": 0,
+  "provider_request_failure_message_count": 0,
+  "raw_log_exported": false,
+  "server_log_sha256": "ae001b6e3d8b4576fa30c124c78619ee52e81219a2fdb243cc03c3e2ffdbd0d7"
+}

@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-07",
+  "task": "AC18-FINAL-REL-01",
+  "owner_confirmation": "2.0.75 (PATCH)",
+  "candidate": "2.0.75",
+  "release_type": "patch",
+  "base_sha": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "base_version": "2.0.74",
+  "source_handoff": "6f9d1c940ce405e0debd2335687fda87e13837a7",
+  "paid_branch_path_sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "version_bump": true,
+  "branch_push": true,
+  "pr": true,
+  "mandatory_ci": true,
+  "human_code_review": "REQUIRED_FOR_EXACT_PR_HEAD",
+  "merge": false,
+  "deploy": false,
+  "artifact_publish": false,
+  "paid_path": false,
+  "working_database_writes": false,
+  "intermediate_test_deploy": false
+}

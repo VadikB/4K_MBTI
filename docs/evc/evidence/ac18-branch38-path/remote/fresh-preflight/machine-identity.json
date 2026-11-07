@@ -1,0 +1,20 @@
+{
+  "checked_at_utc": "2026-11-07T08:40:51.343755+00:00",
+  "checkout": "/home/vadim_bogachev/evidence/ac18-branch38-checkout-20261107-48b27d91",
+  "preflight_directory": "/home/vadim_bogachev/evidence/ac18-branch38-preflight-20261107-48b27d91",
+  "future_run_directory": "/home/vadim_bogachev/evidence/ac18-branch38-run-20261107-48b27d91",
+  "python": "3.12.3",
+  "node": "v24.22.1",
+  "npm": "11.19.1",
+  "chromium": "153.0.8010.12",
+  "provider_key_count": 1,
+  "provider_max_concurrency": "default:10",
+  "env_file_owner_only": true,
+  "env_file_copied": false,
+  "dependency_setup": "ignored real node_modules; links to existing installed dependencies; no install",
+  "new_database_created": false,
+  "provider_calls_started": 0,
+  "real_email_sent": false,
+  "paid_run_authorized": "ONE_UNRELEASED_BRANCH_CANDIDATE_RUN_AFTER_FRESH_PREFLIGHT",
+  "candidate_not_deployed": true
+}

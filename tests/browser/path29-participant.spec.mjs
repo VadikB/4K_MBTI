@@ -6,6 +6,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { persistReceipt, isTerminalPreparationReceipt } from './fixtures/receipt-file.mjs';
 import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from './fixtures/preparation-receipt.mjs';
 import { capturePathViewports } from './fixtures/path-viewports.mjs';
+import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
+import { captureFailurePage } from './fixtures/failure-page.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -40,6 +42,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const superContext = await browser.newContext(), adminContext = await browser.newContext(), participantContext = await browser.newContext();
   const extraContexts = [];
   const superPage = await superContext.newPage(), admin = await adminContext.newPage(), page = await participantContext.newPage();
+  let activePage = superPage;
+  let activeActor = 'superadmin';
   let server;
   let finalReceipt;
   let runId;
@@ -118,6 +122,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await expect(superCard).toContainText(state.path29.admin_email);
     }
     step = 'admin_login_questionnaire_and_assignment';
+    activePage = admin;
+    activeActor = 'administrator';
     await admin.goto(base);
     await admin.locator('#email-input').fill(state.path29.admin_email);
     await admin.locator('#request-magic-link-button').click();
@@ -130,7 +136,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       })).json();
       const login = new URL(adminMail.item.action_url);
       await admin.goto(base + '/' + login.search);
-      await expect(admin.locator('#magic-token-input')).toBeVisible();
+      await waitForPasswordCreationForm(admin, state.path29.admin_email);
       await admin.locator('#magic-token-input').fill(state.password);
       await admin.locator('#verify-magic-link-button').click();
       await expect(admin.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
@@ -214,9 +220,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     expect(mail.item).toBeTruthy();
     const invitation = new URL(mail.item.action_url);
     expect(invitation.origin).toBe('https://test.example.com');
-    await page.goto(base + '/' + invitation.search);
     step = 'participant_login_and_acquaintance';
-    await expect(page.locator('#magic-token-input')).toBeVisible();
+    activePage = page;
+    activeActor = 'participant';
+    await page.goto(base + '/' + invitation.search);
+    await waitForPasswordCreationForm(page, state.path29.participant_email);
     await page.locator('#magic-token-input').fill(state.password);
     await page.locator('#verify-magic-link-button').click();
     await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
@@ -490,9 +498,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         failureReceipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
         save('failure-receipt', failureReceipt);
         terminalPreparationReceiptSaved ||= isTerminalPreparationReceipt(failureReceipt);
-        await page.screenshot({ path: path.join(dir, 'failure.png'), fullPage: true });
       }
     } catch { /* Startup failures may have no HTTP endpoint. */ }
+    try {
+      await captureFailurePage(activePage, dir, { step, actor: activeActor });
+    } catch { /* Closed or unavailable active tabs must not discard server evidence. */ }
     const preparationError = failureReceipt?.preparation_operation?.error_message;
     save('failure', { step,
       expected: step === 'real_llm_preparation' ? 'Admission конечного кандидата и сохранённая AS' : 'Согласованный шаг завершён штатно',

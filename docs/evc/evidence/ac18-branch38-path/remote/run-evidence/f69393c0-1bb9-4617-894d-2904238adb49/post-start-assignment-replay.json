@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "result": {
+    "items": [
+      {
+        "user_id": 3,
+        "status": "already_assigned",
+        "assignment_id": 1,
+        "error": null
+      }
+    ]
+  },
+  "participant_state": {
+    "profiles": 1,
+    "cycles": 1,
+    "started": 1,
+    "operations": 1
+  },
+  "scope": "real-provider PATH"
+}

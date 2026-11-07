@@ -1,4 +1,42 @@
-# STATE — PROVIDER-ROLES-01
+# STATE — AC18-FINAL-REL-01
+
+07.11.2026. После приёмки branch PATH владелец «делаем»: готовим один финальный
+выпуск, без промежуточного test deploy и без нового LLM. Fresh origin/main339aff9/
+2.0.74, чистая codex/ac18-auth-readiness38bf8244; foreign root и3 untracked сохранены.
+Canonical ready preflight exit2 сохранён; затем владелец прямо утвердил2.0.75(PATCH).
+Bump/push/PR/mandatoryCI разрешены; merge/deployfalse, human review NOT_RUN.
+Actual full branch PATH8336eef3… PASS:10 операций/749363 tokens, admissionPASS,
+repairfalse, explicitstart201/ASdcaa65f1…/ответов0,4widths+visualPASS; owned cleanup
+и independent absent readback PASS. Primary64 files теперь сохраняются в Git:
+docs/evc/evidence/ac18-branch38-path; общий пакет SHAe6dd3a0e… передан владельцу.
+Новые runner/release units24 PASS, verifier64/link10/diff-check PASS; передача
+подготовки фиксируется docs-only commit, runtime38bf8244 не меняется.
+Canonical2.0.75 PASS дважды,45dist idempotent; newfrontend146/receipt66/Python24/
+browser9 PASS, lint/release/evidence PASS.18 runtime hashes прежние,45 normalized
+module/import graph совпадает с paid38bf; только4 metadata release values изменены.
+Активно: release commit/push → PR/mandatoryCI →
+humanreview → отдельный merge/deploy допуск. PREP-DIAG-01 UNKNOWN отдельно.
+Карточка/отчёт: ac18-final-release. Ниже история, не текущий запрет/результат.
+
+# История — AC18-AUTH-READY-01
+
+07.11.2026. Отдельная локальная `codex/ac18-auth-readiness`, база339aff9/main/test2.0.74.
+Владелец разрешил узкий UI/harness fix и бесплатные проверки; release flags всеfalse.
+Run2835475f… завершён FAIL до LLM на auth step1 вместо2; owned cleanup/absent readback
+PASS, исходные evidence сохранены. Причина именно run UNKNOWN, causal identity с
+воспроизведённой readiness-гонкой NOT_PROVEN; PREP-DIAG-01 отдельно UNKNOWN.
+Реализованы pending hidden/disabled/submit guard, отдельное validation generation,
+semantic-ready exact-email helper и safe failure capture активной вкладки.
+Before2 FAIL; первая targeted5 PASS; frontend146/backend956/HTTP108 PASS;
+широкий browser126 PASS/1 ошибка нового test expectation URL, исправлена только
+проверка; финальный полный повтор127 PASS, flaky0/retries0. Build45 byte-idempotent/lint PASS.
+Продуктовые Api/схема/артефакты/admission/repair не менялись; CI/новый deploy/LLM NOT_RUN.
+Implementation c4a6a0cb1e28cda7a4188ac8d4efef33c237999c, итоговый handoff docs-only.
+Карточка/отчёт/evidence: ac18-auth-readiness. Локальная проверка и передача завершены;
+выпуск и новый AC18 требуют отдельных разрешений. Однократный run уже израсходован,
+heartbeat PAUSED. Main339aff9/test2.0.74 не содержат эту правку.
+
+# История — PROVIDER-ROLES-01
 
 ## R2 — 07.11: кандидат2.0.74, разрешены bump/push/PR/CI/review
 

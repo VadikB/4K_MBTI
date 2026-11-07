@@ -1,0 +1,34 @@
+{
+  "contract": "path-pilot-schema-comparison/1",
+  "result": "EXACT_SCOPED_SCHEMA_MATCH",
+  "expected_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+  "actual_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+  "working_server_checkout_sha": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "scope_table_count": 32,
+  "missing_tables": [],
+  "counts": {
+    "columns": {
+      "expected": 353,
+      "actual": 353
+    },
+    "constraints": {
+      "expected": 191,
+      "actual": 191
+    },
+    "indexes": {
+      "expected": 84,
+      "actual": 84
+    },
+    "triggers": {
+      "expected": 16,
+      "actual": 16
+    }
+  },
+  "missing": [],
+  "changed": [],
+  "extra": [],
+  "program_activation_checked": false,
+  "schema_or_data_writes": false,
+  "business_rows_read": false,
+  "runtime_or_llm_pass": false
+}

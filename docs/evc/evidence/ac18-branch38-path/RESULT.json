@@ -1,0 +1,26 @@
+{
+  "candidate_path": "PASS",
+  "candidate_sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "main_deployed_sha": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "formal_deployed_release_ac18": "NOT_CLOSED_BY_BRANCH_RUN",
+  "run_id": "8336eef355fc43b49c1837fc89e2868e",
+  "runner_invocations": 1,
+  "start_http_status": 201,
+  "cycle_id": "a8f1b6bb-cc41-4df2-95e6-77a296d1be4f",
+  "started_at": "2026-11-07T08:46:06.274840+00:00",
+  "assessment_situation_id": "dcaa65f1-d527-477c-a009-c26d7d298700",
+  "assessment_answers": 0,
+  "admission": "PASS",
+  "repair_used": false,
+  "provider_operations": 10,
+  "usage": {
+    "prompt_tokens": 712010,
+    "completion_tokens": 37353,
+    "total_tokens": 749363
+  },
+  "primary_run_files": 64,
+  "cleanup": "PASS_WITH_INDEPENDENT_READ_ONLY_ABSENT_READBACK",
+  "candidate_ci": "NOT_RUN_NO_PUSH",
+  "merge_or_deploy": false,
+  "PREP_DIAG_01": "SEPARATE_HISTORICAL_UNKNOWN"
+}

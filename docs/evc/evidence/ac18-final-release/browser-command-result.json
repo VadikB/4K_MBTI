@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "/Users/vadim_bogachev/Developer/4K/node_modules/.bin/playwright",
+    "test",
+    "tests/browser/auth-r03.spec.mjs",
+    "--grep",
+    "AC18 auth readiness|AC18 failure capture|AS projection|initial HTML has a complete frontend version",
+    "--reporter=json"
+  ],
+  "exit_code": 0,
+  "finished_at_utc": "2026-11-07T09:10:53.823347+00:00",
+  "scope": "synthetic HTTP component; real UI/build; no DB/provider/email",
+  "previous_failure": "7 passed/2 failed: projection fixture subprocess .venv missing in worktree; project BROWSER_PYTHON now explicit"
+}

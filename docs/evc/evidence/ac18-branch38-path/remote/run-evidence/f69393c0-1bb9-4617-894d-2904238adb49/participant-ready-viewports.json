@@ -1,0 +1,1022 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "readiness-explanation",
+        "enabled": true,
+        "box": {
+          "x": 180,
+          "y": 580,
+          "width": 840,
+          "height": 24
+        },
+        "geometry": {
+          "box": {
+            "x": 180,
+            "y": 580,
+            "width": 840,
+            "height": 24
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 180,
+            "right": 1020,
+            "top": 580,
+            "bottom": 604
+          },
+          "visible_area": 20160,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "H2",
+            "id": "onboarding-title",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 580,
+            "height": 24,
+            "scrollTop": 0,
+            "clientHeight": 24,
+            "scrollHeight": 24
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 560,
+            "height": 384,
+            "scrollTop": 0,
+            "clientHeight": 384,
+            "scrollHeight": 384
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 536,
+            "height": 408,
+            "scrollTop": 0,
+            "clientHeight": 408,
+            "scrollHeight": 408
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -2518,
+            "height": 3462,
+            "scrollTop": 0,
+            "clientHeight": 3462,
+            "scrollHeight": 3462
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 136,
+            "height": 864,
+            "scrollTop": 2678,
+            "clientHeight": 864,
+            "scrollHeight": 3542
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      },
+      {
+        "name": "explicit-start",
+        "enabled": true,
+        "box": {
+          "x": 180,
+          "y": 876,
+          "width": 215,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 180,
+            "y": 876,
+            "width": 215,
+            "height": 48
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 180,
+            "right": 395,
+            "top": 876,
+            "bottom": 924
+          },
+          "visible_area": 10320,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "onboarding-next",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 876,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 876,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 560,
+            "height": 384,
+            "scrollTop": 0,
+            "clientHeight": 384,
+            "scrollHeight": 384
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 536,
+            "height": 408,
+            "scrollTop": 0,
+            "clientHeight": 408,
+            "scrollHeight": 408
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -2518,
+            "height": 3462,
+            "scrollTop": 0,
+            "clientHeight": 3462,
+            "scrollHeight": 3462
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 136,
+            "height": 864,
+            "scrollTop": 2678,
+            "clientHeight": 864,
+            "scrollHeight": 3542
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "visibleTextLength": 3712,
+      "visibility": "visible"
+    },
+    "screenshot": "participant-ready-1440.png"
+  },
+  {
+    "width": 320,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "readiness-explanation",
+        "enabled": true,
+        "box": {
+          "x": 32,
+          "y": 552,
+          "width": 256,
+          "height": 24
+        },
+        "geometry": {
+          "box": {
+            "x": 32,
+            "y": 552,
+            "width": 256,
+            "height": 24
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 32,
+            "right": 288,
+            "top": 552,
+            "bottom": 576
+          },
+          "visible_area": 6144,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "H2",
+            "id": "onboarding-title",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 552,
+            "height": 24,
+            "scrollTop": 0,
+            "clientHeight": 24,
+            "scrollHeight": 24
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 534,
+            "height": 700,
+            "scrollTop": 0,
+            "clientHeight": 700,
+            "scrollHeight": 700
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 510,
+            "height": 724,
+            "scrollTop": 0,
+            "clientHeight": 724,
+            "scrollHeight": 724
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -4628,
+            "height": 5862,
+            "scrollTop": 0,
+            "clientHeight": 5862,
+            "scrollHeight": 5862
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 128,
+            "height": 872,
+            "scrollTop": 4780,
+            "clientHeight": 872,
+            "scrollHeight": 5926
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      },
+      {
+        "name": "explicit-start",
+        "enabled": true,
+        "box": {
+          "x": 32,
+          "y": 894,
+          "width": 256,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 32,
+            "y": 894,
+            "width": 256,
+            "height": 48
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 32,
+            "right": 288,
+            "top": 894,
+            "bottom": 942
+          },
+          "visible_area": 12288,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "onboarding-next",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 894,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 894,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 260,
+            "height": 700,
+            "scrollTop": 0,
+            "clientHeight": 700,
+            "scrollHeight": 700
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 236,
+            "height": 724,
+            "scrollTop": 0,
+            "clientHeight": 724,
+            "scrollHeight": 724
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -4902,
+            "height": 5862,
+            "scrollTop": 0,
+            "clientHeight": 5862,
+            "scrollHeight": 5862
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 128,
+            "height": 872,
+            "scrollTop": 5054,
+            "clientHeight": 872,
+            "scrollHeight": 5926
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 320,
+      "scrollWidth": 320,
+      "visibleTextLength": 3712,
+      "visibility": "visible"
+    },
+    "screenshot": "participant-ready-320.png"
+  },
+  {
+    "width": 390,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "readiness-explanation",
+        "enabled": true,
+        "box": {
+          "x": 32,
+          "y": 406,
+          "width": 326,
+          "height": 24
+        },
+        "geometry": {
+          "box": {
+            "x": 32,
+            "y": 406,
+            "width": 326,
+            "height": 24
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 32,
+            "right": 358,
+            "top": 406,
+            "bottom": 430
+          },
+          "visible_area": 7824,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "H2",
+            "id": "onboarding-title",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 406,
+            "height": 24,
+            "scrollTop": 0,
+            "clientHeight": 24,
+            "scrollHeight": 24
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 388,
+            "height": 572,
+            "scrollTop": 0,
+            "clientHeight": 572,
+            "scrollHeight": 572
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 364,
+            "height": 596,
+            "scrollTop": 0,
+            "clientHeight": 596,
+            "scrollHeight": 596
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -4102,
+            "height": 5062,
+            "scrollTop": 0,
+            "clientHeight": 5062,
+            "scrollHeight": 5062
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 128,
+            "height": 872,
+            "scrollTop": 4254,
+            "clientHeight": 872,
+            "scrollHeight": 5126
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      },
+      {
+        "name": "explicit-start",
+        "enabled": true,
+        "box": {
+          "x": 32,
+          "y": 894,
+          "width": 326,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 32,
+            "y": 894,
+            "width": 326,
+            "height": 48
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 32,
+            "right": 358,
+            "top": 894,
+            "bottom": 942
+          },
+          "visible_area": 15648,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "onboarding-next",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 894,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 894,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 388,
+            "height": 572,
+            "scrollTop": 0,
+            "clientHeight": 572,
+            "scrollHeight": 572
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 364,
+            "height": 596,
+            "scrollTop": 0,
+            "clientHeight": 596,
+            "scrollHeight": 596
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -4102,
+            "height": 5062,
+            "scrollTop": 0,
+            "clientHeight": 5062,
+            "scrollHeight": 5062
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 128,
+            "height": 872,
+            "scrollTop": 4254,
+            "clientHeight": 872,
+            "scrollHeight": 5126
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 390,
+      "scrollWidth": 390,
+      "visibleTextLength": 3712,
+      "visibility": "visible"
+    },
+    "screenshot": "participant-ready-390.png"
+  },
+  {
+    "width": 768,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "readiness-explanation",
+        "enabled": true,
+        "box": {
+          "x": 52,
+          "y": 532,
+          "width": 593.59375,
+          "height": 24
+        },
+        "geometry": {
+          "box": {
+            "x": 52,
+            "y": 532,
+            "width": 593.59375,
+            "height": 24
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 52,
+            "right": 645.59375,
+            "top": 532,
+            "bottom": 556
+          },
+          "visible_area": 14246.25,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "H2",
+            "id": "onboarding-title",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 532,
+            "height": 24,
+            "scrollTop": 0,
+            "clientHeight": 24,
+            "scrollHeight": 24
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 512,
+            "height": 432,
+            "scrollTop": 0,
+            "clientHeight": 432,
+            "scrollHeight": 432
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 488,
+            "height": 456,
+            "scrollTop": 0,
+            "clientHeight": 456,
+            "scrollHeight": 456
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -3132,
+            "height": 4076,
+            "scrollTop": 0,
+            "clientHeight": 4076,
+            "scrollHeight": 4076
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 136,
+            "height": 864,
+            "scrollTop": 3292,
+            "clientHeight": 864,
+            "scrollHeight": 4156
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "MAIN",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      },
+      {
+        "name": "explicit-start",
+        "enabled": true,
+        "box": {
+          "x": 52,
+          "y": 876,
+          "width": 215,
+          "height": 48
+        },
+        "geometry": {
+          "box": {
+            "x": 52,
+            "y": 876,
+            "width": 215,
+            "height": 48
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 52,
+            "right": 267,
+            "top": 876,
+            "bottom": 924
+          },
+          "visible_area": 10320,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "onboarding-next",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 876,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 876,
+            "height": 48,
+            "scrollTop": 0,
+            "clientHeight": 48,
+            "scrollHeight": 48
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 512,
+            "height": 432,
+            "scrollTop": 0,
+            "clientHeight": 432,
+            "scrollHeight": 432
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 488,
+            "height": 456,
+            "scrollTop": 0,
+            "clientHeight": 456,
+            "scrollHeight": 456
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -3132,
+            "height": 4076,
+            "scrollTop": 0,
+            "clientHeight": 4076,
+            "scrollHeight": 4076
+          },
+          {
+            "tag": "MAIN",
+            "id": "onboarding-history",
+            "position": "static",
+            "overflowY": "auto",
+            "y": 136,
+            "height": 864,
+            "scrollTop": 3292,
+            "clientHeight": 864,
+            "scrollHeight": 4156
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          },
+          {
+            "tag": "SECTION",
+            "id": "onboarding-panel",
+            "position": "static",
+            "overflowY": "hidden",
+            "y": 0,
+            "height": 1000,
+            "scrollTop": 0,
+            "clientHeight": 1000,
+            "scrollHeight": 1000
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 768,
+      "scrollWidth": 768,
+      "visibleTextLength": 3712,
+      "visibility": "visible"
+    },
+    "screenshot": "participant-ready-768.png"
+  }
+]

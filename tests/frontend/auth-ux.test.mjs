@@ -34,6 +34,17 @@ test('auth forms expose password-manager fields and an explicit way to change em
   assert.match(wiring, /showPasswordCreationStep\(\)/);
 });
 
+test('action validation fences pending input without advancing the parent auth-operation generation', () => {
+  const validation = wiring.slice(wiring.indexOf('export const handleAuthActionToken'), wiring.indexOf('const requestPasswordReset'));
+  assert.match(validation, /const operationGeneration = authOperationGeneration/);
+  assert.doesNotMatch(validation, /\+\+authOperationGeneration/);
+  assert.match(validation, /validationGeneration === authActionTokenGeneration/);
+  assert.match(validation, /authTokenForm\?\.classList\.add\('hidden'\)/);
+  assert.match(validation, /authActionTokenPending = true/);
+  assert.match(validation, /if \(!isCurrentValidation\(\)\) return/);
+  assert.match(validation, /if \(isCurrentValidation\(\)\)/);
+});
+
 test('registration and repeat login route through the existing journey without auth-complete', () => {
   assert.match(wiring, /loadUserJourneyState/);
   assert.match(wiring, /next_action === 'show_onboarding'/);

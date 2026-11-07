@@ -1,0 +1,16 @@
+{
+  "candidate_clean": true,
+  "candidate_not_deployed": true,
+  "candidate_sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "candidate_ui_files": {
+    "web/dist/main.js": "51d5238081418835853da64909cd4d2afa80e736aa3347fa61ab7613b2faa370",
+    "web/js/main.js": "a22ee0e655b15acb6491a4e84f5d95b405bf13fbfb4ab1eb20d25f2c0374f77e",
+    "web/js/wiring.js": "6e0d6128957285fd6d8ce580d8ef6c2fe39e3ab96c373a436a3ef5b6ffb51c45"
+  },
+  "checked_at_utc": "2026-11-07T08:46:45.608904+00:00",
+  "deployed_tracked_clean": true,
+  "formal_deployed_release_ac18": false,
+  "main_deployed_sha": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "merge_deploy_performed": false,
+  "new_provider_calls": 0
+}

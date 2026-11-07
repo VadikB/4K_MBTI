@@ -1,0 +1,79 @@
+{
+  "status": "APPROVED_FOR_EXACTLY_ONE_INVOCATION",
+  "observed_at_utc": "2026-11-07T08:42:12.813814+00:00",
+  "sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "version": "2.0.74 / UNRELEASED CANDIDATE",
+  "cwd": "/home/vadim_bogachev/evidence/ac18-branch38-checkout-20261107-48b27d91",
+  "argv": [
+    "/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python",
+    "scripts/assessment_first_case.py",
+    "--env-file",
+    "/home/vadim_bogachev/projects/Agent4K-Test/.env",
+    "--python",
+    "/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python",
+    "--program-source",
+    "published-pilot",
+    "--db-admin-port",
+    "55432",
+    "--port",
+    "18861",
+    "--program-receipt",
+    "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+    "--program-receipt-sha256",
+    "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+    "--program-version",
+    "1.2",
+    "--directory",
+    "/home/vadim_bogachev/evidence/ac18-branch38-run-20261107-48b27d91"
+  ],
+  "main_deployed_sha_unchanged": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "candidate_not_deployed": true,
+  "formal_deployed_release_ac18": false,
+  "owner_authorization": "Current chat: да подтверждаю — один новый платный прогон в ветке 38bf8244 без выпуска/test deploy",
+  "authorization_id": "AC18-BRANCH38-20261107-48b27d91",
+  "provider_recovery": {
+    "observed_at_utc": "2026-11-07T08:42:06.893845+00:00",
+    "provider_inference_calls": 0,
+    "pages": [
+      {
+        "url": "https://status.deepseek.com/",
+        "http_status": 200,
+        "current": "All systems are operating as expected.",
+        "body_sha256": "ff98ec2c216e104c24bbe745fe0712e80e53544a9aea9de359c6429f0d449c3d"
+      },
+      {
+        "url": "https://status.deepseek.com/incidents/7219383236287",
+        "http_status": 200,
+        "current": "Resolved",
+        "body_sha256": "bd8fa6e68d10c48d45cb7b22c65d8d8cef21e82e9e222fae01db782266e72afb"
+      }
+    ]
+  },
+  "fresh_preflight_status": "READY_FOR_ONE_UNRELEASED_BRANCH_CANDIDATE_RUN",
+  "published_sources_match": {
+    "program": true,
+    "configuration": true,
+    "catalog": true,
+    "roles": true,
+    "cases": true,
+    "artifact_readback": true
+  },
+  "working_source_transaction_read_only_rolled_back": true,
+  "program": {
+    "id": 2,
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "assignment_ref": "specialist-pilot",
+    "status": "published",
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+    "assessment_configuration_id": 11,
+    "catalog_version_id": 2
+  },
+  "receipt_bytes_sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+  "old_model_env_is_not_authority": true,
+  "retries_of_full_runner": 0,
+  "product_admission_or_repair_changes": false,
+  "paid_run_count_authorized": 1,
+  "hard_global_money_or_token_cap": null,
+  "permanent_database_write_authorized": false
+}

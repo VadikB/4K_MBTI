@@ -16,6 +16,8 @@ def test_code_identity_includes_readonly_viewport_collector(monkeypatch):
     monkeypatch.setattr(runner.subprocess, 'check_output', git_output)
     relative = 'tests/browser/fixtures/path-viewports.mjs'
     assert runner.code_identity()['files'][relative] == hashlib.sha256((runner.ROOT / relative).read_bytes()).hexdigest()
+    for relative in ('tests/browser/fixtures/auth-password-form.mjs', 'tests/browser/fixtures/failure-page.mjs'):
+        assert runner.code_identity()['files'][relative] == hashlib.sha256((runner.ROOT / relative).read_bytes()).hexdigest()
 
 
 def test_code_identity_missing_origin_main_still_fails_closed(monkeypatch):
