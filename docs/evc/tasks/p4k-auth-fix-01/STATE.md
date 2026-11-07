@@ -9,6 +9,41 @@ Prod/pilot/реальная почта/продуктовые LLM/изменен
 Точные SHA и результаты: outputs/p4k-auth-fix-01-release-20261107/ исходного workspace.
 Снимки ниже исторические: прежние запреты относятся к прежнему этапу.
 
+## Диагностика CI и существования PR — 07.11.2026
+
+Прямой авторизованный REST GET VadikB/4K_MBTI/pulls/181 и список PR AUTH-ветки
+с state=all вернули HTTP200 и OPEN Ready PR181. GraphQL и удалённые Git refs
+подтверждают тот же объект; отсутствие PR в отфильтрованном списке не доказывает
+его отсутствия. Аккаунт CLI/браузера — lidum-lab, роль write, без admin.
+
+База65c1f4c04466b60d4c6ce4611346fc92c617ed74, сохранённый проверенный product
+кандидат87bd7110e8be61756bed6683f624f77dfb46a06b, релиз2.0.76.
+Runs/check suites/statuses head и merge ref отсутствуют; это NO_RUN_CREATED,
+не очередь, не FAIL тестов и не подтверждённое ожидание одобрения. В интерфейсе
+нет Approve workflows to run; action_required runs0. Workflows active, их blobs
+равны main; on.pull_request допускает opened/reopened/synchronize/ready_for_review.
+Skip markers/конфликтов нет. Последний успешный PR180 создал владелец VadikB;
+различие автора само по себе не доказывает блокировку lidum-lab.
+
+Владелец сообщил в чате: Actions permissions = Allow all actions and reusable
+workflows; Policies пусты; Policy insights = No rule evaluations matched your
+search. Настройки он не менял. Это USER_REPORTED проверка владельца, не результат
+недоступного нам API настроек (403); версия о подтверждённом запрете Actions снята.
+Причина отсутствия первоначальных runs пока не установлена.
+
+Новый PR, повторное переоткрытие и bump не выполняются. Этот содержательный
+STATE update публикуется обычным commit/push: Ready PR получает synchronize,
+предусмотренный действующими workflows. Это один штатный способ восстановления
+после проверки существования PR/разрешений; результат необходимо проверить по
+новому actual head, не выдавая ручной прогон за required checks. Product и tests
+проверенного87bd711 не меняются; тождество их Git trees фиксируется во внешнем
+отчёте. Если run снова не создан, штатный retry не устанавливает причину сам.
+
+Merge разрешён только после frontend/pytest/full-verification для актуального
+head/base и человеческого review; затем deploy-test и read-only проверка test.
+Целевые SHA, исходные API/GUI observations и дальнейшие результаты:
+outputs/p4k-auth-fix-01-release-20261107/ci-diagnostic/ исходного workspace.
+
 ## Исторический срез локальной передачи 07.11.2026
 
 - Продолжение: `docs/evc/tasks/p4k-auth-fix-01-completion.md`.
