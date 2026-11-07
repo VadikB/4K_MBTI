@@ -1,6 +1,6 @@
 [project]
 name = "agent-4k"
-version = "2.0.78"
+version = "2.0.79"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [

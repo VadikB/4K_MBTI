@@ -126,11 +126,14 @@ const readinessStep = () => {
     body: '<div class="onboarding-warning">' + escape(model?.readiness?.responsible_contact
       ? 'Контакт ответственного: ' + model.readiness.responsible_contact : 'Обратитесь к ответственному за оценку в вашей организации.') + '</div>',
     action: 'refresh', button: 'Проверить готовность' };
-  if (status === 'failed') return { title: 'Не удалось подготовить оценку',
-    description: model?.preparation_operation?.error?.code === 'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE'
-      ? model.preparation_operation.error.message
-      : 'Ваши ответы сохранены. Подготовка завершилась технической ошибкой; можно повторить её или передать код обращения ответственному.',
-    body: reference, action: 'retry', button: 'Повторить подготовку' };
+  if (status === 'failed') {
+    const canRetry = model?.preparation_operation?.retry_allowed === true;
+    return { title: 'Не удалось подготовить оценку',
+      description: model?.preparation_operation?.error?.message ||
+        'Ваши ответы сохранены. Подготовка завершилась с ошибкой; обратитесь к ответственному за оценку.',
+      body: reference, action: canRetry ? 'retry' : 'refresh',
+      button: canRetry ? 'Повторить подготовку' : 'Проверить состояние' };
+  }
   if (status === 'ready') {
     const plan = timing();
     return { title: 'Можно приступать к оценке',

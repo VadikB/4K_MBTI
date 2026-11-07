@@ -3759,14 +3759,19 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
       consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
     onboarding: { status: 'completed', current_step: 8 },
     late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
-    preparation_operation: { operation_id: 'operation-visual', status: phase === 'failed' ? 'failed'
+    preparation_operation: { operation_id: 'operation-visual', status: ['failed', 'technical_failed'].includes(phase) ? 'failed'
       : phase === 'ready' ? 'completed' : 'running',
-      ...(phase === 'failed' ? { error: { code: 'M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE' } } : {}) },
+      ...(phase === 'failed' ? { retry_allowed: false, error: { code: 'ASSESSMENT_AS_NOT_ADMITTED',
+        message: 'Ситуация не прошла обязательную проверку. Обратитесь к ответственному.' } } : {}),
+      ...(phase === 'technical_failed' ? { retry_allowed: true, error: {
+        code: 'ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE',
+        message: 'Подготовка завершилась технической ошибкой. Можно повторить её.' } } : {}) },
     prepared_plan: phase === 'ready' ? plan : null,
   });
   const states = [
     ['waiting', 'Готовим вашу оценку', 'Проверить состояние'],
-    ['failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
+    ['failed', 'Не удалось подготовить оценку', 'Проверить состояние'],
+    ['technical_failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
     ['unknown', 'Не удалось проверить подготовку', 'Проверить состояние'],
     ['ready', 'Можно приступать к оценке', 'Приступить к оценке'],
   ];
@@ -3805,7 +3810,7 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
     const actionButton = page.getByRole('button', { name: action, exact: true });
     await expect(actionButton).toBeVisible();
     await expect(actionButton).toBeEnabled();
-    if (stateName === 'failed' || stateName === 'unknown') {
+    if (['failed', 'technical_failed', 'unknown'].includes(stateName)) {
       await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
       await expect(page.locator('#onboarding-panel')).not.toContainText('M5_FUNCTIONAL_AS_NOT_ADMITTED');
     }
@@ -3827,10 +3832,19 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
         ...(evidenceDirectory ? { path: path.join(evidenceDirectory, `${name}.png`) } : {}) });
       await testInfo.attach(name, { body, contentType: 'image/png' });
     }
+    if (stateName === 'failed') {
+      await actionButton.click();
+      expect(preparePosts).toBe(0);
+      await expect(page.getByRole('button', { name: 'Повторить подготовку' })).toHaveCount(0);
+    }
+    if (stateName === 'technical_failed') {
+      await actionButton.click();
+      await expect.poll(() => preparePosts).toBe(1);
+    }
     await context.close();
   }
   expect(operationReads).toBeGreaterThan(0);
-  expect(preparePosts).toBe(0);
+  expect(preparePosts).toBe(1); // Only the explicit server-permitted technical retry writes.
 });
 
 test('R03 reset request locks every visible credential action', async ({ page }) => {
