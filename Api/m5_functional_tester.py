@@ -120,12 +120,12 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, A
             status, reason = "TECHNICAL_ERROR", "FAIL без локализованной находки и серьёзности не может быть агрегирован."
         protected = bool(definition.get("protected") or definition.get("category") in PROTECTED_CATEGORIES)
         adversarial = item.get("adversarial_review") if isinstance(item.get("adversarial_review"), dict) else None
-        if status == "PASS" and definition.get("mandatory") and protected and (
-            adversarial is None
-            or not isinstance(adversarial.get("candidate_conflicts"), list)
-            or not str(adversarial.get("resolution") or "").strip()
-        ):
-            status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки без adversarial review не допускается."
+        if status == "PASS" and definition.get("mandatory") and protected:
+            if adversarial is None:
+                status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки без adversarial review не допускается."
+            elif (not isinstance(adversarial.get("candidate_conflicts"), list)
+                  or not str(adversarial.get("resolution") or "").strip()):
+                status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки с неполным adversarial review не допускается."
         normalized.append({
             **deepcopy(definition), "status": status, "reason": reason,
             "evidence_paths": item.get("evidence_paths") if isinstance(item.get("evidence_paths"), list) else [],
