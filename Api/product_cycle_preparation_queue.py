@@ -39,7 +39,7 @@ def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignm
     table = connection.execute("SELECT to_regclass(current_schema()||'.product_cycle_preparation_operations') AS relation").fetchone()
     if not table or not table.get('relation'):
         return None
-    row = connection.execute('''SELECT operation_id,status FROM product_cycle_preparation_operations
+    row = connection.execute('''SELECT operation_id,status,error_message FROM product_cycle_preparation_operations
         WHERE user_id=%s AND request_json->>'personalized_profile_id'=%s
           AND request_json->>'assignment_ref'=%s
           AND request_json->>'questionnaire_revision_id' IS NOT DISTINCT FROM %s
