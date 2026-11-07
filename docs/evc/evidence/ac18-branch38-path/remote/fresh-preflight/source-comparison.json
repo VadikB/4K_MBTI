@@ -1,0 +1,29 @@
+{
+  "source_code_sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "receipt_bytes_sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+  "program": {
+    "id": 2,
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "assignment_ref": "specialist-pilot",
+    "status": "published",
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+    "assessment_configuration_id": 11,
+    "catalog_version_id": 2
+  },
+  "objects_match": {
+    "program": true,
+    "configuration": true,
+    "catalog": true,
+    "roles": true,
+    "cases": true,
+    "artifact_readback": true
+  },
+  "cases": 9,
+  "original_qa": 27,
+  "artifacts": 15,
+  "transaction_read_only": true,
+  "transaction_rolled_back": true,
+  "user_history_read": false,
+  "database_writes": false
+}

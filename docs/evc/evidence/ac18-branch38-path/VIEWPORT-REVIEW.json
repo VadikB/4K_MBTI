@@ -1,0 +1,98 @@
+{
+  "reviewed_at_utc": "2026-11-07T08:53:20.631559+00:00",
+  "candidate_sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "run_id": "8336eef355fc43b49c1837fc89e2868e",
+  "review_method": "original saved PNGs inspected with image viewer, not only assertions",
+  "result": "PASS_NO_BLOCKING_PRESENTATION_DEFECT_OBSERVED",
+  "new_provider_calls": 0,
+  "first_as_same_backend_and_identity_on_all_widths": true,
+  "notes": [
+    "vertical/internal scrolling retained; screenshots may be after trial scroll",
+    "disabled controls were not force-enabled",
+    "no technical list/dict repr seen in presented first-AS text",
+    "does not constitute methodological review of all catalogue contents"
+  ],
+  "images": {
+    "superadmin-program-1440.png": {
+      "sha256": "fb63e99ef1182c86465b44b1a630093371f553381d5de611c7839c8c9c183d96"
+    },
+    "superadmin-program-320.png": {
+      "sha256": "877570894e892769918c5244d780134c4be5a56101d472f2455dad5c97909a84"
+    },
+    "superadmin-program-390.png": {
+      "sha256": "287f0c2bf945b830d7e993469e8ce10d872416d27b7c5a8c046f6fcf41bcb668"
+    },
+    "superadmin-program-768.png": {
+      "sha256": "8f8b57c36163a85d142e9af88b9dc81f12968262471b4796a5cd676aa9cc9b53"
+    },
+    "admin-questionnaire-1440.png": {
+      "sha256": "6c0d30e4c132c2c0afa96bd50ed59e4ade9deca93524959552608bbfc2d780ff"
+    },
+    "admin-questionnaire-320.png": {
+      "sha256": "776db84f7c7e892be8810b6a65f3cd6fc5211cf95be3e1102a81d62c3f3f681e"
+    },
+    "admin-questionnaire-390.png": {
+      "sha256": "df90a0adea903f3748b26d43970456181b4d5909c8e28045e339f36c2d459afc"
+    },
+    "admin-questionnaire-768.png": {
+      "sha256": "d830939808f3210605969ce1dfa82f8b925a2c4005d36a54c7cd34931833e9d5"
+    },
+    "admin-assignment-1440.png": {
+      "sha256": "452b5bf45ac6777b1cca1218491fce25daf43b6fe5bab8dc02f941f17bbf804f"
+    },
+    "admin-assignment-320.png": {
+      "sha256": "3bd5783a68ee52026a200f3edabce784fa98eed4065da89ce2dd46f6cf761d25"
+    },
+    "admin-assignment-390.png": {
+      "sha256": "1e9507ba1b481468dc858b14ce6c4bca484d474625239d49570a1e4421c36945"
+    },
+    "admin-assignment-768.png": {
+      "sha256": "8057e1f96dc17e0b0f9529fefaea34623e2f4c19964a6aaa50a6e380a57d3efc"
+    },
+    "participant-ready-1440.png": {
+      "sha256": "a0d9be6dd644f2799010289fdccdf27e6ffd312cc9a623a2e95bdf0e13b4c489"
+    },
+    "participant-ready-320.png": {
+      "sha256": "6a767eb33eb8a70a4795a4bf87ca56204373ac5d5b254dc729c1cd2d05ae3c9d"
+    },
+    "participant-ready-390.png": {
+      "sha256": "6fa9ef6c12c683a19a9626d64eb9b820cc6371fbf1d9339e0dd67e18547b7f11"
+    },
+    "participant-ready-768.png": {
+      "sha256": "23ae491b44f6f65a8ae84e7d85d8dd22db9a04c8594d2ab822b921e0b56db482"
+    },
+    "first-as-1440.png": {
+      "sha256": "6d13b3f7e961e075791f6477b54a3063ac9fcba94429138ff95f7983707dc0f6"
+    },
+    "first-as-320.png": {
+      "sha256": "ee37b3d07280c5b2d9e7e58fa5214d0727ea1c38b2c5d5034c4f1e15dca34551"
+    },
+    "first-as-390.png": {
+      "sha256": "96984697ff5b435857e4d25937af42391a92d36ba619cd4dab49b734ce7c8663"
+    },
+    "first-as-768.png": {
+      "sha256": "cf559406e236e566bde09e970efa8e63757f385f198e9b5bb3f41a20e52b5e48"
+    },
+    "question-1440.png": {
+      "sha256": "90b96ab68689c95ef98fc0ca625978823687950b48bf4ac71499fb5d59e55acd"
+    },
+    "question-1280.png": {
+      "sha256": "9fc2aec0cd4c96a38210f698ec0aefc2f0bc1b8626b85fa5e6cbbecc6da558cf"
+    },
+    "question-768.png": {
+      "sha256": "64334424c6951124720c7e18b5957658627b3af71eb652a49c9c4da6d8110fc6"
+    },
+    "question-390.png": {
+      "sha256": "fc16ebb2e3b1fb9d28497c5d67dd3e7b7f36e38d5b2400aa1d18957e9d9c8de6"
+    },
+    "question-360.png": {
+      "sha256": "c810f893fcad9113f41fb2ffcf584c912032f9480379350446d3da1247c3bc23"
+    },
+    "question-320.png": {
+      "sha256": "3125dc0b8c392f300bca9166c9045d9b915f03a3313e9b2e3217b18b43ba4fc4"
+    },
+    "question-short-zoom200.png": {
+      "sha256": "23325c91b6bcbb7fefc6605b65e047c85aa02d7ec301b633db9fdcf5d10f11f5"
+    }
+  }
+}

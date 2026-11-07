@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-07",
+  "command": "npm run ready:prepare",
+  "head": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "origin_main": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "base_version": "2.0.74",
+  "exit_code": 2,
+  "status": "AWAITING_OWNER_VERSION_DECISION",
+  "proposed_candidate": "2.0.75",
+  "release_type": "patch",
+  "message": "Ready preflight requires an approved patch candidate: 2.0.74 → 2.0.75. Re-run with --candidate 2.0.75.",
+  "version_files_changed": false,
+  "new_provider_calls": 0,
+  "database_changes": false,
+  "push_pr_merge_deploy_performed": false
+}

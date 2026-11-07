@@ -1,0 +1,29 @@
+{
+  "status": "READY_FOR_ONE_UNRELEASED_BRANCH_CANDIDATE_RUN",
+  "sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "version": "2.0.74 / UNRELEASED",
+  "main_deployed_sha": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "candidate_not_deployed": true,
+  "machine_preflight": "READY",
+  "schema": "EXACT_SCOPED_SCHEMA_MATCH",
+  "published_sources_match": true,
+  "program_version": "1.2",
+  "receipt_sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+  "checkout": "/home/vadim_bogachev/evidence/ac18-branch38-checkout-20261107-48b27d91",
+  "preflight_directory": "/home/vadim_bogachev/evidence/ac18-branch38-preflight-20261107-48b27d91",
+  "future_run_directory": "/home/vadim_bogachev/evidence/ac18-branch38-run-20261107-48b27d91",
+  "new_database_created": false,
+  "provider_calls_started": 0,
+  "paid_run_authorized": "ONE_UNRELEASED_BRANCH_CANDIDATE_RUN_AFTER_FRESH_PREFLIGHT",
+  "runtime_or_ac18_pass": false,
+  "primary_files": [
+    "code-identity.json",
+    "deploy-freshness.json",
+    "machine-identity.json",
+    "preflight-invocation.json",
+    "preflight.json",
+    "schema-comparison.json",
+    "source-comparison.json",
+    "working-schema.json"
+  ]
+}
