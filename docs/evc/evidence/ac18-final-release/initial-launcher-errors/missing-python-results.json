@@ -1,0 +1,488 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/node_modules/.bin/playwright",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "AC18 auth readiness|AC18 failure capture|AS projection|initial HTML has a complete frontend version",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AC18 auth readiness: email_verification cannot submit before validation, then reaches step2",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 993,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:05.887Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6e6a80584817570654d1",
+          "file": "auth-r03.spec.mjs",
+          "line": 63,
+          "column": 3
+        },
+        {
+          "title": "AC18 auth readiness: email_verification validation refusal stays fail-closed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 366,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:07.411Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-e38c435433b6f633826a",
+          "file": "auth-r03.spec.mjs",
+          "line": 101,
+          "column": 3
+        },
+        {
+          "title": "AC18 auth readiness: password_reset cannot submit before validation, then reaches step2",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 687,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:07.798Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6d5c4a959ab9308c6b8f",
+          "file": "auth-r03.spec.mjs",
+          "line": 63,
+          "column": 3
+        },
+        {
+          "title": "AC18 auth readiness: password_reset validation refusal stays fail-closed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 330,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:08.507Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-a55e2333c67165e356d7",
+          "file": "auth-r03.spec.mjs",
+          "line": 101,
+          "column": 3
+        },
+        {
+          "title": "AC18 failure capture uses supplied admin page and never exports credential values",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 741,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:08.855Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-ffe7069005c644ec168c",
+          "file": "auth-r03.spec.mjs",
+          "line": 112,
+          "column": 1
+        },
+        {
+          "title": "AC18 auth readiness: network validation failure can retry before password entry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 587,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:09.615Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-49ec0d5f1a56d0d2a3bd",
+          "file": "auth-r03.spec.mjs",
+          "line": 137,
+          "column": 1
+        },
+        {
+          "title": "AS projection CASE.SPEC.01: concrete public materials, no author passport, four widths",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_component",
+                  "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 165,
+                  "error": {
+                    "message": "Error: spawnSync /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.venv/bin/python ENOENT",
+                    "stack": "Error: spawnSync /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.venv/bin/python ENOENT\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:162:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 162
+                    },
+                    "snippet": "  160 |       'Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission' });\n  161 |     const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');\n> 162 |     const fixture = JSON.parse(execFileSync(python, ['-m', 'tests.m5_participant_projection_inputs', caseId], {\n      |                                ^\n  163 |       cwd: root, encoding: 'utf8', timeout: 30000,\n  164 |     }));\n  165 |     expect(fixture.scope).toBe('SYNTHETIC_COMPONENT_PRESENTATION_NOT_PILOT_ADMISSION');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 162
+                      },
+                      "message": "Error: spawnSync /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.venv/bin/python ENOENT\n\n  160 |       'Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission' });\n  161 |     const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');\n> 162 |     const fixture = JSON.parse(execFileSync(python, ['-m', 'tests.m5_participant_projection_inputs', caseId], {\n      |                                ^\n  163 |       cwd: root, encoding: 'utf8', timeout: 30000,\n  164 |     }));\n  165 |     expect(fixture.scope).toBe('SYNTHETIC_COMPONENT_PRESENTATION_NOT_PILOT_ADMISSION');\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:162:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:10.218Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_component",
+                      "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output/auth-r03-AS-projection-CAS-21959-author-passport-four-widths/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output/auth-r03-AS-projection-CAS-21959-author-passport-four-widths/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output/auth-r03-AS-projection-CAS-21959-author-passport-four-widths/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 162
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-8116dcf38207f015e190",
+          "file": "auth-r03.spec.mjs",
+          "line": 158,
+          "column": 3
+        },
+        {
+          "title": "AS projection CASE.SPEC.02: concrete public materials, no author passport, four widths",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_component",
+                  "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 302,
+                  "error": {
+                    "message": "Error: spawnSync /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.venv/bin/python ENOENT",
+                    "stack": "Error: spawnSync /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.venv/bin/python ENOENT\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:162:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                      "column": 32,
+                      "line": 162
+                    },
+                    "snippet": "  160 |       'Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission' });\n  161 |     const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');\n> 162 |     const fixture = JSON.parse(execFileSync(python, ['-m', 'tests.m5_participant_projection_inputs', caseId], {\n      |                                ^\n  163 |       cwd: root, encoding: 'utf8', timeout: 30000,\n  164 |     }));\n  165 |     expect(fixture.scope).toBe('SYNTHETIC_COMPONENT_PRESENTATION_NOT_PILOT_ADMISSION');"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                        "column": 32,
+                        "line": 162
+                      },
+                      "message": "Error: spawnSync /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.venv/bin/python ENOENT\n\n  160 |       'Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission' });\n  161 |     const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');\n> 162 |     const fixture = JSON.parse(execFileSync(python, ['-m', 'tests.m5_participant_projection_inputs', caseId], {\n      |                                ^\n  163 |       cwd: root, encoding: 'utf8', timeout: 30000,\n  164 |     }));\n  165 |     expect(fixture.scope).toBe('SYNTHETIC_COMPONENT_PRESENTATION_NOT_PILOT_ADMISSION');\n    at /Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs:162:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:11.364Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_component",
+                      "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output/auth-r03-AS-projection-CAS-a78f8-author-passport-four-widths/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output/auth-r03-AS-projection-CAS-a78f8-author-passport-four-widths/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output/auth-r03-AS-projection-CAS-a78f8-author-passport-four-widths/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser/auth-r03.spec.mjs",
+                    "column": 32,
+                    "line": 162
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-38c672ef6b7e4efc63c4",
+          "file": "auth-r03.spec.mjs",
+          "line": 158,
+          "column": 3
+        },
+        {
+          "title": "ADM28 initial HTML has a complete frontend version before JavaScript",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 368,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:09:12.975Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-b9611f4b41323a14495c",
+          "file": "auth-r03.spec.mjs",
+          "line": 445,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-07T09:09:04.997Z",
+    "duration": 8739.482,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

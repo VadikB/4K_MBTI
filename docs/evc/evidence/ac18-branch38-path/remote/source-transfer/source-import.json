@@ -1,0 +1,11 @@
+{
+  "candidate_sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "main_deployed_sha_unchanged": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "checkout": "/home/vadim_bogachev/evidence/ac18-branch38-checkout-20261107-48b27d91",
+  "clean": true,
+  "env_copied": false,
+  "github_push": false,
+  "deploy": false,
+  "new_provider_calls": 0,
+  "bundle_sha256": "6e613cf7887512a66aebd77fd48e34b553b0be1990376531e69f0c1a6d89a67a"
+}

@@ -1,0 +1,229 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/node_modules/.bin/playwright",
+      "test",
+      "tests/browser/path-admin-contract.spec.mjs",
+      "tests/browser/path29-participant.spec.mjs",
+      "--workers=1"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "path-admin-contract.spec.mjs",
+      "file": "path-admin-contract.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload and repeat",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 124653,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T11:16:07.063Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "995d42b89cd35edb86d1-c877e8de415976ed7089",
+          "file": "path-admin-contract.spec.mjs",
+          "line": 8,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "path29-participant.spec.mjs",
+      "file": "path29-participant.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "synthetic_upstream",
+                  "description": "Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 91942,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeInViewport\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#interview-submit-button')\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeInViewport\" locator('#interview-submit-button') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#interview-submit-button')\u001b[22m\n\u001b[2m    13 × locator resolved to <button type=\"button\" class=\"primary-button\" id=\"interview-submit-button\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"viewport ratio 0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeInViewport\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#interview-submit-button')\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeInViewport\" locator('#interview-submit-button') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#interview-submit-button')\u001b[22m\n\u001b[2m    13 × locator resolved to <button type=\"button\" class=\"primary-button\" id=\"interview-submit-button\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"viewport ratio 0\"\u001b[22m\n\n    at capturePathViewports (/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs:38:31)\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/path29-participant.spec.mjs:382:5",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs",
+                      "column": 31,
+                      "line": 38
+                    },
+                    "snippet": "   at fixtures/path-viewports.mjs:38\n\n  36 |         // A disabled pre-answer finish/submit is expected, not forced enabled.\n  37 |         if (enabled) await locator.click({ trial: true });\n> 38 |         await expect(locator).toBeInViewport();\n     |                               ^\n  39 |         expect(box.x, `${phase}/${name}/${width}: left`).toBeGreaterThanOrEqual(-1);\n  40 |         expect(box.x + box.width, `${phase}/${name}/${width}: right`).toBeLessThanOrEqual(width + 1);\n  41 |       }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs",
+                        "column": 31,
+                        "line": 38
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeInViewport\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#interview-submit-button')\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeInViewport\" locator('#interview-submit-button') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#interview-submit-button')\u001b[22m\n\u001b[2m    13 × locator resolved to <button type=\"button\" class=\"primary-button\" id=\"interview-submit-button\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"viewport ratio 0\"\u001b[22m\n\n\n   at fixtures/path-viewports.mjs:38\n\n  36 |         // A disabled pre-answer finish/submit is expected, not forced enabled.\n  37 |         if (enabled) await locator.click({ trial: true });\n> 38 |         await expect(locator).toBeInViewport();\n     |                               ^\n  39 |         expect(box.x, `${phase}/${name}/${width}: left`).toBeGreaterThanOrEqual(-1);\n  40 |         expect(box.x + box.width, `${phase}/${name}/${width}: right`).toBeLessThanOrEqual(width + 1);\n  41 |       }\n    at capturePathViewports (/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs:38:31)\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/path29-participant.spec.mjs:382:5"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T11:18:13.312Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_upstream",
+                      "description": "Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/test-failed-2.png"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/test-failed-1.png"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/test-failed-3.png"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/test-failed-4.png"
+                    },
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/test-failed-5.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/.test-stand/browser-output/path29-participant-PATH29--42550-ation-→-explicit-first-case/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-harness-2070/tests/browser/fixtures/path-viewports.mjs",
+                    "column": 31,
+                    "line": 38
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "fa9ee0bf487cdda4a2b3-399c5fd476e4d8416d7f",
+          "file": "path29-participant.spec.mjs",
+          "line": 19,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T11:15:58.778Z",
+    "duration": 227042.03,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

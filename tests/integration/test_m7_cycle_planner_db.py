@@ -435,6 +435,28 @@ def test_presence_lease_119_120_and_two_clients_use_last_server_expiry(db):
         assert result['branch']=='continued_current'
         event=c.execute("SELECT recognized_at,source_kind FROM m7_return_absence_events").fetchone()
         assert event['recognized_at']==base+timedelta(seconds=180) and event['source_kind']=='presence_lease'
+        assert c.execute("SELECT count(*) AS n FROM m7_return_presence_clients").fetchone()['n']==0
+        # A cycle continued by an earlier deployment may still retain the expired lease.
+        # Reading it must allow runtime restoration without a second Continue or DB repair.
+        ids=c.execute("""SELECT c.id AS cycle_db_id,s.id AS situation_db_id
+            FROM m5_cycles c JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
+            WHERE c.cycle_id=%s AND s.assessment_situation_id=%s""",(cycle_id,as_id)).fetchone()
+        c.execute("""INSERT INTO m7_return_presence_clients
+            (cycle_db_id,client_id,owner_user_id,assessment_situation_db_id,last_seen_at,lease_expires_at)
+            VALUES(%s,%s,%s,%s,%s,%s)""",
+            (ids['cycle_db_id'],uuid4(),99,ids['situation_db_id'],base+timedelta(seconds=60),base+timedelta(seconds=180)))
+        resumed=read_return_state(c,cycle_id=cycle_id,owner_user_id=99)
+        assert resumed['allowed_action']=='dependency_unavailable'
+        immediate_client=str(uuid4())
+        beat=heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=immediate_client,
+            expected_as_id=as_id,received_at=base+timedelta(seconds=181))
+        assert beat['client_id']==immediate_client
+        assert c.execute("SELECT count(*) AS n FROM m7_return_presence_clients").fetchone()['n']==2
+        assert c.execute("SELECT count(*) AS n FROM m7_return_absence_events WHERE status='recognized'").fetchone()['n']==0
+        open_interval=c.execute("""SELECT interval_type,started_at,ended_at FROM m5_cycle_time_intervals
+            WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s) AND ended_at IS NULL""",
+            (cycle_id,)).fetchone()
+        assert open_interval['interval_type']=='collecting' and open_interval['ended_at'] is None
 
 
 def test_fourth_successful_return_replacement_closes_collection_without_new_cycle(db):

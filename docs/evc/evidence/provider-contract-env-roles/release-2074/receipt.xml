@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="exact selected program 1.1" time="0.014026" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="exact selected program synthetic-next-version" time="0.000874" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected id drift before blocks success" time="0.004478" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected id drift after blocks success" time="0.000924" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected code drift before blocks success" time="0.000968" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected code drift after blocks success" time="0.000695" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected version drift before blocks success" time="0.000680" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected version drift after blocks success" time="0.000692" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assignment_ref drift before blocks success" time="0.000797" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assignment_ref drift after blocks success" time="0.000862" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected status drift before blocks success" time="0.000696" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected status drift after blocks success" time="0.000690" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected definition_checksum drift before blocks success" time="0.000610" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected definition_checksum drift after blocks success" time="0.029125" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assessment_configuration_id drift before blocks success" time="0.001574" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assessment_configuration_id drift after blocks success" time="0.002106" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected catalog_version_id drift before blocks success" time="0.001083" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected catalog_version_id drift after blocks success" time="0.008107" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="missing selected source is rejected, not inferred from actual program" time="0.002953" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS, final repair=false" time="0.006318" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS, final repair=true" time="0.001010" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS_WITH_WARNINGS, final repair=false" time="0.000834" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS_WITH_WARNINGS, final repair=true" time="0.000732" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission INCOMPLETE" time="0.000800" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission FAIL" time="0.001081" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission REVIEW_REQUIRED" time="0.000895" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission null" time="0.001348" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass unadmitted" time="0.001425" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing generation" time="0.002265" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing tester" time="0.002280" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing challenger" time="0.000927" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing batch" time="0.001430" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass foreign operation" time="0.001334" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong final candidate" time="0.000979" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong final generation" time="0.000863" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong repair ref" time="0.001164" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong compiled ref" time="0.001301" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong snapshot" time="0.092487" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong execution ref" time="0.001271" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing checksums" time="0.001582" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong presented AS" time="0.004675" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong presented payload" time="0.000834" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass not started" time="0.000709" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass assessment answer" time="0.000681" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start chain cannot change after start" time="0.000795" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH linked profile/assignment/plan/timing retains PASS_WITH_WARNINGS" time="0.001492" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects unknown lineage" time="0.000828" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects foreign assignment" time="0.000649" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects foreign profile" time="0.001957" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects wrong operation profile" time="0.000732" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects wrong profile checksum" time="0.000638" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects unfrozen profile" time="0.000621" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects missing time source" time="0.000698" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects invalid time" time="0.000695" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects wrong time source" time="0.004326" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects missing plan revision" time="0.001165" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects missing server decision" time="0.000892" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects server denied" time="0.000792" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects foreign server cycle" time="0.000673" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects stale server revision" time="0.000702" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects wrong server hash" time="0.000732" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects foreign server AS" time="0.000769" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects blockers despite true" time="0.001016" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects LIMITED without exact admission" time="0.001707" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="exact LIMITED admission retains stages and final AS checks" time="0.001317" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="only a durable terminal preparation receipt permits cleanup" time="0.036449" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/provider-contract-env-roles/tests/unit/test_assessment_receipt_file.mjs"/>
+	<!-- tests 66 -->
+	<!-- suites 0 -->
+	<!-- pass 66 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 1189.356566 -->
+</testsuites>

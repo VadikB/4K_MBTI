@@ -1,0 +1,69 @@
+{
+  "result": "FRESH_PREFLIGHT_PASS",
+  "observed_at_utc": "2026-11-05T17:40:30.133593+00:00",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "application_version": "2.0.66",
+  "tracked_clean": true,
+  "schema_comparison": {
+    "contract": "path-pilot-schema-comparison/1",
+    "result": "EXACT_SCOPED_SCHEMA_MATCH",
+    "expected_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+    "actual_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+    "working_server_checkout_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+    "scope_table_count": 32,
+    "missing_tables": [],
+    "counts": {
+      "columns": {
+        "expected": 353,
+        "actual": 353
+      },
+      "constraints": {
+        "expected": 191,
+        "actual": 191
+      },
+      "indexes": {
+        "expected": 84,
+        "actual": 84
+      },
+      "triggers": {
+        "expected": 16,
+        "actual": 16
+      }
+    },
+    "missing": [],
+    "changed": [],
+    "extra": [],
+    "program_activation_checked": false,
+    "schema_or_data_writes": false,
+    "business_rows_read": false,
+    "runtime_or_llm_pass": false
+  },
+  "transaction_read_only": true,
+  "transaction_rolled_back": true,
+  "source_hashes": {
+    "program": "acad5385f9a6c61fa6aabf7c6964d22aabee6414ecb96259e15d210ae8c6fe0d",
+    "configuration": "b895bf8a4661a44c31cc40074fbd5f1397a1d00378af0af51e6985bc1f200510",
+    "catalog": "2b32f588235204b57e768ef0e3f03dfa78bf1315c56d1c18c93d632077133064",
+    "roles": "fa7cad069e0a0dd5b47df2fe20c5a518be12eab18b6826cea508807856bb5c09",
+    "cases": "ca6095437393b35bb1b5cab76e015dc1bd7d52c031a58dcad128fe0a8cdc0de3",
+    "artifact_readback": "ccfe41da4a7b786aaab08819cc01e7b26764e43dc94a8fe6650068a152e1b58e"
+  },
+  "publisher": {
+    "id": 4,
+    "configured_superadmin": true,
+    "not_suppressed": true
+  },
+  "resolved_role": {
+    "id": 2,
+    "version": 1,
+    "checksum": "c5c2234f9fdd237e14024ea6939e3bc5561fd27bf4fac416a52196dec79cbe8f"
+  },
+  "version_1_2_free": true,
+  "candidate_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+  "snapshot_checksum": "daa715b153f16e9ebc4ea6744a1c8541c5e269e248bba4b5c37723571e6ccfce",
+  "all_program_rows_before_sha256": "5f0b4acf2146698390d458340f188c66144ca8dc812975ff8845f53c164dec63",
+  "all_allowed_roles_before_sha256": "9bb5c0ea5783dcf66b7f9f7f6f13b273ec08ade9327eafdc2c412eacf1473562",
+  "org_connections_before_sha256": "8c3be2cd3c0e5968399f0619401dbc7aebec293c920e220fe4e493a397ab3e5c",
+  "publication_performed": false,
+  "provider_calls": 0
+}

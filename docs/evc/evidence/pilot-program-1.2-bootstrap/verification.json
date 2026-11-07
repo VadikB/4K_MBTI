@@ -1,0 +1,95 @@
+{
+  "scope": "FREE_BOOTSTRAP_OF_ACTUAL_PUBLISHED_1_2_NOT_PATH",
+  "input_commit": "b6b9f365bd080d3fe627fb20c3bbdb41ee1dcf3f",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "attempts": {
+    "first_operational_launch": "FAILED_BEFORE_PREFLIGHT_OR_DB_MISSING_PYTHONPATH",
+    "read_only_failure_probe": "REPRODUCED_MODULE_NOT_FOUND_tests",
+    "corrected_actual_bootstraps": 1
+  },
+  "actual_result": "PASS_BOOTSTRAP_ONLY",
+  "process_exit_code": 0,
+  "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+  "source_receipt_sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+  "initial_counts": {
+    "users": 1,
+    "organizations": 0,
+    "memberships": 0,
+    "profiles": 0,
+    "cycles": 0,
+    "assignments": 0
+  },
+  "primary_archive": {
+    "result": "PASS_BOOTSTRAP_ONLY",
+    "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+    "database": "product4k_pytest_5d4f68db1fae48bf9c82be26b2bee390",
+    "cleanup_readback": {
+      "observed_at_utc": "2026-11-05T18:03:05.342320+00:00",
+      "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+      "database": "product4k_pytest_5d4f68db1fae48bf9c82be26b2bee390",
+      "database_absent": true,
+      "active_database_connections": 0,
+      "state_absent": true,
+      "permanent_database_used": false,
+      "permanent_database_writes": false,
+      "maintenance_only": "postgres at explicit localhost55432",
+      "marker_verified_by_existing_destroy": true,
+      "force": false,
+      "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+      "tracked_clean": true,
+      "offline_normalized_result": "PASS_BOOTSTRAP_ONLY",
+      "provider_calls": 0,
+      "scope": "BOOTSTRAP_ONLY_NOT_PATH"
+    },
+    "archive": "/home/vadim_bogachev/evidence/path-pilot-1.2-bootstrap-x12etu58/bootstrap-evidence.zip",
+    "archive_bytes": 142887,
+    "archive_sha256": "65ce025b2df4c3e9d64f30c10602d519f84e3146400d0ebe9c8ce6a33b6a2c12",
+    "file_count": 16
+  },
+  "offline_check": {
+    "command": "python docs/evc/evidence/pilot-program-1.2-bootstrap/CHECK.py",
+    "exit_code": 0,
+    "stdout_and_safe_stderr": "git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\ngit: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead\n{\"result\": \"PASS_BOOTSTRAP_ONLY\", \"program_id\": 2, \"program_version\": \"1.2\", \"source_receipt_sha256\": \"09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b\", \"run_id\": \"5d4f68db1fae48bf9c82be26b2bee390\", \"files_verified\": 16, \"runtime_files_verified\": 11, \"initial_counts\": {\"users\": 1, \"organizations\": 0, \"memberships\": 0, \"profiles\": 0, \"cycles\": 0, \"assignments\": 0}, \"catalog_cases\": 9, \"original_qa_source_records\": 27, \"owned_database_absent\": true, \"remaining_connections\": 0, \"provider_calls\": 0, \"socket_attempts\": 0, \"db_connections\": 0, \"full_path\": \"NOT_RUN\", \"runtime_tracked_clean\": true, \"runtime_untracked_entries\": 1204, \"limitations\": \"Bootstrap only. No human QA/admission/content quality re-review; no AS/start/answers.\"}\n",
+    "note": "Git confstr sandbox warnings during byte comparison were non-fatal;11 immutable source object byte digests matched."
+  },
+  "targeted_unit": {
+    "command": "python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_path_start_release_source.py tests/unit/test_assessment_run_summary.py tests/unit/test_test_stand.py",
+    "environment": "Sanitized child; AGENT4K_ISOLATED_STAND=1; provider keys empty; localhost9 sentinel; no .env or DB",
+    "passed": 110,
+    "exit_code": 0,
+    "elapsed_seconds": 12.71,
+    "retained_stdout_tail": "...................................................................... [ 65%]\n......................................                                   [100%]\n110 passed in 12.71s\n"
+  },
+  "optimized_evidence_check": "REJECTED_AS_REQUIRED",
+  "reused_checks": {
+    "backend": "908 PASS b6b9f36; unchanged runtime; not re-executed",
+    "isolated_sql": "29 PASS b6b9f36; unchanged tests/runtime; not re-executed",
+    "runtime_ci": "PR171 PASS; deployed identical-tree e63",
+    "new_ci": "NOT_RUN_NO_NEW_PR"
+  },
+  "deployment": {
+    "main": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+    "test": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+    "app_version": "2.0.66",
+    "new_deploy": false
+  },
+  "runtime_identity_limitation": {
+    "tracked_clean": true,
+    "pinned_runtime_files_matched": 11,
+    "untracked_dist_assets": 1203,
+    "other_untracked_count": 1,
+    "other_kind": "Env-backup PATH only, not contents; not read/moved/deleted",
+    "full_checkout_clean": false,
+    "required_before_paid": "Separate clean execution checkout at e63; do not clean deploy checkout"
+  },
+  "provider_calls": 0,
+  "permanent_database_writes": 0,
+  "PREP_DIAG_01": "UNKNOWN",
+  "excluded": [
+    "Paid PATH",
+    "Human review or content quality acceptance",
+    "New AS/start/answers",
+    "Program activation/publication",
+    "Push/PR/merge/deploy"
+  ]
+}

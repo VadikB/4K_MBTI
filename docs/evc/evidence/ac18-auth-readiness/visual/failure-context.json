@@ -1,0 +1,24 @@
+{
+  "step": "admin_login",
+  "actor": "administrator",
+  "pathname": "/",
+  "query_keys": [
+    "diagnostic",
+    "token"
+  ],
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "title": "С возвращением",
+  "status": "Введите пароль для входа.",
+  "error": "",
+  "credential_step": "Шаг 1 из 2",
+  "credential_input": {
+    "name": "password",
+    "type": "password",
+    "disabled": false,
+    "has_value": true
+  },
+  "credential_values_exported": false
+}

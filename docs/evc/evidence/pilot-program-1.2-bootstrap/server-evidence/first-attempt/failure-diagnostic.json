@@ -1,0 +1,27 @@
+{
+  "mode": "READ_ONLY_PREFLIGHT_REPRO_NO_BOOTSTRAP",
+  "exit_code": 1,
+  "exception_type": "ModuleNotFoundError",
+  "missing_modules": [
+    "tests"
+  ],
+  "trace_frames": [
+    {
+      "file": "assessment_first_case.py",
+      "line": 293
+    },
+    {
+      "file": "assessment_first_case.py",
+      "line": 247
+    },
+    {
+      "file": "assessment_first_case.py",
+      "line": 64
+    }
+  ],
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_sha256": "5619e4a5c5b55289e04ca5d9e1615d49d0e55c7b7b068bcd2e9eb374d94ae680",
+  "preflight_json_present": false,
+  "run_json_count": 0,
+  "PYTHONPATH_set": false
+}

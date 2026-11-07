@@ -1,0 +1,127 @@
+2026-11-06 13:22:43 | INFO | agent4k | Agent_4K API startup complete
+2026-11-06 13:22:44 | INFO | uvicorn.error | Started server process [95562]
+2026-11-06 13:22:44 | INFO | uvicorn.error | Waiting for application startup.
+2026-11-06 13:22:44 | INFO | agent4k.assessment_queue | Assessment preparation queue started workers=1
+2026-11-06 13:22:44 | INFO | agent4k.analysis_queue | Assessment analysis queue started workers=1
+2026-11-06 13:22:44 | INFO | uvicorn.error | Application startup complete.
+2026-11-06 13:22:44 | INFO | uvicorn.error | Uvicorn running on http://127.0.0.1:18872 (Press CTRL+C to quit)
+2026-11-06 13:22:44 | INFO | uvicorn.access | 127.0.0.1:60399 - "GET /health/ready HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET / HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/styles/tokens.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60402 - "GET /web/styles/components.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/styles/screens/auth.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60401 - "GET /web/styles/base.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60405 - "GET /web/styles/screens/processing.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60404 - "GET /web/styles/screens/onboarding.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/styles/screens/profile.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60402 - "GET /web/styles/screens/report.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/styles/screens/ai-welcome.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60401 - "GET /web/styles/screens/prechat.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60405 - "GET /web/styles/screens/chat.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60404 - "GET /web/styles/screens/interview.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60402 - "GET /web/styles/screens/reports.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/styles/screens/dashboard.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/styles/screens/app-loader.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60401 - "GET /web/styles/screens/admin.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60404 - "GET /web/styles/screens/admin-reports.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60405 - "GET /web/styles/screens/admin-organizations.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60402 - "GET /web/styles/screens/admin-report-detail.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/styles/screens/admin-methodology.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/styles/screens/admin-prompt-lab.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60401 - "GET /web/styles/utilities.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60404 - "GET /web/dist/main.js?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60405 - "GET /app-config.js HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60402 - "GET /web/assets/icons/4k-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/assets/icons/info-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/assets/icons/report-star-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60401 - "GET /web/assets/icons/download-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60404 - "GET /web/assets/icons/file-icon-accent.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60405 - "GET /web/assets/icons/free-form-writing-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/assets/icons/clock-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/assets/icons/specialized-agents-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60402 - "GET /web/assets/icons/arrow-down-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60401 - "GET /web/assets/fonts/onest/Onest-Variable.woff HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60404 - "GET /web/dist/chunk-LWKUZKHU.js HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60405 - "GET /web/dist/chunk-3LKGPIUM.js HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/dist/chunk-2HZJGYBN.js HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60402 - "GET /web/dist/chunk-JJD56FML.js HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/dist/chunk-BT2YDLPZ.js HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60404 - "GET /web/dist/chunk-KX44Y7RV.js HTTP/1.1" 200
+2026-11-06 13:22:45 | INFO | uvicorn.access | 127.0.0.1:60401 - "GET /web/dist/chunk-JNXYSQRG.js HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60405 - "GET /web/dist/chunk-5XKLRMKF.js HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/assets/icons/pencil-icon-white.svg HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/vendor/chart.js/chart.umd.min.js HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /users/version HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /users/session/restore HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/dist/admin-organizations-FODVT2MH.js HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /web/dist/chunk-IT5AHWOR.js HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /users/admin/organizations HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60400 - "GET /web/assets/icons/exclamationmark-shield-icon.svg HTTP/1.1" 200
+2026-11-06 13:22:46 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /users/admin/organizations/1/questionnaire HTTP/1.1" 200
+2026-11-06 13:22:47 | INFO | uvicorn.access | 127.0.0.1:60403 - "POST /users/admin/organizations/1/assessment-assignments HTTP/1.1" 200
+2026-11-06 13:22:48 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /users/admin/organizations HTTP/1.1" 200
+2026-11-06 13:22:48 | INFO | uvicorn.access | 127.0.0.1:60403 - "GET /users/admin/organizations/1/questionnaire HTTP/1.1" 200
+2026-11-06 13:23:01 | INFO | uvicorn.access | 127.0.0.1:60423 - "POST /users/admin/organizations/1/assessment-assignments HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /?screen=admin-organizations&ui=1793960566491 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /web/styles/tokens.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60436 - "GET /web/styles/base.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60439 - "GET /web/styles/screens/onboarding.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60438 - "GET /web/styles/screens/auth.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/styles/components.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/styles/screens/processing.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /web/styles/screens/profile.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60439 - "GET /web/styles/screens/ai-welcome.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/styles/screens/interview.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60436 - "GET /web/styles/screens/report.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/styles/screens/chat.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60438 - "GET /web/styles/screens/prechat.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /web/styles/screens/dashboard.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/styles/screens/app-loader.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/styles/screens/admin-organizations.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60436 - "GET /web/styles/screens/admin.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60439 - "GET /web/styles/screens/reports.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60438 - "GET /web/styles/screens/admin-reports.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /web/styles/screens/admin-report-detail.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/styles/screens/admin-methodology.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60439 - "GET /web/dist/main.js?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/styles/screens/admin-prompt-lab.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60436 - "GET /web/styles/utilities.css?v=2.0.69 HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60438 - "GET /app-config.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /web/assets/icons/4k-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/assets/icons/info-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/assets/icons/download-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60436 - "GET /web/assets/icons/report-star-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60439 - "GET /web/assets/fonts/onest/Onest-Variable.woff HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60438 - "GET /web/assets/icons/file-icon-accent.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /web/dist/chunk-LWKUZKHU.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/dist/chunk-BT2YDLPZ.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/dist/chunk-3LKGPIUM.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60436 - "GET /web/dist/chunk-2HZJGYBN.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60438 - "GET /web/dist/chunk-JJD56FML.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/dist/chunk-5XKLRMKF.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60435 - "GET /web/dist/chunk-KX44Y7RV.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60439 - "GET /web/dist/chunk-JNXYSQRG.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/assets/icons/free-form-writing-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60436 - "GET /web/assets/icons/specialized-agents-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60438 - "GET /web/assets/icons/clock-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60439 - "GET /web/assets/icons/pencil-icon-white.svg HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/vendor/chart.js/chart.umd.min.js HTTP/1.1" 200
+2026-11-06 13:23:14 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/assets/icons/arrow-down-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:15 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /users/version HTTP/1.1" 200
+2026-11-06 13:23:15 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /users/4/session-bootstrap HTTP/1.1" 200
+2026-11-06 13:23:15 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/dist/admin-organizations-FODVT2MH.js HTTP/1.1" 200
+2026-11-06 13:23:15 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /web/dist/chunk-IT5AHWOR.js HTTP/1.1" 200
+2026-11-06 13:23:15 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /users/admin/organizations HTTP/1.1" 200
+2026-11-06 13:23:15 | INFO | uvicorn.access | 127.0.0.1:60440 - "GET /web/assets/icons/exclamationmark-shield-icon.svg HTTP/1.1" 200
+2026-11-06 13:23:15 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /users/admin/organizations/1/questionnaire HTTP/1.1" 200
+2026-11-06 13:23:16 | INFO | uvicorn.access | 127.0.0.1:60437 - "POST /users/admin/organizations/1/assessment-assignments HTTP/1.1" 200
+2026-11-06 13:23:16 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /users/admin/organizations HTTP/1.1" 200
+2026-11-06 13:23:16 | INFO | uvicorn.access | 127.0.0.1:60437 - "GET /users/admin/organizations/1/questionnaire HTTP/1.1" 200
+2026-11-06 13:23:16 | INFO | uvicorn.access | 127.0.0.1:60444 - "GET /users/admin/organizations HTTP/1.1" 200
+2026-11-06 13:23:16 | INFO | uvicorn.access | 127.0.0.1:60444 - "GET /users/admin/organizations HTTP/1.1" 200
+2026-11-06 13:23:21 | INFO | uvicorn.error | Shutting down
+2026-11-06 13:23:21 | INFO | uvicorn.error | Waiting for application shutdown.
+2026-11-06 13:23:21 | INFO | agent4k.assessment_queue | Assessment preparation queue stopped
+2026-11-06 13:23:21 | INFO | agent4k.analysis_queue | Assessment analysis queue stopped
+2026-11-06 13:23:21 | INFO | uvicorn.error | Application shutdown complete.
+2026-11-06 13:23:21 | INFO | uvicorn.error | Finished server process [95562]

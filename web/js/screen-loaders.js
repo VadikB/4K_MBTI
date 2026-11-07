@@ -62,10 +62,10 @@ export const loadAdminMethodology = async () => {
 export const loadAdminReportDetail = () =>
   loadModule('admin-report-detail', () => import('./entries/admin-report-detail.js'));
 
-export const resetChatScreen = async ({ shouldReset = () => true } = {}) => {
+export const resetChatScreen = async ({ shouldReset = () => true, preserveAuthFeedback = false } = {}) => {
   const module = await loadChat();
   if (shouldReset()) {
-    module.resetChat();
+    module.resetChat({ preserveAuthFeedback });
   }
 };
 

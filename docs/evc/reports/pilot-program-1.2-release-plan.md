@@ -1,5 +1,21 @@
 # PATH-PILOT-PROGRAM-01 — проект выпуска программы и итогового PATH
 
+Актуализация05.11.2026 после отдельного решения владельца:
+**PUBLISHED_READBACK_VERIFIED**, `specialist_pilot@1.2`, id2/publisher4,
+на неизменённом main/test e63eba6 /2.0.66. Free retirement SQL29 PASS,
+fresh scoped schema/source preflight PASS, existing publisher1call/exit0,
+exact receipt independent validation PASS. Backend908 PASS.
+[Полный итог](../tasks/pilot-program-release-preparation.md) и
+[первичный readback](../evidence/pilot-program-publication-execution/publication-result.json).
+Подключений1.2 —0; activation/retirement/paid PATH нет. Free bootstrap именно нового
+published receipt теперь **PASS_BOOTSTRAP_ONLY**, run5d4f68db…; exact sources/minimal
+counts/cleanup/повторная offline summary PASS.110 unit PASS. Первая операционная
+попытка без PYTHONPATH остановилась до БД и сохранена; исправлена только команда.
+Следующее разрешение paid run остаётся отдельным; исполнение из чистого checkout
+того же e63, не из deploy checkout с сохранёнными untracked assets/env-backup.
+Ниже сохранён исторический проект3385145/f211e71; его прежние PENDING/BLOCKED
+не являются текущим статусом публикации и не подменяют новый exact receipt.
+
 05.11.2026. **OFFLINE_PROPOSAL_VALIDATED / EXECUTION_BLOCKED**.
 Это подготовленный проект, не опубликованная ProgramDefinition, не активация
 рабочей программы и не разрешение платного вызова.

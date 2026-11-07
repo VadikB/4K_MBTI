@@ -1,0 +1,150 @@
+{
+  "no_preview_post": true,
+  "no_confirm_button": true,
+  "database_readback": {
+    "run_id": "1dc16dda26ce4bd386346e8b8b34d32d",
+    "database": "product4k_pytest_1dc16dda26ce4bd386346e8b8b34d32d",
+    "owner_verified": true,
+    "read_only_rollback": true,
+    "revision": null,
+    "counts": {
+      "questionnaire_revisions": 0,
+      "assignments": 0,
+      "profiles": 2,
+      "preparation_operations": 0,
+      "cycles": 0,
+      "assessment_situations": 0,
+      "assessment_answers": 0
+    }
+  },
+  "timeline": [
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:51.927Z",
+      "method": "GET",
+      "path": "/users/version"
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:51.985Z",
+      "method": "GET",
+      "path": "/users/session/restore"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:52.021Z",
+      "method": "GET",
+      "path": "/users/version",
+      "status": 200
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:52.034Z",
+      "method": "GET",
+      "path": "/users/session/restore",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:52.108Z",
+      "method": "POST",
+      "path": "/users/auth/email/request-link"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:52.218Z",
+      "method": "POST",
+      "path": "/users/auth/email/request-link",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:52.275Z",
+      "method": "POST",
+      "path": "/users/auth/email/password-login"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:52.711Z",
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:52.771Z",
+      "method": "GET",
+      "path": "/users/admin/organizations"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:52.895Z",
+      "method": "GET",
+      "path": "/users/admin/organizations",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:52.904Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    },
+    {
+      "event": "real_questionnaire_get_held",
+      "at": "2026-11-06T20:00:52.904Z"
+    },
+    {
+      "event": "before_release",
+      "at": "2026-11-06T20:00:53.897Z",
+      "values": {
+        "source_author": "Синтетический HR-партнёр ИТ Вектор",
+        "organization_name": "ИТ Вектор (синтетическая компания)",
+        "organization_type": "Частная ИТ-компания",
+        "industry": "",
+        "activity_description": "",
+        "purpose": "",
+        "results_usage": "",
+        "result_recipients": "",
+        "organizer": "",
+        "responsible_contact": "",
+        "case_reality_level": "",
+        "organization_name_usage_rules": ""
+      }
+    },
+    {
+      "event": "real_questionnaire_get_continued",
+      "at": "2026-11-06T20:00:54.128Z"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:54.279Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire",
+      "status": 200
+    },
+    {
+      "event": "after_release",
+      "at": "2026-11-06T20:00:54.452Z",
+      "values": {
+        "source_author": "",
+        "organization_name": "",
+        "organization_type": "",
+        "industry": "",
+        "activity_description": "",
+        "purpose": "",
+        "results_usage": "",
+        "result_recipients": "",
+        "organizer": "",
+        "responsible_contact": "",
+        "case_reality_level": "",
+        "organization_name_usage_rules": ""
+      },
+      "original_node_connected": false,
+      "lost_fields": [
+        "source_author",
+        "organization_name",
+        "organization_type"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "contract": "path_ac06_ac10_evidence/1",
+  "base_sha": "3f42bba992e1a556e1961ca4abdaa0954a367153",
+  "verified_source_sha": "2a868e5f909b0493e1e3b936e5407b07c73e811a",
+  "http_pg": "verified-sha-http-pg",
+  "admin_browser": "browser/4427a1ca-cbb6-4b8d-8003-9e77b9c7174f",
+  "component": "component-final",
+  "historical_negative_component": "component-negative-viewport",
+  "AC06": "PASS",
+  "AC07": "PASS",
+  "AC09": "PASS",
+  "AC10": "PASS",
+  "AC18": "NOT_RUN",
+  "PREP-DIAG-01": "HISTORICAL_UNKNOWN",
+  "synthetic_qa_note": "Existing E10.2 seed models Case QA; NOT real human review or pilot admission. Component plan fixture is upstream substitution, forbidden in real/full PATH.",
+  "product_api_web_artifact_schema_diff": false,
+  "paid_provider_calls": 0,
+  "external_email_delivery": false,
+  "working_database_used": false,
+  "new_ci": "NOT_RUN",
+  "push_merge_deploy_artifact_publication": false
+}

@@ -1,0 +1,18 @@
+{
+  "observed_at_utc": "2026-11-05T18:03:05.342320+00:00",
+  "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+  "database": "product4k_pytest_5d4f68db1fae48bf9c82be26b2bee390",
+  "database_absent": true,
+  "active_database_connections": 0,
+  "state_absent": true,
+  "permanent_database_used": false,
+  "permanent_database_writes": false,
+  "maintenance_only": "postgres at explicit localhost55432",
+  "marker_verified_by_existing_destroy": true,
+  "force": false,
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "tracked_clean": true,
+  "offline_normalized_result": "PASS_BOOTSTRAP_ONLY",
+  "provider_calls": 0,
+  "scope": "BOOTSTRAP_ONLY_NOT_PATH"
+}

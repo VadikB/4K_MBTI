@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "task": "PROVIDER-ROLES-01/R2",
+  "status": "READY_FOR_PR_NOT_DEPLOYED_NOT_AC18",
+  "candidate": "2.0.74",
+  "release_type": "patch",
+  "base_sha": "44802660b47851f98e7b62ddb5a5f8275308569c",
+  "base_version": "2.0.73",
+  "implementation_sha": "1666f92114c3118305324309bc3e922643865c23",
+  "source_handoff_sha": "19bc6ad01e7a27dcd83fece4dd9493fc6824aec1",
+  "branch": "codex/provider-contract-env-roles",
+  "owner_decision": "07.11.2026 «да» на 2.0.74 PATCH: bump → push ветки → PR → обязательный CI → человеческое review. Merge/deploy/платный AC18 исключены.",
+  "ready_preparation": {
+    "command": "PYTHON_DOTENV_DISABLED=1 npm run ready:prepare -- --candidate 2.0.74",
+    "first_exit_code": 0,
+    "repeat_exit_code": 0,
+    "first_output": "From https://github.com/VadikB/4K_MBTI\n * branch              main       -> FETCH_HEAD\n\n> prebuild:web\n> npm run clean:web\n\n\n> clean:web\n> node scripts/clean_web_dist.mjs\n\n\n> build:web\n> esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --minify\n\n\n  web/dist/chunk-KBMJZM7R.js                   234.4kb\n  web/dist/chunk-HTY3YQPL.js                   138.7kb\n  web/dist/main.js                              98.7kb\n  web/dist/admin-methodology-UERP43ZR.js        67.4kb\n  web/dist/admin-prompt-lab-PIMIHSCI.js         45.5kb\n  web/dist/chunk-T4NRWAQK.js                    40.8kb\n  web/dist/chunk-JNXYSQRG.js                    33.5kb\n  web/dist/chunk-7UZMALYO.js                    24.0kb\n  web/dist/chunk-KX44Y7RV.js                    21.5kb\n  web/dist/chunk-F3X2FICN.js                    20.0kb\n  web/dist/admin-reports-YG7L3B6W.js            12.8kb\n  web/dist/admin-regression-tests-KXESJWRL.js   12.8kb\n  web/dist/chunk-EOVGDGGS.js                    11.8kb\n  web/dist/chunk-5XKLRMKF.js                    11.8kb\n  web/dist/chunk-EZG3N4JM.js                     8.7kb\n  web/dist/chunk-6SCW7EFZ.js                     5.7kb\n  web/dist/chunk-PQSE6YEI.js                     4.0kb\n  web/dist/chunk-66YIVMVW.js                     3.8kb\n  web/dist/chunk-L4XY6LN7.js                     3.1kb\n  web/dist/chunk-GAT6J624.js                     2.7kb\n  ...and 25 more output files...\n\n⚡ Done in 39ms\npatch: 2.0.73 → 2.0.74; updated: pyproject.toml, uv.lock, web/js/config.js, web/index.html\nNext step: npm run build:web\nReady preflight passed: release 2.0.74; product paths: 8",
+    "repeat_output": "From https://github.com/VadikB/4K_MBTI\n * branch              main       -> FETCH_HEAD\n\n> prebuild:web\n> npm run clean:web\n\n\n> clean:web\n> node scripts/clean_web_dist.mjs\n\n\n> build:web\n> esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --minify\n\n\n  web/dist/chunk-KBMJZM7R.js                   234.4kb\n  web/dist/chunk-HTY3YQPL.js                   138.7kb\n  web/dist/main.js                              98.7kb\n  web/dist/admin-methodology-UERP43ZR.js        67.4kb\n  web/dist/admin-prompt-lab-PIMIHSCI.js         45.5kb\n  web/dist/chunk-T4NRWAQK.js                    40.8kb\n  web/dist/chunk-JNXYSQRG.js                    33.5kb\n  web/dist/chunk-7UZMALYO.js                    24.0kb\n  web/dist/chunk-KX44Y7RV.js                    21.5kb\n  web/dist/chunk-F3X2FICN.js                    20.0kb\n  web/dist/admin-reports-YG7L3B6W.js            12.8kb\n  web/dist/admin-regression-tests-KXESJWRL.js   12.8kb\n  web/dist/chunk-EOVGDGGS.js                    11.8kb\n  web/dist/chunk-5XKLRMKF.js                    11.8kb\n  web/dist/chunk-EZG3N4JM.js                     8.7kb\n  web/dist/chunk-6SCW7EFZ.js                     5.7kb\n  web/dist/chunk-PQSE6YEI.js                     4.0kb\n  web/dist/chunk-66YIVMVW.js                     3.8kb\n  web/dist/chunk-L4XY6LN7.js                     3.1kb\n  web/dist/chunk-GAT6J624.js                     2.7kb\n  ...and 25 more output files...\n\n⚡ Done in 37ms\nReady preflight passed: release 2.0.74; product paths: 47",
+    "identical_49_hashes": true
+  },
+  "release_file_hashes": {
+    "pyproject.toml": "df434d6b4ff1ad319ce35896756c772b215520342485b8e974a3632e685d8f59",
+    "uv.lock": "713ea1ccf1a8e87294d3f4852d961274f9b116d880b3f069394f0b57a2ea1369",
+    "web/js/config.js": "ce671aec053c61433941e37d8a4c9a41a21ce2a597e88a85d6138c5a2bbd499b",
+    "web/index.html": "a61d098d40af4cf2dc2a48c44f75445a517845dfa74a9c8ea566d0cea5e8aa60",
+    "web/dist/admin-dashboard-NQI4BFAJ.js": "be40b5e77a171f3d267a5f5beba678a527d52824ee0b3d2417fa7f4db1fab684",
+    "web/dist/admin-methodology-UERP43ZR.js": "4410456e8c70877830dc1b5b96c9b942766c16a635a93640f0164926a96aa5ed",
+    "web/dist/admin-organizations-4KSL5J5H.js": "e291ad75e21bd2ae9728afc51ea1956889ae3164b73e5f6c2e837992bcc41806",
+    "web/dist/admin-prompt-lab-PIMIHSCI.js": "1a1dad6302e1be0ef3ddee45bc587ddcd34c73ba99da196dad149c4696aead43",
+    "web/dist/admin-regression-tests-KXESJWRL.js": "a0f3d46bff21024d52d70b636721f3d6cf75bb6809829871d8744c0a399c3c93",
+    "web/dist/admin-report-detail-S73YM5KW.js": "fd9f90c63d0886e6b70dc2b6c1a9890b815cbc9a431ad9c51540d3599351809d",
+    "web/dist/admin-reports-YG7L3B6W.js": "2fea370b83ade07a4f7a67a6158051b1933e61cade8ab10c666d4fa8d168dc1a",
+    "web/dist/ai-welcome-JKSUOUFU.js": "5913818603d450f00fddb8a05bc15826648f2ddf26c6a1eecca0e33ea184a6ff",
+    "web/dist/assessment-WSOQX4P6.js": "7cb98f7671ebaa711ab704d2b7fbe970b83f94e7ec2d9e8d6bee0f3748fe1ceb",
+    "web/dist/chat-BORQUXF3.js": "f1b7a2821ba22fbf69ca2b62c682497832ccc7913e654ebca3dbf86ab815ff17",
+    "web/dist/chat-CJMNGE5O.js": "115d392025ac345ef151215ec2d87889cb1db93ff2540ef91d223fd76785975b",
+    "web/dist/chunk-5XKLRMKF.js": "6a955f27cdce5b263bfe3e055f8ddcb71037401db14bbc85dc1d96ebfcc34938",
+    "web/dist/chunk-66YIVMVW.js": "2258e58eb077abc6a77a5d7bc516cee2d16b2b8cbdbe52199f2ceaec46bc4066",
+    "web/dist/chunk-6CEJVO3A.js": "1cff30a94d3702e17b7e6e88f2cd007a6924b3edcfdddb51ffe6c553f476420c",
+    "web/dist/chunk-6SCW7EFZ.js": "18a88a625fe0dfd7e6b47ad11f302535103be80e30ddf84ce3c89a9ad86b6847",
+    "web/dist/chunk-7UZMALYO.js": "f6e1abc50a34ad24ffa51a83283ba827ad460474c75d7a0198b2562e02092eba",
+    "web/dist/chunk-EOVGDGGS.js": "754491d6cbd1cda72dc92cf287c2a6ddaa356579e92e10054f694086b5f754bf",
+    "web/dist/chunk-EZG3N4JM.js": "ea5b836b32f7530f619cdd371cf49dd0682d1197a8cd5252f2d441567f1bad89",
+    "web/dist/chunk-F3X2FICN.js": "b6a939f0ee66beb2556f247690964d0730b683e79e5339b5e4617ce69e6d52d2",
+    "web/dist/chunk-GAT6J624.js": "f9a384e13b6818905455cbd9aa83ebbc63a1192c8c579719b517ed133fd0d930",
+    "web/dist/chunk-HTY3YQPL.js": "86dcc9cc9f34baaaeccd9a4839d3d9b5a470539f03cfcdb6c2d3cc89f979acca",
+    "web/dist/chunk-JNXYSQRG.js": "2b4d1d7e5010b9e6e9a34abc1dd7c4fa7b16d7e17ad6e0b807b0f9b8392f289b",
+    "web/dist/chunk-KBMJZM7R.js": "85e8c0f68c7b0f69e4f1a29033ff60fc0468e50768a45c21839ae8d849a4e622",
+    "web/dist/chunk-KX44Y7RV.js": "53736accd0b107db62b05460626b4c86f78b8189c00f91230cc2be032666243c",
+    "web/dist/chunk-L4XY6LN7.js": "59096f56c0774e4783c7fe0904b9fb7d2ff480ad9c60f76e76105f2850b01b80",
+    "web/dist/chunk-LWKUZKHU.js": "69f417f4487f2dda917b6784a81574bbfa5c1c98905de058b9550c922a9298d0",
+    "web/dist/chunk-PQSE6YEI.js": "9fe4dafb84d803f44845994e2050e07667687c9f8ff9f7122dea6ecc49dbb2d8",
+    "web/dist/chunk-T4NRWAQK.js": "9374dfdce9ed3a871c3062b3768ab8b20dc595547362d2a3471cccf716332e6d",
+    "web/dist/chunk-YWUOLKW6.js": "abd8bae090ba8f7a86e9708229fcf591eca43eb8fba245929aec808e247943f2",
+    "web/dist/dashboard-EQXBCQJ2.js": "76f8bfcd762eab60f7b0259db18f2310e401e14c40eb1f2f8d459e45e6408174",
+    "web/dist/dashboard-Q2FDVCQI.js": "9529c0f42c5c95b3aa8833dc45bde77e75336a01a96ca104868d0e923fe3b545",
+    "web/dist/interview-IP2IGDA5.js": "23d8ae19c1d8e7e20eb8a1dae6fb3770cd3f4b848a072fa9f93d4fada2d47621",
+    "web/dist/main.js": "9e76eb9cb53ad38e27c7b4c7822ba2ae5dffcf6462bd05bf27d38a2e755d3e1f",
+    "web/dist/onboarding-WHUKBWCR.js": "023bb7dd53ad160e577f58905c552a5385ea663ba46e5ae50f431ac2d64f89da",
+    "web/dist/onboarding-YU6PFXOX.js": "18d52347a5081dcd3b346e3f80116c159363d8ae2452e23b7833467cb39ab752",
+    "web/dist/organizations-NXXSETCR.js": "9c7c2a0b03dd64278d0abcc5d1c4b0a2a00aa8ced9153d2701c98109e725f75f",
+    "web/dist/processing-XZAV7EJX.js": "424668939ca61fe484358179adfc8552406bcd0fa74a1d0c3c5c09875fc697b5",
+    "web/dist/profile-ECNAWJSM.js": "a886de80b8ed012a0d68f4bf396b408e4389c6deddcd070f9287706c8bd93ca1",
+    "web/dist/profile-recovery-3B4FEPFD.js": "ef7454a40afcf98cb2637e1b28a9ed2c7162d377250db0ac81a08f8fe428e51d",
+    "web/dist/report-2M5LA5KE.js": "b9b8ce47d5858eb16b01e140ef0ca4d046d8f04faa9efdf24b6f7f09ed42b9bf",
+    "web/dist/report-ZRE5J6FI.js": "a5580e2d8d56bac04d17769ba2d2c690d5bcf191708feee0082636733085d46c",
+    "web/dist/reports-YOSTB3GQ.js": "4ae36907c68fa452132feecce579f32e4933b16a10f47f412a7bc04cdbc2d5c0",
+    "web/dist/router-AMZIPOTE.js": "ed2cf568ba5fae2dc626e4bd2f13ececef17420c51176ac54d1ad8f6219501ac",
+    "web/dist/screen-loaders-45EINECG.js": "f3c4c18f6ee5c50d06ff1e2c768f4e3cd7566b4d82cd959e35bc2ef7e7c7384c",
+    "web/dist/session-IRVL6J2W.js": "4336ed348ae9084f2eab544d2bf94720b679c0b497a0059783bacc89b3c7ef74"
+  },
+  "junit_file_hashes": {
+    "docs/evc/evidence/provider-contract-env-roles/release-2074/frontend.xml": "7b868cf2fe9cc4032455f35a4d8de66eb67ce83e5ec40caa45e5c02e8273434d",
+    "docs/evc/evidence/provider-contract-env-roles/release-2074/receipt.xml": "37e2f563cc0d2af23597424090a35098ae77e02f6541d2963d07425b1fc75a80",
+    "docs/evc/evidence/provider-contract-env-roles/release-2074/python.xml": "301247361de55c920a8a906565d169975583a6ddc86b33785a47ab5e2af613dc"
+  },
+  "junit_counts": {
+    "frontend.xml": {
+      "tests": 145,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "receipt.xml": {
+      "tests": 66,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "python.xml": {
+      "tests": 116,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "checks": {
+    "release_gate": "PASS: Release check passed: 2.0.74",
+    "lint": "PASS exit0",
+    "frontend": "145 PASS exit0",
+    "receipt": "66 PASS exit0",
+    "python": "116 PASS exit0",
+    "source_checker": "18 hashes / 4 JUnit PASS",
+    "diff_check": "PASS",
+    "functional_source_delta": "EMPTY: git diff --exit-code 1666f921 -- Api scripts tests README.md .env templates profile assessment_definitions"
+  },
+  "reused": {
+    "backend_passed": 956,
+    "http_passed": 108,
+    "from_sha": "1666f92114c3118305324309bc3e922643865c23",
+    "basis": "Функциональные source bytes и tests без delta; новые release tests проверяют изменённые metadata/build. Полный CI exact head/base всё равно обязателен."
+  },
+  "not_run": {
+    "local_integration": "Нет SQL/schema изменения; actual PostgreSQL/integration исполняет mandatory CI",
+    "local_browser": "Нет UI behavior изменения; mandatory browser CI и будущий AC18 не заменяются frontend units",
+    "real_provider": "NOT_RUN_NOT_AUTHORIZED",
+    "working_schema_readback": "NOT_RUN_NO_SERVER_ACCESS",
+    "ci": "PENDING_AFTER_PR",
+    "human_review": "NOT_DONE",
+    "merge": "NOT_AUTHORIZED_NOT_RUN",
+    "deploy": "NOT_AUTHORIZED_NOT_RUN"
+  },
+  "warnings": [
+    "Локальный Node25.5.0 сообщает MODULE_TYPELESS_PACKAGE_JSON; существующий package.json не менялся. CI использует Node22.",
+    "Предшествующие backend/HTTP имеют Starlette/httpx deprecation; зависимости в этом выпуске не менялись."
+  ],
+  "safety": {
+    "working_env_modified": false,
+    "working_db_access": false,
+    "db_created": false,
+    "real_mail": false,
+    "llm_calls": 0,
+    "provider_manifest_modified": false,
+    "prompts_admission_repair_modified": false,
+    "source_publication": false
+  },
+  "history": {
+    "PREP_DIAG_01": "UNKNOWN",
+    "timeout_cleanup": "UNKNOWN",
+    "q_draft_historical_causal_identity": "NOT_PROVEN"
+  },
+  "snapshot_note": "Pre-push receipt. Точный candidate head и дальнейший CI/status фиксируются в PR без status-only commit после CI."
+}

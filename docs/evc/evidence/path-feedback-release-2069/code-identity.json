@@ -1,0 +1,20 @@
+{
+  "main": "946a46cb71e5ca5cc99778f036807d6c193188dc",
+  "implementation": "c59b024ebfae98790e545eae16d043a2280b9384",
+  "branch": "codex/path-feedback-2069",
+  "version": "2.0.69",
+  "approved_actions": ["version_bump", "branch_push", "pr", "ci", "human_review_handoff"],
+  "excluded_actions": ["merge", "deploy", "program_publication", "program_activation", "working_database", "paid_llm"],
+  "unchanged_source_comparison": "PASS",
+  "comparison_scope": "Api/scripts/assessment_definitions/tests/web/styles and all web/js except APP_RELEASE in config.js, against c59b024",
+  "metadata_changed": ["pyproject.toml", "uv.lock", "web/js/config.js", "web/index.html"],
+  "build_assets": 45,
+  "preflight_idempotency_files": 49,
+  "synthetic_http": true,
+  "real_path_on_this_candidate": "NOT_RUN",
+  "human_review": "NOT_DONE",
+  "historical_auth_114_1_causality": "NOT_ESTABLISHED",
+  "historical_r10_adm_timeout_root_cause": "UNKNOWN",
+  "prep_diag_01_root_cause": "UNKNOWN",
+  "deployment": "NOT_RUN; last confirmed main/test 946a46c / 2.0.68"
+}

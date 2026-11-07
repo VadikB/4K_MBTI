@@ -1,0 +1,13 @@
+{
+  "container_id": "d72f7cc391d9ab001cb28cebba4e8942d0b48869c5abbf002f62a97cb504186f",
+  "container_name": "4k-harness2070-pytest-20261106",
+  "owner_label": "codex.task=path-harness-release-2070",
+  "owner_label_verified": true,
+  "owned_database_count": 0,
+  "owned_connection_count": 0,
+  "container_removed": true,
+  "removal_readback": "docker ps -a --filter id=d72f7cc: empty",
+  "force": false,
+  "working_database_access": false,
+  "evidence_exported_before_cleanup": true
+}

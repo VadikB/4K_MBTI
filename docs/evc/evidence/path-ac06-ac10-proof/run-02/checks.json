@@ -1,0 +1,3256 @@
+{
+  "contract": "path_admin_http_pg/1",
+  "synthetic_only": true,
+  "real_sessions": true,
+  "real_resolvers": true,
+  "real_postgresql": true,
+  "database": "product4k_pytest_053285bb34a049c39f1679eab8f7ea40",
+  "events": [
+    {
+      "method": "PUT",
+      "path": "/users/admin/organizations/1/assessment-program",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Superadmin access required",
+      "before": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "PUT",
+      "path": "/users/admin/organizations/2/assessment-program",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Superadmin access required",
+      "before": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/users/admin/organizations/2",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Organization admin access required",
+      "before": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/members",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Organization admin access required",
+      "before": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/admin/organizations/2/members",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Organization admin access required",
+      "before": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/assessment-assignments",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Organization admin access required",
+      "before": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/preview",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Organization admin access required",
+      "before": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 2,
+          "sha256": "510662c9ba7383e06f18777f44317badfea5877e3d988cd88a106506fdd19bdd"
+        },
+        "users": {
+          "count": 7,
+          "sha256": "c2e5c5c10598c56d85542daa2dee8d50709282e07918b84c4afc13dc5afef09b"
+        },
+        "organization_memberships": {
+          "count": 6,
+          "sha256": "9521aea288f50f6e54df814d6a131dfccfcc9dc22a6cd9abc72942061f9eb7f8"
+        },
+        "organization_assessment_program_connections": {
+          "count": 1,
+          "sha256": "ee7538b468d378b5b079f7563dec7b49238f2adaba394ebfe0c1c404423c4b6d"
+        },
+        "assessment_program_definitions": {
+          "count": 1,
+          "sha256": "4cf47e6bcba0dd4f2e349bf41afb37e7ebebc8ec410a7114126511bab8173e19"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 1,
+          "sha256": "ff893dce48eb918bd51c149b89aa40fa0a0b18339de812ed874dd56d1ffd15ef"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 1,
+          "sha256": "f0f15e148392470da2a785a3e9024c3c0779c785fda05b04ea556dc276578c31"
+        },
+        "m8_report_access_revisions": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/1/confirm",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "QUESTIONNAIRE_REVISION_CONFLICT",
+      "before": {
+        "organizations": {
+          "count": 3,
+          "sha256": "46039d2f690a9d6b71380b33c3dd2b79d14ec68397607ea2cb1d81a8394e326d"
+        },
+        "users": {
+          "count": 11,
+          "sha256": "89cb2e13ef91fb667f3bc9700249ed2fb03ecb24dab8e0806e075dcd177cf5eb"
+        },
+        "organization_memberships": {
+          "count": 10,
+          "sha256": "6a20be0ed3e2265d103c05a987aeec73637aa0eb997ebe4c463a58e75addf98b"
+        },
+        "organization_assessment_program_connections": {
+          "count": 2,
+          "sha256": "34fbeb94bf7cdd9c7ff40190e0414e0d3ccc6960b315b405eff44ece268212ce"
+        },
+        "assessment_program_definitions": {
+          "count": 2,
+          "sha256": "a78badff91aece9989e7552dc2b10a3b198db0fd69ed4cf51bd8524a878b4641"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 2,
+          "sha256": "84eaa16ea595e16c8cc80d1c557d9f47aa7f0d6f746775006d45e6e50e0bd052"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 2,
+          "sha256": "ab5d9e38d24dfca7447e11d65acb18482fa4e2efdae78b88bbb34940357ab3d9"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 2,
+          "sha256": "5f31d33905af43ea92940914ac7ae1220be2e9927e2ea559e0745d8fb0fbe10b"
+        },
+        "m8_report_access_revisions": {
+          "count": 1,
+          "sha256": "a1d7ac187eb24a0ff7464c83b57d2970bc97fc057ac53e0c2f2c06f73cd8aa41"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 3,
+          "sha256": "46039d2f690a9d6b71380b33c3dd2b79d14ec68397607ea2cb1d81a8394e326d"
+        },
+        "users": {
+          "count": 11,
+          "sha256": "89cb2e13ef91fb667f3bc9700249ed2fb03ecb24dab8e0806e075dcd177cf5eb"
+        },
+        "organization_memberships": {
+          "count": 10,
+          "sha256": "6a20be0ed3e2265d103c05a987aeec73637aa0eb997ebe4c463a58e75addf98b"
+        },
+        "organization_assessment_program_connections": {
+          "count": 2,
+          "sha256": "34fbeb94bf7cdd9c7ff40190e0414e0d3ccc6960b315b405eff44ece268212ce"
+        },
+        "assessment_program_definitions": {
+          "count": 2,
+          "sha256": "a78badff91aece9989e7552dc2b10a3b198db0fd69ed4cf51bd8524a878b4641"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 2,
+          "sha256": "84eaa16ea595e16c8cc80d1c557d9f47aa7f0d6f746775006d45e6e50e0bd052"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 2,
+          "sha256": "ab5d9e38d24dfca7447e11d65acb18482fa4e2efdae78b88bbb34940357ab3d9"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 2,
+          "sha256": "5f31d33905af43ea92940914ac7ae1220be2e9927e2ea559e0745d8fb0fbe10b"
+        },
+        "m8_report_access_revisions": {
+          "count": 1,
+          "sha256": "a1d7ac187eb24a0ff7464c83b57d2970bc97fc057ac53e0c2f2c06f73cd8aa41"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/3/confirm",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "QUESTIONNAIRE_REVISION_NOT_FOUND",
+      "before": {
+        "organizations": {
+          "count": 3,
+          "sha256": "46039d2f690a9d6b71380b33c3dd2b79d14ec68397607ea2cb1d81a8394e326d"
+        },
+        "users": {
+          "count": 11,
+          "sha256": "89cb2e13ef91fb667f3bc9700249ed2fb03ecb24dab8e0806e075dcd177cf5eb"
+        },
+        "organization_memberships": {
+          "count": 10,
+          "sha256": "6a20be0ed3e2265d103c05a987aeec73637aa0eb997ebe4c463a58e75addf98b"
+        },
+        "organization_assessment_program_connections": {
+          "count": 2,
+          "sha256": "34fbeb94bf7cdd9c7ff40190e0414e0d3ccc6960b315b405eff44ece268212ce"
+        },
+        "assessment_program_definitions": {
+          "count": 2,
+          "sha256": "a78badff91aece9989e7552dc2b10a3b198db0fd69ed4cf51bd8524a878b4641"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 2,
+          "sha256": "84eaa16ea595e16c8cc80d1c557d9f47aa7f0d6f746775006d45e6e50e0bd052"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 3,
+          "sha256": "e6a778ee5b4f8ad6957f38465bf4a2aee68d2f9789f8ed30276d36e20cb89af6"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 2,
+          "sha256": "5f31d33905af43ea92940914ac7ae1220be2e9927e2ea559e0745d8fb0fbe10b"
+        },
+        "m8_report_access_revisions": {
+          "count": 1,
+          "sha256": "a1d7ac187eb24a0ff7464c83b57d2970bc97fc057ac53e0c2f2c06f73cd8aa41"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 3,
+          "sha256": "46039d2f690a9d6b71380b33c3dd2b79d14ec68397607ea2cb1d81a8394e326d"
+        },
+        "users": {
+          "count": 11,
+          "sha256": "89cb2e13ef91fb667f3bc9700249ed2fb03ecb24dab8e0806e075dcd177cf5eb"
+        },
+        "organization_memberships": {
+          "count": 10,
+          "sha256": "6a20be0ed3e2265d103c05a987aeec73637aa0eb997ebe4c463a58e75addf98b"
+        },
+        "organization_assessment_program_connections": {
+          "count": 2,
+          "sha256": "34fbeb94bf7cdd9c7ff40190e0414e0d3ccc6960b315b405eff44ece268212ce"
+        },
+        "assessment_program_definitions": {
+          "count": 2,
+          "sha256": "a78badff91aece9989e7552dc2b10a3b198db0fd69ed4cf51bd8524a878b4641"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 2,
+          "sha256": "84eaa16ea595e16c8cc80d1c557d9f47aa7f0d6f746775006d45e6e50e0bd052"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 3,
+          "sha256": "e6a778ee5b4f8ad6957f38465bf4a2aee68d2f9789f8ed30276d36e20cb89af6"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 2,
+          "sha256": "5f31d33905af43ea92940914ac7ae1220be2e9927e2ea559e0745d8fb0fbe10b"
+        },
+        "m8_report_access_revisions": {
+          "count": 1,
+          "sha256": "a1d7ac187eb24a0ff7464c83b57d2970bc97fc057ac53e0c2f2c06f73cd8aa41"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/3/questionnaire/3/confirm",
+      "expected_status": 403,
+      "status": 403,
+      "detail": "Organization admin access required",
+      "before": {
+        "organizations": {
+          "count": 3,
+          "sha256": "46039d2f690a9d6b71380b33c3dd2b79d14ec68397607ea2cb1d81a8394e326d"
+        },
+        "users": {
+          "count": 11,
+          "sha256": "89cb2e13ef91fb667f3bc9700249ed2fb03ecb24dab8e0806e075dcd177cf5eb"
+        },
+        "organization_memberships": {
+          "count": 10,
+          "sha256": "6a20be0ed3e2265d103c05a987aeec73637aa0eb997ebe4c463a58e75addf98b"
+        },
+        "organization_assessment_program_connections": {
+          "count": 2,
+          "sha256": "34fbeb94bf7cdd9c7ff40190e0414e0d3ccc6960b315b405eff44ece268212ce"
+        },
+        "assessment_program_definitions": {
+          "count": 2,
+          "sha256": "a78badff91aece9989e7552dc2b10a3b198db0fd69ed4cf51bd8524a878b4641"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 2,
+          "sha256": "84eaa16ea595e16c8cc80d1c557d9f47aa7f0d6f746775006d45e6e50e0bd052"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 3,
+          "sha256": "e6a778ee5b4f8ad6957f38465bf4a2aee68d2f9789f8ed30276d36e20cb89af6"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 2,
+          "sha256": "5f31d33905af43ea92940914ac7ae1220be2e9927e2ea559e0745d8fb0fbe10b"
+        },
+        "m8_report_access_revisions": {
+          "count": 1,
+          "sha256": "a1d7ac187eb24a0ff7464c83b57d2970bc97fc057ac53e0c2f2c06f73cd8aa41"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 3,
+          "sha256": "46039d2f690a9d6b71380b33c3dd2b79d14ec68397607ea2cb1d81a8394e326d"
+        },
+        "users": {
+          "count": 11,
+          "sha256": "89cb2e13ef91fb667f3bc9700249ed2fb03ecb24dab8e0806e075dcd177cf5eb"
+        },
+        "organization_memberships": {
+          "count": 10,
+          "sha256": "6a20be0ed3e2265d103c05a987aeec73637aa0eb997ebe4c463a58e75addf98b"
+        },
+        "organization_assessment_program_connections": {
+          "count": 2,
+          "sha256": "34fbeb94bf7cdd9c7ff40190e0414e0d3ccc6960b315b405eff44ece268212ce"
+        },
+        "assessment_program_definitions": {
+          "count": 2,
+          "sha256": "a78badff91aece9989e7552dc2b10a3b198db0fd69ed4cf51bd8524a878b4641"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 2,
+          "sha256": "84eaa16ea595e16c8cc80d1c557d9f47aa7f0d6f746775006d45e6e50e0bd052"
+        },
+        "organization_assessment_assignments": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "questionnaire_response_revisions": {
+          "count": 3,
+          "sha256": "e6a778ee5b4f8ad6957f38465bf4a2aee68d2f9789f8ed30276d36e20cb89af6"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 2,
+          "sha256": "5f31d33905af43ea92940914ac7ae1220be2e9927e2ea559e0745d8fb0fbe10b"
+        },
+        "m8_report_access_revisions": {
+          "count": 1,
+          "sha256": "a1d7ac187eb24a0ff7464c83b57d2970bc97fc057ac53e0c2f2c06f73cd8aa41"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "87e047d9a8b395d4ef2472f4138b8545b89feab51ecc5b0d741c91824d87f5fe"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 2,
+          "sha256": "2ae51b7ef9527822062bc92a1dc40adf46d7ee960b0c2d113ff44d8fca94a7c9"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "criterion": "AC07",
+      "exact_revision": 2,
+      "stale_revision": 1,
+      "foreign_revision": 3,
+      "context_version": 2,
+      "positive_and_replay": "PASS"
+    },
+    {
+      "criterion": "AC09",
+      "mode": "lost_reply",
+      "concurrent": false,
+      "lost_response": true,
+      "reload_and_repeat_readback": true,
+      "before": {
+        "assignments": [
+          {
+            "id": 1
+          }
+        ],
+        "bindings": [
+          {
+            "id": 1,
+            "assignment_id": 1
+          }
+        ],
+        "cycles": 0
+      },
+      "after": {
+        "assignments": [
+          {
+            "id": 1
+          }
+        ],
+        "bindings": [
+          {
+            "id": 1,
+            "assignment_id": 1
+          }
+        ],
+        "cycles": 0
+      }
+    },
+    {
+      "criterion": "AC09",
+      "mode": "same_key_concurrent",
+      "concurrent": true,
+      "lost_response": false,
+      "reload_and_repeat_readback": true,
+      "before": {
+        "assignments": [
+          {
+            "id": 5
+          }
+        ],
+        "bindings": [
+          {
+            "id": 2,
+            "assignment_id": 5
+          }
+        ],
+        "cycles": 0
+      },
+      "after": {
+        "assignments": [
+          {
+            "id": 5
+          }
+        ],
+        "bindings": [
+          {
+            "id": 2,
+            "assignment_id": 5
+          }
+        ],
+        "cycles": 0
+      }
+    },
+    {
+      "criterion": "AC09",
+      "mode": "different_key_concurrent",
+      "concurrent": true,
+      "lost_response": false,
+      "reload_and_repeat_readback": true,
+      "before": {
+        "assignments": [
+          {
+            "id": 9
+          }
+        ],
+        "bindings": [
+          {
+            "id": 3,
+            "assignment_id": 9
+          }
+        ],
+        "cycles": 0
+      },
+      "after": {
+        "assignments": [
+          {
+            "id": 9
+          }
+        ],
+        "bindings": [
+          {
+            "id": 3,
+            "assignment_id": 9
+          }
+        ],
+        "cycles": 0
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "ASSIGNMENT_SOURCES_FROZEN: Создайте новое назначение; подтверждённый профиль неизменяем.",
+      "before": {
+        "organizations": {
+          "count": 7,
+          "sha256": "91dffd34c62ba3145ea84185da567f453b6b05cec8fe09ad8678e0c53fda6e53"
+        },
+        "users": {
+          "count": 27,
+          "sha256": "cd5d9033160024b75db1ac0ad0c18b04b7462ab5a4375b8f82d4686e8b6f7bb4"
+        },
+        "organization_memberships": {
+          "count": 26,
+          "sha256": "96ca77d9146c5109dc02988281fcf39ff9ab591f5cbd4e3ca15b5c12ce590cd9"
+        },
+        "organization_assessment_program_connections": {
+          "count": 6,
+          "sha256": "50fdc534059a9f190451c1e80f309c73fd646bcebc0eb69fd7245b81ce1e1b65"
+        },
+        "assessment_program_definitions": {
+          "count": 6,
+          "sha256": "49f8bb8fde4a61aaf3641c41e5679707af5041db839063c700261aa95c92dcb1"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 6,
+          "sha256": "0ca1d76f3b89bcaaaebfcfc0c74b480c76d108293586c6650f99c1801037400b"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 7,
+          "sha256": "2bac7421ff2157ba4a8e2498ec9646123e1930be5329223c97981e081c8ac777"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 6,
+          "sha256": "e1d7bfb95d283e57a8b356593c1b1de145a46b0913dfffdd5dde80cf146d5da8"
+        },
+        "m8_report_access_revisions": {
+          "count": 5,
+          "sha256": "4bea85635352ddf1f755b43da7bad03cc80e1f4acf92a1ca641029eb0ce25298"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 7,
+          "sha256": "91dffd34c62ba3145ea84185da567f453b6b05cec8fe09ad8678e0c53fda6e53"
+        },
+        "users": {
+          "count": 27,
+          "sha256": "cd5d9033160024b75db1ac0ad0c18b04b7462ab5a4375b8f82d4686e8b6f7bb4"
+        },
+        "organization_memberships": {
+          "count": 26,
+          "sha256": "96ca77d9146c5109dc02988281fcf39ff9ab591f5cbd4e3ca15b5c12ce590cd9"
+        },
+        "organization_assessment_program_connections": {
+          "count": 6,
+          "sha256": "50fdc534059a9f190451c1e80f309c73fd646bcebc0eb69fd7245b81ce1e1b65"
+        },
+        "assessment_program_definitions": {
+          "count": 6,
+          "sha256": "49f8bb8fde4a61aaf3641c41e5679707af5041db839063c700261aa95c92dcb1"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 6,
+          "sha256": "0ca1d76f3b89bcaaaebfcfc0c74b480c76d108293586c6650f99c1801037400b"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 7,
+          "sha256": "2bac7421ff2157ba4a8e2498ec9646123e1930be5329223c97981e081c8ac777"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 6,
+          "sha256": "e1d7bfb95d283e57a8b356593c1b1de145a46b0913dfffdd5dde80cf146d5da8"
+        },
+        "m8_report_access_revisions": {
+          "count": 5,
+          "sha256": "4bea85635352ddf1f755b43da7bad03cc80e1f4acf92a1ca641029eb0ce25298"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 500,
+      "status": 500,
+      "detail": "Internal Server Error",
+      "before": {
+        "organizations": {
+          "count": 8,
+          "sha256": "703e1edac8ee651e4610a00be55ae5b43a28785123e68c8ea8f22753addc0dc3"
+        },
+        "users": {
+          "count": 31,
+          "sha256": "4d279a2ecdb042de2d80122d2c7517ac51f244b4f258c93a06d10f68bd3fe0c9"
+        },
+        "organization_memberships": {
+          "count": 30,
+          "sha256": "a37758e5724a21d01527b212614c8794c56b1e407cf0d7358059b75bde6c09fa"
+        },
+        "organization_assessment_program_connections": {
+          "count": 7,
+          "sha256": "fb15e255a7dda776cf3c2c039ee532987a429ce63abf11e54e954af37039c4d1"
+        },
+        "assessment_program_definitions": {
+          "count": 7,
+          "sha256": "10c4e857f1c9cd29ac897867140b17ef880361a6b8f549b4775632cec82d84f6"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 7,
+          "sha256": "38047b222723d38f2360b47aa79879eab0676ac97f9a470e42b32a0146942370"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 8,
+          "sha256": "9f72313541178e71c330357bb0039dd8f54ae8c069520d92f13074fd156b4d3c"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 7,
+          "sha256": "614d7970849cdb9b3ad0bc5a199224752ce3b38f2abe67235231d65f3f02b8f1"
+        },
+        "m8_report_access_revisions": {
+          "count": 6,
+          "sha256": "e6558d69ab2d7adede50eb66eca44a880ee43163ae4de8364d53f89c9de497b8"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 8,
+          "sha256": "703e1edac8ee651e4610a00be55ae5b43a28785123e68c8ea8f22753addc0dc3"
+        },
+        "users": {
+          "count": 31,
+          "sha256": "4d279a2ecdb042de2d80122d2c7517ac51f244b4f258c93a06d10f68bd3fe0c9"
+        },
+        "organization_memberships": {
+          "count": 30,
+          "sha256": "a37758e5724a21d01527b212614c8794c56b1e407cf0d7358059b75bde6c09fa"
+        },
+        "organization_assessment_program_connections": {
+          "count": 7,
+          "sha256": "fb15e255a7dda776cf3c2c039ee532987a429ce63abf11e54e954af37039c4d1"
+        },
+        "assessment_program_definitions": {
+          "count": 7,
+          "sha256": "10c4e857f1c9cd29ac897867140b17ef880361a6b8f549b4775632cec82d84f6"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 7,
+          "sha256": "38047b222723d38f2360b47aa79879eab0676ac97f9a470e42b32a0146942370"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 8,
+          "sha256": "9f72313541178e71c330357bb0039dd8f54ae8c069520d92f13074fd156b4d3c"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 7,
+          "sha256": "614d7970849cdb9b3ad0bc5a199224752ce3b38f2abe67235231d65f3f02b8f1"
+        },
+        "m8_report_access_revisions": {
+          "count": 6,
+          "sha256": "e6558d69ab2d7adede50eb66eca44a880ee43163ae4de8364d53f89c9de497b8"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS",
+      "before": {
+        "organizations": {
+          "count": 9,
+          "sha256": "143f2a6e4a25efc85d4f08933ae6edb915995abced9398b483c54d7672e55f78"
+        },
+        "users": {
+          "count": 35,
+          "sha256": "43481a392125bfae8db64a7cc2de0c6d0462eadc8cd46af24bc8cc251aaa3b93"
+        },
+        "organization_memberships": {
+          "count": 34,
+          "sha256": "77a84a0a297fec0d72659c3f1bf4f5d610902ef25c446a3f39bf4f2a55a735e1"
+        },
+        "organization_assessment_program_connections": {
+          "count": 8,
+          "sha256": "6103a1e241a2098888933d6946f7710afc190660f8e99aedbe6f6f7eb61e8b12"
+        },
+        "assessment_program_definitions": {
+          "count": 8,
+          "sha256": "1ae621addf9ec192eb4ac166bf2563b59a339778ce3f6eb29dcc9a9ebebcca5e"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 8,
+          "sha256": "2f73492c58688fd05217be69c248f11234c5448410e888caddd3aecc2f6bac42"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 9,
+          "sha256": "6724f287211a1cdc49e383c1e0bfff03c8b1f04103638caa58612bd470c6d795"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 8,
+          "sha256": "48907cbbc6e3629bc797aa031589cf09f8b2069533e501aeb9843ab98c5818bf"
+        },
+        "m8_report_access_revisions": {
+          "count": 7,
+          "sha256": "c20b9a4f31fcbedc673637d0d8730ae63f92c4ee90c35a5a917ad300c4c3e8be"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 9,
+          "sha256": "143f2a6e4a25efc85d4f08933ae6edb915995abced9398b483c54d7672e55f78"
+        },
+        "users": {
+          "count": 35,
+          "sha256": "43481a392125bfae8db64a7cc2de0c6d0462eadc8cd46af24bc8cc251aaa3b93"
+        },
+        "organization_memberships": {
+          "count": 34,
+          "sha256": "77a84a0a297fec0d72659c3f1bf4f5d610902ef25c446a3f39bf4f2a55a735e1"
+        },
+        "organization_assessment_program_connections": {
+          "count": 8,
+          "sha256": "6103a1e241a2098888933d6946f7710afc190660f8e99aedbe6f6f7eb61e8b12"
+        },
+        "assessment_program_definitions": {
+          "count": 8,
+          "sha256": "1ae621addf9ec192eb4ac166bf2563b59a339778ce3f6eb29dcc9a9ebebcca5e"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 8,
+          "sha256": "2f73492c58688fd05217be69c248f11234c5448410e888caddd3aecc2f6bac42"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 9,
+          "sha256": "6724f287211a1cdc49e383c1e0bfff03c8b1f04103638caa58612bd470c6d795"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 8,
+          "sha256": "48907cbbc6e3629bc797aa031589cf09f8b2069533e501aeb9843ab98c5818bf"
+        },
+        "m8_report_access_revisions": {
+          "count": 7,
+          "sha256": "c20b9a4f31fcbedc673637d0d8730ae63f92c4ee90c35a5a917ad300c4c3e8be"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "PROGRAM_ROLE_NOT_AVAILABLE",
+      "before": {
+        "organizations": {
+          "count": 10,
+          "sha256": "ec76c78094d338433c8bb88bfd0bdd8ed0c7785b61f153615b6bbecbd24f88ae"
+        },
+        "users": {
+          "count": 39,
+          "sha256": "e0ac5c95f9f08e5e869ef0519b29104d25ef55df1a19e58d1b50ab864fad241c"
+        },
+        "organization_memberships": {
+          "count": 38,
+          "sha256": "790c042c4df436bcb150972fa721feed480a9878bc016cf3411cf5d6aa537c96"
+        },
+        "organization_assessment_program_connections": {
+          "count": 9,
+          "sha256": "8c7e30938acc1b173cb77c402628c1dadd78553bdc7955dda07cbfd17cfc209a"
+        },
+        "assessment_program_definitions": {
+          "count": 9,
+          "sha256": "45f9cee9693a515f6cf04040de05763d25f9c6372219c34b739c87b368d4adeb"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 9,
+          "sha256": "8d8e7cd23062413404d10bf59709989e71c0048bfcdac40165b367f143c1a6d1"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 10,
+          "sha256": "49ee701506f91b91e3d074e73f7ef33dc5fc7f3dc42d8e3c02a4e2a6f20f158f"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 9,
+          "sha256": "5a5598d103c6a66a65472cbcb1d7be3f45f68b85a29b3203fabadcc4880921a3"
+        },
+        "m8_report_access_revisions": {
+          "count": 8,
+          "sha256": "1ef45329b966c976b1463533a8bfe3e4d5d8495782c872d4ddcf263a68e10913"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 10,
+          "sha256": "ec76c78094d338433c8bb88bfd0bdd8ed0c7785b61f153615b6bbecbd24f88ae"
+        },
+        "users": {
+          "count": 39,
+          "sha256": "e0ac5c95f9f08e5e869ef0519b29104d25ef55df1a19e58d1b50ab864fad241c"
+        },
+        "organization_memberships": {
+          "count": 38,
+          "sha256": "790c042c4df436bcb150972fa721feed480a9878bc016cf3411cf5d6aa537c96"
+        },
+        "organization_assessment_program_connections": {
+          "count": 9,
+          "sha256": "8c7e30938acc1b173cb77c402628c1dadd78553bdc7955dda07cbfd17cfc209a"
+        },
+        "assessment_program_definitions": {
+          "count": 9,
+          "sha256": "45f9cee9693a515f6cf04040de05763d25f9c6372219c34b739c87b368d4adeb"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 9,
+          "sha256": "8d8e7cd23062413404d10bf59709989e71c0048bfcdac40165b367f143c1a6d1"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 10,
+          "sha256": "49ee701506f91b91e3d074e73f7ef33dc5fc7f3dc42d8e3c02a4e2a6f20f158f"
+        },
+        "assessment_organization_contexts": {
+          "count": 1,
+          "sha256": "44309fd9e9058410370477f8c84cc5dce52577c8e53f32b5b801c20d2fdbcbd3"
+        },
+        "assessment_organization_context_versions": {
+          "count": 9,
+          "sha256": "5a5598d103c6a66a65472cbcb1d7be3f45f68b85a29b3203fabadcc4880921a3"
+        },
+        "m8_report_access_revisions": {
+          "count": 8,
+          "sha256": "1ef45329b966c976b1463533a8bfe3e4d5d8495782c872d4ddcf263a68e10913"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/11/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "PROGRAM_CATALOG_SCOPE_MISMATCH",
+      "before": {
+        "organizations": {
+          "count": 11,
+          "sha256": "847b455b142391886aa38848029cfe6ba3b18af880c303bb48b17535b6f4505f"
+        },
+        "users": {
+          "count": 43,
+          "sha256": "7d00bbf18934f3cafb082b5fdf4ea04584cf6782fcad2575416cd8f740fb6f49"
+        },
+        "organization_memberships": {
+          "count": 42,
+          "sha256": "6e4bd531e787fde265230bc34d9646f7c0f8ddde57868dc82d4748b32d92280a"
+        },
+        "organization_assessment_program_connections": {
+          "count": 11,
+          "sha256": "7ec35ea54b567629923b940928d59a09d0e261413b228e95a3f6494fe2130c22"
+        },
+        "assessment_program_definitions": {
+          "count": 10,
+          "sha256": "294f4be3df346c592f9118deb4252f16c1fb544b9f591ad8ca44ccb3a67d1599"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 10,
+          "sha256": "378df15fe6a7cc416450702d06d15debd1faa727af2209b6d0a4e07f398254a8"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 12,
+          "sha256": "091bbbd0d61038717811eb47bbb2c3001e642f084dfead7e653524e1775bb41a"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 11,
+          "sha256": "649863d211bbd3bdc53fdcf92f8bd4582ae444fc284f787ebc5d85afa763c1b2"
+        },
+        "m8_report_access_revisions": {
+          "count": 10,
+          "sha256": "540b8fda63ac0dc7994a2215d72355c37d0f2d3331faeef9470f2479742f1981"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 11,
+          "sha256": "847b455b142391886aa38848029cfe6ba3b18af880c303bb48b17535b6f4505f"
+        },
+        "users": {
+          "count": 43,
+          "sha256": "7d00bbf18934f3cafb082b5fdf4ea04584cf6782fcad2575416cd8f740fb6f49"
+        },
+        "organization_memberships": {
+          "count": 42,
+          "sha256": "6e4bd531e787fde265230bc34d9646f7c0f8ddde57868dc82d4748b32d92280a"
+        },
+        "organization_assessment_program_connections": {
+          "count": 11,
+          "sha256": "7ec35ea54b567629923b940928d59a09d0e261413b228e95a3f6494fe2130c22"
+        },
+        "assessment_program_definitions": {
+          "count": 10,
+          "sha256": "294f4be3df346c592f9118deb4252f16c1fb544b9f591ad8ca44ccb3a67d1599"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 10,
+          "sha256": "378df15fe6a7cc416450702d06d15debd1faa727af2209b6d0a4e07f398254a8"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 12,
+          "sha256": "091bbbd0d61038717811eb47bbb2c3001e642f084dfead7e653524e1775bb41a"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 11,
+          "sha256": "649863d211bbd3bdc53fdcf92f8bd4582ae444fc284f787ebc5d85afa763c1b2"
+        },
+        "m8_report_access_revisions": {
+          "count": 10,
+          "sha256": "540b8fda63ac0dc7994a2215d72355c37d0f2d3331faeef9470f2479742f1981"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "PROGRAM_ASSIGNMENT_REF_MISMATCH",
+      "before": {
+        "organizations": {
+          "count": 12,
+          "sha256": "3b969555138d4aa23346895ef89203e7aae5393ae9c46c88fc89cf56b1a0609c"
+        },
+        "users": {
+          "count": 47,
+          "sha256": "4d34842bf09b0a8ddc48848c25e7b4e9ae691e7c0d164e64d7337bccc119f692"
+        },
+        "organization_memberships": {
+          "count": 46,
+          "sha256": "0825d1bb709300b494533c002555bf4ca7ef8cec490fd0710ae9c012e199dce2"
+        },
+        "organization_assessment_program_connections": {
+          "count": 13,
+          "sha256": "61c31c723c044a4afe3136c2e6b9a769875994099950c7a50ee249fcaa8e57a9"
+        },
+        "assessment_program_definitions": {
+          "count": 12,
+          "sha256": "d261cc2867370a96a2a80882bea30ca541bd624107d5229e9bed8607bac866ec"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 12,
+          "sha256": "d8059aab81c32d916f1e12dd49fb493bb9ffbcf082668d2d1e9c8b6e2b9d4d14"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 13,
+          "sha256": "eb0a19b0c4578ce5b9f6cc307836e7602b0dabebd4af9da11ce49a2ea419bd02"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 12,
+          "sha256": "5bba4a1c5d16a9631f15cf79578bb1fdd6ab170dd20e6bfc9fb4259f0be68d83"
+        },
+        "m8_report_access_revisions": {
+          "count": 11,
+          "sha256": "5d9a8c106d4a5431280c2a636b8e49eba98eb34bb747c6fa04fe255c1e719067"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 12,
+          "sha256": "3b969555138d4aa23346895ef89203e7aae5393ae9c46c88fc89cf56b1a0609c"
+        },
+        "users": {
+          "count": 47,
+          "sha256": "4d34842bf09b0a8ddc48848c25e7b4e9ae691e7c0d164e64d7337bccc119f692"
+        },
+        "organization_memberships": {
+          "count": 46,
+          "sha256": "0825d1bb709300b494533c002555bf4ca7ef8cec490fd0710ae9c012e199dce2"
+        },
+        "organization_assessment_program_connections": {
+          "count": 13,
+          "sha256": "61c31c723c044a4afe3136c2e6b9a769875994099950c7a50ee249fcaa8e57a9"
+        },
+        "assessment_program_definitions": {
+          "count": 12,
+          "sha256": "d261cc2867370a96a2a80882bea30ca541bd624107d5229e9bed8607bac866ec"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 12,
+          "sha256": "d8059aab81c32d916f1e12dd49fb493bb9ffbcf082668d2d1e9c8b6e2b9d4d14"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 13,
+          "sha256": "eb0a19b0c4578ce5b9f6cc307836e7602b0dabebd4af9da11ce49a2ea419bd02"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 12,
+          "sha256": "5bba4a1c5d16a9631f15cf79578bb1fdd6ab170dd20e6bfc9fb4259f0be68d83"
+        },
+        "m8_report_access_revisions": {
+          "count": 11,
+          "sha256": "5d9a8c106d4a5431280c2a636b8e49eba98eb34bb747c6fa04fe255c1e719067"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED",
+      "before": {
+        "organizations": {
+          "count": 13,
+          "sha256": "96e92b59040b4e46d290a4ad2e27e2b07d727a03fa377fb3e41183094cd2fd7c"
+        },
+        "users": {
+          "count": 51,
+          "sha256": "74be25e48e4cae1995de13d1cb1bbca0db806def88c3a85ce6d8fe56006a9f04"
+        },
+        "organization_memberships": {
+          "count": 50,
+          "sha256": "44f03a57abfc04cda838183dbced3fc61457a63d062100fa94d7888f3bc5ac28"
+        },
+        "organization_assessment_program_connections": {
+          "count": 14,
+          "sha256": "4ce777180a5a3c04a20bc188801111952d25129e277a66d87d2b2d362026c65f"
+        },
+        "assessment_program_definitions": {
+          "count": 13,
+          "sha256": "2717ad9e5f0750bacdeb4502a54b3a986a9e0b8a888f7ac29cf8c3b942b29d14"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 13,
+          "sha256": "e2402f1728be31fbaff81aa068500ed51e9d60e7f42e2d7807c7a451c9081ed7"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 13,
+          "sha256": "eb0a19b0c4578ce5b9f6cc307836e7602b0dabebd4af9da11ce49a2ea419bd02"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 12,
+          "sha256": "5bba4a1c5d16a9631f15cf79578bb1fdd6ab170dd20e6bfc9fb4259f0be68d83"
+        },
+        "m8_report_access_revisions": {
+          "count": 11,
+          "sha256": "5d9a8c106d4a5431280c2a636b8e49eba98eb34bb747c6fa04fe255c1e719067"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 13,
+          "sha256": "96e92b59040b4e46d290a4ad2e27e2b07d727a03fa377fb3e41183094cd2fd7c"
+        },
+        "users": {
+          "count": 51,
+          "sha256": "74be25e48e4cae1995de13d1cb1bbca0db806def88c3a85ce6d8fe56006a9f04"
+        },
+        "organization_memberships": {
+          "count": 50,
+          "sha256": "44f03a57abfc04cda838183dbced3fc61457a63d062100fa94d7888f3bc5ac28"
+        },
+        "organization_assessment_program_connections": {
+          "count": 14,
+          "sha256": "4ce777180a5a3c04a20bc188801111952d25129e277a66d87d2b2d362026c65f"
+        },
+        "assessment_program_definitions": {
+          "count": 13,
+          "sha256": "2717ad9e5f0750bacdeb4502a54b3a986a9e0b8a888f7ac29cf8c3b942b29d14"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 13,
+          "sha256": "e2402f1728be31fbaff81aa068500ed51e9d60e7f42e2d7807c7a451c9081ed7"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 13,
+          "sha256": "eb0a19b0c4578ce5b9f6cc307836e7602b0dabebd4af9da11ce49a2ea419bd02"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 12,
+          "sha256": "5bba4a1c5d16a9631f15cf79578bb1fdd6ab170dd20e6bfc9fb4259f0be68d83"
+        },
+        "m8_report_access_revisions": {
+          "count": 11,
+          "sha256": "5d9a8c106d4a5431280c2a636b8e49eba98eb34bb747c6fa04fe255c1e719067"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED",
+      "before": {
+        "organizations": {
+          "count": 14,
+          "sha256": "29a7061a8f512285fe2eee9c780ad6feef8d0ff4cac5e187e26c486ba3e58e23"
+        },
+        "users": {
+          "count": 55,
+          "sha256": "3e74a902e3f8599675ae22b01a5f9b84841848226003c26fea0eddd2fb6e804a"
+        },
+        "organization_memberships": {
+          "count": 54,
+          "sha256": "32b522be49280f40879510a135b5aea6c6b75b8cf1fca1849f0bd38afec90eef"
+        },
+        "organization_assessment_program_connections": {
+          "count": 15,
+          "sha256": "c172305ff783966223769219a95fd6f0904c7d874a58e81f9555b5e9fcc3820f"
+        },
+        "assessment_program_definitions": {
+          "count": 14,
+          "sha256": "2981c105592fd9a8f067c127a5269eaccc4fd5eea44c7f5ab90fb706fc534288"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 14,
+          "sha256": "c1efc526c9f2d3a02891abea2cc5486a111307b68350d149195358322bd5f9da"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 14,
+          "sha256": "e85d2297ed908146f604f2198b6067c32a42dfc24a3d5f4a868727686cc26ff5"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 12,
+          "sha256": "5bba4a1c5d16a9631f15cf79578bb1fdd6ab170dd20e6bfc9fb4259f0be68d83"
+        },
+        "m8_report_access_revisions": {
+          "count": 11,
+          "sha256": "5d9a8c106d4a5431280c2a636b8e49eba98eb34bb747c6fa04fe255c1e719067"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 14,
+          "sha256": "29a7061a8f512285fe2eee9c780ad6feef8d0ff4cac5e187e26c486ba3e58e23"
+        },
+        "users": {
+          "count": 55,
+          "sha256": "3e74a902e3f8599675ae22b01a5f9b84841848226003c26fea0eddd2fb6e804a"
+        },
+        "organization_memberships": {
+          "count": 54,
+          "sha256": "32b522be49280f40879510a135b5aea6c6b75b8cf1fca1849f0bd38afec90eef"
+        },
+        "organization_assessment_program_connections": {
+          "count": 15,
+          "sha256": "c172305ff783966223769219a95fd6f0904c7d874a58e81f9555b5e9fcc3820f"
+        },
+        "assessment_program_definitions": {
+          "count": 14,
+          "sha256": "2981c105592fd9a8f067c127a5269eaccc4fd5eea44c7f5ab90fb706fc534288"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 14,
+          "sha256": "c1efc526c9f2d3a02891abea2cc5486a111307b68350d149195358322bd5f9da"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 14,
+          "sha256": "e85d2297ed908146f604f2198b6067c32a42dfc24a3d5f4a868727686cc26ff5"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 12,
+          "sha256": "5bba4a1c5d16a9631f15cf79578bb1fdd6ab170dd20e6bfc9fb4259f0be68d83"
+        },
+        "m8_report_access_revisions": {
+          "count": 11,
+          "sha256": "5d9a8c106d4a5431280c2a636b8e49eba98eb34bb747c6fa04fe255c1e719067"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "expected_status": 409,
+      "status": 409,
+      "detail": "PROGRAM_SOURCE_SELECTION_STALE",
+      "before": {
+        "organizations": {
+          "count": 15,
+          "sha256": "60bf74e8d3e568a4b5793b5b569f9cf268a42ac0588c0204e07c80f980893f97"
+        },
+        "users": {
+          "count": 59,
+          "sha256": "f6d259cd9e2eb6cdeb00b7e1a95d7e479f39c7e36aab55dac5cb68b80a1416fb"
+        },
+        "organization_memberships": {
+          "count": 58,
+          "sha256": "f4bcb515eedbe77bbd6b8c3191b3d3160f20a3a054200ddb552480beca1e7ed5"
+        },
+        "organization_assessment_program_connections": {
+          "count": 16,
+          "sha256": "162bb6cfaf26eada45c1927afc02dabfb3761a1fc96b4da94eb05556b1c8a9d6"
+        },
+        "assessment_program_definitions": {
+          "count": 15,
+          "sha256": "ecf923aa5f433ab770cdcc0be127e03a58dcf01b2a67f81a347b607f14966bb9"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 15,
+          "sha256": "abc86e089280a16dfd104df66ec2265acdab97082182a6d8d8e0df6e5709cddd"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 15,
+          "sha256": "cfb1132e5c130ee555714cebf5aee19858ce37ffc1c03ead58e7c16ac209cd1c"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 13,
+          "sha256": "227a3214757e37c3cc9380b2e2bf7ea218663a3d0777e40cd186577e10333a9b"
+        },
+        "m8_report_access_revisions": {
+          "count": 12,
+          "sha256": "368253e05171f9079811e5cb6d707e0013c7ec33e5cfae131e719cbcbd18b5ed"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "after": {
+        "organizations": {
+          "count": 15,
+          "sha256": "60bf74e8d3e568a4b5793b5b569f9cf268a42ac0588c0204e07c80f980893f97"
+        },
+        "users": {
+          "count": 59,
+          "sha256": "f6d259cd9e2eb6cdeb00b7e1a95d7e479f39c7e36aab55dac5cb68b80a1416fb"
+        },
+        "organization_memberships": {
+          "count": 58,
+          "sha256": "f4bcb515eedbe77bbd6b8c3191b3d3160f20a3a054200ddb552480beca1e7ed5"
+        },
+        "organization_assessment_program_connections": {
+          "count": 16,
+          "sha256": "162bb6cfaf26eada45c1927afc02dabfb3761a1fc96b4da94eb05556b1c8a9d6"
+        },
+        "assessment_program_definitions": {
+          "count": 15,
+          "sha256": "ecf923aa5f433ab770cdcc0be127e03a58dcf01b2a67f81a347b607f14966bb9"
+        },
+        "assessment_program_allowed_roles": {
+          "count": 15,
+          "sha256": "abc86e089280a16dfd104df66ec2265acdab97082182a6d8d8e0df6e5709cddd"
+        },
+        "organization_assessment_assignments": {
+          "count": 3,
+          "sha256": "ed674bde4c315697ccef1e986e456d2a3e1cfe14097be527f31ae357f6c52149"
+        },
+        "organization_assessment_assignment_operations": {
+          "count": 8,
+          "sha256": "a34a60ba061b0c5962ef321927e52b70eff392eb1bf396ce598de41c9436b49e"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 3,
+          "sha256": "0e4057653a53f593205aaef769ba3751f2c66cea2e2a40a4b8f3deecf24e8087"
+        },
+        "questionnaire_response_revisions": {
+          "count": 15,
+          "sha256": "cfb1132e5c130ee555714cebf5aee19858ce37ffc1c03ead58e7c16ac209cd1c"
+        },
+        "assessment_organization_contexts": {
+          "count": 2,
+          "sha256": "3a1d613997158a1c47f9cd12c8fb42edde64eb4175f538667ba5a1d8faf07d40"
+        },
+        "assessment_organization_context_versions": {
+          "count": 13,
+          "sha256": "227a3214757e37c3cc9380b2e2bf7ea218663a3d0777e40cd186577e10333a9b"
+        },
+        "m8_report_access_revisions": {
+          "count": 12,
+          "sha256": "368253e05171f9079811e5cb6d707e0013c7ec33e5cfae131e719cbcbd18b5ed"
+        },
+        "m8_report_access_recipients": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_personalized_profiles": {
+          "count": 3,
+          "sha256": "f10c8fa5619406d55b857a278cd7c6347932f536a6aae78000b3323bcf34560b"
+        },
+        "participant_acquaintance_confirmations": {
+          "count": 3,
+          "sha256": "61752ee9c3e446770dcd7a3a50d71187aa32bbcf92e2412022e6f5e6dccf2173"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        }
+      },
+      "unchanged": true
+    },
+    {
+      "criterion": "AC10",
+      "invalid": "recipient_scope",
+      "status": 200,
+      "item_status": "not_assigned",
+      "before": {
+        "assignments": [],
+        "bindings": [],
+        "cycles": 0
+      },
+      "after": {
+        "assignments": [],
+        "bindings": [],
+        "cycles": 0
+      }
+    }
+  ],
+  "provider_table_counts": {}
+}

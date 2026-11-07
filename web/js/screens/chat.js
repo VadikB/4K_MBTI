@@ -194,7 +194,7 @@ export const buildProcessingAgentsState = () =>
     status: 'pending',
   }));
 
-export const resetChat = () => {
+export const resetChat = ({ preserveAuthFeedback = false } = {}) => {
   state.sessionId = null;
   state.completed = false;
   state.isChatSubmitting = false;
@@ -274,10 +274,12 @@ export const resetChat = () => {
   getChatSubmitButton().disabled = false;
   chatForm.classList.remove('hidden');
   showError(chatError, '');
-  showError(authError, '');
-  if (authStatus) {
-    authStatus.textContent = '';
-    authStatus.classList.add('hidden');
+  if (!preserveAuthFeedback) {
+    showError(authError, '');
+    if (authStatus) {
+      authStatus.textContent = '';
+      authStatus.classList.add('hidden');
+    }
   }
   chatRoleOptions.innerHTML = '';
   chatRoleOptions.classList.add('hidden');

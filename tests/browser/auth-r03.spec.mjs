@@ -4,6 +4,10 @@ import http from 'node:http';
 import path from 'node:path';
 import { registerAuthF01Tests } from './helpers/auth-f01.mjs';
 import { registerAuthV01Tests } from './helpers/auth-v01.mjs';
+import { execFileSync } from 'node:child_process';
+import { capturePathViewports, viewportGeometry, assertViewportGeometry } from './fixtures/path-viewports.mjs';
+import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
+import { captureFailurePage } from './fixtures/failure-page.mjs';
 
 const root = process.cwd();
 const port = 18764;
@@ -57,6 +61,207 @@ registerAuthF01Tests({ test, expect, baseRoutes, base, fulfillJson });
 registerAuthV01Tests({ test, expect, baseRoutes, base, fulfillJson, appRelease });
 
 const adminUser = { id: 18, email: 'admin@example.test', full_name: 'Admin' };
+
+for (const [action, endpoint] of [
+  ['email_verification', '/users/auth/email/confirm'],
+  ['password_reset', '/users/auth/password/reset/validate'],
+]) {
+  test(`AC18 auth readiness: ${action} cannot submit before validation, then reaches step2`, async ({ page }, testInfo) => {
+    await baseRoutes(page);
+    let release;
+    let requested = false;
+    const pending = new Promise((resolve) => { release = resolve; });
+    const unexpected = [];
+    await page.route('**/users/auth/**', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === endpoint) {
+        requested = true;
+        await pending;
+        return fulfillJson(route, { email: 'ready@example.test', auth_mode: 'password_registration' });
+      }
+      unexpected.push(pathname);
+      return fulfillJson(route, { detail: 'Unexpected synthetic auth request' }, 400);
+    });
+    await page.goto(`${base}/?auth_action=${action}&token=synthetic-readiness`);
+    await expect.poll(() => requested).toBe(true);
+    await expect(page.locator('#auth-token-form')).toBeHidden({ timeout: 1000 });
+    await expect(page.locator('#magic-token-input')).toBeDisabled();
+    await expect(page.locator('#verify-magic-link-button')).toBeDisabled();
+    await page.screenshot({ path: testInfo.outputPath(`${action}-pending.png`), fullPage: true });
+    await page.evaluate(() => document.querySelector('#auth-token-form')
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(unexpected).toEqual([]);
+    release();
+    await waitForPasswordCreationForm(page, 'ready@example.test');
+    await page.locator('#magic-token-input').fill('Readiness-Aa1!');
+    await page.locator('#verify-magic-link-button').click();
+    await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
+    expect(unexpected).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`${action}-step2-1440.png`), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('#verify-magic-link-button')).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    await page.screenshot({ path: testInfo.outputPath(`${action}-step2-390.png`), fullPage: true });
+  });
+
+  test(`AC18 auth readiness: ${action} validation refusal stays fail-closed`, async ({ page }) => {
+    await baseRoutes(page);
+    await page.route('**' + endpoint, (route) => fulfillJson(route, { detail: 'Срок ссылки истёк.' }, 400));
+    await page.goto(`${base}/?auth_action=${action}&token=synthetic-expired`);
+    await expect(page.locator('#auth-email-sent')).toBeVisible();
+    await expect(page.locator('#auth-token-form')).toBeHidden();
+    await expect(page.locator('#auth-email-sent h2')).toContainText(
+      action === 'password_reset' ? 'Срок ссылки истёк' : 'Не удалось проверить ссылку');
+  });
+}
+
+test('AC18 failure capture uses supplied admin page and never exports credential values', async ({ page }, testInfo) => {
+  await baseRoutes(page);
+  await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { auth_mode: 'password' }));
+  await page.goto(`${base}/?diagnostic=synthetic`);
+  await page.locator('#email-input').fill('admin@example.test');
+  await page.locator('#request-magic-link-button').click();
+  await expect(page.locator('#magic-token-input')).toBeVisible();
+  await page.locator('#magic-token-input').fill('NeverExport-Aa1!');
+  await page.evaluate(() => window.history.replaceState({}, '', '/?diagnostic=synthetic&token=MustNotExport'));
+  const directory = testInfo.outputPath('safe-failure');
+  await fs.mkdir(directory, { recursive: true });
+  const context = await captureFailurePage(page, directory, { step: 'admin_login', actor: 'administrator' });
+  expect(context.actor).toBe('administrator');
+  expect(context.pathname).toBe('/');
+  expect(context.query_keys).toEqual(['diagnostic', 'token']);
+  expect(context.title).toBe('С возвращением');
+  expect(context.credential_values_exported).toBe(false);
+  expect(context.credential_input).not.toHaveProperty('value');
+  expect(context.credential_input.has_value).toBe(true);
+  expect(JSON.stringify(context)).not.toContain('NeverExport-Aa1!');
+  expect(JSON.stringify(context)).not.toContain('MustNotExport');
+  expect(JSON.parse(await fs.readFile(path.join(directory, 'failure-context.json'), 'utf8'))).toEqual(context);
+  expect((await fs.stat(path.join(directory, 'failure.png'))).size).toBeGreaterThan(1000);
+});
+
+test('AC18 auth readiness: network validation failure can retry before password entry', async ({ page }) => {
+  await baseRoutes(page);
+  let calls = 0;
+  await page.route('**/users/auth/email/confirm', (route) => {
+    calls += 1;
+    return calls === 1 ? route.abort('failed') : fulfillJson(route, {
+      email: 'retry@example.test', auth_mode: 'password_registration',
+    });
+  });
+  await page.goto(`${base}/?auth_action=email_verification&token=synthetic-retry`);
+  await expect(page.locator('#auth-email-sent h2')).toHaveText('Нет связи с сервером');
+  await expect(page.locator('#auth-token-form')).toBeHidden();
+  await page.locator('#auth-change-email-button').click();
+  await waitForPasswordCreationForm(page, 'retry@example.test');
+  await page.locator('#magic-token-input').fill('RetryReady-Aa1!');
+  await page.locator('#verify-magic-link-button').click();
+  await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
+  expect(calls).toBe(2);
+});
+
+for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
+  test(`AS projection ${caseId}: concrete public materials, no author passport, four widths`, async ({ page }) => {
+    test.info().annotations.push({ type: 'synthetic_component', description:
+      'Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission' });
+    const python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');
+    const fixture = JSON.parse(execFileSync(python, ['-m', 'tests.m5_participant_projection_inputs', caseId], {
+      cwd: root, encoding: 'utf8', timeout: 30000,
+    }));
+    expect(fixture.scope).toBe('SYNTHETIC_COMPONENT_PRESENTATION_NOT_PILOT_ADMISSION');
+    const payload = fixture.participant_payload;
+    const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+    const writes = [];
+    let reads = 0;
+    let remainingSeconds = 7200;
+    let extraTurns = [];
+    await page.route('**/users/**', (route) => {
+      if (route.request().method() !== 'GET') writes.push(route.request().method() + ' ' + new URL(route.request().url()).pathname);
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+      if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+      if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+      if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+        next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+        assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'projection-cycle',
+          cycle_session_id: 'projection-session', assessment_situation_id: 'projection-as' },
+      });
+      if (pathname === '/users/assessment/m7/cycles/projection-cycle/return-state') {
+        return fulfillJson(route, { detail: 'M7_RETURN_POLICY_NOT_SNAPSHOTTED' }, 409);
+      }
+      if (pathname === '/users/assessment/cycles/projection-cycle/runtime') { reads += 1; return fulfillJson(route, {
+        cycle_id: 'projection-cycle', status: { collection_status: 'active', remaining_seconds: remainingSeconds },
+        return_policy_enabled: false,
+        route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'projection-as' }], progress: { total_positions: 8 } },
+        current_situation: { assessment_situation_id: 'projection-as', status: 'active', participant_payload: payload },
+        trace: { turns: extraTurns, events: [] },
+      }); }
+      return fulfillJson(route, {}, 404);
+    });
+    await page.goto(`${base}/?screen=interview`);
+    const situation = page.locator('.interview-message--situation');
+    await expect(situation).toHaveCount(1);
+    await expect(situation).toContainText(payload.introduction);
+    for (const item of payload.initial_materials) await expect(situation).toContainText(item.text);
+    await expect(situation).not.toContainText('определяются в AS');
+    await expect(situation).not.toContainText("[{'Функция'");
+    // renderProductRuntime schedules bottom alignment at RAF + 80/220ms.
+    // Let those existing initial effects finish before trial scroll measurement;
+    // do not alter CSS, clipping assertions, enabled state or scroll behavior.
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    // Keep polling real UI code: an unchanged AS must retain its DOM and user
+    // scroll, while timer updates still apply. Do not pause/intercept poll timers.
+    const originalNode = await situation.elementHandle();
+    const beforeReads = reads;
+    await page.locator('#interview-finish-button').click({ trial: true });
+    const beforeY = await page.evaluate(() => scrollY);
+    remainingSeconds = 7100;
+    await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeReads + 2);
+    expect(await originalNode.evaluate((node) => node.isConnected)).toBe(true);
+    expect(await page.evaluate(() => scrollY)).toBeCloseTo(beforeY, 0);
+    await expect(page.locator('#interview-timer-badge')).toContainText('118:20');
+    const dir = path.join(process.env.AS_PRESENTATION_EVIDENCE_DIRECTORY || path.join(root, '.test-stand/as-presentation'), caseId);
+    await fs.mkdir(dir, { recursive: true });
+    await capturePathViewports(page, dir, 'first-as', [
+      { name: 'home', locator: page.locator('#interview-profile-button') },
+      { name: 'answer-input', locator: page.locator('#interview-textarea') },
+      { name: 'pause', locator: page.locator('#interview-pause-button') },
+      { name: 'finish', locator: page.locator('#interview-finish-button') },
+      { name: 'answer-submit', locator: page.locator('#interview-submit-button') },
+    ]);
+    // Desktop intentionally has an inner message scroller. Prove its last
+    // material remains reachable across live polls, not merely present in DOM.
+    const lastMaterial = situation.locator('li').last();
+    await lastMaterial.scrollIntoViewIfNeeded();
+    await expect.poll(async () => (await viewportGeometry(lastMaterial)).visible_ratio).toBeGreaterThan(0);
+    const beforeMaterialReads = reads;
+    await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeMaterialReads + 2);
+    const lastMaterialGeometry = await viewportGeometry(lastMaterial);
+    assertViewportGeometry(lastMaterialGeometry, 'last-material-after-poll');
+    // fullPage capture resizes the layout viewport and can reset a dvh-sized
+    // inner scroller. This evidence must show the actual reading viewport.
+    await page.screenshot({ path: path.join(dir, 'last-material.png'), fullPage: false });
+    const afterCapture = await viewportGeometry(lastMaterial);
+    assertViewportGeometry(afterCapture, 'last-material-after-viewport-capture');
+    await fs.writeFile(path.join(dir, 'last-material-geometry.json'), JSON.stringify({
+      ...afterCapture, screenshot_mode: 'viewport', material_text: await lastMaterial.innerText(),
+    }, null, 2) + '\n');
+    await page.reload();
+    await expect(situation).toHaveCount(1);
+    await expect(situation).toContainText(payload.introduction);
+    await expect(page.locator('#interview-textarea')).toHaveValue('');
+    // A genuinely changed trace still renders; caching must not hide updates.
+    extraTurns = [{ sequence_no: 1, turn_id: 'synthetic-public-update', speaker_type: 'character',
+      speaker_name: 'Контролируемый персонаж', content_text: 'Новый публичный материал из synthetic fixture' }];
+    await expect(situation.locator('h3')).toHaveText(payload.title);
+    await expect(page.locator('[data-speaker-label="Контролируемый персонаж"]')).toContainText('Новый публичный материал');
+    expect(writes).toEqual([]);
+    await fs.writeFile(path.join(dir, 'readback.json'), JSON.stringify({ scope: fixture.scope,
+      case_id: caseId, participant_payload: payload, reload_same_payload: true,
+      mutation_requests: writes, assessment_answers: 0 }, null, 2) + '\n');
+  });
+}
 
 async function adm28Preview(page) {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), {
@@ -282,6 +487,174 @@ test('ADM28 superadmin still restores its global dashboard', async ({ page }) =>
   await expect(page.locator('#admin-open-methodology-button')).toBeVisible();
 });
 
+async function reloadSuperadminOrganizations(page) {
+  await page.reload();
+  await expect(page.locator('#admin-panel:not(.hidden), #admin-organizations-panel:not(.hidden)')).toHaveCount(1);
+  if (await page.locator('#admin-open-organizations-button').isVisible()) {
+    await page.locator('#admin-open-organizations-button').click();
+  }
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+}
+
+for (const firstReply of ['confirmed', 'lost', 'service-error']) {
+  test(`PATH-START AC02 repeats organization creation after ${firstReply} response without a duplicate`, async ({ page }, testInfo) => {
+    testInfo.annotations.push({ type: 'synthetic_http', description: 'Stateful HTTP fixture; real entry/dist; no DB/provider.' });
+    const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+    const items = [];
+    const posts = [];
+    let releaseCreate;
+    const pendingCreate = new Promise((resolve) => { releaseCreate = resolve; });
+    const listing = () => ({ is_superadmin: true, items, assessment_programs: [] });
+    await page.route('**/users/**', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (['/users/session/restore', '/users/18/session-bootstrap'].includes(pathname)) return fulfillJson(route, {
+        authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+      });
+      if (pathname === '/users/version') return fulfillJson(route, { version: 'ac02-test' });
+      if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+      if (pathname === '/users/admin/organizations') {
+        if (route.request().method() === 'GET') return fulfillJson(route, listing());
+        const payload = route.request().postDataJSON();
+        posts.push(payload);
+        if (posts.length === 1) {
+          await pendingCreate;
+          if (firstReply === 'service-error') return fulfillJson(route, { detail: 'Synthetic create unavailable' }, 503);
+        }
+        if (items.some((item) => item.code === payload.code)) {
+          return fulfillJson(route, { detail: 'Organization with this code already exists' }, 409);
+        }
+        items.push({ ...payload, id: 3, is_active: true, domains: [], admins: [],
+          members_count: 0, reports_count: 0, members: [], assessment_program: null });
+        if (posts.length === 1 && firstReply === 'lost') return route.abort('connectionreset');
+        return fulfillJson(route, listing());
+      }
+      if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+      return fulfillJson(route, {}, 404);
+    });
+    await page.goto(base);
+    await page.locator('#admin-open-organizations-button').click();
+    const name = page.locator('#admin-organization-name-input');
+    const code = page.locator('#admin-organization-code-input');
+    const button = page.locator('#admin-organization-create-button');
+    const status = page.locator('#admin-organizations-status');
+    await name.fill('Owned synthetic AC02');
+    await code.fill('owned-ac02');
+    await button.click();
+    try {
+      await expect.poll(() => posts.length).toBe(1);
+      await expect(button).toBeDisabled();
+      // A real keyboard repeat while the command is pending must not issue another POST.
+      await name.press('Enter');
+      expect(posts).toHaveLength(1);
+    } finally { releaseCreate(); }
+    await expect(status).toHaveAttribute('data-tone', firstReply === 'confirmed' ? 'success' : 'error');
+    await expect(button).toBeEnabled();
+    await reloadSuperadminOrganizations(page);
+    await expect(page.locator('[data-organization-id="3"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);
+    await name.fill('Owned synthetic AC02');
+    await code.fill('owned-ac02');
+    await button.click();
+    await expect.poll(() => posts.length).toBe(2);
+    await expect(status).toHaveAttribute('data-tone', firstReply === 'service-error' ? 'success' : 'error');
+    if (firstReply !== 'service-error') await expect(status).toContainText('Organization with this code already exists');
+    expect(items).toHaveLength(1);
+    expect(posts[1]).toEqual(posts[0]);
+    await expect(button).toBeEnabled();
+    await reloadSuperadminOrganizations(page);
+    await expect(page.locator('[data-organization-id="3"]')).toHaveCount(1);
+    await expect(page.locator('[data-organization-id="3"]')).toContainText('Owned synthetic AC02');
+    await page.screenshot({ path: testInfo.outputPath('ac02-result.png') });
+  });
+}
+
+for (const lostCommandResponse of [false, true]) {
+  for (const readbackFailure of ['deadline', 'http503', 'network', 'invalid-json', 'null', 'foreign-program']) {
+    test(`PATH-START AC05 ${readbackFailure} GET after ${lostCommandResponse ? 'lost' : 'confirmed'} PUT is finite, unknown and safely repeatable`, async ({ page }, testInfo) => {
+      testInfo.annotations.push({ type: 'synthetic_http', description: 'Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.' });
+      const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+      const connection = { organization_id: 3, program_definition_id: 11,
+        program_name: 'Owned AC05 pilot', program_version: 'synthetic-v1', assignment_ref: 'ac05',
+        roles: [], role_capabilities: [] };
+      const organization = { id: 3, code: 'owned-ac05', name: 'Owned AC05 organization',
+        is_active: true, domains: [], admins: [], members_count: 0, reports_count: 0,
+        members: [], assessment_program: null };
+      const operationIds = [];
+      let getCount = 0;
+      let releaseReadback;
+      const stalledReadback = new Promise((resolve) => { releaseReadback = resolve; });
+      await page.route('**/users/**', async (route) => {
+        const pathname = new URL(route.request().url()).pathname;
+        if (['/users/session/restore', '/users/18/session-bootstrap'].includes(pathname)) return fulfillJson(route, {
+          authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+        });
+        if (pathname === '/users/version') return fulfillJson(route, { version: 'ac05-test' });
+        if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+        if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
+          return fulfillJson(route, { is_superadmin: true, items: [organization],
+            assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }] });
+        }
+        if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+        if (pathname === '/users/admin/organizations/3/assessment-program') {
+          if (route.request().method() === 'PUT') {
+            operationIds.push(route.request().postDataJSON().operation_id);
+            organization.assessment_program = connection; // Fixture models a committed command, even if its response is lost.
+            return lostCommandResponse ? route.abort('connectionreset') : fulfillJson(route, { connection });
+          }
+          getCount += 1;
+          if (getCount > 1) return fulfillJson(route, { connection });
+          if (readbackFailure === 'deadline') { await stalledReadback; return fulfillJson(route, { connection }); }
+          if (readbackFailure === 'http503') return fulfillJson(route, { detail: 'Synthetic readback unavailable' }, 503);
+          if (readbackFailure === 'network') return route.abort('connectionreset');
+          if (readbackFailure === 'invalid-json') return route.fulfill({ status: 200, contentType: 'application/json', body: '{' });
+          if (readbackFailure === 'null') return fulfillJson(route, { connection: null });
+          return fulfillJson(route, { connection: { ...connection, program_definition_id: 999, program_name: 'Foreign program' } });
+        }
+        return fulfillJson(route, {}, 404);
+      });
+      await page.goto(base);
+      await page.locator('#admin-open-organizations-button').click();
+      const form = page.locator('[data-action="connect-assessment-program"]');
+      const button = form.getByRole('button', { name: 'Подключить', exact: true });
+      await form.locator('[name="program_definition_id"]').selectOption('11');
+      await button.click();
+      const status = form.locator('[data-operation-status]');
+      try {
+        await expect(status).toHaveAttribute('data-tone', 'error', { timeout: 22000 });
+        await expect(status).not.toContainText('Выполняем действие');
+        await expect(status).toContainText('Результат подключения не подтверждён');
+        await expect(button).toBeEnabled();
+        await expect(page.locator('[data-organization-id="3"]')).not.toContainText(/не подключена/i);
+        await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
+        await expect(form).not.toContainText('Foreign program');
+        await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });
+      } finally { releaseReadback(); }
+      if (readbackFailure === 'http503' && !lostCommandResponse) {
+        await page.locator('#admin-organizations-back-button').click();
+        await page.locator('#admin-open-organizations-button').click();
+        await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
+        for (const width of [1440, 320, 390, 768]) {
+          await page.setViewportSize({ width, height: 1000 });
+          await button.scrollIntoViewIfNeeded();
+          await expect(button).toBeVisible();
+          const box = await form.boundingBox();
+          expect(box.x).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+          await page.screenshot({ path: testInfo.outputPath(`ac05-unknown-${width}.png`) });
+        }
+      }
+      await button.click();
+      await expect(form.locator('[data-operation-status]')).toHaveAttribute('data-tone', 'success');
+      await expect(form).toContainText('Подключено: Owned AC05 pilot · synthetic-v1');
+      expect(operationIds).toHaveLength(2);
+      expect(operationIds[1]).toBe(operationIds[0]);
+      expect(new Set(operationIds).size).toBe(1);
+      expect(getCount).toBe(2);
+      await reloadSuperadminOrganizations(page);
+      await expect(form).toContainText('Подключено: Owned AC05 pilot · synthetic-v1');
+    });
+  }
+}
+
 test('PROGRAM01 R10 finishes exact program connection while questionnaire refresh is pending', async ({ page }) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const connection = {
@@ -373,6 +746,54 @@ test('PROGRAM01 R10 shows a terminal error when exact readback is null', async (
   await expect.poll(() => operationIds.length).toBe(2);
   expect(operationIds[1]).toBe(operationIds[0]);
 });
+
+for (const lostCommandResponse of [false, true]) {
+  test(`PATH-START AC05 rejects a foreign organization readback after ${lostCommandResponse ? 'lost' : 'confirmed'} command`, async ({ page }) => {
+    const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+    const organization = { id: 3, code: 'ac05-foreign', name: 'Owned synthetic organization',
+      is_active: true, domains: [], admins: [], members_count: 0, reports_count: 0,
+      members: [], assessment_program: null };
+    const connection = { organization_id: 3, program_definition_id: 11,
+      program_name: 'Owned pilot', program_version: '1.1', assignment_ref: 'pilot-4k-9',
+      roles: [], role_capabilities: [] };
+    const operationIds = [];
+    await page.route('**/users/**', (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/users/session/restore') return fulfillJson(route, {
+        authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
+      });
+      if (pathname === '/users/version') return fulfillJson(route, { version: 'ac05-test' });
+      if (pathname === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+      if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
+        return fulfillJson(route, { is_superadmin: true, items: [organization],
+          assessment_programs: [{ id: 11, name: connection.program_name, version: connection.program_version }] });
+      }
+      if (pathname === '/users/admin/organizations/3/questionnaire') return fulfillJson(route, { items: [] });
+      if (pathname === '/users/admin/organizations/3/assessment-program') {
+        if (route.request().method() === 'PUT') {
+          operationIds.push(route.request().postDataJSON().operation_id);
+          return lostCommandResponse ? route.abort('connectionreset') : fulfillJson(route, { connection });
+        }
+        return fulfillJson(route, { connection: { ...connection, organization_id: 999,
+          program_name: 'Foreign organization pilot' } });
+      }
+      return fulfillJson(route, {}, 404);
+    });
+    await page.goto(base);
+    await page.locator('#admin-open-organizations-button').click();
+    const form = page.locator('[data-action="connect-assessment-program"]');
+    await form.locator('[name="program_definition_id"]').selectOption('11');
+    await form.getByRole('button', { name: 'Подключить' }).click();
+    const status = form.locator('[data-operation-status]');
+    await expect(status).toHaveAttribute('data-tone', 'error');
+    await expect(form).not.toContainText('Foreign organization pilot');
+    await expect(form.getByRole('button', { name: 'Подключить' })).toBeEnabled();
+    await form.getByRole('button', { name: 'Подключить' }).click();
+    await expect.poll(() => operationIds.length).toBe(2);
+    expect(operationIds[1]).toBe(operationIds[0]);
+    await expect(status).toHaveAttribute('data-tone', 'error');
+  });
+}
 
 test('PROGRAM01 R10 confirms a committed connection after the PUT response is lost', async ({ page }) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
@@ -1759,24 +2180,18 @@ test('ADM19-01 adds a participant with only email, name and role', async ({ page
 });
 
 test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague', async ({ page }) => {
+  const rolePackage = JSON.parse(await fs.readFile(path.join(root,
+    'assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json'), 'utf8'));
   const organization = {
     ...adminOrganization,
     assessment_program: {
       program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0',
       assignment_ref: 'competencies_4k', roles: [{ version_id: 92, code: 'specialist', name: 'Специалист' }],
-      role_capabilities: [
-        { version_id: null, code: 'operational_employee', name: 'Операционный сотрудник', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: 92, code: 'specialist_expert', name: 'Специалист / эксперт', is_available: true },
-        { version_id: null, code: 'team_lead', name: 'Руководитель команды', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: null, code: 'project_product_process_manager', name: 'Менеджер проекта, продукта или процесса', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: null, code: 'direction_system_leader', name: 'Руководитель направления или системы', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-        { version_id: null, code: 'student', name: 'Студент', is_available: false,
-          unavailable_reason: 'Недоступно в пилоте' },
-      ],
+      role_capabilities: rolePackage.base_roles.map((role) => ({
+        version_id: role.code === 'specialist_expert' ? 92 : null,
+        code: role.code, name: role.description.name, is_available: role.code === 'specialist_expert',
+        unavailable_reason: role.code === 'specialist_expert' ? null : 'Недоступно в пилоте',
+      })),
     },
     members_count: 2,
     members: [
@@ -1807,8 +2222,20 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await page.locator('input[name="invitation_email"]').nth(1).check();
   const roleOptions = page.locator('[name="role_profile_version_id"] option');
   await expect(roleOptions).toHaveCount(7);
-  await expect(roleOptions.filter({ hasText: 'Операционный сотрудник' })).toHaveAttribute('disabled', '');
-  await expect(roleOptions.filter({ hasText: 'Операционный сотрудник' })).toHaveAttribute('value', '');
+  expect(organization.assessment_program.role_capabilities.map((role) => role.code))
+    .toEqual(rolePackage.base_roles.map((role) => role.code));
+  for (const role of rolePackage.base_roles) {
+    const option = roleOptions.filter({ hasText: role.description.name });
+    await expect(option).toHaveCount(1);
+    if (role.code === 'specialist_expert') {
+      await expect(option).toBeEnabled();
+      await expect(option).toHaveAttribute('value', '92');
+    } else {
+      await expect(option).toHaveAttribute('disabled', '');
+      await expect(option).toHaveAttribute('value', '');
+      await expect(option).toContainText('Недоступно в пилоте');
+    }
+  }
   await expect(page.locator('[name="role_profile_version_id"]')).toHaveValue('92');
   await page.getByRole('button', { name: 'Данные организации', exact: true }).click();
   const assessmentIdentity = page.locator('[data-action="preview-early-data"] .admin-assessment-identity');

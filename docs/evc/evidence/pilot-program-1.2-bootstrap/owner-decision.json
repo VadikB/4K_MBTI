@@ -1,0 +1,36 @@
+{
+  "task": "PATH-PILOT-PROGRAM-01",
+  "stage": "FREE_BOOTSTRAP_PUBLISHED_1_2",
+  "owner_basis": "Пользователь ответил «делаем» после предложения бесплатного bootstrap нового receipt; paid PATH требует отдельного разрешения.",
+  "incoming_commit": "b6b9f365bd080d3fe627fb20c3bbdb41ee1dcf3f",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "receipt": {
+    "program": "specialist_pilot@1.2",
+    "id": 2,
+    "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+    "path": "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json"
+  },
+  "scope": [
+    "Existing assessment_first_case.py --check-bootstrap",
+    "Fresh owned product4k_pytest_<uuid> only",
+    "Minimal source seed and exact receipt validation",
+    "Evidence and marker-guarded cleanup; no FORCE",
+    "Local EVC commit and accessible evidence package"
+  ],
+  "excluded": [
+    "Paid provider operations or full PATH",
+    "Existing organization activation/connections",
+    "Permanent database cleanup/schema or source writes",
+    "Publication/push/PR/merge/deploy",
+    "Methodology/prompts/admission/repair changes"
+  ],
+  "checks": [
+    "Runtime SHA and tracked source clean",
+    "Exact receipt bytes/version/refs",
+    "Machine preflight READY",
+    "Source provenance/minimal counts",
+    "Completion/process exit/runner result PASS_BOOTSTRAP_ONLY",
+    "Owned cleanup exact run ID/database/marker and 0 remaining connections"
+  ],
+  "PREP_DIAG_01": "UNKNOWN"
+}

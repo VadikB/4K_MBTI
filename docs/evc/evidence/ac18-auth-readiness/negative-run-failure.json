@@ -1,0 +1,6 @@
+{
+  "step": "admin_login_questionnaire_and_assignment",
+  "expected": "Согласованный шаг завершён штатно",
+  "actual": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#auth-credential-step-indicator')\nExpected: \"Шаг 2 из 2\"\nReceived: \"Шаг 1 из 2\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#auth-credential-step-indicator') with timeout 5000ms\n  - waiting for locator('#auth-credential-step-indicator')\n    14 × locator resolved to <p data-step=\"1\" aria-live=\"polite\" id=\"auth-credential-step-indicator\" class=\"auth-credential-step-indicator\">Шаг 1 из 2</p>\n       - unexpected value \"Шаг 1 из 2\"\n",
+  "classification": "diagnostic_assertion_or_environment_failure"
+}

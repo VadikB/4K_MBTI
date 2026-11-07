@@ -1,0 +1,19 @@
+{
+  "observed_at_utc": "2026-11-07T08:40:52.192587+00:00",
+  "deployed_sha": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "execution_sha": "38bf82448e63e55414ff55ac45fa126e9c4385f0",
+  "origin_main": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "public_version": {
+    "version": "2.0.74",
+    "public_origin": "https://test.4k-assistant.ru"
+  },
+  "public_entry_references_current_version": true,
+  "public_asset_matches_deployed_disk": true,
+  "public_main_js_sha256": "9e76eb9cb53ad38e27c7b4c7822ba2ae5dffcf6462bd05bf27d38a2e755d3e1f",
+  "candidate_main_js_sha256": "51d5238081418835853da64909cd4d2afa80e736aa3347fa61ab7613b2faa370",
+  "candidate_not_deployed": true,
+  "candidate_asset_differs_from_public": true,
+  "service": "active",
+  "read_only": true,
+  "new_llm_calls": 0
+}

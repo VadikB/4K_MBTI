@@ -55,6 +55,7 @@ let returnHeartbeatTimer = null;
 let returnPresenceCycleId = null;
 let returnPresenceGeneration = 0;
 let activeInterviewDraftKey = null;
+let renderedProductMessages = null;
 const returnClientId = (() => {
   const key = 'agent4k.returnClientId';
   let value = window.sessionStorage.getItem(key);
@@ -171,25 +172,35 @@ const renderProductRuntime = (snapshot) => {
   persistAssessmentContext();
   restoreInterviewDraft();
 
-  interviewMessages.innerHTML = '';
-  if (current) addProductSituationMessage(current.participant_payload);
   const dialogue = [
     ...(snapshot.trace?.turns || []).map((item) => ({...item, text:item.content_text,
       role:item.speaker_type === 'assessee' ? 'user' : 'assistant'})),
     ...(snapshot.trace?.events || []).map((event) => ({...event, text:productEventText(event), role:'assistant'})),
   ].sort((a, b) => a.sequence_no - b.sequence_no);
-  for (const item of dialogue) {
-    if (item.text) {
-      const label = item.speaker_type === 'character' ? item.speaker_name || 'Персонаж'
-        : item.speaker_type === 'assessment' ? 'Уточнение к вашему ответу' : 'Материал ситуации';
-      const row = addInterviewMessage(item.role, item.text, label);
-      if (item.turn_id) row.dataset.turnId = item.turn_id;
-    }
-  }
   const clarification = snapshot.clarification;
-  if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
-      !(snapshot.trace?.turns || []).some((turn) => turn.turn_id === clarification.question_turn_id)) {
-    addInterviewMessage('assistant', clarification.question.text, 'Уточнение к вашему ответу');
+  // Polling the same saved AS must not collapse/recreate its long DOM and move
+  // the document back to the message while the participant reads or uses controls.
+  // Include only rendered content; status, time and actionability still refresh.
+  const messageKey = JSON.stringify([current?.assessment_situation_id,
+    current?.participant_payload, dialogue, clarification]);
+  const messagesChanged = renderedProductMessages?.key !== messageKey
+    || renderedProductMessages?.node !== interviewMessages.firstChild;
+  if (messagesChanged) {
+    interviewMessages.innerHTML = '';
+    if (current) addProductSituationMessage(current.participant_payload);
+    for (const item of dialogue) {
+      if (item.text) {
+        const label = item.speaker_type === 'character' ? item.speaker_name || 'Персонаж'
+          : item.speaker_type === 'assessment' ? 'Уточнение к вашему ответу' : 'Материал ситуации';
+        const row = addInterviewMessage(item.role, item.text, label);
+        if (item.turn_id) row.dataset.turnId = item.turn_id;
+      }
+    }
+    if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
+        !(snapshot.trace?.turns || []).some((turn) => turn.turn_id === clarification.question_turn_id)) {
+      addInterviewMessage('assistant', clarification.question.text, 'Уточнение к вашему ответу');
+    }
+    renderedProductMessages = { key: messageKey, node: interviewMessages.firstChild };
   }
   if (interviewScrollArea) {
     const targetTop = current && previousCaseKey !== current.assessment_situation_id ? 0 : previousScrollTop;
@@ -275,7 +286,7 @@ const renderProductRuntime = (snapshot) => {
         ? 'Проверяем, требуется ли уточнение.'
         : 'Ответы сохраняются в текущей Assessment Situation.';
   updateInterviewTimer();
-  scheduleInterviewBottomAlignment();
+  if (messagesChanged) scheduleInterviewBottomAlignment();
   return snapshot;
 };
 

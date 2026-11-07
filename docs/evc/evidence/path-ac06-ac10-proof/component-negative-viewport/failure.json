@@ -1,0 +1,6 @@
+{
+  "step": "explicit_start_and_first_as",
+  "expected": "Согласованный шаг завершён штатно",
+  "actual": "expect(locator).toBeInViewport() failed\n\nLocator:  locator('#interview-profile-button')\nExpected: in viewport\nReceived: viewport ratio 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toBeInViewport\" locator('#interview-profile-button') with timeout 5000ms\n  - waiting for locator('#interview-profile-button')\n    14 × locator resolved to <button type=\"button\" id=\"interview-profile-button\" class=\"ghost-button compact-ghost\">Домой</button>\n       - unexpected value \"viewport ratio 0\"\n",
+  "classification": "diagnostic_assertion_or_environment_failure"
+}

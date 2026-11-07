@@ -6,6 +6,33 @@ const source = readFileSync(new URL('../../web/js/screens/admin/organizations.js
 const wiring = readFileSync(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
 const entry = readFileSync(new URL('../../web/js/entries/admin-organizations.js', import.meta.url), 'utf8');
 
+test('R10 feedback rehydrates only the exact current identity, organization, selection and connection', () => {
+  const restore = source.match(/const restoreProgramConnectionFeedback[\s\S]*?\n\};/)?.[0] || '';
+  for (const guard of ['outcome.identityEpoch !== state.identityEpoch', 'outcome.identityKey !== currentIdentityKey()',
+    'Number(selectedOrganizationId) !== outcome.organizationId', 'outcome.programDefinitionId',
+    'outcome.connectedProgramDefinitionId']) assert.ok(restore.includes(guard), guard);
+  assert.match(source, /restoreAdminOrganizationsDraft\(\);\s*restoreProgramConnectionFeedback\(\)/);
+  assert.match(restore, /setLocalOperationStatus\(form, outcome.message, outcome.tone\)/);
+  assert.doesNotMatch(restore, /setStatus\(/);
+});
+
+test('R10 late feedback is generation guarded while exact server readback stays mandatory', () => {
+  const connect = source.match(/export const connectAdminOrganizationProgram[\s\S]*?\n\};/)?.[0] || '';
+  assert.match(connect, /feedbackGeneration !== programConnectionFeedbackGeneration/);
+  assert.match(connect, /identityEpoch !== state.identityEpoch/);
+  assert.match(connect, /setStatus\(message, tone, form\)/);
+  assert.match(connect, /isExactProgramConnection\(commandConnection, organizationId, programDefinitionId\)/);
+  assert.match(connect, /isExactProgramConnection\(readback, organizationId, programDefinitionId\)/);
+  assert.doesNotMatch(connect, /safeStorage\.setItem.*programConnectionOutcome/);
+});
+
+test('R10 feedback is invalidated on session clearing, selection and new actions', () => {
+  assert.match(source, /programConnectionOperationIds.clear\(\);\s*programConnectionOutcome = null;\s*programConnectionFeedbackGeneration \+= 1/);
+  assert.match(source, /export const selectAdminOrganization = [\s\S]*?clearProgramConnectionFeedback\(\)/);
+  assert.match(source, /const trackOperation = [\s\S]*?clearProgramConnectionFeedback\(\)/);
+  assert.match(source, /select\[name="program_definition_id"\][\s\S]*?clearProgramConnectionFeedback\(\)/);
+});
+
 test('ARCH30 connects an exact published program version from the superadmin UI', () => {
   assert.match(source, /assessment_programs/);
   assert.match(source, /program_definition_id/);

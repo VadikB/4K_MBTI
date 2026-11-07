@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testcase name="exact selected program 1.1" time="0.007849" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="exact selected program synthetic-next-version" time="0.000813" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected id drift before blocks success" time="0.003281" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected id drift after blocks success" time="0.000869" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected code drift before blocks success" time="0.000775" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected code drift after blocks success" time="0.000552" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected version drift before blocks success" time="0.000685" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected version drift after blocks success" time="0.000690" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assignment_ref drift before blocks success" time="0.000694" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assignment_ref drift after blocks success" time="0.000824" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected status drift before blocks success" time="0.000705" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected status drift after blocks success" time="0.000896" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected definition_checksum drift before blocks success" time="0.000648" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected definition_checksum drift after blocks success" time="0.000819" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assessment_configuration_id drift before blocks success" time="0.000577" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected assessment_configuration_id drift after blocks success" time="0.000809" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected catalog_version_id drift before blocks success" time="0.001050" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="selected catalog_version_id drift after blocks success" time="0.000700" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="missing selected source is rejected, not inferred from actual program" time="0.001851" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS, final repair=false" time="0.000659" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS, final repair=true" time="0.000574" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS_WITH_WARNINGS, final repair=false" time="0.000481" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PASS_WITH_WARNINGS, final repair=true" time="0.000409" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission INCOMPLETE" time="0.000555" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission FAIL" time="0.000501" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission REVIEW_REQUIRED" time="0.000600" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="reject admission null" time="0.000834" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass unadmitted" time="0.001296" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing generation" time="0.000546" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing tester" time="0.000805" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing challenger" time="0.000913" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing batch" time="0.000811" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass foreign operation" time="0.000664" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong final candidate" time="0.000607" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong final generation" time="0.000556" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong repair ref" time="0.000653" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong compiled ref" time="0.000984" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong snapshot" time="0.000748" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong execution ref" time="0.000635" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass missing checksums" time="0.137290" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong presented AS" time="0.001133" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass wrong presented payload" time="0.001332" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass not started" time="0.000987" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="warnings do not bypass assessment answer" time="0.000521" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start chain cannot change after start" time="0.001077" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH linked profile/assignment/plan/timing retains PASS_WITH_WARNINGS" time="0.000801" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects unknown lineage" time="0.000509" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects foreign assignment" time="0.000475" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects foreign profile" time="0.000432" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects wrong operation profile" time="0.000403" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects wrong profile checksum" time="0.000421" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects unfrozen profile" time="0.000390" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects missing time source" time="0.000450" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects invalid time" time="0.000471" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects wrong time source" time="0.004747" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="PATH rejects missing plan revision" time="0.000658" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects missing server decision" time="0.000702" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects server denied" time="0.000490" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects foreign server cycle" time="0.026270" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects stale server revision" time="0.000930" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects wrong server hash" time="0.003951" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects foreign server AS" time="0.000592" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects blockers despite true" time="0.000961" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="pre-start rejects LIMITED without exact admission" time="0.000871" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="exact LIMITED admission retains stages and final AS checks" time="0.001550" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_preparation_receipt.mjs"/>
+	<testcase name="only a durable terminal preparation receipt permits cleanup" time="0.101554" classname="test" file="/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/unit/test_assessment_receipt_file.mjs"/>
+	<!-- tests 66 -->
+	<!-- suites 0 -->
+	<!-- pass 66 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 1672.255447 -->
+</testsuites>

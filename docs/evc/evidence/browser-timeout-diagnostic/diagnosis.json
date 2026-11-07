@@ -1,0 +1,4046 @@
+{
+  "comparison_commit": "dea8c44a183c2ac5f4b527e53cdeed0a39bcf454",
+  "product_commit": "bf637af8e1ee89c1a8d5621c4ce694a52bb0806e",
+  "current_targeted": {
+    "startTime": "2026-11-06T05:45:44.644Z",
+    "duration": 14097.589,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "comparison_targeted": {
+    "startTime": "2026-11-06T05:46:48.561Z",
+    "duration": 14185.179,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "current_full": {
+    "startTime": "2026-11-06T05:47:28.555Z",
+    "duration": 209609.33099999998,
+    "expected": 118,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "comparison_status_loss": {
+    "startTime": "2026-11-06T05:51:47.149Z",
+    "duration": 23378.118000000002,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  },
+  "source_identity": {
+    "tests/browser/auth-r03.spec.mjs": {
+      "sha256": "a4214494912a7c029727fac5f8a18f15922ff7b86d82f7dd235f10ad8ae3ea60",
+      "previous_fix_evidence_sha256": "a4214494912a7c029727fac5f8a18f15922ff7b86d82f7dd235f10ad8ae3ea60"
+    },
+    "playwright.config.mjs": {
+      "sha256": "cddaf358e7c32055a5814c5cbe9ca6fcde27fb130383bd4c8fbd70a42de43398",
+      "previous_fix_evidence_sha256": "cddaf358e7c32055a5814c5cbe9ca6fcde27fb130383bd4c8fbd70a42de43398"
+    },
+    "web/js/main.js": {
+      "sha256": "603900a6ae65edb0bb0afb338c167cc214a892a61bbbadd4e6bf6e0ebe638bf8",
+      "previous_fix_evidence_sha256": "603900a6ae65edb0bb0afb338c167cc214a892a61bbbadd4e6bf6e0ebe638bf8"
+    },
+    "web/js/wiring.js": {
+      "sha256": "996144312622bf38b57360368ea31885af98c4ce29729b4fe9fff8ef65f3dbd6",
+      "previous_fix_evidence_sha256": "996144312622bf38b57360368ea31885af98c4ce29729b4fe9fff8ef65f3dbd6"
+    },
+    "web/js/screens/admin/organizations.js": {
+      "sha256": "da3dbba727b52d3e758bb224ec3a34ea1324fb6445277e12e870d55b3c0e2b48",
+      "previous_fix_evidence_sha256": "da3dbba727b52d3e758bb224ec3a34ea1324fb6445277e12e870d55b3c0e2b48"
+    }
+  },
+  "historical_failure_actions": [
+    {
+      "source": "docs/evc/evidence/path-auth-fix/after/full-results.json",
+      "title": "PROGRAM01 R10 restores the exact connected program after reopening the card",
+      "status": "timedOut",
+      "duration_ms": 150218,
+      "start_time": "2026-11-05T23:21:15.864Z",
+      "errors": [
+        {
+          "location": null,
+          "message": "\u001b[31mTest timeout of 150000ms exceeded.\u001b[39m"
+        },
+        {
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "column": 56,
+            "line": 662
+          },
+          "message": "Error: locator.selectOption: Test timeout of 150000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-action=\"connect-assessment-program\"]').locator('[name=\"program_definition_id\"]')\u001b[22m\n\n\n  660 |   await page.locator('#admin-open-organizations-button').click();\n  661 |   const form = page.locator('[data-action=\"connect-assessment-program\"]');\n> 662 |   await form.locator('[name=\"program_definition_id\"]').selectOption('11');\n      |                                                        ^\n  663 |   await form.getByRole('button', { name: 'Подключить' }).click();\n  664 |   await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');\n  665 |   await page.locator('#admin-organizations-back-button').click();\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs:662:56"
+        }
+      ]
+    },
+    {
+      "source": "docs/evc/evidence/path-auth-fix/after/full-results.json",
+      "title": "ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports",
+      "status": "timedOut",
+      "duration_ms": 1777707,
+      "start_time": "2026-11-05T23:24:36.037Z",
+      "errors": [
+        {
+          "location": null,
+          "message": "\u001b[31mTest timeout of 150000ms exceeded.\u001b[39m"
+        },
+        {
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "column": 51,
+            "line": 757
+          },
+          "message": "Error: locator.click: Test timeout of 150000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#verify-magic-link-button')\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"submit\" class=\"primary-button\" id=\"verify-magic-link-button\">Продолжить</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\n\n  755 |   await page.locator('#request-magic-link-button').click();\n  756 |   await page.locator('#magic-token-input').fill('legacy-password');\n> 757 |   await page.locator('#verify-magic-link-button').click();\n      |                                                   ^\n  758 |   await expect(page.locator('#admin-organizations-panel')).toBeVisible();\n  759 |   if (organization.members.length) {\n  760 |     await page.locator('input[name=\"invitation_email\"]').first().waitFor();\n    at openAdminOrganizations (/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs:757:51)\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs:1321:3"
+        }
+      ]
+    },
+    {
+      "source": "docs/evc/evidence/path-auth-fix/after/followup-results.json",
+      "title": "ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports",
+      "status": "timedOut",
+      "duration_ms": 3612260,
+      "start_time": "2026-11-06T00:24:56.221Z",
+      "errors": [
+        {
+          "location": null,
+          "message": "\u001b[31mTest timeout of 150000ms exceeded.\u001b[39m"
+        },
+        {
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "column": 38,
+            "line": 754
+          },
+          "message": "Error: locator.fill: Test timeout of 150000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#email-input')\u001b[22m\n\u001b[2m    - locator resolved to <input required=\"\" name=\"email\" type=\"email\" id=\"email-input\" placeholder=\"name@company.ru\" autocomplete=\"username email\" aria-describedby=\"auth-error\"/>\u001b[22m\n\u001b[2m    - fill(\"admin@example.test\")\u001b[22m\n\u001b[2m  - attempting fill action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and editable\u001b[22m\n\n\n  752 |   });\n  753 |   await page.goto(base);\n> 754 |   await page.locator('#email-input').fill(adminUser.email);\n      |                                      ^\n  755 |   await page.locator('#request-magic-link-button').click();\n  756 |   await page.locator('#magic-token-input').fill('legacy-password');\n  757 |   await page.locator('#verify-magic-link-button').click();\n    at openAdminOrganizations (/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs:754:38)\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs:1321:3"
+        }
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "group": "current-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/current-targeted/outputs/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports-repeat1/trace.zip",
+      "sha256": "bc51ac99aab6d257cc2189fdcc0752af8b39cc23f0a860cb4fa6a048f6fc4e72",
+      "actions": [
+        {
+          "method": "fill",
+          "selector": "#email-input",
+          "duration_ms": 56.263,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#request-magic-link-button",
+          "duration_ms": 63.406,
+          "error": null
+        },
+        {
+          "method": "fill",
+          "selector": "#magic-token-input",
+          "duration_ms": 130.984,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#verify-magic-link-button",
+          "duration_ms": 80.926,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 44.316,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 74.973,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 39.323,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 17.617,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:45:53.057Z",
+          "duration_ms": 12.034
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:45:53.060Z",
+          "duration_ms": 11.821
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/request-link",
+          "status": 200,
+          "started": "2026-11-06T05:45:53.222Z",
+          "duration_ms": 10.283000000000001
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/password-login",
+          "status": 200,
+          "started": "2026-11-06T05:45:53.452Z",
+          "duration_ms": 11.89
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:53.501Z",
+          "duration_ms": 12.183000000000002
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:53.527Z",
+          "duration_ms": 9.282
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 758,
+            "column": 60,
+            "function": "openAdminOrganizations"
+          },
+          "start": 10197.244,
+          "end": 10295.724,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10461.476,
+          "end": 10461.756,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10462.315,
+          "end": 10462.436,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10462.919,
+          "end": 10462.964,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10463.485,
+          "end": 10463.524,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 10464.103,
+          "end": 10464.152,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10464.701,
+          "end": 10464.753,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10465.262,
+          "end": 10465.306,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10580.66,
+          "end": 10580.737,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10581.3,
+          "end": 10581.36,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10581.986,
+          "end": 10582.04,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10582.565,
+          "end": 10582.628,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 10583.137,
+          "end": 10583.192,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10583.759,
+          "end": 10583.796,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10584.293,
+          "end": 10584.323,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10662.254,
+          "end": 10662.303,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10662.782,
+          "end": 10662.812,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10663.237,
+          "end": 10663.265,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10663.838,
+          "end": 10663.882,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 10664.764,
+          "end": 10664.819,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10665.396,
+          "end": 10665.434,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10665.985,
+          "end": 10666.022,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10731.354,
+          "end": 10731.419,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10731.756,
+          "end": 10731.788,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10732.096,
+          "end": 10732.121,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10732.495,
+          "end": 10732.53,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1350,
+            "column": 56
+          },
+          "start": 10732.875,
+          "end": 10732.917,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10733.229,
+          "end": 10733.257,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10733.609,
+          "end": 10733.636,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "current-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/current-targeted/outputs/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports-repeat2/trace.zip",
+      "sha256": "a8044d93ae99c357f9049dde973ab08b11cd6a2084a9f246fddd5f5238e920e0",
+      "actions": [
+        {
+          "method": "fill",
+          "selector": "#email-input",
+          "duration_ms": 51.036,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#request-magic-link-button",
+          "duration_ms": 57.884,
+          "error": null
+        },
+        {
+          "method": "fill",
+          "selector": "#magic-token-input",
+          "duration_ms": 79.995,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#verify-magic-link-button",
+          "duration_ms": 43.842,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 33.666,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 33.8,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 43.819,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 21.539,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:45:57.538Z",
+          "duration_ms": 8.562000000000001
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:45:57.541Z",
+          "duration_ms": 8.836
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/request-link",
+          "status": 200,
+          "started": "2026-11-06T05:45:57.690Z",
+          "duration_ms": 6.966
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/password-login",
+          "status": 200,
+          "started": "2026-11-06T05:45:57.825Z",
+          "duration_ms": 8.158000000000001
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:57.857Z",
+          "duration_ms": 5.904999999999999
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:57.883Z",
+          "duration_ms": 7.943999999999999
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 758,
+            "column": 60,
+            "function": "openAdminOrganizations"
+          },
+          "start": 14559.51,
+          "end": 14600.964,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 14773.934,
+          "end": 14774.228,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 14774.778,
+          "end": 14774.903,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 14775.453,
+          "end": 14775.501,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 14776.02,
+          "end": 14776.065,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 14776.616,
+          "end": 14776.664,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 14777.191,
+          "end": 14777.239,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 14777.726,
+          "end": 14777.766,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 14874.443,
+          "end": 14874.506,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 14875.022,
+          "end": 14875.073,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 14875.823,
+          "end": 14875.882,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 14876.557,
+          "end": 14876.627,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 14877.327,
+          "end": 14877.395,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 14877.959,
+          "end": 14877.998,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 14878.539,
+          "end": 14878.572,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 14970.105,
+          "end": 14970.213,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 14970.977,
+          "end": 14971.018,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 14971.632,
+          "end": 14971.681,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 14974.399,
+          "end": 14974.462,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 14976.363,
+          "end": 14976.415,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 14977.033,
+          "end": 14977.066,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 14977.657,
+          "end": 14977.693,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 15059.493,
+          "end": 15059.541,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 15059.852,
+          "end": 15059.878,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 15060.16,
+          "end": 15060.184,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 15060.594,
+          "end": 15060.628,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1350,
+            "column": 56
+          },
+          "start": 15060.98,
+          "end": 15061.014,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 15061.425,
+          "end": 15061.455,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 15061.762,
+          "end": 15061.788,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "current-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/current-targeted/outputs/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports/trace.zip",
+      "sha256": "cfe381fdffbdbbae862b21c84aa48cc376989712b4f240225e7750488a49dd9b",
+      "actions": [
+        {
+          "method": "fill",
+          "selector": "#email-input",
+          "duration_ms": 59.918,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#request-magic-link-button",
+          "duration_ms": 51.815,
+          "error": null
+        },
+        {
+          "method": "fill",
+          "selector": "#magic-token-input",
+          "duration_ms": 99.597,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#verify-magic-link-button",
+          "duration_ms": 73.316,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 29.543,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 23.629,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 26.469,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 13.948,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:45:48.811Z",
+          "duration_ms": 12.8
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:45:48.814Z",
+          "duration_ms": 13.611
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/request-link",
+          "status": 200,
+          "started": "2026-11-06T05:45:48.970Z",
+          "duration_ms": 8.591000000000001
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/password-login",
+          "status": 200,
+          "started": "2026-11-06T05:45:49.144Z",
+          "duration_ms": 16.499000000000002
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:49.202Z",
+          "duration_ms": 6.834
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:49.236Z",
+          "duration_ms": 6.227
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 758,
+            "column": 60,
+            "function": "openAdminOrganizations"
+          },
+          "start": 5893.544,
+          "end": 5954.873,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 6169.053,
+          "end": 6169.24,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 6169.618,
+          "end": 6169.701,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 6170.061,
+          "end": 6170.091,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 6170.453,
+          "end": 6170.481,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 6170.829,
+          "end": 6170.86,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 6171.266,
+          "end": 6171.3,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 6171.653,
+          "end": 6171.682,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 6221.26,
+          "end": 6221.297,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 6221.66,
+          "end": 6221.691,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 6222.033,
+          "end": 6222.061,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 6222.671,
+          "end": 6223.803,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 6224.343,
+          "end": 6224.383,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 6224.804,
+          "end": 6224.829,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 6225.167,
+          "end": 6225.187,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 6285.584,
+          "end": 6285.615,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 6285.847,
+          "end": 6285.866,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 6286.083,
+          "end": 6286.101,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 6286.324,
+          "end": 6286.34,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 6286.558,
+          "end": 6286.575,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 6286.786,
+          "end": 6286.803,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 6287.017,
+          "end": 6287.033,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 6329.237,
+          "end": 6329.277,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 6329.573,
+          "end": 6329.597,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 6329.878,
+          "end": 6329.901,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 6330.18,
+          "end": 6330.201,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1350,
+            "column": 56
+          },
+          "start": 6330.477,
+          "end": 6330.506,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 6330.779,
+          "end": 6330.8,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 6331.077,
+          "end": 6331.098,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "current-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/current-targeted/outputs/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card-repeat1/trace.zip",
+      "sha256": "e01cd2ac073fa81d154019fb0e714f426060a9695d6cff88c83b255e3faacdec",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 246.451,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 286.608,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 81.405,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-organizations-back-button",
+          "duration_ms": 63.235,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 42.562,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:45:51.477Z",
+          "duration_ms": 20.558
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:45:51.481Z",
+          "duration_ms": 21.109
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:45:51.583Z",
+          "duration_ms": 8.158
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:51.816Z",
+          "duration_ms": 95.004
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:51.916Z",
+          "duration_ms": 6.373
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:45:52.169Z",
+          "duration_ms": 14.678
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:45:52.184Z",
+          "duration_ms": 5.468
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:52.201Z",
+          "duration_ms": 14.603
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:52.363Z",
+          "duration_ms": 8.259
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:52.373Z",
+          "duration_ms": 4.5809999999999995
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 664,
+            "column": 22
+          },
+          "start": 8918.599,
+          "end": 8954.109,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 666,
+            "column": 46
+          },
+          "start": 9026.935,
+          "end": 9047.171,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 669,
+            "column": 6
+          },
+          "start": 9108.276,
+          "end": 9134.995,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "current-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/current-targeted/outputs/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card-repeat2/trace.zip",
+      "sha256": "2eda6b759ed330769c7e152301fd441203dc9327aa22d7961612e748ac599080",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 209.699,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 239.306,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 47.867,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-organizations-back-button",
+          "duration_ms": 70.24,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 57.238,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.081Z",
+          "duration_ms": 25.006
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.084Z",
+          "duration_ms": 35.61
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.190Z",
+          "duration_ms": 6.837
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.454Z",
+          "duration_ms": 6.599
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.465Z",
+          "duration_ms": 4.63
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.652Z",
+          "duration_ms": 9.848
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.662Z",
+          "duration_ms": 6.304
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.716Z",
+          "duration_ms": 3.717
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.895Z",
+          "duration_ms": 16.505
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:56.914Z",
+          "duration_ms": 4.726
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 664,
+            "column": 22
+          },
+          "start": 13400.943,
+          "end": 13460.85,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 666,
+            "column": 46
+          },
+          "start": 13543.039,
+          "end": 13570.743,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 669,
+            "column": 6
+          },
+          "start": 13656.504,
+          "end": 13683.358,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "current-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/current-targeted/outputs/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card/trace.zip",
+      "sha256": "dc0a70a45233632e5a9d03f1fcef2ea12e93ba669eb23145c15372d00f280424",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 539.722,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 154.388,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 55.752,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-organizations-back-button",
+          "duration_ms": 84.281,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 52.212,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.109Z",
+          "duration_ms": 22.393
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.112Z",
+          "duration_ms": 19.634999999999998
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.232Z",
+          "duration_ms": 10.619
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.752Z",
+          "duration_ms": 7.639
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.765Z",
+          "duration_ms": 8.373000000000001
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.950Z",
+          "duration_ms": 11.514999999999999
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.962Z",
+          "duration_ms": 5.2700000000000005
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:47.979Z",
+          "duration_ms": 11.496
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:45:48.165Z",
+          "duration_ms": 10.795
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:45:48.177Z",
+          "duration_ms": 3.992
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 664,
+            "column": 22
+          },
+          "start": 4701.037,
+          "end": 4725.763,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 666,
+            "column": 46
+          },
+          "start": 4818.182,
+          "end": 4841.725,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 669,
+            "column": 6
+          },
+          "start": 4912.489,
+          "end": 4935.465,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "comparison-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-targeted/outputs/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports-repeat1/trace.zip",
+      "sha256": "4614458bdbf3f6be83bc11a156882dee7b5a1631b924f3e61fd8144f27d20778",
+      "actions": [
+        {
+          "method": "fill",
+          "selector": "#email-input",
+          "duration_ms": 51.485,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#request-magic-link-button",
+          "duration_ms": 128.194,
+          "error": null
+        },
+        {
+          "method": "fill",
+          "selector": "#magic-token-input",
+          "duration_ms": 20.398,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#verify-magic-link-button",
+          "duration_ms": 61.561,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 58.704,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 35.675,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 76.802,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 34.808,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:46:57.232Z",
+          "duration_ms": 11.893999999999998
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:46:57.235Z",
+          "duration_ms": 9.551
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/request-link",
+          "status": 200,
+          "started": "2026-11-06T05:46:57.384Z",
+          "duration_ms": 6.021000000000001
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/password-login",
+          "status": 200,
+          "started": "2026-11-06T05:46:57.546Z",
+          "duration_ms": 12.4
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:46:57.594Z",
+          "duration_ms": 97.36800000000001
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:57.696Z",
+          "duration_ms": 4.617
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 758,
+            "column": 60,
+            "function": "openAdminOrganizations"
+          },
+          "start": 9958.623,
+          "end": 10079.77,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10307.799,
+          "end": 10308.082,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10308.608,
+          "end": 10308.747,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10309.235,
+          "end": 10309.279,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10309.755,
+          "end": 10309.796,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 10310.272,
+          "end": 10310.317,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10310.873,
+          "end": 10310.922,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10311.389,
+          "end": 10311.427,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10388.248,
+          "end": 10388.304,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10388.814,
+          "end": 10388.864,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10389.347,
+          "end": 10389.418,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10389.981,
+          "end": 10390.049,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 10390.552,
+          "end": 10390.608,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10391.273,
+          "end": 10391.314,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10391.789,
+          "end": 10391.819,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10513.84,
+          "end": 10513.889,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10514.361,
+          "end": 10514.392,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10514.838,
+          "end": 10514.868,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10515.361,
+          "end": 10515.391,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 10515.829,
+          "end": 10515.86,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10516.311,
+          "end": 10516.34,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10516.803,
+          "end": 10516.834,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 10597.127,
+          "end": 10597.179,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 10597.746,
+          "end": 10597.781,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 10598.242,
+          "end": 10598.273,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 10598.727,
+          "end": 10598.756,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1350,
+            "column": 56
+          },
+          "start": 10599.186,
+          "end": 10599.226,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 10599.743,
+          "end": 10599.773,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 10600.267,
+          "end": 10600.296,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "comparison-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-targeted/outputs/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports-repeat2/trace.zip",
+      "sha256": "31e91f10835cf2e9fdaee8fdeac329da95a04adef054ad2ea9d788c88c44305a",
+      "actions": [
+        {
+          "method": "fill",
+          "selector": "#email-input",
+          "duration_ms": 53.5,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#request-magic-link-button",
+          "duration_ms": 61.879,
+          "error": null
+        },
+        {
+          "method": "fill",
+          "selector": "#magic-token-input",
+          "duration_ms": 101.091,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#verify-magic-link-button",
+          "duration_ms": 51.604,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 33.628,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 29.25,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 31.861,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 18.229,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:47:01.666Z",
+          "duration_ms": 9.152999999999999
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:47:01.669Z",
+          "duration_ms": 8.004
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/request-link",
+          "status": 200,
+          "started": "2026-11-06T05:47:01.825Z",
+          "duration_ms": 7.951
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/password-login",
+          "status": 200,
+          "started": "2026-11-06T05:47:01.988Z",
+          "duration_ms": 12.033
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:47:02.030Z",
+          "duration_ms": 4.638
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:47:02.060Z",
+          "duration_ms": 4.5169999999999995
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 758,
+            "column": 60,
+            "function": "openAdminOrganizations"
+          },
+          "start": 14398.271,
+          "end": 14446.041,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 14612.222,
+          "end": 14612.478,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 14612.971,
+          "end": 14613.076,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 14613.544,
+          "end": 14613.581,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 14614.038,
+          "end": 14614.074,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 14614.603,
+          "end": 14614.655,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 14615.163,
+          "end": 14615.209,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 14615.671,
+          "end": 14615.71,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 14679.761,
+          "end": 14679.826,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 14680.285,
+          "end": 14680.33,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 14680.801,
+          "end": 14680.84,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 14681.357,
+          "end": 14681.426,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 14681.96,
+          "end": 14682.012,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 14682.507,
+          "end": 14682.541,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 14683.022,
+          "end": 14683.049,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 14748.622,
+          "end": 14748.683,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 14749.12,
+          "end": 14749.149,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 14749.585,
+          "end": 14749.609,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 14750.08,
+          "end": 14750.106,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 14750.534,
+          "end": 14750.562,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 14750.981,
+          "end": 14751.007,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 14751.432,
+          "end": 14751.46,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 14801.009,
+          "end": 14801.08,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 14801.665,
+          "end": 14801.702,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 14802.145,
+          "end": 14802.174,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 14802.602,
+          "end": 14802.631,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1350,
+            "column": 56
+          },
+          "start": 14803.062,
+          "end": 14803.099,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 14803.522,
+          "end": 14803.55,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 14804.149,
+          "end": 14804.18,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "comparison-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-targeted/outputs/auth-r03-ADM-STATUS-01-kee-d30e5-eadable-on-narrow-viewports/trace.zip",
+      "sha256": "db42974042324a0f5f8a03022accb7f82d2fca9f5e58bd1394b7a352408dfd2e",
+      "actions": [
+        {
+          "method": "fill",
+          "selector": "#email-input",
+          "duration_ms": 54.503,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#request-magic-link-button",
+          "duration_ms": 127.642,
+          "error": null
+        },
+        {
+          "method": "fill",
+          "selector": "#magic-token-input",
+          "duration_ms": 23.107,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#verify-magic-link-button",
+          "duration_ms": 62.814,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 39.482,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 43.34,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 42.61,
+          "error": null
+        },
+        {
+          "method": "setViewportSize",
+          "selector": null,
+          "duration_ms": 18.448,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:46:52.922Z",
+          "duration_ms": 12.14
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:46:52.925Z",
+          "duration_ms": 12.4
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/request-link",
+          "status": 200,
+          "started": "2026-11-06T05:46:53.080Z",
+          "duration_ms": 7.266
+        },
+        {
+          "method": "POST",
+          "path": "/users/auth/email/password-login",
+          "status": 200,
+          "started": "2026-11-06T05:46:53.248Z",
+          "duration_ms": 15.82
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:46:53.297Z",
+          "duration_ms": 4.661
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:53.329Z",
+          "duration_ms": 4.269
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 758,
+            "column": 60,
+            "function": "openAdminOrganizations"
+          },
+          "start": 5663.779,
+          "end": 5714.82,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 5911.816,
+          "end": 5912.097,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 5912.677,
+          "end": 5912.802,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 5913.309,
+          "end": 5913.353,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 5913.989,
+          "end": 5914.04,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":320,\"viewportWidth\":320,\"rowWidth\":220,\"mainWidth\":186,\"nameWidth\":186,\"mainRight\":253,\"mainBottom\":4468.421875,\"stageX\":67,\"stageY\":4484.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 5914.643,
+          "end": 5914.699,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 5915.249,
+          "end": 5915.304,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 5915.84,
+          "end": 5915.884,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 6072.475,
+          "end": 6072.532,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 6073.16,
+          "end": 6073.241,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 6074.012,
+          "end": 6074.365,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 6075.027,
+          "end": 6075.122,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":390,\"viewportWidth\":390,\"rowWidth\":290,\"mainWidth\":256,\"nameWidth\":256,\"mainRight\":323,\"mainBottom\":4163.421875,\"stageX\":67,\"stageY\":4179.421875,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 6075.73,
+          "end": 6075.793,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 6076.342,
+          "end": 6076.381,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 6076.893,
+          "end": 6076.925,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 6158.442,
+          "end": 6158.641,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 6160.4,
+          "end": 6160.461,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 6161.172,
+          "end": 6161.211,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 6162.274,
+          "end": 6162.434,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":768,\"viewportWidth\":768,\"rowWidth\":604,\"mainWidth\":450,\"nameWidth\":450,\"mainRight\":609,\"mainBottom\":3908.625,\"stageX\":99,\"stageY\":3924.625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1352,
+            "column": 53
+          },
+          "start": 6163.083,
+          "end": 6163.147,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 6163.781,
+          "end": 6163.94,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 6164.826,
+          "end": 6164.878,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1345,
+            "column": 58
+          },
+          "start": 6229.951,
+          "end": 6229.998,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1346,
+            "column": 53
+          },
+          "start": 6230.314,
+          "end": 6230.341,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1347,
+            "column": 54
+          },
+          "start": 6230.619,
+          "end": 6230.641,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1348,
+            "column": 54
+          },
+          "start": 6230.916,
+          "end": 6230.938,
+          "failed": false
+        },
+        {
+          "title": "{\"documentWidth\":1440,\"viewportWidth\":1440,\"rowWidth\":722,\"mainWidth\":202.71875,\"nameWidth\":202.71875,\"mainRight\":481.71875,\"mainBottom\":2780.859375,\"stageX\":497.71875,\"stageY\":2643.265625,\"menuWidth\":44,\"menuHeight\":44}",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1350,
+            "column": 56
+          },
+          "start": 6231.31,
+          "end": 6231.344,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1354,
+            "column": 30
+          },
+          "start": 6231.761,
+          "end": 6231.795,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 1355,
+            "column": 31
+          },
+          "start": 6232.127,
+          "end": 6232.155,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "comparison-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-targeted/outputs/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card-repeat1/trace.zip",
+      "sha256": "a13f21e80fedbf81de37a250f36a4a924903adb2c3349f313a81abc3255d809a",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 192.909,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 217.907,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 74.37,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-organizations-back-button",
+          "duration_ms": 86.291,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 50.142,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:46:55.726Z",
+          "duration_ms": 14.106000000000002
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:46:55.730Z",
+          "duration_ms": 13.784
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:46:55.820Z",
+          "duration_ms": 6.226
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:46:56.068Z",
+          "duration_ms": 6.95
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:56.079Z",
+          "duration_ms": 5.563
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:46:56.276Z",
+          "duration_ms": 13.563
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:46:56.290Z",
+          "duration_ms": 5.509
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:56.310Z",
+          "duration_ms": 12.711
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:46:56.501Z",
+          "duration_ms": 7.514
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:56.510Z",
+          "duration_ms": 4.6080000000000005
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 664,
+            "column": 22
+          },
+          "start": 8698.471,
+          "end": 8726.572,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 666,
+            "column": 46
+          },
+          "start": 8822.555,
+          "end": 8845.873,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 669,
+            "column": 6
+          },
+          "start": 8913.876,
+          "end": 8939.666,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "comparison-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-targeted/outputs/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card-repeat2/trace.zip",
+      "sha256": "4fd527e603c99753f3ccfd8f25ca22a87969ec646006cae59ead2f6be168e3cf",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 261.923,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 79.351,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 56.433,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-organizations-back-button",
+          "duration_ms": 69.236,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 43.608,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.192Z",
+          "duration_ms": 15.781
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.195Z",
+          "duration_ms": 16.502
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.279Z",
+          "duration_ms": 4.991
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.525Z",
+          "duration_ms": 8.815999999999999
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.542Z",
+          "duration_ms": 4.237
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.651Z",
+          "duration_ms": 11.329
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.663Z",
+          "duration_ms": 4.848
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.682Z",
+          "duration_ms": 8.339
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.845Z",
+          "duration_ms": 6.192
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:47:00.853Z",
+          "duration_ms": 3.8369999999999997
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 664,
+            "column": 22
+          },
+          "start": 13068.943,
+          "end": 13095.34,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 666,
+            "column": 46
+          },
+          "start": 13176.688,
+          "end": 13196.322,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 669,
+            "column": 6
+          },
+          "start": 13260.447,
+          "end": 13291.196,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "comparison-targeted",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-targeted/outputs/auth-r03-PROGRAM01-R10-res-37587-am-after-reopening-the-card/trace.zip",
+      "sha256": "135a7ec70f1c545c40765f06502bc4aefa1cc4e305503597d411261242e3b784",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 280.449,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 155.233,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 87.403,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-organizations-back-button",
+          "duration_ms": 73.485,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 59.679,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:46:51.474Z",
+          "duration_ms": 16.904
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:46:51.478Z",
+          "duration_ms": 13.394
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:46:51.571Z",
+          "duration_ms": 4.915
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:46:51.836Z",
+          "duration_ms": 7.991999999999999
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:51.853Z",
+          "duration_ms": 6.166
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:46:52.060Z",
+          "duration_ms": 13.600999999999999
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:46:52.074Z",
+          "duration_ms": 5.355
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:52.097Z",
+          "duration_ms": 9.595
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:46:52.283Z",
+          "duration_ms": 6.673
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 200,
+          "started": "2026-11-06T05:46:52.291Z",
+          "duration_ms": 4.216
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 664,
+            "column": 22
+          },
+          "start": 4488.14,
+          "end": 4514.073,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeVisible\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 666,
+            "column": 46
+          },
+          "start": 4598.745,
+          "end": 4618.885,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 669,
+            "column": 6
+          },
+          "start": 4699.143,
+          "end": 4726.553,
+          "failed": false
+        }
+      ]
+    },
+    {
+      "group": "current-full",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/current-full/outputs/auth-r03-PROGRAM01-R10-fin-75888-ionnaire-refresh-is-pending/trace.zip",
+      "sha256": "e37ab5e5b3ef4744c9c8b31f68113796952726c647b8aa48b405fb0f2f3629f9",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 209.475,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 160.059,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 95.795,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:48:48.369Z",
+          "duration_ms": 10.124
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:48:48.372Z",
+          "duration_ms": 9.125
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:48:48.471Z",
+          "duration_ms": 5.314
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:48:48.732Z",
+          "duration_ms": 4.292
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:48:48.898Z",
+          "duration_ms": 9.405999999999999
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:48:48.907Z",
+          "duration_ms": 8.436
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:48:48.741Z",
+          "duration_ms": 299.615
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:48:48.934Z",
+          "duration_ms": 106.92200000000001
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 489,
+            "column": 22
+          },
+          "start": 81680.053,
+          "end": 81756.743,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 490,
+            "column": 57
+          },
+          "start": 81757.214,
+          "end": 81774.239,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 491,
+            "column": 33
+          },
+          "start": 81774.58,
+          "end": 81774.636,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/auth-r03.spec.mjs",
+            "line": 493,
+            "column": 57
+          },
+          "start": 81774.99,
+          "end": 86792.368,
+          "failed": true
+        }
+      ]
+    },
+    {
+      "group": "comparison-status",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-status/outputs/auth-r03-PROGRAM01-R10-fin-75888-ionnaire-refresh-is-pending-repeat1/trace.zip",
+      "sha256": "43d09768b84788eb09bee1bc756d95e7146b2c80c77c16b67e09a829f5739dcd",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 429.472,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 111.29,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 184.417,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:51:56.679Z",
+          "duration_ms": 17.704
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:51:56.684Z",
+          "duration_ms": 46.39
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:51:56.797Z",
+          "duration_ms": 4.832
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:51:57.206Z",
+          "duration_ms": 9.222
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:51:57.498Z",
+          "duration_ms": 11.478
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:51:57.513Z",
+          "duration_ms": 3.9859999999999998
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:51:57.253Z",
+          "duration_ms": 397.873
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:51:57.559Z",
+          "duration_ms": 94.671
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 489,
+            "column": 22
+          },
+          "start": 11517.182,
+          "end": 11610.136,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 490,
+            "column": 57
+          },
+          "start": 11611.589,
+          "end": 11632.147,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 491,
+            "column": 33
+          },
+          "start": 11632.566,
+          "end": 11632.836,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 493,
+            "column": 57
+          },
+          "start": 11633.331,
+          "end": 16660.776,
+          "failed": true
+        }
+      ]
+    },
+    {
+      "group": "comparison-status",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-status/outputs/auth-r03-PROGRAM01-R10-fin-75888-ionnaire-refresh-is-pending-repeat2/trace.zip",
+      "sha256": "fafc172d9be1f08e785e3821b65c75c3b3962a8a0e8347d626d58127156f1d37",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 303.475,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 56.266,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 49.092,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:52:04.530Z",
+          "duration_ms": 14.339
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:52:04.533Z",
+          "duration_ms": 16.115
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:52:04.621Z",
+          "duration_ms": 5.618
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:52:04.894Z",
+          "duration_ms": 5.07
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:52:05.002Z",
+          "duration_ms": 10.696
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:52:05.013Z",
+          "duration_ms": 5.088
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:52:04.912Z",
+          "duration_ms": 162.70899999999997
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:52:05.031Z",
+          "duration_ms": 44.565999999999995
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 489,
+            "column": 22
+          },
+          "start": 19016.472,
+          "end": 19039.727,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 490,
+            "column": 57
+          },
+          "start": 19040.438,
+          "end": 19057.093,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 491,
+            "column": 33
+          },
+          "start": 19057.522,
+          "end": 19057.79,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 493,
+            "column": 57
+          },
+          "start": 19058.24,
+          "end": 24078.883,
+          "failed": true
+        }
+      ]
+    },
+    {
+      "group": "comparison-status",
+      "path": "docs/evc/evidence/browser-timeout-diagnostic/comparison-status/outputs/auth-r03-PROGRAM01-R10-fin-75888-ionnaire-refresh-is-pending/trace.zip",
+      "sha256": "0e1d4023cf74cd6b365d0c93772b7c29c8f129b6396a9cd3727d69d2077a43f2",
+      "actions": [
+        {
+          "method": "click",
+          "selector": "#admin-open-organizations-button",
+          "duration_ms": 259.328,
+          "error": null
+        },
+        {
+          "method": "selectOption",
+          "selector": "[data-action=\"connect-assessment-program\"] >> [name=\"program_definition_id\"]",
+          "duration_ms": 84.086,
+          "error": null
+        },
+        {
+          "method": "click",
+          "selector": "[data-action=\"connect-assessment-program\"] >> internal:role=button[name=\"Подключить\"i]",
+          "duration_ms": 53.012,
+          "error": null
+        }
+      ],
+      "responses": [
+        {
+          "method": "GET",
+          "path": "/users/version",
+          "status": 200,
+          "started": "2026-11-06T05:51:49.103Z",
+          "duration_ms": 11.273
+        },
+        {
+          "method": "GET",
+          "path": "/users/session/restore",
+          "status": 200,
+          "started": "2026-11-06T05:51:49.105Z",
+          "duration_ms": 10.418000000000001
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/dashboard",
+          "status": 200,
+          "started": "2026-11-06T05:51:49.192Z",
+          "duration_ms": 4.425
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations",
+          "status": 200,
+          "started": "2026-11-06T05:51:49.436Z",
+          "duration_ms": 7.054
+        },
+        {
+          "method": "PUT",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:51:49.566Z",
+          "duration_ms": 8.68
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/assessment-program",
+          "status": 200,
+          "started": "2026-11-06T05:51:49.575Z",
+          "duration_ms": 5.154
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:51:49.454Z",
+          "duration_ms": 190.719
+        },
+        {
+          "method": "GET",
+          "path": "/users/admin/organizations/3/questionnaire",
+          "status": 503,
+          "started": "2026-11-06T05:51:49.593Z",
+          "duration_ms": 51.601000000000006
+        }
+      ],
+      "expectations": [
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 489,
+            "column": 22
+          },
+          "start": 3582.646,
+          "end": 3609.748,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 490,
+            "column": 57
+          },
+          "start": 3610.426,
+          "end": 3626.15,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toBeGreaterThanOrEqual\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 491,
+            "column": 33
+          },
+          "start": 3626.569,
+          "end": 3626.816,
+          "failed": false
+        },
+        {
+          "title": "Expect \"toContainText\"",
+          "location": {
+            "file": "/private/tmp/4k-path-final-audit-restore.OVMSm5/tests/browser/auth-r03.spec.mjs",
+            "line": 493,
+            "column": 57
+          },
+          "start": 3627.278,
+          "end": 8648.469,
+          "failed": true
+        }
+      ]
+    }
+  ],
+  "historical_timeout_root_cause": "UNKNOWN",
+  "historical_auth_114_1_causality": "NOT_ESTABLISHED",
+  "prep_diag_01_root_cause": "UNKNOWN",
+  "reproduced_timeout": false,
+  "report_correction": "Historical ADM full: click at757; followup: email fill at754, not the same action.",
+  "new_defect": {
+    "id": "R10-STATUS-DIAG-01",
+    "cause": "Final loadAdminOrganizations render removes DOM-only operation status",
+    "preexisting_before_auth_fix": true,
+    "admission_or_connection_lost": false,
+    "product_fix_performed": false,
+    "fix_authorized": false
+  },
+  "product_changed_by_diagnosis": false,
+  "external_actions": false
+}

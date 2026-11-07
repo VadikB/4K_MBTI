@@ -1,0 +1,73 @@
+{
+  "launcher_sha256": "5f8994cff7b59413a9b147e8c070e78fe9165c1cea06f96c77a7006de4b3b0a0",
+  "exit_code": 0,
+  "stdout": {
+    "process_exit_code": 0,
+    "directory": "/home/vadim_bogachev/evidence/path-pilot-1.2-bootstrap-x12etu58",
+    "summary_result": "PASS",
+    "runs": [
+      {
+        "run_id": "5d4f68db1fae48bf9c82be26b2bee390",
+        "result": "PASS_BOOTSTRAP_ONLY",
+        "validation_errors": []
+      }
+    ],
+    "files": [
+      {
+        "name": "4ba078c5e16040c4bdfaa3ae1d927d88/cleanup.json",
+        "bytes": 213,
+        "sha256": "3875cb2c2191629c8ae4fbd9a02f2cc94920e4e02f3ab49b314abcb5ce462c92"
+      },
+      {
+        "name": "4ba078c5e16040c4bdfaa3ae1d927d88/completion.json",
+        "bytes": 214,
+        "sha256": "911abefd57dec146d6ad935cf7a8b86f874529190cf9572ffccbb253d4121f23"
+      },
+      {
+        "name": "4ba078c5e16040c4bdfaa3ae1d927d88/process-result.json",
+        "bytes": 63,
+        "sha256": "f5a695f866a1baab152be2a5cbc57db102126b0c0b48a0cbec5d6d84758b07db"
+      },
+      {
+        "name": "4ba078c5e16040c4bdfaa3ae1d927d88/published-release-source.json",
+        "bytes": 229612,
+        "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+      },
+      {
+        "name": "4ba078c5e16040c4bdfaa3ae1d927d88/run.json",
+        "bytes": 761,
+        "sha256": "a2425c41d8e6ca1dd85a59fae6505564a0f7aee095a035f87b7a937dcf4b74b7"
+      },
+      {
+        "name": "4ba078c5e16040c4bdfaa3ae1d927d88/source-provenance.json",
+        "bytes": 618885,
+        "sha256": "7e9a96c67e284cdf4be4ab4797b24f21c04ed92b8e3af6a12f94e9610a944d3d"
+      },
+      {
+        "name": "code-identity.json",
+        "bytes": 43192,
+        "sha256": "d4aee8866b2d2bd838c5b17c89991ba2638819df31625c84dbd8b1aedaf2d6ac"
+      },
+      {
+        "name": "launch-guard.json",
+        "bytes": 1637,
+        "sha256": "060638b818ba6660cf6b27d988b1f490a510ca56781be5f157bd91a6618fefc3"
+      },
+      {
+        "name": "preflight.json",
+        "bytes": 1020,
+        "sha256": "79db858b8650d6690bc733a3931e565b025f6f41a90d104f328f7681d3f604f0"
+      },
+      {
+        "name": "process-invocation.json",
+        "bytes": 614,
+        "sha256": "5b2ea94bbc6f4c362be97f95b863885d547147e756e357447a47602d329fb3b9"
+      },
+      {
+        "name": "runner-result.json",
+        "bytes": 2131,
+        "sha256": "4c5ed84b7b466eedba13d2ce95a9387ab5594cfda3a54da717067b19a91862a0"
+      }
+    ]
+  }
+}

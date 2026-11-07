@@ -1,0 +1,1022 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "long-participant-selection",
+        "enabled": true,
+        "box": {
+          "x": 209,
+          "y": 620.5,
+          "width": 20,
+          "height": 20
+        },
+        "geometry": {
+          "box": {
+            "x": 209,
+            "y": 620.5,
+            "width": 20,
+            "height": 20
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 209,
+            "right": 229,
+            "top": 620.5,
+            "bottom": 640.5
+          },
+          "visible_area": 400,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "INPUT",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 620.5,
+            "height": 20,
+            "scrollTop": 0,
+            "clientHeight": 20,
+            "scrollHeight": 20
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 608.5,
+            "height": 44,
+            "scrollTop": 0,
+            "clientHeight": 44,
+            "scrollHeight": 44
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "relative",
+            "overflowY": "visible",
+            "y": 507.921875,
+            "height": 245.171875,
+            "scrollTop": 0,
+            "clientHeight": 243,
+            "scrollHeight": 243
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 331.921875,
+            "height": 421.171875,
+            "scrollTop": 0,
+            "clientHeight": 421,
+            "scrollHeight": 421
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -416.5,
+            "height": 1515.421875,
+            "scrollTop": 0,
+            "clientHeight": 1515,
+            "scrollHeight": 1515
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -605,
+            "height": 1703.921875,
+            "scrollTop": 0,
+            "clientHeight": 1704,
+            "scrollHeight": 1704
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -605,
+            "height": 1703.921875,
+            "scrollTop": 0,
+            "clientHeight": 1704,
+            "scrollHeight": 1704
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -605,
+            "height": 1703.921875,
+            "scrollTop": 0,
+            "clientHeight": 1704,
+            "scrollHeight": 1704
+          }
+        ]
+      },
+      {
+        "name": "assign",
+        "enabled": true,
+        "box": {
+          "x": 180,
+          "y": 227.921875,
+          "width": 175,
+          "height": 56
+        },
+        "geometry": {
+          "box": {
+            "x": 180,
+            "y": 227.921875,
+            "width": 175,
+            "height": 56
+          },
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 180,
+            "right": 355,
+            "top": 227.921875,
+            "bottom": 283.921875
+          },
+          "visible_area": 9800,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 227.921875,
+            "height": 56,
+            "scrollTop": 0,
+            "clientHeight": 56,
+            "scrollHeight": 56
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 146.921875,
+            "height": 137,
+            "scrollTop": 0,
+            "clientHeight": 137,
+            "scrollHeight": 137
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 82.921875,
+            "height": 201,
+            "scrollTop": 0,
+            "clientHeight": 201,
+            "scrollHeight": 201
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -416.5,
+            "height": 1515.421875,
+            "scrollTop": 0,
+            "clientHeight": 1515,
+            "scrollHeight": 1515
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -605,
+            "height": 1703.921875,
+            "scrollTop": 0,
+            "clientHeight": 1704,
+            "scrollHeight": 1704
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -605,
+            "height": 1703.921875,
+            "scrollTop": 0,
+            "clientHeight": 1704,
+            "scrollHeight": 1704
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -605,
+            "height": 1703.921875,
+            "scrollTop": 0,
+            "clientHeight": 1704,
+            "scrollHeight": 1704
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -734,
+            "height": 1872.921875,
+            "scrollTop": 0,
+            "clientHeight": 1873,
+            "scrollHeight": 1873
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 1440,
+      "scrollWidth": 1440,
+      "visibleTextLength": 1726,
+      "visibility": "visible"
+    },
+    "screenshot": "admin-assignment-1440.png"
+  },
+  {
+    "width": 320,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "long-participant-selection",
+        "enabled": true,
+        "box": {
+          "x": 49,
+          "y": 490.421875,
+          "width": 20,
+          "height": 20
+        },
+        "geometry": {
+          "box": {
+            "x": 49,
+            "y": 490.421875,
+            "width": 20,
+            "height": 20
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 49,
+            "right": 69,
+            "top": 490.421875,
+            "bottom": 510.421875
+          },
+          "visible_area": 400,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "INPUT",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 490.421875,
+            "height": 20,
+            "scrollTop": 0,
+            "clientHeight": 20,
+            "scrollHeight": 20
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 478.421875,
+            "height": 44,
+            "scrollTop": 0,
+            "clientHeight": 44,
+            "scrollHeight": 44
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "relative",
+            "overflowY": "visible",
+            "y": 461.421875,
+            "height": 528.453125,
+            "scrollTop": 0,
+            "clientHeight": 526,
+            "scrollHeight": 526
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 78.921875,
+            "height": 910.953125,
+            "scrollTop": 0,
+            "clientHeight": 911,
+            "scrollHeight": 911
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -837,
+            "height": 2536.96875,
+            "scrollTop": 0,
+            "clientHeight": 2537,
+            "scrollHeight": 2537
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1099,
+            "height": 2798.96875,
+            "scrollTop": 0,
+            "clientHeight": 2799,
+            "scrollHeight": 2799
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1099,
+            "height": 2798.96875,
+            "scrollTop": 0,
+            "clientHeight": 2799,
+            "scrollHeight": 2799
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1099,
+            "height": 2798.96875,
+            "scrollTop": 0,
+            "clientHeight": 2799,
+            "scrollHeight": 2799
+          }
+        ]
+      },
+      {
+        "name": "assign",
+        "enabled": true,
+        "box": {
+          "x": 20,
+          "y": 6.921875,
+          "width": 280,
+          "height": 56
+        },
+        "geometry": {
+          "box": {
+            "x": 20,
+            "y": 6.921875,
+            "width": 280,
+            "height": 56
+          },
+          "viewport": {
+            "width": 320,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 20,
+            "right": 300,
+            "top": 6.921875,
+            "bottom": 62.921875
+          },
+          "visible_area": 15680,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 6.921875,
+            "height": 56,
+            "scrollTop": 0,
+            "clientHeight": 56,
+            "scrollHeight": 56
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -74.078125,
+            "height": 137,
+            "scrollTop": 0,
+            "clientHeight": 137,
+            "scrollHeight": 137
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -138.078125,
+            "height": 201,
+            "scrollTop": 0,
+            "clientHeight": 201,
+            "scrollHeight": 201
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -837,
+            "height": 2536.96875,
+            "scrollTop": 0,
+            "clientHeight": 2537,
+            "scrollHeight": 2537
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1099,
+            "height": 2798.96875,
+            "scrollTop": 0,
+            "clientHeight": 2799,
+            "scrollHeight": 2799
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1099,
+            "height": 2798.96875,
+            "scrollTop": 0,
+            "clientHeight": 2799,
+            "scrollHeight": 2799
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1099,
+            "height": 2798.96875,
+            "scrollTop": 0,
+            "clientHeight": 2799,
+            "scrollHeight": 2799
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1261,
+            "height": 2984.96875,
+            "scrollTop": 0,
+            "clientHeight": 2985,
+            "scrollHeight": 2985
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 320,
+      "scrollWidth": 320,
+      "visibleTextLength": 1704,
+      "visibility": "visible"
+    },
+    "screenshot": "admin-assignment-320.png"
+  },
+  {
+    "width": 390,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "long-participant-selection",
+        "enabled": true,
+        "box": {
+          "x": 49,
+          "y": 412.421875,
+          "width": 20,
+          "height": 20
+        },
+        "geometry": {
+          "box": {
+            "x": 49,
+            "y": 412.421875,
+            "width": 20,
+            "height": 20
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 49,
+            "right": 69,
+            "top": 412.421875,
+            "bottom": 432.421875
+          },
+          "visible_area": 400,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "INPUT",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 412.421875,
+            "height": 20,
+            "scrollTop": 0,
+            "clientHeight": 20,
+            "scrollHeight": 20
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 400.421875,
+            "height": 44,
+            "scrollTop": 0,
+            "clientHeight": 44,
+            "scrollHeight": 44
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "relative",
+            "overflowY": "visible",
+            "y": 383.421875,
+            "height": 412.0625,
+            "scrollTop": 0,
+            "clientHeight": 410,
+            "scrollHeight": 410
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 78.921875,
+            "height": 716.5625,
+            "scrollTop": 0,
+            "clientHeight": 717,
+            "scrollHeight": 717
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -813,
+            "height": 2278.078125,
+            "scrollTop": 0,
+            "clientHeight": 2278,
+            "scrollHeight": 2278
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1051,
+            "height": 2516.078125,
+            "scrollTop": 0,
+            "clientHeight": 2516,
+            "scrollHeight": 2516
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1051,
+            "height": 2516.078125,
+            "scrollTop": 0,
+            "clientHeight": 2516,
+            "scrollHeight": 2516
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1051,
+            "height": 2516.078125,
+            "scrollTop": 0,
+            "clientHeight": 2516,
+            "scrollHeight": 2516
+          }
+        ]
+      },
+      {
+        "name": "assign",
+        "enabled": true,
+        "box": {
+          "x": 20,
+          "y": 6.921875,
+          "width": 350,
+          "height": 56
+        },
+        "geometry": {
+          "box": {
+            "x": 20,
+            "y": 6.921875,
+            "width": 350,
+            "height": 56
+          },
+          "viewport": {
+            "width": 390,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 20,
+            "right": 370,
+            "top": 6.921875,
+            "bottom": 62.921875
+          },
+          "visible_area": 19600,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 6.921875,
+            "height": 56,
+            "scrollTop": 0,
+            "clientHeight": 56,
+            "scrollHeight": 56
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -74.078125,
+            "height": 137,
+            "scrollTop": 0,
+            "clientHeight": 137,
+            "scrollHeight": 137
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -138.078125,
+            "height": 201,
+            "scrollTop": 0,
+            "clientHeight": 201,
+            "scrollHeight": 201
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -813,
+            "height": 2278.078125,
+            "scrollTop": 0,
+            "clientHeight": 2278,
+            "scrollHeight": 2278
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1051,
+            "height": 2516.078125,
+            "scrollTop": 0,
+            "clientHeight": 2516,
+            "scrollHeight": 2516
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1051,
+            "height": 2516.078125,
+            "scrollTop": 0,
+            "clientHeight": 2516,
+            "scrollHeight": 2516
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1051,
+            "height": 2516.078125,
+            "scrollTop": 0,
+            "clientHeight": 2516,
+            "scrollHeight": 2516
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1181,
+            "height": 2670.078125,
+            "scrollTop": 0,
+            "clientHeight": 2670,
+            "scrollHeight": 2670
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 390,
+      "scrollWidth": 390,
+      "visibleTextLength": 1704,
+      "visibility": "visible"
+    },
+    "screenshot": "admin-assignment-390.png"
+  },
+  {
+    "width": 768,
+    "height": 1000,
+    "controls": [
+      {
+        "name": "long-participant-selection",
+        "enabled": true,
+        "box": {
+          "x": 49,
+          "y": 373.421875,
+          "width": 20,
+          "height": 20
+        },
+        "geometry": {
+          "box": {
+            "x": 49,
+            "y": 373.421875,
+            "width": 20,
+            "height": 20
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 49,
+            "right": 69,
+            "top": 373.421875,
+            "bottom": 393.421875
+          },
+          "visible_area": 400,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "INPUT",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 373.421875,
+            "height": 20,
+            "scrollTop": 0,
+            "clientHeight": 20,
+            "scrollHeight": 20
+          },
+          {
+            "tag": "LABEL",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 361.421875,
+            "height": 44,
+            "scrollTop": 0,
+            "clientHeight": 44,
+            "scrollHeight": 44
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "relative",
+            "overflowY": "visible",
+            "y": 344.421875,
+            "height": 302.5,
+            "scrollTop": 0,
+            "clientHeight": 301,
+            "scrollHeight": 301
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 78.921875,
+            "height": 568,
+            "scrollTop": 0,
+            "clientHeight": 568,
+            "scrollHeight": 568
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -789,
+            "height": 2105.515625,
+            "scrollTop": 0,
+            "clientHeight": 2106,
+            "scrollHeight": 2106
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1027,
+            "height": 2343.515625,
+            "scrollTop": 0,
+            "clientHeight": 2344,
+            "scrollHeight": 2344
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1027,
+            "height": 2343.515625,
+            "scrollTop": 0,
+            "clientHeight": 2344,
+            "scrollHeight": 2344
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1027,
+            "height": 2343.515625,
+            "scrollTop": 0,
+            "clientHeight": 2344,
+            "scrollHeight": 2344
+          }
+        ]
+      },
+      {
+        "name": "assign",
+        "enabled": true,
+        "box": {
+          "x": 20,
+          "y": 6.921875,
+          "width": 728,
+          "height": 56
+        },
+        "geometry": {
+          "box": {
+            "x": 20,
+            "y": 6.921875,
+            "width": 728,
+            "height": 56
+          },
+          "viewport": {
+            "width": 768,
+            "height": 1000
+          },
+          "clipped": {
+            "left": 20,
+            "right": 748,
+            "top": 6.921875,
+            "bottom": 62.921875
+          },
+          "visible_area": 40768,
+          "visible_ratio": 1,
+          "visibility": "visible"
+        },
+        "ancestors": [
+          {
+            "tag": "BUTTON",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": 6.921875,
+            "height": 56,
+            "scrollTop": 0,
+            "clientHeight": 56,
+            "scrollHeight": 56
+          },
+          {
+            "tag": "FORM",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -74.078125,
+            "height": 137,
+            "scrollTop": 0,
+            "clientHeight": 137,
+            "scrollHeight": 137
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -138.078125,
+            "height": 201,
+            "scrollTop": 0,
+            "clientHeight": 201,
+            "scrollHeight": 201
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -789,
+            "height": 2105.515625,
+            "scrollTop": 0,
+            "clientHeight": 2106,
+            "scrollHeight": 2106
+          },
+          {
+            "tag": "ARTICLE",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1027,
+            "height": 2343.515625,
+            "scrollTop": 0,
+            "clientHeight": 2344,
+            "scrollHeight": 2344
+          },
+          {
+            "tag": "DIV",
+            "id": "admin-organizations-list",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1027,
+            "height": 2343.515625,
+            "scrollTop": 0,
+            "clientHeight": 2344,
+            "scrollHeight": 2344
+          },
+          {
+            "tag": "SECTION",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1027,
+            "height": 2343.515625,
+            "scrollTop": 0,
+            "clientHeight": 2344,
+            "scrollHeight": 2344
+          },
+          {
+            "tag": "DIV",
+            "id": "",
+            "position": "static",
+            "overflowY": "visible",
+            "y": -1136,
+            "height": 2476.515625,
+            "scrollTop": 0,
+            "clientHeight": 2477,
+            "scrollHeight": 2477
+          }
+        ]
+      }
+    ],
+    "document": {
+      "viewport": 768,
+      "scrollWidth": 768,
+      "visibleTextLength": 1704,
+      "visibility": "visible"
+    },
+    "screenshot": "admin-assignment-768.png"
+  }
+]

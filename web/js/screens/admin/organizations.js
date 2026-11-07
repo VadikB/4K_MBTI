@@ -23,18 +23,22 @@ const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
 const cancellationRequestsInFlight = new Set();
 const programConnectionOperationIds = new Map();
+const unverifiedProgramConnections = new Set();
 const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
 const questionnairePreviewRequestGenerations = new Map();
 const organizationViews = new Map();
 const managementDrafts = new Map();
+let renderedFormSignatures = new WeakMap();
 const selectedAssessmentRefs = new Map();
 const questionnaireConfirmRequestGenerations = new Map();
 const questionnaireConfirmRequestsInFlight = new Set();
 const questionnaireLoadStates = new Map();
 const questionnaireLoadGenerations = new Map();
 const questionnaireConfirmOutcomes = new Map();
+let programConnectionOutcome = null;
+let programConnectionFeedbackGeneration = 0;
 let operationAnchor = null;
 let restoredManagementIdentity = null;
 let organizationsRequestGeneration = 0;
@@ -162,7 +166,11 @@ const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverr
   if (updateSelected && assignmentRef && !view?.classList.contains('hidden')) {
     selectedAssessmentRefs.set(organizationKey(organizationId), assignmentRef.trim());
   }
-  managementDrafts.set(formDraftKey(organizationId, form, storageRef), {
+  const draftKey = formDraftKey(organizationId, form, storageRef);
+  // A pristine form is not a user draft. In particular, an untouched empty form
+  // must not mask the confirmed revision returned by the initial async GET.
+  if (!managementDrafts.has(draftKey) && renderedFormSignatures.get(form) === formSignature(form)) return;
+  managementDrafts.set(draftKey, {
     fields: Object.fromEntries(fields.map((field) => [field.name + ':' + field.value,
       { name: field.name, value: field === assignmentField && (assessmentOverride !== null || changedActiveScope)
         ? storageRef : field.value, checked: field.checked, type: field.type }])),
@@ -196,10 +204,14 @@ export const captureAdminOrganizationsDraft = () => {
   if (adminOrganizationsPanel.classList.contains('hidden')) return;
   adminOrganizationsList.querySelectorAll('[data-organization-id]').forEach((card) => {
     const organizationId = Number(card.getAttribute('data-organization-id'));
-    card.querySelectorAll('form[data-action]').forEach((form) => captureFormDraft(organizationId, form));
+    const questionnaireAccessDenied = questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied;
+    card.querySelectorAll('form[data-action]').forEach((form) => {
+      if (questionnaireAccessDenied && ['preview-early-data', 'preview-questionnaire'].includes(form.dataset.action)) return;
+      captureFormDraft(organizationId, form);
+    });
     captureParticipantSelection(organizationId, card);
     const preview = card.querySelector('.admin-questionnaire-preview');
-    if (preview) captureFormDraft(organizationId, preview);
+    if (preview && !questionnaireAccessDenied) captureFormDraft(organizationId, preview);
   });
 };
 
@@ -277,12 +289,16 @@ const clearAdminOrganizationsSessionState = () => {
   cancellationOperationIds.clear();
   cancellationRequestsInFlight.clear();
   programConnectionOperationIds.clear();
+  programConnectionOutcome = null;
+  programConnectionFeedbackGeneration += 1;
+  unverifiedProgramConnections.clear();
   questionnairePreviews.clear();
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
   questionnairePreviewRequestGenerations.clear();
   organizationViews.clear();
   managementDrafts.clear();
+  renderedFormSignatures = new WeakMap();
   selectedAssessmentRefs.clear();
   questionnaireConfirmRequestGenerations.clear();
   questionnaireConfirmRequestsInFlight.clear();
@@ -298,6 +314,9 @@ window.addEventListener('agent4k:assessment-context-cleared', clearAdminOrganiza
 
 const clearInaccessibleOrganizationState = (organizations) => {
   const allowed = new Set(organizations.map((org) => organizationKey(org.id)));
+  if (programConnectionOutcome && !allowed.has(organizationKey(programConnectionOutcome.organizationId))) {
+    clearProgramConnectionFeedback();
+  }
   for (const drafts of [managementDrafts, selectedAssessmentRefs, questionnairePreviews, questionnaireRevisions,
     questionnairePreviewRequestGenerations]) {
     for (const key of drafts.keys()) {
@@ -316,6 +335,9 @@ const clearInaccessibleOrganizationState = (organizations) => {
   }
   for (const organizationId of organizationViews.keys()) {
     if (!organizations.some((org) => Number(org.id) === Number(organizationId))) organizationViews.delete(organizationId);
+  }
+  for (const key of unverifiedProgramConnections) {
+    if (!allowed.has(key)) unverifiedProgramConnections.delete(key);
   }
 };
 
@@ -358,34 +380,67 @@ const operationRoot = () => {
   return card?.querySelector(operationAnchor.selector) || card?.querySelector('.admin-questionnaire-confirmation') || null;
 };
 
-const setStatus = (message, tone = 'muted') => {
-  if (!adminOrganizationsStatus) {
-    return;
-  }
-  adminOrganizationsStatus.textContent = message || '';
-  adminOrganizationsStatus.classList.toggle('hidden', !message);
-  adminOrganizationsStatus.dataset.tone = tone;
-  let local = operationRoot()?.querySelector('[data-operation-status]');
-  if (!local && operationRoot()) {
+const setLocalOperationStatus = (root, message, tone) => {
+  let local = root?.querySelector('[data-operation-status]');
+  if (!local && root) {
     local = document.createElement('p');
     local.className = 'admin-organizations-status';
     local.dataset.operationStatus = '';
     local.setAttribute('aria-live', 'polite');
     local.setAttribute('role', 'status');
     local.tabIndex = -1;
-    operationRoot().append(local);
+    root.append(local);
   }
   if (local) {
     local.textContent = message || '';
     local.dataset.tone = tone;
     local.classList.toggle('hidden', !message);
   }
+  return local;
+};
+
+const setStatus = (message, tone = 'muted', root = operationRoot()) => {
+  if (!adminOrganizationsStatus) return;
+  adminOrganizationsStatus.textContent = message || '';
+  adminOrganizationsStatus.classList.toggle('hidden', !message);
+  adminOrganizationsStatus.dataset.tone = tone;
+  const local = setLocalOperationStatus(root, message, tone);
   adminOrganizationsStatus.classList.toggle('hidden', !message || Boolean(local));
   if (message && tone !== 'loading' && !adminOrganizationsPanel.classList.contains('hidden')) {
     const target = local || adminOrganizationsStatus;
     target.focus({ preventScroll: true });
     target.scrollIntoView({ block: 'nearest' });
   }
+};
+
+const programConnectionForm = (organizationId) => adminOrganizationsList?.querySelector(
+  '[data-organization-id="' + Number(organizationId) + '"] form[data-action="connect-assessment-program"]',
+);
+const connectedProgramId = (organizationId) => Number(state.adminOrganizations?.items
+  ?.find((org) => Number(org.id) === Number(organizationId))?.assessment_program?.program_definition_id || 0);
+const clearProgramConnectionFeedback = () => {
+  programConnectionFeedbackGeneration += 1;
+  if (programConnectionOutcome && adminOrganizationsStatus?.textContent === programConnectionOutcome.message) {
+    adminOrganizationsStatus.textContent = '';
+    adminOrganizationsStatus.classList.add('hidden');
+  }
+  programConnectionOutcome = null;
+  adminOrganizationsList?.querySelectorAll('form[data-action="connect-assessment-program"] [data-operation-status]')
+    .forEach((element) => element.remove());
+};
+const restoreProgramConnectionFeedback = () => {
+  const outcome = programConnectionOutcome;
+  if (!outcome) return;
+  const form = programConnectionForm(outcome.organizationId);
+  if (outcome.identityEpoch !== state.identityEpoch || outcome.identityKey !== currentIdentityKey() ||
+      Number(selectedOrganizationId) !== outcome.organizationId ||
+      Number(form?.elements.program_definition_id?.value) !== outcome.programDefinitionId ||
+      connectedProgramId(outcome.organizationId) !== outcome.connectedProgramDefinitionId) {
+    clearProgramConnectionFeedback();
+    return;
+  }
+  // Rehydrate only this exact form, without replaying focus/global messages.
+  setLocalOperationStatus(form, outcome.message, outcome.tone);
 };
 
 // Remember the action by stable DOM attributes: mutations re-render the card.
@@ -398,6 +453,7 @@ const trackOperation = (event) => {
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
+  clearProgramConnectionFeedback();
   const selector = form ? 'form[data-action="' + CSS.escape(form.dataset.action) + '"]'
     : root.matches('.admin-questionnaire-preview')
       ? '.admin-questionnaire-preview[data-questionnaire-revision-id="' + root.dataset.questionnaireRevisionId + '"]'
@@ -410,6 +466,11 @@ const trackOperation = (event) => {
 };
 adminOrganizationsPanel?.addEventListener('submit', trackOperation, true);
 adminOrganizationsPanel?.addEventListener('click', trackOperation, true);
+adminOrganizationsPanel?.addEventListener('change', (event) => {
+  if (event.target instanceof Element && event.target.matches(
+    'form[data-action="connect-assessment-program"] select[name="program_definition_id"]',
+  )) clearProgramConnectionFeedback();
+});
 
 const requestOrganizations = async (url, options, fallbackMessage) => {
   const identityEpoch = state.identityEpoch;
@@ -423,6 +484,9 @@ const requestOrganizations = async (url, options, fallbackMessage) => {
   const data = await readApiResponse(response, fallbackMessage);
   if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
       requestGeneration !== organizationsRequestGeneration) return null;
+  // Preserve live input, not the earlier draft captured before this request.
+  // Keep this after the identity/generation guard and before replacing the data.
+  captureAdminOrganizationsDraft();
   organizationsReadStale = false;
   organizationsReadStaleReason = '';
   state.adminOrganizations = data;
@@ -487,6 +551,7 @@ export const loadAdminOrganizations = async () => {
     org.id, { identityEpoch, identityKey, render: false },
   )));
   if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  captureAdminOrganizationsDraft();
   renderAdminOrganizations();
   return data;
 };
@@ -494,11 +559,15 @@ export const loadAdminOrganizations = async () => {
 const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
   const identityEpoch = context.identityEpoch ?? state.identityEpoch;
   const identityKey = context.identityKey ?? currentIdentityKey();
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   const key = organizationKey(organizationId);
   const generation = (questionnaireLoadGenerations.get(key) || 0) + 1;
   questionnaireLoadGenerations.set(key, generation);
   questionnaireLoadStates.set(key, { status: 'loading' });
-  if (context.render !== false) renderAdminOrganizations();
+  if (context.render !== false) {
+    captureAdminOrganizationsDraft();
+    renderAdminOrganizations();
+  }
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire', {
       credentials: 'same-origin',
@@ -514,7 +583,10 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
     }
     questionnaireRevisions.set(key, [...merged.values()]);
     questionnaireLoadStates.set(key, { status: items.length ? 'ready' : 'empty' });
-    if (context.render !== false) renderAdminOrganizations();
+    if (context.render !== false) {
+      captureAdminOrganizationsDraft();
+      renderAdminOrganizations();
+    }
     return items;
   } catch (error) {
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
@@ -522,16 +594,24 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
     const accessDenied = error?.status === 401 || error?.status === 403;
     if (accessDenied) {
       questionnaireRevisions.delete(key);
+      // A denied read must not resurrect the snapshot captured before the GET.
+      for (const draftKey of managementDrafts.keys()) {
+        if (['preview-early-data', 'preview-questionnaire', 'questionnaire-preview']
+          .some((action) => String(draftKey).startsWith(key + ':' + action + ':'))) managementDrafts.delete(draftKey);
+      }
       for (const scopeKey of questionnairePreviews.keys()) {
         if (String(scopeKey).startsWith(key + ':')) questionnairePreviews.delete(scopeKey);
       }
     }
     questionnaireLoadStates.set(key, {
-      status: 'error', message: accessDenied
+      status: 'error', accessDenied, message: accessDenied
         ? 'Нет доступа к сохранённым анкетам этой организации.'
         : error.message || 'Не удалось загрузить сохранённые анкеты.',
     });
-    if (context.render !== false) renderAdminOrganizations();
+    if (context.render !== false) {
+      if (!accessDenied) captureAdminOrganizationsDraft();
+      renderAdminOrganizations();
+    }
     return null;
   }
 };
@@ -568,6 +648,7 @@ export const createAdminOrganization = async () => {
 };
 
 export const selectAdminOrganization = (organizationId) => {
+  clearProgramConnectionFeedback();
   captureAdminOrganizationsDraft();
   selectedOrganizationId = Number(organizationId) || null;
   saveManagementSelection();
@@ -605,6 +686,7 @@ export const selectAdminOrganizationAssessment = (organizationId, form, assessme
       });
       const restoredDraft = restoreFormDraft(organizationId, assessmentForm);
       if (!restoredDraft) restoreConfirmedRevisionForm(assessmentForm, revision);
+      renderedFormSignatures.set(assessmentForm, formSignature(assessmentForm));
     });
   card?.querySelectorAll('.admin-questionnaire-preview').forEach((preview) => preview.remove());
   card?.querySelectorAll('.admin-readiness-panel').forEach((panel) => {
@@ -1533,12 +1615,39 @@ const refreshAdminOrganizationQuestionnaireInBackground = (organizationId, ident
   void loadQuestionnaireRevisions(organizationId, { identityEpoch, identityKey, render: false });
 };
 
+const isExactProgramConnection = (connection, organizationId, programDefinitionId) =>
+  Number(connection?.organization_id) === Number(organizationId) &&
+  Number(connection?.program_definition_id) === Number(programDefinitionId);
+
+const programConnectionStateMarkup = (organizationId, connection) =>
+  '<p data-program-connection-state>' + (unverifiedProgramConnections.has(organizationKey(organizationId))
+    ? 'Результат подключения пока не подтверждён. После завершения проверки можно безопасно повторить запрос подключения.'
+    : connection ? 'Подключено: <strong>' + escapeHtml(connection.program_name) + ' · ' +
+      escapeHtml(connection.program_version) + '</strong>' : 'Программа ещё не подключена.') + '</p>';
+
 export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  clearProgramConnectionFeedback();
+  const feedbackGeneration = programConnectionFeedbackGeneration;
+  const setOutcome = (message, tone) => {
+    const form = programConnectionForm(organizationId);
+    if (feedbackGeneration !== programConnectionFeedbackGeneration ||
+        identityEpoch !== state.identityEpoch || identityKey !== currentIdentityKey() ||
+        Number(selectedOrganizationId) !== Number(organizationId) ||
+        Number(form?.elements.program_definition_id?.value) !== Number(programDefinitionId)) return;
+    programConnectionOutcome = { identityEpoch, identityKey, organizationId: Number(organizationId),
+      programDefinitionId: Number(programDefinitionId), connectedProgramDefinitionId: connectedProgramId(organizationId),
+      message, tone };
+    setStatus(message, tone, form);
+  };
   const operationKey = organizationKey(organizationId) + ':' + Number(programDefinitionId);
   const operationId = programConnectionOperationIds.get(operationKey) || createOperationId();
   programConnectionOperationIds.set(operationKey, operationId);
+  captureAdminOrganizationsDraft();
+  unverifiedProgramConnections.add(organizationKey(organizationId));
+  renderAdminOrganizations();
+  setStatus('Проверяем результат подключения…', 'loading');
   let commandConfirmed = false;
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
@@ -1547,19 +1656,19 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
     });
     const result = await readApiResponse(response, 'Не удалось подключить программу оценки.');
     const commandConnection = result?.connection;
-    if (Number(commandConnection?.organization_id) !== Number(organizationId) ||
-        Number(commandConnection?.program_definition_id) !== Number(programDefinitionId)) {
+    if (!isExactProgramConnection(commandConnection, organizationId, programDefinitionId)) {
       throw new Error('Сервер не подтвердил точную версию подключённой программы. Обновите список перед повтором.');
     }
     commandConfirmed = true;
     const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-    if (Number(readback?.program_definition_id) !== Number(programDefinitionId)) {
+    if (!isExactProgramConnection(readback, organizationId, programDefinitionId)) {
       throw new Error('Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.');
     }
+    unverifiedProgramConnections.delete(organizationKey(organizationId));
     applyAdminOrganizationProgramReadback(organizationId, readback);
     programConnectionOperationIds.delete(operationKey);
-    setStatus('Опубликованная версия программы подключена к организации.', 'success');
+    setOutcome('Опубликованная версия программы подключена к организации.', 'success');
     refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
     return true;
   } catch (error) {
@@ -1568,16 +1677,20 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
       try {
         const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
         if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-        if (Number(readback?.program_definition_id) === Number(programDefinitionId)) {
+        if (isExactProgramConnection(readback, organizationId, programDefinitionId)) {
+          unverifiedProgramConnections.delete(organizationKey(organizationId));
           applyAdminOrganizationProgramReadback(organizationId, readback);
           programConnectionOperationIds.delete(operationKey);
-          setStatus('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
+          setOutcome('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
           refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
           return true;
         }
       } catch { /* The original command error remains the actionable outcome. */ }
     }
-    setStatus(error.message || 'Не удалось подключить программу оценки.', 'error');
+    captureAdminOrganizationsDraft();
+    renderAdminOrganizations();
+    setOutcome('Результат подключения не подтверждён. ' +
+      (error.message || 'Не удалось подключить программу оценки.'), 'error');
     return false;
   }
 };
@@ -1826,6 +1939,7 @@ export const renderAdminOrganizations = () => {
       const batchIsRunning = activeBatch?.status === 'in_progress';
       const revisions = questionnaireRevisions.get(organizationKey(orgId)) || [];
       const currentProgram = org.assessment_program || null;
+      const programConnectionUnverified = unverifiedProgramConnections.has(organizationKey(orgId));
       const connectedRef = String(currentProgram?.assignment_ref || '').trim();
       const storedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || '';
       const selectedRef = connectedRef || storedRef || revisions[0]?.assignment_ref || '';
@@ -1855,7 +1969,9 @@ export const renderAdminOrganizations = () => {
       const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
       const questionnaireAssignment = questionnaireAssignmentState(questionnaireLoadState, Boolean(publishedRevision));
       const assignmentBlockers = [];
-      if (!currentProgram) {
+      if (programConnectionUnverified) {
+        assignmentBlockers.push('Результат подключения программы не подтверждён. Сначала проверьте подключение.');
+      } else if (!currentProgram) {
         assignmentBlockers.push('Программа оценки не подключена. Обратитесь к суперадминистратору.');
       }
       if (!selectedRef) {
@@ -1871,7 +1987,7 @@ export const renderAdminOrganizations = () => {
       }
       const assignmentReadinessMarkup = '<section class="admin-assignment-readiness" aria-label="Готовность назначения">' +
         '<h5>Готовность назначения</h5><dl>' +
-        '<dt>Программа</dt><dd>' + (currentProgram
+        '<dt>Программа</dt><dd>' + (programConnectionUnverified ? 'подключение не подтверждено' : currentProgram
           ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version)
           : 'не подключена') + '</dd>' +
         '<dt>Роль</dt><dd>' + (allowedRoles.length
@@ -1902,7 +2018,9 @@ export const renderAdminOrganizations = () => {
           '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '"></section>'
         : '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' +
           escapeHtml(selectedRef) + '" placeholder="Подключите программу или укажите исторический ключ" required></label>' +
-          '<p class="form-status error">Программа оценки не подключена. Для нового программного назначения сначала обратитесь к суперадминистратору.</p>';
+          '<p class="form-status error">' + (programConnectionUnverified
+            ? 'Результат подключения программы не подтверждён. Проверьте подключение перед назначением.'
+            : 'Программа оценки не подключена. Для нового программного назначения сначала обратитесь к суперадминистратору.') + '</p>';
       const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
         '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
@@ -1910,8 +2028,7 @@ export const renderAdminOrganizations = () => {
           (Number(currentProgram?.program_definition_id) === Number(program.id) ? ' selected' : '') + '>' +
           escapeHtml(program.name) + ' · ' + escapeHtml(program.version) + '</option>').join('') +
         '</select></label><button class="ghost-button compact-ghost" type="submit">Подключить</button>' +
-        (currentProgram ? '<p>Подключено: <strong>' + escapeHtml(currentProgram.program_name) +
-          ' · ' + escapeHtml(currentProgram.program_version) + '</strong></p>' : '<p>Программа ещё не подключена.</p>') +
+        programConnectionStateMarkup(orgId, currentProgram) +
         '</form>' : '';
       const revisionAnswers = currentRevision?.answers_json || {};
       const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
@@ -2043,7 +2160,7 @@ export const renderAdminOrganizations = () => {
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>' +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
-        '<dl class="admin-people-context"><div><dt>Выбранная оценка</dt><dd>' + escapeHtml(selectedRef || 'Не выбрана') + '</dd></div><div><dt>Подключённая программа</dt><dd>' + (currentProgram ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div></dl>' +
+        '<dl class="admin-people-context"><div><dt>Выбранная оценка</dt><dd>' + escapeHtml(selectedRef || 'Не выбрана') + '</dd></div><div><dt>Подключённая программа</dt><dd>' + (programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div></dl>' +
         '<p>Назначение не запускает оценку.</p>' +
         assignmentReadinessMarkup +
         '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +
@@ -2111,9 +2228,14 @@ export const renderAdminOrganizations = () => {
     })
     .join('');
   restoreAdminOrganizationsDraft();
+  restoreProgramConnectionFeedback();
+  adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')
+    .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));
 };
 
 export const openAdminOrganizations = async () => {
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
   state.activeArea = 'management';
   state.isAdmin = Boolean(state.canAdmin || state.isAdmin);
   setCurrentScreen('admin-organizations');
@@ -2124,8 +2246,10 @@ export const openAdminOrganizations = async () => {
   setStatus('');
   adminOrganizationsList.innerHTML = '<p class="report-empty-state">Загружаем организации...</p>';
   try {
-    await loadAdminOrganizations();
+    const data = await loadAdminOrganizations();
+    if (!data || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
   } catch (error) {
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
     return;
   }

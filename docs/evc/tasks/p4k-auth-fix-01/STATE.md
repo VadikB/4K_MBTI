@@ -1,4 +1,19 @@
-# P4K_AUTH_FIX_01 — состояние передачи
+# P4K_AUTH_FIX_01 — состояние передачи 07.11.2026
+
+- Продолжение: `docs/evc/tasks/p4k-auth-fix-01-completion.md`.
+- Исходный f78cb4a сохранён в verified bundle;50 evidence-файлов — в постоянной
+  папке `outputs/p4k-auth-fix-01-completion-20261107/backup/` исходного workspace.
+- Fresh main65c1f4c/2.0.75 включает MERGED PR174 и180. Локальная интеграция
+  сохраняет AUTH и новое main поведение; release не повышается.
+- B-01: ALREADY_FIXED(PR174); обязательные управляемые S01/02/03 и прежниеguards
+  проверяются на итоговом сочетании; дублирующий runtime fix не добавлялся.
+- Актуальный exact candidate/tree, результаты финального минимума и INT-01,
+  AC/TC/FIN, blocker/next action — новый постоянный `06_RESULT.json` и `STATE.json`
+  в `outputs/p4k-auth-fix-01-completion-20261107/`. Они создаются после фиксации SHA.
+- Публикация/push/PR/merge в main/deploy/bump/mail/LLM не разрешены. Автономность
+  и текущий профиль разрешений не являются gate этого продуктового завершения.
+
+## Исторический срез 05.11.2026 (не переписывать FAIL)
 
 - Ветка: `codex/p4k-auth-fix-01`, worktree `/private/tmp/p4k-auth-fix-01-20261105`.
 - Base/audit: `e63eba67d77fb73f7fb9bb219bc3fe5d3807a909`, релиз2.0.66 сохранён.

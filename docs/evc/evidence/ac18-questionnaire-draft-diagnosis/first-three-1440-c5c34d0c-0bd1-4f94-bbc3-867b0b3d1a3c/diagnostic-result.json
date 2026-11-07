@@ -1,0 +1,200 @@
+{
+  "diagnostic_status": "COMPLETED",
+  "product_status": "FAIL_DRAFT_LOSS_REPRODUCED",
+  "scenario": {
+    "name": "first-three-1440",
+    "count": 3,
+    "width": 1440
+  },
+  "lost_fields": [
+    "source_author",
+    "organization_name",
+    "organization_type"
+  ],
+  "original_node_connected": false,
+  "validity_before_refill": {
+    "valid": false,
+    "invalid_fields": [
+      {
+        "name": "source_author",
+        "value_missing": true
+      }
+    ]
+  },
+  "real_get_response_unmodified": true,
+  "actual_http_postgresql": true,
+  "provider_operations": 0,
+  "historical_ac18_causal_identity": "NOT_PROVEN_NO_HISTORICAL_TIMELINE",
+  "historical_timeout_cleanup_cause": "UNKNOWN",
+  "prep_diag_01": "UNKNOWN",
+  "timeline": [
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:13.387Z",
+      "method": "GET",
+      "path": "/users/version"
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:13.390Z",
+      "method": "GET",
+      "path": "/users/session/restore"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:13.428Z",
+      "method": "GET",
+      "path": "/users/version",
+      "status": 200
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:13.428Z",
+      "method": "GET",
+      "path": "/users/session/restore",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:13.586Z",
+      "method": "POST",
+      "path": "/users/auth/email/request-link"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:13.688Z",
+      "method": "POST",
+      "path": "/users/auth/email/request-link",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:13.774Z",
+      "method": "POST",
+      "path": "/users/auth/email/password-login"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:14.229Z",
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:14.287Z",
+      "method": "GET",
+      "path": "/users/admin/organizations"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:14.387Z",
+      "method": "GET",
+      "path": "/users/admin/organizations",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:14.395Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    },
+    {
+      "event": "real_questionnaire_get_held",
+      "at": "2026-11-06T20:00:14.396Z"
+    },
+    {
+      "event": "before_release",
+      "at": "2026-11-06T20:00:14.761Z",
+      "values": {
+        "source_author": "Синтетический HR-партнёр ИТ Вектор",
+        "organization_name": "ИТ Вектор (синтетическая компания)",
+        "organization_type": "Частная ИТ-компания",
+        "industry": "",
+        "activity_description": "",
+        "purpose": "",
+        "results_usage": "",
+        "result_recipients": "",
+        "organizer": "",
+        "responsible_contact": "",
+        "case_reality_level": "",
+        "organization_name_usage_rules": ""
+      }
+    },
+    {
+      "event": "real_questionnaire_get_continued",
+      "at": "2026-11-06T20:00:15.012Z"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:15.091Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire",
+      "status": 200
+    },
+    {
+      "event": "after_release",
+      "at": "2026-11-06T20:00:15.148Z",
+      "values": {
+        "source_author": "",
+        "organization_name": "",
+        "organization_type": "",
+        "industry": "",
+        "activity_description": "",
+        "purpose": "",
+        "results_usage": "",
+        "result_recipients": "",
+        "organizer": "",
+        "responsible_contact": "",
+        "case_reality_level": "",
+        "organization_name_usage_rules": ""
+      },
+      "original_node_connected": false,
+      "lost_fields": [
+        "source_author",
+        "organization_name",
+        "organization_type"
+      ]
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:16.774Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/preview"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:16.996Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/preview",
+      "status": 201
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:17.190Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/1/confirm"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:00:17.461Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/1/confirm",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:00:17.487Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    },
+    {
+      "event": "real_questionnaire_get_held",
+      "at": "2026-11-06T20:00:17.487Z"
+    },
+    {
+      "event": "real_questionnaire_get_continued",
+      "at": "2026-11-06T20:00:17.487Z"
+    }
+  ]
+}

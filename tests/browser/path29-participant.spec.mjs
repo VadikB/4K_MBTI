@@ -5,6 +5,9 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { persistReceipt, isTerminalPreparationReceipt } from './fixtures/receipt-file.mjs';
 import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from './fixtures/preparation-receipt.mjs';
+import { capturePathViewports } from './fixtures/path-viewports.mjs';
+import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
+import { captureFailurePage } from './fixtures/failure-page.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -39,6 +42,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const superContext = await browser.newContext(), adminContext = await browser.newContext(), participantContext = await browser.newContext();
   const extraContexts = [];
   const superPage = await superContext.newPage(), admin = await adminContext.newPage(), page = await participantContext.newPage();
+  let activePage = superPage;
+  let activeActor = 'superadmin';
   let server;
   let finalReceipt;
   let runId;
@@ -105,6 +110,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const superCard = superPage.locator(`[data-organization-id="${target.id}"]`);
       await expect(superCard).toBeVisible();
       await superCard.locator('select[name="program_definition_id"]').selectOption(String(state.path29.program_id));
+      await capturePathViewports(superPage, dir, 'superadmin-program', [
+        { name: 'program', locator: superCard.locator('select[name="program_definition_id"]') },
+        { name: 'connect', locator: superCard.locator('form[data-action="connect-assessment-program"]').getByRole('button', { name: 'Подключить' }) },
+      ]);
       await superCard.locator('form[data-action="connect-assessment-program"]').getByRole('button', { name: 'Подключить' }).click();
       await expect(superCard.locator('form[data-action="connect-assessment-program"]')).toContainText('Подключено:');
       const addAdmin = superCard.locator('form[data-action="add-admin"]');
@@ -113,6 +122,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await expect(superCard).toContainText(state.path29.admin_email);
     }
     step = 'admin_login_questionnaire_and_assignment';
+    activePage = admin;
+    activeActor = 'administrator';
     await admin.goto(base);
     await admin.locator('#email-input').fill(state.path29.admin_email);
     await admin.locator('#request-magic-link-button').click();
@@ -125,7 +136,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       })).json();
       const login = new URL(adminMail.item.action_url);
       await admin.goto(base + '/' + login.search);
-      await expect(admin.locator('#magic-token-input')).toBeVisible();
+      await waitForPasswordCreationForm(admin, state.path29.admin_email);
       await admin.locator('#magic-token-input').fill(state.password);
       await admin.locator('#verify-magic-link-button').click();
       await expect(admin.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
@@ -147,6 +158,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       results_usage: 'Для синтетического плана развития', result_recipients: 'Участник', organizer: 'Синтетический HR',
       responsible_contact: state.path29.admin_email, case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' };
     for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+    await capturePathViewports(admin, dir, 'admin-questionnaire', [
+      { name: 'source-author', locator: form.locator('[name="source_author"]') },
+      { name: 'purpose', locator: form.locator('[name="purpose"]') },
+      { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }) },
+    ]);
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
     await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
@@ -186,6 +202,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(add.locator('[data-operation-status]')).toContainText('Участник привязан');
     const checkbox = card.locator(`input[name="invitation_email"][value="${state.path29.participant_email}"]`);
     await checkbox.check();
+    await capturePathViewports(admin, dir, 'admin-assignment', [
+      { name: 'long-participant-selection', locator: checkbox },
+      { name: 'assign', locator: card.getByRole('button', { name: 'Назначить оценку', exact: true }) },
+    ]);
     await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(card.locator('[data-assignment-sources]')).toHaveCount(0);
     await expect(card.locator('[data-operation-status]').first()).toContainText('Назначена: 1. Уже была назначена: 0. Не назначена: 0.');
@@ -200,9 +220,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     expect(mail.item).toBeTruthy();
     const invitation = new URL(mail.item.action_url);
     expect(invitation.origin).toBe('https://test.example.com');
-    await page.goto(base + '/' + invitation.search);
     step = 'participant_login_and_acquaintance';
-    await expect(page.locator('#magic-token-input')).toBeVisible();
+    activePage = page;
+    activeActor = 'participant';
+    await page.goto(base + '/' + invitation.search);
+    await waitForPasswordCreationForm(page, state.path29.participant_email);
     await page.locator('#magic-token-input').fill(state.password);
     await page.locator('#verify-magic-link-button').click();
     await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
@@ -351,6 +373,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'ready.png'), fullPage: true });
+    await capturePathViewports(page, dir, 'participant-ready', [
+      { name: 'readiness-explanation', locator: page.locator('#onboarding-title') },
+      { name: 'explicit-start', locator: next },
+    ]);
     step = 'explicit_start_and_first_as';
     const startResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith('/users/assessment/cycles/start'));
@@ -361,6 +387,27 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('.interview-message--situation').first()).toBeVisible();
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'first-case.png'), fullPage: true });
+    await capturePathViewports(page, dir, 'first-as', [
+      { name: 'home', locator: page.locator('#interview-profile-button') },
+      { name: 'answer-input', locator: page.locator('#interview-textarea') },
+      { name: 'pause', locator: page.locator('#interview-pause-button') },
+      { name: 'finish', locator: page.locator('#interview-finish-button') },
+      { name: 'answer-submit', locator: page.locator('#interview-submit-button') },
+    ]);
+    // Resizing/reading must not start another Cycle or create assessment answers.
+    expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
+    const repeatedAssignment = await admin.request.post(base +
+      `/users/admin/organizations/${state.path29.organization_id}/assessment-assignments`, { data: {
+        user_ids: [participantId], assignment_ref: state.path29.assignment_ref || 'PATH29 browser',
+        operation_id: 'post-start-replay-' + runId,
+      } });
+    expect(repeatedAssignment.status()).toBe(200);
+    const repeatedAssignmentResult = await repeatedAssignment.json();
+    expect(repeatedAssignmentResult.items[0].status).toBe('already_assigned');
+    expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
+    save('post-start-assignment-replay', { status: repeatedAssignment.status(),
+      result: repeatedAssignmentResult, participant_state: await snapshot(),
+      scope: fullPath ? 'real-provider PATH' : 'SYNTHETIC component plan boundary; assignment/SQL real' });
     if (fullPath) {
       const receipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
       const runtimeResponse = await page.request.get(base + '/users/assessment/cycles/' + receipt.cycle.cycle_id + '/runtime');
@@ -451,9 +498,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         failureReceipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
         save('failure-receipt', failureReceipt);
         terminalPreparationReceiptSaved ||= isTerminalPreparationReceipt(failureReceipt);
-        await page.screenshot({ path: path.join(dir, 'failure.png'), fullPage: true });
       }
     } catch { /* Startup failures may have no HTTP endpoint. */ }
+    try {
+      await captureFailurePage(activePage, dir, { step, actor: activeActor });
+    } catch { /* Closed or unavailable active tabs must not discard server evidence. */ }
     const preparationError = failureReceipt?.preparation_operation?.error_message;
     save('failure', { step,
       expected: step === 'real_llm_preparation' ? 'Admission конечного кандидата и сохранённая AS' : 'Согласованный шаг завершён штатно',

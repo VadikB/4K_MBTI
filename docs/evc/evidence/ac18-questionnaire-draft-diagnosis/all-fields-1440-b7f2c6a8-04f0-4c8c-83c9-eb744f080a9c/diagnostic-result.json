@@ -1,0 +1,218 @@
+{
+  "diagnostic_status": "COMPLETED",
+  "product_status": "FAIL_DRAFT_LOSS_REPRODUCED",
+  "scenario": {
+    "name": "all-fields-1440",
+    "count": 12,
+    "width": 1440
+  },
+  "lost_fields": [
+    "source_author",
+    "organization_name",
+    "organization_type",
+    "industry",
+    "activity_description",
+    "purpose",
+    "results_usage",
+    "result_recipients",
+    "organizer",
+    "responsible_contact",
+    "case_reality_level",
+    "organization_name_usage_rules"
+  ],
+  "original_node_connected": false,
+  "validity_before_refill": {
+    "valid": false,
+    "invalid_fields": [
+      {
+        "name": "source_author",
+        "value_missing": true
+      }
+    ]
+  },
+  "real_get_response_unmodified": true,
+  "actual_http_postgresql": true,
+  "provider_operations": 0,
+  "historical_ac18_causal_identity": "NOT_PROVEN_NO_HISTORICAL_TIMELINE",
+  "historical_timeout_cleanup_cause": "UNKNOWN",
+  "prep_diag_01": "UNKNOWN",
+  "timeline": [
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:36.237Z",
+      "method": "GET",
+      "path": "/users/version"
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:36.238Z",
+      "method": "GET",
+      "path": "/users/session/restore"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:36.277Z",
+      "method": "GET",
+      "path": "/users/session/restore",
+      "status": 200
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:36.277Z",
+      "method": "GET",
+      "path": "/users/version",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:36.337Z",
+      "method": "POST",
+      "path": "/users/auth/email/request-link"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:36.474Z",
+      "method": "POST",
+      "path": "/users/auth/email/request-link",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:36.567Z",
+      "method": "POST",
+      "path": "/users/auth/email/password-login"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:37.219Z",
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:37.295Z",
+      "method": "GET",
+      "path": "/users/admin/organizations"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:37.443Z",
+      "method": "GET",
+      "path": "/users/admin/organizations",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:37.450Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    },
+    {
+      "event": "real_questionnaire_get_held",
+      "at": "2026-11-06T20:01:37.451Z"
+    },
+    {
+      "event": "before_release",
+      "at": "2026-11-06T20:01:37.744Z",
+      "values": {
+        "source_author": "Синтетический HR-партнёр ИТ Вектор",
+        "organization_name": "ИТ Вектор (синтетическая компания)",
+        "organization_type": "Частная ИТ-компания",
+        "industry": "Информационные технологии: разработка и сопровождение программного обеспечения",
+        "activity_description": "Разработка B2B SaaS-продуктов и интеграций для корпоративных заказчиков. Кросс-функциональные команды объединяют разработчиков, аналитиков, QA и поддержку; работают итерациями и согласуют приоритеты с владельцем продукта. Все сведения вымышлены.",
+        "purpose": "Определить направления развития критического мышления, креативности, коммуникации и кооперации специалиста при анализе требований, согласовании решений и работе с неопределённостью в ИТ-проектах.",
+        "results_usage": "Индивидуальный план развития и обсуждение с участником; не использовать для найма, увольнения или автоматического кадрового решения.",
+        "result_recipients": "Участник",
+        "organizer": "Синтетический HR-партнёр ИТ Вектор",
+        "responsible_contact": "admin@example.test",
+        "case_reality_level": "Реальные",
+        "organization_name_usage_rules": "Разрешено использовать только вымышленное название ИТ Вектор; реальные заказчики, персональные данные и коммерческие секреты исключены."
+      }
+    },
+    {
+      "event": "real_questionnaire_get_continued",
+      "at": "2026-11-06T20:01:38.118Z"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:38.177Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire",
+      "status": 200
+    },
+    {
+      "event": "after_release",
+      "at": "2026-11-06T20:01:38.251Z",
+      "values": {
+        "source_author": "",
+        "organization_name": "",
+        "organization_type": "",
+        "industry": "",
+        "activity_description": "",
+        "purpose": "",
+        "results_usage": "",
+        "result_recipients": "",
+        "organizer": "",
+        "responsible_contact": "",
+        "case_reality_level": "",
+        "organization_name_usage_rules": ""
+      },
+      "original_node_connected": false,
+      "lost_fields": [
+        "source_author",
+        "organization_name",
+        "organization_type",
+        "industry",
+        "activity_description",
+        "purpose",
+        "results_usage",
+        "result_recipients",
+        "organizer",
+        "responsible_contact",
+        "case_reality_level",
+        "organization_name_usage_rules"
+      ]
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:40.051Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/preview"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:40.138Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/preview",
+      "status": 201
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:40.201Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/1/confirm"
+    },
+    {
+      "event": "response",
+      "at": "2026-11-06T20:01:40.351Z",
+      "method": "POST",
+      "path": "/users/admin/organizations/2/questionnaire/1/confirm",
+      "status": 200
+    },
+    {
+      "event": "request",
+      "at": "2026-11-06T20:01:40.366Z",
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire"
+    },
+    {
+      "event": "real_questionnaire_get_held",
+      "at": "2026-11-06T20:01:40.367Z"
+    },
+    {
+      "event": "real_questionnaire_get_continued",
+      "at": "2026-11-06T20:01:40.367Z"
+    }
+  ]
+}

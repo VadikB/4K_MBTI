@@ -1,5 +1,63 @@
 # Тесты backend
 
+## Бесплатная регрессия готовности auth-формы AC18
+
+```sh
+npx playwright test tests/browser/auth-r03.spec.mjs \
+  --grep 'AC18 auth readiness|AC18 failure capture' --workers=1
+```
+
+Удерживается synthetic confirm/reset HTTP response: форма скрыта/disabled до
+валидации, затем штатный step2; отказ и network retry проверяются отдельно.
+Это UI component, не real PostgreSQL/PATH/LLM. PATH29 использует exact-email
+semantic-ready helper; failure capture сохраняет active actor/page и allowlisted
+context, маскирует password/token inputs, не экспортирует значения query/credentials.
+Результаты/границы: [AC18-AUTH-READY-01](../docs/evc/reports/ac18-auth-readiness.md).
+
+## Модель из provider contract, не из env
+
+`DEEPSEEK_MODEL` не выбирает модель и не обязателен для runner. `.env` — только
+credentials/инфраструктура; существующая переменная игнорируется без правки файла.
+Новая operation использует выбранный provider contract, сохранённая — свой snapshot.
+Preflight фиксирует model/source/version/checksum, не значение legacy env и не ключи.
+Нет обязательного контракта — BLOCKED, даже при наличии env-модели.
+
+```sh
+PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 .venv/bin/python -m pytest -q \
+  tests/unit/test_provider_model_ownership.py tests/unit/test_deepseek_provider_contract.py \
+  tests/unit/test_assessment_first_case.py tests/unit/test_test_stand.py
+```
+
+Это offline unit-проверки: synthetic transport/port probes не заменяют actual machine,
+PostgreSQL или real-provider PATH. Свежие subprocess не читают developer `.env`,
+не открывают БД и не вызывают LLM. Source selectors/admission/cleanup не ослабляются.
+
+## Бесплатные AC06/AC07/AC09/AC10
+
+Новая собственная localhost PostgreSQL16, без `.env`, почты и LLM. Задать
+`STAND_ADMIN_URL` (maintenance `postgres`) и `TEST_DATABASE_URL` (другая изолированная
+test/pytest БД, не DB_NAME) только этого экземпляра. Команды из корня checkout:
+
+```sh
+PYTHON_DOTENV_DISABLED=1 PYTHONPATH=. .venv/bin/python -m pytest -q -s \
+  --run-integration tests/integration/test_path_admin_contract_owned_stand.py
+BROWSER_PYTHON=.venv/bin/python npx playwright test \
+  tests/browser/path-admin-contract.spec.mjs --workers=1
+```
+
+Wrapper создаёт новую marker-owned БД, выполняет существующий bootstrap/seed,
+запускает 18 actual HTTP/PG checks и сохраняет evidence **до** cleanup. Для выгрузки
+задать `PATH_ADMIN_EVIDENCE_DIRECTORY=/absolute/owned/evidence`.
+Browser имеет отдельные настоящие contexts/sessions и PostgreSQL; transport abort
+происходит только после `route.fetch()`/commit, fake success отсутствует.
+Его экспорт — `PATH_ADMIN_BROWSER_EVIDENCE=/absolute/owned/evidence` либо `.test-stand`.
+Ни Connection, ни успешные resolver/readiness/authorization не подменяются.
+E10.2 Case QA — **синтетическая техническая подстановка**, не настоящий human review
+и не допуск целевой пилотной программы. AS/LLM в этих admin checks не запускаются.
+Не прикладывать `state.json`, session cookies, generated passwords или auth trace.
+Отдельный PATH29 component-test с viewport collector остаётся component-only;
+его upstream plan fixture запрещён для real/full PATH.
+
 Постоянный синтетический контур «суперадмин → первый Case» и его текущие границы
 описаны в [`docs/evc/assessment-first-case-profile.md`](../docs/evc/assessment-first-case-profile.md).
 
@@ -22,9 +80,15 @@ Default `functional-diagnostic` остаётся исторической synthe
 [контракт](../docs/architecture/pilot-plan-start-admission-contract.md).
 Полный M2=61 сохраняется, план=39/22 вне; любой LIMITED автоматически не допускается.
 Runner требует `m7_start_readiness/1` и exact frozen binding, обязательные стадии,
-конечную допущенную AS и lineage. Новая программа пока не опубликована, прежний
-release fixture1.1 не заменён. Код T1 выпущен main3385145/2.0.65 (PR170), но новая
-программа и новый paid PATH не запускались; нынешняя доработка harness пока локальная.
+конечную допущенную AS и lineage. Прежний release fixture1.1 не заменён.
+Код T1 выпущен в2.0.65 (PR170), harness — main/test e63eba6 /2.0.66 (PR171).
+После отдельного разрешения опубликована только новая `specialist_pilot@1.2`, id2,
+без подключений организаций;
+[exact receipt/readback](../docs/evc/evidence/pilot-program-publication-execution/publication-result.json).
+После отдельного разрешения один paid PATH1.2 выполнен: **PASS**, real LLM + штатный
+repair, explicit start201/та же первая AS/0 ответов, owned cleanup и offline CHECK PASS.
+[Итог](../docs/evc/tasks/pilot-1.2-path.md). Разрешение этого run использовано;
+публикация или прежний PASS не разрешают автоматический повтор.
 Исторический PREP-DIAG-01 остаётся UNKNOWN и не отождествляется с покрытием.
 
 Harness теперь допускает явный внешний published receipt только полным selector
@@ -35,6 +99,13 @@ receipt публикации. Подробности в [профиле](../docs
 реализация/проверки — [PATH-PILOT-HARNESS-01](../docs/evc/tasks/pilot-program-harness.md).
 Saved exact bytes и program refs перепроверяются после cleanup в summary.
 Согласование нового selector не разрешает publication/активацию/paid run.
+
+Actual published receipt1.2 проверен существующим `--check-bootstrap` на test
+e63eba6 /2.0.66: **PASS_BOOTSTRAP_ONLY**, новая owned-БД и marker-guarded cleanup,
+минимальные counts1/0,9 Cases/27 исходных QA, LLM0.
+[Первичные evidence](../docs/evc/evidence/pilot-program-1.2-bootstrap/remote-result.json).
+Команда из repo root требует `PYTHONPATH=.`; это исправлено в профиле. Bootstrap
+не доказывает новый human review/качество AS, first start или полный PATH.
 
 Бесплатные SQL-регрессии самого release seed:
 

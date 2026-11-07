@@ -106,7 +106,6 @@ DB_PASSWORD=...
 
 DEEPSEEK_API_KEYS=key_1,key_2,key_3
 DEEPSEEK_BASE_URL=...
-DEEPSEEK_MODEL=...
 DEEPSEEK_MAX_CONCURRENCY=10
 DEEPSEEK_QUEUE_TIMEOUT_SECONDS=30
 ASSESSMENT_UNIVERSAL_LLM_ENABLED=false
@@ -157,6 +156,20 @@ POSTMARK_SERVER_TOKEN=...
 пробует следующий ключ. Для обратной совместимости поддерживаются
 `DEEPSEEK_API_KEY`, `DEEPSEEK_API_KEY_2` и `DEEPSEEK_API_KEY_3`; дубликаты
 удаляются автоматически.
+
+Модель выбирает версионируемый provider contract, а не `.env`. Для нового вызова
+без явной operation используется проверенный
+`assessment_definitions/providers/deepseek/v1/manifest.json`; для начатого прогона —
+модель сохранённой operation/snapshot. `.env` предоставляет credentials, сетевую
+инфраструктуру и concurrency, но не переопределяет модель. Старая переменная
+`DEEPSEEK_MODEL` игнорируется; удалять или «исправлять» её в рабочем `.env` для
+применения этого правила не требуется. Недоступный обязательный контракт даёт
+ошибку без встроенного/env fallback. Это разделение не публикует draft-пакеты
+и не меняет snapshots уже начатых оценок.
+
+Бесплатный preflight runner сохраняет эффективную модель, источник, версию и checksum
+контракта; для legacy env-переменной — только признак присутствия/игнорирования,
+без её значения. READY не означает успешный платный LLM или полный PATH.
 
 `DEEPSEEK_MAX_CONCURRENCY` ограничивает число одновременных LLM-запросов
 в одном API worker-процессе. Для production-конфигурации из четырех workers

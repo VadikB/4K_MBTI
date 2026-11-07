@@ -1,0 +1,73 @@
+{
+  "task": "PATH-PILOT-RUN-01",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "input_task_commit": "1ee2ec4aa9af20e54becee05cb76dce52eaa64db",
+  "result": "PASS",
+  "paid_runner_invocations": 1,
+  "elapsed_seconds": 376.508,
+  "run_id": "2ff983f12c67494b990b0f85284b8d70",
+  "primary": {
+    "result": "PASS",
+    "run_id": "2ff983f12c67494b990b0f85284b8d70",
+    "admission_status": "PASS",
+    "as_id": "c89539de-2d53-4a70-b887-7a5a217df64a",
+    "unique_provider_operations": 20,
+    "provider_completed_http_requests": 21,
+    "usage": {
+      "prompt_tokens": 1447496,
+      "completion_tokens": 76220,
+      "total_tokens": 1523716
+    },
+    "archive": "/home/vadim_bogachev/evidence/path-pilot-1.2-run-qxzr56r9/path-evidence.zip",
+    "archive_bytes": 926711,
+    "archive_sha256": "4077a3e2b8f6193aec7f92fc78d7bf344a91b1d6ef55c2745fc46378a94a6f64",
+    "files": 34
+  },
+  "offline_check": {
+    "chunk_id": "5904c6",
+    "wall_time_seconds": 2.049746068,
+    "exit_code": 0,
+    "original_token_count": 187,
+    "output": "{\"result\": \"PASS_OFFLINE_ACTUAL_PATH\", \"run_id\": \"2ff983f12c67494b990b0f85284b8d70\", \"program_version\": \"1.2\", \"as_id\": \"c89539de-2d53-4a70-b887-7a5a217df64a\", \"admission\": \"PASS\", \"start_http_status\": 201, \"assessment_answers\": 0, \"unique_operations\": 20, \"completed_http_requests\": 21, \"retained_tokens\": 1523716, \"full_m2\": 61, \"planned\": 39, \"outside\": 22, \"primary_files_verified\": 34, \"runtime_files_verified\": 11, \"python_socket_attempts\": 0, \"db_connections\": 0, \"new_provider_calls\": 0, \"owned_cleanup_verified\": true, \"checksum_scope\": \"Byte hashes, projection body and same-type refs validated; internal candidate/full plan bodies not exported are verified by stored server recomputation/readiness, not independently reconstructed.\"}\n"
+  },
+  "unit_regressions": {
+    "command": "python -m pytest -q tests/unit/test_assessment_first_case.py tests/unit/test_path_start_release_source.py tests/unit/test_assessment_run_summary.py tests/unit/test_test_stand.py",
+    "environment": "Sanitized isolated stand sentinel, no .env/DB/provider keys",
+    "result": {
+      "chunk_id": "385e0b",
+      "wall_time_seconds": 0.000013127,
+      "exit_code": 0,
+      "original_token_count": 46,
+      "output": "........................................................................ [ 65%]\n......................................                                   [100%]\n110 passed in 10.11s\n"
+    }
+  },
+  "node_regressions": {
+    "command": "node --test tests/unit/test_assessment_receipt_file.mjs tests/unit/test_assessment_preparation_receipt.mjs",
+    "result": {
+      "chunk_id": "1e33a7",
+      "wall_time_seconds": 0.52789669,
+      "exit_code": 0,
+      "original_token_count": 989,
+      "output": "✔ exact selected program 1.1 (9.716442ms)\n✔ exact selected program synthetic-next-version (0.595888ms)\n✔ selected id drift before blocks success (3.409428ms)\n✔ selected id drift after blocks success (0.621391ms)\n✔ selected code drift before blocks success (0.597947ms)\n✔ selected code drift after blocks success (0.4894ms)\n✔ selected version drift before blocks success (0.520617ms)\n✔ selected version drift after blocks success (0.836551ms)\n✔ selected assignment_ref drift before blocks success (0.493705ms)\n✔ selected assignment_ref drift after blocks success (0.702038ms)\n✔ selected status drift before blocks success (1.063491ms)\n✔ selected status drift after blocks success (1.041716ms)\n✔ selected definition_checksum drift before blocks success (0.740693ms)\n✔ selected definition_checksum drift after blocks success (0.418064ms)\n✔ selected assessment_configuration_id drift before blocks success (0.394698ms)\n✔ selected assessment_configuration_id drift after blocks success (0.397521ms)\n✔ selected catalog_version_id drift before blocks success (0.371931ms)\n✔ selected catalog_version_id drift after blocks success (1.795654ms)\n✔ missing selected source is rejected, not inferred from actual program (0.492643ms)\n✔ PASS, final repair=false (0.839363ms)\n✔ PASS, final repair=true (0.440659ms)\n✔ PASS_WITH_WARNINGS, final repair=false (0.348788ms)\n✔ PASS_WITH_WARNINGS, final repair=true (0.293072ms)\n✔ reject admission INCOMPLETE (0.36671ms)\n✔ reject admission FAIL (0.26363ms)\n✔ reject admission REVIEW_REQUIRED (0.381159ms)\n✔ reject admission null (0.38127ms)\n✔ warnings do not bypass unadmitted (0.576556ms)\n✔ warnings do not bypass missing generation (0.405643ms)\n✔ warnings do not bypass missing tester (0.406627ms)\n✔ warnings do not bypass missing challenger (0.617205ms)\n✔ warnings do not bypass missing batch (0.507624ms)\n✔ warnings do not bypass foreign operation (0.424339ms)\n✔ warnings do not bypass wrong final candidate (0.39221ms)\n✔ warnings do not bypass wrong final generation (0.36616ms)\n✔ warnings do not bypass wrong repair ref (0.371919ms)\n✔ warnings do not bypass wrong compiled ref (0.402942ms)\n✔ warnings do not bypass wrong snapshot (0.395777ms)\n✔ warnings do not bypass wrong execution ref (0.41393ms)\n✔ warnings do not bypass missing checksums (0.530848ms)\n✔ warnings do not bypass wrong presented AS (0.44558ms)\n✔ warnings do not bypass wrong presented payload (0.429666ms)\n✔ warnings do not bypass not started (0.469833ms)\n✔ warnings do not bypass assessment answer (0.486581ms)\n✔ pre-start chain cannot change after start (0.491801ms)\n✔ PATH linked profile/assignment/plan/timing retains PASS_WITH_WARNINGS (0.694042ms)\n✔ PATH rejects unknown lineage (0.463033ms)\n✔ PATH rejects foreign assignment (0.359849ms)\n✔ PATH rejects foreign profile (0.361021ms)\n✔ PATH rejects wrong operation profile (0.351973ms)\n✔ PATH rejects wrong profile checksum (0.367761ms)\n✔ PATH rejects unfrozen profile (0.382015ms)\n✔ PATH rejects missing time source (0.406844ms)\n✔ PATH rejects invalid time (0.415793ms)\n✔ PATH rejects wrong time source (2.87342ms)\n✔ PATH rejects missing plan revision (0.582921ms)\n✔ pre-start rejects missing server decision (0.624928ms)\n✔ pre-start rejects server denied (0.461321ms)\n✔ pre-start rejects foreign server cycle (0.602248ms)\n✔ pre-start rejects stale server revision (0.473765ms)\n✔ pre-start rejects wrong server hash (0.475226ms)\n✔ pre-start rejects foreign server AS (0.446444ms)\n✔ pre-start rejects blockers despite true (0.593728ms)\n✔ pre-start rejects LIMITED without exact admission (0.461875ms)\n✔ exact LIMITED admission retains stages and final AS checks (0.767585ms)\n✔ only a durable terminal preparation receipt permits cleanup (50.196512ms)\nℹ tests 66\nℹ suites 0\nℹ pass 66\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 366.960458\n"
+    }
+  },
+  "optimized_mode": "REJECTED_AS_REQUIRED",
+  "visual_review": {
+    "file": "server-evidence/run/6364c771-80c7-4013-bad0-6fd7cc2db545/first-case.png",
+    "result": "VISIBLE_FIRST_AS_INTRODUCTION_EMPTY_ANSWER_FIELD_NO_AUTH_ERROR",
+    "review_scope": "Technical UI presentation only, not human methodology/content QA"
+  },
+  "usage_note": "20 unique operations,21 completed HTTP requests,1 JSON retry.1,523,716 retained tokens; missing earlier malformed-response usage prevents a complete billed total.",
+  "working_db": "Read-only pre/post source and schema, no writes/activation; target program connections0",
+  "cleanup": "Owned DB/state absent; no active connections; exact marker destroy without FORCE",
+  "runtime_ci": "PR171 PASS for reviewed a60200d, identical-tree e63; prior backend908/HTTP108/integration220 reused only unchanged runtime",
+  "new_branch_ci": "NOT_RUN_NO_NEW_PR_OR_CODE_CHANGE",
+  "new_merge_deploy": false,
+  "limitations": [
+    "One successful limited-pilot first-case path, not full assessment or all39 planned observations",
+    "Not re-testing every negative branch/6 BaseRole UI states in this real-provider run",
+    "No new human review, CURRENT or methodology/admission/repair changes",
+    "Historical PREP-DIAG-01 remains UNKNOWN; no retrospective causal conclusion"
+  ],
+  "checksum_scope": "Original JSON/PNG byte hashes and safe log projection verified; same-type refs/lineage validated independently. Hidden candidate/full plan bodies were not exported and are not independently reconstructed; rely on stored server recomputation/readiness."
+}

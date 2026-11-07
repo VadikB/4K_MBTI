@@ -1,0 +1,76 @@
+{
+  "scope": "SYNTHETIC_HTTP_COMPONENT_DIAGNOSTIC_NOT_REAL_PATH",
+  "source_sha": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "product_source_changes": false,
+  "database_connections": 0,
+  "provider_calls": 0,
+  "historical_run_causal_identity": "NOT_PROVEN",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/users/version",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/confirm",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/verify",
+      "status": 400
+    }
+  ],
+  "observations": [
+    {
+      "label": "confirmation_pending_input_already_visible",
+      "input_name": "one-time-code",
+      "input_type": "text",
+      "input_length": 25,
+      "input_disabled": false,
+      "button_disabled": false,
+      "button_text": "Войти",
+      "title": "Добро пожаловать",
+      "step": "Шаг 1 из 2",
+      "error": ""
+    },
+    {
+      "label": "clicked_while_confirmation_pending",
+      "input_name": "one-time-code",
+      "input_type": "text",
+      "input_length": 15,
+      "input_disabled": false,
+      "button_disabled": false,
+      "button_text": "Войти",
+      "title": "Добро пожаловать",
+      "step": "Шаг 1 из 2",
+      "error": "SYNTHETIC_UNEXPECTED_ENDPOINT"
+    },
+    {
+      "label": "confirmation_completed_early_input_cleared",
+      "input_name": "new-password",
+      "input_type": "password",
+      "input_length": 0,
+      "input_disabled": false,
+      "button_disabled": false,
+      "button_text": "Продолжить",
+      "title": "Создайте пароль",
+      "step": "Шаг 1 из 2",
+      "error": "SYNTHETIC_UNEXPECTED_ENDPOINT"
+    },
+    {
+      "label": "semantic_ready_then_fill_and_click_step2",
+      "input_name": "new-password",
+      "input_type": "password",
+      "input_length": 0,
+      "input_disabled": false,
+      "button_disabled": false,
+      "button_text": "Создать пароль",
+      "title": "Подтвердите пароль",
+      "step": "Шаг 2 из 2",
+      "error": ""
+    }
+  ],
+  "result": "REPRODUCED_EARLY_FORM_RACE_AND_SEMANTIC_READY_CONTROL_PASS"
+}

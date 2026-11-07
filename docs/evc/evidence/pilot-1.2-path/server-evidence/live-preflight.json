@@ -1,0 +1,59 @@
+{
+  "observed_at_utc": "2026-11-05T18:38:42.043844+00:00",
+  "result": "LIVE_READ_ONLY_PREFLIGHT_PASS",
+  "runtime_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+  "program": {
+    "id": 2,
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "assignment_ref": "specialist-pilot",
+    "status": "published",
+    "definition_checksum": "b4e8270fd10436c417d7b40b8be8049dc2e9329f42a1ffa6d725877480d04718",
+    "assessment_configuration_id": 11,
+    "catalog_version_id": 2
+  },
+  "published_source_canonical_sha256": "be662b3cf28fecbd72b8731be07ca585afd35898a9639fcbbcff962da8c5be37",
+  "receipt_canonical_sha256": "be662b3cf28fecbd72b8731be07ca585afd35898a9639fcbbcff962da8c5be37",
+  "receipt_bytes_sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+  "same_source": true,
+  "publisher_user_id": 4,
+  "target_program_connections": 0,
+  "transaction_read_only": true,
+  "rollback": true,
+  "schema_comparison": {
+    "contract": "path-pilot-schema-comparison/1",
+    "result": "EXACT_SCOPED_SCHEMA_MATCH",
+    "expected_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+    "actual_metadata_checksum": "c18922b95d6223262d23cc6edf1c060ac66b9f84243feee076d32baae586a065",
+    "working_server_checkout_sha": "e63eba67d77fb73f7fb9bb219bc3fe5d3807a909",
+    "scope_table_count": 32,
+    "missing_tables": [],
+    "counts": {
+      "columns": {
+        "expected": 353,
+        "actual": 353
+      },
+      "constraints": {
+        "expected": 191,
+        "actual": 191
+      },
+      "indexes": {
+        "expected": 84,
+        "actual": 84
+      },
+      "triggers": {
+        "expected": 16,
+        "actual": 16
+      }
+    },
+    "missing": [],
+    "changed": [],
+    "extra": [],
+    "program_activation_checked": false,
+    "schema_or_data_writes": false,
+    "business_rows_read": false,
+    "runtime_or_llm_pass": false
+  },
+  "working_db_writes": false,
+  "provider_calls": 0
+}

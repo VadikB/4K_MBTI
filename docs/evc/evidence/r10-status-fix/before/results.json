@@ -1,0 +1,183 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/node_modules/@playwright/test/cli.js",
+      "test",
+      "tests/browser/program-connection-feedback.spec.mjs",
+      "--grep",
+      "503 confirmed",
+      "--trace",
+      "retain-on-failure",
+      "--global-timeout",
+      "60000",
+      "--output",
+      ".test-stand/r10-fix-before"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 60000,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/r10-fix-before",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": ".test-stand/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "program-connection-feedback.spec.mjs",
+      "file": "program-connection-feedback.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "R10-STATUS 503 confirmed survives completion and re-render",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_http",
+                  "description": "Real UI and render; no DB/provider or real program admission."
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 6590,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]')\nExpected substring: \u001b[32m\"Опубликованная версия программы подключена\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]')\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]')\nExpected substring: \u001b[32m\"Опубликованная версия программы подключена\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]')\u001b[22m\n\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/program-connection-feedback.spec.mjs:99:32",
+                    "location": {
+                      "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/program-connection-feedback.spec.mjs",
+                      "column": 32,
+                      "line": 99
+                    },
+                    "snippet": "   97 |     f.releaseQuestionnaire();\n   98 |     await rerender(page);\n>  99 |     await expect(status(page)).toContainText(f.message);\n      |                                ^\n  100 |     await expect(status(page)).toHaveAttribute('data-tone', 'success');\n  101 |     await expect(form(page)).toContainText('Подключено: Synthetic pilot 11');\n  102 |     expect(f.state.puts).toBe(1); expect(f.state.reads).toBe(1);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/program-connection-feedback.spec.mjs",
+                        "column": 32,
+                        "line": 99
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]')\nExpected substring: \u001b[32m\"Опубликованная версия программы подключена\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-organization-id=\"3\"] [data-action=\"connect-assessment-program\"]').locator('[data-operation-status]')\u001b[22m\n\n\n   97 |     f.releaseQuestionnaire();\n   98 |     await rerender(page);\n>  99 |     await expect(status(page)).toContainText(f.message);\n      |                                ^\n  100 |     await expect(status(page)).toHaveAttribute('data-tone', 'success');\n  101 |     await expect(form(page)).toContainText('Подключено: Synthetic pilot 11');\n  102 |     expect(f.state.puts).toBe(1); expect(f.state.reads).toBe(1);\n    at /Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/program-connection-feedback.spec.mjs:99:32"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T06:06:42.052Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_http",
+                      "description": "Real UI and render; no DB/provider or real program admission."
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/r10-fix-before/program-connection-feedbac-49188-es-completion-and-re-render/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/r10-fix-before/program-connection-feedbac-49188-es-completion-and-re-render/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/r10-fix-before/program-connection-feedbac-49188-es-completion-and-re-render/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/.test-stand/r10-fix-before/program-connection-feedbac-49188-es-completion-and-re-render/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/vadim_bogachev/Developer/4K/worktrees/path-final-audit/tests/browser/program-connection-feedback.spec.mjs",
+                    "column": 32,
+                    "line": 99
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d61b937cb6192082243b-a706b47c75a17ef99b40",
+          "file": "program-connection-feedback.spec.mjs",
+          "line": 92,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T06:06:40.836Z",
+    "duration": 8701.713,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

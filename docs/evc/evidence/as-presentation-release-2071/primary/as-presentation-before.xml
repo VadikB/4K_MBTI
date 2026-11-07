@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="9" skipped="0" tests="11" time="5.167" timestamp="2026-11-06T17:31:38.042666+03:00" hostname="MacBook-Pro-Vadim-Bogachev.local"><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.01]" time="0.182"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.01.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...56949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a', 'pointer': ''}, 'title': 'Неоднозначный запрос заказчика', ...})">case_id = 'CASE.SPEC.01'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.01.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...56949c4788e001702ca33086273647a6d3d0dd29694ca301cb57a', 'pointer': ''}, 'title': 'Неоднозначный запрос заказчика', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.02]" time="0.140"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.02.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...3c2e043e134f8d0ea3acf32', 'pointer': ''}, 'title': 'Выбор профессионального предложения при расхождении сведений', ...})">case_id = 'CASE.SPEC.02'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.02.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...3c2e043e134f8d0ea3acf32', 'pointer': ''}, 'title': 'Выбор профессионального предложения при расхождении сведений', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.03]" time="0.247"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.03.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...58ac273e68e52e588a7867e44f193c8', 'pointer': ''}, 'title': 'Разногласие коллег при подготовке общего предложения', ...})">case_id = 'CASE.SPEC.03'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.03.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...58ac273e68e52e588a7867e44f193c8', 'pointer': ''}, 'title': 'Разногласие коллег при подготовке общего предложения', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.04]" time="0.335"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.04.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...8ab1497513e742fb84f9a6ddeef0c1d', 'pointer': ''}, 'title': 'Ошибка исправлена но последствия и сомнения остались', ...})">case_id = 'CASE.SPEC.04'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.04.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...8ab1497513e742fb84f9a6ddeef0c1d', 'pointer': ''}, 'title': 'Ошибка исправлена но последствия и сомнения остались', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.05]" time="0.186"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.05.FUNCTIONAL.20261022', 'version': 'v0.3', 'source': {'file': 'sources/AS_SPEC_0...b3a5c3ae7aac634c192c8a03102d9', 'pointer': ''}, 'title': 'Стандартный способ отклонён а рабочая цель сохраняется', ...})">case_id = 'CASE.SPEC.05'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.05.FUNCTIONAL.20261022', 'version': 'v0.3', 'source': {'file': 'sources/AS_SPEC_0...b3a5c3ae7aac634c192c8a03102d9', 'pointer': ''}, 'title': 'Стандартный способ отклонён а рабочая цель сохраняется', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.06]" time="0.134"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.06.FUNCTIONAL.20261022', 'version': 'v0.3', 'source': {'file': 'sources/AS_SPEC_0...f4646b44e768cf59ea0f92bbde2b0a76cd9fac', 'pointer': ''}, 'title': 'Согласование ожиданий от одного общего пилота', ...})">case_id = 'CASE.SPEC.06'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.06.FUNCTIONAL.20261022', 'version': 'v0.3', 'source': {'file': 'sources/AS_SPEC_0...f4646b44e768cf59ea0f92bbde2b0a76cd9fac', 'pointer': ''}, 'title': 'Согласование ожиданий от одного общего пилота', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.07]" time="0.131"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.07.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...406c4a64500c0ae499d310621', 'pointer': ''}, 'title': 'Рабочее использование после ограниченной проверки средства', ...})">case_id = 'CASE.SPEC.07'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.07.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...406c4a64500c0ae499d310621', 'pointer': ''}, 'title': 'Рабочее использование после ограниченной проверки средства', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.08]" time="0.146"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.08.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...cb0e26380b1c215e642540f29f', 'pointer': ''}, 'title': 'Потери информации при передаче работы между специалистами', ...})">case_id = 'CASE.SPEC.08'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.08.FUNCTIONAL.20261022', 'version': 'v0.2', 'source': {'file': 'sources/AS_SPEC_0...cb0e26380b1c215e642540f29f', 'pointer': ''}, 'title': 'Потери информации при передаче работы между специалистами', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport[CASE.SPEC.09]" time="0.081"><failure message="AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT&#10;assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})&#10; +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))&#10; +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.09.FUNCTIONAL.20261022', 'version': 'v0.3', 'source': {'file': 'sources/AS_SPEC_0...bbb018fc844e7a2264306f24', 'pointer': ''}, 'title': 'Разные рекомендации специалиста и руководителя по кандидату', ...})">case_id = 'CASE.SPEC.09'
+
+    @pytest.mark.parametrize('case_id', [f'CASE.SPEC.{i:02d}' for i in range(1, 10)])
+    def test_functional_public_view_is_exact_as_intro_and_start_materials_not_author_passport(case_id):
+        value = sample(case_id)
+        case, snapshot = value['source_case'], value['snapshot']
+        public = snapshot['participant_payload']
+        expected = case['participant_presentation']
+        assert public['introduction'] == expected['introduction']
+        assert public['initial_materials'] == expected['initial_materials']
+        assert public['source'] == case['author_as_source']
+&gt;       assert not (set(LEGACY_FIELDS) &amp; set(public)), 'AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT'
+E       AssertionError: AUTHOR_PASSPORT_LEAKED_TO_FUNCTIONAL_PARTICIPANT
+E       assert not ({'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} &amp; {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...})
+E        +  where {'assessee_position', 'assessee_task', 'conditions_and_constraints', 'initial_situation', 'participants_and_positions', 'trigger'} = set(('initial_situation', 'trigger', 'assessee_position', 'participants_and_positions', 'assessee_task', 'conditions_and_constraints'))
+E        +  and   {'assessee_position', 'assessee_task', 'assessment_situation_id', 'case_id', 'case_version', 'conditions_and_constraints', ...} = set({'assessment_situation_id': 'AS.SPEC.09.FUNCTIONAL.20261022', 'version': 'v0.3', 'source': {'file': 'sources/AS_SPEC_0...bbb018fc844e7a2264306f24', 'pointer': ''}, 'title': 'Разные рекомендации специалиста и руководителя по кандидату', ...})
+
+tests/unit/test_m5_participant_projection.py:22: AssertionError</failure></testcase><testcase classname="tests.unit.test_m5_participant_projection" name="test_closed_passport_is_retained_without_leaking_into_public_view_or_mutating_source" time="0.248" /><testcase classname="tests.unit.test_m5_participant_projection" name="test_legacy_presentation_without_frozen_functional_profile_remains_byte_equivalent" time="0.121" /></testsuite></testsuites>

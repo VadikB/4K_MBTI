@@ -8,6 +8,23 @@ const wiring = await readFile(new URL('../../web/js/wiring.js', import.meta.url)
 const session = await readFile(new URL('../../web/js/session.js', import.meta.url), 'utf8');
 const main = await readFile(new URL('../../web/js/main.js', import.meta.url), 'utf8');
 const dashboardEntry = await readFile(new URL('../../web/js/entries/dashboard.js', import.meta.url), 'utf8');
+const screenLoaders = await readFile(new URL('../../web/js/screen-loaders.js', import.meta.url), 'utf8');
+const chat = await readFile(new URL('../../web/js/screens/chat.js', import.meta.url), 'utf8');
+
+test('expired-session cleanup clears old feedback before the lazy boundary and keeps generation guard', () => {
+  const recovery = session.slice(session.indexOf('export const resetStaleUserState'), session.indexOf('const selectedProfileQuery'));
+  assert.ok(recovery.indexOf("showError(authError, '')") < recovery.indexOf('await resetChatScreen'));
+  assert.match(recovery, /shouldReset: \(\) => getSessionGeneration\(\) === recoveryGeneration/);
+  assert.match(recovery, /preserveAuthFeedback: true/);
+  assert.doesNotMatch(recovery, /postLogoutWithTimeout\(/);
+});
+
+test('ordinary chat reset still clears auth feedback by default after the guarded lazy load', () => {
+  assert.match(screenLoaders, /preserveAuthFeedback = false/);
+  assert.match(screenLoaders, /await loadChat\(\);\s*if \(shouldReset\(\)\) \{\s*module.resetChat\(\{ preserveAuthFeedback \}\)/);
+  assert.match(chat, /resetChat = \(\{ preserveAuthFeedback = false \} = \{\}\)/);
+  assert.match(chat, /if \(!preserveAuthFeedback\) \{\s*showError\(authError, ''\);\s*if \(authStatus\)/);
+});
 
 test('auth forms expose password-manager fields and an explicit way to change email', () => {
   assert.match(html, /autocomplete="username email"/);
@@ -15,6 +32,17 @@ test('auth forms expose password-manager fields and an explicit way to change em
   assert.match(html, /id="auth-change-credential-email-button"/);
   assert.match(wiring, /authChangeCredentialEmailButton\.addEventListener\('click'/);
   assert.match(wiring, /showPasswordCreationStep\(\)/);
+});
+
+test('action validation fences pending input without advancing the parent auth-operation generation', () => {
+  const validation = wiring.slice(wiring.indexOf('export const handleAuthActionToken'), wiring.indexOf('const requestPasswordReset'));
+  assert.match(validation, /const operationGeneration = authOperationGeneration/);
+  assert.doesNotMatch(validation, /\+\+authOperationGeneration/);
+  assert.match(validation, /validationGeneration === authActionTokenGeneration/);
+  assert.match(validation, /authTokenForm\?\.classList\.add\('hidden'\)/);
+  assert.match(validation, /authActionTokenPending = true/);
+  assert.match(validation, /if \(!isCurrentValidation\(\)\) return/);
+  assert.match(validation, /if \(isCurrentValidation\(\)\)/);
 });
 
 test('registration and repeat login route through the existing journey without auth-complete', () => {

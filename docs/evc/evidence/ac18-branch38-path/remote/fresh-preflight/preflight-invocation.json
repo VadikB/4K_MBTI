@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python",
+    "scripts/assessment_first_case.py",
+    "--preflight-only",
+    "--env-file",
+    "/home/vadim_bogachev/projects/Agent4K-Test/.env",
+    "--python",
+    "/home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python",
+    "--program-source",
+    "published-pilot",
+    "--db-admin-port",
+    "55432",
+    "--port",
+    "18861",
+    "--program-receipt",
+    "/home/vadim_bogachev/evidence/pilot-program-1.2-wryr3q10/published-release-source.json",
+    "--program-receipt-sha256",
+    "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+    "--program-version",
+    "1.2",
+    "--directory",
+    "/home/vadim_bogachev/evidence/ac18-branch38-preflight-20261107-48b27d91"
+  ],
+  "cwd": "/home/vadim_bogachev/evidence/ac18-branch38-checkout-20261107-48b27d91",
+  "exit_code": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_exported": false,
+  "scope": "preflight-only; no bootstrap, new database, provider call, email or cleanup"
+}

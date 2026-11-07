@@ -5,15 +5,29 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 
-def preflight(port:int,python_path:str|None=None,*,verify_machine:bool=False)->dict:
+def preflight(port:int,python_path:str|None=None,*,verify_machine:bool=False,
+              legacy_model_present:bool|None=None)->dict:
     checks=[]
     def add(code,ready,detail):checks.append({'code':code,'status':'READY' if ready else 'BLOCKED','detail':detail})
     add('isolated_database_admin',bool(os.getenv('STAND_ADMIN_URL')),
         'STAND_ADMIN_URL is set' if os.getenv('STAND_ADMIN_URL') else 'STAND_ADMIN_URL is required')
     python=Path(python_path) if python_path else ROOT/'.venv/bin/python';add('python_environment',python.is_file(),str(python) if python.is_file() else f'{python} is required')
     playwright=ROOT/'node_modules/.bin/playwright';add('browser',playwright.is_file(),str(playwright) if playwright.is_file() else 'npm ci is required')
-    keys=bool(os.getenv('DEEPSEEK_API_KEYS') or os.getenv('DEEPSEEK_API_KEY'));model=bool(os.getenv('DEEPSEEK_MODEL'))
-    add('real_provider',keys and model,'provider credentials and model are set' if keys and model else 'DEEPSEEK_API_KEYS (or DEEPSEEK_API_KEY) and DEEPSEEK_MODEL are required')
+    keys=any(bool(os.getenv(key)) for key in ('DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY',
+                                             'DEEPSEEK_API_KEY_2','DEEPSEEK_API_KEY_3'))
+    add('real_provider',keys,'provider credentials are set' if keys else 'DeepSeek provider credentials are required')
+    provider={'model_source':'provider_contract', 'legacy_env_model_present':
+              'DEEPSEEK_MODEL' in os.environ if legacy_model_present is None else legacy_model_present,
+              'legacy_env_model_ignored':True}
+    try:
+        from Api.llm.provider_contract import load_provider_contract
+        contract=load_provider_contract()
+        provider.update(provider=contract['provider'],model=contract['model'],
+                        contract_id=contract['id'],contract_version=contract['version'],
+                        contract_checksum=contract['checksum'])
+        add('provider_contract',True,'versioned provider contract verified; model is not selected by env')
+    except (OSError,ValueError,KeyError,TypeError):
+        add('provider_contract',False,'required provider contract unavailable or invalid; no env fallback')
     try:
         with socket.socket() as probe:
             probe.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);probe.bind(('127.0.0.1',port))
@@ -36,16 +50,21 @@ def preflight(port:int,python_path:str|None=None,*,verify_machine:bool=False)->d
                 add(name,probe.returncode==0,'verified' if probe.returncode==0 else 'probe failed; no credentials logged')
             except (OSError,subprocess.TimeoutExpired):
                 add(name,False,'probe unavailable or timed out')
-    return {'status':'READY' if all(c['status']=='READY' for c in checks) else 'BLOCKED','checks':checks}
+    return {'status':'READY' if all(c['status']=='READY' for c in checks) else 'BLOCKED','checks':checks,
+            'provider':provider}
 
 
 def code_identity():
     def git(*args):
         return subprocess.check_output(['git', *args], cwd=ROOT, text=True).strip()
     paths = ['scripts/test_stand.py', 'scripts/assessment_first_case.py',
+        'Api/config.py', 'Api/llm/deepseek_gateway.py', 'Api/llm/provider_contract.py',
+        'assessment_definitions/providers/deepseek/v1/manifest.json',
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
         'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs',
         'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs',
+        'tests/browser/fixtures/path-viewports.mjs',
+        'tests/browser/fixtures/auth-password-form.mjs', 'tests/browser/fixtures/failure-page.mjs',
         'tests/path_start_release_source.py', 'tests/path_start_release_inputs.py',
         'tests/browser/fixtures/path-start-release.json']
     return {'sha': git('rev-parse', 'HEAD'), 'branch': git('branch', '--show-current'),
@@ -249,6 +268,8 @@ def main()->int:
     except ValueError as exc:
         p.error(str(exc))
     env=os.environ.copy()
+    legacy_model_present='DEEPSEEK_MODEL' in env
+    env.pop('DEEPSEEK_MODEL',None)
     env.pop('P4K_PUBLISHED_RELEASE_REF', None)
     if selected is not None:
         env['P4K_PUBLISHED_RELEASE_REF'] = json.dumps(selected)
@@ -256,12 +277,15 @@ def main()->int:
     if a.env_file:
         from dotenv import dotenv_values
         values=dotenv_values(a.env_file)
-        for key in ('DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_API_KEY_2','DEEPSEEK_API_KEY_3','DEEPSEEK_BASE_URL','DEEPSEEK_MODEL','DEEPSEEK_MAX_CONCURRENCY'):
+        legacy_model_present=legacy_model_present or 'DEEPSEEK_MODEL' in values
+        for key in ('DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_API_KEY_2','DEEPSEEK_API_KEY_3','DEEPSEEK_BASE_URL','DEEPSEEK_MAX_CONCURRENCY'):
             if values.get(key):env[key]=str(values[key])
         if not env.get('STAND_ADMIN_URL') and values.get('DB_USER') and values.get('DB_PASSWORD'):
             env['STAND_ADMIN_URL']='postgresql://'+urllib.parse.quote(str(values['DB_USER']),safe='')+':'+urllib.parse.quote(str(values['DB_PASSWORD']),safe='')+f'@127.0.0.1:{a.db_admin_port}/postgres'
-    os.environ.update({key:value for key,value in env.items() if key in ('STAND_ADMIN_URL','DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_MODEL')})
-    result=preflight(a.port,a.python,verify_machine=True);a.directory.mkdir(parents=True,exist_ok=True);(a.directory/'preflight.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');print(json.dumps(result,ensure_ascii=False,indent=2),flush=True)
+    os.environ.update({key:value for key,value in env.items() if key in ('STAND_ADMIN_URL',
+        'DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_API_KEY_2','DEEPSEEK_API_KEY_3',
+        'DEEPSEEK_BASE_URL','DEEPSEEK_MAX_CONCURRENCY')})
+    result=preflight(a.port,a.python,verify_machine=True,legacy_model_present=legacy_model_present);a.directory.mkdir(parents=True,exist_ok=True);(a.directory/'preflight.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');print(json.dumps(result,ensure_ascii=False,indent=2),flush=True)
     if result['status']!='READY':return 2
     if a.preflight_only:return 0
     identity = code_identity()

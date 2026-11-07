@@ -1,0 +1,51 @@
+{
+  "sequence": 1,
+  "terminal": false,
+  "observation": {
+    "scope": "READ_ONLY_OWNED_PATH_MONITOR",
+    "runs": [
+      {
+        "run_id": "2ff983f12c67494b990b0f85284b8d70",
+        "database": "product4k_pytest_2ff983f12c67494b990b0f85284b8d70",
+        "completion_present": false,
+        "cleanup_present": false,
+        "cleanup_deferred": false,
+        "failure_present": false,
+        "state_present": true,
+        "provider_completed_requests": 3,
+        "last_provider_completions": [
+          {
+            "duration_ms": 50564.99,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:generation:d0356d85c699"
+          },
+          {
+            "duration_ms": 13357.42,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:tester:01:ed3a73cf2078"
+          },
+          {
+            "duration_ms": 13659.6,
+            "routing_key": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11:tester:02:253bee4cd898"
+          }
+        ],
+        "operation": {
+          "operation_id": "9d99628f-6e6a-4292-b5b5-4055eb7c6b11",
+          "status": "running",
+          "attempts": 1,
+          "error_code": null
+        },
+        "cycle": {
+          "id": 1,
+          "status": "prepared",
+          "started_at": null
+        },
+        "assessment_answers": 0,
+        "start_readiness": {
+          "can_start": false,
+          "reasons": [
+            "PILOT_PLAN_PREPARATION_SCOPE_MISMATCH"
+          ]
+        }
+      }
+    ]
+  }
+}
