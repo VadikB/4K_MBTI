@@ -1,6 +1,7 @@
 # AC18-FIX-02 / P2-AC04 — readback после потерянного ответа подготовки
 
-Статус: draft PR #185; обязательный CI на опубликованной ветке. Основание — `START_CODEX.txt`, `TASK.txt`
+Статус: draft PR #185; кандидат 2.0.77 подготовлен, переход в Ready и полный CI ожидаются.
+Основание — `START_CODEX.txt`, `TASK.txt`
 и `SOURCES.md` пакета `P4K_AC18_FIX_02_Preparation_Start_2026-11-07.zip` (редакция 1.0,
 07.11.2026). Содержимое пакета задаёт критерии, но не разрешает выпуск или LLM-вызов.
 
@@ -11,7 +12,8 @@
 повторную команду подготовки. Повторный POST остаётся только за явным действием
 `retry` после подтверждённого failed; серверную политику retry эта задача не меняет.
 
-Base: `origin/main@157d77d11a0eb8e504a5f5c822f0151f3e288fe6` (2.0.76).
+Base: `origin/main@157d77d11a0eb8e504a5f5c822f0151f3e288fe6` (2.0.76),
+следующий PATCH-кандидат 2.0.77 по решению владельца «делаем» после draft PR #185.
 Ветка: `codex/ac18-fix02-coverage-close`; worktree: `/tmp/4k-ac18-fix02-coverage`.
 Ранее приняты и слиты: #182 (продукт), #183 (визуальные свидетельства), #184
 (план provider verification). Их результат не переносится в этот diff.
@@ -61,6 +63,13 @@ PM-03 готовит AS, PM-04 исполняет; изменение относ
 - `playwright test tests/browser/auth-r03.spec.mjs -g 'AC18-FIX-02' --workers=1`:
   **PASS**, 3/3, синтетические HTTP fixtures, без реального LLM.
 - `git diff --check`: **PASS**.
+- `npm run ready:prepare -- --candidate 2.0.77`: первый запуск **FAIL** из-за
+  отсутствующего локального `esbuild` в изолированном worktree, после подключения
+  уже установленного `node_modules` основного workspace повторный запуск **PASS**;
+  release gate и сборка 2.0.77 выполнены.
+- Для сборки 2.0.77 повторно: `npm run lint:js` **PASS**,
+  `node --test tests/frontend/*.test.mjs` **PASS** (150/150), адресный
+  Playwright `-g 'AC18-FIX-02' --workers=1` **PASS** (3/3), `git diff --check` **PASS**.
 - Backend/DB integration: **NOT_RUN** в этом PR, сервер, схема и admission не менялись;
   результаты #182 не выдаются за проверку этого SHA.
 - Полный CI: **NOT_RUN** до PR; обязательный перед merge.
@@ -77,10 +86,9 @@ PM-03 готовит AS, PM-04 исполняет; изменение относ
 ## Передача и выпуск
 
 `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`,
-`version_bump=false`, `artifact_publish=false` на момент публикации draft PR.
-Владелец ранее разрешил merge/deploy #183–#184, но не этого нового PR. Для
-`Ready for review` нужен согласованный следующий patch-кандидат и
-`npm run ready:prepare -- --candidate <версия>`, затем полный обязательный CI.
-Следующий шаг: дождаться CI для актуального head PR #185; отдельно получить
-решение о версии, review и merge/deploy. Не смешивать с
+`version_bump=true` (2.0.77), `artifact_publish=false` по решению владельца.
+Владелец ранее разрешил merge/deploy #183–#184, но не этого нового PR. После
+commit/push кандидата перевести #185 в `Ready for review`, дождаться полного
+обязательного CI на точном SHA; затем требуется человеческое review и отдельное
+решение о merge/deploy. Не смешивать с
 provider verification: по #184 платный вызов требует выбора SHA и лимита затрат.
