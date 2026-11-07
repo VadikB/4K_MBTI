@@ -6,6 +6,7 @@ const onboarding = fs.readFileSync('web/js/screens/onboarding.js', 'utf8');
 const interview = fs.readFileSync('web/js/screens/interview.js', 'utf8');
 const router = fs.readFileSync('web/js/router.js', 'utf8');
 const productPreparation = fs.readFileSync('web/js/product-cycle-preparation.js', 'utf8');
+const productStart = fs.readFileSync('web/js/product-cycle-start.js', 'utf8');
 
 test('W02 uses server briefing, saves each answer and confirms all three before 4K', () => {
   assert.match(onboarding, /readiness\.briefing/);
@@ -19,7 +20,8 @@ test('W02 uses server briefing, saves each answer and confirms all three before 
 
 test('W02 keeps preparation separate from explicit assessment start', () => {
   assert.match(interview, /if \(!state\.productCycleId\)/);
-  assert.match(interview, /assessment\/cycles\/start/);
+  assert.match(interview, /startPreparedProductCycle/);
+  assert.match(productStart, /assessment\/cycles\/start/);
   assert.match(router, /Проверить готовность/);
   assert.doesNotMatch(router, /invitation_intro/);
   const entry = interview.slice(interview.indexOf('export const handleAssessmentEntryClick'));
