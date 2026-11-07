@@ -1,4 +1,20 @@
-# STATE — PROVIDER-ROLES-01
+# STATE — AC18-AUTH-READY-01
+
+07.11.2026. Отдельная локальная `codex/ac18-auth-readiness`, база339aff9/main/test2.0.74.
+Владелец разрешил узкий UI/harness fix и бесплатные проверки; release flags всеfalse.
+Run2835475f… завершён FAIL до LLM на auth step1 вместо2; owned cleanup/absent readback
+PASS, исходные evidence сохранены. Причина именно run UNKNOWN, causal identity с
+воспроизведённой readiness-гонкой NOT_PROVEN; PREP-DIAG-01 отдельно UNKNOWN.
+Реализованы pending hidden/disabled/submit guard, отдельное validation generation,
+semantic-ready exact-email helper и safe failure capture активной вкладки.
+Before2 FAIL; первая targeted5 PASS; frontend146/backend956/HTTP108 PASS;
+широкий browser126 PASS/1 ошибка нового test expectation URL, исправлена только
+проверка; финальный полный повтор ещё выполняется. Build45 byte-idempotent/lint PASS.
+Продуктовые Api/схема/артефакты/admission/repair не менялись; CI/новый deploy/LLM NOT_RUN.
+Карточка: docs/evc/tasks/ac18-auth-readiness.md. Следующий шаг — финальная бесплатная
+проверка и локальная передача; выпуск и новый AC18 требуют отдельных разрешений.
+
+# История — PROVIDER-ROLES-01
 
 ## R2 — 07.11: кандидат2.0.74, разрешены bump/push/PR/CI/review
 

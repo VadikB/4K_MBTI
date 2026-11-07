@@ -4,6 +4,8 @@ import http from 'node:http';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { capturePathViewports, viewportGeometry, assertViewportGeometry } from './fixtures/path-viewports.mjs';
+import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
+import { captureFailurePage } from './fixtures/failure-page.mjs';
 
 const root = process.cwd();
 const port = 18764;
@@ -53,6 +55,104 @@ async function baseRoutes(page, restore = { authenticated: false }) {
 }
 
 const adminUser = { id: 18, email: 'admin@example.test', full_name: 'Admin' };
+
+for (const [action, endpoint] of [
+  ['email_verification', '/users/auth/email/confirm'],
+  ['password_reset', '/users/auth/password/reset/validate'],
+]) {
+  test(`AC18 auth readiness: ${action} cannot submit before validation, then reaches step2`, async ({ page }, testInfo) => {
+    await baseRoutes(page);
+    let release;
+    let requested = false;
+    const pending = new Promise((resolve) => { release = resolve; });
+    const unexpected = [];
+    await page.route('**/users/auth/**', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname === endpoint) {
+        requested = true;
+        await pending;
+        return fulfillJson(route, { email: 'ready@example.test', auth_mode: 'password_registration' });
+      }
+      unexpected.push(pathname);
+      return fulfillJson(route, { detail: 'Unexpected synthetic auth request' }, 400);
+    });
+    await page.goto(`${base}/?auth_action=${action}&token=synthetic-readiness`);
+    await expect.poll(() => requested).toBe(true);
+    await expect(page.locator('#auth-token-form')).toBeHidden({ timeout: 1000 });
+    await expect(page.locator('#magic-token-input')).toBeDisabled();
+    await expect(page.locator('#verify-magic-link-button')).toBeDisabled();
+    await page.screenshot({ path: testInfo.outputPath(`${action}-pending.png`), fullPage: true });
+    await page.evaluate(() => document.querySelector('#auth-token-form')
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(unexpected).toEqual([]);
+    release();
+    await waitForPasswordCreationForm(page, 'ready@example.test');
+    await page.locator('#magic-token-input').fill('Readiness-Aa1!');
+    await page.locator('#verify-magic-link-button').click();
+    await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
+    expect(unexpected).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`${action}-step2-1440.png`), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('#verify-magic-link-button')).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    await page.screenshot({ path: testInfo.outputPath(`${action}-step2-390.png`), fullPage: true });
+  });
+
+  test(`AC18 auth readiness: ${action} validation refusal stays fail-closed`, async ({ page }) => {
+    await baseRoutes(page);
+    await page.route('**' + endpoint, (route) => fulfillJson(route, { detail: 'Срок ссылки истёк.' }, 400));
+    await page.goto(`${base}/?auth_action=${action}&token=synthetic-expired`);
+    await expect(page.locator('#auth-email-sent')).toBeVisible();
+    await expect(page.locator('#auth-token-form')).toBeHidden();
+    await expect(page.locator('#auth-email-sent h2')).toContainText(
+      action === 'password_reset' ? 'Срок ссылки истёк' : 'Не удалось проверить ссылку');
+  });
+}
+
+test('AC18 failure capture uses supplied admin page and never exports credential values', async ({ page }, testInfo) => {
+  await baseRoutes(page);
+  await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { auth_mode: 'password' }));
+  await page.goto(`${base}/?diagnostic=synthetic`);
+  await page.locator('#email-input').fill('admin@example.test');
+  await page.locator('#request-magic-link-button').click();
+  await expect(page.locator('#magic-token-input')).toBeVisible();
+  await page.locator('#magic-token-input').fill('NeverExport-Aa1!');
+  await page.evaluate(() => window.history.replaceState({}, '', '/?diagnostic=synthetic&token=MustNotExport'));
+  const directory = testInfo.outputPath('safe-failure');
+  await fs.mkdir(directory, { recursive: true });
+  const context = await captureFailurePage(page, directory, { step: 'admin_login', actor: 'administrator' });
+  expect(context.actor).toBe('administrator');
+  expect(context.pathname).toBe('/');
+  expect(context.query_keys).toEqual(['diagnostic', 'token']);
+  expect(context.title).toBe('С возвращением');
+  expect(context.credential_values_exported).toBe(false);
+  expect(context.credential_input).not.toHaveProperty('value');
+  expect(context.credential_input.has_value).toBe(true);
+  expect(JSON.stringify(context)).not.toContain('NeverExport-Aa1!');
+  expect(JSON.stringify(context)).not.toContain('MustNotExport');
+  expect(JSON.parse(await fs.readFile(path.join(directory, 'failure-context.json'), 'utf8'))).toEqual(context);
+  expect((await fs.stat(path.join(directory, 'failure.png'))).size).toBeGreaterThan(1000);
+});
+
+test('AC18 auth readiness: network validation failure can retry before password entry', async ({ page }) => {
+  await baseRoutes(page);
+  let calls = 0;
+  await page.route('**/users/auth/email/confirm', (route) => {
+    calls += 1;
+    return calls === 1 ? route.abort('failed') : fulfillJson(route, {
+      email: 'retry@example.test', auth_mode: 'password_registration',
+    });
+  });
+  await page.goto(`${base}/?auth_action=email_verification&token=synthetic-retry`);
+  await expect(page.locator('#auth-email-sent h2')).toHaveText('Нет связи с сервером');
+  await expect(page.locator('#auth-token-form')).toBeHidden();
+  await page.locator('#auth-change-email-button').click();
+  await waitForPasswordCreationForm(page, 'retry@example.test');
+  await page.locator('#magic-token-input').fill('RetryReady-Aa1!');
+  await page.locator('#verify-magic-link-button').click();
+  await expect(page.locator('#auth-credential-step-indicator')).toHaveText('Шаг 2 из 2');
+  expect(calls).toBe(2);
+});
 
 for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
   test(`AS projection ${caseId}: concrete public materials, no author passport, four widths`, async ({ page }) => {

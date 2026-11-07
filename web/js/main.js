@@ -160,12 +160,6 @@ const bootApp = async () => {
   if (authTokenFromLink) {
     document.getElementById('session-restore-panel')?.classList.add('hidden');
     authPanel.classList.remove('hidden');
-    if (authTokenForm) {
-      authTokenForm.classList.remove('hidden');
-    }
-    if (magicTokenInput) {
-      magicTokenInput.value = authTokenFromLink;
-    }
     if (authStatus) {
       authStatus.textContent = 'Подтверждаем ссылку для входа...';
       authStatus.classList.remove('hidden');
@@ -174,6 +168,8 @@ const bootApp = async () => {
     if (authAction === 'email_verification' || authAction === 'password_reset') {
       await handleAuthActionToken(authAction, authTokenFromLink);
     } else {
+      authTokenForm?.classList.remove('hidden');
+      if (magicTokenInput) magicTokenInput.value = authTokenFromLink;
       await verifyEmailMagicLinkToken(authTokenFromLink);
     }
     return;

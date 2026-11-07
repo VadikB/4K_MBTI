@@ -300,6 +300,8 @@ let authActionToken = '';
 let authResendTimer = null;
 let authRequestInFlight = false;
 let authCredentialInFlight = false;
+let authActionTokenPending = false;
+let authActionTokenGeneration = 0;
 let authResetRequestInFlight = false;
 let authPendingEmailAction = 'verification';
 let authPendingTokenAction = '';
@@ -399,6 +401,10 @@ const showAccessUnavailable = (email) => {
 const showEmailEntry = () => {
   authOperationGeneration += 1;
   authCredentialInFlight = false;
+  authActionTokenPending = false;
+  authTokenForm?.closest('.auth-panel')?.removeAttribute('aria-busy');
+  [magicTokenInput, verifyMagicLinkButton].filter(Boolean)
+    .forEach((control) => { control.disabled = false; });
   stopAuthResendCountdown();
   authEmailSent?.classList.add('hidden');
   authTokenForm?.classList.add('hidden');
@@ -979,6 +985,7 @@ const handleEmailMagicLinkRequest = async () => {
 };
 
 export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
+  if (authActionTokenPending) return;
   showError(authError, '');
   const token = String(tokenValue ?? magicTokenInput?.value ?? '').trim();
   if (!token) {
@@ -1006,6 +1013,7 @@ export const verifyEmailMagicLinkToken = async (tokenValue = null) => {
 
 const submitEmailPassword = async () => {
   if (authCredentialInFlight) return;
+  if (authActionTokenPending) return;
   showError(authError, '');
   const email = String(authCredentialEmail || emailInput?.value || '').trim();
   let password = String(magicTokenInput?.value || '');
@@ -1117,10 +1125,23 @@ const submitEmailPassword = async () => {
 };
 
 export const handleAuthActionToken = async (action, tokenValue) => {
+  const operationGeneration = authOperationGeneration;
+  const validationGeneration = ++authActionTokenGeneration;
+  const isCurrentValidation = () => operationGeneration === authOperationGeneration
+    && validationGeneration === authActionTokenGeneration;
   authPendingTokenAction = action;
   const token = String(tokenValue || '').trim();
   const isReset = action === 'password_reset';
   const endpoint = isReset ? '/users/auth/password/reset/validate' : '/users/auth/email/confirm';
+  authActionTokenPending = true;
+  authTokenForm?.classList.add('hidden');
+  authEmailForm?.classList.add('hidden');
+  authEmailSent?.classList.add('hidden');
+  authTokenForm?.closest('.auth-panel')?.setAttribute('aria-busy', 'true');
+  if (magicTokenInput) magicTokenInput.value = '';
+  [magicTokenInput, verifyMagicLinkButton].filter(Boolean)
+    .forEach((control) => { control.disabled = true; });
+  setAuthStatus('Подтверждаем ссылку для входа...');
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -1128,15 +1149,17 @@ export const handleAuthActionToken = async (action, tokenValue) => {
       body: JSON.stringify({ token }),
     });
     const data = await readApiResponse(response, 'Ссылка недействительна или устарела.');
+    if (!isCurrentValidation()) return;
     renderOrganizationInvitation(data.organization || null);
     authActionToken = token;
     authCredentialEmail = data.email || '';
     if (emailInput) emailInput.value = authCredentialEmail;
-    if (authTokenForm) authTokenForm.classList.remove('hidden');
     configureAuthCredentialForm(isReset ? 'password_reset' : 'password_registration');
+    authTokenForm?.classList.remove('hidden');
     setAuthStatus('');
     magicTokenInput?.focus();
   } catch (error) {
+    if (!isCurrentValidation()) return;
     const networkFailure = error instanceof TypeError || error?.message === 'Failed to fetch';
     const failureMessage = String(error?.message || '').toLowerCase();
     const resetFailureTitle = failureMessage.includes('отозван')
@@ -1164,6 +1187,14 @@ export const handleAuthActionToken = async (action, tokenValue) => {
     if (paragraphs?.[1]) paragraphs[1].textContent = '';
     if (authChangeEmailButton) authChangeEmailButton.textContent = networkFailure ? 'Повторить' : isReset ? 'Запросить новую ссылку' : 'Вернуться';
     showError(authError, '');
+  } finally {
+    if (isCurrentValidation()) {
+      authActionTokenPending = false;
+      authTokenForm?.closest('.auth-panel')?.removeAttribute('aria-busy');
+      [magicTokenInput, verifyMagicLinkButton].filter(Boolean)
+        .forEach((control) => { control.disabled = false; });
+      if (!authTokenForm?.classList.contains('hidden')) magicTokenInput?.focus();
+    }
   }
 };
 
@@ -1371,6 +1402,10 @@ if (authResendEmailButton) {
 }
 
 authTokenForm.addEventListener('submit', (event) => {
+  if (authActionTokenPending) {
+    event.preventDefault();
+    return;
+  }
   if (!authTokenForm.reportValidity()) {
     return;
   }
