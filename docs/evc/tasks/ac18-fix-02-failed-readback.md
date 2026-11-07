@@ -1,9 +1,9 @@
 # AC18-FIX-02 / P2-AC03 — безопасная причина отказа после reload
 
-Статус: локальный кандидат отдельного draft PR. Base `origin/main@157d77d11a0eb8e504a5f5c822f0151f3e288fe6`
-(2.0.76); ветка `codex/ac18-fix02-failed-readback`, worktree
-`/tmp/4k-ac18-fix02-failed-readback`. #185 — отдельный незаслитый PR readback
-неопределённого POST; данный результат не зависит от его JS-правки.
+Статус: подготовка PR #186 к Ready после слияния #185. Base
+`origin/main@edd3183357ef7c0dd80e8535e947796466e35df1` (2.0.77),
+кандидат 2.0.78; ветка `codex/ac18-fix02-failed-readback`. Результат
+не зависит от JS-правки #185 и остаётся отдельным PR.
 
 ## Результат и область
 
@@ -58,16 +58,18 @@ SELECT последней scope-операции; наружу проходит 
   с `STAND_ADMIN_URL` и `TEST_DATABASE_URL` на собственном disposable PostgreSQL16,
   БД `agent4k_pytest`: **PASS**, 1/1. Marker-owned стенд создан и удалён штатным
   runner; контейнер с label `codex.owner=ac18-fix02-readback` после проверки остановлен.
-- `git diff --check`: **PASS**. Реальные LLM, письма и рабочая БД не использовались.
-- CI: **NOT_RUN** до создания PR. Полный `full-verification` обязателен перед merge.
+- После обновления от #185: `npm run ready:prepare -- --candidate 2.0.78`
+  **PASS**, `npm run lint:js` **PASS**, frontend 150/150 **PASS**,
+  backend 957 passed / 354 deselected **PASS**; `git diff --check` **PASS**.
+  Реальные LLM, письма и рабочая БД не использовались.
+- Полный CI для обновлённого head: **PENDING**; обязателен перед merge.
 
-Следующий шаг — отдельный draft PR. Не назначать новую версию до этапа общего
-   последовательного merge: #185 уже готовит 2.0.77. После его слияния
-   перебазировать этот PR на актуальный main, назначить следующий согласованный
-   кандидат и выполнить полный CI для точного SHA.
+Следующий шаг — commit/push подготовленного кандидата, Ready и полный CI
+для точного head. Затем отдельный squash-merge после проверки актуального main.
 
-На текущем этапе `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
-`version_bump=false`, `artifact_publish=false`, `llm=false`.
+Для последовательного merge владелец разрешил `branch_push=true`, `pr=true`,
+`merge=true`, `deploy=true`, `version_bump=true`; `artifact_publish=false`,
+`llm=false`.
 
 ## Риски и откат
 
