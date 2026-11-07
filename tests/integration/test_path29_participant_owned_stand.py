@@ -224,6 +224,10 @@ def internal():
         completed = participant.get('/users/assessment/cycles/preparation/' + operation_id)
         assert completed.status_code == 200 and completed.json()['status'] == 'failed', completed.text
         assert completed.json()['error']['code'] == 'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE'
+        restored = participant.get(path)
+        assert restored.status_code == 200, restored.text
+        assert restored.json()['preparation_operation']['error'] == completed.json()['error']
+        assert 'M7_NO_ADMISSIBLE_CASE' not in restored.text
         with get_connection() as c:
             assert c.execute('SELECT COUNT(*) AS n FROM m5_cycles WHERE owner_user_id=%s', (uid,)).fetchone()['n'] == 0
             invitations_before = c.execute('SELECT COUNT(*) AS n FROM organization_invitations WHERE organization_id=%s AND LOWER(recipient_email)=%s',
