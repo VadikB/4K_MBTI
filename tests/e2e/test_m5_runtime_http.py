@@ -105,9 +105,10 @@ def test_cycle_preparation_api_exposes_only_participant_safe_projection(client):
     assert response.json() == {
         "operation_id": "safe-projection-01",
         "status": "failed",
+        "retry_allowed": False,
         "error": {
             "code": "ASSESSMENT_CYCLE_PREPARATION_FAILED",
-            "message": "Не удалось подготовить оценочный цикл. Повторите попытку.",
+            "message": "Подготовка завершилась с ошибкой. Обратитесь к ответственному за оценку.",
         },
     }
     assert marker not in response.text

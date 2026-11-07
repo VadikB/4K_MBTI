@@ -128,11 +128,14 @@ const readinessStep = () => {
     body: '<div class="onboarding-warning">' + escape(model?.readiness?.responsible_contact
       ? 'Контакт ответственного: ' + model.readiness.responsible_contact : 'Обратитесь к ответственному за оценку в вашей организации.') + '</div>',
     action: 'refresh', button: 'Проверить готовность' };
-  if (status === 'failed') return { title: 'Не удалось подготовить оценку',
-    description: model?.preparation_operation?.error?.code === 'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE'
-      ? model.preparation_operation.error.message
-      : 'Ваши ответы сохранены. Подготовка завершилась технической ошибкой; можно повторить её или передать код обращения ответственному.',
-    body: reference, action: 'retry', button: 'Повторить подготовку' };
+  if (status === 'failed') {
+    const canRetry = model?.preparation_operation?.retry_allowed === true;
+    return { title: 'Не удалось подготовить оценку',
+      description: model?.preparation_operation?.error?.message ||
+        'Ваши ответы сохранены. Подготовка завершилась с ошибкой; обратитесь к ответственному за оценку.',
+      body: reference, action: canRetry ? 'retry' : 'refresh',
+      button: canRetry ? 'Повторить подготовку' : 'Проверить состояние' };
+  }
   if (status === 'ready') {
     const plan = timing();
     const pendingStart = hasPendingPreparedStart(model?.prepared_plan?.cycle_id);
@@ -362,7 +365,9 @@ const beginPreparation = ({ retry = false } = {}) => {
         onAccepted: (operation) => { if (current()) storeOperation(operation); },
         onStatus: (operation) => { if (current()) { storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderOnboarding(); } },
       };
-      const prepared = accepted && !retry && accepted.status !== 'unknown'
+      // A lost command response has an operation ID: reconcile it through owned GET,
+      // never send another preparation command merely because the page reloaded.
+      const prepared = accepted && !retry
         ? await waitForProductCyclePreparation(accepted, callbacks)
         : await prepareProductCycle({ personalized_profile_id: model.late_readiness.personalized_profile_id,
           idempotency_key: !retry && accepted?.operation_id || createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],

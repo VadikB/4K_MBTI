@@ -270,6 +270,70 @@ def test_product_cycle_preparation_operation_returns_only_committed_admitted_cyc
 
 
 @pytest.mark.integration
+def test_http_preparation_retry_requires_server_classified_technical_failure(product_db, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+
+    factory = product_db
+    with factory() as connection:
+        connection.execute("""CREATE TABLE product_cycle_preparation_operations (
+            id BIGSERIAL PRIMARY KEY, operation_id TEXT NOT NULL UNIQUE,
+            user_id BIGINT NOT NULL REFERENCES users(id), request_json JSONB NOT NULL,
+            request_checksum TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'queued',
+            attempts INTEGER NOT NULL DEFAULT 0, result_json JSONB, error_code TEXT,
+            error_message TEXT, worker_id TEXT, attempt_token UUID, locked_at TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            completed_at TIMESTAMP)
+        """)
+    monkeypatch.setattr("Api.product_cycle_preparation_queue.get_connection", factory)
+    monkeypatch.setattr(routes, "get_connection", factory)
+    monkeypatch.setattr(routes.acquaintance, "preparation_scope", lambda *args, **kwargs: None)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                        lambda token: SimpleNamespace(id=99) if token == "synthetic-owner" else None)
+    queue = ProductCyclePreparationQueue()
+    monkeypatch.setattr(routes, "product_cycle_preparation_queue", queue)
+    app = FastAPI()
+    app.include_router(routes.router)
+    request = {"personalized_profile_id": factory.profile_id,
+               "idempotency_key": "synthetic-initial", "selected_skills": ["K1", "K2", "K3", "K4"]}
+    queue.enqueue(operation_id=request["idempotency_key"], user_id=99, request=request)
+    with factory() as connection:
+        connection.execute("""UPDATE product_cycle_preparation_operations SET status='failed',
+            error_code='ValueError',error_message='M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE'
+            WHERE operation_id=%s""", (request["idempotency_key"],))
+
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, "synthetic-owner")
+        saved = client.get("/users/assessment/cycles/preparation/synthetic-initial")
+        assert saved.status_code == 200
+        assert saved.json()["retry_allowed"] is False
+        assert saved.json()["error"]["code"] == "ASSESSMENT_AS_NOT_ADMITTED"
+        same_key = client.post("/users/assessment/cycles/prepare", json=request)
+        assert same_key.status_code == 202 and same_key.json()["operation_id"] == "synthetic-initial"
+        blocked = client.post("/users/assessment/cycles/prepare",
+                              json={**request, "idempotency_key": "synthetic-forbidden"})
+        assert blocked.status_code == 409
+        assert blocked.json()["detail"] == "PRODUCT_CYCLE_PREPARATION_RETRY_NOT_ALLOWED"
+        with factory() as connection:
+            assert connection.execute("SELECT COUNT(*) AS n FROM product_cycle_preparation_operations").fetchone()["n"] == 1
+            connection.execute("""UPDATE product_cycle_preparation_operations SET
+                error_code='TimeoutError',error_message='synthetic private timeout'
+                WHERE operation_id='synthetic-initial'""")
+        technical = client.get("/users/assessment/cycles/preparation/synthetic-initial")
+        assert technical.json()["retry_allowed"] is True
+        assert "synthetic private timeout" not in technical.text
+        allowed = client.post("/users/assessment/cycles/prepare",
+                              json={**request, "idempotency_key": "synthetic-allowed"})
+        assert allowed.status_code == 202 and allowed.json()["status"] == "queued"
+        concurrent = client.post("/users/assessment/cycles/prepare",
+                                 json={**request, "idempotency_key": "synthetic-concurrent"})
+        assert concurrent.status_code == 202 and concurrent.json()["operation_id"] == "synthetic-allowed"
+    with factory() as connection:
+        assert connection.execute("SELECT COUNT(*) AS n FROM product_cycle_preparation_operations").fetchone()["n"] == 2
+
+
+@pytest.mark.integration
 def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkeypatch):
     factory = product_db
     with factory() as connection:
@@ -351,18 +415,21 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
 
 
 @pytest.mark.parametrize(
-    ("explicit_profile", "close_during_provider", "crash_phase"),
+    ("explicit_profile", "close_during_provider", "crash_phase", "tester_outcome"),
     [
-        (True, False, None),
-        (False, False, None),
-        (True, True, None),
-        (True, False, "before_provider"),
-        (True, False, "after_provider"),
-        (True, False, "after_attach"),
+        (True, False, None, None),
+        (False, False, None, None),
+        (True, True, None, None),
+        (True, False, "before_provider", None),
+        (True, False, "after_provider", None),
+        (True, False, "after_attach", None),
+        (True, False, None, "INCOMPLETE"),
+        (True, False, None, "FAIL"),
     ],
 )
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
-        product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase):
+        product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase,
+        tester_outcome):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -494,8 +561,17 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                 content = json.dumps(candidate, ensure_ascii=False)
             else:
                 required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
-                content = json.dumps({"checks": [{"check_id": item["check_id"], "status": "PASS",
-                        "reason": "isolated functional Cycle fixture", "evidence_paths": [], "findings": [],
+                content = json.dumps({"candidate_checksum": payload.get("candidate_checksum"),
+                                      "checks": [{"check_id": item["check_id"],
+                        "status": ("TECHNICAL_ERROR" if tester_outcome == "INCOMPLETE" else "FAIL")
+                                  if tester_outcome and ":tester:" in kwargs["routing_key"]
+                                  and item["check_id"] == "common.confidentiality" else "PASS",
+                        "reason": "synthetic mandatory failure" if tester_outcome else "isolated functional Cycle fixture",
+                        "evidence_paths": [],
+                        "findings": ([{"code": "SYNTHETIC_BLOCK", "severity": "blocking",
+                                      "paths": ["candidate_as"], "reason": "synthetic mandatory failure"}]
+                                     if tester_outcome == "FAIL" and ":tester:" in kwargs["routing_key"]
+                                     and item["check_id"] == "common.confidentiality" else []),
                         "adversarial_review": {"candidate_conflicts": [], "resolution": "fixture"}}
                         for item in required]}, ensure_ascii=False)
             return SimpleNamespace(content=content, sent={}, provider={"finish_reason": "stop"})
@@ -556,6 +632,46 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     assert FunctionalGateway.transaction_probes
     assert all(item["observed_at"] for item in FunctionalGateway.transaction_probes)
     assert all(item["idle_in_transaction"] == 0 for item in FunctionalGateway.transaction_probes)
+    if tester_outcome:
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        from Api import routes
+
+        assert operation["status"] == "failed", operation
+        assert operation["error_message"] == f"M5_FUNCTIONAL_AS_NOT_ADMITTED:{tester_outcome}"
+        diagnostic = operation["result_json"]["generated"]["tester"]
+        assert diagnostic["aggregation"]["status"] == tester_outcome
+        assert diagnostic["aggregation"]["admitted_for_participant"] is False
+        assert any(item["check_id"] == "common.confidentiality"
+                   for item in diagnostic["checks"])
+        with product_db() as connection:
+            saved_profile = connection.execute(
+                "SELECT content_json FROM assessment_personalized_profiles WHERE id=%s",
+                (specialist_profile["id"],),
+            ).fetchone()["content_json"]
+            assert saved_profile
+            assert connection.execute("SELECT COUNT(*) AS n FROM m5_assessment_situations").fetchone()["n"] == 0
+            assert connection.execute(
+                "SELECT COUNT(*) AS n FROM m5_cycles WHERE owner_user_id=99 AND started_at IS NOT NULL"
+            ).fetchone()["n"] == 0
+            assert connection.execute("SELECT COUNT(*) AS n FROM m5_dialogue_turns").fetchone()["n"] == 0
+        monkeypatch.setattr(routes, "get_connection", product_db)
+        monkeypatch.setattr(routes.acquaintance, "preparation_scope", lambda *args, **kwargs: None)
+        monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                            lambda token: SimpleNamespace(id=99) if token == "synthetic-owner" else None)
+        monkeypatch.setattr(routes, "product_cycle_preparation_queue", queue)
+        app = FastAPI()
+        app.include_router(routes.router)
+        calls_before_readback = FunctionalGateway.call_count
+        with TestClient(app) as client:
+            client.cookies.set(routes.SESSION_COOKIE_NAME, "synthetic-owner")
+            for _ in range(2):
+                response = client.get("/users/assessment/cycles/preparation/functional-cycle")
+                assert response.status_code == 200
+                assert response.json()["status"] == "failed"
+        assert FunctionalGateway.call_count == calls_before_readback
+        assert queue.get_status("functional-cycle")["result_json"] == operation["result_json"]
+        return
     if close_during_provider:
         assert operation["status"] == "failed", operation
         assert operation["error_message"] == "M7_COLLECTION_CLOSED"
