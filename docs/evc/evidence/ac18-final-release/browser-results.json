@@ -1,0 +1,408 @@
+{
+  "config": {
+    "argv": [
+      "/usr/local/Cellar/node/25.5.0/bin/node",
+      "/Users/vadim_bogachev/Developer/4K/node_modules/.bin/playwright",
+      "test",
+      "tests/browser/auth-r03.spec.mjs",
+      "--grep",
+      "AC18 auth readiness|AC18 failure capture|AS projection|initial HTML has a complete frontend version",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/playwright.config.mjs",
+    "rootDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/.test-stand/browser-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/vadim_bogachev/Developer/4K/worktrees/ac18-auth-readiness/tests/browser",
+        "testIgnore": [],
+        "testMatch": [
+          "*.spec.mjs"
+        ],
+        "timeout": 150000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth-r03.spec.mjs",
+      "file": "auth-r03.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "AC18 auth readiness: email_verification cannot submit before validation, then reaches step2",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 936,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:27.659Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6e6a80584817570654d1",
+          "file": "auth-r03.spec.mjs",
+          "line": 63,
+          "column": 3
+        },
+        {
+          "title": "AC18 auth readiness: email_verification validation refusal stays fail-closed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 423,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:29.052Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-e38c435433b6f633826a",
+          "file": "auth-r03.spec.mjs",
+          "line": 101,
+          "column": 3
+        },
+        {
+          "title": "AC18 auth readiness: password_reset cannot submit before validation, then reaches step2",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 714,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:29.491Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-6d5c4a959ab9308c6b8f",
+          "file": "auth-r03.spec.mjs",
+          "line": 63,
+          "column": 3
+        },
+        {
+          "title": "AC18 auth readiness: password_reset validation refusal stays fail-closed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 389,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:30.224Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-a55e2333c67165e356d7",
+          "file": "auth-r03.spec.mjs",
+          "line": 101,
+          "column": 3
+        },
+        {
+          "title": "AC18 failure capture uses supplied admin page and never exports credential values",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 601,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:30.630Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-ffe7069005c644ec168c",
+          "file": "auth-r03.spec.mjs",
+          "line": 112,
+          "column": 1
+        },
+        {
+          "title": "AC18 auth readiness: network validation failure can retry before password entry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 525,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:31.248Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-49ec0d5f1a56d0d2a3bd",
+          "file": "auth-r03.spec.mjs",
+          "line": 137,
+          "column": 1
+        },
+        {
+          "title": "AS projection CASE.SPEC.01: concrete public materials, no author passport, four widths",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_component",
+                  "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10832,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:31.788Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_component",
+                      "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-8116dcf38207f015e190",
+          "file": "auth-r03.spec.mjs",
+          "line": 158,
+          "column": 3
+        },
+        {
+          "title": "AS projection CASE.SPEC.02: concrete public materials, no author passport, four widths",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [
+                {
+                  "type": "synthetic_component",
+                  "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10574,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:42.634Z",
+                  "annotations": [
+                    {
+                      "type": "synthetic_component",
+                      "description": "Exact author AS/public material fixture through real materializer and UI; NOT real-provider PATH, DB persistence or pilot admission"
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-38c672ef6b7e4efc63c4",
+          "file": "auth-r03.spec.mjs",
+          "line": 158,
+          "column": 3
+        },
+        {
+          "title": "ADM28 initial HTML has a complete frontend version before JavaScript",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 150000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 354,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-07T09:10:53.221Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f69c2fbc6e1fc4e8df71-b9611f4b41323a14495c",
+          "file": "auth-r03.spec.mjs",
+          "line": 445,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-07T09:10:26.715Z",
+    "duration": 27067.488,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

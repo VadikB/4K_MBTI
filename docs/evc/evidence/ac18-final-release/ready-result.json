@@ -1,0 +1,16 @@
+{
+  "date": "2026-11-07",
+  "command": "npm run ready:prepare -- --candidate 2.0.75",
+  "source_parent": "6f9d1c940ce405e0debd2335687fda87e13837a7",
+  "origin_main": "339aff9034ff005bc20d072876b3fbef4f834c5e",
+  "candidate": "2.0.75",
+  "exit_code": 0,
+  "invocations": 2,
+  "status": "PASS",
+  "second_invocation_same_metadata_and_dist_hashes": true,
+  "build_files": 45,
+  "consistency_and_release_gate": "PASS",
+  "further_product_change_since_paid_branch_path": false,
+  "new_provider_calls": 0,
+  "merge_deploy": false
+}

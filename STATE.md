@@ -3,15 +3,18 @@
 07.11.2026. После приёмки branch PATH владелец «делаем»: готовим один финальный
 выпуск, без промежуточного test deploy и без нового LLM. Fresh origin/main339aff9/
 2.0.74, чистая codex/ac18-auth-readiness38bf8244; foreign root и3 untracked сохранены.
-Canonical ready preflight exit2: нужен approved PATCH2.0.75, задан вопрос владельцу.
-Bump/merge/deploy покаfalse, PR/push подготовка разрешена; CI/human review NOT_RUN.
+Canonical ready preflight exit2 сохранён; затем владелец прямо утвердил2.0.75(PATCH).
+Bump/push/PR/mandatoryCI разрешены; merge/deployfalse, human review NOT_RUN.
 Actual full branch PATH8336eef3… PASS:10 операций/749363 tokens, admissionPASS,
 repairfalse, explicitstart201/ASdcaa65f1…/ответов0,4widths+visualPASS; owned cleanup
 и independent absent readback PASS. Primary64 files теперь сохраняются в Git:
 docs/evc/evidence/ac18-branch38-path; общий пакет SHAe6dd3a0e… передан владельцу.
 Новые runner/release units24 PASS, verifier64/link10/diff-check PASS; передача
 подготовки фиксируется docs-only commit, runtime38bf8244 не меняется.
-Следующий шаг после номера: metadata-only release/build/tests → PR/mandatoryCI →
+Canonical2.0.75 PASS дважды,45dist idempotent; newfrontend146/receipt66/Python24/
+browser9 PASS, lint/release/evidence PASS.18 runtime hashes прежние,45 normalized
+module/import graph совпадает с paid38bf; только4 metadata release values изменены.
+Активно: release commit/push → PR/mandatoryCI →
 humanreview → отдельный merge/deploy допуск. PREP-DIAG-01 UNKNOWN отдельно.
 Карточка/отчёт: ac18-final-release. Ниже история, не текущий запрет/результат.
 

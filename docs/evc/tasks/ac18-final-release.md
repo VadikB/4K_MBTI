@@ -8,8 +8,8 @@ runner и safe failure capture активного актора. Не повто�
 исправления AUTH/R10/другие выпуски. Один финальный test deploy, не серия промежуточных.
 
 Основание07.11.2026: после PASS полного branch-run владелец ответил «делаем» на
-следующий шаг единого финального выпуска. Конкретный номер ещё ожидает владельца:
-штатный preflight на свежем main339aff9/2.0.74 предлагает PATCH2.0.75.
+следующий шаг единого финального выпуска. Затем на вопрос canonical preflight
+владелец прямо утвердил «2.0.75 (PATCH)» для PR/обязательного CI/code review.
 Человеческое code review точного PR head и разрешение merge/deploy не получены.
 
 Включены существующий code c4a6a0c/handoff38bf8244, сохранение primary run evidence,
@@ -35,21 +35,21 @@ unit/browser HTTP regressions → actual HTTP/PostgreSQL/provider PATH на38bf8
 
 Все8 stop checks workflow: первые5 нет (сущности/API/schema/данные/артефакты не
 меняются); sixth — deploy ещё требует разрешения, seventh нет (rollback к339aff9,
-schema unchanged), eighth — bump заблокирован до решения номера, merge/deploy до
+schema unchanged), eighth — bump2.0.75 разрешён, merge/deploy заблокированы до
 review/отдельного допуска. Независимая подготовка docs/evidence разрешена и продолжается.
 
 ## План, флаги и состояние
 
 1. Fresh origin/main/branch/foreign work +canonical preflight — выполнено.
-2. Сохранить actual branch-PASS primary evidence и провести code review агента;
-   номер PATCH ожидает владельца — активный этап.
-3. После номера: canonical ready preparation, idempotency/diff checks, применимые
-   бесплатные проверки/сопоставление exact tested bytes, release commit, push/PR/CI.
+2. Сохранить actual branch-PASS primary evidence и провести code review агента —
+   выполнено; PATCH2.0.75 утверждён владельцем.
+3. Canonical ready preparation, idempotency/diff checks, применимые бесплатные
+   проверки/сопоставление exact tested bytes, release commit, push/PR/CI — активный этап.
 4. Получить человеческое review точного head; merge/deploy только после отдельного
    разрешения и fresh main/mandatory CI. Один deploy, затем бесплатный readback.
 
 `branch_push=true`, `pr=true` — по «делаем» в контексте единого выпуска;
-`version_bump=false` до конкретного решения версии;
+`version_bump=true` — отдельный ответ владельца «2.0.75 (PATCH)»;
 `merge=false`, `deploy=false`, `artifact_publish=false`, `paid_run=false`.
 Исходная ветка codex/ac18-auth-readiness, clean38bf82448e63e55414ff55ac45fa126e9c4385f0;
 main339aff9034ff005bc20d072876b3fbef4f834c5e /2.0.74. Чужой root branch и3 untracked
