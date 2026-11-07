@@ -11,8 +11,9 @@
 
 Это самостоятельное закрытие пробела **доказательства** P2-AC05, не заявление о новом
 дефекте сервера или исправлении кода продукта. Клиентская обработка неизвестного
-исхода — отдельный draft PR #190; этот тест основан на `origin/main@157d77d1` и
-не зависит от его diff. Остальные P2-AC ведутся в своих PR либо уже в main.
+исхода уже слита в #190. Этот тест обновлён от
+`origin/main@d0e1c84515012034fc8eb721e6f8f97f79b14595` (2.0.82) и не
+зависит от его продуктового diff. Остальные P2-AC уже в main.
 
 ## Источники и решение
 
@@ -52,15 +53,20 @@
   `StarletteDeprecationWarning` от `httpx`/`TestClient`.
 - Browser, физический телефон, test deploy, real provider и полный CI — **NOT_RUN**
   в этом PR; browser-часть P2-AC05 относится к #190 и прежнему #182.
+- После обновления от #190: `npm run ready:prepare` — **PASS**, нет product
+  release change и version bump не требуется; адресный HTTP/PG-файл на
+  собственной одноразовой PostgreSQL 16 с БД `ac18_fix02_pr191_test` — **PASS**,
+  8/8. Контейнер `ac18_fix02_pr191_pg` после проверки остановлен и удалён.
+  Полный CI обновлённого head — **PENDING** перед merge.
 
 ## Риски, откат и передача
 
 Публичный API, БД, схема, release version и продуктовый код не изменены. Тест
 использует только синтетические данные в изолированной БД и не вызывает LLM.
 Откат — revert этого теста и записи задачи; пользовательские Cycle/AS/ответы не
-затрагиваются. Ветка `codex/ac18-fix02-start-http-proof` от `157d77d1`.
+затрагиваются. PR #191, ветка `codex/ac18-fix02-start-http-proof`.
 
-`branch_push=false`, `pr=false`, `merge=false`, `deploy=false`, `llm=false`,
-`version_bump=false`, `artifact_publish=false`. Следующий шаг — commit и draft PR;
-перед Ready назначить согласованный кандидат и запустить полный обязательный CI
-на актуальном head/base. По плану владельца все PR готовятся до финального merge.
+Владелец подтвердил приёмку #185–191 и последовательные `branch_push=true`,
+`pr=true`, `merge=true`, `deploy=true`; `version_bump=false` для этого test-only
+PR, `artifact_publish=false`, `llm=false`. Следующий шаг — commit/push отчёта,
+Ready, полный CI точного head и проверка свежего `main`, затем squash-merge.
