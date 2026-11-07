@@ -2,7 +2,9 @@
 
 ## Результат и границы
 
-Ветка `codex/ac18-fix02-tester-correlation` от `157d77d1` (`origin/main`):
+PR #188, ветка `codex/ac18-fix02-tester-correlation`, обновлена от
+`origin/main@6a87dec07c0fc2e711813b4f0bce7adc11975ff0` (2.0.79);
+кандидат 2.0.80:
 результат проверки учитывается только в той пачке `required_check_ids`, для которой
 был запрошен. Возврат `check_id` из другой пачки больше не может закрыть отсутствующий
 результат и ошибочно допустить AS. То же правило применяется к challenger. Дополнительно
@@ -51,14 +53,18 @@ repair policy, схема БД, публичный API и данные. Реал
 - `PYTHON_DOTENV_DISABLED=1 /Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -q -m 'not integration and not e2e and not llm'` — 957 PASS, 354 deselected; один существующий Starlette deprecation warning.
 - `TEST_DATABASE_URL=postgresql://postgres:***@127.0.0.1:55000/ac18_pytest ... python -m pytest --run-integration -q tests/integration/test_m10_product_path_db.py -k functional_catalog` — 8 PASS, 10 deselected. Синтетические `INCOMPLETE` и `FAIL` проверены после worker: сохранены `result_json.generated.tester`, обязательный `common.confidentiality`, профиль; `m5_assessment_situations=0`, нет `started_at` и dialogue turns. Два HTTP GET той же операции не увеличивают счётчик provider calls и не переписывают диагностический результат.
 - `npm run test:backend` из worktree — NOT_RUN: там нет `.venv/bin/python`; тот же pytest-набор выполнен абсолютным путём к venv репозитория.
-- CI, browser, real provider — NOT_RUN. Историческая операция не воспроизведена; полный P2-AC01 остаётся открыт из-за отсутствия первичного trace и нерешённой корреляции кандидата.
+- После обновления от #187: `npm run ready:prepare -- --candidate 2.0.80`,
+  `npm run lint:js`, frontend 150/150, backend 965 passed / 357 deselected,
+  HTTP e2e 108 passed / 12 deselected — PASS. Полный CI нового head — PENDING.
+  Browser для этой серверной правки локально не повторялся; обязательный browser
+  CI пройдёт перед merge. Real provider — NOT_RUN. Историческая операция не
+  воспроизведена; корреляция кандидата вынесена в отдельный PR #189.
 
 ## Состояние и откат
 
 Изменены `Api/m5_functional_generation_service.py` и адресные unit/integration-тесты;
-этот файл отчёта — документация шага. Push/PR/merge/deploy/version bump не
-выполнены. Откат — revert локальных коммитов до включения в main; данные не
-мигрируются. Следующий зависимый шаг — решение владельца о новом контракте
-корреляции кандидата. Для
-создания draft PR нужна отдельная команда пользователя; Ready/merge/deploy этим
-шагом не разрешаются.
+этот файл отчёта — документация шага. Владелец подтвердил приёмку #185–191 и
+последовательные `branch_push=true`, `pr=true`, `merge=true`, `deploy=true`,
+`version_bump=true`; `artifact_publish=false`, `llm=false`. Перед merge нужны
+полный CI точного head и свежий `main`. Откат — revert PR без миграции данных.
+Следующий зависимый результат — отдельный PR #189 по versioned candidate contract.
