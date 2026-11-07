@@ -1,6 +1,31 @@
 import pytest
 
-from Api.product_cycle_preparation_queue import needs_functional_generation, public_operation
+from Api.product_cycle_preparation_queue import latest_scope_operation, needs_functional_generation, public_operation
+
+
+def test_latest_scope_operation_keeps_safe_terminal_reason_after_reload() -> None:
+    class Result:
+        def __init__(self, row):
+            self.row = row
+
+        def fetchone(self):
+            return self.row
+
+    class Connection:
+        def execute(self, query, params=None):
+            if "to_regclass" in query:
+                return Result({"relation": "product_cycle_preparation_operations"})
+            row = {"operation_id": "operation-specialist", "status": "failed"}
+            if "error_message" in query.split("FROM product_cycle_preparation_operations")[0]:
+                row["error_message"] = "M7_NO_ADMISSIBLE_CASE: private diagnostic"
+            return Result(row)
+
+    operation = latest_scope_operation(
+        Connection(), user_id=7, profile_id=12, assignment_ref="synthetic-assignment",
+        questionnaire_revision_id=1,
+    )
+    assert operation["error"]["code"] == "ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE"
+    assert "private diagnostic" not in str(operation)
 
 
 def test_public_operation_whitelists_each_status() -> None:
