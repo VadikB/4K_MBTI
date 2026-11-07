@@ -2,12 +2,13 @@
 
 ## Результат и область
 
-По решению владельца в этом чате после запроса «делаем следующую задачу» подготовлен
-отдельный draft `m5_functional_protocol` 2.0.0 в
+После слияния #188 PR #189 обновлён от
+`origin/main@a4f825d7970da9d62467e7e84ed1b11543941986` (2.0.80),
+кандидат приложения 2.0.81. По решению владельца подготовлен отдельный draft
+`m5_functional_protocol` 2.0.0 в
 `assessment_definitions/prompts/m5_functional_protocol/v2`. Новые Cycle получают
 его через `DEFAULT_DEPENDENCIES`; старые frozen Cycle по-прежнему разрешают свой
-`v1` и не меняют сохранённый execution manifest. Эта ветка зависит от
-`codex/ac18-fix02-tester-correlation` (`5dbcf219`, draft PR #188).
+`v1` и не меняют сохранённый execution manifest. #188 уже слит в `main`.
 
 Tester и challenger v2 возвращают `candidate_checksum` рядом с `checks`.
 Сервер рассчитывает checksum фактического concrete candidate, передаёт его в
@@ -29,8 +30,9 @@ Tester и challenger v2 возвращают `candidate_checksum` рядом с 
   `assessment_definitions/prompts/m5_functional_protocol/v1/{manifest.json,tester-addendum.md,challenger.md,json-retry.md}`.
 - v1 addendum запрещает новый верхнеуровневый ключ. Поэтому v1 оставлен
   неизменным; новый несовместимый формат живёт только в `v2` с собственным
-  manifest и SHA-256 каждого файла. Владелец разрешил подготовить новую версию
-  ответом «да» в этом чате. Отдельного допуска на publication/Ready/merge нет.
+  manifest и SHA-256 каждого файла. Владелец подтвердил последовательный
+  Ready/merge PR #185–191 и deploy-test. Отдельная публикация предметного
+  артефакта не разрешена и не выполняется.
 - Правило: `P2-AC01` в переданном пакете → versioned output contract →
   `Api/m5_functional_generation_service.py` и `Api/m5_functional_tester.py` →
   unit/HTTP-PG fixtures. Владение: PM-03; PM-04 и данные участника не меняются.
@@ -53,6 +55,10 @@ Tester и challenger v2 возвращают `candidate_checksum` рядом с 
   Starlette deprecation warning. Изолированная PostgreSQL 16: product-path
   HTTP/PG 8 PASS, F05 runtime matrix 1 PASS. Реальный LLM — NOT_RUN, CI/Ready —
   NOT_RUN, browser — NOT_RUN (UI не изменён).
+- После обновления от #188: `npm run ready:prepare -- --candidate 2.0.81`,
+  `npm run lint:js`, frontend 150/150, backend 974 passed / 357 deselected,
+  HTTP e2e 108 passed / 12 deselected — PASS. Три SHA-256 v2 совпадают с
+  manifest. Полный CI обновлённого head — PENDING; он обязателен перед merge.
 - Схема/миграция/публичный API/права/персональные данные — без изменений.
   Риск: реальный provider может не соблюдать новый ответный формат; в этом
   случае система fail-closed, а не допускает AS. Для подтверждения provider
@@ -63,8 +69,7 @@ Tester и challenger v2 возвращают `candidate_checksum` рядом с 
 
 ## Состояние
 
-Активная ветка `codex/ac18-fix02-tester-candidate-binding`, база `5dbcf219`.
-Push, PR, Ready, merge, deploy, version bump и real-provider run не выполнялись.
-Следующий шаг — завершить review/diff/checksum, сделать локальный commit, затем
-отдельно согласовать публикацию draft PR на базе #188. По плану владельца все
-PR готовятся до финального последовательного merge.
+Активная ветка `codex/ac18-fix02-tester-candidate-binding`, PR #189. Следующий
+шаг — commit/push кандидата, base `main`, Ready, полный CI точного head,
+проверка свежего `main`, затем squash-merge. `artifact_publish=false`,
+`llm=false`; deploy-test следует только из разрешённого merge приложения.
