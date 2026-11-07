@@ -349,7 +349,9 @@ const beginPreparation = ({ retry = false } = {}) => {
         onAccepted: (operation) => { if (current()) storeOperation(operation); },
         onStatus: (operation) => { if (current()) { storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderOnboarding(); } },
       };
-      const prepared = accepted && !retry && accepted.status !== 'unknown'
+      // A lost command response has an operation ID: reconcile it through owned GET,
+      // never send another preparation command merely because the page reloaded.
+      const prepared = accepted && !retry
         ? await waitForProductCyclePreparation(accepted, callbacks)
         : await prepareProductCycle({ personalized_profile_id: model.late_readiness.personalized_profile_id,
           idempotency_key: !retry && accepted?.operation_id || createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],
