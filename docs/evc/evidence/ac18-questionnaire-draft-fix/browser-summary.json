@@ -1,0 +1,1192 @@
+{
+  "contract": "q-draft-free-browser-checks/1",
+  "status": "PASS",
+  "case_count": 140,
+  "groups": {
+    "adm28-real.spec.mjs": 1,
+    "auth-r03.spec.mjs": 117,
+    "program-connection-feedback.spec.mjs": 10,
+    "questionnaire-draft-guards.spec.mjs": 7,
+    "questionnaire-draft-preservation.spec.mjs": 4,
+    "questionnaire-it-inputs.spec.mjs": 1
+  },
+  "duration_ms": 746163.0819999999,
+  "unexpected": 0,
+  "flaky": 0,
+  "source_sha256": {
+    "web/js/screens/admin/organizations.js": "23a8ef4a4db6d4496df4cbe19fb8372a193e8ded07980a9e2c1253249a12081d",
+    "tests/browser/adm28-real.spec.mjs": "1272561d0b34ba91bcce274fe51a9797753ab76bc92faa54aedf6f1714d0aa96",
+    "tests/browser/auth-r03.spec.mjs": "3483f7fc19b643cc887971c5dc59697fc02e58e2e0c164982942d96983862a01",
+    "tests/browser/program-connection-feedback.spec.mjs": "31bf9d845a1b2cab9b41fd66a3f749bc2548e369f2634edf961bf69a01872d72",
+    "tests/browser/questionnaire-draft-guards.spec.mjs": "9991247ad43b86b9e0ca20f8a7125cf5b12f9639490284558e041874155281cf",
+    "tests/browser/questionnaire-draft-preservation.spec.mjs": "b20d6b7795dd716349cfcccab5048f05b280d1c8aea30d2562aa8517e85d9a4d",
+    "tests/browser/questionnaire-it-inputs.spec.mjs": "b605ba9c6a28a2ce13abb547656fb645edc7041eac7de329a0ec4e72769711da",
+    "web/dist/admin-dashboard-MHW7MAWQ.js": "7473f9471e2cc604066875c1f5d6ae8e8ca6bdbda6301822a8c5fbd25b6bc7b9",
+    "web/dist/admin-methodology-YYMPFXNT.js": "8fb48bf80b25cd0f0d6e061f539f08b59066c7a87758b041f7ed2b24106f65ef",
+    "web/dist/admin-organizations-4KSL5J5H.js": "e291ad75e21bd2ae9728afc51ea1956889ae3164b73e5f6c2e837992bcc41806",
+    "web/dist/admin-prompt-lab-MY3J3CCZ.js": "6107af46c6ba246b267aa6cf7fff562a9a23047665de4266aa5a9d3671cb5b9b",
+    "web/dist/admin-regression-tests-KXESJWRL.js": "a0f3d46bff21024d52d70b636721f3d6cf75bb6809829871d8744c0a399c3c93",
+    "web/dist/admin-report-detail-TO4BQXUG.js": "defcee2622a7ab0118015e36793bf336ebeb8f34651e6538ef174a83a6ec6d06",
+    "web/dist/admin-reports-SSTLKAJ2.js": "f7decefe29898b89ee38026e6ab2533d14edeaeda6020ff9e6c50fc633463d97",
+    "web/dist/ai-welcome-KRYUNJN2.js": "b56c041b48d1c3dfefb5258f38ee7c4d9feeb9193ca7e1ba67c156b200d91f91",
+    "web/dist/assessment-NUHKZQK6.js": "c5847b53dd2188decf111eb22d88da3941798533b6b67a287bb9885eb26b98fe",
+    "web/dist/chat-AMD4DUA5.js": "8a5282c53be8ee3b3621470b0c94a77fe84dfa8cf8ecbeb11dbf93f0a2413553",
+    "web/dist/chat-HLT74KV2.js": "7f944527be2ac6b83b02d79663ef7ee73a9008c236fcc15991881c375b393497",
+    "web/dist/chunk-2GIY2BHH.js": "443e220ba9dee97703d269dcbf12af1715459aead4eb3de890e055236823c521",
+    "web/dist/chunk-4UKEKPFU.js": "d385e34c50cd7193d6f19b96cb9921ca2e292659efcf5bcfaba9834d110ea35d",
+    "web/dist/chunk-5XKLRMKF.js": "6a955f27cdce5b263bfe3e055f8ddcb71037401db14bbc85dc1d96ebfcc34938",
+    "web/dist/chunk-6MKAQBTX.js": "cff48f368093a2f268462b18a918402d883b2adf6d49dfc2821b591087d1fe8a",
+    "web/dist/chunk-BJVI5Y5N.js": "be033d4d639babc88cdb5fd1db8ca7f1f483d6f61280b696e25a6bb0a72801d1",
+    "web/dist/chunk-GAT6J624.js": "f9a384e13b6818905455cbd9aa83ebbc63a1192c8c579719b517ed133fd0d930",
+    "web/dist/chunk-HJU4BRKF.js": "dd52b735ea183c8b40d405adfb32cc9baff581631594d441c99bb71f3d3bb90a",
+    "web/dist/chunk-HNRQ3X4N.js": "ccc676f747230979f5d27deea00518ef4b999c4ebce755be932f6d279d24426d",
+    "web/dist/chunk-HTY3YQPL.js": "86dcc9cc9f34baaaeccd9a4839d3d9b5a470539f03cfcdb6c2d3cc89f979acca",
+    "web/dist/chunk-I26LJ77P.js": "4065cdb06fa713602706fc704c565f6f8bd1293d44d5514ef60494215f5f9ea2",
+    "web/dist/chunk-JNXYSQRG.js": "2b4d1d7e5010b9e6e9a34abc1dd7c4fa7b16d7e17ad6e0b807b0f9b8392f289b",
+    "web/dist/chunk-KRCXUJEH.js": "5a9095f6dbe44adc131427271cee37f6a7817b3d747fa14fdeefb0225494c2d7",
+    "web/dist/chunk-KX44Y7RV.js": "53736accd0b107db62b05460626b4c86f78b8189c00f91230cc2be032666243c",
+    "web/dist/chunk-LWKUZKHU.js": "69f417f4487f2dda917b6784a81574bbfa5c1c98905de058b9550c922a9298d0",
+    "web/dist/chunk-MHE5I2FA.js": "5fba461c4d65901ba28156493cfc1bfd21fce61fa5573b2c7ca5883cb831cac7",
+    "web/dist/chunk-OFFTNKVB.js": "a6417f9fb3b1aa1211a48b3791913b7e8bd5de1813771326047d241beb448886",
+    "web/dist/chunk-XDVCECDS.js": "dcc901bfd7597f331d2e219ed531ebb68e32354b4c79eb0b060a1fc1ea063270",
+    "web/dist/chunk-XOWIVWXR.js": "aabb7e886c7ec9c5c32ab3dc2fe61e4fe19c1a39a517c5bb4992a36a70b83184",
+    "web/dist/dashboard-DE3QVWAZ.js": "05a9407361e64ab92f856982764b0b21c6a4d24c2a412b1589f77cb0360be182",
+    "web/dist/dashboard-QIZ4ACTX.js": "e6e03eb363c5108b328124ee59821ad9db0c626046893c64e133d4a459381886",
+    "web/dist/interview-YTXIUMYO.js": "b6a6cf5819aafaf3c13e10555c0da069355fc5dcda7974b55a21ef132a92691f",
+    "web/dist/main.js": "0c1b2c00654347ae1e0face65c25769f6efce64baafa5b9004d1867b12287d9b",
+    "web/dist/onboarding-LA7LBUR5.js": "143348877ecf2d19bc90a95b3f5be7d3a548704a4e59f7595d9bb130f9b7cc6e",
+    "web/dist/onboarding-V753AW2Q.js": "b493b2fb3c6bbda12a55b4fc3f9883689636b6a1bef0cf6ca5d7c2393fc227c1",
+    "web/dist/organizations-NXXSETCR.js": "9c7c2a0b03dd64278d0abcc5d1c4b0a2a00aa8ced9153d2701c98109e725f75f",
+    "web/dist/processing-AVVBKOQP.js": "0cca397aa9984b8183c5728db33c3a12798ac4ca6f13055fd2ea641dd92d7329",
+    "web/dist/profile-FPRWMJKN.js": "a28fce31167dbb76cd0a8beef74089e93410486b3635d2df5647c37dd8be9afe",
+    "web/dist/profile-recovery-RYEM6KOX.js": "f76a52d6025326618368e5cb15c2ae7d713f1dd73a43a2038ca8d192b98ee045",
+    "web/dist/report-2VLG4DFT.js": "801db5acaf731c13417d8ee55cfe4a31b127ad10575db462244aaaae2d3510cb",
+    "web/dist/report-RNGMJAF5.js": "59ed9a20f6c616ab4ac92801be5b0561fc64e4c92ee730a582d6439ca6a7f2b4",
+    "web/dist/reports-PLKNHAMG.js": "1cc54d756db9073a69c497bf6d17885910919d572904bd57731e9cff5d747316",
+    "web/dist/router-AMZIPOTE.js": "ed2cf568ba5fae2dc626e4bd2f13ececef17420c51176ac54d1ad8f6219501ac",
+    "web/dist/screen-loaders-5WVHMSBN.js": "09c809a783d6c80e785153a21a9819b573d10af8fdb5a51aa80dcc8278cdb0aa",
+    "web/dist/session-Y2AM54EY.js": "4eeb555bd0ea8d43e1b0a43d5f6a98a062e7d14bd0f58482180af2d506b590ee"
+  },
+  "cases": [
+    {
+      "file": "adm28-real.spec.mjs",
+      "title": "ADM28 real isolated backend: draft, recipients, publication, self-assignment and own journey",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 53466
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "AS projection CASE.SPEC.01: concrete public materials, no author passport, four widths",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 14951
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "AS projection CASE.SPEC.02: concrete public materials, no author passport, four widths",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 12681
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 confirmation finishes before supplementary GET and offers a retry on GET failure",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1764
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 lost POST response checks exact revision and recipients without republishing",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1841
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 recipients stay checked and editable after navigation, and errors stay beside confirm",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2021
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 old confirmation cannot delete a newly created preview or newer input",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2628
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 late confirmation cannot replace another selected assessment",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2962
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 late confirmation after account change cannot populate the new account",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 6094
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 session restoration hides credentials and loads each admin resource once",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1411
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 temporary restore failure offers retry and does not show login credentials",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1044
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 initial HTML has a complete frontend version before JavaScript",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 916
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 invalid JSON leaves a finite unknown outcome and restores confirm controls",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2864
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM28 superadmin still restores its global dashboard",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1955
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC02 repeats organization creation after confirmed response without a duplicate",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 4322
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC02 repeats organization creation after lost response without a duplicate",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3610
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC02 repeats organization creation after service-error response without a duplicate",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3520
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 deadline GET after confirmed PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 16968
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 http503 GET after confirmed PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3330
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 network GET after confirmed PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2155
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 invalid-json GET after confirmed PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2223
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 null GET after confirmed PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2447
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 foreign-program GET after confirmed PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2510
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 deadline GET after lost PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 30372
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 http503 GET after lost PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 109309
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 network GET after lost PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3481
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 invalid-json GET after lost PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2984
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 null GET after lost PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 5598
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 foreign-program GET after lost PUT is finite, unknown and safely repeatable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 4193
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R10 finishes exact program connection while questionnaire refresh is pending",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1899
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R10 shows a terminal error when exact readback is null",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2523
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 rejects a foreign organization readback after confirmed command",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3422
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START AC05 rejects a foreign organization readback after lost command",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2463
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R10 confirms a committed connection after the PUT response is lost",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3274
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R10 restores the exact connected program after reopening the card",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 4157
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R10 does not render the old connection result after logout",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2788
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "QA19-03 keeps the participant section available with no members",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1713
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START ST-R1 card: local view or refusal is not a pending mutation",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2163
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START ST-R1 cancel-dialog: local view or refusal is not a pending mutation",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1861
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START ST-R1: confirmed cancellation has local loading and a terminal error",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2197
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START ST-R4: authorized read-only preparation action survives renderer",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1889
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START viewport 1440: long facts, unknown questionnaire, read-only action",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2372
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START viewport 320: long facts, unknown questionnaire, read-only action",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2423
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START viewport 390: long facts, unknown questionnaire, read-only action",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1608
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START viewport 768: long facts, unknown questionnaire, read-only action",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2592
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH-START PG-R1: participant sees the exact missing-position reason and can recheck",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1056
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM-STATUS-01 shows the current participant stage and opens known facts in the participant card",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2507
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from assignment cancellation",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2904
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R08 refreshes actions and explains a revoke conflict after acquaintance starts",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2002
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R06 marks a confirmed cancellation stale when readback fails and restores the action",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1495
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R06 refreshes an exact assignment after 409 and removes an invalid cancellation",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1136
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R06 resolves a lost cancellation response by exact readback without a new intent",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1110
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R06 does not render an old cancellation result after identity changes",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1841
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R06 restores cancellation after 403",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1538
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R06 restores cancellation after 500",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1427
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PROGRAM01 R05 keeps privileged password reset in the card and exposes only an authorized exact report",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1074
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ARCH30 offers an explicit one-way legacy profile copy into an empty C01 draft",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1169
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "QA19-03 keeps long participant rows readable and actions associated after view changes",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1509
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1023
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM19-01 exposes three keyboard-operable management blocks without horizontal overflow",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1271
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-FIX20-04 shows server readiness and routes to missing roles without blocking member add",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1252
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "F22-07 explains participant acquaintance wait without a false roles action",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1106
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-FIX20-04 org-admin edits the attached card and never sees free tenant creation",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1395
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-FIX20-04 keeps readiness separated when org-admin switches assessment",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1196
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-ADM28-02 reports questionnaire load failure separately and offers retry",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 962
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "F22-06 restores confirmed fields when the selected assessment has no local draft",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1414
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-FIX20-02 preserves named drafts across all management views",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1787
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-FIX20-02 clears account A drafts and ignores its late preview after account B login",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2095
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-FIX20-02 keeps newer input when an older preview response arrives",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1245
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM19-02 routes org-admin own assessment by server journey and preserves management capability",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3141
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM19-02 opens the own saved M8 report and returns to management",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1499
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM19-01 saves early organization data through the versioned product form contract",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1385
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-ADM28-01 changes recipients without invalidating content preview and applies confirmation immediately",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2374
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "F22-04 keeps a newer confirmed revision and input entered after confirm started",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1472
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "ADM19-01 adds a participant with only email, name and role",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1063
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-ADM27 org-admin assigns the selected assessment to self and a colleague",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2494
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PILOT31-03 explains every visible readiness blocker before assignment",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1655
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "QA19-02 resolves palette tokens in visible auth and admin states",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1850
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 personal invitation has priority and exposes an explicit account choice",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 720
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 verification pending renders one mail-check heading without password copy",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 916
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 reset returns to AUTH 03 with known email and no autologin",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 878
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 mutating auth locks the complete step",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 765
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 tooltip toggles on tap and stays inside a low viewport",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 945
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 AUTH 01 and password creation keep canonical R01 metrics",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1212
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R04 shared footer stays in document flow and stacks on mobile",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 601
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "REL-VERSION-01 shows one build number on auth and common areas, with a safe fallback",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 769
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 refresh obeys server journey and fails closed on journey outage",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 779
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 successful password response reports a missing browser session as auth failure",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 793
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "LK01 renders selected Cycle cards without catalogue or horizontal overflow",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 936
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "RAD01 renders saved scores, gaps and mobile competency view",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 5988
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UI02 full overview keeps every radar label separate",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 5693
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "QA19-04 keeps four M8 competency radars readable across mobile and desktop widths",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 3867
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 late login cannot replace a password-reset step",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 799
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 first mouse click keeps tooltip open and second closes it",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 756
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 expired reset opens explicit recovery email entry",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 926
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 queued batch is not reported as provider accepted",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1053
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 network retry reuses invitation operation id",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1107
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 processing deep link obeys server journey before local state",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 471
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 direct interview URL uses journey and keeps Cycle failure visible",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 604
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "E02 shows ready Cycle without automatic navigation and keeps mobile actions usable",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 667
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "E02 falls back to journey polling when detailed Cycle status stalls",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 530
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 fresh login persists journey assessment identifiers",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 731
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "P03 return card hides stopped AS and keeps explicit continue in the same chat",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 670
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "P03 fresh login opens explicit return card without reading blocked runtime",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 904
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "E01 renders accepted active assessment copy, colors and AS-scoped draft",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 946
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 null journey removes stale legacy and Cycle identifiers",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 564
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "W02 blocks direct entry on missing participant briefing and supports readiness retry on mobile",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 782
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PARTICIPANT-LAYOUT-01 keeps waiting states content-sized and responsive",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 854
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "W02 does not present plan cards before the prepared plan exists",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 447
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "UX-AUD29-03 grows the answer and submits desktop Enter only once",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1041
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R08 shows the frozen program budget instead of the planned duration sum",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 655
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "R03 reset request locks every visible credential action",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 751
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH29 readiness distinguishes 403 without a fake ready plan",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 773
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH29 readiness distinguishes 409 without a fake ready plan",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 570
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH29 readiness distinguishes 503 without a fake ready plan",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 518
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH29 readiness distinguishes network without a fake ready plan",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 522
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH29 readiness distinguishes failed without a fake ready plan",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 493
+    },
+    {
+      "file": "auth-r03.spec.mjs",
+      "title": "PATH29 readiness distinguishes organization without a fake ready plan",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 542
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS 200 confirmed survives completion and re-render",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1029
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS 200 lost survives completion and re-render",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1026
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS 503 confirmed survives completion and re-render",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1184
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS 503 lost survives completion and re-render",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1041
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS changing program clears the prior outcome without resurrection",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1184
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS a new failed intent cannot revive success and its error survives render",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1690
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS same program in another organization never receives the old outcome",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1307
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS logout and another account cannot restore the previous outcome",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1811
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS a late command cannot restore feedback after program selection changes",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1502
+    },
+    {
+      "file": "program-connection-feedback.spec.mjs",
+      "title": "R10-STATUS changed server program invalidates the saved outcome even with an old draft",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1133
+    },
+    {
+      "file": "questionnaire-draft-guards.spec.mjs",
+      "title": "Q-DRAFT pristine initial form does not mask a confirmed server revision",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1215
+    },
+    {
+      "file": "questionnaire-draft-guards.spec.mjs",
+      "title": "Q-DRAFT live input wins over a delayed confirmed revision in the same scope",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1106
+    },
+    {
+      "file": "questionnaire-draft-guards.spec.mjs",
+      "title": "Q-DRAFT pending read of organization A cannot overwrite organization B draft",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1301
+    },
+    {
+      "file": "questionnaire-draft-guards.spec.mjs",
+      "title": "Q-DRAFT pending read cannot clone a draft into a different connected assessment",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 1807
+    },
+    {
+      "file": "questionnaire-draft-guards.spec.mjs",
+      "title": "Q-DRAFT old account read cannot erase or restore drafts after re-login",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2972
+    },
+    {
+      "file": "questionnaire-draft-guards.spec.mjs",
+      "title": "Q-DRAFT retry 503 retains live edits",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2582
+    },
+    {
+      "file": "questionnaire-draft-guards.spec.mjs",
+      "title": "Q-DRAFT retry 403 clears denied scope",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 2752
+    },
+    {
+      "file": "questionnaire-draft-preservation.spec.mjs",
+      "title": "Q-DRAFT-01 actual PG: first-three-1440 retains input without refill",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 86742
+    },
+    {
+      "file": "questionnaire-draft-preservation.spec.mjs",
+      "title": "Q-DRAFT-01 actual PG: first-three-390 retains input without refill",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 61746
+    },
+    {
+      "file": "questionnaire-draft-preservation.spec.mjs",
+      "title": "Q-DRAFT-01 actual PG: all-fields-1440 retains input without refill",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 40302
+    },
+    {
+      "file": "questionnaire-draft-preservation.spec.mjs",
+      "title": "Q-DRAFT-01 actual PG: read-complete-control retains input without refill",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 32903
+    },
+    {
+      "file": "questionnaire-it-inputs.spec.mjs",
+      "title": "IT questionnaire: actual preview, confirmation, reload and PostgreSQL readback",
+      "status": "passed",
+      "expected_status": "passed",
+      "attempts": 1,
+      "duration_ms": 46175
+    }
+  ]
+}

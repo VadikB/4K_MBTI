@@ -1,0 +1,16 @@
+{
+  "run_id": "40a42accc7d04c6ea722e647e83a1be6",
+  "database": "product4k_pytest_40a42accc7d04c6ea722e647e83a1be6",
+  "owner_verified": true,
+  "read_only_rollback": true,
+  "revision": null,
+  "counts": {
+    "questionnaire_revisions": 0,
+    "assignments": 0,
+    "profiles": 2,
+    "preparation_operations": 0,
+    "cycles": 0,
+    "assessment_situations": 0,
+    "assessment_answers": 0
+  }
+}
