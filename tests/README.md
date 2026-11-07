@@ -1,5 +1,23 @@
 # Тесты backend
 
+## Модель из provider contract, не из env
+
+`DEEPSEEK_MODEL` не выбирает модель и не обязателен для runner. `.env` — только
+credentials/инфраструктура; существующая переменная игнорируется без правки файла.
+Новая operation использует выбранный provider contract, сохранённая — свой snapshot.
+Preflight фиксирует model/source/version/checksum, не значение legacy env и не ключи.
+Нет обязательного контракта — BLOCKED, даже при наличии env-модели.
+
+```sh
+PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 .venv/bin/python -m pytest -q \
+  tests/unit/test_provider_model_ownership.py tests/unit/test_deepseek_provider_contract.py \
+  tests/unit/test_assessment_first_case.py tests/unit/test_test_stand.py
+```
+
+Это offline unit-проверки: synthetic transport/port probes не заменяют actual machine,
+PostgreSQL или real-provider PATH. Свежие subprocess не читают developer `.env`,
+не открывают БД и не вызывают LLM. Source selectors/admission/cleanup не ослабляются.
+
 ## Бесплатные AC06/AC07/AC09/AC10
 
 Новая собственная localhost PostgreSQL16, без `.env`, почты и LLM. Задать

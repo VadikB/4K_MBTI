@@ -45,9 +45,17 @@ PREP-DIAG-01 отдельно UNKNOWN.
 
 SSH key подключается один раз средствами машины, без копирования в репозиторий.
 Owner-only файл доступа (`0600`) передаётся через `--env-file`; runner читает его
-как dotenv-данные и копирует только allowlist. Нужны `DEEPSEEK_API_KEYS` (или
-`DEEPSEEK_API_KEY`), `DEEPSEEK_MODEL=deepseek-flash`. Допустимы ключи `_2/_3`,
+как dotenv-данные и копирует только инфраструктурную allowlist. Нужны
+`DEEPSEEK_API_KEYS` (или `DEEPSEEK_API_KEY`); допустимы ключи `_2/_3`,
 `DEEPSEEK_BASE_URL`, `DEEPSEEK_MAX_CONCURRENCY`.
+Модель задаёт проверенный provider contract, не `.env`; у начатой operation
+приоритет имеет её frozen snapshot. `DEEPSEEK_MODEL` из старого env-файла/окружения
+игнорируется и не передаётся в owned stand. Редактирование серверного `.env` или
+временный model override для устранения такого расхождения не нужны.
+`preflight.json/provider` сохраняет model/source/contract version/checksum и только
+boolean присутствия legacy model env, без его значения. Нет/повреждён обязательный
+контракт — BLOCKED, не fallback. Модель из текущего контракта не заменяет модель
+сохранённой operation. Подробности: [PROVIDER-ROLES-01](tasks/provider-contract-env-roles.md).
 `STAND_ADMIN_URL` передаётся через окружение: только localhost maintenance DB
 (`postgres`, `agent4k_pytest`, `task11_pytest`). Для проверенной машины URL
 строится в памяти из `DB_USER`/`DB_PASSWORD` защищённого env-файла и явно выбранного
@@ -71,7 +79,7 @@ PYTHONPATH=. /home/vadim_bogachev/projects/Agent4K-Test/.venv/bin/python \
 ```
 
 `--preflight-only` проверяет PostgreSQL connect/CREATEDB, запуск Chromium, Python,
-Node, provider configuration и фактический порт. READY относится к машине;
+Node, наличие credentials, обязательный provider contract и фактический порт. READY относится к машине;
 BLOCKED сохраняет причины в `preflight.json` и возвращает exit 2. Реальный provider
 проверяется в основном прогоне; preflight не расходует tokens.
 

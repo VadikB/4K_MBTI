@@ -21,13 +21,17 @@ def test_stand_does_not_inherit_provider_or_developer_config(monkeypatch):
 def test_real_provider_is_explicit_and_secrets_are_not_persisted(monkeypatch):
     monkeypatch.setenv('DEEPSEEK_API_KEYS','synthetic-secret')
     monkeypatch.setenv('DEEPSEEK_MODEL','synthetic-model')
+    monkeypatch.setenv('DEEPSEEK_BASE_URL','https://synthetic-provider.invalid')
+    monkeypatch.setenv('DEEPSEEK_MAX_CONCURRENCY','2')
     monkeypatch.setenv('STAND_ADMIN_URL','postgresql://u@localhost/postgres')
     state={'connection':{'host':'localhost','user':'u'},'database':'product4k_pytest_abc',
         'gateway':0,'provider_mode':'real','port':18520,'state_path':'/tmp/owned',
         'owner_marker':'stand-10.2:test'}
     env=environment(state)
     assert env['DEEPSEEK_API_KEYS']=='synthetic-secret'
-    assert env['DEEPSEEK_MODEL']=='synthetic-model'
+    assert 'DEEPSEEK_MODEL' not in env
+    assert env['DEEPSEEK_BASE_URL']=='https://synthetic-provider.invalid'
+    assert env['DEEPSEEK_MAX_CONCURRENCY']=='2'
     assert 'synthetic-secret' not in repr(state)
 
 

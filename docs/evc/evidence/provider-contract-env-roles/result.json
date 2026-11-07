@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "task": "PROVIDER-ROLES-01",
+  "result": "PASS_LOCAL_NOT_RELEASED",
+  "implementation_sha": "1666f92114c3118305324309bc3e922643865c23",
+  "applicability": "Адресные52/backend956/HTTP108 проверяют те же implementation bytes; последующая передача меняет только STATE/task/evidence metadata, 18 хешей перепроверяются CHECK.py.",
+  "base_sha": "44802660b47851f98e7b62ddb5a5f8275308569c",
+  "base_version": "2.0.73",
+  "branch": "codex/provider-contract-env-roles",
+  "decision": "Пользователь: контракт управляет моделью, .env — секретами/инфраструктурой; не исправлять рабочий .env.",
+  "contract": {
+    "path": "assessment_definitions/providers/deepseek/v1/manifest.json",
+    "id": "deepseek_product_gateway",
+    "version": "1.0.0",
+    "status": "draft",
+    "sha256": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c",
+    "changed": false,
+    "model": "deepseek-flash"
+  },
+  "checks": [
+    {
+      "id": "red",
+      "file": "red.zip",
+      "member": "red.xml",
+      "uncompressed_sha256": "293a8bdb9928c89f40aa3aad8f299e03532e45c8a243230fe0eb0ebe2f9b1798",
+      "tests": 15,
+      "failures": 13,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 1,
+      "result": "EXPECTED_RED_BEFORE_IMPLEMENTATION",
+      "note": "Первоначальные 15 ownership units. В этой попытке port probe ещё не изолирован от sandbox; последующие unit явно подставляют только port availability. Не 13 отдельных продуктовых дефектов."
+    },
+    {
+      "id": "targeted",
+      "file": "targeted.xml",
+      "tests": 52,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "id": "backend",
+      "file": "backend.xml",
+      "tests": 956,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 354,
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "id": "http",
+      "file": "http.xml",
+      "tests": 108,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 12,
+      "exit_code": 0,
+      "result": "PASS",
+      "scope": "Существующие HTTP-контракты с их synthetic dependency fixtures, не real PostgreSQL/real provider PATH"
+    },
+    {
+      "id": "diff_check",
+      "result": "PASS",
+      "exit_code": 0
+    },
+    {
+      "id": "immutable_sources",
+      "result": "PASS",
+      "exit_code": 0,
+      "scope": "git diff BASE -- assessment_definitions docs/methodology docs/architecture/product-4k pyproject.toml uv.lock web"
+    }
+  ],
+  "offline_model_readback": {
+    "model_source": "provider_contract",
+    "legacy_model_present": true,
+    "legacy_value_exported": false,
+    "contract_model": "deepseek-flash",
+    "settings_compatibility_view": "deepseek-flash",
+    "default_gateway": "deepseek-flash",
+    "new_m6_evidence_snapshot": "deepseek-flash",
+    "new_m6_assessment_snapshot": "deepseek-flash",
+    "explicit_frozen_model_preserved": true,
+    "db_connections": 0,
+    "provider_calls": 0
+  },
+  "source_hashes": {
+    "Api/config.py": "496d174c74ec21ce5a6c760e7682b383df283b3619735047028ecf0945f59f7b",
+    "Api/llm/deepseek_gateway.py": "5d340c105596a993374647c9184ee36ecdc59259f31ccae1f03c29808b866265",
+    "Api/llm/provider_contract.py": "a3caa700a2f9b53a7201c24cf47b7ed292f01d21257f0b8bc3f76066891094d2",
+    "scripts/assessment_first_case.py": "674394b48a108029910de9ef6d58b4f62c94b06ac4646b8dc62b8bd92ecad328",
+    "scripts/test_stand.py": "36ed60cd1121a98a1cf8d52f30a0ea55d14034d92612eb14df7eb426615cfed2",
+    "tests/unit/test_provider_model_ownership.py": "f5781fe3cf139daa6449188976b253f85e69e9a91e562cb9e602ca27b288861f",
+    "tests/unit/test_test_stand.py": "7470142bbc1ead5c0b6063904c1cfc9fb75369a11df2b18574922936ee7dc578",
+    ".env.example": "07963544e69c57c851092eb7c8f5bce392310ecb3a6f314477ad888d28572d98",
+    ".env.local.example": "22c09ad0bcc6ba192583a1234b7607ed32d96488db83ed611556fc83d74e8067",
+    ".env.production.example": "2273f6946ea5843d00a47636d248ae65743b89bf0a64d83333c827e51d178034",
+    "README.md": "caa1244484328eb5b81be3f4b4da5e238aec2d7c10d839d6fb976dfd663a906e",
+    "tests/README.md": "330f58721da9264e592cf6891af73e3562877ccc8feb356d72a27a86a783ea1c",
+    "docs/evc/assessment-first-case-profile.md": "f460936c9a6d89858d8288a7c3403152b46d31b0bbce31eec6810df4db2f16b2",
+    "assessment_definitions/providers/deepseek/v1/manifest.json": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c",
+    "docs/evc/evidence/provider-contract-env-roles/red.zip": "89845a276810933d83ab2c0b7ec3a140f65190580506618478bc2cc02225408c",
+    "docs/evc/evidence/provider-contract-env-roles/targeted.xml": "e0b94e9a3fcf040bce268502141edb929e990c7ef889a5f37de77bccd7733722",
+    "docs/evc/evidence/provider-contract-env-roles/backend.xml": "541ba727e88820c6c768b89bd1bdab1dc2f206ff17c5f3d4c2b442874e5ee611",
+    "docs/evc/evidence/provider-contract-env-roles/http.xml": "0b2d630be42f65fcf3db57cf04a2422c15082f9353609e6502e62921dcc16349"
+  },
+  "limits": {
+    "machine_preflight": "NOT_RUN_ON_NEW_IMPLEMENTATION",
+    "postgresql_integration": "NOT_RUN_NOT_REQUIRED_BY_DIFF_NO_SQL_CHANGE",
+    "browser": "NOT_RUN_NO_UI_CHANGE",
+    "real_provider": "NOT_RUN_NOT_AUTHORIZED",
+    "ci": "NOT_RUN_NO_PUSH_OR_PR",
+    "new_release_number": "NOT_ASSIGNED",
+    "deploy": "NOT_RUN",
+    "historical_prep_diag_01": "UNKNOWN",
+    "historical_timeout_cleanup": "UNKNOWN",
+    "q_draft_causal_identity": "NOT_PROVEN",
+    "warning": "Предсуществующий StarletteDeprecationWarning/httpx в backend и HTTP; не исправлялся.",
+    "initial_staged_diff_check": "FAIL: raw negative JUnit contains trailing spaces; штатный hook отклонил коммит. Исходные bytes сохранены в red.zip с прежним uncompressed SHA256; hook и критерии не менялись."
+  },
+  "safety": {
+    "working_env_modified": false,
+    "server_access": false,
+    "working_db_read": false,
+    "working_db_writes": false,
+    "new_owned_db_created": false,
+    "cleanup": false,
+    "real_mail": false,
+    "llm_calls": 0,
+    "branch_push": false,
+    "pr": false,
+    "merge": false,
+    "deploy": false,
+    "version_bump": false,
+    "artifact_publish": false
+  }
+}

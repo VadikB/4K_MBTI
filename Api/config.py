@@ -77,7 +77,16 @@ class Settings:
     deepseek_api_key_3: str = os.getenv("DEEPSEEK_API_KEY_3", "")
     deepseek_api_keys_raw: str = os.getenv("DEEPSEEK_API_KEYS", "")
     deepseek_base_url: str = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-    deepseek_model: str = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
+    @property
+    def deepseek_model(self) -> str:
+        """Compatibility view, not an env setting; operations freeze their model.
+
+        Import lazily: Api.llm exposes the gateway, which itself imports settings.
+        No env fallback is allowed if the required provider contract is unavailable.
+        """
+        from Api.llm.provider_contract import load_provider_contract
+        return str(load_provider_contract()["model"])
+
     deepseek_max_concurrency: int = int(os.getenv("DEEPSEEK_MAX_CONCURRENCY", "10"))
     deepseek_queue_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUEUE_TIMEOUT_SECONDS", "30"))
     assessment_preparation_max_concurrency: int = int(os.getenv("ASSESSMENT_PREPARATION_MAX_CONCURRENCY", "2"))

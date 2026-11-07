@@ -54,7 +54,7 @@ def environment(state):
         # Explicit opt-in only. Values stay in the process environment and are
         # never copied to state.json, logs or evidence.
         for key in ('DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_API_KEY_2',
-                    'DEEPSEEK_API_KEY_3','DEEPSEEK_BASE_URL','DEEPSEEK_MODEL',
+                    'DEEPSEEK_API_KEY_3','DEEPSEEK_BASE_URL',
                     'DEEPSEEK_MAX_CONCURRENCY'):
             if key in os.environ:
                 env[key]=os.environ[key]
