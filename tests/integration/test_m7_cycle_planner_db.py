@@ -435,6 +435,17 @@ def test_presence_lease_119_120_and_two_clients_use_last_server_expiry(db):
         assert result['branch']=='continued_current'
         event=c.execute("SELECT recognized_at,source_kind FROM m7_return_absence_events").fetchone()
         assert event['recognized_at']==base+timedelta(seconds=180) and event['source_kind']=='presence_lease'
+        assert c.execute("SELECT count(*) AS n FROM m7_return_presence_clients").fetchone()['n']==0
+        immediate_client=str(uuid4())
+        beat=heartbeat(c,cycle_id=cycle_id,owner_user_id=99,client_id=immediate_client,
+            expected_as_id=as_id,received_at=base+timedelta(seconds=181))
+        assert beat['client_id']==immediate_client
+        assert c.execute("SELECT count(*) AS n FROM m7_return_presence_clients").fetchone()['n']==1
+        assert c.execute("SELECT count(*) AS n FROM m7_return_absence_events WHERE status='recognized'").fetchone()['n']==0
+        open_interval=c.execute("""SELECT interval_type,started_at,ended_at FROM m5_cycle_time_intervals
+            WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s) AND ended_at IS NULL""",
+            (cycle_id,)).fetchone()
+        assert open_interval['interval_type']=='collecting' and open_interval['ended_at'] is None
 
 
 def test_fourth_successful_return_replacement_closes_collection_without_new_cycle(db):
