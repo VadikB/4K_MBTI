@@ -3675,6 +3675,101 @@ test('AC18-FIX-02 reconciles a committed first start after the POST response is 
   }
 });
 
+test('AC18-FIX-02 visual readiness states survive reload without another preparation', async ({ browser }, testInfo) => {
+  const evidenceDirectory = process.env.AC18_FIX02_VISUAL_EVIDENCE;
+  if (evidenceDirectory) await fs.mkdir(evidenceDirectory, { recursive: true });
+  const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+  const plan = { cycle_id: 'cycle-visual', revision_id: 'revision-visual', revision_no: 1,
+    start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-visual',
+      plan_revision_id: 'revision-visual', can_start: true, reasons: [] }, plan: {
+      status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], time_budget_seconds: 7200,
+      calendar_window_seconds: 259200,
+    } };
+  let phase = 'waiting';
+  let preparePosts = 0;
+  let operationReads = 0;
+  const acquaintance = () => ({
+    readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+      briefing: { organizer: 'Synthetic', purpose: 'Synthetic', results_usage: 'Synthetic',
+        result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' }, consent_accepted_at: 'synthetic',
+      consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
+    onboarding: { status: 'completed', current_step: 8 },
+    late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    preparation_operation: { operation_id: 'operation-visual', status: phase === 'failed' ? 'failed'
+      : phase === 'ready' ? 'completed' : 'running',
+      ...(phase === 'failed' ? { error: { code: 'M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE' } } : {}) },
+    prepared_plan: phase === 'ready' ? plan : null,
+  });
+  const states = [
+    ['waiting', 'Готовим вашу оценку', 'Проверить состояние'],
+    ['failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
+    ['unknown', 'Не удалось проверить подготовку', 'Проверить состояние'],
+    ['ready', 'Можно приступать к оценке', 'Приступить к оценке'],
+  ];
+  for (const [stateName, title, action] of states) {
+    phase = stateName;
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await context.newPage();
+    await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user, is_admin: false, dashboard: {},
+    });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'show_onboarding', acquaintance: acquaintance(), profile: { status: 'complete' },
+      onboarding: { status: 'completed', current_step: 8 }, assessment: { status: 'not_started' },
+    });
+    if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) {
+      return fulfillJson(route, acquaintance());
+    }
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'completed', current_step: 8 });
+    if (pathname === '/users/assessment/cycles/preparation/operation-visual') {
+      operationReads += 1;
+      if (phase === 'unknown') return route.abort('failed');
+      return fulfillJson(route, { operation_id: 'operation-visual', status: 'running' });
+    }
+    if (pathname === '/users/assessment/cycles/prepare') {
+      preparePosts += 1;
+      return fulfillJson(route, {}, 500);
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+    return fulfillJson(route, {}, 404);
+    });
+    await page.goto(`${base}/?screen=onboarding`);
+    await expect(page.locator('#onboarding-title')).toHaveText(title);
+    const actionButton = page.getByRole('button', { name: action, exact: true });
+    await expect(actionButton).toBeVisible();
+    await expect(actionButton).toBeEnabled();
+    if (stateName === 'failed' || stateName === 'unknown') {
+      await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
+      await expect(page.locator('#onboarding-panel')).not.toContainText('M5_FUNCTIONAL_AS_NOT_ADMITTED');
+    }
+    await page.reload();
+    await expect(page.locator('#onboarding-title')).toHaveText(title);
+    await actionButton.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(actionButton).toBeFocused();
+    for (const width of [1440, 768, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(page.locator('#onboarding-title')).toHaveText(title);
+      await expect(actionButton).toBeVisible();
+      await actionButton.scrollIntoViewIfNeeded();
+      await expect(actionButton).toBeInViewport();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+      const name = `ac18-fix02-${stateName}-${width}`;
+      const body = await page.screenshot({ fullPage: true,
+        ...(evidenceDirectory ? { path: path.join(evidenceDirectory, `${name}.png`) } : {}) });
+      await testInfo.attach(name, { body, contentType: 'image/png' });
+    }
+    await context.close();
+  }
+  expect(operationReads).toBeGreaterThan(0);
+  expect(preparePosts).toBe(0);
+});
+
 test('R03 reset request locks every visible credential action', async ({ page }) => {
   await baseRoutes(page);
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { email: 'person@example.test', auth_mode: 'password' }));
