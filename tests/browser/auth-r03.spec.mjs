@@ -3675,6 +3675,69 @@ test('AC18-FIX-02 reconciles a committed first start after the POST response is 
   }
 });
 
+test('AC18-FIX-02 reload reads a preparation with lost POST response before any new command', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+  const plan = { cycle_id: 'cycle-preparation-readback', revision_id: 'revision-preparation-readback',
+    start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-preparation-readback',
+      plan_revision_id: 'revision-preparation-readback', can_start: true, reasons: [] },
+    plan: { status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], time_budget_seconds: 7200,
+      calendar_window_seconds: 259200 } };
+  let committed = false;
+  let completed = false;
+  let preparePosts = 0;
+  let statusReads = 0;
+  let operationId;
+  const acquaintance = () => ({
+    readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+      briefing: { organizer: 'Synthetic', purpose: 'Synthetic', results_usage: 'Synthetic',
+        result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' }, consent_accepted_at: 'synthetic',
+      consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
+    onboarding: { status: 'completed', current_step: 8 },
+    late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    preparation_operation: completed ? { operation_id: operationId, status: 'completed' } : null,
+    prepared_plan: completed ? plan : null,
+  });
+  await page.route('**/users/**', (route) => {
+    const request = route.request(); const pathname = new URL(request.url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_onboarding',
+      acquaintance: acquaintance(), profile: { status: 'complete' },
+      onboarding: { status: 'completed', current_step: 8 }, assessment: { status: 'not_started' } });
+    if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) {
+      return fulfillJson(route, acquaintance());
+    }
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'completed', current_step: 8 });
+    if (pathname === '/users/assessment/cycles/prepare' && request.method() === 'POST') {
+      preparePosts += 1;
+      operationId = request.postDataJSON().idempotency_key;
+      committed = true; // The server accepted the command; only its HTTP response is lost.
+      return route.abort('connectionreset');
+    }
+    if (pathname === `/users/assessment/cycles/preparation/${operationId}`) {
+      statusReads += 1;
+      expect(committed).toBe(true);
+      if (statusReads === 1) return fulfillJson(route, { detail: 'Synthetic readback unavailable' }, 503);
+      completed = true;
+      return fulfillJson(route, { operation_id: operationId, status: 'completed', result: { plan } });
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=onboarding`);
+  await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить подготовку');
+  expect(preparePosts).toBe(1);
+  await page.reload();
+  await expect.poll(() => preparePosts + statusReads).toBeGreaterThan(1);
+  expect(preparePosts).toBe(1);
+  await expect(page.locator('#onboarding-title')).toHaveText('Сервис подготовки временно недоступен');
+  await page.getByRole('button', { name: 'Проверить состояние' }).click();
+  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  expect(statusReads).toBe(2);
+  expect(preparePosts).toBe(1);
+});
+
 test('AC18-FIX-02 visual readiness states survive reload without another preparation', async ({ browser }, testInfo) => {
   const evidenceDirectory = process.env.AC18_FIX02_VISUAL_EVIDENCE;
   if (evidenceDirectory) await fs.mkdir(evidenceDirectory, { recursive: true });
