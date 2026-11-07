@@ -2,6 +2,8 @@
   "schema_version": 1,
   "task": "PROVIDER-ROLES-01",
   "result": "PASS_LOCAL_NOT_RELEASED",
+  "implementation_sha": "1666f92114c3118305324309bc3e922643865c23",
+  "applicability": "Адресные52/backend956/HTTP108 проверяют те же implementation bytes; последующая передача меняет только STATE/task/evidence metadata, 18 хешей перепроверяются CHECK.py.",
   "base_sha": "44802660b47851f98e7b62ddb5a5f8275308569c",
   "base_version": "2.0.73",
   "branch": "codex/provider-contract-env-roles",

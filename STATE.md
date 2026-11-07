@@ -2,7 +2,8 @@
 
 07.11.2026. Владелец: контракт управляет моделью, `.env` — секретами/инфраструктурой.
 Отдельная локальная `codex/provider-contract-env-roles`, база свежего main44802660/
-2.0.73. Модель default gateway/settings view берётся из существующего контракта;
+2.0.73. Implementation1666f92114c3118305324309bc3e922643865c23; handoff — только docs.
+Модель default gateway/settings view берётся из существующего контракта;
 frozen explicit operation сохраняется. Runner/stand не копируют DEEPSEEK_MODEL,
 preflight показывает source/version/checksum и только boolean legacy presence.
 Ни серверный `.env`, ни опубликованные определения, snapshots, admission/repair

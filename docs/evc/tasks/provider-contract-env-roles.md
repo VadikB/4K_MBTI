@@ -111,6 +111,11 @@ allowlist и расширенная code identity; stand: модель не пе
 
 ## Непроверенное и состояние передачи
 
+Implementation commit `1666f92114c3118305324309bc3e922643865c23`; к нему применимы
+targeted52/backend956/HTTP108. Handoff после него — только STATE/task/evidence
+metadata; runtime/templates/profile/tests остаются с теми же18 проверяемыми hashes.
+Final staged diff-check и штатный commit hook PASS после byte-preserving упаковки.
+
 Локальная реализация и бесплатные проверки завершены. Свежий origin/main перед
 передачей по `git ls-remote` —44802660/2.0.73. Remote CI NOT_RUN (нет push/PR),
 новая версия не назначалась. Этот diff NOT_DEPLOYED; свежий readback существующего

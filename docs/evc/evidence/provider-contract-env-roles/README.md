@@ -4,6 +4,12 @@
 [карточка](../../tasks/provider-contract-env-roles.md). Этот каталог — локальные
 evidence, не публикация артефакта/программы и не новый real-provider AC18.
 
+Implementation SHA `1666f92114c3118305324309bc3e922643865c23`. Последующая передача
+меняет только STATE/task/evidence metadata, не проверенные implementation bytes.
+18 hashes и JUnit повторно проверяются checker; полный backend/HTTP не повторяются
+из-за изменения документации. Финальный head передачи указывается пользователю
+отдельно; это не новый runtime SHA/deploy.
+
 - `red.zip` → точный `red.xml`: до реализации15 units,13 FAIL/2 PASS. Часть первичных machine assertions
   также затронута запретом socket bind в sandbox; в окончательных ownership units
   port probe явно подставлен. Не интерпретировать13 failures как13 продуктовых ошибок.
