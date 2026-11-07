@@ -71,7 +71,12 @@ PM-03 подготавливает AS, PM-04 исполняет; исправл�
 - `git diff --check`: PASS.
 - После обновления от #186: `npm run ready:prepare -- --candidate 2.0.79`
   PASS; unit projection 16/16, lint, frontend 150/150 и адресный browser 3/3
-  PASS. Полный CI нового head — PENDING.
+  PASS. Первый CI для head `d3e170d0`: **FAIL** в `CI / pytest`, потому что
+  прежний HTTP smoke-тест ожидал универсальное предложение повтора и ответ без
+  `retry_allowed`. Обновлён `tests/e2e/test_m5_runtime_http.py` для нового
+  fail-closed контракта; локальный `pytest -q -m e2e tests/e2e` после исправления:
+  **PASS**, 108 passed / 12 deselected. Полный CI нового head обязателен перед
+  merge.
 - Реальный LLM, рабочая БД, письма, physical phone и deploy: NOT_RUN.
   Этот тест не доказывает качество real-provider AS.
 
