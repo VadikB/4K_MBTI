@@ -1,6 +1,6 @@
 import pytest
 
-from Api.product_cycle_preparation_queue import latest_scope_operation, needs_functional_generation, public_operation
+from Api.product_cycle_preparation_queue import latest_scope_operation, needs_functional_generation, public_operation, retry_allowed
 
 
 def test_latest_scope_operation_keeps_safe_terminal_reason_after_reload() -> None:
@@ -15,7 +15,7 @@ def test_latest_scope_operation_keeps_safe_terminal_reason_after_reload() -> Non
         def execute(self, query, params=None):
             if "to_regclass" in query:
                 return Result({"relation": "product_cycle_preparation_operations"})
-            row = {"operation_id": "operation-specialist", "status": "failed"}
+            row = {"operation_id": "operation-specialist", "status": "failed", "error_code": "ValueError"}
             if "error_message" in query.split("FROM product_cycle_preparation_operations")[0]:
                 row["error_message"] = "M7_NO_ADMISSIBLE_CASE: private diagnostic"
             return Result(row)
@@ -25,6 +25,7 @@ def test_latest_scope_operation_keeps_safe_terminal_reason_after_reload() -> Non
         questionnaire_revision_id=1,
     )
     assert operation["error"]["code"] == "ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE"
+    assert operation["retry_allowed"] is False
     assert "private diagnostic" not in str(operation)
 
 
@@ -49,11 +50,37 @@ def test_public_operation_whitelists_each_status() -> None:
     assert public_operation({**common, "status": "failed"}) == {
         "operation_id": "operation-01",
         "status": "failed",
+        "retry_allowed": False,
         "error": {
             "code": "ASSESSMENT_CYCLE_PREPARATION_FAILED",
-            "message": "Не удалось подготовить оценочный цикл. Повторите попытку.",
+            "message": "Подготовка завершилась с ошибкой. Обратитесь к ответственному за оценку.",
         },
     }
+
+
+@pytest.mark.parametrize("error_code", ["TimeoutError", "ConnectionError", "LlmGatewayError"])
+def test_only_explicit_technical_failure_allows_retry(error_code: str) -> None:
+    operation = {"operation_id": "technical", "status": "failed", "error_code": error_code,
+                 "error_message": "private provider diagnostic"}
+    assert retry_allowed(operation) is True
+    public = public_operation(operation)
+    assert public["retry_allowed"] is True
+    assert public["error"]["code"] == "ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE"
+    assert "private provider diagnostic" not in str(public)
+
+
+@pytest.mark.parametrize("error_code,error_message,public_code", [
+    ("ValueError", "M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE", "ASSESSMENT_AS_NOT_ADMITTED"),
+    ("ValueError", "M7_NO_ADMISSIBLE_CASE: private diagnostic", "ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE"),
+    ("LlmGatewayError", "M5_FUNCTIONAL_AS_NOT_ADMITTED:INCOMPLETE", "ASSESSMENT_AS_NOT_ADMITTED"),
+    ("RuntimeError", "unclassified private diagnostic", "ASSESSMENT_CYCLE_PREPARATION_FAILED"),
+])
+def test_admission_and_unknown_failure_do_not_allow_retry(error_code: str, error_message: str, public_code: str) -> None:
+    public = public_operation({"operation_id": "blocked", "status": "failed",
+                               "error_code": error_code, "error_message": error_message})
+    assert public["retry_allowed"] is False
+    assert public["error"]["code"] == public_code
+    assert "private diagnostic" not in str(public)
 
 
 def test_public_operation_keeps_only_committed_participant_result() -> None:
