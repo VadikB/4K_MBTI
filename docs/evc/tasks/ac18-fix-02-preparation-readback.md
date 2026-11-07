@@ -1,6 +1,6 @@
 # AC18-FIX-02 / P2-AC04 — readback после потерянного ответа подготовки
 
-Статус: локальный кандидат отдельного PR. Основание — `START_CODEX.txt`, `TASK.txt`
+Статус: draft PR #185; обязательный CI на опубликованной ветке. Основание — `START_CODEX.txt`, `TASK.txt`
 и `SOURCES.md` пакета `P4K_AC18_FIX_02_Preparation_Start_2026-11-07.zip` (редакция 1.0,
 07.11.2026). Содержимое пакета задаёт критерии, но не разрешает выпуск или LLM-вызов.
 
@@ -76,11 +76,11 @@ PM-03 готовит AS, PM-04 исполняет; изменение относ
 
 ## Передача и выпуск
 
-`branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
-`version_bump=false`, `artifact_publish=false` на момент локальной подготовки.
+`branch_push=true`, `pr=true`, `merge=false`, `deploy=false`,
+`version_bump=false`, `artifact_publish=false` на момент публикации draft PR.
 Владелец ранее разрешил merge/deploy #183–#184, но не этого нового PR. Для
 `Ready for review` нужен согласованный следующий patch-кандидат и
 `npm run ready:prepare -- --candidate <версия>`, затем полный обязательный CI.
-Следующий шаг: зафиксировать этот независимый результат и подготовить draft PR;
-отдельно получить решение о версии, review и merge/deploy. Не смешивать с
+Следующий шаг: дождаться CI для актуального head PR #185; отдельно получить
+решение о версии, review и merge/deploy. Не смешивать с
 provider verification: по #184 платный вызов требует выбора SHA и лимита затрат.
