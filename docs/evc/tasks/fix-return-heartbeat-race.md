@@ -4,15 +4,15 @@
 
 После успешного возврата к сохранённой Assessment Situation первый heartbeat не
 пытается закрыть новый `collecting` старой границей presence lease и не возвращает
-HTTP 500.
+HTTP 500. Уже возобновлённая в предыдущей версии сессия с оставшимся старым lease
+при чтении не требует повторного Continue: runtime может восстановиться сам.
 
 ## Область
 
 - Включено: M7 return-presence, сброс lease предыдущей эпохи, защита временного
   интервала, интеграционная регрессия воспроизведённой гонки.
-- Не входит: изменение UI/API/схемы и предметных артефактов. Восстановление
-  конкретного Cycle на test выполняется после выпуска исправления отдельным
-  адресным эксплуатационным действием.
+- Не входит: изменение UI/API/схемы и предметных артефактов. Конкретный Cycle
+  на test проверяется после выпуска; ручное изменение БД не планируется.
 
 ## Контекст
 
@@ -37,10 +37,10 @@ HTTP 500.
 
 ## План и состояние
 
-- Завершено: диагностика test, изоляция worktree, код, unit-регрессия и полный
-  быстрый backend/HTTP-набор.
+- Завершено: диагностика test, изоляция worktree, код, unit-регрессия, полный
+  M7 integration-файл и быстрый backend/HTTP-набор.
 - Активный шаг: выпуск PATCH-кандидата и проверка CI.
-- Следующий шаг: после merge/deploy восстановить test Cycle и проверить возврат.
+- Следующий шаг: после merge/deploy проверить восстановление test Cycle.
 - Ветка: `codex/fix-return-heartbeat-race`, base `b04b7f0a`.
 
 ## Действия выпуска
@@ -65,26 +65,27 @@ HTTP 500.
 - [x] Немедленный heartbeat после Continue не создаёт новое событие отсутствия —
   адресный integration PASS на изолированной PostgreSQL.
 - [x] Старый lease не может записать `ended_at < started_at` — unit PASS.
-- [x] Адресная M7 integration-регрессия проходит на изолированной PostgreSQL.
+- [x] Чтение возобновлённого Cycle со старым lease позволяет загрузить runtime
+  без повторного Continue — адресная integration-регрессия.
+- [x] Полный M7 integration-файл проходит на изолированной PostgreSQL.
 - [x] Backend и HTTP-наборы проходят.
 
 ## План проверки
 
 - Адресный integration на отдельной БД с `test`/`pytest` в имени.
 - `npm run test:backend`, `git diff --check`.
-- Полный CI перед merge; test/deploy и восстановление Cycle — отдельный шаг.
+- Полный CI перед merge; test/deploy и проверка Cycle — отдельный шаг.
 
 ## Проверки
 
 - Python compile изменённых файлов — PASS.
 - `pytest -q tests/unit/test_m7_return_integration.py` — 3 PASS.
-- backend `not integration and not e2e and not llm` — 937 PASS.
+- backend `not integration and not e2e and not llm` — 938 PASS на актуальном SHA.
 - HTTP/e2e — 108 PASS.
 - `git diff --check` — PASS.
 - адресный integration — 1 PASS / 30 deselected на одноразовой PostgreSQL 16,
-  БД `return_heartbeat_pytest`; контейнер после проверки удалён.
-- полный M7 integration-файл запускался дополнительно, но итоговая строка runner
-  не была сохранена инструментом; этот прогон не используется как доказательство.
+  БД `return_heartbeat_pytest`; затем полный M7 integration-файл — 31 PASS;
+  контейнер после проверки удалён.
 - `origin/main` после повторного fetch остаётся `b04b7f0a`; параллельное изменение
   не появилось в main на момент проверки.
 - `npm run ready:prepare -- --candidate 2.0.73` — PASS; version metadata и

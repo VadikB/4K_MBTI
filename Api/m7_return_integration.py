@@ -273,6 +273,12 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
     elif not event:
         latest=connection.execute("""SELECT MAX(lease_expires_at) AS value FROM m7_return_presence_clients
             WHERE cycle_db_id=%s AND assessment_situation_db_id=%s""",(cycle["id"],situation["id"])).fetchone()["value"]
+        if latest:
+            collecting = connection.execute("""SELECT started_at FROM m5_cycle_time_intervals
+                WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type='collecting'""",
+                (cycle["id"],)).fetchone()
+            if collecting and latest < collecting["started_at"]:
+                latest = None
         if latest and latest<=now and not _open_incident_overlaps(connection,latest):
             absence_seconds=max(0,int((now-latest).total_seconds()))
             if same_as or absence_seconds < policy["replacement_threshold_seconds"]:
