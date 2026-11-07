@@ -154,6 +154,11 @@ def _open_incident_overlaps(connection, at: datetime) -> bool:
 def _recognize_presence_absence(connection, *, cycle: dict, session: dict, position: dict,
                                 situation: dict, recognized_at: datetime, source_ref: str) -> dict:
     policy = _saved_policy(connection, cycle);policy_ref={"id":policy["id"],"version":policy["version"],"checksum":checksum(policy)}
+    collecting = connection.execute("""SELECT started_at FROM m5_cycle_time_intervals
+        WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type='collecting' FOR UPDATE""",
+        (cycle["id"],)).fetchone()
+    if collecting and recognized_at < collecting["started_at"]:
+        return {}
     connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=%s WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type='collecting'",
                        (recognized_at, cycle["id"]))
     operation_ref=f"return:{source_ref}"
@@ -268,6 +273,12 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
     elif not event:
         latest=connection.execute("""SELECT MAX(lease_expires_at) AS value FROM m7_return_presence_clients
             WHERE cycle_db_id=%s AND assessment_situation_db_id=%s""",(cycle["id"],situation["id"])).fetchone()["value"]
+        if latest:
+            collecting = connection.execute("""SELECT started_at FROM m5_cycle_time_intervals
+                WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type='collecting'""",
+                (cycle["id"],)).fetchone()
+            if collecting and latest < collecting["started_at"]:
+                latest = None
         if latest and latest<=now and not _open_incident_overlaps(connection,latest):
             absence_seconds=max(0,int((now-latest).total_seconds()))
             if same_as or absence_seconds < policy["replacement_threshold_seconds"]:
@@ -342,6 +353,7 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
     elapsed = max(0, int((now - event["recognized_at"]).total_seconds()))
     if policy["algorithm"] == "m7-return-r1" or elapsed < int(policy["replacement_threshold_seconds"]):
         current_id, branch = expected_as_id, "continued_current"
+        connection.execute("DELETE FROM m7_return_presence_clients WHERE cycle_db_id=%s", (cycle["id"],))
         end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
                           operation_ref=f"return:{event['source_ref']}", reason="explicit_return_continue")
     else:
@@ -369,6 +381,7 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
             key=f"{key}:replace", reason="recognized_return_threshold", policy_ref=event["policy_ref_json"],
             requested_by=owner_user_id, provider=GeneratedCandidateReplacementProvider(generation_operation_id))
         current_id = replaced["new_assessment_situation_id"]
+        connection.execute("DELETE FROM m7_return_presence_clients WHERE cycle_db_id=%s", (cycle["id"],))
         end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
                           operation_ref=f"return:{event['source_ref']}", reason="explicit_return_continue")
         started = start_situation(connection, current_id)
