@@ -85,7 +85,15 @@ test('UI03 keeps participant and admin primary actions semantically distinct', (
 
 test('UI03 prevents local six-digit hex colors outside the owner palette', () => {
   for (const file of [...cssFiles, ...collectFiles('web/js', '.js')]) {
-    const colors = readFileSync(file, 'utf8').toLowerCase().match(/#[0-9a-f]{6}\b/g) ?? [];
+    let source = readFileSync(file, 'utf8').toLowerCase();
+    if (file === 'web/styles/screens/auth.css') {
+      // AUTH R01 + owner task 05.11: this exact field border is an auth-only exception.
+      // Keep rejecting the color in any other selector, shared token, or JS file.
+      const authBorder = /(?:^|\})\s*\.auth-panel\.auth-panel input\s*\{[^}]*border-color:\s*#cbd5e1;[^}]*\}/g;
+      assert.equal([...source.matchAll(authBorder)].length, 1);
+      source = source.replace(authBorder, (block) => block.replace('#cbd5e1', ''));
+    }
+    const colors = source.match(/#[0-9a-f]{6}\b/g) ?? [];
     for (const color of colors) assert.ok(allowedHex.has(color), `${file}: ${color}`);
   }
 });
