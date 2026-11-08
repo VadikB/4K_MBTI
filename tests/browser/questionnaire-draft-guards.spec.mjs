@@ -106,7 +106,7 @@ test('Q-DRAFT pristine initial form does not mask a confirmed server revision', 
   const f = await fixture(page, { items: [confirmed] });
   await finishRead(page, f);
   await assertValues(page, fields('сервер'));
-  await card(page).getByRole('button', { name: 'Организация и участники', exact: true }).click();
+  await card(page).getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await assertValues(page, fields('сервер'));
   expect(f.state.mutations).toEqual([]);
@@ -166,7 +166,7 @@ for (const status of [503, 403]) test(`Q-DRAFT retry ${status} ${status === 403 
   await fill(page, changed); held.release();
   await expect(card(page).locator('.admin-questionnaire-load-state.error').first()).toBeVisible();
   await assertValues(page, status === 403 ? empty : changed);
-  await card(page).getByRole('button', { name: 'Организация и участники', exact: true }).click();
+  await card(page).getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await assertValues(page, status === 403 ? empty : changed);
   expect(f.state.mutations).toEqual([]);

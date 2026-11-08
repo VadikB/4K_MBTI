@@ -347,7 +347,7 @@ test('ADM28 recipients stay checked and editable after navigation, and errors st
   await recipient.check();
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).hover();
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toHaveCSS('background-color', 'rgb(104, 119, 124)');
-  await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+  await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(toggle).toBeChecked();
   await expect(recipient).toBeChecked();
@@ -1519,7 +1519,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await rows.first().locator('.admin-organization-member-select').click();
   await expect(checkbox).not.toBeChecked();
   await page.getByRole('button', { name: 'Данные организации' }).click();
-  await page.getByRole('button', { name: 'Организация и участники' }).click();
+  await page.getByRole('button', { name: 'Участники оценки' }).click();
   await expect(rows.first().locator('[data-action="send-member-invitation"]')).toHaveAttribute('data-value', longEmail);
   await rows.first().locator('.admin-organization-member-menu summary').click();
   page.once('dialog', async (dialog) => {
@@ -1583,7 +1583,7 @@ test('ADM19-01 exposes three keyboard-operable management blocks without horizon
   const people = card.locator('[data-admin-view="people"]');
   const organizationData = card.locator('[data-admin-view="organization-data"]');
   const questionnaire = card.locator('[data-admin-view="questionnaire"]');
-  const peopleButton = card.getByRole('button', { name: 'Организация и участники' });
+  const peopleButton = card.getByRole('button', { name: 'Участники оценки' });
   const organizationDataButton = card.getByRole('button', { name: 'Данные организации' });
   const questionnaireButton = card.getByRole('button', { name: 'Анкета', exact: true });
 
@@ -1721,6 +1721,31 @@ test('UX-ADM28-02 reports questionnaire load failure separately and offers retry
     .toContainText('Выберите оценку');
 });
 
+test('AC18-ADM-1A accepted composition stays usable across target widths and keyboard', async ({ page }, testInfo) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const card = page.locator('[data-organization-id="3"]');
+  const people = card.getByRole('button', { name: 'Участники оценки', exact: true });
+  const data = card.getByRole('button', { name: 'Данные организации', exact: true });
+  const questionnaire = card.getByRole('button', { name: 'Анкета', exact: true });
+  await expect(people).toBeVisible();
+  await data.focus();
+  await data.press('Enter');
+  await expect(card.locator('[data-admin-view="organization-data"]')).toBeVisible();
+  await expect(card.getByRole('group', { name: 'Об организации' })).toBeVisible();
+  await expect(card.getByRole('group', { name: 'Условия оценки' })).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Сохранить черновик и предпросмотр' })).toBeVisible();
+  for (const width of [1440, 1280, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: width <= 390 ? 844 : 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await expect(card.getByRole('group', { name: 'Об организации' })).toBeVisible();
+    await expect(card.getByRole('group', { name: 'Условия оценки' })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath(`adm-1a-data-${width}.png`), fullPage: true });
+  }
+  await questionnaire.focus();
+  await questionnaire.press('Enter');
+  await expect(card.locator('[data-admin-view="questionnaire"]')).toBeVisible();
+});
+
 test('F22-06 restores confirmed fields when the selected assessment has no local draft', async ({ page }) => {
   const revision = (id, assignmentRef, purpose) => ({
     id, assignment_ref: assignmentRef, status: 'confirmed', channel: 'product_form',
@@ -1778,7 +1803,7 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   await expect(questionnaire.locator('[name="assignment_ref"]')).toHaveValue('Поток A');
   await questionnaire.locator('[name="source_author"]').fill('Автор черновика');
 
-  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await card.getByRole('button', { name: 'Участники оценки' }).click();
   await expect(memberForm.locator('[name="email"]')).toHaveValue('draft.member@example.test');
   await expect(memberForm.locator('[name="full_name"]')).toHaveValue('Черновик участника');
   await expect(memberForm.locator('[name="role_description"]')).toHaveValue('Черновик должности');
@@ -1794,20 +1819,20 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   await assignment.focus();
   await assignment.fill('Поток B');
   await assignment.press('Tab');
-  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('');
   await questionnaire.locator('[name="source_author"]').fill('Автор B');
   await questionnaire.locator('[name="assignment_ref"]').focus();
   await questionnaire.locator('[name="assignment_ref"]').fill('Поток A');
   await questionnaire.locator('[name="assignment_ref"]').press('Tab');
-  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор черновика');
   await questionnaire.locator('[name="assignment_ref"]').focus();
   await questionnaire.locator('[name="assignment_ref"]').fill('Поток B');
   await questionnaire.locator('[name="assignment_ref"]').press('Tab');
-  await card.getByRole('button', { name: 'Организация и участники' }).click();
+  await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор B');
 });
@@ -2256,7 +2281,7 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await expect(boundAssignment).toHaveValue('competencies_4k');
   await expect(page.locator('[data-action="preview-early-data"] [name="source_author"]')).toHaveValue('Точный автор');
   await expect(page.locator('[data-action="preview-early-data"] [name="purpose"]')).toHaveValue('Точная цель');
-  await page.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+  await page.getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await page.getByRole('button', { name: 'Назначить оценку' }).click();
   await expect.poll(() => assignmentPayload).toBeTruthy();
   await expect(page.locator('#admin-organizations-status')).toContainText('Назначена: 2');

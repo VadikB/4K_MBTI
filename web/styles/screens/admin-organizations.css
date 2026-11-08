@@ -259,6 +259,24 @@
     grid-column: 1 / -1;
 }
 
+.admin-questionnaire-field-group {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    min-width: 0;
+    margin: 0;
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+    padding: var(--space-4);
+}
+
+.admin-questionnaire-field-group legend {
+    padding: 0 var(--space-2);
+    color: var(--text-main);
+    font-weight: var(--fw-bold);
+}
+
 .admin-organization-member-form textarea {
     grid-column: span 2;
     min-height: 84px;
@@ -890,6 +908,10 @@
     .admin-organization-early-data-form .admin-organization-profile-wide,
     .admin-organization-early-data-form button {
         grid-column: auto;
+    }
+
+    .admin-questionnaire-field-group {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .admin-organization-profile-heading {

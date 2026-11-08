@@ -83,7 +83,7 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
     state.activeArea = 'assessment';
     persistAssessmentContext();
     if (adminAssessmentEmptyDescription) {
-      adminAssessmentEmptyDescription.textContent = 'Вы можете назначить себе оценку в разделе «Организация и участники» после подготовки необходимых сведений.';
+      adminAssessmentEmptyDescription.textContent = 'Вы можете назначить себе оценку в разделе «Участники оценки» после подготовки необходимых сведений.';
     }
     adminAssessmentEmptyPanel?.classList.remove('hidden');
     window.history.replaceState({ screen: 'admin-assessment-empty' }, '', '/?screen=admin-assessment-empty');
