@@ -38,6 +38,12 @@ version bump и предметная публикация.
 - Требования процесса: приложенный пакет rev1.0. Прямое полномочие на внешний
   побочный эффект выдаётся владельцем отдельно; изменение scope или явный stop
   прекращает соответствующий допуск.
+- Прямое разрешение владельца охватывает этап публикации целиком: обычные push
+  собственной `codex/codex-workflow-02` в `origin`, Draft PR #196 в `main`,
+  необходимые последующие push после адресных исправлений/status-sync и наблюдение
+  CI. Новый вопрос нужен при выходе за эту ветку/remote/PR или для force/deploy/
+  version bump/artifact publish/нового продуктового scope. Обязательные проверки
+  точного SHA и отдельный human review перед merge сохраняются.
 
 ## Среда
 
@@ -108,6 +114,8 @@ CLI-маршрут остаётся непроверенным/нерабочи�
 
 Компактные доказательства A/B, loopback, отказа reviewer и команда полного diff:
 [codex-workflow-02-controls.md](../evidence/codex-workflow-02-controls.md).
+Фактический diff четырёх процессных файлов:
+[codex-workflow-02-process-files.diff](../evidence/codex-workflow-02-process-files.diff).
 
 ## Статус критериев приёмки
 

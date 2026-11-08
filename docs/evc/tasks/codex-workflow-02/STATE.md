@@ -23,14 +23,24 @@
   deploy/browser/full-verification jobs SKIPPED по workflow. Conflicts: none.
 - Loopback/browser: первоначальный sandbox bind `BLOCKED/NOT_RUN` сохранён;
   адресный штатный approval получен, HTTP 200 и browser readback/screenshot PASS.
-- Reviewer denial на первый push разобран: приложенный `01_TASK.txt` был источником
-  требований, но не прямым пользовательским разрешением внешнего эффекта. Обхода
-  не было; владелец затем отдельно подтвердил точную ветку/remote/PR.
+- Reviewer denial на первый push: факт отказа подтверждён, но машинная причина,
+  входной контекст reviewer и event ID недоступны — `UNKNOWN`. Объяснение о
+  недоступности прямого допуска сохранено только как интерпретация. Обхода не было;
+  владелец затем отдельно подтвердил точную ветку/remote/PR.
+- Publication scope подтверждён целиком: собственная ветка, PR #196, необходимые
+  последующие обычные push после исправлений/status-sync и наблюдение CI; точный
+  SHA всё равно проходит применимые checks, merge — только после отдельного human
+  review. Выход за branch/remote/PR или force/deploy/version/artifact/product scope
+  требует нового решения.
+- Дословное исходное поручение, первые два запроса/ответа «да», отдельный status-
+  push и browser-реквизиты приложены в `docs/evc/evidence/codex-workflow-02-controls.md`;
+  фактический diff четырёх файлов — рядом в `codex-workflow-02-process-files.diff`.
 - Content candidate с уточнениями и доказательствами:
   `1f3a774f` (`Complete Codex workflow control evidence`). Текущий delivery head —
   commit синхронизации этого STATE; его полный SHA фиксируется в PR/CI, поскольку
   commit не может достоверно содержать собственный SHA.
-- Активный шаг: push текущего HEAD в тот же PR и обязательный CI точного remote head.
+- Активный шаг: адресно проверить изменённый механизм передачи полномочий в новой
+  сессии; затем push нового HEAD в тот же PR и применимые checks точного remote head.
 - После CI: человеческий review и Ready; только затем merge без bypass, pull/readback
   в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
