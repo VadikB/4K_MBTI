@@ -4,6 +4,7 @@ import { stepBadgeLabel, onboardingTitle, onboardingDescription, featureList,
 import { hideAllPanels, syncUrlState, openAcquaintanceWaiting } from '../router.js';
 import { readApiResponse, createOperationId, fetchWithDeadline as fetch } from '../api.js';
 import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
+import { hasPendingPreparedStart, readPendingPreparedStart } from '../product-cycle-start.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../onboarding-flow.js';
 
 let model = null;
@@ -17,6 +18,7 @@ let loading = false;
 let errorMessage = '';
 let notice = '';
 let preparationError = null;
+let startReadbackAdmitted = false;
 let preparationTask = null;
 let generation = 0;
 let editingFromSummary = false;
@@ -126,13 +128,27 @@ const readinessStep = () => {
     body: '<div class="onboarding-warning">' + escape(model?.readiness?.responsible_contact
       ? 'Контакт ответственного: ' + model.readiness.responsible_contact : 'Обратитесь к ответственному за оценку в вашей организации.') + '</div>',
     action: 'refresh', button: 'Проверить готовность' };
-  if (status === 'failed') return { title: 'Не удалось подготовить оценку',
-    description: model?.preparation_operation?.error?.code === 'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE'
-      ? model.preparation_operation.error.message
-      : 'Ваши ответы сохранены. Подготовка завершилась технической ошибкой; можно повторить её или передать код обращения ответственному.',
-    body: reference, action: 'retry', button: 'Повторить подготовку' };
+  if (status === 'failed') {
+    const canRetry = model?.preparation_operation?.retry_allowed === true;
+    return { title: 'Не удалось подготовить оценку',
+      description: model?.preparation_operation?.error?.message ||
+        'Ваши ответы сохранены. Подготовка завершилась с ошибкой; обратитесь к ответственному за оценку.',
+      body: reference, action: canRetry ? 'retry' : 'refresh',
+      button: canRetry ? 'Повторить подготовку' : 'Проверить состояние' };
+  }
   if (status === 'ready') {
     const plan = timing();
+    const pendingStart = hasPendingPreparedStart(model?.prepared_plan?.cycle_id);
+    if (pendingStart && !startReadbackAdmitted) return {
+      title: 'Проверяем первый старт',
+      description: 'Ответ на команду старта не получен. Ваши сведения сохранены. Сначала проверьте состояние: оценка могла уже начаться.',
+      body: reference, action: 'check_start', button: 'Проверить состояние',
+    };
+    if (pendingStart) return {
+      title: 'Старт ещё не подтверждён',
+      description: 'Сервер показывает подготовленную, но ещё не предъявленную ситуацию. Можно явно повторить старт с прежним ключом операции.',
+      body: reference, action: 'start', button: 'Повторить старт',
+    };
     return { title: 'Можно приступать к оценке',
       description: 'Подготовлены план и первая ситуация. Следующие ситуации подготавливаются по ходу оценки. Время начнётся после вашего явного действия.' +
         (plan?.participant_notice ? '\n\n' + plan.participant_notice : ''),
@@ -349,7 +365,9 @@ const beginPreparation = ({ retry = false } = {}) => {
         onAccepted: (operation) => { if (current()) storeOperation(operation); },
         onStatus: (operation) => { if (current()) { storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderOnboarding(); } },
       };
-      const prepared = accepted && !retry && accepted.status !== 'unknown'
+      // A lost command response has an operation ID: reconcile it through owned GET,
+      // never send another preparation command merely because the page reloaded.
+      const prepared = accepted && !retry
         ? await waitForProductCyclePreparation(accepted, callbacks)
         : await prepareProductCycle({ personalized_profile_id: model.late_readiness.personalized_profile_id,
           idempotency_key: !retry && accepted?.operation_id || createOperationId(), selected_skills: ['K1', 'K2', 'K3', 'K4'],
@@ -383,7 +401,7 @@ const beginPreparation = ({ retry = false } = {}) => {
 export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedReview = false } = {}) => {
   generation += 1; preparationTask?.controller.abort(); busy = false; progressTail = Promise.resolve();
   const owner = identity(), epoch = state.identityEpoch, run = generation;
-  reviewMode = Boolean(requestedReview); errorMessage = ''; notice = ''; preparationError = null;
+  reviewMode = Boolean(requestedReview); errorMessage = ''; notice = ''; preparationError = null; startReadbackAdmitted = false;
   setCurrentScreen('onboarding'); hideAllPanels(); onboardingPanel.classList.remove('hidden');
   state.onboardingShown = true; state.onboardingIndex = Number(currentStep || 0);
   // Preserve navigation intent even if reload happens while the first GET is pending.
@@ -455,7 +473,19 @@ const advance = async () => {
       if (model.readiness.status !== 'ready') { openAcquaintanceWaiting(model.readiness); return; }
       if (!model.mandatory_complete) state.onboardingIndex = resumeOnboardingIndex(model, model.onboarding);
       else void beginPreparation({ retry: step.action === 'retry' });
+    } else if (step.action === 'check_start') {
+      const cycleId = model.prepared_plan?.cycle_id;
+      if (!cycleId) throw new Error('Подготовленный цикл пока недоступен. Проверьте готовность.');
+      const readback = await readPendingPreparedStart(cycleId);
+      if (!readback) throw new Error('Состояние старта не найдено. Обновите готовность.');
+      if (readback.started) {
+        const { loadInterview } = await import('../screen-loaders.js');
+        const interview = await loadInterview();
+        if (!isCurrent(owner, epoch, run)) return;
+        await interview.startAssessmentInterview({ preparedCycleId: cycleId });
+      } else startReadbackAdmitted = true;
     } else if (step.action === 'start') {
+      startReadbackAdmitted = false;
       const cycleId = model.prepared_plan?.cycle_id;
       if (!cycleId) throw new Error('Подготовленный цикл пока недоступен. Проверьте готовность.');
       await saveProgress('completed', readinessIndex());

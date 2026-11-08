@@ -70,7 +70,7 @@ class FunctionalGateway:
             content = json.dumps(candidate, ensure_ascii=False)
         else:
             required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
-            content = json.dumps({"checks": [{
+            content = json.dumps({"candidate_checksum": payload.get("candidate_checksum"), "checks": [{
                 "check_id": item["check_id"], "status": "PASS", "reason": "F05 controlled admission",
                 "evidence_paths": [], "findings": [],
                 "adversarial_review": {"candidate_conflicts": [], "resolution": "controlled fixture"},

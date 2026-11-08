@@ -5,19 +5,25 @@ import path from 'node:path';
 import { registerAuthF01Tests } from './helpers/auth-f01.mjs';
 import { registerAuthV01Tests } from './helpers/auth-v01.mjs';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { capturePathViewports, viewportGeometry, assertViewportGeometry } from './fixtures/path-viewports.mjs';
 import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
 import { captureFailurePage } from './fixtures/failure-page.mjs';
 
 const root = process.cwd();
 const port = 18764;
-const base = `http://127.0.0.1:${port}`;
+const publishedOrigin = process.env.AC18_FIX02_PUBLISHED_ORIGIN || '';
+if (publishedOrigin && publishedOrigin !== 'https://test.4k-assistant.ru') {
+  throw new Error('AC18_FIX02_PUBLISHED_ORIGIN must be the approved test origin');
+}
+const base = publishedOrigin || `http://127.0.0.1:${port}`;
 const appRelease = (await fs.readFile(path.join(root, 'web/js/config.js'), 'utf8'))
   .match(/APP_RELEASE = "([^"]+)";/)?.[1];
 if (!appRelease) throw new Error('web/js/config.js must define APP_RELEASE');
 let server;
 
 test.beforeAll(async () => {
+  if (publishedOrigin) return;
   server = http.createServer(async (request, response) => {
     try {
       const pathname = new URL(request.url, base).pathname;
@@ -38,8 +44,17 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  if (!server) return;
   await new Promise((resolve) => server.close(resolve));
 });
+
+async function blockUnmockedWrites(context) {
+  if (!publishedOrigin) return;
+  await context.route('**/*', (route) => route.request().method() === 'GET'
+    ? route.continue() : route.abort('blockedbyclient'));
+}
+
+test.beforeEach(async ({ context }) => blockUnmockedWrites(context));
 
 const fulfillJson = (route, body, status = 200) => route.fulfill({
   status,
@@ -3613,6 +3628,325 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
   await expect(page.locator('.onboarding-metrics')).toContainText('Время на выполнение');
   await expect(page.getByText('120 мин.')).toBeVisible();
   await expect(page.getByText('189 мин.')).toBeHidden();
+});
+
+test('AC18-FIX-02 published frontend matches the merged release and asset', async ({ page }) => {
+  test.skip(!publishedOrigin, 'Runs only for the explicitly selected published test origin');
+  const response = await page.goto(base);
+  expect(response?.status()).toBe(200);
+  const assetPath = await page.locator('script[type="module"][src^="/web/dist/main.js"]').getAttribute('src');
+  expect(assetPath).toContain(`v=${appRelease}`);
+  const assetResponse = await page.request.get(new URL(assetPath, base).href);
+  expect(assetResponse.status()).toBe(200);
+  const deployedHash = createHash('sha256').update(await assetResponse.body()).digest('hex');
+  const localHash = createHash('sha256').update(await fs.readFile(path.join(root, 'web/dist/main.js'))).digest('hex');
+  expect(deployedHash).toBe(localHash);
+  const versionResponse = await page.request.get(`${base}/users/version`);
+  expect(versionResponse.status()).toBe(200);
+  expect((await versionResponse.json()).version).toBe(appRelease);
+});
+
+test('AC18-FIX-02 reconciles a committed first start after the POST response is lost', async ({ page }, testInfo) => {
+  const evidenceDirectory = process.env.AC18_FIX02_VISUAL_EVIDENCE;
+  if (evidenceDirectory) await fs.mkdir(evidenceDirectory, { recursive: true });
+  const capture = async (name) => {
+    const body = await page.screenshot({
+      fullPage: true, ...(evidenceDirectory ? { path: path.join(evidenceDirectory, `${name}.png`) } : {}),
+    });
+    await testInfo.attach(name, { body, contentType: 'image/png' });
+  };
+  const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+  const plan = { cycle_id: 'cycle-lost-start', revision_id: 'revision-lost-start', revision_no: 1,
+    start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-lost-start',
+      plan_revision_id: 'revision-lost-start', can_start: true, reasons: [] }, plan: {
+      status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], time_budget_seconds: 7200,
+      calendar_window_seconds: 259200,
+    } };
+  const acquaintance = {
+    readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+      briefing: { organizer: 'Synthetic', purpose: 'Synthetic', results_usage: 'Synthetic',
+        result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' }, consent_accepted_at: 'synthetic',
+      consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
+    onboarding: { status: 'completed', current_step: 8 }, late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    prepared_plan: plan,
+  };
+  const runtime = { runtime_kind: 'cycle', cycle_id: 'cycle-lost-start', between_situations: false,
+    return_policy_enabled: false, status: { collection_status: 'active', remaining_seconds: 7200 },
+    route: { positions: [{ position_no: 1, state: 'in_progress',
+      current_assessment_situation_id: 'as-lost-start' }], progress: { total_positions: 1 } },
+    situations: [{ assessment_situation_id: 'as-lost-start', status: 'active' }],
+    current_situation: { assessment_situation_id: 'as-lost-start', status: 'active', participant_payload: {
+      title: 'Синтетическая первая ситуация', situation: 'Проверьте сохранённое состояние после потери ответа.',
+      assessee_task: 'Опишите решение.',
+    } }, trace: { turns: [], events: [] }, clarification: null, continuation: null, pipeline: null };
+  let startPosts = 0;
+  await page.route('**/users/**', (route) => {
+    const request = route.request(); const pathname = new URL(request.url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_onboarding', acquaintance,
+      profile: { status: 'complete' }, onboarding: acquaintance.onboarding, assessment: { status: 'not_started' } });
+    if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) return fulfillJson(route, acquaintance);
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'completed', current_step: 8 });
+    if (pathname === '/users/assessment/cycles/start' && request.method() === 'POST') {
+      startPosts += 1; return route.abort('failed');
+    }
+    if (pathname === '/users/assessment/m7/cycles/cycle-lost-start/return-state') {
+      return fulfillJson(route, { detail: 'M7_RETURN_CURRENT_POSITION_NOT_FOUND' }, 409);
+    }
+    if (pathname === '/users/assessment/cycles/cycle-lost-start/runtime') return fulfillJson(route, runtime);
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'ac18-fix02-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(base);
+  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  await page.getByRole('button', { name: 'Приступить к оценке' }).click();
+  await expect(page.locator('#interview-panel')).toBeVisible();
+  await expect(page.locator('#interview-case-title')).toHaveText('Синтетическая первая ситуация');
+  expect(startPosts).toBe(1);
+  await capture('ac18-fix02-lost-start-1440');
+  for (const width of [768, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.locator('#interview-case-title')).toHaveText('Синтетическая первая ситуация');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await capture(`ac18-fix02-lost-start-${width}`);
+  }
+});
+
+test('AC18-FIX-02 reload resolves unknown first start by owned GET without another POST', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+  const plan = { cycle_id: 'cycle-unknown-start', revision_id: 'revision-unknown-start', revision_no: 1,
+    start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-unknown-start',
+      plan_revision_id: 'revision-unknown-start', can_start: true, reasons: [] },
+    plan: { status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], time_budget_seconds: 7200,
+      calendar_window_seconds: 259200 } };
+  const acquaintance = {
+    readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+      briefing: { organizer: 'Synthetic', purpose: 'Synthetic', results_usage: 'Synthetic',
+        result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' }, consent_accepted_at: 'synthetic',
+      consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
+    onboarding: { status: 'completed', current_step: 8 }, late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    prepared_plan: plan,
+  };
+  const runtime = { runtime_kind: 'cycle', cycle_id: 'cycle-unknown-start', between_situations: false,
+    return_policy_enabled: false, status: { collection_status: 'active', remaining_seconds: 7200 },
+    route: { positions: [{ position_no: 1, state: 'in_progress',
+      current_assessment_situation_id: 'as-unknown-start' }], progress: { total_positions: 1 } },
+    situations: [{ assessment_situation_id: 'as-unknown-start', status: 'active' }],
+    current_situation: { assessment_situation_id: 'as-unknown-start', status: 'active', participant_payload: {
+      title: 'Сохранённая первая ситуация', situation: 'Проверьте состояние после reload.',
+      assessee_task: 'Опишите решение.',
+    } }, trace: { turns: [], events: [] }, clarification: null, continuation: null, pipeline: null };
+  let startPosts = 0;
+  let runtimeReads = 0;
+  await page.route('**/users/**', (route) => {
+    const request = route.request(); const pathname = new URL(request.url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_onboarding', acquaintance,
+      profile: { status: 'complete' }, onboarding: acquaintance.onboarding, assessment: { status: 'not_started' } });
+    if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) return fulfillJson(route, acquaintance);
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'completed', current_step: 8 });
+    if (pathname === '/users/assessment/cycles/start' && request.method() === 'POST') {
+      startPosts += 1; return route.abort('failed');
+    }
+    if (pathname === '/users/assessment/m7/cycles/cycle-unknown-start/return-state') {
+      return fulfillJson(route, { detail: 'M7_RETURN_CURRENT_POSITION_NOT_FOUND' }, 409);
+    }
+    if (pathname === '/users/assessment/cycles/cycle-unknown-start/runtime') {
+      runtimeReads += 1;
+      return runtimeReads === 1 ? fulfillJson(route, { detail: 'temporarily unavailable' }, 503) : fulfillJson(route, runtime);
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'ac18-fix02-test' });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=onboarding`);
+  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  await page.getByRole('button', { name: 'Приступить к оценке' }).click();
+  await expect(page.locator('#onboarding-panel')).toContainText('Состояние не подтверждено');
+  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем первый старт');
+  expect(startPosts).toBe(1);
+  await page.reload();
+  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем первый старт');
+  await page.getByRole('button', { name: 'Проверить состояние' }).click();
+  await expect(page.locator('#interview-case-title')).toHaveText('Сохранённая первая ситуация');
+  expect(startPosts).toBe(1);
+  expect(runtimeReads).toBeGreaterThanOrEqual(2); // Interview also refreshes its own runtime.
+});
+
+test('AC18-FIX-02 reload reads a preparation with lost POST response before any new command', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+  const plan = { cycle_id: 'cycle-preparation-readback', revision_id: 'revision-preparation-readback',
+    start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-preparation-readback',
+      plan_revision_id: 'revision-preparation-readback', can_start: true, reasons: [] },
+    plan: { status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], time_budget_seconds: 7200,
+      calendar_window_seconds: 259200 } };
+  let committed = false;
+  let completed = false;
+  let preparePosts = 0;
+  let statusReads = 0;
+  let operationId;
+  const acquaintance = () => ({
+    readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+      briefing: { organizer: 'Synthetic', purpose: 'Synthetic', results_usage: 'Synthetic',
+        result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' }, consent_accepted_at: 'synthetic',
+      consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
+    onboarding: { status: 'completed', current_step: 8 },
+    late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    preparation_operation: completed ? { operation_id: operationId, status: 'completed' } : null,
+    prepared_plan: completed ? plan : null,
+  });
+  await page.route('**/users/**', (route) => {
+    const request = route.request(); const pathname = new URL(request.url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_onboarding',
+      acquaintance: acquaintance(), profile: { status: 'complete' },
+      onboarding: { status: 'completed', current_step: 8 }, assessment: { status: 'not_started' } });
+    if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) {
+      return fulfillJson(route, acquaintance());
+    }
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'completed', current_step: 8 });
+    if (pathname === '/users/assessment/cycles/prepare' && request.method() === 'POST') {
+      preparePosts += 1;
+      operationId = request.postDataJSON().idempotency_key;
+      committed = true; // The server accepted the command; only its HTTP response is lost.
+      return route.abort('connectionreset');
+    }
+    if (pathname === `/users/assessment/cycles/preparation/${operationId}`) {
+      statusReads += 1;
+      expect(committed).toBe(true);
+      if (statusReads === 1) return fulfillJson(route, { detail: 'Synthetic readback unavailable' }, 503);
+      completed = true;
+      return fulfillJson(route, { operation_id: operationId, status: 'completed', result: { plan } });
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=onboarding`);
+  await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить подготовку');
+  expect(preparePosts).toBe(1);
+  await page.reload();
+  await expect.poll(() => preparePosts + statusReads).toBeGreaterThan(1);
+  expect(preparePosts).toBe(1);
+  await expect(page.locator('#onboarding-title')).toHaveText('Сервис подготовки временно недоступен');
+  await page.getByRole('button', { name: 'Проверить состояние' }).click();
+  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  expect(statusReads).toBe(2);
+  expect(preparePosts).toBe(1);
+});
+
+test('AC18-FIX-02 visual readiness states survive reload without another preparation', async ({ browser }, testInfo) => {
+  const evidenceDirectory = process.env.AC18_FIX02_VISUAL_EVIDENCE;
+  if (evidenceDirectory) await fs.mkdir(evidenceDirectory, { recursive: true });
+  const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic participant' };
+  const plan = { cycle_id: 'cycle-visual', revision_id: 'revision-visual', revision_no: 1,
+    start_readiness: { contract: 'm7_start_readiness/1', cycle_id: 'cycle-visual',
+      plan_revision_id: 'revision-visual', can_start: true, reasons: [] }, plan: {
+      status: 'READY', route: [{ case_id: 'CASE.SPEC.01' }], time_budget_seconds: 7200,
+      calendar_window_seconds: 259200,
+    } };
+  let phase = 'waiting';
+  let preparePosts = 0;
+  let operationReads = 0;
+  const acquaintance = () => ({
+    readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
+      briefing: { organizer: 'Synthetic', purpose: 'Synthetic', results_usage: 'Synthetic',
+        result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
+    state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' }, consent_accepted_at: 'synthetic',
+      consent_version: 1, answers_confirmed_at: 'synthetic' }, mandatory_complete: true,
+    onboarding: { status: 'completed', current_step: 8 },
+    late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
+    preparation_operation: { operation_id: 'operation-visual', status: ['failed', 'technical_failed'].includes(phase) ? 'failed'
+      : phase === 'ready' ? 'completed' : 'running',
+      ...(phase === 'failed' ? { retry_allowed: false, error: { code: 'ASSESSMENT_AS_NOT_ADMITTED',
+        message: 'Ситуация не прошла обязательную проверку. Обратитесь к ответственному.' } } : {}),
+      ...(phase === 'technical_failed' ? { retry_allowed: true, error: {
+        code: 'ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE',
+        message: 'Подготовка завершилась технической ошибкой. Можно повторить её.' } } : {}) },
+    prepared_plan: phase === 'ready' ? plan : null,
+  });
+  const states = [
+    ['waiting', 'Готовим вашу оценку', 'Проверить состояние'],
+    ['failed', 'Не удалось подготовить оценку', 'Проверить состояние'],
+    ['technical_failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
+    ['unknown', 'Не удалось проверить подготовку', 'Проверить состояние'],
+    ['ready', 'Можно приступать к оценке', 'Приступить к оценке'],
+  ];
+  for (const [stateName, title, action] of states) {
+    phase = stateName;
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await blockUnmockedWrites(context);
+    const page = await context.newPage();
+    await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/session/restore') return fulfillJson(route, {
+      authenticated: true, user, is_admin: false, dashboard: {},
+    });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'show_onboarding', acquaintance: acquaintance(), profile: { status: 'complete' },
+      onboarding: { status: 'completed', current_step: 8 }, assessment: { status: 'not_started' },
+    });
+    if (['/users/8/acquaintance', '/users/8/acquaintance/resolve-profile'].includes(pathname)) {
+      return fulfillJson(route, acquaintance());
+    }
+    if (pathname === '/users/8/onboarding') return fulfillJson(route, { status: 'completed', current_step: 8 });
+    if (pathname === '/users/assessment/cycles/preparation/operation-visual') {
+      operationReads += 1;
+      if (phase === 'unknown') return route.abort('failed');
+      return fulfillJson(route, { operation_id: 'operation-visual', status: 'running' });
+    }
+    if (pathname === '/users/assessment/cycles/prepare') {
+      preparePosts += 1;
+      return fulfillJson(route, {}, 500);
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: appRelease });
+    return fulfillJson(route, {}, 404);
+    });
+    await page.goto(`${base}/?screen=onboarding`);
+    await expect(page.locator('#onboarding-title')).toHaveText(title);
+    const actionButton = page.getByRole('button', { name: action, exact: true });
+    await expect(actionButton).toBeVisible();
+    await expect(actionButton).toBeEnabled();
+    if (['failed', 'technical_failed', 'unknown'].includes(stateName)) {
+      await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
+      await expect(page.locator('#onboarding-panel')).not.toContainText('M5_FUNCTIONAL_AS_NOT_ADMITTED');
+    }
+    await page.reload();
+    await expect(page.locator('#onboarding-title')).toHaveText(title);
+    await actionButton.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(actionButton).toBeFocused();
+    for (const width of [1440, 768, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(page.locator('#onboarding-title')).toHaveText(title);
+      await expect(actionButton).toBeVisible();
+      await actionButton.scrollIntoViewIfNeeded();
+      await expect(actionButton).toBeInViewport();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+      const name = `ac18-fix02-${stateName}-${width}`;
+      const body = await page.screenshot({ fullPage: true,
+        ...(evidenceDirectory ? { path: path.join(evidenceDirectory, `${name}.png`) } : {}) });
+      await testInfo.attach(name, { body, contentType: 'image/png' });
+    }
+    if (stateName === 'failed') {
+      await actionButton.click();
+      expect(preparePosts).toBe(0);
+      await expect(page.getByRole('button', { name: 'Повторить подготовку' })).toHaveCount(0);
+    }
+    if (stateName === 'technical_failed') {
+      await actionButton.click();
+      await expect.poll(() => preparePosts).toBe(1);
+    }
+    await context.close();
+  }
+  expect(operationReads).toBeGreaterThan(0);
+  expect(preparePosts).toBe(1); // Only the explicit server-permitted technical retry writes.
 });
 
 test('R03 reset request locks every visible credential action', async ({ page }) => {

@@ -47,6 +47,7 @@ import { openPrechat } from './ai-welcome.js';
 import { openProcessing } from './processing.js';
 import { recoverProfileCompletionForAssessment, shouldRecoverProfileOnAssessmentError } from './profile-recovery.js';
 import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
+import { startPreparedProductCycle } from '../product-cycle-start.js';
 
 const interviewCaseContextByKey = new Map();
 const PRODUCT_RUNTIME_POLL_MS = 1200;
@@ -1310,11 +1311,7 @@ const startAssessmentInterview = async ({ preparedCycleId = null } = {}) => {
     }
     state.assessmentRuntimeKind = 'cycle';
     persistAssessmentContext();
-    const response = await fetch('/users/assessment/cycles/start', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cycle_id: state.productCycleId, idempotency_key: createOperationId() }),
-    });
-    const started = await readApiResponse(response, 'Не удалось запустить Cycle runtime.');
+    const started = await startPreparedProductCycle(state.productCycleId);
     state.assessmentRuntimeKind = 'cycle';
     state.productCycleId = started.plan.cycle_id;
     state.assessmentSessionCode = null;
