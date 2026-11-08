@@ -2274,8 +2274,8 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await expect(assessmentIdentity).toContainText('Специалист 4К');
   await expect(assessmentIdentity).toContainText('Версия программы');
   await expect(assessmentIdentity).toContainText('1.0');
-  await expect(assessmentIdentity).toContainText('Ключ оценки');
-  await expect(assessmentIdentity).toContainText('competencies_4k');
+  await expect(assessmentIdentity).not.toContainText('Ключ оценки');
+  await expect(assessmentIdentity).not.toContainText('competencies_4k');
   const boundAssignment = page.locator('[data-action="preview-early-data"] [name="assignment_ref"]');
   await expect(boundAssignment).toHaveAttribute('type', 'hidden');
   await expect(boundAssignment).toHaveValue('competencies_4k');
@@ -2284,7 +2284,11 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await page.getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await page.getByRole('button', { name: 'Назначить оценку' }).click();
   await expect.poll(() => assignmentPayload).toBeTruthy();
-  await expect(page.locator('#admin-organizations-status')).toContainText('Назначена: 2');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Admin: оценка назначена');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Colleague: оценка назначена');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('.admin-people-context')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   expect(assignmentPayload.assignment_ref).toBe('competencies_4k');
   expect(assignmentPayload.role_profile_version_id).toBe(92);
   expect(assignmentPayload.user_ids.sort()).toEqual([18, 19]);
@@ -2306,6 +2310,52 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
   await page.locator('input[name="invitation_email"]').check();
   await expect(page.locator('[data-bulk-actions]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Назначить оценку' })).toBeDisabled();
+});
+
+test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting zero success', async ({ page }) => {
+  const organization = {
+    ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Пилот 4К · 9 кейсов',
+      program_version: '1.2', assignment_ref: 'specialist-pilot',
+      roles: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист' }] },
+    members_count: 2,
+    members: [
+      { ...adminOrganization.members[0], user_id: 8, email: 'first@example.test', full_name: 'Первый участник' },
+      { ...adminOrganization.members[0], user_id: 9, email: 'second@example.test', full_name: 'Второй участник' },
+    ],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, {
+    items: [{ email: 'first@example.test', status: 'accepted' }],
+  }), organization, { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot',
+    status: 'confirmed', channel: 'product_form', validation_json: {} }] } });
+  await page.locator('input[name="invitation_email"]').nth(0).check();
+  await page.locator('input[name="invitation_email"]').nth(1).check();
+  await page.getByRole('button', { name: 'Отправить приглашения' }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('неполный или противоречивый результат приглашения');
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('принял приглашения: 0');
+});
+
+test('AC18-ADM-1B reads assignment state after a lost command response', async ({ page }) => {
+  const member = { ...adminOrganization.members[0], user_id: 8, email: 'person@example.test',
+    full_name: 'Участник чтения', assessment_assignments: [] };
+  const organization = {
+    ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Пилот 4К · 9 кейсов',
+      program_version: '1.2', assignment_ref: 'specialist-pilot',
+      roles: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист' }],
+      role_capabilities: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист', is_available: true }] },
+    members: [member],
+  };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
+    { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
+      channel: 'product_form', validation_json: {} }] } });
+  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => {
+    member.assessment_assignments = ['specialist-pilot'];
+    return route.abort('failed');
+  });
+  await page.locator('input[name="invitation_email"]').check();
+  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('назначение подтверждено чтением после потери ответа');
 });
 
 test('QA19-02 resolves palette tokens in visible auth and admin states', async ({ page }) => {

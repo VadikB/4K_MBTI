@@ -49,6 +49,15 @@ const currentIdentityKey = () => String(state.pendingUser?.id || '');
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
 const assessmentKey = (organizationId, assessmentRef = '') =>
   organizationKey(organizationId) + ':' + String(assessmentRef || '').trim();
+const organizationById = (organizationId) => (state.adminOrganizations?.items || [])
+  .find((item) => Number(item.id) === Number(organizationId));
+const participantLabel = (organizationId, { user_id: userId, email } = {}) => {
+  const member = (organizationById(organizationId)?.members || []).find((item) =>
+    userId ? Number(item.user_id) === Number(userId) : String(item.email || '').toLowerCase() === String(email || '').toLowerCase());
+  return member?.full_name || member?.email || email || (userId ? 'Участник ' + Number(userId) : 'Участник');
+};
+const programIdentity = (program) => program?.program_name || 'Программа оценки';
+const roleIdentity = (roles = []) => roles.map((role) => role.name || role.code).filter(Boolean).join(', ') || 'не выбрана';
 const saveManagementSelection = () => safeStorage.setItem('agent4k.adminManagement.' + currentIdentityKey(), JSON.stringify({
   organizationId: selectedOrganizationId,
   views: [...organizationViews],
@@ -361,13 +370,12 @@ const readinessRow = (title, item, target) => '<li><strong>' + escapeHtml(title)
     target + '">Перейти</button>' : '') + '</li>';
 const readinessMarkup = (selectedRef, readiness) => !selectedRef || !readiness
   ? '<div class="admin-readiness-panel admin-readiness-panel--empty" data-readiness-status="not-selected"><strong>' +
-    (selectedRef ? 'Готовность выбранной оценки «' + escapeHtml(selectedRef) + '» ещё не рассчитана' : 'Выберите оценку') +
+    (selectedRef ? 'Готовность выбранной оценки ещё не рассчитана' : 'Выберите программу и роль в оценке') +
     '</strong><p>' + (selectedRef
       ? 'Сохраните сведения или загрузите анкету, чтобы увидеть готовность этой оценки.'
-      : 'Укажите оценку в форме ниже, чтобы начать подготовку.') + '</p></div>'
+      : 'Подключённая программа определяет оценку автоматически.') + '</p></div>'
   : '<div class="admin-readiness-panel" data-readiness-status="' +
-  escapeHtml(readiness?.status || 'unavailable') + '"><strong>Готовность выбранной оценки' +
-  (selectedRef ? ' «' + escapeHtml(selectedRef) + '»' : '') + '</strong><ul>' +
+  escapeHtml(readiness?.status || 'unavailable') + '"><strong>Готовность выбранной оценки</strong><ul>' +
   readinessRow('Ранние сведения', readiness?.early, 'organization-data') +
   readinessRow('Контекст', readiness?.context, 'organization-data') +
   readinessRow('Участники', readiness?.roles, readiness?.roles?.action_view || null) +
@@ -925,6 +933,16 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     });
     const result = await readApiResponse(response, 'Не удалось отправить приглашение.');
     const items = Array.isArray(result.items) ? result.items : [];
+    const requestedEmails = new Set(emails);
+    const returnedEmails = items.map((item) => String(item.email || '').trim().toLowerCase());
+    const responseMatchesRequest = items.length === requestedEmails.size &&
+      new Set(returnedEmails).size === requestedEmails.size &&
+      returnedEmails.every((email) => requestedEmails.has(email)) &&
+      items.every((item) => ['accepted', 'queued', 'uncertain', 'error', 'already_registered'].includes(item.status));
+    if (!responseMatchesRequest) {
+      setStatus('Сервер вернул неполный или противоречивый результат приглашения. Проверьте состояние операции перед повтором.', 'error');
+      return;
+    }
     const failed = items.filter((item) => item.status === 'error');
     const queued = items.filter((item) => item.status === 'queued');
     const accepted = items.filter((item) => item.status === 'accepted');
@@ -936,7 +954,7 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
       setStatus(
         'Принято провайдером: ' + accepted.length + '. Уже зарегистрированы: ' + registered.length + '. В очереди: ' + queued.length +
           '. Неопределённый исход: ' + uncertain.length + '. Ошибок: ' + failed.length + '. ' +
-          [...uncertain, ...failed].map((item) => item.email + ': ' + (item.error || 'ошибка отправки')).join('; '),
+          [...uncertain, ...failed].map((item) => participantLabel(organizationId, item) + ': ' + (item.error || 'ошибка отправки')).join('; '),
         'error',
       );
     } else if (queued.length) {
@@ -946,7 +964,7 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     }
   } catch (error) {
     const message = error instanceof TypeError || error?.message === 'Failed to fetch'
-      ? 'Не удалось связаться с сервером. Повторите отправку — операция не будет продублирована.'
+      ? 'Не удалось получить результат. Проверьте состояние операции; повтор использует тот же operation_id.'
       : error.message || 'Не удалось отправить приглашение.';
     setStatus(message, 'error');
   } finally {
@@ -993,21 +1011,51 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
       setStatus('Сервер вернул неполный или противоречивый результат назначения. Обновите список перед безопасным повтором.', 'error');
       return false;
     }
-    const assigned = items.filter((item) => item.status === 'assigned').length;
-    const existing = items.filter((item) => item.status === 'already_assigned').length;
     const failed = items.filter((item) => item.status === 'not_assigned');
     await loadAdminOrganizations();
     if (state.identityEpoch !== identityEpoch) return false;
     assignmentOperationIds.delete(operationKey);
     setStatus(
-      'Назначена: ' + assigned + '. Уже была назначена: ' + existing + '. Не назначена: ' + failed.length +
-        (failed.length ? '. ' + failed.map((item) => item.user_id + ': ' + item.error).join('; ') : '') + '.',
+      items.map((item) => participantLabel(organizationId, item) + ': ' + ({ assigned: 'оценка назначена',
+        already_assigned: 'эта оценка уже назначена', not_assigned: 'не назначена' })[item.status] +
+        (item.error ? ' — ' + item.error : '')).join('. ') + '.',
       failed.length ? 'error' : 'success',
     );
     return failed.length === 0;
   } catch (error) {
-    setStatus(error.message || 'Не удалось назначить оценку.', 'error');
-    offerAssessmentDataNavigation(organizationId, assessment);
+    const isUnknown = error?.name === 'RequestDeadlineError' || error instanceof TypeError || error?.message === 'Failed to fetch';
+    if (isUnknown) {
+      try {
+        await loadAdminOrganizations();
+        if (state.identityEpoch !== identityEpoch) return false;
+        const members = organizationById(organizationId)?.members || [];
+        const confirmed = selected.filter((userId) => members.some((member) => Number(member.user_id) === userId &&
+          (member.assessment_assignments || []).includes(assessment)));
+        if (confirmed.length === selected.length) {
+          assignmentOperationIds.delete(operationKey);
+          setStatus(confirmed.map((userId) => participantLabel(organizationId, { user_id: userId }) +
+            ': назначение подтверждено чтением после потери ответа').join('. ') + '.', 'success');
+          return true;
+        }
+        setStatus('Итог назначения пока неизвестен. Проверено текущее состояние; не создавайте новую операцию, повтор использует тот же operation_id.', 'error');
+      } catch (_readbackError) {
+        setStatus('Не удалось получить результат. Проверьте состояние операции; повтор использует тот же operation_id.', 'error');
+      }
+    } else {
+      const messages = {
+        ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED: 'Проверьте и подтвердите сведения перед назначением.',
+        PROGRAM_ROLE_SELECTION_REQUIRED: 'Выберите роль в оценке.',
+        PROGRAM_ROLE_NOT_AVAILABLE: 'Выберите доступную роль в оценке.',
+        PROGRAM_NOT_CONNECTED: 'Оценка пока недоступна для назначения. Обратитесь к суперадминистратору.',
+        PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS: 'Эта программа сейчас недоступна для новых назначений. Обратитесь к суперадминистратору.',
+        PROGRAM_ASSIGNMENT_REF_MISMATCH: 'Не удалось сопоставить сведения с доступной оценкой. Обновите данные.',
+        PROGRAM_SOURCE_SELECTION_STALE: 'Сведения об оценке изменились. Обновите состояние и повторите выбор.',
+        PROGRAM_CONFIGURATION_NOT_AVAILABLE: 'Настройка оценки не завершена. Обратитесь к суперадминистратору.',
+      };
+      const code = Object.keys(messages).find((item) => String(error?.message || '').includes(item));
+      setStatus(code ? messages[code] : (error.message || 'Не удалось назначить оценку.'), 'error');
+      offerAssessmentDataNavigation(organizationId, assessment);
+    }
     return false;
   } finally {
     assignmentSourceRequests.delete(requestKey);
@@ -1120,7 +1168,7 @@ const offerAssessmentDataNavigation = (organizationId, assessmentRef) => {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'text-button';
-  button.textContent = assessmentRef ? 'Открыть данные оценки «' + assessmentRef + '»' : 'Выбрать оценку и подготовить сведения';
+  button.textContent = assessmentRef ? 'Открыть данные выбранной оценки' : 'Выбрать программу и подготовить сведения';
   button.onclick = () => {
     if (assessmentRef) selectedAssessmentRefs.set(organizationKey(organizationId), assessmentRef);
     selectAdminOrganizationView(organizationId, 'organization-data');
@@ -1990,12 +2038,11 @@ export const renderAdminOrganizations = () => {
       const assignmentReadinessMarkup = '<section class="admin-assignment-readiness" aria-label="Готовность назначения">' +
         '<h5>Готовность назначения</h5><dl>' +
         '<dt>Программа</dt><dd>' + (programConnectionUnverified ? 'подключение не подтверждено' : currentProgram
-          ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version)
+          ? escapeHtml(programIdentity(currentProgram)) + ' · версия ' + escapeHtml(currentProgram.program_version)
           : 'не подключена') + '</dd>' +
-        '<dt>Роль</dt><dd>' + (allowedRoles.length
-          ? escapeHtml(allowedRoles.map((role) => role.name || role.code).join(', '))
+        '<dt>Роль в оценке</dt><dd>' + (allowedRoles.length
+          ? escapeHtml(roleIdentity(allowedRoles))
           : 'недоступна') + '</dd>' +
-        '<dt>Оценка</dt><dd>' + escapeHtml(selectedRef || 'не выбрана') + '</dd>' +
         '<dt>Анкета</dt><dd>' + escapeHtml(questionnaireAssignment.label) + '</dd></dl>' +
         (assignmentBlockers.length
           ? '<div class="form-status error" role="alert"><strong>Назначение пока недоступно</strong><ul>' +
@@ -2003,7 +2050,7 @@ export const renderAdminOrganizations = () => {
           : '<p class="form-status success">Можно назначать. Выберите участников ниже; назначение не запускает оценку.</p>') +
         '</section>';
       const roleSelectionMarkup = roleCapabilities.length
-        ? '<label><span>Роль программы</span><select name="role_profile_version_id" required><option value="">Выберите роль</option>' +
+        ? '<label><span>Роль в оценке</span><select name="role_profile_version_id" required><option value="">Выберите роль</option>' +
           roleCapabilities.map((role) => {
             const selectable = role.is_available === true && Number(role.version_id) > 0;
             return '<option value="' + (selectable ? Number(role.version_id) : '') + '"' +
@@ -2013,10 +2060,9 @@ export const renderAdminOrganizations = () => {
           }).join('') + '</select></label>' : '';
       const assessmentFieldMarkup = currentProgram
         ? '<section class="admin-assessment-identity" aria-label="Выбранная оценка программы"><strong>' +
-          escapeHtml(currentProgram.program_name) + '</strong><dl>' +
+          escapeHtml(programIdentity(currentProgram)) + '</strong><dl>' +
           '<dt>Версия программы</dt><dd>' + escapeHtml(currentProgram.program_version) + '</dd>' +
-          '<dt>Роль</dt><dd>' + escapeHtml(allowedRoles.map((role) => role.name || role.code).join(', ') || 'не выбрана') + '</dd>' +
-          '<dt>Ключ оценки</dt><dd><code>' + escapeHtml(connectedRef) + '</code></dd></dl>' +
+          '<dt>Роль в оценке</dt><dd>' + escapeHtml(roleIdentity(allowedRoles)) + '</dd></dl>' +
           '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '"></section>'
         : '<label><span>Оценка</span><input name="assignment_ref" type="text" value="' +
           escapeHtml(selectedRef) + '" placeholder="Подключите программу или укажите исторический ключ" required></label>' +
@@ -2162,7 +2208,7 @@ export const renderAdminOrganizations = () => {
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>' +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Участники оценки</h4>' +
-        '<dl class="admin-people-context"><div><dt>Выбранная оценка</dt><dd>' + escapeHtml(selectedRef || 'Не выбрана') + '</dd></div><div><dt>Подключённая программа</dt><dd>' + (programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div></dl>' +
+        '<dl class="admin-people-context"><div><dt>Программа оценки</dt><dd>' + (programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram ? escapeHtml(programIdentity(currentProgram)) + ' · версия ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div><div><dt>Роль в оценке</dt><dd>' + escapeHtml(roleIdentity(allowedRoles)) + '</dd></div></dl>' +
         '<p>Назначение не запускает оценку.</p>' +
         assignmentReadinessMarkup +
         '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +
