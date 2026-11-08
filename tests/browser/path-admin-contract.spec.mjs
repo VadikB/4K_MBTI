@@ -67,7 +67,7 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     const response = page.waitForResponse((r) => r.url() === url && r.request().method() === 'POST');
     await assign.dblclick();
     expect((await response).status()).toBe(200);
-    await expect(card.locator('[data-operation-status]').first()).toContainText('Назначена: 1');
+    await expect(card.locator('[data-operation-status]').first()).toContainText('Synthetic contract subject: оценка назначена');
     const afterDouble = inputs('readback');
     expect(afterDouble.assignments).toHaveLength(1);
     expect(afterDouble.bindings).toHaveLength(1);

@@ -1222,7 +1222,7 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
     cancelled = true;
     return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
   });
-  await expect(page.locator('.admin-people-context')).toContainText('Специалист 4К · 1.0');
+  await expect(page.locator('.admin-people-context')).toContainText('Специалист 4К · версия 1.0');
   await expect(page.locator('[data-bulk-actions]')).toBeHidden();
   await page.locator('input[name="invitation_email"]').check();
   await expect(page.locator('[data-bulk-actions]')).toBeVisible();
@@ -1249,7 +1249,8 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   const cancelTrigger = menu.getByRole('menuitem', { name: 'Отменить назначение оценки' });
   await cancelTrigger.click();
   dialog = page.getByRole('dialog', { name: 'Отменить назначение?' });
-  await expect(dialog).toContainText('Иван Иванов · «competencies_4k»');
+  await expect(dialog).toContainText('Иван Иванов · «Специалист 4К · не выбрана»');
+  await expect(dialog).not.toContainText('competencies_4k');
   await expect(dialog).toContainText('Для нового прохождения потребуется новое назначение');
   await expect(dialog).toContainText('Аккаунт, участие в организации и история сохранятся');
   await dialog.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
@@ -1718,7 +1719,7 @@ test('UX-ADM28-02 reports questionnaire load failure separately and offers retry
   await expect(error).not.toContainText('temporary failure');
   await expect(error.getByRole('button', { name: 'Повторить' })).toBeVisible();
   await expect(card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel'))
-    .toContainText('Выберите оценку');
+    .toContainText('Выберите программу и роль в оценке');
 });
 
 test('AC18-ADM-1A accepted composition stays usable across target widths and keyboard', async ({ page }, testInfo) => {
@@ -2134,7 +2135,9 @@ test('UX-ADM28-01 changes recipients without invalidating content preview and ap
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await expect(preview).toHaveCount(0);
-  await expect(card.locator('[data-admin-view="organization-data"] .admin-readiness-panel')).toContainText('Поток B');
+  await expect(card.locator('[data-admin-view="organization-data"] .admin-readiness-panel'))
+    .toContainText('Готовность выбранной оценки ещё не рассчитана');
+  await expect(card.locator('[data-admin-view="organization-data"] .admin-readiness-panel')).not.toContainText('Поток B');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель участника');
 
 });

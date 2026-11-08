@@ -208,7 +208,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     ]);
     await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(card.locator('[data-assignment-sources]')).toHaveCount(0);
-    await expect(card.locator('[data-operation-status]').first()).toContainText('Назначена: 1. Уже была назначена: 0. Не назначена: 0.');
+    await expect(card.locator('[data-operation-status]').first()).toContainText(`${fullName}: оценка назначена.`);
     await checkbox.check();
     await card.getByRole('button', { name: 'Отправить приглашения', exact: true }).click();
     await expect.poll(async () => (await (await admin.request.get(base + '/__pytest__/mailbox', {

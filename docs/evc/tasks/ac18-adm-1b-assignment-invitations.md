@@ -109,12 +109,16 @@
   `deploy-test` и полный draft-only workflow штатно SKIPPED.
 - `npm run ready:prepare -- --candidate 2.0.84` — PASS против свежего
   `origin/main=0c59577d`, версия `2.0.83` → `2.0.84`, frontend пересобран.
+- Ready full CI для `c292c149`: frontend, pytest, 4/4 runtime browser shards и
+  integration — PASS; fast browser — FAIL 6 устаревших текстовых ожиданий после
+  принятого 1B UI-контракта. Исправлены assertions и скрыт raw `assignment_ref`
+  также в диалоге отмены; адресный Playwright — PASS 5/5.
 - Реальная owned PostgreSQL integration — PASS: outer runner 1/1, child actual
   HTTP/PG checks 18/18; новая `product4k_pytest_*` БД, owner marker подтверждён,
   `database_absent=true`, `state_absent=true`, `force=false`. Временный PostgreSQL 16
   работал в Docker tmpfs и удалён; рабочая БД и `.env` не использовались.
-- CI точного candidate SHA — NOT_RUN до push; deploy/test-stand/human visual acceptance —
-  NOT_RUN, соответствующие действия не выполнялись.
+- Повторный CI точного исправленного candidate SHA — NOT_RUN до push;
+  deploy/test-stand/human visual acceptance — NOT_RUN, соответствующие действия не выполнялись.
 
 ## Откат
 

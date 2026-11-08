@@ -1820,7 +1820,7 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
   );
 };
 
-const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '', transferTargets = [] } = {}) => {
+const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '', selectedAssessmentLabel = '', transferTargets = [] } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
   }
@@ -1882,7 +1882,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           : '';
         const cancellableStage = ['assigned', 'acquaintance', 'acquaintance_complete', 'preparing', 'preparation_failed', 'preparation_complete', 'start_blocked', 'ready_to_start'].includes(preparationStatus);
         const cancelButton = scopedStage?.assignment_id && cancellableStage
-          ? '<button type="button" role="menuitem" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-value="' + escapeHtml(email) + '">Отменить назначение оценки</button>'
+          ? '<button type="button" role="menuitem" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-assessment-label="' + escapeHtml(selectedAssessmentLabel || 'выбранная оценка') + '" data-value="' + escapeHtml(email) + '">Отменить назначение оценки</button>'
           : '';
         const reportButton = scopedStage?.action === 'open_report' && scopedStage?.report_id
           ? '<button type="button" data-action="open-member-report" data-report-id="' + escapeHtml(scopedStage.report_id) +
@@ -2218,6 +2218,9 @@ export const renderAdminOrganizations = () => {
         renderMemberList(org.members || [], {
           isSuperadmin,
           selectedAssessmentRef: selectedRef,
+          selectedAssessmentLabel: currentProgram
+            ? programIdentity(currentProgram) + ' · ' + roleIdentity(allowedRoles)
+            : 'выбранная оценка',
           transferTargets: organizations.filter((candidate) => candidate.is_active !== false && Number(candidate.id) !== orgId),
         }) +
         '<form class="admin-organization-member-form" data-action="add-member">' +
