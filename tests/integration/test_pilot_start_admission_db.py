@@ -347,3 +347,72 @@ def test_http_start_uses_same_sql_decision_and_does_not_expose_review_material(p
         repeated = client.post("/users/assessment/cycles/start", json=request)
         assert repeated.status_code == 201
         assert repeated.json()["runtime"]["current_situation"]["assessment_situation_id"] == ready["assessment_situation_id"]
+
+
+def test_http_lost_start_receipt_is_recovered_by_read_only_runtime(pilot_db, monkeypatch):
+    """A committed POST with a lost response must be recoverable without another start."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+
+    factory, cid, profile_id, _ = pilot_db
+    monkeypatch.setattr(routes, "get_connection", factory)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                        lambda token: SimpleNamespace(id={"synthetic-owner": 99,
+                                                          "synthetic-other": 100}[token])
+                        if token in {"synthetic-owner", "synthetic-other"} else None)
+    app = FastAPI()
+    app.include_router(routes.router)
+    request = {"cycle_id": cid, "idempotency_key": "synthetic-http-lost-receipt"}
+
+    with factory() as c:
+        before = read_cycle(c, cid)
+        ready = start_readiness(c, cycle_id=cid, user_id=99)
+        assert ready["can_start"] is True
+        assert before["started_at"] is None and before["consumed_seconds"] == 0
+        cycle_count = c.execute("SELECT count(*) AS n FROM m5_cycles WHERE owner_user_id=99").fetchone()["n"]
+        as_count = c.execute("SELECT count(*) AS n FROM m5_assessment_situations WHERE cycle_db_id=%s",
+                             (before["id"],)).fetchone()["n"]
+
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, "synthetic-owner")
+        committed = client.post("/users/assessment/cycles/start", json=request)
+        assert committed.status_code == 201, committed.text
+        first = committed.json()
+        # The client never receives this body: only persisted state may prove success.
+        del committed
+        with factory() as c:
+            committed_at = read_cycle(c, cid)["started_at"]
+            assert committed_at is not None
+        client.cookies.set(routes.SESSION_COOKIE_NAME, "synthetic-other")
+        foreign = client.get(f"/users/assessment/cycles/{cid}/runtime")
+        assert foreign.status_code in {403, 404}
+        client.cookies.set(routes.SESSION_COOKIE_NAME, "synthetic-owner")
+        readbacks = [client.get(f"/users/assessment/cycles/{cid}/runtime") for _ in range(2)]
+        assert all(response.status_code == 200 for response in readbacks)
+        assert readbacks[0].json() == readbacks[1].json()
+        recovered = readbacks[0].json()
+        assert recovered["cycle_id"] == cid
+        assert recovered["current_situation"]["assessment_situation_id"] == ready["assessment_situation_id"]
+        assert recovered["current_situation"]["participant_payload"] == first["runtime"]["current_situation"]["participant_payload"]
+        assert recovered["plan"] == first["runtime"]["plan"]
+        assert "pilot_plan_binding" not in readbacks[0].text
+        assert "observation_occurrences" not in readbacks[0].text
+
+        repeated = client.post("/users/assessment/cycles/start", json=request)
+        assert repeated.status_code == 201, repeated.text
+        assert repeated.json()["runtime"]["current_situation"] == recovered["current_situation"]
+
+    with factory() as c:
+        after = read_cycle(c, cid)
+        assert after["started_at"] == committed_at
+        assert after["personalized_profile_id"] == profile_id
+        assert c.execute("SELECT count(*) AS n FROM m5_cycles WHERE owner_user_id=99").fetchone()["n"] == cycle_count
+        assert c.execute("SELECT count(*) AS n FROM m5_assessment_situations WHERE cycle_db_id=%s",
+                         (before["id"],)).fetchone()["n"] == as_count
+        assert c.execute("""SELECT count(*) AS n FROM m5_cycle_time_intervals
+            WHERE cycle_db_id=%s AND interval_type='collecting'""", (before["id"],)).fetchone()["n"] == 1
+        assert c.execute("""SELECT count(*) AS n FROM m5_dialogue_turns turn
+            JOIN m5_assessment_situations s ON s.id=turn.assessment_situation_db_id
+            WHERE s.cycle_db_id=%s AND turn.speaker_type='assessee'""",
+            (before["id"],)).fetchone()["n"] == 0
