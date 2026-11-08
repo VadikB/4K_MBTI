@@ -3,19 +3,25 @@ import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { capturePathViewports, viewportGeometry, assertViewportGeometry } from './fixtures/path-viewports.mjs';
 import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
 import { captureFailurePage } from './fixtures/failure-page.mjs';
 
 const root = process.cwd();
 const port = 18764;
-const base = `http://127.0.0.1:${port}`;
+const publishedOrigin = process.env.AC18_FIX02_PUBLISHED_ORIGIN || '';
+if (publishedOrigin && publishedOrigin !== 'https://test.4k-assistant.ru') {
+  throw new Error('AC18_FIX02_PUBLISHED_ORIGIN must be the approved test origin');
+}
+const base = publishedOrigin || `http://127.0.0.1:${port}`;
 const appRelease = (await fs.readFile(path.join(root, 'web/js/config.js'), 'utf8'))
   .match(/APP_RELEASE = "([^"]+)";/)?.[1];
 if (!appRelease) throw new Error('web/js/config.js must define APP_RELEASE');
 let server;
 
 test.beforeAll(async () => {
+  if (publishedOrigin) return;
   server = http.createServer(async (request, response) => {
     try {
       const pathname = new URL(request.url, base).pathname;
@@ -36,8 +42,17 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  if (!server) return;
   await new Promise((resolve) => server.close(resolve));
 });
+
+async function blockUnmockedWrites(context) {
+  if (!publishedOrigin) return;
+  await context.route('**/*', (route) => route.request().method() === 'GET'
+    ? route.continue() : route.abort('blockedbyclient'));
+}
+
+test.beforeEach(async ({ context }) => blockUnmockedWrites(context));
 
 const fulfillJson = (route, body, status = 200) => route.fulfill({
   status,
@@ -3607,6 +3622,22 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
   await expect(page.getByText('189 мин.')).toBeHidden();
 });
 
+test('AC18-FIX-02 published frontend matches the merged release and asset', async ({ page }) => {
+  test.skip(!publishedOrigin, 'Runs only for the explicitly selected published test origin');
+  const response = await page.goto(base);
+  expect(response?.status()).toBe(200);
+  const assetPath = await page.locator('script[type="module"][src^="/web/dist/main.js"]').getAttribute('src');
+  expect(assetPath).toContain(`v=${appRelease}`);
+  const assetResponse = await page.request.get(new URL(assetPath, base).href);
+  expect(assetResponse.status()).toBe(200);
+  const deployedHash = createHash('sha256').update(await assetResponse.body()).digest('hex');
+  const localHash = createHash('sha256').update(await fs.readFile(path.join(root, 'web/dist/main.js'))).digest('hex');
+  expect(deployedHash).toBe(localHash);
+  const versionResponse = await page.request.get(`${base}/users/version`);
+  expect(versionResponse.status()).toBe(200);
+  expect((await versionResponse.json()).version).toBe(appRelease);
+});
+
 test('AC18-FIX-02 reconciles a committed first start after the POST response is lost', async ({ page }, testInfo) => {
   const evidenceDirectory = process.env.AC18_FIX02_VISUAL_EVIDENCE;
   if (evidenceDirectory) await fs.mkdir(evidenceDirectory, { recursive: true });
@@ -3840,6 +3871,7 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
   for (const [stateName, title, action] of states) {
     phase = stateName;
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await blockUnmockedWrites(context);
     const page = await context.newPage();
     await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
