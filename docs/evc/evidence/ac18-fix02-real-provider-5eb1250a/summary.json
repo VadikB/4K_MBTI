@@ -1,0 +1,64 @@
+{
+  "scope": "AC18-FIX-02 real-provider first-case path",
+  "result": "PASS",
+  "code_sha": "5eb1250a2341a54b125cf451c13bd5bd9ae32a00",
+  "application_version": "2.0.82",
+  "profile": "assessment-first-case/1.1",
+  "program": {
+    "code": "specialist_pilot",
+    "version": "1.2",
+    "id": 2,
+    "source_receipt_sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+  },
+  "provider_contract": {
+    "id": "deepseek_product_gateway",
+    "version": "1.0.0",
+    "checksum": "a9b20456f413a8828ee2cca47356490ae98844542c8ad31c015f937abe951c8c",
+    "model": "deepseek-flash"
+  },
+  "invocations": {
+    "paid_runner": 1,
+    "browser_retries": 0,
+    "bootstrap_llm_calls": 0,
+    "provider_completed_requests": 10,
+    "transport_attempts_per_request": 1,
+    "json_parse_failures": 0,
+    "repair_used": false
+  },
+  "paid_run_id": "e2ad46ce8f0f4663996224981dbf2faa",
+  "checks": {
+    "preflight": "READY",
+    "bootstrap": "PASS_BOOTSTRAP_ONLY",
+    "browser": "PASS",
+    "offline_summary": "PASS",
+    "admission": "PASS",
+    "admitted_for_participant": true,
+    "pre_start_can_start": true,
+    "start_http_status": 201,
+    "presented_as_matches_saved": true,
+    "assessment_answers": 0,
+    "cleanup_owner_verified": true,
+    "cleanup_database_absent": true,
+    "cleanup_state_absent": true
+  },
+  "usage_retained_tokens": {
+    "prompt": 712763,
+    "completion": 39810,
+    "total": 752573
+  },
+  "primary_evidence_sha256": {
+    "code_identity_json": "f2d5d54af13046052b62d8d3ebae050fbc9c108959190b57a0eb10dc6a00ec97",
+    "published_release_source_json": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+    "source_to_runtime_receipt_json": "4daec6e85b20c9a50fdc8c22c8de540dc8019d73c1df33c3bb482c2772850b66",
+    "first_case_receipt_json": "72017dd2d70613a84b3f9bdff21c7883f237adace167a38cf7c307772b391929",
+    "first_case_png": "9fc810c3b3b0193b2f8ce9721898837ea81a4b99f80568ea6950df20e6db35ce",
+    "cleanup_json": "de91b1e01c9775832a7654d2f827a1a73cfe24fc21078b1e9db68668dc0b3a41",
+    "runner_result_normalized_json": "d6c6f794d0916999922e57ae9616f76cebce2ce46cbdd42edd278f57dbfb2be6"
+  },
+  "limitations": [
+    "one positive real-provider path only",
+    "retained usage was not independently reconciled with provider billing",
+    "historical incidents and repair path are not reclassified by this result",
+    "no physical device or real participant test"
+  ]
+}
