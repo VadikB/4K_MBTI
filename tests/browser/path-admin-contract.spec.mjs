@@ -84,7 +84,9 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     }, { times: 1 });
     await assign.click();
     await expect.poll(() => committed?.status).toBe(200);
-    await expect(card.locator('[data-operation-status]').first()).toHaveAttribute('data-tone', 'error');
+    await expect(card.locator('[data-operation-status]').first()).toHaveAttribute('data-tone', 'success');
+    await expect(card.locator('[data-operation-status]').first())
+      .toContainText('назначение подтверждено чтением после потери ответа');
     const afterLost = inputs('readback');
     expect(afterLost.assignments).toHaveLength(2);
     expect(afterLost.bindings).toHaveLength(2);
@@ -95,7 +97,8 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     await expect(card).toBeVisible();
     await select(emails[1]);
     await assign.click();
-    await expect(card.locator('[data-operation-status]').first()).toContainText('Уже была назначена: 1');
+    await expect(card.locator('[data-operation-status]').first())
+      .toContainText('Synthetic contract subject: эта оценка уже назначена');
     for (let i = 0; i < 2; i += 1) {
       const read = await page.request.get(base + '/users/admin/organizations');
       expect(read.status()).toBe(200);

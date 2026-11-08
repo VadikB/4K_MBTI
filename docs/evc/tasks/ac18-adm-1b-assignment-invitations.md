@@ -113,6 +113,10 @@
   integration — PASS; fast browser — FAIL 6 устаревших текстовых ожиданий после
   принятого 1B UI-контракта. Исправлены assertions и скрыт raw `assignment_ref`
   также в диалоге отмены; адресный Playwright — PASS 5/5.
+- Повторный full CI для `723216b8`: frontend, pytest, 4/4 runtime browser shards и
+  integration — PASS; fast browser — FAIL 1 оставшееся legacy-ожидание `error`
+  после успешного assignment readback. Исправлено на проверку подтверждённого
+  чтением успеха и результата повторной операции по имени участника.
 - Реальная owned PostgreSQL integration — PASS: outer runner 1/1, child actual
   HTTP/PG checks 18/18; новая `product4k_pytest_*` БД, owner marker подтверждён,
   `database_absent=true`, `state_absent=true`, `force=false`. Временный PostgreSQL 16
