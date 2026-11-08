@@ -1,10 +1,3 @@
-# Точка входа
-
-- `CODEX-WORKFLOW-02`: актуальное состояние —
-  `docs/evc/tasks/CODEX-WORKFLOW-02/STATE.md`; ветка
-  `codex/codex-workflow-02`, PR #196. Публикация/status-sync и наблюдение CI
-  разрешены, Human review нового SHA ожидается, `merge=false` до отдельного допуска.
-
 # STATE — AC18-FINAL-REL-01
 
 07.11.2026. После приёмки branch PATH владелец «делаем»: готовим один финальный

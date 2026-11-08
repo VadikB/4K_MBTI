@@ -24,6 +24,11 @@
   `deploy-test` SKIPPED; full verification run `42509105355` — integration PASS,
   browser fast и четыре runtime shard PASS, агрегирующий `full-verification` PASS.
   Conflicts: none.
+- Первый status-sync `31cfdaa697bff1de6a892b96fb2b6dffaf6cb7f4`: CI run
+  `42510248058`, `frontend` FAIL на штатном release-gate — корневой `STATE.md`
+  классифицирован как product change при неизменной версии `2.0.84`. Это не обходится
+  и не требует неразрешённого version bump: корневой указатель снят, вся прежняя
+  AC18-информация сохранена без изменений; актуальная точка задачи остаётся здесь.
 - Loopback/browser: первоначальный sandbox bind `BLOCKED/NOT_RUN` сохранён;
   адресный штатный approval получен, HTTP 200 и browser readback/screenshot PASS.
 - Reviewer denial на первый push: факт отказа подтверждён, но машинная причина,
@@ -50,9 +55,10 @@
   `git diff --check`. Последующий `84680624` устранил найденный повтор формулировки
   Human review; продуктовые файлы не менялись. Внешних действий и новых веток в
   контролях не было. Эти сессии — review кандидата, но не человеческая приёмка.
-- Активный шаг: опубликовать этот task-local/root status-sync обычным push в ту же
+- Активный шаг: опубликовать corrective task-local status-sync обычным push в ту же
   ветку и дождаться применимых checks точного нового remote HEAD; затем передать
-  точный SHA на отдельный Human review.
+  точный SHA на отдельный Human review. Корневой `STATE.md` не служит точкой входа
+  этой задачи: его изменение требует отдельного release/version scope.
 - После Human review: новый точный merge-допуск; только затем
   merge без bypass, pull/readback в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
