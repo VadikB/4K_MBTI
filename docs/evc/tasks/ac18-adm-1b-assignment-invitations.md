@@ -53,9 +53,10 @@
 - Завершено: проверены архив, контрольные суммы, base SHA, границы 1A/1B/1C;
   реализованы identity/readiness, per-person results, invitation batch validation и
   assignment readback; добавлены адресные browser-регрессии; frontend/HTTP PASS.
-- Активный шаг: финальная diff/review-проверка и оформление передачи.
-- Следующий шаг: human visual acceptance; затем отдельное решение о
-  push/PR/version/merge/deploy.
+- Активный шаг: PATCH-кандидат `2.0.84` подготовлен каноническим preflight;
+  требуется commit/push и повторный обязательный CI точного SHA.
+- Следующий шаг: после успешного CI перевести Draft PR в Ready for review;
+  human visual acceptance, merge и deploy остаются отдельными решениями.
 - Ветка / base / head: `codex/ac18-adm-1b` / `0c59577d` / локальный review-ready commit
   `AC18-ADM-1B clarify assignment outcomes` (точный SHA — в итоговой передаче).
 - Передача: обновлять этот раздел после каждого смыслового шага.
@@ -63,13 +64,14 @@
 ## Действия выпуска
 
 - `branch_push=true`
-- `pr=true` (draft до согласованного version candidate)
+- `pr=true` (Draft PR #195)
 - `merge=false`
 - `deploy=false`
-- `version_bump=false`
+- `version_bump=true` (`2.0.83` → `2.0.84`, PATCH)
 - `artifact_publish=false`
-- Основание: прямое разрешение пользователя 08.11.2026 на push ветки и создание PR;
-  version bump, Ready for review, merge и deploy этим разрешением не охвачены.
+- Основание: прямое разрешение пользователя 08.11.2026 на push/PR и продолжение
+  release-подготовки; по правилам репозитория небольшое продуктовое изменение получает
+  непосредственный PATCH-преемник базы, то есть `2.0.84`. Merge и deploy не разрешены.
 
 ## Ограничения и риски
 
@@ -103,11 +105,16 @@
 - `pytest tests/e2e/test_adm27_assignment_http.py tests/e2e/test_r03_invitation_http.py -q` — PASS, 28/28.
 - Адресный Playwright 1B — PASS, 4/4; mobile geometry включена в assignment-сценарий.
 - `npm run build:web`, `node --check`, `git diff --check` — PASS.
+- Draft CI исходного SHA `d7bdcbc8`: PASS обязательных `frontend` и `pytest`;
+  `deploy-test` и полный draft-only workflow штатно SKIPPED.
+- `npm run ready:prepare -- --candidate 2.0.84` — PASS против свежего
+  `origin/main=0c59577d`, версия `2.0.83` → `2.0.84`, frontend пересобран.
 - Реальная owned PostgreSQL integration — PASS: outer runner 1/1, child actual
   HTTP/PG checks 18/18; новая `product4k_pytest_*` БД, owner marker подтверждён,
   `database_absent=true`, `state_absent=true`, `force=false`. Временный PostgreSQL 16
   работал в Docker tmpfs и удалён; рабочая БД и `.env` не использовались.
-- CI/deploy/test-stand/human visual acceptance — NOT_RUN: соответствующие действия не разрешены.
+- CI точного candidate SHA — NOT_RUN до push; deploy/test-stand/human visual acceptance —
+  NOT_RUN, соответствующие действия не выполнялись.
 
 ## Откат
 
