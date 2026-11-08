@@ -40,8 +40,12 @@
   `1f3a774f` (`Complete Codex workflow control evidence`). Текущий delivery head —
   commit синхронизации этого STATE; его полный SHA фиксируется в PR/CI, поскольку
   commit не может достоверно содержать собственный SHA.
-- Активный шаг: адресно проверить изменённый механизм передачи полномочий в новой
-  сессии; затем push нового HEAD в тот же PR и применимые checks точного remote head.
+- Provenance-контроль: сессия `01a1bc5c-4235-70a0-bfe1-3cda522db306` нашла
+  смешение publication/merge; после исправления новая сессия
+  `01a1bc5e-36c4-7f21-a53f-1b6ab2c08bd9` дала PASS на `cf8b8821`, включая
+  `git diff --check`. Внешних действий и новых веток в контролях не было.
+- Активный шаг: зафиксировать evidence-кандидат, выполнить разрешённый обычный push
+  нового HEAD в тот же PR и применимые checks точного remote head.
 - После CI: отдельный human review нового SHA и новый merge-допуск; только затем
   merge без bypass, pull/readback в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
@@ -49,8 +53,8 @@
   AC06 PASS, включая повторённый loopback/browser; исторический `NOT_RUN` сохранён;
   AC07 PASS.
 - Ограничения: `/usr/local/bin/codex` 0.125.0 остаётся неработоспособным (`ENOENT`
-  после точной переустановки); проверенный маршрут — Codex desktop. Human review/
-  human review/merge ещё не выполнены; один исторический auto-review denial на
+  после точной переустановки); проверенный маршрут — Codex desktop. Human review и
+  merge нового кандидата ещё не выполнены; один исторический auto-review denial на
   неподтверждённый push закрыт прямым решением владельца без обхода; client model/effort
   `UNKNOWN`.
 - Ограничения: без PATH/AUTH/AC18, БД, писем, product LLM, deploy/version bump/

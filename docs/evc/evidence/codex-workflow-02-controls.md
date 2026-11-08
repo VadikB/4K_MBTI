@@ -108,3 +108,17 @@ git diff origin/main...HEAD -- AGENTS.md docs/evc/agent-workflow.md \
 
 Изменение добавляет восстановление Decision IDs, целый разрешённый цикл,
 полномочия этапа, независимые release-флаги и проверку provenance полномочия.
+
+## Адресная проверка изменённого механизма полномочий
+
+- Новая read-only сессия `01a1bc5c-4235-70a0-bfe1-3cda522db306` проверила
+  candidate `440e998f`: provenance, области двух первых «да», отдельный status-push,
+  publication scope и `UNKNOWN` — PASS; выявила смешение publication authority и
+  merge authority в карточке.
+- После адресного исправления новая read-only сессия
+  `01a1bc5e-36c4-7f21-a53f-1b6ab2c08bd9` проверила commit `cf8b8821` — PASS:
+  publication включает собственную ветку/PR/последующие обычные push/наблюдение CI,
+  но не merge; для изменённого кандидата `merge=false` до checks, отдельного human
+  review и нового merge-допуска; reviewer reason остаётся `UNKNOWN`, объяснение —
+  интерпретация. `git diff --check cf8b8821^ cf8b8821` — PASS.
+- Обе сессии не создавали веток, не меняли файлы и не выполняли внешних действий.
