@@ -29,6 +29,11 @@
   классифицирован как product change при неизменной версии `2.0.84`. Это не обходится
   и не требует неразрешённого version bump: корневой указатель снят, вся прежняя
   AC18-информация сохранена без изменений; актуальная точка задачи остаётся здесь.
+- Corrective candidate `e6f6b5b11292c5d60385993aab389ba6a7d1388b`:
+  CI run `42510360541` — `frontend` PASS, `pytest` PASS, `deploy-test` SKIPPED;
+  Full verification run `42510360576` — Status Success, 5m32s, integration PASS
+  (4m19s), browser fast и четыре runtime shard PASS, агрегирующий
+  `full-verification` PASS (4s). Результат относится к exact remote HEAD.
 - Loopback/browser: первоначальный sandbox bind `BLOCKED/NOT_RUN` сохранён;
   адресный штатный approval получен, HTTP 200 и browser readback/screenshot PASS.
 - Reviewer denial на первый push: факт отказа подтверждён, но машинная причина,
@@ -55,10 +60,10 @@
   `git diff --check`. Последующий `84680624` устранил найденный повтор формулировки
   Human review; продуктовые файлы не менялись. Внешних действий и новых веток в
   контролях не было. Эти сессии — review кандидата, но не человеческая приёмка.
-- Активный шаг: опубликовать corrective task-local status-sync обычным push в ту же
-  ветку и дождаться применимых checks точного нового remote HEAD; затем передать
-  точный SHA на отдельный Human review. Корневой `STATE.md` не служит точкой входа
-  этой задачи: его изменение требует отдельного release/version scope.
+- Активный шаг: опубликовать этот финальный task-local CI receipt обычным push в ту
+  же ветку, дождаться checks точного status-commit HEAD и передать этот SHA на
+  отдельный Human review. Корневой `STATE.md` не служит точкой входа этой задачи:
+  его изменение требует отдельного release/version scope.
 - После Human review: новый точный merge-допуск; только затем
   merge без bypass, pull/readback в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
