@@ -17,10 +17,13 @@
   повторные manual replies=0, approvals=0, denied=0.
 - Владелец прямо подтвердил push точной ветки в
   `origin` (`github.com/VadikB/4K_MBTI`) и создание PR. Ветка опубликована.
-- Draft PR: `https://github.com/VadikB/4K_MBTI/pull/196`, base
-  `main@65a62aca`, проверенный remote head до текущих правок `7cdcffeb`.
-- CI run `42476587396`: required `frontend` и `pytest` PASS; draft-only
-  deploy/browser/full-verification jobs SKIPPED по workflow. Conflicts: none.
+- PR: `https://github.com/VadikB/4K_MBTI/pull/196`, base `main@65a62aca`;
+  переведён из Draft после выполнения условий workflow. Проверенный content/remote
+  head до task-local status-sync: `84680624735986ef2589b2603fff73a6095e8b7f`.
+- CI exact `84680624`: run `42509105327` — required `frontend` и `pytest` PASS,
+  `deploy-test` SKIPPED; full verification run `42509105355` — integration PASS,
+  browser fast и четыре runtime shard PASS, агрегирующий `full-verification` PASS.
+  Conflicts: none.
 - Loopback/browser: первоначальный sandbox bind `BLOCKED/NOT_RUN` сохранён;
   адресный штатный approval получен, HTTP 200 и browser readback/screenshot PASS.
 - Reviewer denial на первый push: факт отказа подтверждён, но машинная причина,
@@ -40,16 +43,21 @@
   `1f3a774f` (`Complete Codex workflow control evidence`). Текущий delivery head —
   commit синхронизации этого STATE; его полный SHA фиксируется в PR/CI, поскольку
   commit не может достоверно содержать собственный SHA.
-- Provenance-контроль: сессия `01a1bc5c-4235-70a0-bfe1-3cda522db306` нашла
+- Техническое review текущего кандидата: сессия
+  `01a1bc5c-4235-70a0-bfe1-3cda522db306` нашла
   смешение publication/merge; после исправления новая сессия
   `01a1bc5e-36c4-7f21-a53f-1b6ab2c08bd9` дала PASS на `cf8b8821`, включая
-  `git diff --check`. Внешних действий и новых веток в контролях не было.
-- Активный шаг: зафиксировать evidence-кандидат, выполнить разрешённый обычный push
-  нового HEAD в тот же PR и применимые checks точного remote head.
-- После CI: отдельный human review нового SHA и новый merge-допуск; только затем
+  `git diff --check`. Последующий `84680624` устранил найденный повтор формулировки
+  Human review; продуктовые файлы не менялись. Внешних действий и новых веток в
+  контролях не было. Эти сессии — review кандидата, но не человеческая приёмка.
+- Активный шаг: опубликовать этот task-local/root status-sync обычным push в ту же
+  ветку и дождаться применимых checks точного нового remote HEAD; затем передать
+  точный SHA на отдельный Human review.
+- После Human review: новый точный merge-допуск; только затем
   merge без bypass, pull/readback в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
-  auto-review=1, denied=0; local candidate diff PASS; A/B fixture checks PASS.
+  auto-review=1, denied=0; local candidate diff PASS; A/B fixture checks PASS;
+  exact `84680624` mandatory CI/full verification PASS.
   AC06 PASS, включая повторённый loopback/browser; исторический `NOT_RUN` сохранён;
   AC07 PASS.
 - Ограничения: `/usr/local/bin/codex` 0.125.0 остаётся неработоспособным (`ENOENT`
