@@ -1,6 +1,6 @@
 # AC18-FIX-02 — один real-provider PATH на итоговом SHA
 
-Статус: **локальный отчёт готов; branch_push/PR/CI не выполнялись**. Основание —
+Статус: **опубликован в draft PR #192; быстрый CI запущен, полный CI не выполнялся**. Основание —
 `P4K_AC18_FIX_02_Preparation_Start_2026-11-07.zip`, редакция 1.0, и
 [план проверки](ac18-fix-02-provider-verification-plan.md). Владелец в текущем
 чате 08.11.2026 разрешил **один** платный прогон полной схемы без лимита затрат.
@@ -92,10 +92,10 @@ Safari/Firefox и сессия реального участника на `test`
 `main@5eb1250a` уже развёрнут на `test`: deploy-test #873 PASS, публичные
 frontend и `/users/version` показывают `2.0.82`. Этот docs/evidence diff ничего
 не развёртывает и не назначает новую версию. Флаги:
-`branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
+`branch_push=true`, `pr=true (draft #192)`, `merge=false`, `deploy=false`,
 `version_bump=false`, `artifact_publish=false`, `llm=true` ровно для завершённого
 run. Следующий шаг — review безопасной сводки и отдельное решение владельца о
-push/PR отчёта; CI для нового head до передачи в merge ещё не запускался.
+Ready/полном CI и merge; после публикации draft запущен только быстрый CI.
 
 Откат документационного результата — revert только отчёта и safe summary.
 Сохранённые оценки/программу/снимки и рабочую БД не удалять. Для тестового
