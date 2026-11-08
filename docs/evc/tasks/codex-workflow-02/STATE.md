@@ -7,11 +7,16 @@
   `CODEX-WORKFLOW-02-AUTH`.
 - Завершено: package integrity, разведка main, изоляция, официальный readback
   auto-review, draft правил/реестра/карточки.
-- Активный шаг: проверить diff, ссылки и полноту источников; зафиксировать commit.
-- Следующий шаг: две новые контрольные сессии A/B на точном candidate SHA.
+- Candidate: `c08dd49f` (`Add Codex decision recovery workflow`).
+- Завершено дополнительно: `git diff --cached --check` PASS; все адресные источники
+  реестра существуют.
+- Активный шаг: контрольные сессии A/B.
+- Следующий шаг: восстановить штатный способ запуска новой сессии либо получить
+  прямой запрос владельца на два отдельных desktop-чата; затем выполнить A/B.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
-  auto-review=1, denied=0. Остальные `NOT_RUN`.
-- Блокеры: human review/CI/merge ещё не достигнуты; client build/model/effort
-  безопасному readback недоступны (`UNKNOWN`).
+  auto-review=1, denied=0; local candidate diff PASS. AC06–AC07 `BLOCKED`:
+  `/usr/local/bin/codex` завершается `ENOENT` на отсутствующем darwin-x64 binary.
+- Блокеры: две новые сессии, human review/CI/merge; client model/effort безопасному
+  readback недоступны (`UNKNOWN`).
 - Ограничения: без PATH/AUTH/AC18, БД, писем, product LLM, deploy/version bump/
   предметной публикации; чужая root-ветка и untracked files не изменяются.
