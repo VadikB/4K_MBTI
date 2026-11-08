@@ -89,6 +89,6 @@ test('PROGRAM01 R02 binds questionnaire forms to the exact connected program key
   assert.match(source, /const selectedRef = connectedRef \|\| storedRef/);
   assert.match(source, /aria-label="Выбранная оценка программы"/);
   assert.match(source, /<dt>Версия программы<\/dt>/);
-  assert.match(source, /<dt>Ключ оценки<\/dt>/);
+  assert.doesNotMatch(source, /<dt>Ключ оценки<\/dt>/);
   assert.match(source, /name="assignment_ref" type="hidden"/);
 });

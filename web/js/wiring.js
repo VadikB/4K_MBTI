@@ -2146,11 +2146,12 @@ if (adminOrganizationsList) {
       const assignmentId = Number(button.getAttribute('data-assignment-id'));
       const participantName = button.dataset.participantName || value;
       const assessmentRef = button.dataset.assessmentRef || 'выбранная оценка';
+      const assessmentLabel = button.dataset.assessmentLabel || 'выбранная оценка';
       if (!assignmentId) return;
       openAdminSubjectConfirmation({
         trigger: button,
         title: 'Отменить назначение?',
-        subject: participantName + ' · «' + assessmentRef + '»',
+        subject: participantName + ' · «' + assessmentLabel + '»',
         consequences: 'Участник больше не сможет начать эту оценку. Для нового прохождения потребуется новое назначение. Аккаунт, участие в организации и история сохранятся.',
         cancelLabel: 'Оставить назначение',
         confirmLabel: 'Отменить назначение',
