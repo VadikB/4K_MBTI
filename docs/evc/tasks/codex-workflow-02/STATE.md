@@ -26,8 +26,11 @@
 - Reviewer denial на первый push разобран: приложенный `01_TASK.txt` был источником
   требований, но не прямым пользовательским разрешением внешнего эффекта. Обхода
   не было; владелец затем отдельно подтвердил точную ветку/remote/PR.
-- Активный шаг: зафиксировать текущие уточнения и доказательства, push в тот же PR,
-  получить обязательный CI точного финального SHA.
+- Content candidate с уточнениями и доказательствами:
+  `1f3a774f` (`Complete Codex workflow control evidence`). Текущий delivery head —
+  commit синхронизации этого STATE; его полный SHA фиксируется в PR/CI, поскольку
+  commit не может достоверно содержать собственный SHA.
+- Активный шаг: push текущего HEAD в тот же PR и обязательный CI точного remote head.
 - После CI: человеческий review и Ready; только затем merge без bypass, pull/readback
   в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
