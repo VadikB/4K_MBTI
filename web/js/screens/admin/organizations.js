@@ -1344,7 +1344,9 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     setStatus(inputChanged
       ? 'Данные изменились во время предпросмотра. Обновите предпросмотр перед подтверждением.'
       : preview.status === 'ready_for_confirmation'
-      ? 'Анкета распознана. Проверьте сведения и подтвердите источник.'
+      ? (payload?.channel === 'csv'
+        ? 'Анкета загружена. Проверьте сведения, изменения и источник перед подтверждением.'
+        : 'Черновик сохранён. Проверьте сведения и источник перед подтверждением.')
       : 'Черновик сохранён. Исправьте перечисленные ошибки или заполните обязательные поля.',
     !inputChanged && preview.status === 'ready_for_confirmation' ? 'success' : 'error');
   } catch (error) {
@@ -1882,7 +1884,7 @@ export const renderAdminOrganizations = () => {
   if (adminOrganizationsTitle) {
     const activeView = organizationViews.get(Number(selectedOrganizationId)) || 'people';
     adminOrganizationsTitle.textContent = data?.is_superadmin ? (data?.title || 'Организации')
-      : ({ people: 'Участники и приглашения', 'organization-data': 'Данные организации', questionnaire: 'Анкета для подготовки оценки' })[activeView];
+      : ({ people: 'Участники оценки', 'organization-data': 'Данные организации', questionnaire: 'Анкета' })[activeView];
   }
   if (adminOrganizationsSubtitle) {
     adminOrganizationsSubtitle.textContent = data?.is_superadmin
@@ -2074,7 +2076,7 @@ export const renderAdminOrganizations = () => {
           ? recipientProjections.participant || participant[key] : participant[key]) + '</dd>').join('');
       const changes = Array.isArray(questionnairePreview?.changes) ? questionnairePreview.changes : [];
       const changesMarkup = questionnairePreview?.is_first_publication
-        ? '<p><strong>Первая публикация.</strong> Эти сведения станут текущими после подтверждения.</p>'
+        ? '<p><strong>Пока нет подтверждённых сведений.</strong> Эта редакция станет текущей после подтверждения.</p>'
         : (changes.length ? '<ul>' + changes.map((change) => '<li><strong>' +
           escapeHtml(fieldLabels[change.field] || change.field) + ':</strong> «' + escapeHtml(change.before || 'не указано') +
           '» → «' + escapeHtml(change.after || 'не указано') + '»</li>').join('') + '</ul>' :
@@ -2089,7 +2091,7 @@ export const renderAdminOrganizations = () => {
         (previewIsStale ? '<p class="form-status error" data-preview-stale>Данные изменились. Обновите предпросмотр перед подтверждением. ' +
           '<button type="button" class="text-button" data-action="refresh-questionnaire-preview">Обновить предпросмотр</button></p>' : '') +
         (humanProblems.length ? '<p>Проверьте: ' + escapeHtml([...new Set(humanProblems)].join(', ')) + '.</p>' :
-          '<p>Обязательные поля распознаны.</p>') +
+          '<p>Обязательные сведения заполнены.</p>') +
         '<section><h5>Что увидит участник</h5><dl>' + participantRows + '</dl></section>' +
         '<section><h5>Изменения относительно текущей редакции</h5>' + changesMarkup + '</section>' +
         (questionnairePreview.status === 'ready_for_confirmation' ?
@@ -2156,10 +2158,10 @@ export const renderAdminOrganizations = () => {
         '</section>' +
         '</div>' : '') +
         '<nav class="admin-organization-steps" aria-label="Разделы управления">' +
-        viewButton('people', 'Организация и участники') +
+        viewButton('people', 'Участники оценки') +
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>' +
-        '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Организация и участники</h4>' +
+        '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Участники оценки</h4>' +
         '<dl class="admin-people-context"><div><dt>Выбранная оценка</dt><dd>' + escapeHtml(selectedRef || 'Не выбрана') + '</dd></div><div><dt>Подключённая программа</dt><dd>' + (programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram ? escapeHtml(currentProgram.program_name) + ' · ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div></dl>' +
         '<p>Назначение не запускает оценку.</p>' +
         assignmentReadinessMarkup +
@@ -2200,17 +2202,19 @@ export const renderAdminOrganizations = () => {
         '<form class="admin-organization-early-data-form" data-action="preview-early-data">' +
         assessmentFieldMarkup +
         '<label><span>Автор сведений</span><input name="source_author" type="text" value="' + escapeHtml(currentRevision?.source_author || '') + '" placeholder="Ответственный со стороны заказчика" required></label>' +
+        '<fieldset class="admin-questionnaire-field-group"><legend>Об организации</legend>' +
         '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '"></label>' +
         '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
         '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '"></label>' +
         '<label class="admin-organization-profile-wide"><span>Описание деятельности</span><textarea name="activity_description">' + answer('C01', 'activity_description') + '</textarea></label>' +
+        '<label><span>Близость кейсов к реальной деятельности</span><input name="case_reality_level" value="' + answer('C17', 'case_reality_level') + '"></label>' +
+        '<label><span>Использование названия в кейсах</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '"></label></fieldset>' +
+        '<fieldset class="admin-questionnaire-field-group"><legend>Условия оценки</legend>' +
         '<label class="admin-organization-profile-wide"><span>Цель оценки</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
         '<label class="admin-organization-profile-wide"><span>Использование результатов</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label>' +
         '<label><span>Кто увидит результаты</span><input name="result_recipients" value="' + answer('C04', 'answer') + '"></label>' +
         '<label><span>Организатор</span><input name="organizer" value="' + answer('C21', 'organizer') + '"></label>' +
-        '<label><span>Контакт ответственного</span><input name="responsible_contact" value="' + answer('C21', 'responsible_contact') + '"></label>' +
-        '<label><span>Реалистичность кейсов</span><input name="case_reality_level" value="' + answer('C17', 'case_reality_level') + '"></label>' +
-        '<label><span>Правила использования названия</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '"></label>' +
+        '<label><span>Контакт ответственного</span><input name="responsible_contact" value="' + answer('C21', 'responsible_contact') + '"></label></fieldset>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить черновик и предпросмотр</button></form>' +
         (activeView === 'organization-data' ? confirmationMarkup + previewMarkup : '') + '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + readinessMarkup(selectedRef, readiness) + '<h4>Корпоративная анкета</h4>' +

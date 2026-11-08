@@ -77,7 +77,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await toggle.check();
     await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
     await preview.locator('[name="questionnaire_recipient_user"]').check();
-    await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     await expect(toggle).toBeChecked();
     await expect(preview.locator('[name="questionnaire_recipient_user"]')).toBeEnabled();
@@ -99,7 +99,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await page.reload();
     await expect(form.locator('[name="source_author"]')).toHaveValue(values.source_author);
     await expect(form.locator('[name="purpose"]')).toHaveValue(values.purpose);
-    await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await card.locator('input[name="invitation_email"]').evaluateAll((fields) => fields.forEach((field) => {
       field.checked = true;
       field.dispatchEvent(new Event('change', { bubbles: true }));

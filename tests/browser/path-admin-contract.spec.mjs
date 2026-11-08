@@ -55,7 +55,7 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     await page.goto(base);
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     const card = page.locator(`[data-organization-id="${prepared.organization_id}"]`);
-    const people = card.getByRole('button', { name: 'Организация и участники', exact: true });
+    const people = card.getByRole('button', { name: 'Участники оценки', exact: true });
     const emails = Object.values(prepared.member_emails);
     const select = async (email) => {
       await people.click();
