@@ -15,18 +15,21 @@
   `01a1bae8-9d81-7031-a420-7be5ae09a79b`, fixture commit `6c339e6`; контроль B
   `01a1baea-9280-7122-b3b6-9d9c2eb17515`, commit `eb4e16d`. В обеих сессиях
   повторные manual replies=0, approvals=0, denied=0.
-- Активный шаг: внешний push gate. `origin/main@65a62aca` подтверждён свежим,
-  candidate `1b164449` содержит base в ancestry, worktree clean, diff-check PASS.
-- Push `codex/codex-workflow-02` → `origin` (`github.com/VadikB/4K_MBTI`) отклонён
-  auto-review до прямого подтверждения владельцем точной ветки/destination. Обход
-  не выполнялся. Следующий шаг — получить это подтверждение, затем push/PR/CI.
-- После CI: человеческий review; только затем разрешённый merge.
+- Владелец прямо подтвердил push точной ветки в
+  `origin` (`github.com/VadikB/4K_MBTI`) и создание PR. Ветка опубликована.
+- Draft PR: `https://github.com/VadikB/4K_MBTI/pull/196`, base
+  `main@65a62aca`, проверенный remote head `47b8222e`.
+- CI run `42476376967`: required `frontend` и `pytest` PASS; draft-only
+  deploy/browser/full-verification jobs SKIPPED по workflow. Conflicts: none.
+- Активный шаг: этот status commit, push и обязательный повтор CI нового head.
+- После CI: человеческий review и Ready; только затем разрешённый merge без bypass.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
   auto-review=1, denied=0; local candidate diff PASS; A/B fixture checks PASS.
   AC06 PASS с loopback `NOT_RUN`; AC07 PASS.
 - Ограничения: `/usr/local/bin/codex` 0.125.0 остаётся неработоспособным (`ENOENT`
   после точной переустановки); проверенный маршрут — Codex desktop. Human review/
-  CI/merge ещё не выполнены; один auto-review denial на push; client model/effort
+  human review/merge ещё не выполнены; один исторический auto-review denial на
+  неподтверждённый push закрыт прямым решением владельца; client model/effort
   `UNKNOWN`.
 - Ограничения: без PATH/AUTH/AC18, БД, писем, product LLM, deploy/version bump/
   предметной публикации; чужая root-ветка и untracked files не изменяются.

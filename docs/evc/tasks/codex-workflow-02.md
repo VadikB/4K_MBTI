@@ -111,9 +111,9 @@ AC01–AC05 проверяются diff и средой; AC06–AC07 — дву�
 | AC05 | PASS с ограничением | Desktop `workspace-write` + auto-review подтверждены фактическим worktree approval; global CLI 0.125.0 неработоспособен и не выдан за PASS. |
 | AC06 | PASS с ограничением | Чат A: manual=0, решения найдены, fixture/check/commit PASS; loopback bind `NOT_RUN`. |
 | AC07 | PASS | Чат B: восстановление по STATE, commit `eb4e16d`, проверки и границы PASS; manual=0. |
-| AC08 | WAITING | Push/PR/CI/human review/merge/main ещё не выполнены. |
+| AC08 | PARTIAL | Ветка опубликована, Draft PR #196 создан; обязательные `frontend`/`pytest` на head `47b8222e` PASS. Human review/Ready/merge/main ожидаются; новый status commit требует повторного CI. |
 | AC09 | PASS | Штатный desktop-способ и откат описаны; Mac Дмитрия не заявлен проверенным. |
-| AC10 | PARTIAL | Пути, candidate и session IDs есть; ожидаются remote SHA/PR/CI/main. |
+| AC10 | PARTIAL | Remote head `47b8222e`, PR #196, CI run `42476376967`, session IDs и счётчики зафиксированы; ожидаются CI нового status head, review/merge/main. |
 
 ## Штатное применение и откат
 
