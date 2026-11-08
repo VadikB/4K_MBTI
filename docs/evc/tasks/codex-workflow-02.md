@@ -28,8 +28,9 @@ version bump и предметная публикация.
 - Задача/исполнитель: `CODEX-WORKFLOW-02`, Вадим с Codex.
 - Разрешено: весь этап настройки, локальные проверки/исправления, свои коммиты,
   push собственной ветки, PR и наблюдение checks/review.
-- `branch_push=true`, `pr=true`; `merge=true` только после обязательных checks и
-  человеческого review без bypass.
+- `branch_push=true`, `pr=true`; `merge=false` для нового кандидата до его
+  обязательных checks, отдельного человеческого review и нового точного допуска,
+  без bypass.
 - `deploy=false`, `version_bump=false`, предметный `artifact_publish=false`.
 - Ресурсы: изолированный worktree `worktrees/codex-workflow-02`, synthetic loopback
   и временный Git-ресурс. Чужие checkout/worktree и untracked files не изменяются.
@@ -68,8 +69,8 @@ API/схема, данные, артефактный контур, права п
 1. Завершено: разведка, изоляция, проверка источников и среды.
 2. Завершено: правила, реестр, полномочия, A/B и штатный loopback/browser PASS.
 3. Активно: уточнение provenance полномочий, первичных реквизитов и финального state.
-4. Далее: финальный commit/push, обязательный CI и human review; затем merge/main
-   без bypass и подтверждение основного checkout.
+4. Далее: финальный commit/push и обязательный CI. Human review/merge прежнего
+   `ab964240` не переносится на изменённый кандидат; merge/main ждёт нового gate.
 
 AC01–AC05 проверяются diff и средой; AC06–AC07 — двумя новыми сессиями; AC08 и
 часть AC10 зависят от CI/review/merge; AC09 — инструкцией и откатом ниже.

@@ -29,9 +29,10 @@
   владелец затем отдельно подтвердил точную ветку/remote/PR.
 - Publication scope подтверждён целиком: собственная ветка, PR #196, необходимые
   последующие обычные push после исправлений/status-sync и наблюдение CI; точный
-  SHA всё равно проходит применимые checks, merge — только после отдельного human
-  review. Выход за branch/remote/PR или force/deploy/version/artifact/product scope
-  требует нового решения.
+  SHA всё равно проходит применимые checks. `merge=false` для изменённого кандидата:
+  прежнее human review/merge-подтверждение относилось к `ab964240` и не переносится;
+  нужны отдельный human review нового SHA и новый точный merge-допуск. Выход за
+  branch/remote/PR или force/deploy/version/artifact/product scope требует решения.
 - Дословное исходное поручение, первые два запроса/ответа «да», отдельный status-
   push и browser-реквизиты приложены в `docs/evc/evidence/codex-workflow-02-controls.md`;
   фактический diff четырёх файлов — рядом в `codex-workflow-02-process-files.diff`.
@@ -41,8 +42,8 @@
   commit не может достоверно содержать собственный SHA.
 - Активный шаг: адресно проверить изменённый механизм передачи полномочий в новой
   сессии; затем push нового HEAD в тот же PR и применимые checks точного remote head.
-- После CI: человеческий review и Ready; только затем merge без bypass, pull/readback
-  в основном checkout и закрытие AC08/AC10.
+- После CI: отдельный human review нового SHA и новый merge-допуск; только затем
+  merge без bypass, pull/readback в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
   auto-review=1, denied=0; local candidate diff PASS; A/B fixture checks PASS.
   AC06 PASS, включая повторённый loopback/browser; исторический `NOT_RUN` сохранён;
