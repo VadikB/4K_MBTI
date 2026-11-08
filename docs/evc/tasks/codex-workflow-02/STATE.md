@@ -18,18 +18,26 @@
 - Владелец прямо подтвердил push точной ветки в
   `origin` (`github.com/VadikB/4K_MBTI`) и создание PR. Ветка опубликована.
 - Draft PR: `https://github.com/VadikB/4K_MBTI/pull/196`, base
-  `main@65a62aca`, проверенный remote head `47b8222e`.
-- CI run `42476376967`: required `frontend` и `pytest` PASS; draft-only
+  `main@65a62aca`, проверенный remote head до текущих правок `7cdcffeb`.
+- CI run `42476587396`: required `frontend` и `pytest` PASS; draft-only
   deploy/browser/full-verification jobs SKIPPED по workflow. Conflicts: none.
-- Активный шаг: этот status commit, push и обязательный повтор CI нового head.
-- После CI: человеческий review и Ready; только затем разрешённый merge без bypass.
+- Loopback/browser: первоначальный sandbox bind `BLOCKED/NOT_RUN` сохранён;
+  адресный штатный approval получен, HTTP 200 и browser readback/screenshot PASS.
+- Reviewer denial на первый push разобран: приложенный `01_TASK.txt` был источником
+  требований, но не прямым пользовательским разрешением внешнего эффекта. Обхода
+  не было; владелец затем отдельно подтвердил точную ветку/remote/PR.
+- Активный шаг: зафиксировать текущие уточнения и доказательства, push в тот же PR,
+  получить обязательный CI точного финального SHA.
+- После CI: человеческий review и Ready; только затем merge без bypass, pull/readback
+  в основном checkout и закрытие AC08/AC10.
 - Проверки: package SHA PASS; auto-review worktree escalation PASS, manual=0,
   auto-review=1, denied=0; local candidate diff PASS; A/B fixture checks PASS.
-  AC06 PASS с loopback `NOT_RUN`; AC07 PASS.
+  AC06 PASS, включая повторённый loopback/browser; исторический `NOT_RUN` сохранён;
+  AC07 PASS.
 - Ограничения: `/usr/local/bin/codex` 0.125.0 остаётся неработоспособным (`ENOENT`
   после точной переустановки); проверенный маршрут — Codex desktop. Human review/
   human review/merge ещё не выполнены; один исторический auto-review denial на
-  неподтверждённый push закрыт прямым решением владельца; client model/effort
+  неподтверждённый push закрыт прямым решением владельца без обхода; client model/effort
   `UNKNOWN`.
 - Ограничения: без PATH/AUTH/AC18, БД, писем, product LLM, deploy/version bump/
   предметной публикации; чужая root-ветка и untracked files не изменяются.

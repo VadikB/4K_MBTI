@@ -35,7 +35,9 @@ version bump и предметная публикация.
   и временный Git-ресурс. Чужие checkout/worktree и untracked files не изменяются.
 - Запрещены рабочая БД, реальные письма и продуктовые LLM.
 - Повторы: только затронутые проверки и обязательные gates; без бесконечного preflight.
-- Основание: пакет rev1.0. Изменение scope или явный stop прекращает соответствующий допуск.
+- Требования процесса: приложенный пакет rev1.0. Прямое полномочие на внешний
+  побочный эффект выдаётся владельцем отдельно; изменение scope или явный stop
+  прекращает соответствующий допуск.
 
 ## Среда
 
@@ -58,9 +60,10 @@ API/схема, данные, артефактный контур, права п
 ## План и проверка
 
 1. Завершено: разведка, изоляция, проверка источников и среды.
-2. Активно: правила, реестр, полномочия и state.
-3. Далее: diff/ссылки; две новые сессии по `02_CONTROLS.txt`; commit/push/PR/CI.
-4. Merge/main/обновление основного checkout — после внешнего human-review gate.
+2. Завершено: правила, реестр, полномочия, A/B и штатный loopback/browser PASS.
+3. Активно: уточнение provenance полномочий, первичных реквизитов и финального state.
+4. Далее: финальный commit/push, обязательный CI и human review; затем merge/main
+   без bypass и подтверждение основного checkout.
 
 AC01–AC05 проверяются diff и средой; AC06–AC07 — двумя новыми сессиями; AC08 и
 часть AC10 зависят от CI/review/merge; AC09 — инструкцией и откатом ниже.
@@ -80,8 +83,10 @@ AC01–AC05 проверяются diff и средой; AC06–AC07 — дву�
   `CODEX-WORKFLOW-02-AUTH`; каталог контрольного пакета не читала.
 - Создала owned fixture `/tmp/codex-workflow-02-control.sUt4AR`, выполнила
   локальную правку и commit `6c339e6f607ed49e9b95314c540f9dd6c7e61d77`.
-- `check_fixture.sh` и `git diff --check` — PASS. Loopback bind запрещён sandbox
-  (`PermissionError`) и честно отмечен `NOT_RUN`, не продуктовый FAIL.
+- `check_fixture.sh` и `git diff --check` — PASS. Первичный loopback bind был
+  `BLOCKED/NOT_RUN` из-за sandbox `PermissionError`, не продуктовый FAIL. После
+  адресного штатного approval повторена только эта часть: HTTP 200, browser H1
+  `CONTROL_FIXTURE_READY`, viewport `1280x720`, screenshot получен — PASS.
 - После небольшой правки повторила только затронутые проверки и оставила один
   разрешённый шаг в fixture `STATE.md`. Manual replies=0; approvals=0; denied=0.
 
@@ -96,9 +101,13 @@ AC01–AC05 проверяются diff и средой; AC06–AC07 — дву�
   зависимой областью. Manual replies=0; approvals=0; denied=0.
 
 Продуктовый код, БД, письма, LLM и release-действия не затронуты. AC06 и AC07 —
-`PASS` для проверенного desktop-маршрута с ограничением: browser/loopback часть A
-`NOT_RUN` из-за sandbox bind. CLI-маршрут остаётся непроверенным/нерабочим и не
+`PASS` для проверенного desktop-маршрута, включая адресно повторённую browser/
+loopback часть A. Исторический `BLOCKED/NOT_RUN` сохранён в доказательствах.
+CLI-маршрут остаётся непроверенным/нерабочим и не
 является штатным способом этой приёмки.
+
+Компактные доказательства A/B, loopback, отказа reviewer и команда полного diff:
+[codex-workflow-02-controls.md](../evidence/codex-workflow-02-controls.md).
 
 ## Статус критериев приёмки
 
@@ -109,11 +118,11 @@ AC01–AC05 проверяются diff и средой; AC06–AC07 — дву�
 | AC03 | PASS | [Один реестр](../decision-register.md) с первичными источниками, областью и преемственностью. |
 | AC04 | PASS | Раздел «Полномочия этапа» и обновлённый task template; чужая работа изолирована. |
 | AC05 | PASS с ограничением | Desktop `workspace-write` + auto-review подтверждены фактическим worktree approval; global CLI 0.125.0 неработоспособен и не выдан за PASS. |
-| AC06 | PASS с ограничением | Чат A: manual=0, решения найдены, fixture/check/commit PASS; loopback bind `NOT_RUN`. |
+| AC06 | PASS | Чат A: manual=0, решения найдены, fixture/check/commit PASS; исторический bind `BLOCKED/NOT_RUN`, затронутая loopback/browser часть повторена штатно и PASS. |
 | AC07 | PASS | Чат B: восстановление по STATE, commit `eb4e16d`, проверки и границы PASS; manual=0. |
-| AC08 | PARTIAL | Ветка опубликована, Draft PR #196 создан; обязательные `frontend`/`pytest` на head `47b8222e` PASS. Human review/Ready/merge/main ожидаются; новый status commit требует повторного CI. |
+| AC08 | PARTIAL | Ветка опубликована, Draft PR #196 создан; обязательные `frontend`/`pytest` на head `7cdcffeb` PASS, run `42476587396`. Human review/Ready/merge/main и CI финального head ожидаются. |
 | AC09 | PASS | Штатный desktop-способ и откат описаны; Mac Дмитрия не заявлен проверенным. |
-| AC10 | PARTIAL | Remote head `47b8222e`, PR #196, CI run `42476376967`, session IDs и счётчики зафиксированы; ожидаются CI нового status head, review/merge/main. |
+| AC10 | PARTIAL | Remote head до текущих правок `7cdcffeb`, PR #196, CI run `42476587396`, session IDs, reviewer denial и loopback доказательства зафиксированы; ожидаются финальный SHA/CI, review/merge/main. |
 
 ## Штатное применение и откат
 
