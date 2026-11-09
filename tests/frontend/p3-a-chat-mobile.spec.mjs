@@ -427,9 +427,11 @@ test('P3-AC03 late delivery from another Cycle and actor cannot overwrite the ne
   // Real logout and password login in the SAME document leave the old fetch alive.
   // The seeded verified .test account takes password mode and sends no email.
   await page.locator('#interview-exit-button').click();
+  await expect(page.locator('#interview-exit-button')).not.toHaveAttribute('aria-busy', 'true');
   await expect(page.locator('#email-input')).toBeVisible();
   await page.locator('#email-input').fill('other@example.test');
   await page.locator('#request-magic-link-button').click();
+  await expect(page.locator('#auth-token-form')).toBeVisible();
   await page.locator('#magic-token-input').fill(state.password);
   await page.locator('#verify-magic-link-button').click();
   const confirm = page.getByRole('button', { name: 'Продолжить', exact: true }).filter({ visible: true });
