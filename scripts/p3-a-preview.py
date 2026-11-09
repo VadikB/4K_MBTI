@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 import html
 import hashlib
 import json
@@ -30,7 +31,10 @@ def source_identity(state):
     files = [ROOT / item for item in ("scripts/p3-a-preview.py", "web/index.html",
         "web/styles/screens/interview.css", "web/js/screens/interview.js", "web/js/wiring.js")]
     files += sorted((ROOT / "web/dist").glob("*.js"))
+    files += [ROOT / "assessment_definitions/planning/m7_return_integration/v2" / name
+              for name in ("policy.json", "manifest.json")]
     return {"fixture": FIXTURE, "run_id": state["run_id"],
+        "return_profile": state.get("p3_a_return_profile", "qa"),
         "seed_base_sha": state["p3_a_revision"],
         "source_head_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "worktree_dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()),
@@ -117,6 +121,54 @@ def prepare(path):
     print("P3-A saved synthetic AS ready; real PostgreSQL; provider disabled; NOT AC18 PATH")
 
 
+def prepare_return(path):
+    """Synthetic presence input only; frozen policy/AS/history are untouched.
+
+    This is not proof of a physical absence or of the presence event source.
+    The synthetic expired lease lies inside the real open collecting interval;
+    its 120-second duration follows the unchanged published R1 policy.
+    """
+    state = read_state(path)
+    if state.get("p3_a_return_profile") != "r1":
+        raise ValueError("P3_A_R1_INITIAL_SNAPSHOT_REQUIRED")
+    from Api.database import get_connection
+    from Api.m5_case_runtime import checksum
+    from Api.m7_return_integration import load_policy, read_return_state
+    expected = load_policy(usage_scope="assessment")
+    target = state["p3_a_previews"]["long"]
+    with get_connection() as connection:
+        existing = read_return_state(connection, cycle_id=target["cycle_id"], owner_user_id=target["user_id"])
+        if (existing["allowed_action"] == "continue_current"
+                and existing["policy_ref"] == {"id": expected["id"], "version": expected["version"], "checksum": checksum(expected)}):
+            return existing
+        row = connection.execute("""SELECT c.id,c.usage_scope,s.id AS as_id,s.assessment_situation_id,
+            interval.started_at,r.content_json->'return_policy_snapshot' AS policy
+            FROM m5_cycles c JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
+            JOIN m5_cycle_time_intervals interval ON interval.cycle_db_id=c.id
+            JOIN m7_cycle_plans p ON p.cycle_db_id=c.id
+            JOIN LATERAL(SELECT content_json FROM m7_plan_revisions WHERE plan_id=p.id
+                         ORDER BY revision_no DESC LIMIT 1) r ON TRUE
+            WHERE c.cycle_id=%s AND s.assessment_situation_id=%s
+              AND interval.ended_at IS NULL AND interval.interval_type='collecting'
+            FOR UPDATE OF c""", (target["cycle_id"], target["assessment_situation_id"])).fetchone()
+        if (not row or row["usage_scope"] != "assessment" or
+                row["policy"] != {"content": expected, "checksum": checksum(expected)}):
+            raise ValueError("P3_A_R1_EXACT_INITIAL_POLICY_OR_ACTIVE_INTERVAL_REQUIRED")
+        expires = datetime.now(timezone.utc)
+        if expires <= row["started_at"]:
+            raise ValueError("P3_A_SYNTHETIC_LEASE_MUST_FOLLOW_COLLECTING_START")
+        connection.execute("DELETE FROM m7_return_presence_clients WHERE cycle_db_id=%s", (row["id"],))
+        connection.execute("""INSERT INTO m7_return_presence_clients
+            (cycle_db_id,client_id,owner_user_id,assessment_situation_db_id,last_seen_at,lease_expires_at)
+            VALUES(%s,%s,%s,%s,%s,%s)""", (row["id"], uuid4(), target["user_id"], row["as_id"],
+                expires - timedelta(seconds=expected["presence_lease_seconds"]), expires))
+        connection.commit()
+        result = read_return_state(connection, cycle_id=target["cycle_id"], owner_user_id=target["user_id"])
+        if result["allowed_action"] != "continue_current":
+            raise ValueError("P3_A_R1_CONTINUE_CURRENT_NOT_ADMITTED")
+        return result
+
+
 def create_app(path):
     state = read_state(path)
     identity = source_identity(state)
@@ -152,7 +204,8 @@ def create_app(path):
         links = "".join(f'<li><a href="/p3-a/open/{mode}">{label}</a></li>' for mode, label in [
             ("long", "Длинная активная AS"), ("short", "Короткая активная AS"),
             ("paused", "Подтверждённая сервером пауза"),
-            ("continue", "Разрешённое возобновление control (R1 Continue: NOT_PREPARED)"),
+            ("continue", "R1: синтетический истёкший lease → явное Продолжить в чате"
+             if state.get("p3_a_return_profile") == "r1" else "Разрешённое возобновление control (R1 Continue: NOT_PREPARED)"),
             ("delayed", "Задержка ответа отправки на 6 секунд"),
             ("unknown", "Неизвестный клиенту исход: ответ потерян после сохранения"),
             ("restored", "Восстановленный диалог: один сохранённый synthetic Turn"),
@@ -167,7 +220,10 @@ def create_app(path):
                 f"<ul>{links}</ul><p>Длинная AS и её история общие для состояний; короткая AS принадлежит "
                 "другому синтетическому участнику. Вход выполняется автоматически через штатный endpoint. "
                 "Пауза, отправка и возобновление control сохраняют реальные изменения на этом временном стенде. "
-                "R1 explicit return-state/return-continue не подготовлен: нужен checkpoint 3Б.</p>"
+                + ("R1 v2 выбран в исходном snapshot нового Cycle; возврат использует синтетический "
+                   "истёкший presence lease. Это не доказательство физического отсутствия или AC18 admission.</p>"
+                   if state.get("p3_a_return_profile") == "r1" else
+                   "R1 explicit return-state/return-continue не подготовлен.</p>") +
                 "<p>Проверьте 320/390/430/768/1440 px, 200%, начало/конец истории, многострочный "
                 "черновик и reload. Эмуляция уменьшенной высоты не доказывает физическую экранную клавиатуру "
                 "или iOS Safari/Android Chrome. VISUAL_ACCEPTED назначает владелец.</p></html>")
@@ -199,13 +255,15 @@ def create_app(path):
         model = await call("GET", f"/users/assessment/cycles/{target['cycle_id']}/runtime")
         if model[0] == 200:
             paused = model[1]["status"]["collection_status"] == "paused"
-            want_paused = mode in ("paused", "continue")
+            want_paused = mode == "paused" or (mode == "continue" and state.get("p3_a_return_profile") != "r1")
             if paused != want_paused:
                 controlled = await call("POST", prefix + "/control", {
                     "action": "pause" if want_paused else "resume", "reason": "p3_a_synthetic_preview",
                     "idempotency_key": str(uuid4())})
                 if controlled[0] != 200:
                     raise HTTPException(500, "P3_A_SYNTHETIC_CONTROL_FAILED")
+        if mode == "continue" and state.get("p3_a_return_profile") == "r1":
+            await asyncio.to_thread(prepare_return, path)
         if mode == "restored":
             fixture = json.loads((ROOT / "tests/browser/fixtures/v1.json").read_text())
             sent = await call("POST", f"/users/assessment/m5/situations/{target['assessment_situation_id']}/turns", {
@@ -234,9 +292,10 @@ def create_app(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("create", "serve", "destroy", "inspect", "_inspect", "_prepare", "_serve"))
+    parser.add_argument("action", choices=("create", "serve", "destroy", "inspect", "return", "_return", "_inspect", "_prepare", "_serve"))
     parser.add_argument("--state", required=True, type=Path)
     parser.add_argument("--port", type=int, default=18931)
+    parser.add_argument("--return-profile", choices=("qa", "r1"), default="qa")
     args = parser.parse_args()
     path = args.state.resolve()
     if args.action == "create":
@@ -249,7 +308,8 @@ def main():
                             "--provider", "disabled"], cwd=ROOT, check=True)
         cli("create")
         state = json.loads(path.read_bytes())
-        state.update(p3_a_fixture=FIXTURE, qa_orchestration=True, browser_scenario="acceptance-v1",
+        state.update(p3_a_fixture=FIXTURE, p3_a_return_profile=args.return_profile,
+                     qa_orchestration=args.return_profile == "qa", browser_scenario="acceptance-v1",
                      component_plan_fixture="browser-component-plan-boundary/1")
         path.write_text(json.dumps(state))
         cli("bootstrap")
@@ -263,6 +323,12 @@ def main():
                        cwd=ROOT, check=True)
     elif args.action == "_prepare":
         prepare(path)
+    elif args.action == "return":
+        state = read_state(path)
+        subprocess.run([sys.executable, __file__, "_return", "--state", str(path)],
+                       cwd=ROOT, env=fixture_environment(state), check=True)
+    elif args.action == "_return":
+        print(json.dumps(prepare_return(path), default=str, indent=2))
     elif args.action == "inspect":
         state = read_state(path)
         subprocess.run([sys.executable, __file__, "_inspect", "--state", str(path)],

@@ -105,7 +105,12 @@ async function geometry(page) {
       visualViewport: visualViewport ? { width: visualViewport.width, height: visualViewport.height, scale: visualViewport.scale } : null,
       document: { scrollWidth: document.documentElement.scrollWidth, scrollHeight: document.documentElement.scrollHeight },
       input: rect('#interview-textarea'), submit: rect('#interview-submit-button'),
-      history: rect('#interview-scroll-area'), actions: rect('.interview-action-buttons') };
+      history: rect('#interview-scroll-area'), actions: rect('.interview-action-buttons'),
+      overflow_offenders: [...document.querySelectorAll('#interview-panel *')].map((node) => {
+        const box = node.getBoundingClientRect(), computed = getComputedStyle(node);
+        return { tag: node.tagName, id: node.id, class: node.className, left: box.left, right: box.right,
+          width: box.width, font_px: computed.fontSize, white_space: computed.whiteSpace };
+      }).filter((item) => item.width > 0 && (item.right > innerWidth + 1 || item.left < -1)).slice(0, 20) };
   });
 }
 
@@ -201,8 +206,8 @@ test('P3-AC03 send persists once over real HTTP/PG; send leaves AS active and re
 });
 
 test('P3-AC10 partial: server control pause/resume, delayed/unknown response and restored history', async ({ page }, info) => {
-  info.annotations.push({ type: 'not_prepared', description:
-    'R1 explicit return-state/return-continue is NOT_PREPARED pending P3-B checkpoint; control resume is a separate existing command.' });
+  info.annotations.push({ type: 'control_scenario', description:
+    'Control pause/resume is a separate existing command; initial R1v2 explicit return-state/return-continue is tested separately in p3-a-r1-return.spec.mjs.' });
   await open(page, 'paused');
   await expect(page.locator('#interview-textarea')).toBeDisabled();
   await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
@@ -232,7 +237,10 @@ test('P3-AC10 partial: server control pause/resume, delayed/unknown response and
         delivery_labels: await page.locator('.interview-message-delivery-status').allTextContents(),
       };
       observation.safety_status = observation.input_contains_accepted_answer && observation.send_enabled
-        ? 'FAIL_ACCEPTED_TURN_CAN_BE_RESENT_AS_DRAFT' : 'REQUIRES_REVIEW';
+        ? 'FAIL_ACCEPTED_TURN_CAN_BE_RESENT_AS_DRAFT'
+        : !observation.input_contains_accepted_answer && !observation.send_enabled
+          && !observation.delivery_labels.includes('Не отправлено')
+          ? 'PASS_SAVED_TURN_GUARDED_PENDING_EXPLICIT_RECOVERY' : 'REQUIRES_REVIEW';
       fs.writeFileSync(path.join(evidence, 'unknown-delivery-observation.json'), JSON.stringify(observation, null, 2) + '\n');
       await capture(page, 'delivery-unknown-before-reload');
       info.annotations.push({ type: 'unknown_delivery_safety', description: observation.safety_status });
@@ -271,4 +279,177 @@ test('P3-AC02 saved new trace preserves reading position until the participant r
   await latest.click();
   await expect(page.locator('.interview-message.own').filter({ hasText: answer })).toBeInViewport();
   await capture(page, 'new-trace-request-latest');
+});
+
+test('P3-AC02 synthetic computed text scale 200 percent keeps conditions and controls reachable', async ({ page }, info) => {
+  info.annotations.push({ type: 'emulation', description:
+    'Synthetic computed font-size/line-height ×2 with absolute px values captured before mutation; NOT native browser text zoom, OS magnification or physical-device acceptance.' });
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: width >= 768 ? 1000 : 844 });
+    await open(page, 'long');
+    const situation = page.locator('.interview-message--situation');
+    const essential = await situation.textContent();
+    const draft = `Синтетический черновик при размере текста 200%: ${width}\nВторая строка.`;
+    const input = page.locator('#interview-textarea'); await input.fill(draft); await input.focus();
+    const fonts = await page.evaluate(() => {
+      const elements = [...document.querySelectorAll('#interview-panel *')].filter((element) =>
+        element.tagName === 'TEXTAREA' || [...element.childNodes].some((node) =>
+          node.nodeType === Node.TEXT_NODE && node.textContent.trim()));
+      // Snapshot all original metrics first: inherited scaling must not compound.
+      const values = elements.map((element) => {
+        const computed = getComputedStyle(element), size = parseFloat(computed.fontSize);
+        const line = parseFloat(computed.lineHeight);
+        return { element, size, line: Number.isFinite(line) ? line : size * 1.5 };
+      });
+      for (const value of values) {
+        value.element.style.fontSize = `${value.size * 2}px`;
+        value.element.style.lineHeight = `${value.line * 2}px`;
+      }
+      return { mode: 'synthetic computed text scale200percent; absolute px, no nested compounding',
+        elements_scaled: values.length, textarea_font_px: parseFloat(getComputedStyle(document.querySelector('#interview-textarea')).fontSize),
+        situation_fonts_px: [...new Set([...document.querySelectorAll('.interview-message--situation p, .interview-message--situation li')]
+          .map((element) => parseFloat(getComputedStyle(element).fontSize)))] };
+    });
+    expect(fonts.textarea_font_px).toBe(32); expect(fonts.situation_fonts_px).toContain(32);
+    await expect(situation).toHaveText(essential);
+    const last = situation.locator('li').last(); await last.scrollIntoViewIfNeeded(); await expect(last).toBeInViewport();
+    await expect(input).toHaveValue(draft); await expect(input).toBeFocused();
+    await input.scrollIntoViewIfNeeded(); const inputMetrics = await geometry(page); expect(inputMetrics.input.hit).toBe(true);
+    await page.locator('#interview-submit-button').click({ trial: true });
+    const submitMetrics = await capture(page, `synthetic-text-200-${width}`); expect(submitMetrics.submit.hit).toBe(true);
+    expect(submitMetrics.document.scrollWidth).toBeLessThanOrEqual(width + 1);
+    await expect(input).toHaveValue(draft); await expect(input).toBeFocused();
+    fs.writeFileSync(path.join(evidence, `synthetic-text-200-${width}-scope.json`), JSON.stringify({
+      ...fonts, essential_text_unchanged: (await situation.textContent()) === essential,
+      input_reachable: inputMetrics.input.hit, submit_reachable: submitMetrics.submit.hit,
+      native_browser_text_zoom: 'NOT_RUN', physical_keyboard: 'NOT_RUN',
+    }, null, 2) + '\n');
+  }
+});
+
+for (const fault of ['lost-after-commit', 'aborted-before-commit']) {
+  test(`P3-AC03 delivery ${fault}: reload and double retry preserve one request identity and one saved Turn`, async ({ page }) => {
+    await open(page, fault === 'lost-after-commit' ? 'unknown' : 'long');
+    const answer = `Синтетическая проверка доставки ${fault} ${randomUUID()}`;
+    const requests = [];
+    await page.route('**/users/assessment/m5/situations/*/turns', async (route) => {
+      const payload = route.request().postDataJSON(); requests.push(payload);
+      if (fault === 'aborted-before-commit' && requests.length === 1) return route.abort('failed');
+      // A transport delay keeps an actual double click within one pending attempt.
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return route.continue();
+    });
+    const input = page.locator('#interview-textarea'), submit = page.locator('#interview-submit-button');
+    await input.fill(answer); await submit.click();
+    await expect.poll(() => requests.length).toBe(1);
+    const savedCount = async () => (await runtime(page)).trace.turns.filter((turn) => turn.content_text === answer).length;
+    await expect.poll(savedCount).toBe(fault === 'lost-after-commit' ? 1 : 0);
+    await expect(submit).toBeDisabled();
+    await expect(input).toHaveValue(fault === 'aborted-before-commit' ? answer : '');
+    await page.reload(); await expect(page.locator('#interview-panel')).toBeVisible();
+    await expect(submit).toBeDisabled();
+    await expect(input).toHaveValue(fault === 'aborted-before-commit' ? answer : '');
+    const operationRow = page.locator('.interview-message.own').filter({ hasText: answer });
+    await expect(operationRow).toHaveCount(1);
+    await expect(operationRow).not.toContainText('Не отправлено');
+    const retry = operationRow.locator('.interview-message-retry'); await expect(retry).toBeVisible();
+    await page.context().addCookies([{ name: 'p3_a_delivery', value: 'normal', url: base,
+      httpOnly: true, sameSite: 'Strict' }]);
+    await retry.dblclick({ delay: 10 });
+    await expect(submit).toBeEnabled(); await expect(input).toHaveValue('');
+    await expect.poll(savedCount).toBe(1);
+    expect(requests).toHaveLength(2);
+    expect(new Set(requests.map((request) => request.request_id)).size).toBe(1);
+    expect(new Set(requests.map((request) => request.turn_id)).size).toBe(1);
+    expect(new Set(requests.map((request) => request.content))).toEqual(new Set([answer]));
+    await expect(page.locator('.interview-message.own').filter({ hasText: answer })).toHaveCount(1);
+    await expect(page.locator('.interview-message.own.delivery-failed')).toHaveCount(0);
+    await page.reload(); await expect(input).toHaveValue(''); await expect(submit).toBeEnabled();
+    await expect(page.locator('.interview-message.own').filter({ hasText: answer })).toHaveCount(1);
+    fs.writeFileSync(path.join(evidence, `delivery-${fault}-identity.json`), JSON.stringify({
+      transport_fault: fault, requests, saved_turns: await savedCount(),
+      one_identity: true, accepted_answer_not_a_draft: true, double_retry_guarded: true,
+    }, null, 2) + '\n');
+    await capture(page, `delivery-${fault}-recovered`);
+  });
+}
+
+test('P3-AC03 failed sender preflight makes zero POSTs and permits an edited draft to be sent once', async ({ page }) => {
+  await open(page, 'long');
+  const input = page.locator('#interview-textarea'), submit = page.locator('#interview-submit-button');
+  const initial = `Синтетический текст до сбоя preflight ${randomUUID()}`;
+  const edited = `Отредактированный синтетический текст после preflight ${randomUUID()}`;
+  const runtimePath = `/users/assessment/cycles/${state.p3_a_previews.long.cycle_id}/runtime`;
+  const posts = []; let armed = false, failedReads = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && /\/m5\/situations\/[^/]+\/turns$/.test(new URL(request.url()).pathname)) {
+      posts.push(request.postDataJSON());
+    }
+  });
+  await page.route('**' + runtimePath, (route) => {
+    if (armed && route.request().method() === 'GET') {
+      armed = false; failedReads += 1; return route.abort('failed');
+    }
+    return route.continue();
+  });
+  await input.fill(initial); await submit.scrollIntoViewIfNeeded();
+  // Arm immediately after a completed periodic read, leaving a full 1200ms
+  // polling interval for this click's preflight. Bootstrap is already complete.
+  await page.waitForResponse((response) => new URL(response.url()).pathname === runtimePath
+    && response.request().method() === 'GET' && response.ok());
+  armed = true; await submit.click();
+  await expect.poll(() => failedReads).toBe(1);
+  await expect(submit).toBeEnabled(); await expect(input).toBeEnabled(); await expect(input).toHaveValue(initial);
+  expect(posts).toHaveLength(0);
+  await input.fill(edited);
+  const sent = page.waitForResponse((response) => /\/m5\/situations\/[^/]+\/turns$/.test(new URL(response.url()).pathname)
+    && response.request().method() === 'POST');
+  await submit.click(); expect((await sent).ok()).toBe(true);
+  await expect.poll(async () => (await runtime(page)).trace.turns.filter((turn) => turn.content_text === edited).length).toBe(1);
+  expect((await runtime(page)).trace.turns.filter((turn) => turn.content_text === initial)).toHaveLength(0);
+  expect(posts).toHaveLength(1); expect(posts[0].content).toBe(edited);
+  await expect(input).toHaveValue('');
+  fs.writeFileSync(path.join(evidence, 'sender-preflight-zero-post.json'), JSON.stringify({
+    first_preflight_transport_failures: failedReads, original_text_posts: 0, original_text_turns: 0,
+    edited_text_posts: posts.length, edited_text_turns: 1, edited_payload: posts[0],
+  }, null, 2) + '\n');
+  await capture(page, 'sender-preflight-edited-draft-sent');
+});
+
+test('P3-AC03 late delivery from another Cycle and actor cannot overwrite the new draft or focus', async ({ page }) => {
+  await open(page, 'delayed');
+  const oldAnswer = `Синтетический старый ответ с задержкой ${randomUUID()}`;
+  const submitted = page.waitForRequest((request) => /\/m5\/situations\/[^/]+\/turns$/.test(new URL(request.url()).pathname)
+    && request.method() === 'POST');
+  await page.locator('#interview-textarea').fill(oldAnswer); await page.locator('#interview-submit-button').click();
+  const oldRequest = await submitted;
+  await expect.poll(async () => (await runtime(page)).trace.turns.filter((turn) => turn.content_text === oldAnswer).length).toBe(1);
+  // Real logout and password login in the SAME document leave the old fetch alive.
+  // The seeded verified .test account takes password mode and sends no email.
+  await page.locator('#interview-exit-button').click();
+  await expect(page.locator('#email-input')).toBeVisible();
+  await page.locator('#email-input').fill('other@example.test');
+  await page.locator('#request-magic-link-button').click();
+  await page.locator('#magic-token-input').fill(state.password);
+  await page.locator('#verify-magic-link-button').click();
+  const confirm = page.getByRole('button', { name: 'Продолжить', exact: true }).filter({ visible: true });
+  await expect(page.locator('#interview-panel').or(confirm).first()).toBeVisible();
+  if (await confirm.isVisible()) await confirm.click();
+  await expect(page.locator('#interview-panel')).toBeVisible();
+  const input = page.locator('#interview-textarea'); await expect(input).toBeEnabled();
+  const newDraft = 'Новый черновик другого Cycle/AS после смены синтетического участника.';
+  await input.fill(newDraft); await input.focus();
+  const oldResponse = await Promise.race([oldRequest.response(), new Promise((resolve) => setTimeout(() => resolve(null), 7000))]);
+  await expect(input).toHaveValue(newDraft); await expect(input).toBeFocused();
+  await expect(page.locator('.interview-message.own').filter({ hasText: oldAnswer })).toHaveCount(0);
+  await expect(page.locator('#interview-error')).toBeHidden();
+  const current = await runtime(page, 'short');
+  expect(current.cycle_id).toBe(state.p3_a_previews.short.cycle_id);
+  expect(current.current_situation.assessment_situation_id).toBe(state.p3_a_previews.short.assessment_situation_id);
+  fs.writeFileSync(path.join(evidence, 'late-delivery-scope.json'), JSON.stringify({
+    old_cycle: state.p3_a_previews.long.cycle_id, new_cycle: current.cycle_id,
+    old_response_status: oldResponse?.status() ?? 'cancelled_or_no_response',
+    new_draft_preserved: true, new_focus_preserved: true, old_turn_in_new_scope: false,
+  }, null, 2) + '\n');
+  await capture(page, 'late-delivery-new-scope');
 });
