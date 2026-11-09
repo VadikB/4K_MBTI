@@ -118,3 +118,11 @@ test/script bytes фиксируются в SOURCE_MAPPING.json внешнего
 `node --test tests/frontend/*.test.mjs` (200/200) и `npm run build:web` — PASS.
 Следующий согласованный PATCH — 2.0.89; точный release SHA и GitHub CI фиксируются
 в PR. Откат остаётся совместимым squash-revert без удаления продуктовых данных.
+
+Первый CI head `eab70f74f45ce6212f1b1e0efb705f3a51e2e980`: `frontend`, `pytest`,
+`integration` и четыре runtime browser shard — PASS; `browser (fast)` — FAIL на
+единственном legacy assertion `PROGRAM01 R10 shows a terminal error when exact readback
+is null` (222 остальных теста PASS). Реализация теперь выдаёт более точный fail-closed
+текст о неподтверждённой версии, тогда как тест ожидал прежнюю фразу о повторном чтении.
+Assertion синхронизирован с новым контрактом; адресная регрессия и полный CI должны
+быть повторены на новом head. Merge до зелёного `full-verification` запрещён.

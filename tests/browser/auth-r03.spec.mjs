@@ -758,7 +758,9 @@ test('PROGRAM01 R10 shows a terminal error when exact readback is null', async (
   const form = page.locator('[data-action="connect-assessment-program"]');
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
-  await expect(form.locator('[data-operation-status]')).toContainText('повторное чтение не подтвердило');
+  await expect(form.locator('[data-operation-status]')).toContainText(
+    'Сервер не подтвердил точную версию подключённой программы',
+  );
   await expect(form.locator('[data-operation-status]')).not.toContainText('Выполняем действие');
   await expect(form.getByRole('button', { name: 'Подключить' })).toBeEnabled();
   await form.getByRole('button', { name: 'Подключить' }).click();
