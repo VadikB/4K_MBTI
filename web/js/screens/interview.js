@@ -150,6 +150,11 @@ const productEventText = (event) => {
   return typeof content === 'string' ? content : null;
 };
 
+const serverRemainingSeconds = (value) => {
+  const seconds = Number(value);
+  return value !== null && value !== '' && Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+};
+
 const renderProductRuntime = (snapshot) => {
   const current = snapshot.current_situation;
   const previousCaseKey = state.activeInterviewCaseKey;
@@ -164,7 +169,7 @@ const renderProductRuntime = (snapshot) => {
   state.productAssessmentSituationId = current?.assessment_situation_id || null;
   state.productClarificationDecisionId = snapshot.clarification?.id || null;
   state.productCycleStatus = snapshot.status?.collection_status || null;
-  state.assessmentRemainingSeconds = snapshot.status?.remaining_seconds ?? null;
+  state.assessmentRemainingSeconds = serverRemainingSeconds(snapshot.status?.remaining_seconds);
   state.assessmentCaseNumber = Math.max(1, Number(currentPosition?.position_no || completedPositions + 1));
   state.assessmentTotalCases = Math.max(state.assessmentCaseNumber,
     Number(snapshot.route?.progress?.total_positions || routePositions.length || 1));
@@ -334,25 +339,37 @@ const stopProductPresence = () => {
 };
 
 const renderReturnCard = (value) => {
-  interviewTimerBadge.classList.add('is-paused');
+  const confirmedPause = ['paused', 'interrupted'].includes(value.collection_status)
+    || ['continue_current', 'replace_current'].includes(value.allowed_action);
+  interviewTimerBadge.classList.toggle('is-paused', confirmedPause);
+  state.assessmentRemainingSeconds = serverRemainingSeconds(value.remaining_seconds);
   updateInterviewTimer();
   interviewMessages.innerHTML = '';
   const card = document.createElement('section'); card.className = 'interview-return-card';
   const title = document.createElement('h3'); title.textContent = 'Продолжение оценки';
   const progress = value.progress || {};
   const copy = document.createElement('p');
-  copy.textContent = `Пройдено ${progress.completed_positions || 0} из ${progress.total_positions || 0}. Остаток времени выполнения: ${Math.ceil(Number(value.remaining_seconds || 0) / 60)} мин.`;
+  const completedPositions = Number.isInteger(Number(progress.completed_positions))
+    ? Math.max(0, Number(progress.completed_positions)) : 0;
+  const totalPositions = Number.isInteger(Number(progress.total_positions))
+    ? Math.max(0, Number(progress.total_positions)) : 0;
+  const remainingSeconds = serverRemainingSeconds(value.remaining_seconds);
+  const remainingCopy = remainingSeconds === null
+    ? 'Остаток времени выполнения уточняется.'
+    : `Остаток времени выполнения: ${Math.ceil(remainingSeconds / 60)} мин.`;
+  copy.textContent = `Завершено ${completedPositions} из ${totalPositions}. ${remainingCopy}`;
   const reason = document.createElement('p');
   reason.textContent = value.allowed_action === 'replace_current'
     ? 'После продолжения текущая незавершённая ситуация будет обновлена. Частичный диалог не переносится, завершённые ситуации сохраняются.'
     : 'После продолжения откроется та же незавершённая ситуация и сохранённый диалог.';
   const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button'; button.textContent = 'Продолжить';
   const status = document.createElement('p'); status.setAttribute('role', 'status');
+  const continueOperationId = createOperationId();
+  let generationOperationId = null;
   button.addEventListener('click', async () => {
     button.disabled = true; status.textContent = value.allowed_action === 'replace_current' ? 'Готовим допустимое обновление ситуации…' : 'Восстанавливаем ситуацию…';
     try {
-      let generationOperationId = null;
-      if (value.allowed_action === 'replace_current') {
+      if (value.allowed_action === 'replace_current' && !generationOperationId) {
         if (!value.provider_config_ref) throw new Error('Для этого Cycle ещё не подключён допущенный provider обновления.');
         const generatedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId)
           + '/positions/' + encodeURIComponent(value.position_no) + '/equivalent-candidate', {
@@ -368,14 +385,26 @@ const renderReturnCard = (value) => {
         body: JSON.stringify({ position_no: value.position_no,
           expected_assessment_situation_id: value.current_assessment_situation_id,
           expected_state: value.current_assessment_situation_status,
-          idempotency_key: createOperationId(), generation_operation_id: generationOperationId }),
+          idempotency_key: continueOperationId, generation_operation_id: generationOperationId }),
       });
       const continued = await readApiResponse(response, 'Не удалось продолжить оценку.');
       if (continued.status === 'collection_closed') { openProcessing(); return; }
       state.productAssessmentSituationId = continued.assessment_situation_id;
       await heartbeatProductPresence();
       await loadProductRuntime();
-    } catch (error) { status.textContent = error.message; button.disabled = false; }
+    } catch (error) {
+      status.textContent = 'Проверяем, была ли команда принята сервером…';
+      try {
+        if (!(await loadReturnState())) {
+          await loadProductRuntime();
+          return;
+        }
+        status.textContent = `${error.message} Можно безопасно повторить проверку.`;
+      } catch (_readbackError) {
+        status.textContent = `${error.message} Результат пока неизвестен. Обновите состояние перед повтором.`;
+      }
+      button.disabled = false;
+    }
   });
   card.append(title, copy, reason, button, status); interviewMessages.appendChild(card);
   interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
@@ -1057,7 +1086,7 @@ const updateInterviewTimer = () => {
   const remainingMs = getRemainingCaseTimeMs();
   const prefix = interviewTimerBadge.classList.contains('is-paused') ? 'Пауза · ' : '';
   if (remainingMs === null) {
-    interviewTimerBadge.textContent = prefix + 'Без лимита';
+    interviewTimerBadge.textContent = prefix + 'Время уточняется';
     interviewTimerBadge.classList.remove('is-low-time');
     return false;
   }

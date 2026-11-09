@@ -375,7 +375,7 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         counts_after=c.execute("SELECT (SELECT count(*) FROM m5_assessment_situations) AS situations,(SELECT count(*) FROM m7_return_commands) AS commands").fetchone()
         assert counts_after==counts_before
         assert state['allowed_action']=='continue_current' and state['recognized_absence_seconds']==179
-        assert state['progress']=={'total_positions':1,'completed_positions':0}
+        assert state['progress']=={'total_positions':2,'completed_positions':0}
         assert state['planned_positions']==2 and state['planned_total'] is True
         assert str(event['id'])==state['absence_event_id']
         result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,expected_state='active',

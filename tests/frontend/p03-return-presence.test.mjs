@@ -17,6 +17,9 @@ test('P03 confirms server presence independently of typing and requires explicit
   assert.match(interview, /if \(await loadReturnState\(\)\) return null/);
   assert.match(interview, /M7_RETURN_CURRENT_POSITION_NOT_FOUND/);
   assert.match(interview, /await heartbeatProductPresence\(\);\s*await loadProductRuntime\(\)/);
+  assert.match(interview, /const continueOperationId = createOperationId\(\)/);
+  assert.match(interview, /idempotency_key: continueOperationId/);
+  assert.match(interview, /if \(!\(await loadReturnState\(\)\)\)/);
   assert.match(interview, /Продолжить/);
 });
 
@@ -25,4 +28,12 @@ test('P03 blocks stopped AS input and uses admitted equivalent candidate for rep
   assert.match(interview, /equivalent-candidate/);
   assert.match(interview, /provider_config_ref/);
   assert.match(interview, /Частичный диалог не переносится/);
+});
+
+test('P3-B keeps unknown timing distinct from zero or unlimited time', () => {
+  assert.match(interview, /serverRemainingSeconds/);
+  assert.match(interview, /Остаток времени выполнения уточняется/);
+  assert.match(interview, /Время уточняется/);
+  assert.doesNotMatch(interview, /value\.remaining_seconds \|\| 0/);
+  assert.doesNotMatch(interview, /prefix \+ 'Без лимита'/);
 });
