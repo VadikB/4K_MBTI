@@ -26,7 +26,7 @@ test('E01 keeps the absolute deadline outside assessment and marks only server-c
 });
 
 test('E01 scopes editable drafts to cycle and assessment situation', () => {
-  assert.match(interview, /agent4k\.assessmentDraft:\$\{state\.productCycleId\}:\$\{state\.productAssessmentSituationId\}/);
+  assert.match(interview, /agent4k\.assessmentDraft:\$\{scope\.cycleId\}:\$\{scope\.situationId\}/);
   assert.match(interview, /window\.sessionStorage\.setItem\(key, interviewTextarea\.value\)/);
   assert.match(wiring, /interviewModule\.clearInterviewDraft\(\)/);
   assert.match(interviewEntry, /clearInterviewDraft/);

@@ -7325,6 +7325,24 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+@router.get("/assessment/m5/situations/{assessment_situation_id}/answer-status")
+def get_owned_assessment_answer_status(assessment_situation_id: UUID, request: Request, response: FastAPIResponse,
+                                     request_id: str, turn_id: UUID,
+                                     clarification_id: UUID | None = None) -> dict:
+    _m5_owned_situation(request, str(assessment_situation_id))
+    if not request_id.strip() or len(request_id) > 200:
+        raise HTTPException(status_code=422, detail="ANSWER_STATUS_REQUEST_ID_INVALID")
+    from Api.assessment_answer_status import read
+    response.headers['Cache-Control'] = 'no-store'
+    try:
+        with get_connection() as connection:
+            return read(connection, assessment_situation_id=str(assessment_situation_id),
+                        request_id=request_id, turn_id=str(turn_id),
+                        clarification_id=str(clarification_id) if clarification_id else None)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
 @router.get("/assessment/m5/situations/{assessment_situation_id}/trace")
 def get_owned_m5_trace(assessment_situation_id: UUID, request: Request) -> dict:
     user = _m5_owned_situation(request, str(assessment_situation_id))

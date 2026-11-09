@@ -72,30 +72,73 @@ const returnClientId = (() => {
   return value;
 })();
 
-const interviewDraftKey = () => state.productCycleId && state.productAssessmentSituationId
-  ? `agent4k.assessmentDraft:${state.productCycleId}:${state.productAssessmentSituationId}`
-  : null;
+const interviewDraftKey = (scope = interviewDraftScope()) => {
+  if (!scope.cycleId || !scope.situationId) return null;
+  const base = `agent4k.assessmentDraft:${scope.cycleId}:${scope.situationId}`;
+  return scope.clarificationId ? `${base}:${scope.ownerId}:${scope.clarificationId}` : base;
+};
+
+const productInterviewReadbacks = new Map();
+
+const interviewDraftScope = () => ({
+  cycleId: state.productCycleId, situationId: state.productAssessmentSituationId,
+  ownerId: String(state.pendingUser?.id || ''),
+  clarificationId: confirmedProductInterviewSnapshot?.cycle_id === state.productCycleId
+    && confirmedProductInterviewSnapshot?.current_situation?.assessment_situation_id === state.productAssessmentSituationId
+    && confirmedProductInterviewSnapshot?.clarification?.status === 'ASK'
+    ? confirmedProductInterviewSnapshot.clarification.id : null,
+});
+
+const interviewDraftContext = (key) => {
+  try { return JSON.parse(window.sessionStorage.getItem(key + ':context') || 'null'); }
+  catch (_error) { return null; }
+};
+
+const interviewDraftSignature = () => `${interviewDraftKey()}:${String(state.pendingUser?.id || '')}`;
 
 const restoreInterviewDraft = () => {
   const key = interviewDraftKey();
-  if (key === activeInterviewDraftKey) return;
-  activeInterviewDraftKey = key;
-  interviewTextarea.value = key ? window.sessionStorage.getItem(key) || '' : '';
+  const signature = interviewDraftSignature();
+  if (signature === activeInterviewDraftKey) return;
+  activeInterviewDraftKey = signature;
+  let context = key ? interviewDraftContext(key) : null;
+  const ownerId = String(state.pendingUser?.id || '');
+  // Legacy ordinary drafts can be adopted only after this owner's AS runtime
+  // is confirmed. They never become a draft for a newly presented M7 question.
+  interviewTextarea.value = key && (!context || context.ownerId === ownerId)
+    ? window.sessionStorage.getItem(key) || '' : '';
+  if (key && interviewTextarea.value && !context) {
+    context = { ownerId, clarificationId: interviewDraftScope().clarificationId, revision: createOperationId() };
+    window.sessionStorage.setItem(key + ':context', JSON.stringify(context));
+  }
+  interviewTextarea.dataset.draftRevision = context?.ownerId === ownerId ? context.revision || '' : '';
+  const pending = readProductInterviewAnswer();
+  if (pending && pending.draftRevision === undefined && key === interviewDraftKey(pending)
+      && context?.ownerId === pending.ownerId && interviewTextarea.value === pending.draftValue) {
+    // Upgrade a pre-revision operation before input becomes editable. Later
+    // equal-text edits have a different revision and cannot be cleared by it.
+    saveProductInterviewAnswer({ ...pending, draftRevision: context.revision });
+  }
 };
 
 export const clearInterviewDraft = (operation = null) => {
   if (operation && operation.cycleId === state.productCycleId
       && operation.situationId === state.productAssessmentSituationId
       && (operation.ownerId !== String(state.pendingUser?.id || '') || operation.identityEpoch !== state.identityEpoch)) return;
-  const key = operation
-    ? `agent4k.assessmentDraft:${operation.cycleId}:${operation.situationId}` : interviewDraftKey();
-  if (key && (!operation || window.sessionStorage.getItem(key) === operation.draftValue)) {
+  const key = interviewDraftKey(operation || interviewDraftScope());
+  const context = key ? interviewDraftContext(key) : null;
+  const ownRevision = !operation || ((!context || context.ownerId === operation.ownerId)
+    && (operation.draftRevision === undefined ? !context
+      : !operation.draftRevision || context?.revision === operation.draftRevision));
+  if (key && ownRevision && (!operation || window.sessionStorage.getItem(key) === operation.draftValue)) {
     window.sessionStorage.removeItem(key);
+    window.sessionStorage.removeItem(key + ':context');
   }
-  if (key === interviewDraftKey() && (!operation || isProductInterviewAnswerCurrent(operation))) {
-    activeInterviewDraftKey = key;
+  if (key === interviewDraftKey() && ownRevision && (!operation || isProductInterviewAnswerCurrent(operation))) {
+    activeInterviewDraftKey = interviewDraftSignature();
     if (operation && isProductInterviewPresentationCurrent(operation) && interviewTextarea.value === operation.draftValue) {
       interviewTextarea.value = '';
+      interviewTextarea.dataset.draftRevision = '';
     }
   }
 };
@@ -166,6 +209,68 @@ const productInterviewReceiptAccepted = (receipt, operation) => operation.clarif
 const productInterviewSnapshotMatches = (snapshot, operation) => snapshot?.cycle_id === operation.cycleId
   && snapshot.current_situation?.assessment_situation_id === operation.situationId;
 
+const readProductInterviewAnswerStatus = async (operation) => {
+  const params = 'request_id=' + encodeURIComponent(operation.requestId) + '&turn_id=' + encodeURIComponent(operation.turnId)
+    + (operation.clarificationId ? '&clarification_id=' + encodeURIComponent(operation.clarificationId) : '');
+  const response = await fetch('/users/assessment/m5/situations/' + encodeURIComponent(operation.situationId)
+    + '/answer-status?' + params, { credentials: 'same-origin', cache: 'no-store' });
+  const value = await readApiResponse(response, 'Исход отправки пока не подтверждён.');
+  if (value.cycle_id !== operation.cycleId || value.assessment_situation_id !== operation.situationId
+      || value.request_id !== operation.requestId || value.turn_id !== operation.turnId
+      || value.clarification_id !== operation.clarificationId || !['absent', 'accepted'].includes(value.status)) {
+    throw new Error('Сервер не подтвердил идентичность исходной отправки.');
+  }
+  if (value.status === 'accepted' && (value.turn?.turn_id !== operation.turnId
+      || value.turn.request_id !== operation.requestId || value.turn.content_text !== operation.text
+      || value.turn.speaker_type !== 'assessee')) throw new Error('Сохранённый ответ отличается от исходной отправки.');
+  return value;
+};
+
+const productInterviewAnswerResolved = (operation, value, snapshot) => value.status === 'accepted'
+  && (operation.clarificationId || ['applied', 'rejected_late'].includes(value.processing_status)
+    || (snapshot && operation.sourcePhase !== productInterviewSourcePhase(snapshot)));
+
+const applyProductInterviewAnswerStatus = (operation, value, snapshot) => {
+  const pending = readProductInterviewAnswer(operation);
+  if (!pending || pending.requestId !== operation.requestId || pending.turnId !== operation.turnId) return false;
+  if (value.status === 'accepted') {
+    clearInterviewDraft(operation);
+    const completed = productInterviewAnswerResolved(operation, value, snapshot);
+    if (completed) {
+      window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+      return true;
+    }
+    const changed = pending.status !== 'saved';
+    saveProductInterviewAnswer({ ...pending, status: 'saved' });
+    return changed;
+  }
+  // An absent receipt is not a rejected write. Only a changed source phase can
+  // retire its active slot; the original identity/endpoint remains in session.
+  if (!pending.accepted && operation.sourcePhase !== productInterviewSourcePhase(snapshot)) {
+    window.sessionStorage.setItem(productInterviewAnswerKey(operation) + ':resolved:' + operation.requestId,
+      JSON.stringify({ ...pending, status: 'superseded', resolution: 'absent_in_previous_phase' }));
+    window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+    clearInterviewDraft(operation);
+    return true;
+  }
+  return false;
+};
+
+const recoverProductInterviewAnswer = (operation, snapshot) => {
+  const key = productInterviewRequestKey(operation);
+  if (productInterviewRequests.has(key) || productInterviewReadbacks.has(key)) return;
+  const reading = readProductInterviewAnswerStatus(operation);
+  productInterviewReadbacks.set(key, reading);
+  void reading.then((value) => {
+    if (!isProductInterviewPresentationCurrent(operation)) return;
+    if (applyProductInterviewAnswerStatus(operation, value, snapshot)
+        && productInterviewSnapshotMatches(confirmedProductInterviewSnapshot, operation)) {
+      renderProductRuntime(confirmedProductInterviewSnapshot);
+    }
+  }).catch(() => { /* A failed readback keeps the original unknown operation. */ })
+    .finally(() => { if (productInterviewReadbacks.get(key) === reading) productInterviewReadbacks.delete(key); });
+};
+
 const reconcileProductInterviewAnswer = (snapshot) => {
   const scope = { ...productInterviewAnswerScope(), cycleId: snapshot.cycle_id,
     situationId: snapshot.current_situation?.assessment_situation_id };
@@ -181,8 +286,7 @@ const reconcileProductInterviewAnswer = (snapshot) => {
   clearInterviewDraft(operation);
   // M5 commits the participant Turn before provider processing. Keep a lost
   // receipt recoverable with the same identity while its source phase remains.
-  if (operation.accepted || operation.clarificationId
-      || operation.sourcePhase !== productInterviewSourcePhase(snapshot)) {
+  if (operation.accepted) {
     window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
     return null;
   }
@@ -202,6 +306,7 @@ const renderProductInterviewAnswerDelivery = (snapshot, canSend) => {
   });
   if (!operation) return;
   const busy = productInterviewRequests.has(productInterviewRequestKey(operation));
+  if (!busy) recoverProductInterviewAnswer(operation, snapshot);
   const savedRow = [...interviewMessages.children].find((row) => row.dataset.turnId === operation.turnId
     && !row.dataset.pendingTurnId);
   let row = savedRow || localRows.find((item) => item.dataset.pendingTurnId === operation.turnId);
@@ -239,7 +344,8 @@ const createProductInterviewTurnId = () => {
   throw new Error('Браузер не может создать идентификатор ответа. Откройте оценку в актуальном браузере; черновик сохранён.');
 };
 
-const prepareProductInterviewAnswer = (text, draftValue, scope = productInterviewAnswerScope()) => {
+const prepareProductInterviewAnswer = (text, draftValue, scope = productInterviewAnswerScope(),
+  draftRevision = interviewDraftContext(interviewDraftKey())?.revision || null) => {
   if (!isProductInterviewPresentationCurrent(scope)) throw new Error('Ситуация изменилась. Вернитесь к текущему ответу.');
   if (typeof text !== 'string' || !text.trim() || text.length > 10000 || typeof draftValue !== 'string') {
     throw new Error('Введите ответ длиной от 1 до 10000 символов. Черновик сохранён.');
@@ -264,7 +370,8 @@ const prepareProductInterviewAnswer = (text, draftValue, scope = productIntervie
   const clarification = snapshot.clarification;
   const isClarification = clarification?.status === 'ASK' && !clarification.response_outcome;
   const operation = { cycleId: scope.cycleId, situationId: scope.situationId, ownerId: scope.ownerId,
-    identityEpoch: scope.identityEpoch, text, draftValue, requestId: createOperationId(), turnId: createProductInterviewTurnId(),
+    identityEpoch: scope.identityEpoch, text, draftValue,
+    draftRevision, requestId: createOperationId(), turnId: createProductInterviewTurnId(),
     clarificationId: isClarification ? clarification.id : null,
     sourcePhase: productInterviewSourcePhase(snapshot), status: 'prepared', accepted: false,
     endpoint: isClarification
@@ -275,11 +382,11 @@ const prepareProductInterviewAnswer = (text, draftValue, scope = productIntervie
 };
 
 export const sendProductInterviewAnswer = async (text, { draftValue = interviewTextarea.value,
-  scope = productInterviewAnswerScope() } = {}) => {
+  scope = productInterviewAnswerScope(), draftRevision = interviewTextarea.dataset.draftRevision || null } = {}) => {
   const key = productInterviewRequestKey(scope);
   if (productInterviewRequests.has(key)) return { busy: true };
   let operation;
-  try { operation = prepareProductInterviewAnswer(text, draftValue, scope); }
+  try { operation = prepareProductInterviewAnswer(text, draftValue, scope, draftRevision); }
   catch (error) {
     if (isProductInterviewPresentationCurrent(scope)) showError(interviewError, error.message);
     return { accepted: false };
@@ -1641,12 +1748,34 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
     const operation = requestIdentity?.cycleId ? requestIdentity
       : prepareProductInterviewAnswer(text, interviewTextarea.value);
     const runtimeUrl = '/users/assessment/cycles/' + encodeURIComponent(operation.cycleId) + '/runtime';
+    let outcome = null;
+    if (operation.status !== 'prepared') {
+      outcome = await readProductInterviewAnswerStatus(operation);
+      if (!isProductInterviewAnswerCurrent(operation)) return { stale: true };
+      if (productInterviewAnswerResolved(operation, outcome, confirmedProductInterviewSnapshot)) {
+        applyProductInterviewAnswerStatus(operation, outcome, confirmedProductInterviewSnapshot);
+        operation.accepted = true;
+        operation.status = 'accepted';
+        // Receipt readback remains conclusive when a later runtime/return GET
+        // is unavailable. It does not grant permission to write in that state.
+        await loadProductRuntime();
+        return { accepted: true, verified: true };
+      }
+    }
     // Readback always precedes a retry. A failed GET never means the Turn is absent.
     const runtimeResponse = await fetch(runtimeUrl, { credentials: 'same-origin' });
     const snapshot = await readApiResponse(runtimeResponse, 'Не удалось восстановить состояние оценки.');
     if (!isProductInterviewPresentationCurrent(operation)) return { stale: true, accepted: operation.accepted };
     if (!productInterviewSnapshotMatches(snapshot, operation)) {
       throw new Error('Ситуация изменилась. Ответ остаётся связан с исходной ситуацией.');
+    }
+    if (outcome) {
+      applyProductInterviewAnswerStatus(operation, outcome, snapshot);
+      if (productInterviewAnswerResolved(operation, outcome, snapshot)) {
+        renderProductRuntime(snapshot);
+        return { accepted: true, verified: true };
+      }
+      if (!readProductInterviewAnswer(operation)) { renderProductRuntime(snapshot); return { blocked: true }; }
     }
     renderProductRuntime(snapshot);
     const saved = (snapshot.trace?.turns || []).some((turn) => turn.turn_id === operation.turnId
@@ -1861,9 +1990,19 @@ export const initInterview = () => {
   interviewTextarea.addEventListener('input', () => {
     const key = interviewDraftKey();
     if (!key) return;
-    activeInterviewDraftKey = key;
-    if (interviewTextarea.value) window.sessionStorage.setItem(key, interviewTextarea.value);
-    else window.sessionStorage.removeItem(key);
+    activeInterviewDraftKey = interviewDraftSignature();
+    if (interviewTextarea.value) {
+      window.sessionStorage.setItem(key, interviewTextarea.value);
+      const revision = createOperationId();
+      interviewTextarea.dataset.draftRevision = revision;
+      window.sessionStorage.setItem(key + ':context', JSON.stringify({
+        ownerId: String(state.pendingUser?.id || ''), clarificationId: interviewDraftScope().clarificationId, revision,
+      }));
+    } else {
+      window.sessionStorage.removeItem(key);
+      window.sessionStorage.removeItem(key + ':context');
+      interviewTextarea.dataset.draftRevision = '';
+    }
   });
   placeInterviewTimerBadge();
   interviewCompactQuery?.addEventListener('change', placeInterviewTimerBadge);
