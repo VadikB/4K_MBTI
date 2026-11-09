@@ -1131,6 +1131,12 @@ def _project_member_scope_compatibility(stages: dict) -> dict:
     }
 
 
+def _remember_newest_assessment_stage(stages: dict, member_key: tuple[int, int],
+                                      assignment_ref: str, stage: dict) -> None:
+    """Keep the first row from a newest-first assignment projection."""
+    stages.setdefault(member_key, {}).setdefault(assignment_ref, stage)
+
+
 def _build_admin_organizations(connection, scope: AdminScope | None = None, *, actor_user_id: int | None = None) -> AdminOrganizationsResponse:
     ensure_configured_organizations(connection)
     connection.commit()
@@ -1338,9 +1344,15 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 from Api.assessment_start_readiness import read as read_start_readiness
                 row['start_readiness'] = read_start_readiness(
                     connection, cycle_id=str(row['cycle_id']), user_id=int(row['recipient_user_id']))
-            assessment_stages.setdefault(
-                (int(row["organization_id"]), int(row["recipient_user_id"])), {}
-            )[str(row["assignment_ref"])] = _project_admin_assessment_stage(dict(row))
+            # Rows are newest first. Preserve the current generation while keeping every
+            # older generation in assessment_history; an old revocation must not replace
+            # the stage of a later active assignment with the same assignment_ref.
+            _remember_newest_assessment_stage(
+                assessment_stages,
+                (int(row["organization_id"]), int(row["recipient_user_id"])),
+                str(row["assignment_ref"]),
+                _project_admin_assessment_stage(dict(row)),
+            )
 
         member_detail_rows = connection.execute(
             """
