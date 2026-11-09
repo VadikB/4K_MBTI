@@ -329,11 +329,11 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     status = m7_completion.read_status(connection, cycle_id)
     cycle = connection.execute("SELECT id FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
     situations = connection.execute(
-        """SELECT assessment_situation_id,status,snapshot_json,started_at,scenario_ended_at,closed_at
+        """SELECT id,assessment_situation_id,status,snapshot_json,started_at,scenario_ended_at,closed_at
            FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id""", (cycle["id"],)
     ).fetchall()
     route_current = connection.execute(
-        """SELECT s.assessment_situation_id,s.status,s.snapshot_json,s.started_at,
+        """SELECT s.id,s.assessment_situation_id,s.status,s.snapshot_json,s.started_at,
                   s.scenario_ended_at,s.closed_at
            FROM m7_route_positions p
            JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
@@ -382,6 +382,8 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
                 "answer_turn_id": str(saved["answer_turn_id"]) if saved["answer_turn_id"] else None,
                 "explanation": saved["explanation_json"],
             }
+    from Api.m7_completion import finish_availability
+    availability = finish_availability(connection, current) if current and current['status']=='scenario_ended' else None
     pipeline = connection.execute(
         "SELECT status,stage,error_code,latest_report_id FROM m10_pipeline_runs WHERE cycle_db_id=%s",
         (cycle["id"],),
@@ -411,7 +413,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
             "status": current["status"],
             **({"participant_payload": current["snapshot_json"]["participant_payload"]} if presented else {}),
         } if current else None),
-        "trace": trace, "clarification": clarification,
+        "trace": trace, "clarification": clarification, "finish_availability": availability,
         "continuation": ({"intent_id": str(continuation["id"]), "status": continuation["status"]}
                          if continuation else None),
         "pipeline": dict(pipeline) if pipeline else None,

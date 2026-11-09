@@ -26,7 +26,7 @@ class BlockingWaitRequest(StrictModel):
 class ReturnContinueRequest(StrictModel):
     position_no:int=Field(gt=0)
     expected_assessment_situation_id:str=Field(min_length=1)
-    expected_state:Literal['active','paused']
+    expected_state:Literal['active','paused','scenario_ended']
     idempotency_key:str=Field(min_length=1,max_length=200)
     generation_operation_id:str|None=None
 

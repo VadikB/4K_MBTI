@@ -26,6 +26,7 @@ def test_product_queue_claims_cycle_before_assessment_situation():
     assert [query.rsplit(" ORDER BY ", 1)[1] for query in connection.queries] == [
         "o.created_at FOR UPDATE OF c SKIP LOCKED LIMIT 1",
         "a.created_at FOR UPDATE OF c SKIP LOCKED LIMIT 1",
+        "d.created_at FOR UPDATE OF cy SKIP LOCKED LIMIT 1",
         "c.created_at FOR UPDATE OF cy SKIP LOCKED LIMIT 1",
     ]
 
@@ -38,7 +39,9 @@ def test_concurrent_clarification_fence_is_retried_without_publishing_late_outpu
             return row
 
     class Connection:
-        def execute(self, *_args, **_kwargs):
+        def execute(self, query, *_args, **_kwargs):
+            if 'SELECT d.id,d.c54_revision_id' in query:
+                return _NoCandidateResult()
             return Result()
         def commit(self):
             return None

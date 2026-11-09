@@ -108,10 +108,17 @@ def _processing_failure(calculation: dict) -> dict | None:
 
 
 def enqueue_handoff(connection, *, handoff_id: str, created_by: int) -> dict:
+    # Keep Cycle -> AS order even on HTTP enqueue and accepted-request replay.
+    connection.execute('''SELECT c.id FROM m5_cycles c
+        JOIN m5_assessment_situations s ON s.cycle_db_id=c.id
+        JOIN m5_c45_handoffs h ON h.assessment_situation_db_id=s.id
+        WHERE h.handoff_id=%s FOR UPDATE OF c''',(UUID(handoff_id),)).fetchone()
     as_db_id, material = resolve(connection, handoff_id)
     cycle = connection.execute("SELECT * FROM m5_cycles WHERE id=(SELECT cycle_db_id FROM m5_assessment_situations WHERE id=%s)",
                                (as_db_id,)).fetchone()
     cycle = dict(cycle)
+    prior=connection.execute('SELECT request_id FROM m6_request_keys WHERE as_db_id=%s AND key=%s',
+                             (as_db_id,f"product-evidence:{handoff_id}")).fetchone()
     request = enqueue_evidence(
         connection, as_db_id=as_db_id, handoff_id=handoff_id, key=f"product-evidence:{handoff_id}",
         material=material, mechanism=load_evidence_mechanism(
@@ -121,6 +128,10 @@ def enqueue_handoff(connection, *, handoff_id: str, created_by: int) -> dict:
             resolve_cycle_dependency(cycle, "provider_contract"),
         ), created_by=created_by,
     )
+    if prior:return dict(request)
+    situation=connection.execute('SELECT * FROM m5_assessment_situations WHERE id=%s',(as_db_id,)).fetchone()
+    handoff=connection.execute('SELECT mode FROM m5_c45_handoffs WHERE handoff_id=%s',(UUID(handoff_id),)).fetchone()
+    if handoff['mode']=='interim':m7_clarification.sync_interim_wait(connection,dict(situation))
     cycle = connection.execute("SELECT cycle_db_id FROM m5_assessment_situations WHERE id=%s", (as_db_id,)).fetchone()
     _set_state(connection, int(cycle["cycle_db_id"]), status="processing", stage="evidence_queued")
     return dict(request)
@@ -180,6 +191,20 @@ def _clarify_interim(connection, gateway=None, connection_factory=None) -> bool:
         from Api.m10_test_gateway import acceptance_fixture, BrowserAcceptanceGateway
         if acceptance_fixture():
             gateway=BrowserAcceptanceGateway()
+    # A pause can win after detached generation committed ASK but before its
+    # delivery. Resume retries that immutable decision, without another LLM call.
+    pending=connection.execute(f"""SELECT d.id,d.c54_revision_id,s.cycle_db_id,cy.created_by
+        FROM m7_clarification_decisions d JOIN m5_assessment_situations s ON s.id=d.assessment_situation_db_id
+        JOIN m5_cycles cy ON cy.id=s.cycle_db_id
+        WHERE d.status='ASK' AND s.status='scenario_ended' AND cy.status='active' AND {sql_scope('cy')}
+          AND NOT EXISTS(SELECT 1 FROM m7_clarification_deliveries q WHERE q.decision_id=d.id)
+          AND d.c54_revision_id=(SELECT id FROM m6_c54_revisions WHERE as_db_id=s.id AND mode='interim'
+              ORDER BY created_at DESC,id DESC LIMIT 1)
+        ORDER BY d.created_at FOR UPDATE OF cy SKIP LOCKED LIMIT 1""").fetchone()
+    if pending:
+        m7_clarification.present(connection,decision_id=str(pending['id']),expected_c54_revision_id=str(pending['c54_revision_id']))
+        _set_state(connection,int(pending['cycle_db_id']),status='processing',stage='clarification_waiting')
+        return True
     row = connection.execute(f"""SELECT c.id,c.as_db_id,s.cycle_db_id,cy.created_by FROM m6_c54_revisions c
         JOIN m5_assessment_situations s ON s.id=c.as_db_id JOIN m5_cycles cy ON cy.id=s.cycle_db_id
         WHERE c.mode='interim' AND {sql_scope('cy')} AND NOT EXISTS(
@@ -203,6 +228,8 @@ def _clarify_interim(connection, gateway=None, connection_factory=None) -> bool:
         # only the newest still-applicable interim revision.
         return True
     if decision["status"] == "ASK":
+        current=connection.execute('SELECT status FROM m5_cycles WHERE id=%s FOR UPDATE',(row['cycle_db_id'],)).fetchone()
+        if current['status']!='active':return True
         m7_clarification.present(connection, decision_id=str(decision["id"]), expected_c54_revision_id=str(row["id"]))
     stage = "clarification_waiting" if decision["status"] == "ASK" else "clarification_resolved"
     status = "failed" if decision["status"] == "WAIT_TECHNICAL" else "processing"

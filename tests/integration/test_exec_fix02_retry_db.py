@@ -189,6 +189,11 @@ def retry_env(product_db, monkeypatch):
         lambda token: SimpleNamespace(id=99) if token == "exec02-owner" else SimpleNamespace(id=100) if token else None)
     queue = ProductCyclePreparationQueue()
     monkeypatch.setattr(routes, "product_cycle_preparation_queue", queue)
+    # EXEC-FIX-01 owns ordinary Finish admission. EXEC-FIX-02 exercises the
+    # subsequent preparation scope, so its synthetic upstream admission stays
+    # explicit instead of fabricating M6/M7 domain evidence in this fixture.
+    monkeypatch.setattr("Api.m7_completion.finish_availability",
+                        lambda _connection, _situation: {"allowed": True, "reason": "CURRENT_DECISION"})
     app = FastAPI(); app.include_router(routes.router)
     with TestClient(app) as http:
         http.cookies.set(routes.SESSION_COOKIE_NAME, "exec02-owner")
