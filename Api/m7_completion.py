@@ -22,7 +22,7 @@ def _effective_limit(connection,cycle):
     if deadline and now>=deadline:return 'calendar_deadline',deadline
     if state['remaining_seconds']<=0:
         remaining=int(cycle['time_budget_seconds'])
-        rows=connection.execute("SELECT started_at,COALESCE(ended_at,NOW()) AS ended_at FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting' ORDER BY started_at,id",(cycle['id'],)).fetchall()
+        rows=connection.execute("SELECT started_at,COALESCE(ended_at,clock_timestamp()) AS ended_at FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting' ORDER BY started_at,id",(cycle['id'],)).fetchall()
         for row in rows:
             seconds=max(0,int((row['ended_at']-row['started_at']).total_seconds()))
             if seconds>=remaining:return 'time_budget',row['started_at']+timedelta(seconds=remaining)
@@ -51,9 +51,60 @@ def _finalize_as(connection,row,reason,key):
     return handoff
 
 
+def finish_availability(connection, situation: dict) -> dict:
+    """Ordinary Finish needs a permitting M7 decision for the last material.
+
+    A delivered M7 question is not new assessee material. An accepted answer is;
+    its interim must complete M6/M7 again. No persisted schema/state is added.
+    """
+    def result(allowed,reason):return {'allowed':allowed,'reason':reason}
+    if situation['status']!='scenario_ended':return result(False,'SCENARIO_NOT_COMPLETED')
+    as_db=situation['id']
+    material=connection.execute("""SELECT MAX(sequence_no) AS boundary FROM (
+        SELECT sequence_no FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s
+          AND NOT (speaker_type='assessment' AND speaker_id='m7-clarification')
+        UNION ALL SELECT sequence_no FROM m5_scenario_events WHERE assessment_situation_db_id=%s
+        ) material""",(as_db,as_db)).fetchone()['boundary'] or 0
+    handoff=connection.execute("""SELECT * FROM m5_c45_handoffs
+        WHERE assessment_situation_db_id=%s AND mode='interim'
+        ORDER BY boundary_sequence DESC,created_at DESC LIMIT 1""",(as_db,)).fetchone()
+    if not handoff or handoff['boundary_sequence']<material:return result(False,'INTERIM_PENDING')
+    decision=connection.execute("""SELECT d.status,d.input_json,d.explanation_json,q.question_turn_id,r.outcome AS response_outcome,
+            c.payload_json,c.payload_hash,c.handoff_id,h.boundary_sequence,h.envelope_checksum
+        FROM m7_clarification_decisions d
+        JOIN m6_c54_revisions c ON c.id=d.c54_revision_id AND c.as_db_id=d.assessment_situation_db_id
+        JOIN m5_c45_handoffs h ON h.handoff_id=c.handoff_id
+        LEFT JOIN m7_clarification_responses r ON r.decision_id=d.id
+        LEFT JOIN m7_clarification_deliveries q ON q.decision_id=d.id
+        WHERE d.assessment_situation_db_id=%s AND c.mode='interim'
+          AND c.id=(SELECT id FROM m6_c54_revisions WHERE as_db_id=%s AND mode='interim'
+                    ORDER BY created_at DESC,id DESC LIMIT 1)
+        ORDER BY h.boundary_sequence DESC,d.created_at DESC LIMIT 1""",(as_db,as_db)).fetchone()
+    if not decision:return result(False,'INTERIM_PENDING')
+    if (decision['handoff_id']!=handoff['handoff_id'] or decision['boundary_sequence']<material
+            or decision['input_json'].get('handoff_id')!=str(handoff['handoff_id'])
+            or decision['input_json'].get('boundary_sequence')!=handoff['boundary_sequence']):
+        return result(False,'DECISION_STALE')
+    from Api.assessment_configuration import definition_checksum
+    if (checksum(handoff['envelope_json'])!=handoff['envelope_checksum']
+            or definition_checksum(decision['payload_json'])!=decision['payload_hash']):
+        return result(False,'ANALYSIS_FAILED')
+    if decision['status']=='WAIT_TECHNICAL':return result(False,'WAIT_TECHNICAL')
+    if decision['status']=='ASK':
+        if not decision['question_turn_id']:return result(False,'QUESTION_PENDING')
+        return result(decision['response_outcome'] in {'no_answer','refused'},
+                      'CURRENT_DECISION' if decision['response_outcome'] in {'no_answer','refused'} else 'OPEN_ASK')
+    permitting=(decision['status'] in {'NO_QUESTION','NEW_AS'} or
+        (decision['status']=='STOP' and decision['explanation_json'].get('code')=='M7_CLARIFICATION_TIME_UNAVAILABLE'))
+    return result(permitting,'CURRENT_DECISION' if permitting else 'DECISION_STOP')
+
+
 def finish_current_situation(connection, *, cycle_id: str, key: str, initiated_by: int) -> dict:
     """Close one completed AS without closing its Cycle (W02 inter-case boundary)."""
     cycle = _cycle(connection, cycle_id)
+    request_checksum=checksum({'action':'finish_situation'})
+    prior=repo.existing(connection,cycle['id'],key,request_checksum)
+    if prior:return {**prior,'idempotent':True}
     if cycle['status'] not in {'active', 'paused'}:
         raise ValueError('M7_CYCLE_NOT_ACTIVE')
     row = connection.execute(
@@ -70,20 +121,20 @@ def finish_current_situation(connection, *, cycle_id: str, key: str, initiated_b
             "SELECT handoff_id FROM m5_c45_handoffs WHERE assessment_situation_db_id=%s AND mode='final' ORDER BY created_at DESC LIMIT 1",
             (row['id'],),
         ).fetchone()
-        return {"status": "between_situations", "assessment_situation_id": str(row['assessment_situation_id']),
+        result={"status": "between_situations", "assessment_situation_id": str(row['assessment_situation_id']),
                 "handoff_id": str(handoff['handoff_id']) if handoff else None, "idempotent": True}
+        connection.execute('INSERT INTO m7_completion_commands VALUES(%s,%s,%s,%s::jsonb,NOW())',
+            (cycle['id'],key,request_checksum,json.dumps(result)))
+        return result
     if cycle['status'] != 'active':
         raise ValueError('M7_CYCLE_NOT_ACTIVE')
     if row['status'] != 'scenario_ended':
         raise ValueError('M7_SCENARIO_NOT_COMPLETED')
-    clarification = connection.execute(
-        """SELECT d.status,r.outcome AS response_outcome FROM m7_clarification_decisions d
-           LEFT JOIN m7_clarification_responses r ON r.decision_id=d.id
-           WHERE d.assessment_situation_db_id=%s ORDER BY d.created_at DESC LIMIT 1""",
-        (row['id'],),
-    ).fetchone()
-    if clarification is not None and clarification['status'] == 'ASK' and not clarification['response_outcome']:
-        raise ValueError('M7_CLARIFICATION_PENDING')
+    from Api.m7_clarification import _assert_answer_collection
+    _assert_answer_collection(connection,dict(row))
+    availability=finish_availability(connection,dict(row))
+    if not availability['allowed']:
+        raise ValueError('M7_CLARIFICATION_PENDING:'+availability['reason'])
     handoff = _finalize_as(connection, dict(row), 'user_finished_situation', key)
     session = connection.execute(
         "SELECT session_id FROM m5_cycle_sessions WHERE cycle_db_id=%s AND status='active' ORDER BY ordinal DESC LIMIT 1",
@@ -92,9 +143,12 @@ def finish_current_situation(connection, *, cycle_id: str, key: str, initiated_b
     if session:
         m5_cycle_runtime.transition_session(connection, session_id=str(session['session_id']),
                                             action='pause', reason='between_situations')
-    return {"status": "between_situations", "assessment_situation_id": str(row['assessment_situation_id']),
+    result={"status": "between_situations", "assessment_situation_id": str(row['assessment_situation_id']),
             "handoff_id": str(handoff['handoff_id']) if handoff else None, "idempotent": False,
             "initiated_by": initiated_by}
+    connection.execute('INSERT INTO m7_completion_commands VALUES(%s,%s,%s,%s::jsonb,NOW())',
+        (cycle['id'],key,request_checksum,json.dumps(result)))
+    return result
 
 def _composition(connection,cycle):
     from Api.m7_route_replacement import replacement_metadata
@@ -185,7 +239,7 @@ def complete(connection,*,cycle_id,key,action,reason,initiated_by):
     connection.execute("""UPDATE m7_route_positions p SET state='completed',updated_at=NOW()
         FROM m5_assessment_situations s WHERE p.current_as_db_id=s.id AND p.cycle_db_id=%s
         AND s.status IN('closed','terminated')""", (cycle['id'],))
-    connection.execute('UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL',(cycle['id'],))
+    connection.execute('UPDATE m5_cycle_time_intervals SET ended_at=clock_timestamp() WHERE cycle_db_id=%s AND ended_at IS NULL',(cycle['id'],))
     if action=='interrupt_for_continuation':
         if not current or current['status'] not in {'active','paused'}:raise ValueError('M7_CONTINUATION_NOT_INTERRUPTED')
         connection.execute("UPDATE m5_cycle_sessions SET status='interrupted',ended_at=NOW(),close_reason=%s,updated_at=NOW() WHERE id=%s",(reason,current['id']))
@@ -238,6 +292,12 @@ def control(connection,*,cycle_id,key,action,reason,initiated_by):
     if open_as:
         m5_scenario_runtime.transition(connection,assessment_situation_id=str(open_as['assessment_situation_id']),action=action,reason=reason,request_id=f'{key}:{action}')
     saved=transition_session(connection,session_id=str(session['session_id']),action=action,reason=reason)
+    if action=='resume':
+        clarification_as=connection.execute("""SELECT * FROM m5_assessment_situations
+            WHERE session_db_id=%s AND status='scenario_ended' ORDER BY id DESC LIMIT 1""",(session['id'],)).fetchone()
+        if clarification_as:
+            from Api.m7_clarification import sync_interim_wait
+            sync_interim_wait(connection,dict(clarification_as))
     result={'cycle_id':cycle_id,'session_id':str(session['session_id']),'action':action,'cycle_status':'paused' if action=='pause' else 'active',
         'session_status':saved['status'],'assessment_situation_id':str(open_as['assessment_situation_id']) if open_as else None}
     connection.execute('INSERT INTO m7_completion_commands VALUES(%s,%s,%s,%s::jsonb,NOW())',(cycle['id'],key,request_checksum,json.dumps(result)))

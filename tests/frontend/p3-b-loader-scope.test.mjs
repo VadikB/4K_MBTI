@@ -97,7 +97,7 @@ test('P3-A+3B unversioned initial/visibility load rejects old AS but accepts ser
   assert.equal(current.renders.length, 1);
 });
 
-test('P3-A+3B late presence does not render an AS replaced during heartbeat', async () => {
+test('P3-A+3B late presence cannot apply effects after an AS replacement', async () => {
   const heartbeat = deferred();
   const heartbeatStarted = deferred();
   const h = harness({ presence: () => { heartbeatStarted.resolve(); return heartbeat.promise; } });
@@ -105,11 +105,12 @@ test('P3-A+3B late presence does not render an AS replaced during heartbeat', as
   await h.requested;
   h.resolve({ syntheticPayload: snapshot('as-B', true) });
   await heartbeatStarted.promise;
+  assert.equal(h.renders.length, 1); // Confirmed runtime renders before the independent heartbeat.
   h.state.productAssessmentSituationId = 'as-C';
   heartbeat.resolve({ heartbeat_interval_seconds: 30 });
   assert.equal(await loading, null);
   assert.equal(h.state.productAssessmentSituationId, 'as-C');
-  assert.equal(h.renders.length, 0);
+  assert.equal(h.renders.length, 1); // The late heartbeat never renders again.
   assert.equal(h.effects.includes('startPresence'), false);
 });
 

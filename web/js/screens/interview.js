@@ -513,6 +513,7 @@ const renderProductRuntime = (snapshot) => {
   interviewTimerBadge.classList.remove('is-paused');
 
   if (snapshot.between_situations) {
+    stopProductPresence();
     interviewTimerBadge.classList.add('is-paused');
     interviewMessages.innerHTML = '';
     const card = document.createElement('section'); card.className = 'interview-return-card';
@@ -563,7 +564,8 @@ const renderProductRuntime = (snapshot) => {
   interviewTimerBadge.classList.toggle('is-paused', suspended);
   interviewTextarea.disabled = closed || suspended || !current;
   interviewSubmitButton.disabled = closed || suspended || !current;
-  interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion;
+  interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion
+    || (current.status === 'scenario_ended' && snapshot.finish_availability?.allowed !== true);
   interviewPauseButton?.classList.toggle('hidden', closed || !current || cycleStatus === 'interrupted');
   interviewAdditionalButton?.classList.toggle('hidden', closed || (!current && cycleStatus !== 'interrupted'));
   if (interviewPauseButton) interviewPauseButton.textContent = state.productCycleStatus === 'paused' ? 'Продолжить' : 'Пауза';
@@ -580,7 +582,11 @@ const renderProductRuntime = (snapshot) => {
     : waitingQuestion
       ? 'Ответьте на уточняющий вопрос.'
       : current?.status === 'scenario_ended'
-        ? 'Проверяем, требуется ли уточнение.'
+        ? snapshot.finish_availability?.allowed === true
+          ? 'Уточнение завершено. Можно завершить ситуацию.'
+          : snapshot.pipeline?.status === 'failed' || ['WAIT_TECHNICAL', 'ANALYSIS_FAILED'].includes(snapshot.finish_availability?.reason)
+            ? 'Не удалось завершить анализ. Ответы сохранены; ожидаем восстановления обработки.'
+            : 'Анализируем последний ответ. Завершение ситуации пока недоступно.'
         : 'Ответы сохраняются в текущей Assessment Situation.';
   confirmedProductInterviewCanSend = !interviewSubmitButton.disabled && productInterviewSourceReady(snapshot);
   if (!confirmedProductInterviewCanSend) {
@@ -617,7 +623,9 @@ const startProductPresence = (initialContract = null) => {
       }
       returnHeartbeatTimer = window.setTimeout(tick, intervalSeconds * 1000);
     } catch (error) {
+      if (generation !== returnPresenceGeneration) return;
       showError(interviewError, error.message);
+      returnHeartbeatTimer = window.setTimeout(tick, PRODUCT_RUNTIME_POLL_MS);
     }
   };
   const intervalSeconds = Number(initialContract?.heartbeat_interval_seconds);
@@ -636,6 +644,7 @@ const stopProductPresence = () => {
 };
 
 const renderReturnCard = (value) => {
+  stopProductPresence();
   if (renderedProductCycleId !== value.cycle_id) {
     state.caseOutcomeByNumber = {};
     renderedProductCycleId = value.cycle_id;
@@ -785,14 +794,24 @@ export const loadProductRuntime = async ({ generation = null } = {}) => {
   situationId = state.productAssessmentSituationId;
   const terminal = ['collection_closed', 'calculation_pending', 'calculated', 'failed']
     .includes(saved.status?.collection_status);
-  let presenceContract = null;
-  if (saved.return_policy_enabled && saved.current_situation && returnPresenceCycleId !== saved.cycle_id) {
-    presenceContract = await heartbeatProductPresence();
-    if (!current()) return null;
-    returnPresenceCycleId = saved.cycle_id;
-  }
   const snapshot = renderProductRuntime(saved);
-  if (saved.return_policy_enabled && snapshot.current_situation && presenceContract) startProductPresence(presenceContract);
+  if (!terminal && saved.return_policy_enabled && saved.current_situation && returnPresenceCycleId !== saved.cycle_id) {
+    try {
+      const presenceContract = await heartbeatProductPresence();
+      if (!current()) return null;
+      if (presenceContract) {
+        returnPresenceCycleId = saved.cycle_id;
+        startProductPresence(presenceContract);
+      } else {
+        await loadReturnState({ generation });
+      }
+    } catch (error) {
+      if (!current()) return null;
+      showError(interviewError, error.message);
+      returnPresenceCycleId = saved.cycle_id;
+      startProductPresence();
+    }
+  }
   if (terminal && returnPresenceCycleId) {
     stopProductPresence();
   }
@@ -809,7 +828,11 @@ const waitForProductClarification = async (previousDecisionId = null) => {
     if (!snapshot) return null;
     const decision = snapshot.clarification;
     if (snapshot.pipeline?.status === 'failed') throw new Error(snapshot.pipeline.error_code || 'Ошибка анализа.');
-    if (decision && decision.id !== previousDecisionId) return snapshot;
+    if ((decision?.status === 'ASK' && !decision.response_outcome && decision.id !== previousDecisionId)
+        || snapshot.finish_availability?.allowed === true) return snapshot;
+    if (snapshot.finish_availability?.reason === 'WAIT_TECHNICAL') {
+      throw new Error('Уточнение ожидает восстановления обработки. Ответы сохранены.');
+    }
     await new Promise((resolve) => window.setTimeout(resolve, PRODUCT_RUNTIME_POLL_MS));
   }
   throw new Error('Анализ уточнения ещё не завершён. Состояние можно восстановить после обновления страницы.');
@@ -849,7 +872,10 @@ export const finishProductAssessment = async () => {
     renderProductRuntime(snapshot);
     return;
   }
-  stopProductPresence();
+  if (snapshot.finish_availability?.allowed !== true) {
+    renderProductRuntime(snapshot);
+    return;
+  }
   const finishedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/finish-situation', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ idempotency_key: createOperationId() }),

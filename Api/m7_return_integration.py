@@ -121,7 +121,7 @@ def heartbeat(connection, *, cycle_id: str, owner_user_id: int, client_id: str,
     if int(cycle["owner_user_id"]) != int(owner_user_id):
         raise ValueError("M7_CYCLE_NOT_FOUND")
     policy = _saved_policy(connection, cycle)
-    if cycle["status"] in TERMINAL_CYCLE or situation["status"] not in {"active", "paused"}:
+    if cycle["status"] in TERMINAL_CYCLE or situation["status"] not in {"active", "paused", "scenario_ended"}:
         raise ValueError("M7_RETURN_NOT_APPLICABLE")
     if str(situation["assessment_situation_id"]) != expected_as_id:
         raise ValueError("M7_RETURN_STALE_CURRENT_AS")
@@ -210,7 +210,7 @@ def record_controlled_absence(connection, *, cycle_id: str, expected_as_id: str,
     cycle, session, position, situation = _context(connection, cycle_id, lock=True)
     if cycle["usage_scope"] != "qa":
         raise ValueError("M7_RETURN_CONTROLLED_EVENT_QA_ONLY")
-    if cycle["status"] in TERMINAL_CYCLE or situation["status"] not in {"active", "paused"}:
+    if cycle["status"] in TERMINAL_CYCLE or situation["status"] not in {"active", "paused", "scenario_ended"}:
         raise ValueError("M7_RETURN_NOT_APPLICABLE")
     if str(situation["assessment_situation_id"]) != expected_as_id:
         raise ValueError("M7_RETURN_STALE_CURRENT_AS")
@@ -342,6 +342,8 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
         return dict(prior["result_json"])
     if cycle["status"] in TERMINAL_CYCLE:
         raise ValueError("M7_COLLECTION_CLOSED")
+    if situation["status"] not in {"active", "paused", "scenario_ended"}:
+        raise ValueError("M7_RETURN_NOT_APPLICABLE")
     if position["position_no"] != position_no or str(situation["assessment_situation_id"]) != expected_as_id or situation["status"] != expected_state:
         raise ValueError("M7_RETURN_STALE_CURRENT_AS")
     event = connection.execute("SELECT * FROM m7_return_absence_events WHERE cycle_db_id=%s AND status='recognized' FOR UPDATE",
@@ -357,8 +359,13 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
     if policy["algorithm"] == "m7-return-r1" or elapsed < int(policy["replacement_threshold_seconds"]):
         current_id, branch = expected_as_id, "continued_current"
         connection.execute("DELETE FROM m7_return_presence_clients WHERE cycle_db_id=%s", (cycle["id"],))
-        end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
-                          operation_ref=f"return:{event['source_ref']}", reason="explicit_return_continue")
+        return_wait=connection.execute("""SELECT operation_ref FROM m5_cycle_time_intervals
+            WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type='blocking_system_wait'
+              AND (operation_ref=%s OR starts_with(operation_ref,%s)) FOR UPDATE""",
+            (cycle['id'],f"return:{event['source_ref']}",f"return:{event['source_ref']}:")).fetchone()
+        if return_wait:
+            end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
+                              operation_ref=return_wait['operation_ref'], reason="explicit_return_continue")
     else:
         route=replacement_metadata(connection,cycle["id"])
         current_route=next(x for x in route["positions"] if x["position_no"]==position_no)
@@ -385,8 +392,13 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
             requested_by=owner_user_id, provider=GeneratedCandidateReplacementProvider(generation_operation_id))
         current_id = replaced["new_assessment_situation_id"]
         connection.execute("DELETE FROM m7_return_presence_clients WHERE cycle_db_id=%s", (cycle["id"],))
-        end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
-                          operation_ref=f"return:{event['source_ref']}", reason="explicit_return_continue")
+        return_wait=connection.execute("""SELECT operation_ref FROM m5_cycle_time_intervals
+            WHERE cycle_db_id=%s AND ended_at IS NULL AND interval_type='blocking_system_wait'
+              AND (operation_ref=%s OR starts_with(operation_ref,%s)) FOR UPDATE""",
+            (cycle['id'],f"return:{event['source_ref']}",f"return:{event['source_ref']}:")).fetchone()
+        if return_wait:
+            end_blocking_wait(connection, cycle_db_id=cycle["id"], session_db_id=session["id"],
+                              operation_ref=return_wait['operation_ref'], reason="explicit_return_continue")
         started = start_situation(connection, current_id)
         current_row = connection.execute("SELECT id FROM m5_assessment_situations WHERE assessment_situation_id=%s",
                                          (UUID(current_id),)).fetchone()
@@ -401,6 +413,9 @@ def continue_return(connection, *, cycle_id: str, position_no: int, expected_as_
               "calendar_deadline": timing["calendar_deadline"].isoformat()}
     connection.execute("UPDATE m7_return_absence_events SET status='consumed',consumed_at=NOW(),result_json=%s::jsonb WHERE id=%s",
                        (json.dumps(result), event["id"]))
+    if situation['status']=='scenario_ended':
+        from Api.m7_clarification import sync_interim_wait
+        sync_interim_wait(connection,situation)
     connection.execute("INSERT INTO m7_return_commands VALUES(%s,%s,%s,%s::jsonb,NOW())",
                        (cycle["id"], key, digest, json.dumps(result)))
     return result

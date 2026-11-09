@@ -165,6 +165,32 @@ class AssessmentGateway:
             for x in value["material"]["indicator_targets"]]})
 
 
+def _resolve_interim_for_finish(connection, factory, as_id):
+    """Inter-case tests now require the same actual M6/M7 authorization as HTTP."""
+    from Api import m7_clarification, m6_assessment_repository
+    from Api.m5_scenario_runtime import build_c45
+    interim=build_c45(connection,as_id,mode='interim')
+    evidence=m10_orchestration.enqueue_handoff(connection,handoff_id=str(interim['handoff_id']),created_by=99)
+    connection.commit()
+    run_evidence(evidence['id'],connection_factory=factory,gateway=EvidenceGateway())
+    m10_orchestration._queue_assessment(connection)
+    request=connection.execute("SELECT id FROM m6_assessment_requests WHERE status='queued' ORDER BY created_at DESC LIMIT 1").fetchone()
+    connection.commit()
+    class InterimAssessment(AssessmentGateway):
+        def chat(self,messages,**kwargs):
+            value=json.loads(super().chat(messages,**kwargs));value['mode']='interim'
+            for target in value['targets']:
+                target.update(status='INTERIM',outcome=None,descriptor_basis=None)
+            return json.dumps(value)
+    run_assessment(request['id'],connection_factory=factory,gateway=InterimAssessment())
+    saved=m6_assessment_repository.read_request(connection,request['id'])
+    assert saved['status']=='succeeded'
+    connection.commit()
+    decision=m7_clarification.decide_detached(c54_revision_id=str(saved['c54_revision_id']),
+        key='inter-case-resolution:'+str(interim['handoff_id']),created_by=99,connection_factory=factory)
+    assert decision['status']=='NO_QUESTION'
+
+
 def _add_turn(connection, as_id, text, key):
     as_db=connection.execute("SELECT id FROM m5_assessment_situations WHERE assessment_situation_id=%s",(as_id,)).fetchone()["id"]
     connection.execute("""INSERT INTO m5_dialogue_turns
@@ -820,6 +846,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                     semantic_adapter=Semantic(), character_adapter=Character())
         transition(connection, assessment_situation_id=first_as, action="scenario_end",
                    reason="regression", request_id="functional-cycle-end")
+        _resolve_interim_for_finish(connection,product_db,first_as)
         finish_current_situation(connection, cycle_id=cycle_id, key="functional-cycle-finish", initiated_by=99)
         # The started Cycle keeps its frozen CASE.SPEC route even when the mutable
         # configuration pointer changes before the next position is prepared.
@@ -858,6 +885,7 @@ def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(pr
             reason="participant_completed", request_id="w02-inter-case-scenario-end",
         )
 
+        _resolve_interim_for_finish(connection,product_db,first_as)
         closed = finish_current_situation(
             connection, cycle_id=cycle_id, key="w02-inter-case-close", initiated_by=99,
         )
