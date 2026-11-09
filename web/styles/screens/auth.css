@@ -479,17 +479,6 @@
     text-align: left;
 }
 
-.auth-external-brand {
-    position: absolute;
-    left: 0;
-    bottom: calc(100% + 16px);
-    width: 100%;
-    color: var(--palette-graphite-900);
-    font: 600 24px/32px "Onest", var(--font-heading);
-    letter-spacing: -0.02em;
-    text-align: center;
-}
-
 .auth-panel .auth-brand-lockup .brand {
     color: var(--entry-graphite);
     font-family: "Onest", var(--font-heading);
@@ -836,8 +825,10 @@
 
 /* R01 canonical dimensions replace the retired UX-01 entry-screen surface. */
 body:has(#auth-panel:not(.hidden)),
-.shell:has(#auth-panel:not(.hidden)) {
-    background: var(--palette-canvas);
+body:has(#session-restore-panel:not(.hidden)),
+.shell:has(#auth-panel:not(.hidden)),
+.shell:has(#session-restore-panel:not(.hidden)) {
+    background: #ffffff;
 }
 .auth-panel.auth-panel--password-create {
     width: min(calc(100% - 32px), 502px);
@@ -990,4 +981,82 @@ body:has(#auth-panel:not(.hidden)),
         left: 16px;
         width: calc(100% - 32px);
     }
+}
+
+/* AUTH-FIX-01: the original page header and white auth-only canvas. */
+.auth-header {
+    display: none;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    min-height: 48px;
+    margin: 32px 32px 16px;
+    padding: 12px 30px;
+    background: #ffffff;
+}
+
+.shell:has(#auth-panel:not(.hidden)) > .auth-header,
+.shell:has(#session-restore-panel:not(.hidden)) > .auth-header {
+    display: flex;
+}
+
+.auth-header-brand {
+    color: #222c30;
+    font: 700 20px/24px "Onest", sans-serif;
+}
+
+.auth-release-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 24px;
+    padding-inline: 12px;
+    border-radius: 8px;
+    background: #b3ebef;
+    color: #222c30;
+    font: 400 12px/16px "Onest", sans-serif;
+    white-space: nowrap;
+}
+
+.auth-release-badge[hidden] { display: none; }
+
+.shell:has(#auth-panel:not(.hidden)) > .app-footer,
+.shell:has(#session-restore-panel:not(.hidden)) > .app-footer {
+    background: #ffffff;
+}
+
+.shell:has(#auth-panel:not(.hidden)) .app-footer-release,
+.shell:has(#session-restore-panel:not(.hidden)) .app-footer-release {
+    display: none;
+}
+
+.auth-panel.auth-panel input {
+    min-width: 0;
+    padding-inline: 16px;
+    border-color: #cbd5e1;
+    font-size: 16px;
+}
+
+.auth-panel.auth-panel .auth-password-input-row input { padding-right: 52px; }
+.auth-panel.auth-panel input:focus-visible { border-color: var(--entry-cyan-dark); }
+.auth-panel.auth-panel input[aria-invalid="true"] { border-color: var(--entry-coral); }
+.auth-panel.auth-panel .primary-button { line-height: 24px; }
+.auth-panel.auth-panel .subtitle { line-height: 20px; }
+
+.auth-panel.auth-panel .auth-panel-copy,
+.auth-panel.auth-panel .field,
+.auth-panel.auth-panel .stack { min-width: 0; width: 100%; }
+
+.auth-panel.auth-panel h1,
+.auth-panel.auth-panel .subtitle,
+.auth-panel.auth-panel .error { overflow-wrap: anywhere; }
+
+.auth-panel.auth-panel button { white-space: normal; }
+
+/* The existing AUTH03 actions and status fit the original 474px card. */
+.auth-panel:not(.auth-panel--password-create) #auth-token-form { gap: 8px; }
+
+@media (max-width: 767px) {
+    .auth-header { margin: 16px 16px 24px; padding: 12px 0; }
 }

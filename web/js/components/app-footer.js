@@ -17,7 +17,8 @@ export const initAppFooter = ({ root = document, now = new Date() } = {}) => {
     const visible = shouldShowAppFooter(visiblePanel?.id);
     footer.classList.toggle('hidden', !visible);
     footer.setAttribute('aria-hidden', visible ? 'false' : 'true');
-    footer.querySelector('.app-footer-release')?.classList.remove('hidden');
+    const isAuth = visiblePanel?.id === 'auth-panel' || visiblePanel?.id === 'session-restore-panel';
+    footer.querySelector('.app-footer-release')?.classList.toggle('hidden', isAuth);
   };
 
   const panels = Array.from(root.querySelectorAll('.shell > .panel'));

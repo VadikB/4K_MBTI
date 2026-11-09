@@ -33,6 +33,11 @@ test.afterAll(async () => new Promise((resolve) => server.close(resolve)));
 
 const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 const missingSession = 'Сессия входа не сохранилась';
+const resumeEmail = 'p4k-auth-resume@example.invalid';
+const resumePassword = 'P4k!9xQ2mZ';
+const waitingJourney = {
+  next_action: 'wait_for_acquaintance_data', acquaintance: { readiness: { status: 'waiting_for_assignment' } },
+};
 
 async function routes(page) {
   const counts = { journey401: 0, logout: 0 };
@@ -44,28 +49,28 @@ async function routes(page) {
       email: route.request().postDataJSON().email, auth_mode: 'password', message: 'Введите пароль.',
     });
     if (pathname === '/users/auth/email/password-login') {
-      const email = route.request().postDataJSON().email;
-      return json(route, { exists: true, user: { id: email.startsWith('new-') ? 9 : 8, email, full_name: 'Synthetic' },
+      const { email, password } = route.request().postDataJSON();
+      expect(password).toBe(resumePassword);
+      const id = email.startsWith('newer-') ? 10 : email.startsWith('new-') ? 9 : 8;
+      return json(route, { exists: true, user: { id, email, full_name: 'Synthetic' },
         is_admin: false, dashboard: {}, agent: { session_id: 'synthetic-profile', stage: 'profile' } });
     }
     if (pathname === '/users/8/journey-state') {
       counts.journey401 += 1;
       return json(route, { detail: 'Session not found' }, 401);
     }
-    if (pathname === '/users/9/journey-state') return json(route, {
-      next_action: 'wait_for_acquaintance_data', acquaintance: { readiness: { status: 'waiting_for_assignment' } },
-    });
+    if (['/users/9/journey-state', '/users/10/journey-state'].includes(pathname)) return json(route, waitingJourney);
     if (pathname === '/users/session/logout') { counts.logout += 1; return json(route, {}); }
     return json(route, {}, 404);
   });
   return counts;
 }
 
-async function login(page, email = 'old-person@example.test') {
+async function login(page, email = resumeEmail) {
   await page.locator('#email-input').fill(email);
   await page.locator('#request-magic-link-button').click();
   await expect(page.locator('#magic-token-input')).toBeVisible();
-  await page.locator('#magic-token-input').fill('synthetic-password');
+  await page.locator('#magic-token-input').fill(resumePassword);
   await page.locator('#verify-magic-link-button').click();
 }
 
@@ -98,6 +103,19 @@ async function assertClosed(page, { sharedStorage = false } = {}) {
   if (!sharedStorage) expect(await page.evaluate(() => localStorage.getItem('agent4k.pendingUser'))).toBeNull();
 }
 
+async function assertRetryAvailable(page) {
+  await expect(page.locator('#auth-email-form')).toBeVisible();
+  await expect(page.locator('#auth-token-form')).toBeHidden();
+  await expect(page.locator('#auth-panel')).not.toHaveAttribute('aria-busy');
+  for (const id of ['email-input', 'request-magic-link-button', 'magic-token-input', 'verify-magic-link-button',
+    'auth-password-toggle-button', 'auth-change-credential-email-button', 'forgot-password-credential-button']) {
+    const control = page.locator(`#${id}`);
+    await expect(control).toBeEnabled();
+    await expect(control).not.toHaveAttribute('aria-busy');
+  }
+  await expect(page.locator('#request-magic-link-button')).toHaveText('Продолжить');
+}
+
 for (const timing of ['delayed', 'eager']) {
   test(`AUTH-DIAG-01 ${timing} cleanup retains error and fails closed`, async ({ page }, testInfo) => {
     testInfo.annotations.push({ type: 'synthetic_http', description: 'No real auth/DB/provider; real built UI and cleanup.' });
@@ -118,14 +136,74 @@ for (const timing of ['delayed', 'eager']) {
       await expect(page.locator('#auth-error')).toBeVisible();
       await expect(page.locator('#auth-status')).toBeHidden();
       await assertClosed(page);
+      await assertRetryAvailable(page);
       expect(counts).toEqual({ journey401: 1, logout: 0 });
       await page.screenshot({ path: testInfo.outputPath('after-cleanup.png') });
-      await testInfo.attach('recovery-observation', { body: JSON.stringify({ timing, ...counts,
+      await testInfo.attach('recovery-observation', { body: JSON.stringify({ case_id: 'S-01', timing, ...counts,
         error: await page.locator('#auth-error').textContent(), cleanup_module_settled: true,
         scope: 'synthetic_http_real_built_ui', historical_causality: 'NOT_ESTABLISHED' }), contentType: 'application/json' });
+      // A real second attempt proves that neither in-flight guard remains stuck.
+      await login(page);
+      await finishChat(page);
+      await expect(page.locator('#auth-error')).toContainText(missingSession);
+      await assertClosed(page);
+      await assertRetryAvailable(page);
+      expect(counts).toEqual({ journey401: 2, logout: 0 });
     } finally { held?.release(); }
   });
 }
+
+test('AUTH-RESUME S-02 valid journey opens the participant path without a missing-session error', async ({ page }) => {
+  const counts = await routes(page);
+  await page.goto(base);
+  await login(page, 'new-person@example.test');
+  await expect(page.locator('#auth-complete-panel')).toBeVisible();
+  await expect(page.locator('#auth-complete-title')).toHaveText('Оценка пока не назначена');
+  await expect(page.locator('#auth-panel')).toBeHidden();
+  await expect(page.locator('#auth-error')).toBeHidden();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('agent4k.pendingUser')).id)).toBe(9);
+  expect(counts).toEqual({ journey401: 0, logout: 0 });
+});
+
+test('AUTH-RESUME S-03 an old journey 401 after a new login cannot revoke the newer session', async ({ page }) => {
+  const counts = await routes(page);
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  let journeys = 0;
+  await page.route('**/users/9/journey-state', async (route) => {
+    journeys += 1;
+    if (journeys === 1) return json(route, {
+      next_action: 'wait_for_acquaintance_data', acquaintance: { readiness: { status: 'waiting_for_data' } },
+    });
+    await gate;
+    return json(route, { detail: 'Old synthetic session not found' }, 401);
+  });
+  try {
+    await page.goto(base);
+    await login(page, 'new-person@example.test');
+    await expect(page.locator('#auth-complete-panel')).toBeVisible();
+    await page.locator('#auth-complete-continue-button').click();
+    await expect.poll(() => journeys).toBe(2);
+    await expect(page.locator('#auth-complete-continue-button')).toBeDisabled();
+
+    // The readiness request belongs to the account that is explicitly logged out.
+    await page.locator('#auth-complete-logout-button').click();
+    await expect(page.locator('#auth-email-form')).toBeVisible();
+    await login(page, 'newer-person@example.test');
+    await expect(page.locator('#auth-complete-panel')).toBeVisible();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('agent4k.pendingUser')).id)).toBe(10);
+    const lateResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/users/9/journey-state');
+    release();
+    await (await lateResponse).finished();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+
+    await expect(page.locator('#auth-complete-panel')).toBeVisible();
+    await expect(page.locator('#auth-panel')).toBeHidden();
+    await expect(page.locator('#auth-error')).toBeHidden();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('agent4k.pendingUser')).id)).toBe(10);
+    expect(counts).toEqual({ journey401: 0, logout: 1 });
+  } finally { release(); }
+});
 
 test('AUTH-DIAG-01 late cleanup cannot erase a newer account in the same tab', async ({ page }) => {
   const counts = await routes(page);
