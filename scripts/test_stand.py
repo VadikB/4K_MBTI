@@ -119,6 +119,8 @@ def main():
     parser.add_argument('--port',type=int,default=18520)
     parser.add_argument('--gateway',choices=['0','1'],default='0')
     parser.add_argument('--provider',choices=['disabled','real'],default='disabled')
+    parser.add_argument('--no-workers',action='store_true',
+                        help='Serve a read-only visual fixture without application startup workers')
     args=parser.parse_args();path=args.state.resolve()
     if args.action.startswith('_'):
         if os.getenv('AGENT4K_ISOLATED_STAND')!='1':raise ValueError('ISOLATED_STAND_REQUIRED')
@@ -180,7 +182,11 @@ def main():
         subprocess.run([sys.executable,__file__,'_drain','--state',str(path)],env=env,cwd=ROOT,check=True)
     elif args.action=='serve':
         check_port(state['port'])
-        os.execve(sys.executable,[sys.executable,'-m','uvicorn','main:app','--host','127.0.0.1','--port',str(state['port']),'--no-access-log'],env)
+        command=[sys.executable,'-m','uvicorn','main:app','--host','127.0.0.1',
+                 '--port',str(state['port']),'--no-access-log']
+        if args.no_workers:
+            command.extend(['--lifespan','off'])
+        os.execve(sys.executable,command,env)
     elif args.action=='smoke':
         subprocess.run([sys.executable,str(ROOT/'scripts/test_stand_smoke.py'),'--state',str(path)],env=env,cwd=ROOT,check=True)
 

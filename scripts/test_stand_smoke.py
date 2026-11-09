@@ -3,6 +3,7 @@ import argparse
 import http.cookiejar
 import json
 from pathlib import Path
+import re
 import time
 import urllib.request
 import urllib.error
@@ -25,7 +26,11 @@ def smoke(state):
     signed_in=request('/users/auth/email/password-login',{'email':'superadmin@example.test','password':state['password']})
     assert signed_in['admin_dashboard'] is not None
     admin_dashboard=request('/users/admin/dashboard')
-    assert any(item['label'] == 'Среднее время прохождения' for item in admin_dashboard['metrics'])
+    metrics={item['label']: item['value'] for item in admin_dashboard['metrics']}
+    assert set(metrics)=={'Готовых отчётов','Прохождение оценки'}
+    assert metrics['Готовых отчётов'].isdecimal()
+    assert (metrics['Прохождение оценки']=='Оценки ещё не начинались'
+            or re.fullmatch(r'Завершено \d+ из \d+',metrics['Прохождение оценки']))
     request('/users/auth/email/password-login',{'email':'participant@example.test','password':state['password']})
     out=Path(state['state_path']).parent
     saved=out/'smoke.json'

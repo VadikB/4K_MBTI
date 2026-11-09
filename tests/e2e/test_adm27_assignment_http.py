@@ -38,7 +38,13 @@ class Connection:
             self.operations.setdefault(tuple(params[:3]), params[3])
             return Result()
         if 'SELECT request_fingerprint FROM organization_assessment_assignment_operations' in sql:
-            return Result(one={'request_fingerprint': self.operations[tuple(params)]})
+            fingerprint = self.operations.get(tuple(params))
+            return Result(one={'request_fingerprint': fingerprint} if fingerprint else None)
+        if 'SELECT recipient_user_id,id FROM organization_assessment_assignments' in sql:
+            organization_id, assignment_ref, recipients = params
+            return Result(many=[{'recipient_user_id': row['user_id'], 'id': row['id']} for row in self.rows
+                                if row['organization_id'] == organization_id
+                                and row['assignment_ref'] == assignment_ref and row['user_id'] in recipients])
         if "SELECT DISTINCT request_fingerprint" in sql:
             return Result(many=[{"request_fingerprint": row["fingerprint"]} for row in self.rows
                                 if row["organization_id"] == params[0]
@@ -117,6 +123,33 @@ def test_assignment_rejects_operation_payload_substitution(client):
         "user_ids": [19], "assignment_ref": "assessment-a", "operation_id": operation,
     })
     assert response.status_code == 409
+
+
+def test_assignment_exact_operation_readback_rejects_stale_state(client):
+    http, connection = client
+    connection.rows.append({"id": 91, "organization_id": 3, "user_id": 18,
+                            "assignment_ref": "assessment-a", "actor_id": 18,
+                            "operation_id": "older-operation", "fingerprint": "older"})
+    response = http.get(
+        "/users/admin/organizations/3/assessment-assignments/operations/missing-operation",
+        params={"assignment_ref": "assessment-a", "user_ids": "18"},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "ASSIGNMENT_OPERATION_NOT_FOUND"
+
+
+def test_assignment_exact_operation_readback_confirms_committed_scope(client):
+    http, _connection = client
+    payload = {"user_ids": [18, 19], "assignment_ref": "assessment-a",
+               "operation_id": "adm1c-readback-operation"}
+    assert http.post("/users/admin/organizations/3/assessment-assignments", json=payload).status_code == 200
+    response = http.get(
+        "/users/admin/organizations/3/assessment-assignments/operations/adm1c-readback-operation",
+        params={"assignment_ref": "assessment-a", "user_ids": "19,18"},
+    )
+    assert response.status_code == 200
+    assert [(item["user_id"], item["status"]) for item in response.json()["items"]] == [
+        (18, "already_assigned"), (19, "already_assigned")]
 
 
 def test_assignment_reports_foreign_recipient_without_side_effect(client):
