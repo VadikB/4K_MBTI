@@ -337,6 +337,9 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     ).fetchone()
     from Api.m7_route_replacement import replacement_metadata
     route = replacement_metadata(connection, cycle["id"])
+    saved_route = plan.get("plan", {}).get("route")
+    if isinstance(saved_route, list):
+        route["progress"]["total_positions"] = len(saved_route)
     attached_ids = {item["assessment_situation_id"] for position in route["positions"]
                     for item in position["history"]}
     visible_situations = [x for x in situations

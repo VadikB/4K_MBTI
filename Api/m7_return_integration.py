@@ -303,13 +303,16 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
                 (cycle["id"], position["id"], situation["id"])).fetchone()
             action = "replace_current" if ready else "replacement_candidate_required"
         event_id = str(event["id"])
+    progress = {**route["progress"]}
+    if planned_positions is not None:
+        progress["total_positions"] = planned_positions
     return {"cycle_id": cycle_id, "collection_status": cycle["status"],
             "position_no": position["position_no"],
             "current_assessment_situation_id": str(situation["assessment_situation_id"]),
             "current_assessment_situation_status": situation["status"],
             "absence_event_id": event_id, "recognized_absence_seconds": absence_seconds,
             "allowed_action": action, "remaining_seconds": timing["remaining_seconds"],
-            "calendar_deadline": timing["calendar_deadline"], "progress": route["progress"],
+            "calendar_deadline": timing["calendar_deadline"], "progress": progress,
             "planned_positions": planned_positions,
             "planned_total": planned_positions is not None,
             "heartbeat_interval_seconds": int(policy["heartbeat_interval_seconds"]),

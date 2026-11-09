@@ -8,6 +8,7 @@ export {
   resumeProductRuntimePolling,
   startAssessmentInterview,
   submitAssessmentMessage,
+  sendProductInterviewAnswer,
   updateInterviewTimer,
   handleAssessmentEntryClick,
   isCycleAssessment,

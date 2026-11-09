@@ -3432,7 +3432,7 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   });
   await page.goto(`${base}/?screen=interview`);
   await expect(page.locator('.interview-return-card')).toBeVisible();
-  await expect(page.getByText('Пройдено 2 из 4', { exact: false })).toBeVisible();
+  await expect(page.getByText('Завершено 2 из 4', { exact: false })).toBeVisible();
   await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
   await expect(page.getByText('Календарный срок:', { exact: false })).toBeHidden();
   await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
@@ -3475,6 +3475,84 @@ test('P03 fresh login opens explicit return card without reading blocked runtime
   await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
   await expect(page.locator('#auth-error')).toBeHidden();
   expect(runtimeReads).toBe(0);
+});
+
+test('P3-B return card keeps unknown time distinct from known zero', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let remainingSeconds = null;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'p3b-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-p3b', cycle_session_id: 'session-p3b', assessment_situation_id: 'as-p3b' },
+    });
+    if (pathname === '/users/assessment/m7/cycles/cycle-p3b/return-state') return fulfillJson(route, {
+      cycle_id: 'cycle-p3b', collection_status: 'paused', position_no: 1,
+      current_assessment_situation_id: 'as-p3b', current_assessment_situation_status: 'active',
+      allowed_action: 'continue_current', remaining_seconds: remainingSeconds,
+      progress: { completed_positions: 0, total_positions: 8 },
+    });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=interview`);
+  await expect(page.getByText('Завершено 0 из 8. Остаток времени выполнения уточняется.')).toBeVisible();
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · Время уточняется');
+  await expect(page.getByText('0 мин.', { exact: false })).toBeHidden();
+  await expect(page.getByText('Без лимита', { exact: false })).toBeHidden();
+  remainingSeconds = 0;
+  await page.reload();
+  await expect(page.getByText('Завершено 0 из 8. Остаток времени выполнения: 0 мин.')).toBeVisible();
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · 00:00');
+});
+
+test('P3-B reads server state after a lost Continue response without a second command', async ({ page }) => {
+  const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let continued = false;
+  let continueCommands = 0;
+  await page.route('**/users/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'p3b-test' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
+      next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
+      assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-lost', cycle_session_id: 'session-lost', assessment_situation_id: 'as-lost' },
+    });
+    if (pathname === '/users/assessment/m7/cycles/cycle-lost/return-continue') {
+      continueCommands += 1;
+      continued = true;
+      return route.abort('failed');
+    }
+    if (pathname === '/users/assessment/m7/cycles/cycle-lost/return-state') {
+      if (continued) return fulfillJson(route, { detail: 'M7_RETURN_CURRENT_POSITION_NOT_FOUND' }, 409);
+      return fulfillJson(route, { cycle_id: 'cycle-lost', collection_status: 'paused', position_no: 1,
+        current_assessment_situation_id: 'as-lost', current_assessment_situation_status: 'active',
+        allowed_action: 'continue_current', remaining_seconds: 600,
+        progress: { completed_positions: 0, total_positions: 8 } });
+    }
+    if (pathname === '/users/assessment/cycles/cycle-lost/runtime') return fulfillJson(route, {
+      cycle_id: 'cycle-lost', status: { collection_status: 'active', remaining_seconds: 600 },
+      return_policy_enabled: true,
+      route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'as-lost' }], progress: { total_positions: 8, completed_positions: 0 } },
+      current_situation: { assessment_situation_id: 'as-lost', status: 'active', participant_payload: { title: 'Восстановленная ситуация', assessee_task: 'Продолжите диалог' } },
+      trace: { turns: [], events: [] },
+    });
+    if (pathname === '/users/assessment/m7/cycles/cycle-lost/presence') return fulfillJson(route, {
+      cycle_id: 'cycle-lost', assessment_situation_id: 'as-lost', heartbeat_interval_seconds: 30, presence_lease_seconds: 120,
+    });
+    return fulfillJson(route, {}, 404);
+  });
+  await page.goto(`${base}/?screen=interview`);
+  await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
+  await expect(page.locator('#interview-messages').getByRole('heading', { name: 'Восстановленная ситуация' })).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('agent4k.returnContinuePending'))).toBeNull();
+  await page.reload();
+  await expect(page.locator('#interview-messages').getByRole('heading', { name: 'Восстановленная ситуация' })).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('agent4k.returnContinuePending'))).toBeNull();
+  expect(continueCommands).toBe(1);
 });
 
 test('E01 renders accepted active assessment copy, colors and AS-scoped draft', async ({ page }) => {

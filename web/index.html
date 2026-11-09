@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4K Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.0.86">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.0.86">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.0.87">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.0.87">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
@@ -55,7 +55,7 @@
   <main class="shell">
     <header class="auth-header" aria-label="4К Ассистент">
       <span class="auth-header-brand">4К Ассистент</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.0.86</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.0.87</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -1568,11 +1568,6 @@
             </button>
           </div>
         </div>
-        <div class="interview-progress-labels">
-          <span class="active">Оценка</span>
-          <span>Анализ</span>
-          <span>Результаты</span>
-        </div>
         <div class="interview-progress-line">
           <div id="interview-progress-fill" class="interview-progress-fill"></div>
         </div>
@@ -1599,11 +1594,11 @@
           </aside>
 
           <div class="interview-messages-shell">
-            <div id="interview-scroll-area" class="interview-scroll-area">
+            <div id="interview-scroll-area" class="interview-scroll-area" role="region" aria-label="История диалога и материалы ситуации" tabindex="0">
               <div id="interview-summary" class="interview-summary hidden"></div>
               <div id="interview-messages" class="interview-messages"></div>
             </div>
-            <button id="interview-messages-scroll" class="interview-messages-scroll" type="button" hidden aria-label="К последним сообщениям">
+            <button id="interview-messages-scroll" class="interview-messages-scroll" type="button" hidden aria-label="К последним сообщениям" aria-controls="interview-scroll-area">
               <img src="/web/assets/icons/arrow-down-icon.svg" alt="" aria-hidden="true">
             </button>
           </div>
@@ -1614,19 +1609,22 @@
           <form id="interview-form" class="interview-form">
             <textarea
               id="interview-textarea"
+              aria-label="Ваш ответ или вопрос собеседнику"
+              aria-describedby="interview-error"
               placeholder="Введите ответ или вопрос собеседнику..."
               autocomplete="off"
               autocorrect="off"
               autocapitalize="off"
               spellcheck="false"
               data-form-type="other"
+              disabled
             ></textarea>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
                 <button id="interview-pause-button" type="button" class="ghost-button interview-finish-button hidden">Пауза</button>
+                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Завершить основной диалог текущей ситуации" disabled>Завершить ситуацию</button>
                 <button id="interview-additional-button" type="button" class="ghost-button interview-finish-button hidden">Дополнительная сессия</button>
-                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Завершить основной диалог текущей ситуации">Завершить ситуацию</button>
-                <button id="interview-submit-button" type="button" class="primary-button"><span id="interview-submit-label">Отправить</span></button>
+                <button id="interview-submit-button" type="button" class="primary-button" disabled><span id="interview-submit-label">Отправить</span></button>
               </div>
             </div>
           </form>
@@ -1994,7 +1992,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.0.86</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.0.87</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -2010,6 +2008,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.0.86"></script>
+  <script type="module" src="/web/dist/main.js?v=2.0.87"></script>
 </body>
 </html>
