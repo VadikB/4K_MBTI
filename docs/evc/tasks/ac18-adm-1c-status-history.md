@@ -158,3 +158,18 @@ Human visual acceptance владельца на `fc4b903c` — PASS. Полны�
   `full-verification` — проверяются после этого документального commit.
 - Merge/deploy, deploy readback и новое human review — отдельные этапы;
   baseline не присвоен. Откат — revert собственного PR после review.
+
+## Регрессия по первому Ready PR CI · 09.11.2026
+
+- `CI` на `d10729bf` — `frontend` и `pytest` PASS; первый `Full verification`
+  [run 42597103351](https://github.com/VadikB/4K_MBTI/actions/runs/42597103351) — FAIL:
+  integration читала новую `assignment.created_at` через устаревшую узкую SQL-фикстуру
+  lineage (3 теста); browser fast — 5 устаревших текстовых ожиданий после ADM-1C
+  поведения. Четыре runtime browser shards — PASS. Это не объявляется успешным CI.
+- Исправлено в той же ветке: фикстура lineage теперь совпадает с читаемой схемой,
+  browser-проверки подтверждают современную пустую сводку, локализованную дату,
+  персональный queued-исход, неизвестный сетевой исход с тем же idempotency key
+  только для POST и exact operation readback. Runtime-поведение не менялось.
+- Адресный повтор на owned PostgreSQL `product4k_pytest_release`: lineage 3/3 PASS;
+  mock browser 3/3 PASS; actual HTTP/PostgreSQL browser ADM28 и AC09 2/2 PASS.
+  `git diff --check` — PASS. Полный Ready PR CI для следующего head требуется заново.

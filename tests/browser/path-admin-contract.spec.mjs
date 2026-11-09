@@ -86,7 +86,7 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     await expect.poll(() => committed?.status).toBe(200);
     await expect(card.locator('[data-operation-status]').first()).toHaveAttribute('data-tone', 'success');
     await expect(card.locator('[data-operation-status]').first())
-      .toContainText('назначение подтверждено чтением после потери ответа');
+      .toContainText('назначение подтверждено точным чтением операции');
     const afterLost = inputs('readback');
     expect(afterLost.assignments).toHaveLength(2);
     expect(afterLost.bindings).toHaveLength(2);

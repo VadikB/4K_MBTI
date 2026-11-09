@@ -1441,7 +1441,7 @@ test('PROGRAM01 R05 keeps privileged password reset in the card and exposes only
   await expect(row.getByRole('menuitem', { name: 'Сбросить пароль' })).toHaveCount(0);
   await row.locator('[data-action="open-member-card"]').click();
   const card = page.locator('.admin-member-card-dialog');
-  await expect(card).toContainText('Создано: 2026-11-01T10:00:00Z');
+  await expect(card).toContainText(/Создано: 01\.11\.2026, (10:00 UTC|13:00 GMT\+3)/);
   await expect(card.getByRole('button', { name: 'Сбросить пароль' })).toHaveCount(1);
 });
 
@@ -3238,21 +3238,21 @@ test('R03 queued batch is not reported as provider accepted', async ({ page }) =
   }));
   await page.locator('input[name="invitation_email"]').check();
   await page.locator('[data-action="send-member-invitations"] button').click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('В очереди: 1');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Person: приглашение поставлено в очередь.');
   await expect(page.locator('#admin-organizations-status')).not.toContainText('Почтовый сервис принял');
 });
 
 test('R03 network retry reuses invitation operation id', async ({ page }) => {
   const keys = [];
   await openAdminOrganizations(page, (route) => {
-    keys.push(route.request().headers()['idempotency-key']);
+    if (route.request().method() === 'POST') keys.push(route.request().headers()['idempotency-key']);
     return route.abort('failed');
   });
   const row = page.locator('.admin-organization-member').first();
   await row.locator('.admin-organization-member-menu summary').click();
   const button = row.locator('[data-action="send-member-invitation"]');
   await button.click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('Не удалось');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Исход отправки пока неизвестен');
   await button.click();
   await expect.poll(() => keys.length).toBe(2);
   expect(keys[0]).toBe(keys[1]);
