@@ -1,6 +1,6 @@
 # P3-B: локальный маршрут визуального просмотра
 
-Сборка: `APP_RELEASE=2.0.86`, source commit `c06f7a74822c338767eb6f3e81fa5fe15e654c69`,
+Сборка: `APP_RELEASE=2.0.87`, product/release commit `43c42c2f4b0b825007af97f844f2d3946e055687`,
 base `023bf85ec796d212d29b33218d906a1ed2023941`. Это локальный
 синтетический UI/runtime-стенд, не TEST-deploy и не полный путь создания/назначения
 Cycle из AC18. Пользователь, Cycle, AS и диалог созданы только в памяти fixture;

@@ -11,7 +11,8 @@ CI/gates и рабочие данные не входят.
 
 ## Источники
 
-- base `023bf85ec796d212d29b33218d906a1ed2023941`, APP_RELEASE `2.0.86`;
+- base `023bf85ec796d212d29b33218d906a1ed2023941`,
+  исходный APP_RELEASE `2.0.86`, локальный PATCH-кандидат `2.0.87`;
 - пакет `P4K_P3B_Architect_2026-11-09`, SHA256 всех файлов — PASS;
 - `README.md`, `CONTRIBUTING.md`, `AGENTS.md`;
 - `docs/evc/{agent-workflow,verification-matrix,artifact-recipe,review-checklist}.md`;
@@ -39,5 +40,6 @@ release-кандидата перед merge. Реальные LLM/письма �
 
 ## Полномочия
 
+Ответ владельца «следующий patch» разрешил локальный `version_bump` до `2.0.87`.
 `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
-`version_bump=false`, `artifact_publish=false` до отдельного прямого допуска.
+`artifact_publish=false` до отдельного прямого допуска.

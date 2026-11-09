@@ -2,9 +2,11 @@
 
 Base `023bf85ec796d212d29b33218d906a1ed2023941`; implementation commits
 `ab03144cf465b5213a722a26f9cf6538af64235e` and
-`c06f7a74822c338767eb6f3e81fa5fe15e654c69` (plus task-state/docs commit).
-Separate worktree/branch `codex/ac18-p3-b-time-return`. Release version remains
-`2.0.86` in local candidate; bump is a separate authorized release step.
+`c06f7a74822c338767eb6f3e81fa5fe15e654c69`; release commit
+`43c42c2f4b0b825007af97f844f2d3946e055687` (plus task-state/docs commits).
+Separate worktree/branch `codex/ac18-p3-b-time-return`. Local PATCH candidate:
+`2.0.87`, prepared by `npm run ready:prepare -- --candidate 2.0.87` after
+the owner's direct reply «следующий patch». `origin/main` remains `2.0.86`.
 
 Problem: saved plan, return card and top indicator could show different totals;
 unknown timing became `0`; a lost Continue response could lead to an independent
@@ -23,13 +25,17 @@ M7 integration doc `4f77683101688bbfe2f5a3cd9aa2f042e951a45ec448a10afa96c541875c
 task package `TASK_3B_ARCHITECT.md` `64ec2a5616a4be9ed397e638993c6c73771d80bffd8a2d37ac1c7ce212a58f94`.
 
 Verification: `CHECKS.csv` records commands, source SHA and evidence per criterion.
-Frontend 157 PASS, backend minimum 977 PASS, M7 owned isolated PostgreSQL 31 PASS,
+On release commit `43c42c2f`: frontend 157 PASS, backend minimum 977 PASS,
 HTTP P03 2 PASS, browser P03/P3-B 4 PASS, visual six states × four widths 24 PASS,
-ESLint/build/compile/diff PASS. A separate 200% text emulation measured overflow
+ESLint/build/release gate/diff PASS. M7 owned isolated PostgreSQL 31 PASS on
+the unchanged backend from the prior implementation commit, not repeated for
+version-only change. A separate 200% text emulation measured overflow
 543 px at 390 px viewport: FAIL in shared 3А mobile topbar/textarea. Physical
 iOS/Android, owner visual decision, historical TEST OPS01 and CI: NOT_RUN.
 
 No API/schema/methodology/policy change; no production/test data or paid LLM.
-Rollback: revert the product commits and rebuild `web/dist`; no data migration.
+Rollback: revert the product and release commits, then rebuild `web/dist`;
+no data migration.
 P3-A owns shared mobile chat/keyboard layer; P3-I checks combined deployed SHA.
-Push, PR, version bump, merge and deploy have not been authorized or executed.
+PATCH bump was authorized and committed locally. Push, PR, merge and deploy
+have not been executed; direct scope for push/PR still needs confirmation.
