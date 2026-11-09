@@ -229,7 +229,23 @@ async function openCompletedReport(page,expectedCycles,cycleId=null){
  await card.locator('.participant-assessment-action').click();
  await expect(page.locator('#m8-report-state')).toContainText('Результат готов');
 }
-async function answer(page,text=fixture.answer){await page.locator('#interview-textarea').fill(text);await page.locator('#interview-submit-button').click();await expect(page.locator('#interview-submit-button')).toBeEnabled({timeout:30000});await expect(page.locator('#interview-error')).toBeHidden();await expect(page.locator('#interview-messages .own')).toContainText([text]);}
+async function answer(page,text=fixture.answer){
+ const cycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
+ expect(cycle).toBeTruthy();
+ await page.locator('#interview-textarea').fill(text);
+ const receipt=page.waitForResponse(response=>response.request().method()==='POST'
+  && /^\/users\/assessment\/(m5\/situations\/[^/]+\/turns|m7\/clarifications\/[^/]+\/answers)$/.test(new URL(response.url()).pathname));
+ await page.locator('#interview-submit-button').click();
+ expect((await receipt).ok()).toBeTruthy();
+ await expect.poll(async()=>{
+  const response=await page.request.get(`${new URL(page.url()).origin}/users/assessment/cycles/${cycle}/runtime`);
+  if(!response.ok())return false;
+  const snapshot=await response.json();
+  return snapshot.trace?.turns?.some(turn=>turn.speaker_type==='assessee' && turn.content_text===text) || false;
+ },{timeout:30000}).toBe(true);
+ await expect(page.locator('#interview-error')).toBeHidden();
+ await expect(page.locator('#interview-messages .own')).toContainText([text]);
+}
 async function report(page,stand,info){
  const nextCase=page.getByRole('button',{name:'Приступить к следующей ситуации'});
  try{
