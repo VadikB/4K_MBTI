@@ -66,9 +66,10 @@
   human visual review и CI точного release-кандидата.
 - Внешние этапы: `branch_push` и draft PR прямо разрешены ответом владельца
   «да» на вопрос об этих действиях с открытым FAIL. Ветка опубликована;
-  draft PR #199: `https://github.com/VadikB/4K_MBTI/pull/199`. На момент
-  создания запущены два CI job (`frontend`, `pytest`), четыре проверки
-  пропущены; актуальный итог — на вкладке Checks PR. Локальный
+  draft PR #199: `https://github.com/VadikB/4K_MBTI/pull/199`. На SHA
+  `0b26224d27c6f79df8816d04398be1b7d7ec9a66` быстрые CI job
+  `frontend`/`pytest` — PASS, Full verification — SKIPPED для draft;
+  актуальный итог последнего SHA — на вкладке Checks PR. Локальный
   `version_bump=2.0.87` разрешён ранее ответом «следующий patch».
   `merge`/`deploy` — NOT_RUN, перевод в Ready и приёмка AC10 при открытом FAIL
   не заявлены.
