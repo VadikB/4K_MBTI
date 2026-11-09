@@ -271,6 +271,38 @@ const recoverProductInterviewAnswer = (operation, snapshot) => {
     .finally(() => { if (productInterviewReadbacks.get(key) === reading) productInterviewReadbacks.delete(key); });
 };
 
+const recoverPreviousProductInterviewAnswers = (snapshot) => {
+  const ownerId = String(state.pendingUser?.id || '');
+  const prefix = `agent4k.assessmentPending:${snapshot.cycle_id}:`;
+  Object.keys(window.sessionStorage).filter((key) => key.startsWith(prefix) && key.endsWith(':' + ownerId))
+    .forEach((key) => {
+      let saved;
+      try { saved = JSON.parse(window.sessionStorage.getItem(key)); } catch (_error) { return; }
+      const operation = readProductInterviewAnswer({ cycleId: snapshot.cycle_id, ownerId,
+        situationId: saved?.situationId });
+      if (!operation || operation.situationId === snapshot.current_situation?.assessment_situation_id) return;
+      const requestKey = productInterviewRequestKey(operation);
+      if (productInterviewRequests.has(requestKey) || productInterviewReadbacks.has(requestKey)) return;
+      const reading = readProductInterviewAnswerStatus(operation);
+      productInterviewReadbacks.set(requestKey, reading);
+      void reading.then((value) => {
+        // A finished/replaced AS can be reconciled without showing its text in
+        // the next AS. Never touch a later account/session or unrelated screen.
+        if (operation.ownerId !== String(state.pendingUser?.id || '')
+            || operation.identityEpoch !== state.identityEpoch || operation.cycleId !== state.productCycleId
+            || !['interview', 'processing'].includes(state.currentScreen)) return;
+        applyProductInterviewAnswerStatus(operation, value, snapshot);
+      }).catch(() => { /* Unknown remains recoverable under its original AS. */ })
+        .finally(() => { if (productInterviewReadbacks.get(requestKey) === reading) productInterviewReadbacks.delete(requestKey); });
+    });
+};
+
+export const recoverCompletedInterviewAnswers = (cycleId) => {
+  if (state.currentScreen === 'processing' && cycleId === state.productCycleId) {
+    recoverPreviousProductInterviewAnswers({ cycle_id: cycleId, current_situation: null });
+  }
+};
+
 const reconcileProductInterviewAnswer = (snapshot) => {
   const scope = { ...productInterviewAnswerScope(), cycleId: snapshot.cycle_id,
     situationId: snapshot.current_situation?.assessment_situation_id };
@@ -565,6 +597,7 @@ const renderProductRuntime = (snapshot) => {
   persistAssessmentContext();
   confirmedProductInterviewSnapshot = snapshot;
   restoreInterviewDraft();
+  recoverPreviousProductInterviewAnswers(snapshot);
 
   const initialMaterials = current?.participant_payload?.initial_materials;
   const initialMaterialTextById = new Map((Array.isArray(initialMaterials) ? initialMaterials : [])

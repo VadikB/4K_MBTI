@@ -89,3 +89,20 @@ CONTRACT_03.md владельца01 (2ffd976,09.11.2026) адресно пере
 write path не расширяется. Actual PG:6 границ + held-provider retry PASS7;
 неизменны Turn/events/rule decisions/AI attempts/C54/operations/handoff counts.
 До этой квитанции общие symbols не менялись. M7/return/time semantics01 не правились.
+
+### Recovery после границы AS/Cycle
+
+Pending исходной AS восстанавливается также после её закрытия/Next и на входе
+экрана обработки. Читаются только существующие pending ключи текущего owner/Cycle;
+исходные endpoint/identity не меняются. Ответ старой AS не рендерится в новой,
+поздний readback проверяет owner/identityEpoch/Cycle и снимает только свой slot и
+свою draft revision. Добавлены3 production-function регрессии (208 Node PASS).
+`processing.openProcessing` добавляет только вызов восстановления результата
+ответа; status/report pipeline и общий runtime loader не менялись.
+
+В отдельном R1 test entrypoint `exec03_preview.py` переиспользуются marker-owned
+bootstrap/seed из p3-a-preview и существующий deterministic AI gateway. Scope
+assessment, R1 snapshot,7200/259200 остаются реальными; QA usage switch выключен.
+Новые прогоны сохраняют server startup fingerprints API/JS/dist/spec и точный SHA.
+Clock fixture меняет только наблюдаемый elapsed interval, не бюджет/политику/
+snapshot/Turn. Ожидаемые expiry events/final handoff отделяются от новых ответов.

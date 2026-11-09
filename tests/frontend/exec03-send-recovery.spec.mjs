@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 const require = createRequire(path.join(process.cwd(), 'package.json'));
 const { test, expect } = require('@playwright/test');
 const root = process.cwd();
@@ -24,6 +24,20 @@ const evidence = process.env.EXEC03_EVIDENCE || path.join(path.dirname(statePath
 fs.mkdirSync(evidence, { recursive: true });
 test.describe.configure({ mode: 'serial' });
 let ordinaryAcceptedBody, askAcceptedBody, askAcceptedEndpoint;
+
+test.beforeAll(async () => {
+  const response = await fetch(base + '/exec03/identity');
+  expect(response.status).toBe(200);
+  const identity = await response.json();
+  expect(identity.fixture).toBe('exec03_r1_technical_gateway/1');
+  expect(identity.run_id).toBe(state.run_id); expect(identity.provider_mode).toBe('disabled');
+  const expected = process.env.EXEC03_EXPECTED_SHA || spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim();
+  expect(identity.source_head_sha).toBe(expected);
+  for (const [name, digest] of Object.entries(identity.startup_fingerprints)) {
+    expect(createHash('sha256').update(fs.readFileSync(path.join(root, name))).digest('hex'), name).toBe(digest);
+  }
+  fs.writeFileSync(path.join(evidence, 'source-identity.json'), JSON.stringify(identity, null, 2) + '\n');
+});
 
 function pg(name, targetAsId = asId) {
   const run = spawnSync(python, [readbackScript, '--root', root, '--state', statePath, '--as-id', targetAsId],
@@ -229,26 +243,52 @@ test('EXEC03 C7 M7 ASK: phase isolation, lost commit response, reload, immutable
   await draftTab.close();
   await expect(page.locator('#interview-messages')).toContainText(before.clarification.question.text);
   const text = `Уточнение EXEC03: ${fixture.clarification_answer}`;
-  let body; let operation;
+  let body; let operation; let attempts = 0; let committed = false; let releaseReceipt;
+  const receiptGate = new Promise((resolve) => { releaseReceipt = resolve; });
+  const sentBodies = [];
   await page.route('**' + endpoint, async (route) => {
-    body = route.request().postDataJSON();
+    body = route.request().postDataJSON(); sentBodies.push(body); attempts += 1;
     operation = (await pending(page)).find((item) => item.requestId === body.request_id);
+    if (attempts === 1) return route.abort('failed'); // No server dispatch.
     const response = await route.fetch(); expect(response.status()).toBe(200);
+    committed = true;
+    await receiptGate; // The AS will close before this real response is lost.
     return route.abort('failed');
   });
   await page.locator('#interview-textarea').fill(text);
   await page.locator('#interview-submit-button').click();
-  await expect.poll(() => Boolean(body)).toBe(true);
+  await expect.poll(() => attempts).toBe(1);
   await expect(page.locator('#interview-error')).toBeVisible();
   expect(operation).toBeTruthy();
   expect(operation.clarificationId).toBe(decisionId); expect(operation.endpoint).toBe(endpoint);
   askAcceptedBody = body; askAcceptedEndpoint = endpoint;
   for (let n = 0; n < 2; n += 1) {
     await page.reload(); await expect(page.locator('#interview-panel')).toBeVisible();
-    await expect(page.locator('#interview-textarea')).toHaveValue('');
-    await expect(page.locator('.interview-message.own').filter({ hasText: text })).toHaveCount(1);
+    await expect(page.locator('#interview-textarea')).toHaveValue(text);
+    expect((await pending(page))[0].requestId).toBe(operation.requestId);
   }
-  await page.unroute('**' + endpoint);
+  const copied = await page.evaluate(() => Object.entries(sessionStorage));
+  const recoveryTab = await context.newPage();
+  await recoveryTab.addInitScript((entries) => entries.forEach(([key, value]) => sessionStorage.setItem(key, value)), copied);
+  await recoveryTab.goto(page.url());
+  await expect(recoveryTab.locator('.interview-message-retry')).toBeVisible();
+  await page.locator('.interview-message-retry').click();
+  await expect.poll(() => committed).toBe(true);
+  expect(sentBodies[1]).toEqual(sentBodies[0]);
+  await sameKey(recoveryTab, endpoint, body);
+  await expect.poll(async () => (await runtime(page)).finish_availability?.allowed, { timeout: 30000 }).toBe(true);
+  const closedBeforeLoss = await page.request.post(base + `/users/assessment/m7/cycles/${cycleId}/finish-situation`,
+    { data: { idempotency_key: 'exec03-ask-close-before-response-loss-' + randomUUID() } });
+  expect(closedBeforeLoss.status()).toBe(200);
+  pg('ask-committed-closed-before-response-loss');
+  releaseReceipt();
+  await expect.poll(async () => (await runtime(page)).between_situations).toBe(true);
+  for (let n = 0; n < 2; n += 1) {
+    await page.reload(); await expect(page.locator('#interview-panel')).toBeVisible();
+    await expect(page.locator('#interview-textarea')).toHaveValue('');
+    await expect.poll(() => pending(page)).toHaveLength(0);
+  }
+  await recoveryTab.close(); await page.unroute('**' + endpoint);
   await expect.poll(() => pg('ask-analysis-settled').unsettled_jobs, { timeout: 30000 }).toBe(0);
   const saved = pg('ask-lost-response-recovered');
   expect(saved.turns.filter((turn) => turn.content_text === text)).toHaveLength(1);
@@ -268,10 +308,12 @@ test('EXEC03 C8/C9 with EXEC01: next AS isolation, original receipts after close
   test.skip(process.env.EXEC03_WITH_FIX01 !== '1', 'Requires the separate EXEC01 candidate for shared admission/replay');
   test.setTimeout(180000);
   await page.goto(base + '/p3-a/open/long');
+  if (!(await runtime(page)).between_situations) {
   await expect.poll(async () => (await runtime(page)).finish_availability?.allowed, { timeout: 30000 }).toBe(true);
   const finish = await page.request.post(base + `/users/assessment/m7/cycles/${cycleId}/finish-situation`,
     { data: { idempotency_key: 'exec03-finish-' + randomUUID() } });
   expect(finish.status()).toBe(200);
+  }
   await page.reload();
   await page.getByRole('button', { name: 'Приступить к следующей ситуации', exact: true }).click();
   await expect.poll(async () => { const id = (await runtime(page)).current_situation?.assessment_situation_id;
@@ -297,20 +339,43 @@ test('EXEC03 C8/C9 with EXEC01: next AS isolation, original receipts after close
   assertNoExtraEffects(closed, pg('closed-original-after-replay'));
   const nextEndpoint = `/users/assessment/m5/situations/${nextAsId}/turns`;
   const timeBody = { request_id: randomUUID(), turn_id: randomUUID(), content: 'EXEC03 accepted before budget boundary' };
-  await sameKey(page, nextEndpoint, timeBody);
-  const beforeClock = pg('budget-before-clock', nextAsId);
+  let committed = false; let releaseLostReceipt; let operation;
+  const gate = new Promise((resolve) => { releaseLostReceipt = resolve; });
+  await page.route('**' + nextEndpoint, async (route) => {
+    const posted = route.request().postDataJSON();
+    Object.assign(timeBody, posted);
+    operation = (await pending(page)).find((item) => item.requestId === posted.request_id);
+    const accepted = await route.fetch(); expect(accepted.status()).toBe(200);
+    committed = true; await gate; return route.abort('failed');
+  });
+  await page.locator('#interview-textarea').fill(timeBody.content);
+  await page.locator('#interview-submit-button').click();
+  await expect.poll(() => committed).toBe(true);
+  expect(operation.turnId).toBe(timeBody.turn_id);
+  const beforeClock = pg('budget-accepted-response-held-before-clock', nextAsId);
   const clock = spawnSync(python, [path.join(root, 'tests/frontend/exec03_clock_fixture.py'),
     '--root', root, '--state', statePath, '--as-id', nextAsId], { cwd: root, env: process.env, encoding: 'utf8' });
   expect(clock.status, clock.stderr).toBe(0);
+  expect(JSON.parse(clock.stdout).time_budget_seconds).toBe(7200);
+  expect(JSON.parse(clock.stdout).calendar_window_seconds).toBe(259200);
   fs.writeFileSync(path.join(evidence, 'budget-clock-input.json'), clock.stdout);
-  // Replay preserves the accepted result at zero remaining time; a new key
-  // exercises real write admission and persists the ordinary expiry boundary.
-  await sameKey(page, nextEndpoint, timeBody);
+  // New-write admission persists expiry while the original accepted transport
+  // response is still held. Then lose it and recover after a real reload.
   await sameKey(page, nextEndpoint, { ...timeBody, request_id: randomUUID(), turn_id: randomUUID() }, 409);
+  pg('budget-closed-before-response-loss', nextAsId);
+  releaseLostReceipt();
+  await page.reload();
+  await expect.poll(() => pending(page), { timeout: 15000 }).toHaveLength(0);
+  await page.unroute('**' + nextEndpoint);
   await sameKey(page, nextEndpoint, timeBody);
   await sameKey(page, nextEndpoint, { ...timeBody, content: timeBody.content + ' changed' }, 409);
   const afterClock = pg('budget-after-replay-new-write-rejected', nextAsId);
   expect(afterClock.turns).toEqual(beforeClock.turns);
+  expect(afterClock.operations).toEqual(beforeClock.operations);
+  const boundaryEvents = new Set(['interaction_terminated', 'assessment_situation_closed']);
+  expect(afterClock.events.filter((item) => !boundaryEvents.has(item.event_type))).toEqual(beforeClock.events);
+  expect(afterClock.events.filter((item) => boundaryEvents.has(item.event_type))).toHaveLength(2);
+  expect(afterClock.c45_handoffs).toHaveLength(beforeClock.c45_handoffs.length + 1);
   const readback = await page.request.get(base + `/users/assessment/m5/situations/${nextAsId}/answer-status?request_id=${timeBody.request_id}&turn_id=${timeBody.turn_id}`);
   expect(readback.status()).toBe(200); expect((await readback.json()).status).toBe('accepted');
   await saveScreenshot(page, 'budget-new-write-rejected');
