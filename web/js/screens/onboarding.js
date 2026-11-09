@@ -390,7 +390,7 @@ const beginPreparation = ({ retry = false } = {}) => {
         : error.status === 403 ? { kind: 'access' } : error.status === 409 ? { kind: 'conflict' }
           : error.status >= 500 ? { kind: 'service' } : { kind: 'network' };
       if (error.status === 404 && localOperation) storeOperation({ ...localOperation, status: 'unknown' });
-      if (error.name === 'PreparationFailed') storeOperation({ operation_id: error.operationId, status: 'failed', error: error.operationError });
+      if (error.name === 'PreparationFailed') storeOperation({ operation_id: error.operationId, status: 'failed', error: error.operationError, retry_allowed: error.retryAllowed === true });
       renderOnboarding();
     } finally { if (preparationTask === task) preparationTask = null; }
   })();

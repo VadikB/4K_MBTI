@@ -23,6 +23,10 @@ class LlmGatewayError(RuntimeError):
         self.provider = provider or {}
 
 
+class LlmCapacityError(LlmGatewayError):
+    """No provider request was sent because a local slot was unavailable."""
+
+
 class LlmGateway(Protocol):
     @property
     def enabled(self) -> bool: ...

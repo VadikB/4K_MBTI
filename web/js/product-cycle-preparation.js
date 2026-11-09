@@ -21,6 +21,7 @@ export const waitForProductCyclePreparation = async (accepted, {
     if (operation.status === 'failed') {
       throw Object.assign(new Error(operation.error?.message || 'Не удалось подготовить план оценки.'), {
         name: 'PreparationFailed', operationId: operation.operation_id, operationError: operation.error,
+        retryAllowed: operation.retry_allowed === true,
       });
     }
     await new Promise((resolve) => window.setTimeout(resolve, delay));

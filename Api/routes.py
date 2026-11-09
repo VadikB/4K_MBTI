@@ -7279,6 +7279,13 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
     user = _m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
+            receipt = m5_scenario_runtime.read_applied_turn_receipt(
+                connection, assessment_situation_id=str(assessment_situation_id),
+                request_id=payload.request_id, turn_id=str(payload.turn_id), content=payload.content,
+            )
+            if receipt is not None:
+                connection.commit()
+                return receipt
             _m7_require_explicit_return(connection, owner_user_id=int(user.id),
                                         assessment_situation_id=str(assessment_situation_id))
             semantic_adapter=character_adapter=None
@@ -7321,6 +7328,24 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
                 result={**result,'interim_processing_request_id':str(queued['id'])}
             connection.commit()
             return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/assessment/m5/situations/{assessment_situation_id}/answer-status")
+def get_owned_assessment_answer_status(assessment_situation_id: UUID, request: Request, response: FastAPIResponse,
+                                     request_id: str, turn_id: UUID,
+                                     clarification_id: UUID | None = None) -> dict:
+    _m5_owned_situation(request, str(assessment_situation_id))
+    if not request_id.strip() or len(request_id) > 200:
+        raise HTTPException(status_code=422, detail="ANSWER_STATUS_REQUEST_ID_INVALID")
+    from Api.assessment_answer_status import read
+    response.headers['Cache-Control'] = 'no-store'
+    try:
+        with get_connection() as connection:
+            return read(connection, assessment_situation_id=str(assessment_situation_id),
+                        request_id=request_id, turn_id=str(turn_id),
+                        clarification_id=str(clarification_id) if clarification_id else None)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 

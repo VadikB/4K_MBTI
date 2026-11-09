@@ -2787,13 +2787,15 @@ const captureInterviewSendContext = () => ({
   screen: state.currentScreen, cycleId: state.productCycleId,
   situationId: state.productAssessmentSituationId, sessionCode: state.assessmentSessionCode,
   ownerId: String(state.pendingUser?.id || ''), identityEpoch: state.identityEpoch,
+  clarificationId: state.productClarificationDecisionId || null,
 });
 
 const isInterviewSendContextCurrent = (context) => context.screen === 'interview'
   && state.currentScreen === context.screen && !interviewPanel.classList.contains('hidden')
   && state.productCycleId === context.cycleId && state.productAssessmentSituationId === context.situationId
   && state.assessmentSessionCode === context.sessionCode
-  && String(state.pendingUser?.id || '') === context.ownerId && state.identityEpoch === context.identityEpoch;
+  && String(state.pendingUser?.id || '') === context.ownerId && state.identityEpoch === context.identityEpoch
+  && (state.productClarificationDecisionId || null) === context.clarificationId;
 
 const setInterviewSubmitLabel = (label) => {
   if (interviewSubmitLabel) {
@@ -2841,11 +2843,12 @@ const resumeInterviewTimerAfterSendError = (interviewModule) => {
 const sendInterviewAnswer = async (text, existingMessageRow = null) => {
   const context = captureInterviewSendContext();
   const draftValue = interviewTextarea.value;
+  const draftRevision = interviewTextarea.dataset.draftRevision || null;
   showError(interviewError, '');
   const interviewModule = await loadInterview();
   if (!isInterviewSendContextCurrent(context)) return { stale: true };
   if (interviewModule.isCycleAssessment()) {
-    return interviewModule.sendProductInterviewAnswer(text, { draftValue, scope: context });
+    return interviewModule.sendProductInterviewAnswer(text, { draftValue, draftRevision, scope: context });
   }
   const messageRow = existingMessageRow || interviewModule.addInterviewMessage('user', text);
   interviewModule.setInterviewMessageDeliveryState(messageRow, 'pending');

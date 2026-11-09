@@ -146,6 +146,11 @@ export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
   if (!state.productCycleId && cycleIdFromUrl) state.productCycleId = cycleIdFromUrl;
   if (state.productCycleId) state.assessmentRuntimeKind = 'cycle';
   setCurrentScreen('processing');
+  const recoveryCycleId = state.productCycleId;
+  if (recoveryCycleId) {
+    void import('./interview.js').then((module) => module.recoverCompletedInterviewAnswers(recoveryCycleId))
+      .catch(() => { /* Retain the original pending identity when recovery is unavailable. */ });
+  }
   syncUrlState('processing');
   hideAllPanels();
   processingPanel.classList.remove('hidden');

@@ -56,7 +56,7 @@ test('EXEC01 A1 failed first presence never hides the already confirmed ASK/hist
   assert.equal(h.controls.finish.disabled,true);
 });
 
-test('EXEC01 A2 actual production Continue handler sends scenario_ended and preserves AS/draft', async () => {
+test('EXEC01 A2 Continue preserves the AS and ordinary draft without retargeting it into ASK', async () => {
   const h=createInterviewHarness();
   const value={cycle_id:'cycle-a',collection_status:'interrupted',allowed_action:'continue_current',
     position_no:1,current_assessment_situation_id:'as-a',current_assessment_situation_status:'scenario_ended',
@@ -85,5 +85,6 @@ test('EXEC01 A2 actual production Continue handler sends scenario_ended and pres
   assert.equal(body.generation_operation_id,null);
   assert.equal(h.fetchCalls.some(([url])=>url.endsWith('/equivalent-candidate')),false);
   assert.equal(h.state.productAssessmentSituationId,'as-a');
-  assert.equal(h.textarea.value,'Синтетический черновик');
+  assert.equal(h.storage.get('agent4k.assessmentDraft:cycle-a:as-a'),'Синтетический черновик');
+  assert.equal(h.textarea.value,'');
 });

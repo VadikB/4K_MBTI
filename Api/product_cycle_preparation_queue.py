@@ -28,10 +28,14 @@ def _canonical(value: dict) -> str:
 
 def semantic_request(request: dict) -> dict:
     """Client retry UUID is transport identity, not a new assessment/profile scope."""
-    if request.get('kind') == 'next':
-        # Each next request may follow a newly closed AS in the same Cycle.
-        return dict(request)
-    return {key: value for key, value in request.items() if key != 'idempotency_key'}
+    return {key: value for key, value in request.items()
+            if key not in {"idempotency_key", "preparation_key"}}
+
+
+def _command_request(request: dict) -> dict:
+    # These fields are derived by the server, never transport payload identity.
+    return {key: value for key, value in request.items()
+            if key not in {"preparation_key", "next_preparation_scope"}}
 
 
 def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignment_ref: str,
@@ -39,14 +43,43 @@ def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignm
     table = connection.execute("SELECT to_regclass(current_schema()||'.product_cycle_preparation_operations') AS relation").fetchone()
     if not table or not table.get('relation'):
         return None
-    row = connection.execute('''SELECT operation_id,status,error_code,error_message FROM product_cycle_preparation_operations
+    row = connection.execute('''SELECT operation_id,status,error_code,error_message,request_json,created_at FROM product_cycle_preparation_operations
         WHERE user_id=%s AND request_json->>'personalized_profile_id'=%s
           AND request_json->>'assignment_ref'=%s
           AND request_json->>'questionnaire_revision_id' IS NOT DISTINCT FROM %s
         ORDER BY created_at DESC,id DESC LIMIT 1''',
         (user_id, str(profile_id), assignment_ref,
          str(questionnaire_revision_id) if questionnaire_revision_id is not None else None)).fetchone()
-    return public_operation(dict(row)) if row else None
+    if not row:
+        return None
+    operation = dict(row)
+    ProductCyclePreparationQueue._project_retry_guard(connection, operation, user_id=user_id)
+    return public_operation(operation)
+
+
+def latest_next_operation(connection, *, cycle_id: str, user_id: int) -> dict | None:
+    from Api import m10_product_flow
+    table = connection.execute("SELECT to_regclass(current_schema()||'.product_cycle_preparation_operations') AS relation").fetchone()
+    if not table or not table.get("relation"):
+        return None
+    scope = m10_product_flow.next_preparation_scope(connection, cycle_id=cycle_id, user_id=user_id, check_current=False)
+    row = connection.execute(
+        """SELECT operation_id,status,error_code,error_message,request_json,created_at
+           FROM product_cycle_preparation_operations op WHERE user_id=%s
+             AND request_json->>'kind'='next' AND request_json->>'cycle_id'=%s
+             AND (((request_json->'next_preparation_scope') - 'plan_revision_id')=(%s::jsonb - 'plan_revision_id')
+                  OR (NOT request_json ? 'next_preparation_scope' AND NOT EXISTS (
+                      SELECT 1 FROM m7_route_positions p
+                      JOIN m5_cycles c ON c.id=p.cycle_db_id
+                      JOIN m5_assessment_situations a ON a.id=p.current_as_db_id
+                      WHERE c.cycle_id::text=%s AND a.status='closed' AND a.closed_at>op.created_at)))
+           ORDER BY created_at DESC,id DESC LIMIT 1""", (user_id, cycle_id, _canonical(scope), cycle_id),
+    ).fetchone()
+    if not row:
+        return None
+    operation = dict(row)
+    ProductCyclePreparationQueue._project_retry_guard(connection, operation, user_id=user_id)
+    return public_operation(operation)
 
 
 def _operation_lock_key(operation_id: str) -> int:
@@ -71,12 +104,13 @@ PUBLIC_FAILURES_BY_PREFIX = {
         "message": "Ситуация не прошла обязательную проверку. Ваши ответы сохранены; обратитесь к ответственному за оценку.",
     },
 }
-RETRYABLE_TECHNICAL_ERRORS = frozenset({"TimeoutError", "ConnectionError", "LlmGatewayError"})
+RETRYABLE_TECHNICAL_ERRORS = frozenset({"TimeoutError", "ConnectionError", "LlmGatewayError", "LlmCapacityError"})
 
 
 def retry_allowed(operation: dict) -> bool:
     """Only explicitly classified technical failures permit a new preparation command."""
     return (operation.get("status") == "failed"
+            and not operation.get("retry_blocked")
             and operation.get("error_code") in RETRYABLE_TECHNICAL_ERRORS
             and not any(str(operation.get("error_message") or "").startswith(prefix)
                         for prefix in PUBLIC_FAILURES_BY_PREFIX))
@@ -134,14 +168,14 @@ class ProductCyclePreparationQueue:
             thread.join(timeout=5)
 
     def enqueue(self, *, operation_id: str, user_id: int, request: dict) -> dict:
-        request_text = _canonical(request)
-        request_checksum = hashlib.sha256(request_text.encode()).hexdigest()
+        from Api import m10_product_flow
+        request = _command_request(request)
         with get_connection() as connection:
             connection.execute("SELECT pg_advisory_xact_lock(%s)", (_operation_lock_key(operation_id),))
             connection.execute("SELECT pg_advisory_xact_lock(%s, %s)", (771105, user_id))
             operation_row = connection.execute(
                 """SELECT operation_id,user_id,status,result_json,error_code,error_message,
-                          request_checksum,created_at,updated_at,completed_at
+                          request_json,request_checksum,created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations
                    WHERE operation_id=%s""",
                 (operation_id,),
@@ -150,28 +184,56 @@ class ProductCyclePreparationQueue:
                 result = dict(operation_row)
                 if int(result["user_id"]) != int(user_id):
                     raise PermissionError("PRODUCT_CYCLE_PREPARATION_OPERATION_NOT_OWNED")
-                if result["request_checksum"] != request_checksum:
+                if _command_request(result["request_json"]) != request:
                     raise ValueError("PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT")
+                self._project_retry_guard(connection, result)
+                result.pop("request_json", None)
                 result.pop("request_checksum", None)
                 result.pop("user_id", None)
                 return result
+            if request.get("kind") == "next":
+                request["next_preparation_scope"] = m10_product_flow.next_preparation_scope(
+                    connection, cycle_id=str(request["cycle_id"]), user_id=user_id,
+                )
             existing = connection.execute(
-                """SELECT operation_id,status,result_json,error_code,error_message,request_checksum,created_at,updated_at,completed_at
-                   FROM product_cycle_preparation_operations
+                """SELECT operation_id,status,result_json,error_code,error_message,request_json,
+                          request_checksum,created_at,updated_at,completed_at
+                   FROM product_cycle_preparation_operations op
                    WHERE user_id=%s AND status IN ('queued','running','completed','failed')
-                     AND (CASE WHEN request_json->>'kind'='next' THEN request_json
-                          ELSE request_json - 'idempotency_key' END)=%s::jsonb
-                   ORDER BY created_at DESC LIMIT 1""",
-                (user_id, _canonical(semantic_request(request))),
+                     AND ((request_json - 'idempotency_key' - 'preparation_key')=%s::jsonb
+                          OR (request_json->>'kind'='next' AND %s='next'
+                              AND request_json->>'cycle_id'=%s
+                              AND ((request_json->'next_preparation_scope') - 'plan_revision_id')
+                                  =(%s::jsonb - 'plan_revision_id'))
+                          OR (request_json->>'kind'='next' AND %s='next'
+                              AND request_json->>'cycle_id'=%s
+                              AND NOT request_json ? 'next_preparation_scope'
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM m7_route_positions p
+                                  JOIN m5_cycles c ON c.id=p.cycle_db_id
+                                  JOIN m5_assessment_situations a ON a.id=p.current_as_db_id
+                                  WHERE c.cycle_id::text=%s AND a.status='closed'
+                                    AND a.closed_at>op.created_at)))
+                   ORDER BY created_at DESC,id DESC LIMIT 1""",
+                (user_id, _canonical(semantic_request(request)), request.get("kind"), request.get("cycle_id"),
+                 _canonical(request.get("next_preparation_scope") or {}), request.get("kind"),
+                 request.get("cycle_id"), request.get("cycle_id")),
             ).fetchone()
             if existing:
                 result = dict(existing)
                 if result["status"] == "failed":
+                    self._project_retry_guard(connection, result, user_id=user_id)
                     if not retry_allowed(result):
                         raise ValueError("PRODUCT_CYCLE_PREPARATION_RETRY_NOT_ALLOWED")
                 else:
                     result.pop("request_checksum", None)
+                    result.pop("request_json", None)
                     return result
+            request["preparation_key"] = ((existing["request_json"].get("preparation_key")
+                or existing["request_json"]["idempotency_key"]) if existing else request["idempotency_key"])
+            self._guard_request(connection, request, user_id=user_id)
+            request_text = _canonical(request)
+            request_checksum = hashlib.sha256(request_text.encode()).hexdigest()
             if connection.execute("""SELECT 1 FROM product_cycle_preparation_operations
                 WHERE user_id=%s AND status IN ('queued','running') LIMIT 1""", (user_id,)).fetchone():
                 raise ValueError('PRODUCT_CYCLE_PREPARATION_SCOPE_BUSY')
@@ -204,7 +266,73 @@ class ProductCyclePreparationQueue:
                    WHERE operation_id=%s AND user_id=%s""",
                 (operation_id, user_id),
             ).fetchone()
-        return dict(row) if row else None
+            if row:
+                result = dict(row)
+                self._project_retry_guard(connection, result, user_id=user_id)
+                return result
+        return None
+
+    @staticmethod
+    def _guard_request(connection, request: dict, *, user_id: int, created_at=None, lock: bool = True) -> None:
+        from Api import m10_product_flow
+        if request.get("kind") == "next":
+            current = m10_product_flow.next_preparation_scope(
+                connection, cycle_id=str(request["cycle_id"]), user_id=user_id, lock=lock,
+            )
+            if not request.get("next_preparation_scope") and created_at is not None and connection.execute(
+                """SELECT 1 FROM m7_route_positions p JOIN m5_cycles c ON c.id=p.cycle_db_id
+                   JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
+                   WHERE c.cycle_id=%s AND s.status='closed' AND s.closed_at>%s LIMIT 1""",
+                (request["cycle_id"], created_at),
+            ).fetchone():
+                raise ValueError("PRODUCT_CYCLE_PREPARATION_POSITION_CHANGED")
+            if request.get("next_preparation_scope") and current != request["next_preparation_scope"]:
+                raise ValueError("PRODUCT_CYCLE_PREPARATION_POSITION_CHANGED")
+        else:
+            # Stable domain key also finds a terminal first Cycle, which must not
+            # be replaced by a new Cycle when a technical failure is retried.
+            key = request.get("preparation_key", request["idempotency_key"])
+            cycle = connection.execute(
+                """SELECT c.cycle_id FROM m7_plan_request_keys k
+                   JOIN m7_cycle_plans p ON p.id=k.plan_id JOIN m5_cycles c ON c.id=p.cycle_db_id
+                   WHERE k.created_by=%s AND k.key=%s""", (user_id, f"product-prepare:{key}"),
+            ).fetchone()
+            if cycle:
+                m10_product_flow.require_preparation_cycle(
+                    connection, cycle_id=str(cycle["cycle_id"]), user_id=user_id, lock=lock,
+                )
+        key = request.get("preparation_key", request["idempotency_key"])
+        selection_key = f"product-next:{key}" if request.get("kind") == "next" else f"product-prepared:{key}"
+        selected = connection.execute(
+            """SELECT cv.id,c.usage_scope,c.catalog_ref_json,d.plan_revision_id,c.cycle_id
+               FROM m7_next_as_requests k JOIN m7_route_decisions d ON d.id=k.decision_id
+               JOIN m5_cycles c ON c.id=d.cycle_db_id
+               JOIN m5_case_versions cv ON cv.case_id=d.selected_case_id AND cv.case_version=d.selected_case_version
+               JOIN m5_catalog_case_versions member ON member.case_version_id=cv.id
+                 AND member.catalog_db_id=(c.catalog_ref_json->>'db_id')::bigint
+               WHERE c.owner_user_id=%s AND k.key=%s""", (user_id, selection_key),
+        ).fetchone()
+        if selected:
+            from Api.m5_catalog_integrity import case_admission
+            from Api import m7_cycle_planner
+            plan = m7_cycle_planner.read_plan(connection, str(selected["cycle_id"]))
+            if str(plan["revision_id"]) != str(selected["plan_revision_id"]):
+                raise ValueError("M7_STALE_PLAN_REVISION")
+            admitted = case_admission(connection, case_version_id=int(selected["id"]),
+                usage_scope=selected["usage_scope"], catalog_db_id=selected["catalog_ref_json"]["db_id"])
+            if not admitted["admitted"]:
+                raise ValueError("AS_NOT_ADMITTED")
+
+    @classmethod
+    def _project_retry_guard(cls, connection, operation: dict, *, user_id: int | None = None) -> None:
+        if not retry_allowed(operation):
+            return
+        try:
+            cls._guard_request(connection, operation["request_json"],
+                               user_id=user_id if user_id is not None else int(operation["user_id"]),
+                               created_at=operation.get("created_at"), lock=False)
+        except ValueError:
+            operation["retry_blocked"] = True
 
     def _run(self) -> None:
         while not self._stop.is_set():
@@ -239,7 +367,7 @@ class ProductCyclePreparationQueue:
                    SET status='running',attempts=attempts+1,worker_id=%s,attempt_token=%s,
                        locked_at=NOW(),updated_at=NOW()
                    WHERE id=%s
-                   RETURNING id,operation_id,user_id,request_json,request_checksum,attempt_token""",
+                   RETURNING id,operation_id,user_id,request_json,request_checksum,attempt_token,created_at""",
                 (self._worker_id, attempt_token, row["id"]),
             ).fetchone()
         return dict(claimed)
@@ -325,9 +453,12 @@ class ProductCyclePreparationQueue:
         failure_result = None
         try:
             request = dict(job["request_json"])
+            preparation_key = str(request.get("preparation_key", request["idempotency_key"]))
             if hashlib.sha256(_canonical(request).encode()).hexdigest() != job["request_checksum"]:
                 raise ValueError("PRODUCT_CYCLE_PREPARATION_SNAPSHOT_MISMATCH")
             with get_connection() as connection:
+                self._assert_current_attempt(connection, job, lock=True)
+                self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))
                 next_cycle_id = request.get("cycle_id") if request.get("kind") == "next" else None
                 if next_cycle_id:
                     cycle = connection.execute(
@@ -354,7 +485,19 @@ class ProductCyclePreparationQueue:
                 if request.get('profile_checksum') and (not profile or profile['checksum'] != request['profile_checksum']
                         or profile['organization_id'] != request.get('organization_id')):
                     raise ValueError('PRODUCT_CYCLE_PREPARATION_PROFILE_SCOPE_CHANGED')
+                frozen_first = None
                 if not next_cycle_id:
+                    frozen_first = connection.execute(
+                        """SELECT c.cycle_id FROM m7_plan_request_keys k
+                           JOIN m7_cycle_plans p ON p.id=k.plan_id JOIN m5_cycles c ON c.id=p.cycle_db_id
+                           WHERE k.created_by=%s AND k.key=%s""",
+                        (job["user_id"], f"product-prepare:{preparation_key}"),
+                    ).fetchone()
+                if frozen_first:
+                    functional = m10_product_flow.uses_functional_generation(
+                        connection, cycle_id=str(frozen_first["cycle_id"]),
+                    )
+                elif not next_cycle_id:
                     catalog_column = connection.execute("""SELECT EXISTS (
                         SELECT 1 FROM information_schema.columns
                         WHERE table_schema=current_schema() AND table_name='assessment_configurations'
@@ -368,11 +511,11 @@ class ProductCyclePreparationQueue:
                 if next_cycle_id:
                     result = m10_product_flow.prepare_next_situation(
                         connection, cycle_id=str(next_cycle_id), user_id=int(job["user_id"]),
-                        key=str(request["idempotency_key"]), defer_as=functional,
+                        key=preparation_key, defer_as=functional,
                     )
                 else:
                     result = m10_product_flow.prepare(
-                        connection, user_id=int(job["user_id"]), key=str(request["idempotency_key"]),
+                        connection, user_id=int(job["user_id"]), key=preparation_key,
                         selected_skills=list(request["selected_skills"]), profile_id=profile_id,
                         defer_as=functional, exact_profile=bool(request.get('assignment_ref')),
                     )
@@ -441,6 +584,9 @@ class ProductCyclePreparationQueue:
                 trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job, lock=True)
+                    self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))
+                    m10_product_flow.require_preparation_cycle(connection,
+                        cycle_id=str(result["plan"]["cycle_id"]), user_id=int(job["user_id"]))
                     attached = m7_cycle_planner.attach_functional_generated_as(
                         connection, decision_id=str(decision["id"]), prepared_result=generated,
                         generation_trace=trace, created_by=int(job["user_id"]),
@@ -448,11 +594,11 @@ class ProductCyclePreparationQueue:
                     )
                     result["decision"] = attached
                     result["plan"] = m7_cycle_planner.read_plan(connection, str(result["plan"]["cycle_id"]))
-            if next_cycle_id and result["decision"]["status"] == "SELECTED":
-                with get_connection() as connection:
-                    result = m10_product_flow.present_prepared_next(connection, result=result)
             with get_connection() as connection:
                 self._assert_current_attempt(connection, job, lock=True)
+                self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))
+                if next_cycle_id and result["decision"]["status"] == "SELECTED":
+                    result = m10_product_flow.present_prepared_next(connection, result=result)
                 runtime = m10_product_flow.read_runtime(connection, cycle_id=str(result["plan"]["cycle_id"]))
                 participant_result = {**m10_product_flow.participant_presentation(result), "runtime": runtime}
                 connection.execute(

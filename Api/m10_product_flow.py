@@ -249,6 +249,57 @@ def next_situation(connection, *, cycle_id: str, user_id: int, key: str) -> dict
     return _present_next(connection, plan=plan, user_id=user_id, key=f"product-next:{key}")
 
 
+def require_preparation_cycle(connection, *, cycle_id: str, user_id: int, lock: bool = True) -> dict:
+    """Recheck access and time against the frozen Cycle before preparation effects."""
+    from datetime import datetime, timezone
+    # Same owner serialization as first start and assignment cancellation.
+    if lock:
+        connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
+    suffix = " FOR UPDATE" if lock else ""
+    cycle = connection.execute(
+        "SELECT * FROM m5_cycles WHERE cycle_id=%s" + suffix, (cycle_id,),
+    ).fetchone()
+    if not cycle or int(cycle["owner_user_id"]) != int(user_id):
+        raise ValueError("M7_CYCLE_NOT_FOUND")
+    if participant_profile.active_organization(connection, user_id) != cycle["organization_id"]:
+        raise ValueError("M4_PROFILE_SCOPE_MISMATCH")
+    if cycle.get("assignment_id") is not None and not connection.execute(
+        """SELECT 1 FROM organization_assessment_assignments
+           WHERE id=%s AND recipient_user_id=%s AND status='active' AND revoked_at IS NULL""" + suffix,
+        (cycle["assignment_id"], user_id),
+    ).fetchone():
+        raise ValueError("ASSIGNMENT_CANCELLED")
+    if cycle["status"] in {"collection_closed", "calculation_pending", "calculated", "failed"}:
+        raise ValueError("M7_COLLECTION_CLOSED")
+    from Api.m5_cycle_runtime import read_cycle
+    runtime = read_cycle(connection, cycle_id)
+    if runtime["started_at"] and (runtime["remaining_seconds"] <= 0
+            or datetime.now(timezone.utc) >= runtime["calendar_deadline"]):
+        raise ValueError("M7_TIME_LIMIT_REACHED")
+    return dict(cycle)
+
+
+def next_preparation_scope(connection, *, cycle_id: str, user_id: int, check_current: bool = True, lock: bool = True) -> dict:
+    """A next step advances only after its current route AS really closes."""
+    if check_current:
+        cycle = require_preparation_cycle(connection, cycle_id=cycle_id, user_id=user_id, lock=lock)
+    else:
+        cycle = connection.execute("SELECT id FROM m5_cycles WHERE cycle_id=%s AND owner_user_id=%s",
+                                   (cycle_id, user_id)).fetchone()
+        if not cycle:
+            raise ValueError("M7_CYCLE_NOT_FOUND")
+    plan = m7_cycle_planner.read_plan(connection, cycle_id)
+    previous = connection.execute(
+        """SELECT p.position_no,s.assessment_situation_id
+           FROM m7_route_positions p JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
+           WHERE p.cycle_db_id=%s AND s.status='closed'
+           ORDER BY p.position_no DESC LIMIT 1""", (cycle["id"],),
+    ).fetchone()
+    return {"plan_revision_id": str(plan["revision_id"]),
+            "after_position_no": int(previous["position_no"]) if previous else 0,
+            "after_assessment_situation_id": str(previous["assessment_situation_id"]) if previous else None}
+
+
 def prepare_next_situation(connection, *, cycle_id: str, user_id: int, key: str,
                            defer_as: bool = False) -> dict:
     """Select the next Case without bypassing deferred functional AS preparation."""
@@ -300,8 +351,12 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         current = dict(situations[-1]) if situations else None
     else:
         current = None
-    between_situations = bool(current and current["status"] == "closed"
-                              and status["collection_status"] in {"active", "paused"})
+    between_situations = bool(status["collection_status"] in {"active", "paused"} and (
+        (current and current["status"] == "closed") or (not current and connection.execute(
+            """SELECT 1 FROM m7_route_positions p
+               JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
+               WHERE p.cycle_db_id=%s AND s.status='closed' LIMIT 1""", (cycle["id"],),
+        ).fetchone())))
     if between_situations:
         current = None
     presented = bool(current and current["started_at"] is not None and current["status"] != "admitted")
@@ -362,7 +417,18 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         "continuation": ({"intent_id": str(continuation["id"]), "status": continuation["status"]}
                          if continuation else None),
         "pipeline": dict(pipeline) if pipeline else None,
+        **({"preparation_operation": _next_operation(connection, cycle_id)} if between_situations else {}),
     }
+
+
+def _next_operation(connection, cycle_id: str) -> dict | None:
+    from Api.product_cycle_preparation_queue import latest_next_operation
+    cycle = connection.execute("SELECT owner_user_id FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
+    try:
+        return latest_next_operation(connection, cycle_id=cycle_id, user_id=int(cycle["owner_user_id"]))
+    except ValueError:
+        # Runtime still returns the domain terminal/time state; it offers no retry.
+        return None
 
 
 def participant_trace(trace: dict) -> dict:

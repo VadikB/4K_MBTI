@@ -134,6 +134,9 @@ test('P3-A commit then lost response retains one identity across reload and same
   assert.equal(pendingRow(restored), undefined, 'the saved Turn replaces its local unknown row');
   assert.equal(restored.storage.has('agent4k.assessmentDraft:cycle-a:as-a'), false);
   restored.setFetch(async (_url, options) => {
+    if (_url.includes('/answer-status?')) return json({ status: 'accepted', processing_status: 'failed',
+      cycle_id: original.cycleId, assessment_situation_id: original.situationId, request_id: original.requestId,
+      turn_id: original.turnId, clarification_id: null, turn: h.runtime.trace.turns[0] });
     if (!options?.method) return json(h.runtime);
     const body = JSON.parse(options.body);
     assert.equal(body.request_id, original.requestId);
@@ -310,8 +313,11 @@ test('P3-A a retained retry callback cannot resurrect a resolved operation in th
     return json(h.runtime);
   });
   await h.subject.sendProductInterviewAnswer('Первый ответ');
+  const original = h.subject.readProductInterviewAnswer();
   const oldRetry = pendingRow(h).querySelector('.interview-message-retry').onclick;
   h.setFetch(async (_url, options) => {
+    if (_url.includes('/answer-status?')) return json({ status: 'absent', cycle_id: original.cycleId,
+      assessment_situation_id: original.situationId, request_id: original.requestId, turn_id: original.turnId, clarification_id: null });
     if (!options?.method) return json(h.runtime);
     return json({ turn: addTurn(h.runtime, JSON.parse(options.body)) });
   });
