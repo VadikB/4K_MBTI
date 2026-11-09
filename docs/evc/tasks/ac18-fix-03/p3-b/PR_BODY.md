@@ -1,4 +1,65 @@
-# AC18 FIX-03 / P3-B — прогресс, время и возврат
+# AC18 FIX-03 — совместный кандидат P3-A+P3-B
+
+Существующие ветка `codex/ac18-p3-b-time-return` и draft PR #199.
+База `origin/main=023bf85ec796d212d29b33218d906a1ed2023941` (2.0.86);
+PATCH-кандидат `2.0.87` согласован ранее. Проверенный кодовый SHA:
+`abce5f73cb452a6a71e9369e7a45d94533436a4e`.
+
+Происхождение сохранено merge-коммитом `e343ecc3dc775319088a4f3ad46727494fcb684b`:
+первый родитель — прежний P3-B `8be8e8e5db0ef9ad397d74a0753ea8d5ba26d23d`,
+второй — переданный P3-A `5b502f13d72f63b3e75531e9ef8accd084f0913c`.
+P3-A code SHA `7f0a77be8ba456a4e6bb52bb676d623672d8dcbc`; его последний
+delivery-коммит менял только документы. Архив, checksum, bundle и перечень
+файлов сверены; реализация 3А заново не выполнялась. После merge добавлена
+только стабилизация тестового ожидания async logout (`abce5f73`).
+
+P3-A предоставляет единый public chat, материалы/авторство, мобильный ввод,
+сохранение позиции чтения и черновика в owner/Cycle/AS, идемпотентную отправку
+с readback и защитой от запоздалой доставки. P3-B приводит прогресс к
+замороженному плану, отличает неизвестное время от нуля, сохраняет R1 Continue
+identity после lost response/reload и не открывает AS без серверного факта.
+На стыке исправлен общий runtime/return-state loader: старый ответ другого
+owner/Cycle/AS/экрана или generation больше не перерисовывает новый scope.
+Слой 3А также устранил историческое переполнение 390 px/200%.
+
+Связь с источниками: Change 01 и task manifest → ADR-002, M7 R1 v2
+`sales-pilot-return-r1@2.0` (checksum
+`1121db8c84b6997ee427264a589b5db088588e134734d8ae0dbc0d2220a36f14`)
+→ `Api/m7_return_integration.py`, `Api/m10_product_flow.py`,
+`web/js/screens/interview.js` и мобильный CSS → frontend, HTTP, owned PG,
+browser и visual checks. Policy и публичные API/схема не менялись.
+
+Проверки **именно сочетания** на кодовых байтах `abce5f73`:
+Node frontend 192/192 PASS (включая 4 loader-scope); backend minimum 977 PASS;
+M7 на изолированном PostgreSQL 31 PASS; HTTP P03 2 PASS; real HTTP/PG browser
+P3-A 12 PASS; browser P03/P3-B 4 PASS; шесть визуальных состояний × четыре
+ширины 24 PASS и отдельный 390 px/200% PASS (documentWidth=390,
+offenders=[]); lint/build/diff PASS. Первый полный P3-A browser прогон —
+11 PASS/1 FAIL из-за начала тестового входа до завершения async logout;
+после синхронизации теста адресный 1 PASS и полный 12 PASS. Команды, SHA,
+первичное evidence и ограничения — в `CHECKS.csv`, `STATE.md`, `VISUAL.md`.
+Свежий `origin/main` не сдвинулся; `npm run ready:prepare -- --candidate
+2.0.87` — PASS (release preflight/build), без перевода PR в Ready.
+
+Исторические FAIL сохранены: P3-B `43c42c2f`/AC10 — 543 px при 390 px;
+P3-A `5b502f13`/OPEN_SHARED_3B — stale unversioned loader. Более ранние
+P3-A unknown/text200/initial-readiness также остаются в переданном
+`CHECKS.csv`; их отдельный PASS не считался проверкой сочетания.
+
+Физические iOS Safari/Android Chrome, native text zoom/software keyboard,
+owner visual acceptance, исторический TEST Cycle/OPS01 и полный путь AC18 —
+NOT_RUN. Поэтому whole AC10 и VISUAL_ACCEPTED не заявлены. Платный LLM и
+рабочая БД не использовались. Откат: revert merge и fix/test-коммитов,
+`npm run build:web`; миграции нет.
+На screenshot 200% длинные подписи кнопок переносятся на несколько строк;
+читаемость остаётся предметом человеческого визуального review.
+
+Draft PR сохраняется до человеческого review/визуальной приёмки и отдельного
+решения о Ready. Быстрые CI jobs нужно проверить на актуальном опубликованном
+head; `full-verification` обязателен после Ready и до merge. Действующий
+допуск не разрешает сейчас merge в `main` или автоматический deploy.
+
+## История P3-B до объединения
 
 База `023bf85ec796d212d29b33218d906a1ed2023941`; основные коммиты
 `ab03144cf465b5213a722a26f9cf6538af64235e` и

@@ -1,4 +1,18 @@
-# P3-B: локальный маршрут визуального просмотра
+# P3-A+P3-B: локальный маршрут визуального просмотра
+
+Совместный code SHA `abce5f73cb452a6a71e9369e7a45d94533436a4e`:
+`npx playwright test tests/browser/p3b-visual.spec.mjs --reporter=line` — PASS.
+Шесть состояний × четыре ширины — 24 PASS; дополнительный `active-long`
+при viewport 390 px и computed text 200% — PASS: documentWidth=390,
+viewportWidth=390, offenders=[]. Первичное evidence:
+`.test-stand/p3-b-visual/manifest.json` и `active-long-390-text200.png`.
+Это технический Chromium subset; физические iOS/Android, native text zoom,
+software keyboard и приёмка владельцем — NOT_RUN. Длинные подписи действий
+при 200% занимают несколько строк; отсутствие горизонтального переполнения
+не заменяет оценку их читаемости владельцем. Исторический P3-B FAIL
+на SHA `43c42c2f` (543 px при viewport 390 px) сохранён ниже, не переименован.
+
+## Исторический стенд P3-B до объединения
 
 Сборка: `APP_RELEASE=2.0.87`, product/release commit `43c42c2f4b0b825007af97f844f2d3946e055687`,
 base `023bf85ec796d212d29b33218d906a1ed2023941`. Это локальный
@@ -32,9 +46,10 @@ npx playwright test tests/browser/p3b-visual.spec.mjs --reporter=line
 Первичное evidence: `.test-stand/p3-b-visual/manifest.json` и PNG рядом с ним.
 Для каждого из шести состояний Chromium проверен на 1440, 768, 390 и 320 px:
 24/24 PASS, включая отсутствие горизонтального переполнения при обычном тексте.
-`active-long-390-text200.png` — отдельная проверка удвоенных вычисленных размеров
-текста: **FAIL**, ширина документа 543 px при viewport 390 px. Выходят за край
-общий topbar и `textarea`; это мобильный слой 3А, не исправленный в 3Б.
+`active-long-390-text200.png` на прежнем SHA `43c42c2f` — отдельная проверка
+удвоенных вычисленных размеров текста: **исторический FAIL**, ширина документа
+543 px при viewport 390 px. За край выходили общий topbar и `textarea`;
+совместный кандидат выше исправил это без изменения предметных правил.
 Физические iOS Safari/Android Chrome и клавиатура — NOT_RUN. Эмуляция Chromium
 не доказывает их поведения. Решение владельца: **не просмотрено**.
 
