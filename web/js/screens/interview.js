@@ -57,6 +57,8 @@ let returnPresenceCycleId = null;
 let returnPresenceGeneration = 0;
 let activeInterviewDraftKey = null;
 let renderedProductMessages = null;
+let renderedProductCycleId = null;
+const RETURN_CONTINUE_PENDING_KEY = 'agent4k.returnContinuePending';
 const returnClientId = (() => {
   const key = 'agent4k.returnClientId';
   let value = window.sessionStorage.getItem(key);
@@ -151,11 +153,46 @@ const productEventText = (event) => {
 };
 
 const serverRemainingSeconds = (value) => {
-  const seconds = Number(value);
-  return value !== null && value !== '' && Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+};
+
+const returnContinueIdentity = (value) => [
+  state.pendingUser?.id, value.cycle_id, value.position_no,
+  value.current_assessment_situation_id, value.current_assessment_situation_status,
+];
+
+const pendingReturnContinue = (value) => {
+  let saved = null;
+  try { saved = JSON.parse(window.sessionStorage.getItem(RETURN_CONTINUE_PENDING_KEY) || 'null'); } catch { /* stale storage */ }
+  const identity = returnContinueIdentity(value);
+  if (saved?.identity && JSON.stringify(saved.identity) === JSON.stringify(identity) && saved.key) return saved;
+  saved = { identity, key: createOperationId(), generationKey: createOperationId(), generationOperationId: null };
+  window.sessionStorage.setItem(RETURN_CONTINUE_PENDING_KEY, JSON.stringify(saved));
+  return saved;
+};
+
+const clearPendingReturnContinue = (value) => {
+  let saved = null;
+  try { saved = JSON.parse(window.sessionStorage.getItem(RETURN_CONTINUE_PENDING_KEY) || 'null'); } catch { /* stale storage */ }
+  if (saved?.identity && JSON.stringify(saved.identity) === JSON.stringify(returnContinueIdentity(value))) {
+    window.sessionStorage.removeItem(RETURN_CONTINUE_PENDING_KEY);
+  }
+};
+
+const clearConfirmedReturnContinue = (snapshot) => {
+  if (snapshot.status?.collection_status !== 'active' || !snapshot.current_situation) return;
+  let saved = null;
+  try { saved = JSON.parse(window.sessionStorage.getItem(RETURN_CONTINUE_PENDING_KEY) || 'null'); } catch { /* stale storage */ }
+  if (saved?.identity?.[0] === state.pendingUser?.id && saved.identity[1] === snapshot.cycle_id) {
+    window.sessionStorage.removeItem(RETURN_CONTINUE_PENDING_KEY);
+  }
 };
 
 const renderProductRuntime = (snapshot) => {
+  if (renderedProductCycleId !== snapshot.cycle_id) {
+    state.caseOutcomeByNumber = {};
+    renderedProductCycleId = snapshot.cycle_id;
+  }
   const current = snapshot.current_situation;
   const previousCaseKey = state.activeInterviewCaseKey;
   const previousScrollTop = interviewScrollArea?.scrollTop || 0;
@@ -339,6 +376,25 @@ const stopProductPresence = () => {
 };
 
 const renderReturnCard = (value) => {
+  if (renderedProductCycleId !== value.cycle_id) {
+    state.caseOutcomeByNumber = {};
+    renderedProductCycleId = value.cycle_id;
+  }
+  const progress = value.progress || {};
+  const completedPositions = Number.isInteger(Number(progress.completed_positions))
+    ? Math.max(0, Number(progress.completed_positions)) : 0;
+  const totalPositions = Number.isInteger(Number(progress.total_positions))
+    ? Math.max(0, Number(progress.total_positions)) : 0;
+  state.assessmentRuntimeKind = 'cycle';
+  state.productCycleId = value.cycle_id;
+  state.productAssessmentSituationId = value.current_assessment_situation_id;
+  state.productCycleStatus = value.collection_status;
+  state.assessmentCaseNumber = Number.isInteger(Number(value.position_no))
+    ? Math.max(1, Number(value.position_no)) : completedPositions + 1;
+  state.assessmentTotalCases = totalPositions;
+  state.assessmentCaseTitle = 'Продолжение оценки';
+  renderInterviewMeta();
+  renderCaseProgress(false);
   const confirmedPause = ['paused', 'interrupted'].includes(value.collection_status)
     || ['continue_current', 'replace_current'].includes(value.allowed_action);
   interviewTimerBadge.classList.toggle('is-paused', confirmedPause);
@@ -347,12 +403,7 @@ const renderReturnCard = (value) => {
   interviewMessages.innerHTML = '';
   const card = document.createElement('section'); card.className = 'interview-return-card';
   const title = document.createElement('h3'); title.textContent = 'Продолжение оценки';
-  const progress = value.progress || {};
   const copy = document.createElement('p');
-  const completedPositions = Number.isInteger(Number(progress.completed_positions))
-    ? Math.max(0, Number(progress.completed_positions)) : 0;
-  const totalPositions = Number.isInteger(Number(progress.total_positions))
-    ? Math.max(0, Number(progress.total_positions)) : 0;
   const remainingSeconds = serverRemainingSeconds(value.remaining_seconds);
   const remainingCopy = remainingSeconds === null
     ? 'Остаток времени выполнения уточняется.'
@@ -364,46 +415,60 @@ const renderReturnCard = (value) => {
     : 'После продолжения откроется та же незавершённая ситуация и сохранённый диалог.';
   const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button'; button.textContent = 'Продолжить';
   const status = document.createElement('p'); status.setAttribute('role', 'status');
-  const continueOperationId = createOperationId();
-  let generationOperationId = null;
   button.addEventListener('click', async () => {
+    const cycleId = value.cycle_id;
+    const ownerId = state.pendingUser?.id;
+    const identityEpoch = state.identityEpoch;
+    const current = () => state.productCycleId === cycleId && state.pendingUser?.id === ownerId
+      && state.identityEpoch === identityEpoch;
+    const pending = pendingReturnContinue(value);
     button.disabled = true; status.textContent = value.allowed_action === 'replace_current' ? 'Готовим допустимое обновление ситуации…' : 'Восстанавливаем ситуацию…';
     try {
-      if (value.allowed_action === 'replace_current' && !generationOperationId) {
+      if (value.allowed_action === 'replace_current' && !pending.generationOperationId) {
         if (!value.provider_config_ref) throw new Error('Для этого Cycle ещё не подключён допущенный provider обновления.');
-        const generatedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId)
+        const generatedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId)
           + '/positions/' + encodeURIComponent(value.position_no) + '/equivalent-candidate', {
           method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ expected_assessment_situation_id: value.current_assessment_situation_id,
-            idempotency_key: createOperationId(), provider_config_ref: value.provider_config_ref }),
+            idempotency_key: pending.generationKey, provider_config_ref: value.provider_config_ref }),
         });
         const generated = await readApiResponse(generatedResponse, 'Не удалось подготовить допустимое обновление ситуации.');
-        generationOperationId = generated.operation_id;
+        if (!current()) return;
+        pending.generationOperationId = generated.operation_id;
+        window.sessionStorage.setItem(RETURN_CONTINUE_PENDING_KEY, JSON.stringify(pending));
       }
-      const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/return-continue', {
+      if (!current()) return;
+      const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId) + '/return-continue', {
         method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position_no: value.position_no,
           expected_assessment_situation_id: value.current_assessment_situation_id,
           expected_state: value.current_assessment_situation_status,
-          idempotency_key: continueOperationId, generation_operation_id: generationOperationId }),
+          idempotency_key: pending.key, generation_operation_id: pending.generationOperationId }),
       });
       const continued = await readApiResponse(response, 'Не удалось продолжить оценку.');
+      if (!current()) return;
+      clearPendingReturnContinue(value);
       if (continued.status === 'collection_closed') { openProcessing(); return; }
       state.productAssessmentSituationId = continued.assessment_situation_id;
       await heartbeatProductPresence();
+      if (!current()) return;
       await loadProductRuntime();
     } catch (error) {
+      if (!current()) return;
       status.textContent = 'Проверяем, была ли команда принята сервером…';
       try {
         if (!(await loadReturnState())) {
+          if (!current()) return;
           await loadProductRuntime();
+          if (!current()) return;
+          clearPendingReturnContinue(value);
           return;
         }
-        status.textContent = `${error.message} Можно безопасно повторить проверку.`;
+        // The newly rendered card reuses the pending key after server readback.
       } catch (_readbackError) {
         status.textContent = `${error.message} Результат пока неизвестен. Обновите состояние перед повтором.`;
+        return;
       }
-      button.disabled = false;
     }
   });
   card.append(title, copy, reason, button, status); interviewMessages.appendChild(card);
@@ -413,33 +478,49 @@ const renderReturnCard = (value) => {
 };
 
 const loadReturnState = async () => {
-  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/return-state', { credentials: 'same-origin' });
+  const cycleId = state.productCycleId;
+  const ownerId = state.pendingUser?.id;
+  const identityEpoch = state.identityEpoch;
+  const current = () => state.productCycleId === cycleId && state.pendingUser?.id === ownerId
+    && state.identityEpoch === identityEpoch;
+  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId) + '/return-state', { credentials: 'same-origin' });
+  if (!current()) return false;
   if (response.status === 409) {
     const blocked = await response.json().catch(() => ({}));
     if (['M7_RETURN_CURRENT_POSITION_NOT_FOUND', 'M7_RETURN_POLICY_NOT_SNAPSHOTTED'].includes(blocked.detail)) return false;
     throw new Error(blocked.detail || 'Не удалось проверить состояние возврата.');
   }
   const value = await readApiResponse(response, 'Не удалось проверить состояние возврата.');
+  if (!current() || value.cycle_id !== cycleId) return false;
   if (['continue_current', 'replace_current'].includes(value.allowed_action)) { renderReturnCard(value); return true; }
   return false;
 };
 
 export const loadProductRuntime = async ({ generation = null } = {}) => {
   if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
+  const cycleId = state.productCycleId;
+  const ownerId = state.pendingUser?.id;
+  const identityEpoch = state.identityEpoch;
+  const current = () => state.productCycleId === cycleId && state.pendingUser?.id === ownerId
+    && state.identityEpoch === identityEpoch;
   // Check the server-owned pause before fetching any AS content. Reload/login/GET
   // never resumes a recognized absence; only the explicit command above does.
   if (await loadReturnState()) return null;
-  const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(state.productCycleId) + '/runtime', {
+  if (!current()) return null;
+  const response = await fetch('/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime', {
     credentials: 'same-origin',
   });
   const saved = await readApiResponse(response, 'Не удалось восстановить состояние оценки.');
-  if (generation !== null && generation !== productRuntimePollGeneration) return saved;
+  if (!current() || saved.cycle_id !== cycleId ||
+      (generation !== null && generation !== productRuntimePollGeneration)) return saved;
+  clearConfirmedReturnContinue(saved);
   state.productAssessmentSituationId = saved.current_situation?.assessment_situation_id || null;
   const terminal = ['collection_closed', 'calculation_pending', 'calculated', 'failed']
     .includes(saved.status?.collection_status);
   let presenceContract = null;
   if (saved.return_policy_enabled && saved.current_situation && returnPresenceCycleId !== saved.cycle_id) {
     presenceContract = await heartbeatProductPresence();
+    if (!current()) return saved;
     returnPresenceCycleId = saved.cycle_id;
   }
   const snapshot = renderProductRuntime(saved);

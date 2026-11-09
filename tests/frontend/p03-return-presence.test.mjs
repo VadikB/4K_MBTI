@@ -16,9 +16,12 @@ test('P03 confirms server presence independently of typing and requires explicit
   assert.match(interview, /return-continue/);
   assert.match(interview, /if \(await loadReturnState\(\)\) return null/);
   assert.match(interview, /M7_RETURN_CURRENT_POSITION_NOT_FOUND/);
-  assert.match(interview, /await heartbeatProductPresence\(\);\s*await loadProductRuntime\(\)/);
-  assert.match(interview, /const continueOperationId = createOperationId\(\)/);
-  assert.match(interview, /idempotency_key: continueOperationId/);
+  assert.match(interview, /await heartbeatProductPresence\(\);\s*if \(!current\(\)\) return;\s*await loadProductRuntime\(\)/);
+  assert.match(interview, /const pending = pendingReturnContinue\(value\)/);
+  assert.match(interview, /idempotency_key: pending\.generationKey/);
+  assert.match(interview, /idempotency_key: pending\.key/);
+  assert.match(interview, /clearConfirmedReturnContinue\(saved\)/);
+  assert.match(interview, /state\.assessmentTotalCases = totalPositions/);
   assert.match(interview, /if \(!\(await loadReturnState\(\)\)\)/);
   assert.match(interview, /Продолжить/);
 });

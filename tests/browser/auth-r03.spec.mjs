@@ -3479,10 +3479,12 @@ test('P03 fresh login opens explicit return card without reading blocked runtime
 
 test('P3-B return card keeps unknown time distinct from known zero', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let remainingSeconds = null;
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return fulfillJson(route, { version: 'p3b-test' });
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
     if (pathname === '/users/8/journey-state') return fulfillJson(route, {
       next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
       assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-p3b', cycle_session_id: 'session-p3b', assessment_situation_id: 'as-p3b' },
@@ -3490,7 +3492,7 @@ test('P3-B return card keeps unknown time distinct from known zero', async ({ pa
     if (pathname === '/users/assessment/m7/cycles/cycle-p3b/return-state') return fulfillJson(route, {
       cycle_id: 'cycle-p3b', collection_status: 'paused', position_no: 1,
       current_assessment_situation_id: 'as-p3b', current_assessment_situation_status: 'active',
-      allowed_action: 'continue_current', remaining_seconds: null,
+      allowed_action: 'continue_current', remaining_seconds: remainingSeconds,
       progress: { completed_positions: 0, total_positions: 8 },
     });
     return fulfillJson(route, {}, 404);
@@ -3500,6 +3502,10 @@ test('P3-B return card keeps unknown time distinct from known zero', async ({ pa
   await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · Время уточняется');
   await expect(page.getByText('0 мин.', { exact: false })).toBeHidden();
   await expect(page.getByText('Без лимита', { exact: false })).toBeHidden();
+  remainingSeconds = 0;
+  await page.reload();
+  await expect(page.getByText('Завершено 0 из 8. Остаток времени выполнения: 0 мин.')).toBeVisible();
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · 00:00');
 });
 
 test('P3-B reads server state after a lost Continue response without a second command', async ({ page }) => {
@@ -3510,6 +3516,7 @@ test('P3-B reads server state after a lost Continue response without a second co
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return fulfillJson(route, { version: 'p3b-test' });
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
     if (pathname === '/users/8/journey-state') return fulfillJson(route, {
       next_action: 'resume_assessment', profile: { status: 'complete' }, onboarding: { status: 'completed' },
       assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: 'cycle-lost', cycle_session_id: 'session-lost', assessment_situation_id: 'as-lost' },
@@ -3541,6 +3548,10 @@ test('P3-B reads server state after a lost Continue response without a second co
   await page.goto(`${base}/?screen=interview`);
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
   await expect(page.locator('#interview-messages').getByRole('heading', { name: 'Восстановленная ситуация' })).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('agent4k.returnContinuePending'))).toBeNull();
+  await page.reload();
+  await expect(page.locator('#interview-messages').getByRole('heading', { name: 'Восстановленная ситуация' })).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem('agent4k.returnContinuePending'))).toBeNull();
   expect(continueCommands).toBe(1);
 });
 

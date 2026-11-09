@@ -24,6 +24,7 @@ from Api.m7_route_replacement import (FixedCaseReplacementProvider,GeneratedCand
 from Api.m7_return_integration import (continue_return,heartbeat,read_return_state,
     record_controlled_absence)
 from Api import m7_return_integration as return_integration
+from Api.m10_product_flow import read_runtime
 from Api.m5_cycle_runtime import assert_collecting,begin_blocking_wait,end_blocking_wait,read_cycle
 from scripts.build_m5_case_package import OUTPUT
 
@@ -377,6 +378,12 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         assert state['allowed_action']=='continue_current' and state['recognized_absence_seconds']==179
         assert state['progress']=={'total_positions':2,'completed_positions':0}
         assert state['planned_positions']==2 and state['planned_total'] is True
+        # This focused M7 fixture has no M6 clarification history; provide the
+        # empty read-only projection required by read_runtime.
+        c.execute("CREATE TABLE m7_clarification_decisions(id UUID,assessment_situation_db_id BIGINT,created_at TIMESTAMPTZ)")
+        runtime=read_runtime(c,cycle_id=cycle_id)
+        assert runtime['route']['progress']=={'total_positions':2,'completed_positions':0}
+        assert len(runtime['route']['positions'])==1
         assert str(event['id'])==state['absence_event_id']
         result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,expected_state='active',
             key='return-179',owner_user_id=99,evaluated_at=evaluated)
