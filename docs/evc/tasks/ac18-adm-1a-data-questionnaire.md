@@ -85,3 +85,12 @@ PASS для Chromium viewport/keyboard, zoom 200% и физические уст
 
 Текущий шаг: разрешение владельца на push/PR/merge/deploy получено 08.11.2026;
 кандидат готовится к commit/PR и обязательным CI. Merge/deploy/стенд ещё не выполнялись.
+
+## Актуализация выпуска из AC18-ADM-1C · 09.11.2026
+
+Исторический статус выше сохранён. Фактический итог 1A: PR194 слит в `main`,
+релиз 2.0.83 соответствует `0c59577d68b3b36de9df4a2134ccb22acca034e4`;
+candidate CI и deploy были успешны, публичные frontend assets и version endpoint
+сверены. Это не закрывает отдельную визуальную приёмку: закрытый actual-PG browser
+маршрут 1A, zoom 200%, физические устройства и human acceptance остаются `NOT_RUN`/
+`PENDING` в своей области и не объявляются PASS по факту merge/deploy.

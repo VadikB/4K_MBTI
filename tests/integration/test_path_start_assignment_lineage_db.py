@@ -28,7 +28,7 @@ def lineage_db(test_database_url):
         c.execute(psycopg.sql.SQL('CREATE SCHEMA {}').format(psycopg.sql.Identifier(schema)))
         c.execute(psycopg.sql.SQL('SET LOCAL search_path TO {}').format(psycopg.sql.Identifier(schema)))
         tables = {
-            'organization_assessment_assignments': 'id bigint,organization_id bigint,recipient_user_id bigint,assignment_ref text,status text,revoked_at timestamp',
+            'organization_assessment_assignments': 'id bigint,organization_id bigint,recipient_user_id bigint,assignment_ref text,status text,created_at timestamp,revoked_at timestamp',
             'organization_assessment_source_bindings': 'id bigint,assignment_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint,questionnaire_revision_id bigint',
             'questionnaire_response_revisions': 'id bigint,organization_context_version_id bigint',
             'assessment_personalized_profiles': 'id bigint,user_id bigint,organization_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint,organization_context_version_id bigint,status text,frozen_at timestamp',
@@ -49,7 +49,10 @@ def lineage_db(test_database_url):
         }
         for name, columns in tables.items():
             c.execute('CREATE TABLE ' + name + '(' + columns + ')')
-        c.execute("INSERT INTO organization_assessment_assignments VALUES(41,10,1,'A','active',NULL),(42,10,1,'B','active',NULL)")
+        c.execute("""INSERT INTO organization_assessment_assignments
+            (id,organization_id,recipient_user_id,assignment_ref,status,created_at,revoked_at)
+            VALUES(41,10,1,'A','active',NOW()-INTERVAL '2 hours',NULL),
+                  (42,10,1,'B','active',NOW()-INTERVAL '1 hour',NULL)""")
         c.execute('INSERT INTO organization_assessment_source_bindings VALUES(1,41,11,2,21),(2,42,11,2,22)')
         c.execute('INSERT INTO questionnaire_response_revisions VALUES(21,31),(22,32)')
         c.execute("INSERT INTO assessment_personalized_profiles VALUES(101,1,10,11,2,31,'ready',NOW()-INTERVAL '2 hours'),(102,1,10,11,2,32,'ready',NOW()-INTERVAL '1 hour'),(999,1,99,11,2,99,'ready',NOW())")

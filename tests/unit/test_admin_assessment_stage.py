@@ -1,4 +1,5 @@
-from Api.routes import _project_admin_assessment_stage, _project_member_scope_compatibility
+from Api.routes import (_project_admin_assessment_stage, _project_member_scope_compatibility,
+                        _remember_newest_assessment_stage)
 
 
 def row(**changes):
@@ -107,6 +108,14 @@ def test_processing_failed_and_report_ready_keep_precedence():
     assert _project_admin_assessment_stage(row(cycle_status="calculation_pending"))["code"] == "processing"
     assert _project_admin_assessment_stage(row(cycle_status="calculated", pipeline_status="failed"))["code"] == "failed"
     assert _project_admin_assessment_stage(row(cycle_status="failed", report_ready=True))["code"] == "report_ready"
+
+
+def test_newest_generation_is_not_replaced_by_older_revoked_assignment():
+    stages = {}
+    member_key = (7, 11)
+    _remember_newest_assessment_stage(stages, member_key, "program-a", {"code": "report_ready"})
+    _remember_newest_assessment_stage(stages, member_key, "program-a", {"code": "cancelled"})
+    assert stages[member_key]["program-a"]["code"] == "report_ready"
 
 
 def test_report_action_requires_exact_authorized_report():
