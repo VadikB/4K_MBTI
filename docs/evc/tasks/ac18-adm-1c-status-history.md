@@ -146,5 +146,15 @@ Human visual acceptance владельца на `fc4b903c` — PASS. Полны�
   ошибок после профильного PASS; оставшиеся сценарии — NOT_RUN локально. Обязательный
   полный CI integration/browser ожидается на Ready PR для точного head.
 - Реальные письма и LLM — NOT_RUN по границам задачи. `gh` CLI не авторизован;
-  Git push dry-run через настроенный HTTPS credential — PASS. PR создаётся через
+  Git push dry-run через настроенный HTTPS credential — PASS. Ready PR создан через
   авторизованный браузер после фиксации кандидата.
+
+## Передача в review
+
+- Ready PR: https://github.com/VadikB/4K_MBTI/pull/197 (`main` ←
+  `codex/ac18-adm-1c-status-history`). Релизный commit —
+  `3d4604fe4ad733ab09fbdf8cac28513c32250ea4`, версия `2.0.85`.
+- Обязательные CI jobs для актуального head: `frontend`, `pytest`,
+  `full-verification` — проверяются после этого документального commit.
+- Merge/deploy, deploy readback и новое human review — отдельные этапы;
+  baseline не присвоен. Откат — revert собственного PR после review.
