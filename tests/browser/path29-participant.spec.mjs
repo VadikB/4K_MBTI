@@ -175,7 +175,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         contentType: 'application/json', body: JSON.stringify({ detail: 'Synthetic readback temporarily unavailable' }) }));
       await admin.reload();
       await expect(card).toBeVisible();
-      await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
       await expect(card.locator('.admin-questionnaire-load-state.error').first()).toBeAttached();
       const readiness = card.locator('.admin-assignment-readiness');
       save('ps02-read-error', { organization_id: state.path29.organization_id,
@@ -188,10 +188,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await admin.unroute(questionnaireUrl);
       await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
       await card.getByRole('button', { name: 'Повторить', exact: true }).filter({ visible: true }).click();
-      await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
       await expect(readiness).toContainText('Можно назначать');
     }
-    await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     const add = card.locator('[data-action="add-member"]');
     const fullName = 'Синтетический Участник С Очень Длинным Именем Для Проверки Переноса Строк';
     const position = 'Синтетический специалист по согласованию неоднозначных задач нескольких подразделений';
@@ -208,7 +208,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     ]);
     await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(card.locator('[data-assignment-sources]')).toHaveCount(0);
-    await expect(card.locator('[data-operation-status]').first()).toContainText('Назначена: 1. Уже была назначена: 0. Не назначена: 0.');
+    await expect(card.locator('[data-operation-status]').first()).toContainText(`${fullName}: оценка назначена.`);
     await checkbox.check();
     await card.getByRole('button', { name: 'Отправить приглашения', exact: true }).click();
     await expect.poll(async () => (await (await admin.request.get(base + '/__pytest__/mailbox', {

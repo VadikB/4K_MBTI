@@ -49,7 +49,8 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     const card = page.locator('.admin-organization-card');
     const organizationId = await card.getAttribute('data-organization-id');
     await expect(card.locator('.admin-assignment-readiness')).toContainText('ADM28 synthetic Specialist pilot');
-    await expect(card.locator('.admin-assignment-readiness')).toContainText('ADM28 isolated');
+    await expect(card.locator('.admin-assignment-readiness')).toContainText('Специалист / эксперт');
+    await expect(card.locator('.admin-assignment-readiness')).not.toContainText('ADM28 isolated');
     await expect(card.locator('.admin-assignment-readiness')).toContainText('не подтверждена');
     await expect(card.locator('[data-bulk-actions]')).toBeHidden();
     await card.locator('input[name="invitation_email"]').first().check();
@@ -77,7 +78,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await toggle.check();
     await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
     await preview.locator('[name="questionnaire_recipient_user"]').check();
-    await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     await expect(toggle).toBeChecked();
     await expect(preview.locator('[name="questionnaire_recipient_user"]')).toBeEnabled();
@@ -99,13 +100,14 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     await page.reload();
     await expect(form.locator('[name="source_author"]')).toHaveValue(values.source_author);
     await expect(form.locator('[name="purpose"]')).toHaveValue(values.purpose);
-    await card.getByRole('button', { name: 'Организация и участники', exact: true }).click();
+    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await card.locator('input[name="invitation_email"]').evaluateAll((fields) => fields.forEach((field) => {
       field.checked = true;
       field.dispatchEvent(new Event('change', { bubbles: true }));
     }));
     await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
-    await expect(card.locator('[data-operation-status]')).toContainText('Назначена: 2');
+    await expect(card.locator('[data-operation-status]')).toContainText('Синтетический admin: оценка назначена');
+    await expect(card.locator('[data-operation-status]')).toContainText('Синтетический member: оценка назначена');
     await expect(card.locator('.admin-organization-member')).toHaveCount(2);
     await expect(card.locator('.admin-organization-member').first().locator('.admin-organization-current-stage')).toHaveText('Оценка назначена');
     const revisions = await (await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
