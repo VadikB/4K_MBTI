@@ -77,3 +77,15 @@ replay assertion: на base46a5532 identical replay меняет pipeline revisi
 Эта красная регрессия передана01, не замаскирована как local PASS. Общий C9
 вынесен в отдельный compose checkout01+03; exact SHA/evidence во внешнем HANDOFF.
 Полный CI/TEST/human visual acceptance не выполнялись и не заменены local PASS.
+
+### Согласованное владение ordinary replay
+
+CONTRACT_03.md владельца01 (2ffd976,09.11.2026) адресно передал в03
+`m5_scenario_runtime.submit_turn_detached` и `routes.submit_owned_m5_turn`.
+Добавлен только lookup уже applied receipt до допуска новой записи: owner первым,
+исходный scoped request+checksum(turn/content), точный result_json, никакого provider
+или effect. Pending/failed/rejected_late не получают write bypass. Новый reader
+не берёт operation FOR UPDATE после Cycle/AS; существующий порядок блокировок
+write path не расширяется. Actual PG:6 границ + held-provider retry PASS7;
+неизменны Turn/events/rule decisions/AI attempts/C54/operations/handoff counts.
+До этой квитанции общие symbols не менялись. M7/return/time semantics01 не правились.

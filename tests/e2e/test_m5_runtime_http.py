@@ -47,6 +47,7 @@ def client(monkeypatch):
         yield connection
 
     monkeypatch.setattr(routes, "get_connection", get_connection)
+    monkeypatch.setattr(routes.m5_scenario_runtime, 'read_applied_turn_receipt', lambda *_args, **_kwargs: None)
     # This suite isolates queue projection/ownership. Canonical assignment gates
     # are exercised with actual PostgreSQL and questionnaire API in PATH29.
     monkeypatch.setattr(routes.acquaintance, 'preparation_scope', lambda *args, **kwargs: None)

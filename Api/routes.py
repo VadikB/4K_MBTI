@@ -7279,6 +7279,13 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
     user = _m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
+            receipt = m5_scenario_runtime.read_applied_turn_receipt(
+                connection, assessment_situation_id=str(assessment_situation_id),
+                request_id=payload.request_id, turn_id=str(payload.turn_id), content=payload.content,
+            )
+            if receipt is not None:
+                connection.commit()
+                return receipt
             _m7_require_explicit_return(connection, owner_user_id=int(user.id),
                                         assessment_situation_id=str(assessment_situation_id))
             semantic_adapter=character_adapter=None

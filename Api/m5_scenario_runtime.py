@@ -562,6 +562,32 @@ def _fail_detached_turn(connection_factory, *, as_db_id: int, request_id: str,
         connection.commit()
 
 
+def read_applied_turn_receipt(connection, *, assessment_situation_id: str,
+                              request_id: str, turn_id: str, content: str) -> dict | None:
+    """Read an already applied exact operation without admitting a new write."""
+    row = _as_row(connection, assessment_situation_id, lock=True)
+    return _applied_turn_receipt(connection, row=row, request_id=request_id, turn_id=turn_id, content=content)
+
+
+def _applied_turn_receipt(connection, *, row: dict, request_id: str, turn_id: str, content: str) -> dict | None:
+    # Do not take an operation lock after Cycle/AS: detached finalization owns
+    # operation before Cycle. The immutable applied receipt needs only a read.
+    operation = connection.execute(
+        "SELECT turn_id,request_checksum,status,result_json FROM m5_turn_operations "
+        "WHERE assessment_situation_db_id=%s AND request_id=%s",
+        (row["id"], request_id),
+    ).fetchone()
+    if operation is None:
+        return None
+    request_checksum = checksum({"turn_id": turn_id, "content": content})
+    if (str(operation["turn_id"]) != turn_id
+            or operation["request_checksum"] != request_checksum):
+        raise ValueError("M5_IDEMPOTENCY_PAYLOAD_MISMATCH")
+    if operation["status"] != "applied":
+        return None
+    return {**dict(operation["result_json"]), "idempotent": True}
+
+
 def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_id: str, content: str,
                          semantic_adapter: SemanticDecisionAdapter | None = None,
                          character_adapter: CharacterResponseAdapter | None = None,
@@ -574,6 +600,11 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
     operation_ref = f"m5-turn:{assessment_situation_id}:{request_id}:{attempt_token}"
     with connection_factory() as connection:
         row = _as_row(connection, assessment_situation_id, lock=True)
+        receipt = _applied_turn_receipt(
+            connection, row=row, request_id=request_id, turn_id=turn_id, content=content,
+        )
+        if receipt is not None:
+            return receipt
         m5_cycle_runtime.assert_collecting(
             connection, cycle_db_id=int(row["cycle_db_id"]), session_db_id=int(row["session_db_id"]),
         )
