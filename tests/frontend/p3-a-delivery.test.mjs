@@ -35,6 +35,34 @@ const pendingKeys = (h) => [...h.storage.keys()].filter((key) => key.startsWith(
 const pendingRow = (h) => h.messages.children.find((row) => row.dataset.pendingTurnId);
 const deliveryText = (row) => row?.querySelector('.interview-message-delivery-status')?.textContent;
 
+test('P3-A HTML and synchronous Cycle entry keep input/actions disabled until confirmed runtime', async () => {
+  const html = fs.readFileSync(new URL('../../web/index.html', import.meta.url), 'utf8');
+  for (const id of ['interview-textarea', 'interview-submit-button', 'interview-finish-button']) {
+    const tag = html.match(new RegExp('<(?:textarea|button)\\b[^>]*\\bid="' + id + '"[^>]*>'))?.[0];
+    assert.ok(tag, `entry control ${id} exists`);
+    assert.match(tag, /\bdisabled(?:\s|=|>)/, `${id} is unavailable before JS/runtime`);
+  }
+  for (const paused of [false, true]) {
+    const h = createInterviewHarness(); h.state.productAssessmentSituationId = 'as-a';
+    const raw = '  Существующий черновик\nс новой строкой  '; draft(h, raw);
+    h.controls.textarea.disabled = false; h.controls.submit.disabled = false; h.controls.finish.disabled = false;
+    const held = deferred();
+    h.context.loadProductRuntime = () => held.promise.then((runtime) => h.subject.renderProductRuntime(runtime));
+    h.subject.openInterview();
+    assert.equal(h.controls.textarea.disabled, true);
+    assert.equal(h.controls.submit.disabled, true);
+    assert.equal(h.controls.finish.disabled, true);
+    assert.equal(h.textarea.value, raw);
+    assert.equal(h.storage.get('agent4k.assessmentDraft:cycle-a:as-a'), raw);
+    const runtime = h.snapshot(); if (paused) runtime.status.collection_status = 'paused';
+    held.resolve(runtime); await tick();
+    assert.equal(h.controls.textarea.disabled, paused);
+    assert.equal(h.controls.submit.disabled, paused);
+    assert.equal(h.controls.finish.disabled, paused);
+    assert.equal(h.textarea.value, raw);
+  }
+});
+
 test('P3-A late preflight cannot post or mutate a different Cycle/AS/screen/owner/epoch', async () => {
   for (const change of [
     (h) => { h.subject.renderProductRuntime(h.snapshot(0, 'as-b', 'cycle-b')); },

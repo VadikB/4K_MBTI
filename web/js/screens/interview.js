@@ -1595,6 +1595,10 @@ export const openInterview = () => {
   interviewCompleteActions.classList.add('hidden');
   interviewPanel.classList.remove('hidden');
   if (isCycleAssessment()) {
+    // The visible entry screen has no confirmed actionability until runtime is presented.
+    interviewTextarea.disabled = true;
+    interviewSubmitButton.disabled = true;
+    interviewFinishButton.disabled = true;
     void loadProductRuntime().catch((error) => showError(interviewError, error.message));
     resumeProductRuntimePolling();
   }

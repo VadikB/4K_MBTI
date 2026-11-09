@@ -93,6 +93,8 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     interviewFinishButton: new Element(), interviewPauseButton: new Element(),
     interviewAdditionalButton: new Element(), interviewCaseStatus: new Element(),
     persistAssessmentContext() {},
+    setCurrentScreen(screen) { state.currentScreen = screen; },
+    syncUrlState() {}, hideAllPanels() {}, loadProductRuntime: async () => {},
     interviewError: new Element(),
     showError(_element, message) { errors.push(message); },
     createOperationId, crypto: { randomUUID: createOperationId },
@@ -116,6 +118,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     let interviewScrollAlignmentTimers = [];
     ${section('const interviewDraftKey =', '\nconst payloadText =').replaceAll('export const ', 'const ')}
     ${section('const submitAssessmentMessage =', '\nexport const resumeProductRuntimePolling =')}
+    ${section('export const openInterview =', '\nconst startAssessmentInterview =').replace('export const ', 'const ')}
     ${section('const payloadText =', '\nconst renderProductRuntime =')}
     ${section('const renderProductRuntime =', '\nconst heartbeatProductPresence =')}
     ${section('const renderInterviewStructuredBlock =', '\nexport const addInterviewMessage =')}
@@ -125,7 +128,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     globalThis.subject = {renderProductRuntime, addInterviewMessage, setInterviewMessageDeliveryState,
       scheduleInterviewScrollAlignment, scheduleInterviewBottomAlignment, cancelInterviewScrollAlignment,
       productEventText, initInterview, sendProductInterviewAnswer, readProductInterviewAnswer, isCycleAssessment,
-      clearInterviewDraft, prepareProductInterviewAnswer, submitAssessmentMessage};
+      clearInterviewDraft, prepareProductInterviewAnswer, submitAssessmentMessage, openInterview};
   `, context);
   const flush = () => {
     while (callbacks.size) {

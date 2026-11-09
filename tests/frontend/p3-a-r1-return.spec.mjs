@@ -68,11 +68,51 @@ test.afterEach(async ({ page }) => {
   }, null, 2) + '\n');
 });
 
+test('P3-AC01/03 initial runtime withheld over real HTTP keeps input disabled until the AS is presented', async ({ page }) => {
+  const target = state.p3_a_previews.long;
+  const pathname = `/users/assessment/cycles/${target.cycle_id}/runtime`;
+  let intercepted = false, release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await page.route('**' + pathname, async (route) => {
+    if (!intercepted && route.request().method() === 'GET') {
+      intercepted = true; await gate;
+    }
+    return route.continue();
+  });
+  try {
+    await page.goto(`${base}/p3-a/open/long`);
+    await expect.poll(() => intercepted).toBe(true);
+    const input = page.locator('#interview-textarea'), submit = page.locator('#interview-submit-button');
+    await expect(input).toBeDisabled(); await expect(submit).toBeDisabled();
+    await expect(page.locator('#interview-finish-button')).toBeDisabled();
+    await expect(page.locator('.interview-message--situation')).toHaveCount(0);
+    await page.screenshot({ path: path.join(evidence, 'startup-runtime-held.png'), fullPage: false });
+    release();
+    await expect(page.locator('.interview-message--situation')).toHaveCount(1);
+    await expect(input).toBeEnabled(); await expect(submit).toBeEnabled();
+    const answer = 'Синтетический ответ сразу после подтверждения готовности runtime.';
+    await input.fill(answer);
+    const sent = page.waitForResponse((response) => /\/m5\/situations\/[^/]+\/turns$/.test(new URL(response.url()).pathname)
+      && response.request().method() === 'POST', { timeout: 15000 });
+    await submit.click(); expect((await sent).ok()).toBe(true);
+    await expect(page.locator('.interview-message.own').filter({ hasText: answer })).toHaveCount(1);
+    const model = await (await page.request.get(`${base}${pathname}`)).json();
+    expect(model.trace.turns.filter((turn) => turn.content_text === answer)).toHaveLength(1);
+    fs.writeFileSync(path.join(evidence, 'startup-runtime-readiness.json'), JSON.stringify({
+      transport: 'initial runtime GET held then continued; no response body mock',
+      input_disabled_until_runtime: true, send_disabled_until_runtime: true,
+      finish_disabled_until_runtime: true, presented_situations: 1,
+      immediate_post_after_readiness: 200, saved_turns: 1,
+    }, null, 2) + '\n');
+  } finally { release(); await page.unroute('**' + pathname); }
+});
+
 test('P3-AC10 R1 v2 initial snapshot: explicit Continue keeps AS, saved Turn and unsent draft without replacement', async ({ page }, info) => {
   info.annotations.push({ type: 'scope', description:
     'New owned assessment-scope synthetic fixture; published R1v2 initially snapshotted. Expired presence lease is synthetic upstream input; NOT physical absence, pilot admission or AC18 PATH. Real auth/runtime/return-continue/PG.' });
   const target = state.p3_a_previews.long;
   await page.goto(`${base}/p3-a/open/long`);
+  await expect(page.locator('.interview-message--situation')).toHaveCount(1);
   const input = page.locator('#interview-textarea'); await expect(input).toBeEnabled();
   const answer = 'Синтетический сохранённый ответ перед возвратом R1.';
   await input.fill(answer);
