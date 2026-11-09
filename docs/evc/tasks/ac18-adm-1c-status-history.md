@@ -29,10 +29,13 @@
   C-AC04 — read-only обработка; C-AC10 — современная Cycle/Report-проекция без legacy/fake zero.
 - Завершено review diff: недостижимые legacy-агрегаторы `user_sessions` удалены из активного
   модуля; воспроизводимый визуальный маршрут покрыт адресными browser-тестами.
-- Human visual acceptance владельца пройдена на кандидате `fc4b903c`; следующий шаг —
-  согласованный PATCH candidate, push/PR и CI.
+- Human visual acceptance владельца пройдена на кандидате `fc4b903c`; владелец
+  разрешил PATCH `2.0.85`, полный preflight, push и PR 09.11.2026. Текущий шаг —
+  релизный кандидат и обязательный CI; merge/deploy требуют отдельного решения.
 - Ветка: `codex/ac18-adm-1c-status-history`; base/head до изменений: `65a62aca…`.
-- `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`, `version_bump=false`,
+- Для этапа до визуальной приёмки действовали `branch_push=false`, `pr=false`,
+  `version_bump=false`. После прямого ответа владельца: `branch_push=true`, `pr=true`,
+  `version_bump=true` для PATCH `2.0.85`; `merge=false`, `deploy=false`,
   `artifact_publish=false`.
 
 ## Проверка и откат
@@ -118,4 +121,30 @@ Human visual acceptance владельца на `fc4b903c` — PASS. Полны�
   требование одобренного кандидата `2.0.84 → 2.0.85` и завершился с gate-кодом 2 до любых
   изменений версии, сборки и публикации.
 - Version bump, push, PR, CI и deploy не выполнялись; для следующего внешнего этапа требуется
-  отдельное разрешение владельца.
+  отдельное разрешение владельца. Это исторический результат preflight до ответа владельца.
+
+## Подготовка PATCH 2.0.85 и локальный review · 09.11.2026
+
+- Прямое разрешение владельца: PATCH `2.0.85`, полный preflight, push и PR в существующей
+  ветке; merge/deploy и публикация предметных артефактов не разрешены.
+- Fresh `origin/main@61f94edfb7db5c382b8d327aca232d3ea79b7c20` совпал с merge-base.
+  `scripts/prepare_release.py patch --candidate 2.0.85 --dry-run` — PASS: четыре
+  version-файла. `npm run ready:prepare -- --candidate 2.0.85` — PASS: версия,
+  `web/dist` и release gate. `scripts/check_release_version.py --base-ref origin/main`,
+  `git diff --check` — PASS.
+- `npm run lint:js` — PASS; `node --test tests/frontend/*.test.mjs` — PASS 155/155;
+  backend unit — PASS 977/977; HTTP/e2e — PASS 110/110; Playwright ADM-1C — PASS 6/6.
+- PostgreSQL 16 `product4k_pytest_release` на отдельном localhost: `TEST_DATABASE_URL`
+  содержит `pytest`, `STAND_ADMIN_URL` указывает на maintenance DB этого же контейнера;
+  рабочая БД и `.env` не использовались. ADM-1C SQL — PASS 2/2.
+- Полный первый integration-прогон выявил устаревшее ожидание «Среднее время
+  прохождения» в `scripts/test_stand_smoke.py`; 58 PASS, 1 FAIL, далее остановлен
+  для исправления. Smoke теперь проверяет современную Cycle/Report-сводку; повтор
+  actual HTTP/PG на двух пустых owned-стендах — PASS 1/1. Первый sandbox-вызов
+  к localhost завершался `Operation not permitted`; разрешённый повтор к той же
+  owned-БД прошёл. Полный локальный повтор — 67 PASS, затем остановлен без новых
+  ошибок после профильного PASS; оставшиеся сценарии — NOT_RUN локально. Обязательный
+  полный CI integration/browser ожидается на Ready PR для точного head.
+- Реальные письма и LLM — NOT_RUN по границам задачи. `gh` CLI не авторизован;
+  Git push dry-run через настроенный HTTPS credential — PASS. PR создаётся через
+  авторизованный браузер после фиксации кандидата.
