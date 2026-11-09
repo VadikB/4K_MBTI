@@ -279,9 +279,9 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
 }
 
 async function adm28Preview(page) {
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), {
-    ...adminOrganization, admins: [{ user_id: 18, email: adminUser.email, full_name: 'Admin' }],
-  });
+  const organization = { ...withConnectedAssessment('ADM28 synthetic'),
+    admins: [{ user_id: 18, email: adminUser.email, full_name: 'Admin' }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const card = page.locator('[data-organization-id="3"]');
   await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
   const form = card.locator('form[data-action="preview-early-data"]');
@@ -293,12 +293,13 @@ async function adm28Preview(page) {
       validation_json: {}, participant_preview: { purpose: payload.answers.C02a.participant_text },
       recipient_options: ['participant', 'organization_admin'] });
   });
-  await form.locator('[name="assignment_ref"]').fill('ADM28 synthetic');
+  await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+  await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 synthetic');
   await form.locator('[name="source_author"]').fill('Synthetic owner');
   await form.locator('[name="purpose"]').fill('Synthetic purpose');
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
-  return { card, form, preview: card.locator('.admin-questionnaire-preview'),
+  return { card, form, organization, preview: card.locator('.admin-questionnaire-preview'),
     saved: { id: 201, assignment_ref: 'ADM28 synthetic', status: 'confirmed', channel: 'product_form',
       answers_json: { C02a: { participant_text: 'Synthetic purpose' } },
       recipient_mapping: ['participant'], recipient_user_ids: [] } };
@@ -384,15 +385,14 @@ test('ADM28 old confirmation cannot delete a newly created preview or newer inpu
 });
 
 test('ADM28 late confirmation cannot replace another selected assessment', async ({ page }) => {
-  const { card, preview, form, saved } = await adm28Preview(page);
+  const { card, preview, form, saved, organization } = await adm28Preview(page);
   let release;
   const delayed = new Promise((resolve) => { release = resolve; });
   await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', async (route) => {
     await delayed; return fulfillJson(route, saved);
   });
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
-  await form.locator('[name="assignment_ref"]').fill('Another assessment');
-  await form.locator('[name="assignment_ref"]').press('Tab');
+  await observeConnectedAssessment(page, organization, 'Another assessment');
   await form.locator('[name="purpose"]').fill('Another purpose');
   release();
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue('Another assessment');
@@ -411,6 +411,9 @@ test('ADM28 late confirmation after account change cannot populate the new accou
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   const nextUser = { ...adminUser, id: 28, email: 'next@example.test', full_name: 'Account B' };
+  await page.route('**/users/admin/organizations', (route) => fulfillJson(route, {
+    is_superadmin: false, items: [adminOrganization],
+  }));
   await page.route('**/users/auth/email/request-link', (route) => fulfillJson(route, { email: nextUser.email, auth_mode: 'password' }));
   await page.route('**/users/auth/email/password-login', (route) => fulfillJson(route, {
     exists: true, user: nextUser, is_admin: true, admin_dashboard: { is_superadmin: false },
@@ -426,6 +429,7 @@ test('ADM28 late confirmation after account change cannot populate the new accou
   await page.locator('[data-organization-id="3"]').getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(page.locator('.admin-questionnaire-preview')).toHaveCount(0);
   await expect(page.locator('[data-action="preview-early-data"] [name="assignment_ref"]')).not.toHaveValue('ADM28 synthetic');
+  await expect(page.locator('[data-action="preview-early-data"] [name="assignment_ref"]')).toHaveValue('competencies_4k');
 });
 
 test('ADM28 session restoration hides credentials and loads each admin resource once', async ({ page }) => {
@@ -940,13 +944,44 @@ test('PROGRAM01 R10 does not render the old connection result after logout', asy
   await expect(page.locator('#auth-panel')).toBeVisible();
   await expect(page.locator('#admin-organizations-panel')).toBeHidden();
 });
+const syntheticAdminProgram = (assignmentRef, id = 7) => ({
+  organization_id: 3, program_definition_id: id, program_name: `Синтетическая программа ${id}`,
+  program_version: 'synthetic-1', assignment_ref: assignmentRef,
+  roles: [{ version_id: 92, code: 'synthetic', name: 'Синтетическая роль' }],
+  role_capabilities: [{ version_id: 92, code: 'synthetic', name: 'Синтетическая роль', is_available: true }],
+});
 const adminOrganization = {
+  assessment_program: syntheticAdminProgram('competencies_4k'),
   id: 3, code: 'r03', name: 'R03 Organization', is_active: true, domains: [], admins: [],
   members_count: 1, reports_count: 0,
   members: [{ user_id: 8, email: 'person@example.test', full_name: 'Person', has_password: false,
     registration_status: 'pending', invitation_id: 1, invitation_status: 'queued',
     invitation_delivery_status: 'queued', invitation_link_status: 'active' }],
 };
+
+const withConnectedAssessment = (assessmentRef, id = 7) => ({
+  ...adminOrganization, assessment_program: syntheticAdminProgram(assessmentRef, id),
+});
+
+// Test setup models an externally authorized server program change. The same
+// organization-admin role observes it through the existing profile response;
+// the UI never receives an editable key or new programme-connection rights.
+async function observeConnectedAssessment(page, organization, assessmentRef, id = 8) {
+  organization.assessment_program = syntheticAdminProgram(assessmentRef, id);
+  const card = page.locator('[data-organization-id="3"]');
+  const currentView = await card.locator('[data-admin-view]:not(.hidden)').getAttribute('data-admin-view');
+  if (currentView !== 'organization-data') {
+    await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+  }
+  await card.locator('form[data-action="update-profile"]')
+    .getByRole('button', { name: 'Сохранить карточку', exact: true }).click();
+  const hiddenRef = card.locator('[data-action="preview-early-data"] [name="assignment_ref"]');
+  await expect(hiddenRef).toHaveAttribute('type', 'hidden');
+  await expect(hiddenRef).toHaveValue(assessmentRef);
+  if (currentView !== 'organization-data') {
+    await card.locator(`button[data-action="show-admin-view"][data-view="${currentView}"]`).click();
+  }
+}
 
 async function openAdminOrganizations(page, invitationHandler, organization = adminOrganization, questionnaireResponse = null, isSuperadmin = false) {
   await page.route('**/users/**', (route) => {
@@ -960,6 +995,9 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
       admin_dashboard: { metrics: [], insights: [], activity_series: [], competency_average: [] },
     });
     if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
+      return fulfillJson(route, { is_superadmin: isSuperadmin, items: [organization] });
+    }
+    if (pathname === '/users/admin/organizations/3' && route.request().method() === 'PATCH') {
       return fulfillJson(route, { is_superadmin: isSuperadmin, items: [organization] });
     }
     if (pathname === '/users/admin/organizations/3/questionnaire') {
@@ -1697,7 +1735,8 @@ test('UX-FIX20-04 keeps readiness separated when org-admin switches assessment',
     roles: { status: 'not_started', message: 'Участники ещё не добавлены.', ready: 0, total: 0 },
     preparation: { status: 'idle', message: 'Активной подготовки сейчас нет.' },
   });
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, {
+  const organization = withConnectedAssessment('assessment-a');
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization, {
     body: { items: [
       { id: 21, assignment_ref: 'assessment-a', status: 'confirmed', channel: 'product_form',
         validation_json: {}, answers_json: {}, readiness: readiness('ready', 'Контекст A подтверждён.') },
@@ -1710,8 +1749,9 @@ test('UX-FIX20-04 keeps readiness separated when org-admin switches assessment',
   const assignment = card.locator('[data-admin-view="questionnaire"] [name="assignment_ref"]');
   const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
   await expect(panel).toContainText('Контекст A подтверждён.');
-  await assignment.fill('assessment-b');
-  await assignment.blur();
+  await expect(assignment).toHaveAttribute('type', 'hidden');
+  await observeConnectedAssessment(page, organization, 'assessment-b');
+  await expect(assignment).toHaveValue('assessment-b');
   await expect(panel).toContainText('Черновик B не подтверждён.');
   await expect(panel).not.toContainText('Контекст A подтверждён.');
 });
@@ -1727,7 +1767,9 @@ test('UX-ADM28-02 reports questionnaire load failure separately and offers retry
   await expect(error).not.toContainText('temporary failure');
   await expect(error.getByRole('button', { name: 'Повторить' })).toBeVisible();
   await expect(card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel'))
-    .toContainText('Выберите программу и роль в оценке');
+    .toContainText('Готовность выбранной оценки ещё не рассчитана');
+  await expect(card.locator('[data-action="preview-questionnaire"] [name="assignment_ref"]'))
+    .toHaveValue('competencies_4k');
 });
 
 test('AC18-ADM-1A accepted composition stays usable across target widths and keyboard', async ({ page }, testInfo) => {
@@ -1770,7 +1812,8 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
       context: { status: 'ready', message: 'Готово' }, roles: { status: 'ready', message: 'Готово' },
       preparation: { status: 'idle', message: 'Нет подготовки' } },
   });
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, {
+  const organization = withConnectedAssessment('A');
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization, {
     body: { items: [revision(31, 'A', 'Published A'), revision(32, 'B', 'Published B')] },
   });
 
@@ -1780,9 +1823,9 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published A');
   await expect(form.locator('[name="source_author"]')).toHaveValue('Автор A');
   const assignment = form.locator('[name="assignment_ref"]');
-  await assignment.focus();
-  await assignment.fill('B');
-  await assignment.press('Tab');
+  await expect(assignment).toHaveAttribute('type', 'hidden');
+  await observeConnectedAssessment(page, organization, 'B');
+  await expect(assignment).toHaveValue('B');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published B');
   await expect(form.locator('[name="organization_name"]')).toHaveValue('Организация B');
   await expect(form.locator('[name="source_author"]')).toHaveValue('Автор B');
@@ -1794,7 +1837,8 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
 });
 
 test('UX-FIX20-02 preserves named drafts across all management views', async ({ page }) => {
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const organization = withConnectedAssessment('Поток A');
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const card = page.locator('[data-organization-id="3"]');
   const memberForm = card.locator('[data-action="add-member"]');
   await memberForm.locator('[name="email"]').fill('draft.member@example.test');
@@ -1804,7 +1848,8 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
 
   await card.getByRole('button', { name: 'Данные организации' }).click();
   const earlyData = card.locator('[data-action="preview-early-data"]');
-  await earlyData.locator('[name="assignment_ref"]').fill('Поток A');
+  await expect(earlyData.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+  await expect(earlyData.locator('[name="assignment_ref"]')).toHaveValue('Поток A');
   await earlyData.locator('[name="purpose"]').fill('Несохранённая цель A');
 
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
@@ -1825,22 +1870,17 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор черновика');
 
   const assignment = questionnaire.locator('[name="assignment_ref"]');
-  await assignment.focus();
-  await assignment.fill('Поток B');
-  await assignment.press('Tab');
+  await expect(assignment).toHaveAttribute('type', 'hidden');
+  await observeConnectedAssessment(page, organization, 'Поток B');
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('');
   await questionnaire.locator('[name="source_author"]').fill('Автор B');
-  await questionnaire.locator('[name="assignment_ref"]').focus();
-  await questionnaire.locator('[name="assignment_ref"]').fill('Поток A');
-  await questionnaire.locator('[name="assignment_ref"]').press('Tab');
+  await observeConnectedAssessment(page, organization, 'Поток A', 7);
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор черновика');
-  await questionnaire.locator('[name="assignment_ref"]').focus();
-  await questionnaire.locator('[name="assignment_ref"]').fill('Поток B');
-  await questionnaire.locator('[name="assignment_ref"]').press('Tab');
+  await observeConnectedAssessment(page, organization, 'Поток B');
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор B');
@@ -1849,7 +1889,8 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
 test('UX-FIX20-02 clears account A drafts and ignores its late preview after account B login', async ({ page }) => {
   let releasePreview;
   const previewReleased = new Promise((resolve) => { releasePreview = resolve; });
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }),
+    withConnectedAssessment('Поток A'));
   await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
     await previewReleased;
     return fulfillJson(route, {
@@ -1868,7 +1909,7 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
     results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
     responsible_contact: 'a@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
-  for (const [name, value] of Object.entries(valuesA)) await formA.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(valuesA).filter(([name]) => name !== 'assignment_ref')) await formA.locator(`[name="${name}"]`).fill(value);
   await formA.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
 
   await page.evaluate(() => document.getElementById('admin-logout-button').click());
@@ -1900,7 +1941,8 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
   await cardB.getByRole('button', { name: 'Данные организации' }).click();
   const formB = cardB.locator('[data-action="preview-early-data"]');
   await expect(formB.locator('[name="purpose"]')).toHaveValue('');
-  await expect(formB.locator('[name="assignment_ref"]')).toHaveValue('');
+  await expect(formB.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+  await expect(formB.locator('[name="assignment_ref"]')).toHaveValue('competencies_4k');
 
   releasePreview();
   await page.waitForTimeout(100);
@@ -1911,7 +1953,8 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
 test('UX-FIX20-02 keeps newer input when an older preview response arrives', async ({ page }) => {
   let releasePreview;
   const previewReleased = new Promise((resolve) => { releasePreview = resolve; });
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }),
+    withConnectedAssessment('Поток late'));
   await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
     const submitted = route.request().postDataJSON();
     await previewReleased;
@@ -1930,8 +1973,8 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
     results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
     responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
-  await form.locator('[name="assignment_ref"]').fill(values.assignment_ref);
-  await form.locator('[name="assignment_ref"]').press('Tab');
+  await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+  await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
   for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) {
     await form.locator(`[name="${name}"]`).fill(value);
   }
@@ -2037,7 +2080,8 @@ test('ADM19-02 opens the own saved M8 report and returns to management', async (
 });
 
 test('ADM19-01 saves early organization data through the versioned product form contract', async ({ page }) => {
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }),
+    withConnectedAssessment('Поток октябрь 2026'));
   let submittedPayload;
   await page.route('**/users/admin/organizations/3/questionnaire/preview', async (route) => {
     submittedPayload = route.request().postDataJSON();
@@ -2059,7 +2103,9 @@ test('ADM19-01 saves early organization data through the versioned product form 
     organizer: 'HR-команда', responsible_contact: 'hr@example.test',
     case_reality_level: 'Реалистичные рабочие ситуации', organization_name_usage_rules: 'Можно использовать название',
   };
-  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+  await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
+  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) await form.locator(`[name="${name}"]`).fill(value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
 
   await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview'))
@@ -2078,7 +2124,7 @@ test('ADM19-01 saves early organization data through the versioned product form 
 
 test('UX-ADM28-01 changes recipients without invalidating content preview and applies confirmation immediately', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [{ status: 'queued' }] }), {
-    ...adminOrganization,
+    ...withConnectedAssessment('Поток B'),
     admins: [{ user_id: 18, email: 'admin@example.test', full_name: 'Admin' }],
   });
   let revisionId = 100;
@@ -2123,7 +2169,9 @@ test('UX-ADM28-01 changes recipients without invalidating content preview and ap
     results_usage: 'Для развития', result_recipients: 'Участник', organizer: 'HR',
     responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
-  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+  await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
+  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) await form.locator(`[name="${name}"]`).fill(value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   const preview = card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview');
   await expect(preview).toContainText('Что увидит участник');
@@ -2153,7 +2201,8 @@ test('UX-ADM28-01 changes recipients without invalidating content preview and ap
 test('F22-04 keeps a newer confirmed revision and input entered after confirm started', async ({ page }) => {
   let releaseConfirm;
   const confirmReleased = new Promise((resolve) => { releaseConfirm = resolve; });
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }),
+    withConnectedAssessment('Поток order'));
   await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
     const payload = route.request().postDataJSON();
     return fulfillJson(route, {
@@ -2189,7 +2238,9 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
     results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
     responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
-  for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+  await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
+  await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
+  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) await form.locator(`[name="${name}"]`).fill(value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
   await form.locator('[name="purpose"]').fill('Draft after confirm');
@@ -2309,14 +2360,18 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
   await openAdminOrganizations(
     page,
     (route) => fulfillJson(route, { items: [] }),
-    adminOrganization,
+    { ...adminOrganization, assessment_program: null },
     { body: { items: [{ id: 12, assignment_ref: 'other-assessment', status: 'draft' }] } },
   );
 
   const readiness = page.locator('.admin-assignment-readiness');
   await expect(readiness).toBeVisible();
   await expect(readiness).toContainText('Программа оценки не подключена');
-  await expect(readiness).toContainText('Анкета для выбранной оценки не подтверждена');
+  await expect(readiness).toContainText('Обратитесь к суперадминистратору');
+  await expect(readiness).not.toContainText('Анкета для выбранной оценки не подтверждена');
+  await expect(readiness).not.toContainText('Оценка не выбрана');
+  await expect(readiness.locator('dd').nth(1)).toHaveText('ещё не проверена для программы');
+  await expect(readiness.locator('dd').nth(2)).toHaveText('ещё не проверена для программы');
   await expect(page.locator('[data-bulk-actions]')).toBeHidden();
   await page.locator('input[name="invitation_email"]').check();
   await expect(page.locator('[data-bulk-actions]')).toBeVisible();

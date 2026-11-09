@@ -1,4 +1,5 @@
 export {
+  checkAdminOrganizationProgram,
   openAdminOrganizations,
   loadAdminOrganizations,
   refreshAdminOrganizationsSafely,
