@@ -1568,11 +1568,6 @@
             </button>
           </div>
         </div>
-        <div class="interview-progress-labels">
-          <span class="active">Оценка</span>
-          <span>Анализ</span>
-          <span>Результаты</span>
-        </div>
         <div class="interview-progress-line">
           <div id="interview-progress-fill" class="interview-progress-fill"></div>
         </div>
@@ -1599,11 +1594,11 @@
           </aside>
 
           <div class="interview-messages-shell">
-            <div id="interview-scroll-area" class="interview-scroll-area">
+            <div id="interview-scroll-area" class="interview-scroll-area" role="region" aria-label="История диалога и материалы ситуации" tabindex="0">
               <div id="interview-summary" class="interview-summary hidden"></div>
               <div id="interview-messages" class="interview-messages"></div>
             </div>
-            <button id="interview-messages-scroll" class="interview-messages-scroll" type="button" hidden aria-label="К последним сообщениям">
+            <button id="interview-messages-scroll" class="interview-messages-scroll" type="button" hidden aria-label="К последним сообщениям" aria-controls="interview-scroll-area">
               <img src="/web/assets/icons/arrow-down-icon.svg" alt="" aria-hidden="true">
             </button>
           </div>
@@ -1614,19 +1609,22 @@
           <form id="interview-form" class="interview-form">
             <textarea
               id="interview-textarea"
+              aria-label="Ваш ответ или вопрос собеседнику"
+              aria-describedby="interview-error"
               placeholder="Введите ответ или вопрос собеседнику..."
               autocomplete="off"
               autocorrect="off"
               autocapitalize="off"
               spellcheck="false"
               data-form-type="other"
+              disabled
             ></textarea>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
                 <button id="interview-pause-button" type="button" class="ghost-button interview-finish-button hidden">Пауза</button>
+                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Завершить основной диалог текущей ситуации" disabled>Завершить ситуацию</button>
                 <button id="interview-additional-button" type="button" class="ghost-button interview-finish-button hidden">Дополнительная сессия</button>
-                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Завершить основной диалог текущей ситуации">Завершить ситуацию</button>
-                <button id="interview-submit-button" type="button" class="primary-button"><span id="interview-submit-label">Отправить</span></button>
+                <button id="interview-submit-button" type="button" class="primary-button" disabled><span id="interview-submit-label">Отправить</span></button>
               </div>
             </div>
           </form>

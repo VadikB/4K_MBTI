@@ -2772,7 +2772,20 @@ if (prechatExitButton) {
 }
 
 let failedInterviewMessage = null;
-let interviewSendInFlight = false;
+let interviewSendInFlight = null;
+let interviewSendLabelGeneration = 0;
+
+const captureInterviewSendContext = () => ({
+  screen: state.currentScreen, cycleId: state.productCycleId,
+  situationId: state.productAssessmentSituationId, sessionCode: state.assessmentSessionCode,
+  ownerId: String(state.pendingUser?.id || ''), identityEpoch: state.identityEpoch,
+});
+
+const isInterviewSendContextCurrent = (context) => context.screen === 'interview'
+  && state.currentScreen === context.screen && !interviewPanel.classList.contains('hidden')
+  && state.productCycleId === context.cycleId && state.productAssessmentSituationId === context.situationId
+  && state.assessmentSessionCode === context.sessionCode
+  && String(state.pendingUser?.id || '') === context.ownerId && state.identityEpoch === context.identityEpoch;
 
 const setInterviewSubmitLabel = (label) => {
   if (interviewSubmitLabel) {
@@ -2818,8 +2831,14 @@ const resumeInterviewTimerAfterSendError = (interviewModule) => {
 };
 
 const sendInterviewAnswer = async (text, existingMessageRow = null) => {
+  const context = captureInterviewSendContext();
+  const draftValue = interviewTextarea.value;
   showError(interviewError, '');
   const interviewModule = await loadInterview();
+  if (!isInterviewSendContextCurrent(context)) return { stale: true };
+  if (interviewModule.isCycleAssessment()) {
+    return interviewModule.sendProductInterviewAnswer(text, { draftValue, scope: context });
+  }
   const messageRow = existingMessageRow || interviewModule.addInterviewMessage('user', text);
   interviewModule.setInterviewMessageDeliveryState(messageRow, 'pending');
   if (interviewTextarea.value.trim() === text) {
@@ -2840,6 +2859,7 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
       turnId: messageRow.dataset.turnId,
     };
     await interviewModule.submitAssessmentMessage(text, messageRow.productRequestIdentity);
+    if (!isInterviewSendContextCurrent(context)) return false;
     interviewModule.clearInterviewDraft();
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'sent');
     if (interviewModule.isCycleAssessment()) interviewModule.resumeProductRuntimePolling();
@@ -2849,6 +2869,7 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
     }
     return true;
   } catch (error) {
+    if (!isInterviewSendContextCurrent(context)) return false;
     const rawErrorMessage = String(error?.message || '');
     const errorMessage = /failed to fetch|networkerror|load failed/i.test(rawErrorMessage)
       ? 'Ответ не отправлен. Проверьте соединение и повторите попытку.'
@@ -2857,7 +2878,10 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
     logAssessmentClientEvent('request_failed', 'answer', error?.name || 'unknown');
     failedInterviewMessage = { row: messageRow, text };
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'failed', () => {
-      void sendInterviewAnswer(text, messageRow);
+      if (!isInterviewSendContextCurrent(context)
+          || (interviewSendInFlight && isInterviewSendContextCurrent(interviewSendInFlight.context))) return;
+      interviewTextarea.value = text;
+      void submitCurrentInterviewAnswer();
     });
     if (!interviewTextarea.value.trim()) {
       interviewTextarea.value = text;
@@ -2872,7 +2896,8 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
 };
 
 const submitCurrentInterviewAnswer = async () => {
-  if (interviewSendInFlight) {
+  if ((interviewSendInFlight && isInterviewSendContextCurrent(interviewSendInFlight.context))
+      || interviewSubmitButton.disabled || state.currentScreen !== 'interview') {
     return;
   }
   showError(interviewError, '');
@@ -2895,25 +2920,34 @@ const submitCurrentInterviewAnswer = async () => {
     failedInterviewMessage = null;
   }
   const reusableFailedRow = failedInterviewMessage?.text === text ? failedInterviewMessage.row : null;
-  interviewSendInFlight = true;
+  const context = captureInterviewSendContext();
+  const labelGeneration = ++interviewSendLabelGeneration;
+  const current = () => isInterviewSendContextCurrent(context) && labelGeneration === interviewSendLabelGeneration;
+  const inFlight = { context };
+  interviewSendInFlight = inFlight;
   setInterviewSubmitLabel('Отправляем...');
   logAssessmentClientEvent('submit_clicked');
   try {
-    const sent = await sendInterviewAnswer(text, reusableFailedRow);
-    setInterviewSubmitLabel(sent ? 'Ответ сохранён' : 'Повторить отправку');
+    const result = await sendInterviewAnswer(text, reusableFailedRow);
+    if (!current()) return;
+    const sent = typeof result === 'object' ? result.accepted : result;
+    setInterviewSubmitLabel(result?.pending ? 'Проверить сохранение' : sent ? 'Ответ сохранён' : 'Повторить отправку');
     if (sent) {
-      window.setTimeout(() => setInterviewSubmitLabel('Отправить'), 1200);
+      window.setTimeout(() => { if (current()) setInterviewSubmitLabel('Отправить'); }, 1200);
     }
   } catch (error) {
+    if (!current()) return;
     showError(interviewError, error?.message || 'Не удалось подготовить отправку ответа. Повторите попытку.');
     logAssessmentClientEvent('request_failed', 'answer', error?.name || 'prepare_failed');
     setInterviewSubmitLabel('Повторить отправку');
-    interviewTextarea.disabled = false;
-    interviewSubmitButton.disabled = false;
-    interviewFinishButton.disabled = false;
-    interviewTextarea.focus();
+    if (state.assessmentRuntimeKind !== 'cycle') {
+      interviewTextarea.disabled = false;
+      interviewSubmitButton.disabled = false;
+      interviewFinishButton.disabled = false;
+      interviewTextarea.focus();
+    }
   } finally {
-    interviewSendInFlight = false;
+    if (interviewSendInFlight === inFlight) interviewSendInFlight = null;
   }
 };
 

@@ -14,7 +14,7 @@ test('P03 confirms server presence independently of typing and requires explicit
   assert.match(interview, /presenceContract = await heartbeatProductPresence\(\)/);
   assert.match(interview, /saved\.return_policy_enabled && snapshot\.current_situation/);
   assert.match(interview, /return-continue/);
-  assert.match(interview, /if \(await loadReturnState\(\)\) return null/);
+  assert.match(interview, /if \(await loadReturnState\(\{ generation \}\)\) return null/);
   assert.match(interview, /M7_RETURN_CURRENT_POSITION_NOT_FOUND/);
   assert.match(interview, /await heartbeatProductPresence\(\);\s*if \(!current\(\)\) return;\s*await loadProductRuntime\(\)/);
   assert.match(interview, /const pending = pendingReturnContinue\(value\)/);
