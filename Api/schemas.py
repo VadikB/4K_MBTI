@@ -947,6 +947,7 @@ class AdminOrganizationMemberItem(BaseModel):
     invitation_revoked_at: datetime | None = None
     assessment_assignments: list[str] = Field(default_factory=list)
     assessment_stages: dict[str, dict] = Field(default_factory=dict)
+    assessment_history: list[dict] = Field(default_factory=list)
 
 
 class AdminOrganizationItem(BaseModel):

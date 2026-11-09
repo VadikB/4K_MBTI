@@ -967,7 +967,7 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
         } }] };
       return fulfillJson(route, questionnaireResponse?.body || fallback, questionnaireResponse?.status || 200);
     }
-    if (pathname === '/users/admin/organizations/3/personal-invitations') return invitationHandler(route);
+    if (pathname.startsWith('/users/admin/organizations/3/personal-invitations')) return invitationHandler(route);
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
@@ -2338,7 +2338,7 @@ test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting ze
   await expect(page.locator('#admin-organizations-status')).not.toContainText('принял приглашения: 0');
 });
 
-test('AC18-ADM-1B reads assignment state after a lost command response', async ({ page }) => {
+test('AC18-ADM-1C confirms a lost assignment response only by exact operation receipt', async ({ page }) => {
   const member = { ...adminOrganization.members[0], user_id: 8, email: 'person@example.test',
     full_name: 'Участник чтения', assessment_assignments: [] };
   const organization = {
@@ -2352,13 +2352,106 @@ test('AC18-ADM-1B reads assignment state after a lost command response', async (
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
     { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
       channel: 'product_form', validation_json: {} }] } });
-  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => {
-    member.assessment_assignments = ['specialist-pilot'];
-    return route.abort('failed');
-  });
+  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => route.abort('failed'));
+  await page.route('**/users/admin/organizations/3/assessment-assignments/operations/**', (route) =>
+    fulfillJson(route, { items: [{ user_id: 8, status: 'already_assigned', assignment_id: 41 }] }));
   await page.locator('input[name="invitation_email"]').check();
   await page.getByRole('button', { name: 'Назначить оценку' }).click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('назначение подтверждено чтением после потери ответа');
+  await expect(page.locator('#admin-organizations-status')).toContainText('назначение подтверждено точным чтением операции');
+});
+
+test('AC18-ADM-1C does not accept stale assignment state when exact receipt is absent', async ({ page }) => {
+  const organization = { ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Пилот 4К · 9 кейсов',
+      program_version: '1.2', assignment_ref: 'specialist-pilot',
+      roles: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист' }],
+      role_capabilities: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист', is_available: true }] },
+    members: [{ ...adminOrganization.members[0], user_id: 8, assessment_assignments: ['specialist-pilot'] }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
+    { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
+      channel: 'product_form', validation_json: {} }] } });
+  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => route.abort('failed'));
+  await page.route('**/users/admin/organizations/3/assessment-assignments/operations/**', (route) =>
+    fulfillJson(route, { detail: 'ASSIGNMENT_OPERATION_NOT_FOUND' }, 404));
+  await page.locator('input[name="invitation_email"]').check();
+  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Итог назначения пока неизвестен');
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('подтверждено');
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('operation_id');
+});
+
+test('AC18-ADM-1C keeps a confirmed assignment when the following refresh fails', async ({ page }) => {
+  let organizationReads = 0;
+  const organization = { ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Пилот 4К · 9 кейсов',
+      program_version: '1.2', assignment_ref: 'specialist-pilot',
+      roles: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист' }],
+      role_capabilities: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист', is_available: true }] } };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
+    { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
+      channel: 'product_form', validation_json: {} }] } });
+  await page.route('**/users/admin/organizations', (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    organizationReads += 1;
+    return fulfillJson(route, { detail: 'Synthetic refresh failure' }, 503);
+  });
+  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) =>
+    fulfillJson(route, { items: [{ user_id: 8, status: 'assigned', assignment_id: 42 }] }));
+  await page.locator('input[name="invitation_email"]').check();
+  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('оценка назначена');
+  await expect(page.locator('#admin-organizations-status')).toContainText('данные могут быть устаревшими');
+  expect(organizationReads).toBeGreaterThan(0);
+});
+
+test('AC18-ADM-1C shows queued invitation outcome per person without provider counters', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, {
+    items: [{ email: 'person@example.test', status: 'queued', invitation_id: 1 }],
+  }));
+  await page.locator('input[name="invitation_email"]').check();
+  await page.getByRole('button', { name: 'Отправить приглашения' }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Person: приглашение поставлено в очередь');
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('Принято провайдером');
+});
+
+test('AC18-ADM-1C reads back an unknown invitation and hides the operation key', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => {
+    if (route.request().method() === 'POST') return route.abort('failed');
+    return fulfillJson(route, { items: [{ email: 'person@example.test', status: 'queued', invitation_id: 1 }] });
+  });
+  await page.locator('input[name="invitation_email"]').check();
+  await page.getByRole('button', { name: 'Отправить приглашения' }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Person: приглашение поставлено в очередь');
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('operation_id');
+});
+
+test('AC18-ADM-1C shows factual invitation lifetime and read-only processing details', async ({ page }) => {
+  const organization = { ...adminOrganization,
+    assessment_program: { program_definition_id: 7, program_name: 'Пилот 4К · 9 кейсов',
+      program_version: '1.2', assignment_ref: 'specialist-pilot', roles: [] },
+    members: [{ ...adminOrganization.members[0], invitation_created_at: '2026-11-08T09:00:00Z',
+      invitation_expires_at: '2026-11-10T12:30:00Z', invitation_used_at: '2026-11-09T10:15:00Z',
+      invitation_link_status: 'used', invitation_status: 'used', assessment_assignments: ['specialist-pilot'],
+      assessment_history: [
+        { assignment_id: 42, assignment_ref: 'specialist-pilot', assignment_status: 'active',
+          assignment_created_at: '2026-11-09T11:00:00Z', cycle_id: 'cycle-current', cycle_status: 'calculation_pending' },
+        { assignment_id: 41, assignment_ref: 'specialist-pilot', assignment_status: 'revoked',
+          assignment_created_at: '2026-11-08T08:00:00Z', assignment_revoked_at: '2026-11-08T12:00:00Z' },
+      ],
+      assessment_stages: { 'specialist-pilot': { code: 'processing', action: 'open_processing',
+        description: 'Прохождение завершено; формируется отчёт.' } } }] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  await expect(page.locator('.admin-organization-member-invitation')).not.toContainText('72 часа');
+  await page.getByRole('button', { name: 'Person' }).click();
+  await expect(page.locator('[data-card-invitation-history]')).toContainText('Действует до:');
+  await expect(page.locator('[data-card-invitation-history]')).toContainText('Использовано:');
+  await expect(page.locator('[data-card-assignment-history]')).toContainText('Назначение #42: назначено');
+  await expect(page.locator('[data-card-assignment-history]')).toContainText('Cycle cycle-current');
+  await expect(page.locator('[data-card-assignment-history]')).toContainText('Назначение #41: отменено');
+  await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
+  await page.getByRole('button', { name: 'Подробнее об обработке' }).click();
+  await expect(page.getByRole('heading', { name: 'Обработка результата' })).toBeVisible();
+  await expect(page.locator('.admin-member-card-dialog')).toContainText('Отчёт можно открыть только после готовности');
 });
 
 test('QA19-02 resolves palette tokens in visible auth and admin states', async ({ page }) => {

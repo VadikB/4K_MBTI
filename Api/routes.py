@@ -1155,6 +1155,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
     latest_batch_by_org: dict[int, str] = {}
     programs_by_org: dict[int, dict] = {}
     assessment_stages: dict[tuple[int, int], dict[str, dict]] = {}
+    assessment_history: dict[tuple[int, int], list[dict]] = {}
     if org_ids:
         domain_rows = connection.execute(
             """
@@ -1191,7 +1192,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             """
             SELECT assignment.organization_id, assignment.recipient_user_id,
                    assignment.id AS assignment_id, assignment.assignment_ref,
-                   assignment.status AS assignment_status, assignment.revoked_at,
+                   assignment.status AS assignment_status, assignment.created_at AS assignment_created_at,
+                   assignment.revoked_at,
                    acquaintance.status AS acquaintance_status,
                    COALESCE(product_preparation.operation_id,preparation.operation_id) AS preparation_operation_id,
                    COALESCE(product_preparation.status,preparation.status) AS preparation_status,
@@ -1316,12 +1318,22 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
              AND acquaintance.organization_id=assignment.organization_id
              AND acquaintance.assignment_ref=assignment.assignment_ref
             WHERE assignment.organization_id=ANY(%s)
-            ORDER BY assignment.id ASC
+            ORDER BY assignment.id DESC
             """,
             (int(actor_user_id or (scope.actor_user_id if scope else None) or -1), org_ids),
         ).fetchall()
         for row in stage_rows:
             row = dict(row)
+            member_key = (int(row["organization_id"]), int(row["recipient_user_id"]))
+            assessment_history.setdefault(member_key, []).append({
+                "assignment_id": int(row["assignment_id"]),
+                "assignment_ref": str(row["assignment_ref"]),
+                "assignment_status": str(row["assignment_status"]),
+                "assignment_created_at": row.get("assignment_created_at"),
+                "assignment_revoked_at": row.get("revoked_at"),
+                "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
+                "cycle_status": row.get("cycle_status"),
+            })
             if row.get('cycle_status') == 'prepared':
                 from Api.assessment_start_readiness import read as read_start_readiness
                 row['start_readiness'] = read_start_readiness(
@@ -1432,6 +1444,9 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                     "assessment_stages": assessment_stages.get(
                         (int(row["organization_id"]), int(row["user_id"])), {}
                     ),
+                    "assessment_history": assessment_history.get(
+                        (int(row["organization_id"]), int(row["user_id"])), []
+                    ),
                 }
             )
 
@@ -1449,12 +1464,16 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
 
         report_rows = connection.execute(
             """
-            SELECT om.organization_id, COUNT(DISTINCT us.id)::int AS reports_count
-            FROM organization_memberships om
-            JOIN user_sessions us ON us.user_id = om.user_id
-            WHERE om.organization_id = ANY(%s)
-              AND us.assessment_code = 'competencies_4k'
-            GROUP BY om.organization_id
+            SELECT cycle.organization_id, COUNT(DISTINCT cycle.id)::int AS reports_count
+            FROM m5_cycles cycle
+            JOIN m8_results result ON result.cycle_db_id=cycle.id
+            JOIN m8_result_revisions revision ON revision.results_id=result.id
+            JOIN m8_reports report ON report.result_revision_id=revision.id
+            WHERE cycle.organization_id = ANY(%s) AND cycle.usage_scope='assessment'
+              AND report.status='ready'
+              AND NOT EXISTS (SELECT 1 FROM m10_pipeline_runs pipeline
+                              WHERE pipeline.cycle_db_id=cycle.id AND pipeline.status='failed')
+            GROUP BY cycle.organization_id
             """,
             (org_ids,),
         ).fetchall()
@@ -1864,250 +1883,96 @@ def _build_activity_series(connection, scope: AdminScope, period_key: str) -> tu
     bucket = period["bucket"]
     days = int(period["days"])
     period_label = str(period["label"])
-    scope_sql, scope_params = admin_scope_sql(scope)
-
+    organization_filter = "" if scope.is_superadmin else " AND cycle.organization_id=ANY(%s)"
+    organization_params: tuple = () if scope.is_superadmin else (list(scope.organization_ids),)
     if bucket == "day":
         rows = connection.execute(
-            f"""
-            WITH bounds AS (
-                SELECT CURRENT_DATE - (%s::int - 1) * INTERVAL '1 day' AS start_day,
-                       CURRENT_DATE AS end_day
-            ),
-            axis AS (
-                SELECT generate_series(
-                    (SELECT start_day FROM bounds),
-                    (SELECT end_day FROM bounds),
-                    INTERVAL '1 day'
-                ) AS bucket_start
-            ),
-            stats AS (
-                SELECT
-                    DATE_TRUNC('day', finished_at) AS bucket_start,
-                    COUNT(*)::int AS session_count
-                FROM user_sessions
-                JOIN users u ON u.id = user_sessions.user_id
-                WHERE assessment_code = 'competencies_4k'
-                  AND status = 'completed'
-                  AND finished_at >= (SELECT start_day FROM bounds)
-                  AND LOWER(COALESCE(u.email, '')) <> %s
-                  {scope_sql}
-                GROUP BY DATE_TRUNC('day', finished_at)
-            )
-            SELECT
-                TO_CHAR(axis.bucket_start, 'DD.MM') AS bucket_label,
-                COALESCE(stats.session_count, 0)::int AS session_count
-            FROM axis
-            LEFT JOIN stats ON stats.bucket_start = axis.bucket_start
-            ORDER BY axis.bucket_start
-            """,
-            (days, ADMIN_EMAIL.lower(), *scope_params),
+            f"""WITH axis AS (
+                    SELECT generate_series(CURRENT_DATE-(%s::int-1)*INTERVAL '1 day',CURRENT_DATE,
+                                           INTERVAL '1 day') AS bucket_start),
+                  stats AS (
+                    SELECT DATE_TRUNC('day',cycle.collection_closed_at) AS bucket_start,
+                           COUNT(*)::int AS cycle_count
+                    FROM m5_cycles cycle
+                    WHERE cycle.usage_scope='assessment' AND cycle.started_at IS NOT NULL
+                      AND cycle.collection_closed_at>=CURRENT_DATE-(%s::int-1)*INTERVAL '1 day'
+                      {organization_filter}
+                    GROUP BY DATE_TRUNC('day',cycle.collection_closed_at))
+                SELECT TO_CHAR(axis.bucket_start,'DD.MM') AS bucket_label,
+                       COALESCE(stats.cycle_count,0)::int AS session_count
+                FROM axis LEFT JOIN stats ON stats.bucket_start=axis.bucket_start
+                ORDER BY axis.bucket_start""",
+            (days, days, *organization_params),
         ).fetchall()
     else:
         month_count = max(1, round(days / 30))
         rows = connection.execute(
-            f"""
-            WITH bounds AS (
-                SELECT DATE_TRUNC('month', CURRENT_DATE) - (%s::int - 1) * INTERVAL '1 month' AS start_month,
-                       DATE_TRUNC('month', CURRENT_DATE) AS end_month
-            ),
-            axis AS (
-                SELECT generate_series(
-                    (SELECT start_month FROM bounds),
-                    (SELECT end_month FROM bounds),
-                    INTERVAL '1 month'
-                ) AS bucket_start
-            ),
-            stats AS (
-                SELECT
-                    DATE_TRUNC('month', finished_at) AS bucket_start,
-                    COUNT(*)::int AS session_count
-                FROM user_sessions
-                JOIN users u ON u.id = user_sessions.user_id
-                WHERE assessment_code = 'competencies_4k'
-                  AND status = 'completed'
-                  AND finished_at >= (SELECT start_month FROM bounds)
-                  AND LOWER(COALESCE(u.email, '')) <> %s
-                  {scope_sql}
-                GROUP BY DATE_TRUNC('month', finished_at)
-            )
-            SELECT
-                axis.bucket_start,
-                TO_CHAR(axis.bucket_start, 'MM.YY') AS bucket_label,
-                COALESCE(stats.session_count, 0)::int AS session_count
-            FROM axis
-            LEFT JOIN stats ON stats.bucket_start = axis.bucket_start
-            ORDER BY axis.bucket_start
-            """,
-            (month_count, ADMIN_EMAIL.lower(), *scope_params),
+            f"""WITH axis AS (
+                    SELECT generate_series(DATE_TRUNC('month',CURRENT_DATE)-(%s::int-1)*INTERVAL '1 month',
+                                           DATE_TRUNC('month',CURRENT_DATE),INTERVAL '1 month') AS bucket_start),
+                  stats AS (
+                    SELECT DATE_TRUNC('month',cycle.collection_closed_at) AS bucket_start,
+                           COUNT(*)::int AS cycle_count
+                    FROM m5_cycles cycle
+                    WHERE cycle.usage_scope='assessment' AND cycle.started_at IS NOT NULL
+                      AND cycle.collection_closed_at>=DATE_TRUNC('month',CURRENT_DATE)-(%s::int-1)*INTERVAL '1 month'
+                      {organization_filter}
+                    GROUP BY DATE_TRUNC('month',cycle.collection_closed_at))
+                SELECT axis.bucket_start,TO_CHAR(axis.bucket_start,'MM.YY') AS bucket_label,
+                       COALESCE(stats.cycle_count,0)::int AS session_count
+                FROM axis LEFT JOIN stats ON stats.bucket_start=axis.bucket_start
+                ORDER BY axis.bucket_start""",
+            (month_count, month_count, *organization_params),
         ).fetchall()
-        rows = [
-            {
-                "bucket_label": MONTH_LABELS_RU.get(row["bucket_start"].month, str(row["bucket_label"])),
-                "session_count": row["session_count"],
-            }
-            for row in rows
-        ]
-
+        rows = [{"bucket_label": MONTH_LABELS_RU.get(row["bucket_start"].month, str(row["bucket_label"])),
+                 "session_count": row["session_count"]} for row in rows]
     labels = [str(row["bucket_label"]) for row in rows]
     points = [int(row["session_count"] or 0) for row in rows]
-    axis_max = max(points) if points else 0
-    if axis_max <= 0:
-        axis_max = 1
-    return labels, points, axis_max, period_label
+    return labels, points, max(points) if points and max(points) > 0 else 1, period_label
+
 
 
 def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d") -> AdminDashboard:
-    scope_sql, scope_params = admin_scope_sql(scope)
-    totals_row = connection.execute(
-        f"""
-        SELECT
-            COUNT(*)::int AS total_users,
-            COUNT(*) FILTER (WHERE role_id IS NOT NULL)::int AS profiled_users
-        FROM users u
-        WHERE LOWER(COALESCE(u.email, '')) <> %s
-          {scope_sql}
-        """,
-        (ADMIN_EMAIL.lower(), *scope_params),
+    organization_filter = "" if scope.is_superadmin else " AND cycle.organization_id=ANY(%s)"
+    organization_params: tuple = () if scope.is_superadmin else (list(scope.organization_ids),)
+    cycle_counts = connection.execute(
+        f"""SELECT COUNT(*) FILTER (WHERE cycle.started_at IS NOT NULL)::int AS started,
+                   COUNT(*) FILTER (WHERE cycle.started_at IS NOT NULL
+                                      AND cycle.collection_closed_at IS NOT NULL)::int AS closed
+            FROM m5_cycles cycle
+            WHERE cycle.usage_scope='assessment' {organization_filter}""",
+        organization_params,
     ).fetchone()
-
-    session_row = connection.execute(
-        f"""
-        SELECT
-            COUNT(*)::int AS total_sessions,
-            COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_sessions,
-            ROUND(AVG(completed_cases::numeric), 1)::numeric AS avg_completed_cases
-        FROM (
-            SELECT
-                us.id,
-                us.status,
-                COUNT(sc.id) FILTER (WHERE sc.status IN ('answered', 'assessed'))::int AS completed_cases
-            FROM user_sessions us
-            JOIN users u ON u.id = us.user_id
-            LEFT JOIN session_cases sc ON sc.session_id = us.id
-            WHERE us.assessment_code = 'competencies_4k'
-              AND LOWER(COALESCE(u.email, '')) <> %s
-              {scope_sql}
-            GROUP BY us.id, us.status
-        ) AS session_stats
-        """,
-        (ADMIN_EMAIL.lower(), *scope_params),
+    report_counts = connection.execute(
+        f"""SELECT COUNT(DISTINCT cycle.id)::int AS ready
+            FROM m5_cycles cycle
+            JOIN m8_results result ON result.cycle_db_id=cycle.id
+            JOIN m8_result_revisions revision ON revision.results_id=result.id
+            JOIN m8_reports report ON report.result_revision_id=revision.id
+            WHERE cycle.usage_scope='assessment' AND report.status IN ('ready','limited','no_result')
+              AND NOT EXISTS (
+                SELECT 1 FROM m10_pipeline_runs pipeline
+                WHERE pipeline.cycle_db_id=cycle.id AND pipeline.status='failed')
+              {organization_filter}""",
+        organization_params,
     ).fetchone()
-
-    score_row = connection.execute(
-        f"""
-        SELECT
-            ROUND(AVG(score_percent)::numeric, 1)::numeric AS avg_score_percent
-        FROM (
-            SELECT
-                us.id,
-                AVG(alw.percent_value) AS score_percent
-            FROM user_sessions us
-            JOIN users u ON u.id = us.user_id
-            JOIN session_skill_assessments ssa ON ssa.session_id = us.id
-            JOIN assessment_level_weights alw ON alw.level_code = ssa.assessed_level_code
-            WHERE us.assessment_code = 'competencies_4k'
-              AND us.status = 'completed'
-              AND ssa.assessed_level_code IS NOT NULL
-              AND LOWER(COALESCE(u.email, '')) <> %s
-              {scope_sql}
-            GROUP BY us.id
-        ) AS score_stats
-        """,
-        (ADMIN_EMAIL.lower(), *scope_params),
-    ).fetchone()
-
-    duration_row = connection.execute(
-        f"""
-        SELECT
-            ROUND(
-                AVG(
-                    session_actual_minutes
-                )::numeric,
-                1
-            )::numeric AS avg_actual_minutes
-        FROM (
-            SELECT
-                us.id,
-                SUM(COALESCE(sc.actual_duration_seconds, 0))::numeric / 60.0 AS session_actual_minutes
-            FROM user_sessions us
-            JOIN users u ON u.id = us.user_id
-            JOIN session_cases sc ON sc.session_id = us.id
-            WHERE us.assessment_code = 'competencies_4k'
-              AND us.status = 'completed'
-              AND LOWER(COALESCE(u.email, '')) <> %s
-              {scope_sql}
-            GROUP BY us.id
-        ) AS duration_stats
-        """,
-        (ADMIN_EMAIL.lower(), *scope_params),
-    ).fetchone()
-
-    competency_rows = connection.execute(
-        f"""
-        SELECT
-            s.competency_name,
-            ROUND(AVG(alw.percent_value))::int AS avg_percent
-        FROM session_skill_assessments ssa
-        JOIN skills s ON s.id = ssa.skill_id
-        JOIN user_sessions us ON us.id = ssa.session_id
-        JOIN users u ON u.id = us.user_id
-        JOIN assessment_level_weights alw ON alw.level_code = ssa.assessed_level_code
-        WHERE us.assessment_code = 'competencies_4k'
-          AND us.status = 'completed'
-          AND ssa.assessed_level_code IS NOT NULL
-          AND LOWER(COALESCE(u.email, '')) <> %s
-          {scope_sql}
-        GROUP BY s.competency_name
-        ORDER BY s.competency_name
-        """,
-        (ADMIN_EMAIL.lower(), *scope_params),
-    ).fetchall()
-
-    total_users = int(totals_row["total_users"] or 0)
-    profiled_users = int(totals_row["profiled_users"] or 0)
-    total_sessions = int(session_row["total_sessions"] or 0)
-    completed_sessions = int(session_row["completed_sessions"] or 0)
-    avg_score = float(score_row["avg_score_percent"] or 0)
-    avg_actual_duration = float(duration_row["avg_actual_minutes"] or 0)
-    avg_completed_cases = float(session_row["avg_completed_cases"] or 0)
-    completion_percent = round((completed_sessions / total_sessions) * 100) if total_sessions else 0
-    activity_labels, activity_points, activity_axis_max, activity_period_label = _build_activity_series(connection, scope, period_key)
-
-    competency_average = [
-        {
-            "name": row["competency_name"] or "Без категории",
-            "value": int(row["avg_percent"] or 0),
-        }
-        for row in competency_rows
-    ] or [
-        {"name": "Коммуникация", "value": 0},
-        {"name": "Командная работа", "value": 0},
-        {"name": "Креативность", "value": 0},
-        {"name": "Критическое мышление", "value": 0},
-    ]
-
-    weakest = min(competency_average, key=lambda item: item["value"])
-    strongest = max(competency_average, key=lambda item: item["value"])
-
+    started = int(cycle_counts["started"] or 0)
+    closed = int(cycle_counts["closed"] or 0)
+    ready = int(report_counts["ready"] or 0)
+    activity_labels, activity_points, activity_axis_max, activity_period_label = _build_activity_series(
+        connection, scope, period_key)
     return AdminDashboard(
         title="Сводный отчет",
-        subtitle="Комплексный анализ компетенций и продуктовых метрик по сотрудникам платформы.",
+        subtitle="Современные оценки организации и готовность результатов.",
         is_superadmin=scope.is_superadmin,
         metrics=[
-            AdminMetricCard(label="Пользователи", value=f"{total_users}", delta=f"+{profiled_users} с профилем"),
-            AdminMetricCard(label="Процент завершения", value=f"{completion_percent}%", delta=f"{completed_sessions} из {total_sessions} сессий"),
-            AdminMetricCard(label="Средний индекс", value=f"{avg_score:.1f}/100", delta="по завершенным ассессментам"),
-            AdminMetricCard(label="Среднее время прохождения", value=f"{avg_actual_duration:.0f} мин", delta=f"{avg_completed_cases:.1f} кейса в среднем"),
+            AdminMetricCard(label="Готовых отчётов", value=str(ready), delta="За всё время"),
+            AdminMetricCard(label="Прохождение оценки", value=(f"Завершено {closed} из {started}"
+                if started else "Оценки ещё не начинались"), delta="За всё время"),
         ],
-        competency_average=competency_average,
-        insights=[
-            AdminInsightCard(title="Наиболее слабый контур", description=f"Минимальный средний показатель сейчас у направления «{weakest['name']}»."),
-            AdminInsightCard(title="Лучшая группа", description=f"Самый высокий средний результат показывает направление «{strongest['name']}»."),
-            AdminInsightCard(title="Фокус развития", description="Админ-панель позволяет отслеживать завершение оценок и динамику загрузки платформы."),
-        ] if completed_sessions else [AdminInsightCard(
-            title="Пока нет данных для выводов",
-            description="Аналитика появится после завершения оценок.",
-        )],
+        competency_average=[],
+        insights=[AdminInsightCard(title="Сводная оценка навыков пока недоступна",
+            description="Диаграмма появится, когда современный контур предоставит допустимую сводку навыков.")],
         activity_points=activity_points,
         activity_labels=activity_labels,
         activity_axis_max=activity_axis_max,
@@ -4657,6 +4522,49 @@ def send_personal_organization_invitations(
     return PersonalInvitationBatchResponse(items=results)
 
 
+@router.get(
+    "/admin/organizations/{organization_id}/personal-invitations/operations/{operation_id}",
+    response_model=PersonalInvitationBatchResponse,
+)
+def read_personal_organization_invitation_operation(
+    organization_id: int,
+    operation_id: str,
+    assignment_ref: str,
+    request: Request,
+) -> PersonalInvitationBatchResponse:
+    """Read only invitations saved by one exact idempotent command."""
+    current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_organization_admin(connection, current_user, organization_id)
+        rows = connection.execute(
+            """SELECT id,recipient_email,expires_at,delivery_status,delivery_error,used_at,revoked_at
+               FROM organization_invitations
+               WHERE organization_id=%s AND created_by_user_id=%s
+                 AND purpose='personal_registration' AND request_id=%s AND assignment_ref=%s
+               ORDER BY id DESC""",
+            (organization_id, int(current_user.id), operation_id, assignment_ref),
+        ).fetchall()
+    latest: dict[str, dict] = {}
+    for row in rows:
+        latest.setdefault(normalize_email(row["recipient_email"]), row)
+    if not latest:
+        raise HTTPException(status_code=404, detail="INVITATION_OPERATION_NOT_FOUND")
+    items: list[PersonalInvitationResultItem] = []
+    for email, row in latest.items():
+        delivery = str(row["delivery_status"] or "uncertain")
+        status = "accepted" if delivery == "accepted" else (
+            "queued" if delivery == "queued" else "uncertain" if delivery == "sending" else "error"
+        )
+        items.append(PersonalInvitationResultItem(
+            email=email,
+            status=status,
+            invitation_id=int(row["id"]),
+            expires_at=row["expires_at"],
+            error=str(row["delivery_error"] or "") or None,
+        ))
+    return PersonalInvitationBatchResponse(items=items)
+
+
 @router.get('/admin/organizations/{organization_id}/assessment-source-options')
 def get_organization_assessment_source_options(organization_id: int, request: Request) -> dict:
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
@@ -4806,6 +4714,57 @@ def assign_organization_assessment(
                     raise HTTPException(409, detail=str(exc)) from exc
         connection.commit()
     return AssessmentAssignmentBatchResponse(items=results)
+
+
+@router.get(
+    "/admin/organizations/{organization_id}/assessment-assignments/operations/{operation_id}",
+    response_model=AssessmentAssignmentBatchResponse,
+)
+def read_organization_assessment_assignment_operation(
+    organization_id: int,
+    operation_id: str,
+    assignment_ref: str,
+    user_ids: str,
+    request: Request,
+    role_profile_version_id: int | None = None,
+) -> AssessmentAssignmentBatchResponse:
+    """Confirm the exact committed assignment command, never a coincidental stale assignment."""
+    current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    try:
+        recipients = sorted(set(int(value) for value in str(user_ids or "").split(",") if value.strip()))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="ASSIGNMENT_READBACK_RECIPIENTS_INVALID") from exc
+    if not recipients:
+        raise HTTPException(status_code=400, detail="ASSIGNMENT_READBACK_RECIPIENTS_REQUIRED")
+    fingerprint = hashlib.sha256(json.dumps({
+        "assignment_ref": str(assignment_ref).strip(),
+        "user_ids": recipients,
+        "role_profile_version_id": role_profile_version_id,
+    }, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    with get_connection() as connection:
+        _require_organization_admin(connection, current_user, organization_id)
+        receipt = connection.execute(
+            """SELECT request_fingerprint FROM organization_assessment_assignment_operations
+               WHERE organization_id=%s AND actor_user_id=%s AND operation_id=%s""",
+            (organization_id, int(current_user.id), operation_id),
+        ).fetchone()
+        if receipt is None:
+            raise HTTPException(status_code=404, detail="ASSIGNMENT_OPERATION_NOT_FOUND")
+        if str(receipt["request_fingerprint"]) != fingerprint:
+            raise HTTPException(status_code=409, detail="ASSIGNMENT_OPERATION_SCOPE_MISMATCH")
+        rows = connection.execute(
+            """SELECT recipient_user_id,id FROM organization_assessment_assignments
+               WHERE organization_id=%s AND assignment_ref=%s
+                 AND recipient_user_id=ANY(%s) AND status='active' AND revoked_at IS NULL""",
+            (organization_id, str(assignment_ref).strip(), recipients),
+        ).fetchall()
+    assignments = {int(row["recipient_user_id"]): int(row["id"]) for row in rows}
+    return AssessmentAssignmentBatchResponse(items=[AssessmentAssignmentResultItem(
+        user_id=user_id,
+        status="already_assigned" if user_id in assignments else "not_assigned",
+        assignment_id=assignments.get(user_id),
+        error=None if user_id in assignments else "Сохранённое назначение не найдено.",
+    ) for user_id in recipients])
 
 
 @router.post(

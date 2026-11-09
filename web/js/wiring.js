@@ -2054,23 +2054,43 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
       return;
     }
+    if (button.dataset.action === 'open-member-processing') {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'admin-member-card-dialog';
+      dialog.innerHTML = '<form method="dialog"><div><h3>Обработка результата</h3>' +
+        '<button type="submit" class="dialog-close" aria-label="Закрыть пояснение">×</button></div>' +
+        '<p data-processing-description></p><p>Прохождение завершено, результат обрабатывается. ' +
+        'Отчёт можно открыть только после готовности и при наличии права просмотра.</p>' +
+        '<button type="submit" class="primary-button">Закрыть</button></form>';
+      dialog.querySelector('[data-processing-description]').textContent = button.dataset.stageDescription ||
+        'Текущий этап подтверждён сервером.';
+      document.body.append(dialog);
+      dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
+      dialog.showModal();
+      dialog.querySelector('.dialog-close')?.focus();
+      return;
+    }
     if (button.dataset.action === 'open-member-card') {
       const dialog = document.createElement('dialog');
       dialog.className = 'admin-member-card-dialog';
       dialog.setAttribute('aria-labelledby', 'admin-member-card-title');
       dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-card-title"></h3><button type="submit" class="dialog-close" aria-label="Закрыть карточку">×</button></div>' +
-        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>Допуск</dt><dd data-card-admission></dd><dt>Регистрация</dt><dd data-card-registration></dd><dt>Письмо и ссылка</dt><dd data-card-invitation></dd><dt>История приглашения</dt><dd data-card-invitation-history></dd></dl>' +
+        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>История оценки</dt><dd data-card-assignment-history></dd><dt>Допуск</dt><dd data-card-admission></dd><dt>Регистрация</dt><dd data-card-registration></dd><dt>Письмо и ссылка</dt><dd data-card-invitation></dd><dt>История приглашения</dt><dd data-card-invitation-history></dd></dl>' +
         '<div data-card-actions></div><button type="submit" class="primary-button">Закрыть</button></form>';
       dialog.querySelector('#admin-member-card-title').textContent = button.dataset.participantName || value;
       dialog.querySelector('[data-card-email]').textContent = button.dataset.email || 'Не указан';
       dialog.querySelector('[data-card-position]').textContent = button.dataset.position || 'Не указана';
       dialog.querySelector('[data-card-stage]').textContent = button.dataset.stage || 'Нет данных';
       dialog.querySelector('[data-card-description]').textContent = button.dataset.stageDescription || 'Нет пояснения';
+      dialog.querySelector('[data-card-assignment-history]').textContent = button.dataset.assignmentHistory || 'История неизвестна';
       dialog.querySelector('[data-card-admission]').textContent = button.dataset.admission || 'Нет данных';
       dialog.querySelector('[data-card-registration]').textContent = button.dataset.registration || 'Нет данных';
       dialog.querySelector('[data-card-invitation]').textContent = button.dataset.invitation || 'Неизвестно';
       dialog.querySelector('[data-card-invitation-history]').textContent = button.dataset.invitationCreated
-        ? 'Создано: ' + button.dataset.invitationCreated + (button.dataset.invitationExpires ? '. Действует до: ' + button.dataset.invitationExpires : '')
+        ? ['Создано: ' + button.dataset.invitationCreated,
+          button.dataset.invitationExpires ? 'Действует до: ' + button.dataset.invitationExpires : '',
+          button.dataset.invitationUsed ? 'Использовано: ' + button.dataset.invitationUsed : '',
+          button.dataset.invitationRevoked ? 'Отозвано: ' + button.dataset.invitationRevoked : ''].filter(Boolean).join('. ')
         : 'История приглашения неизвестна';
       if (button.dataset.canResetPassword === 'true') {
         const reset = document.createElement('button');
