@@ -271,8 +271,8 @@ test('EXEC03 C7 M7 ASK: phase isolation, lost commit response, reload, immutable
   const recoveryTab = await context.newPage();
   await recoveryTab.addInitScript((entries) => entries.forEach(([key, value]) => sessionStorage.setItem(key, value)), copied);
   await recoveryTab.goto(page.url());
-  await expect(recoveryTab.locator('.interview-message-retry')).toBeVisible();
-  await page.locator('.interview-message-retry').click();
+  await expect(recoveryTab.locator('.interview-message.own').filter({ hasText: text }).locator('.interview-message-retry')).toBeVisible();
+  await page.locator('.interview-message.own').filter({ hasText: text }).locator('.interview-message-retry').click();
   await expect.poll(() => committed).toBe(true);
   expect(sentBodies[1]).toEqual(sentBodies[0]);
   await sameKey(recoveryTab, endpoint, body);
@@ -346,7 +346,8 @@ test('EXEC03 C8/C9 with EXEC01: next AS isolation, original receipts after close
     Object.assign(timeBody, posted);
     operation = (await pending(page)).find((item) => item.requestId === posted.request_id);
     const accepted = await route.fetch(); expect(accepted.status()).toBe(200);
-    committed = true; await gate; return route.abort('failed');
+    committed = true; await gate;
+    try { return await route.abort('failed'); } catch { /* Reload may already discard this transport. */ }
   });
   await page.locator('#interview-textarea').fill(timeBody.content);
   await page.locator('#interview-submit-button').click();
