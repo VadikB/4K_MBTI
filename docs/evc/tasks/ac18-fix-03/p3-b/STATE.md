@@ -3,6 +3,7 @@
 - Base: `origin/main=023bf85ec796d212d29b33218d906a1ed2023941`, APP_RELEASE `2.0.86`.
 - Branch/worktree: `codex/ac18-p3-b-time-return`,
   `/Users/vadim_bogachev/Developer/4K/worktrees/ac18-p3-b-time-return`.
+- Implementation commit: `ab03144c` (`AC18 P3-B fix progress time and return recovery`).
 - Scope: P3-T03/T04/T05, AC04–08 и локальная часть AC10; P3-A/P3-I вне scope.
 - Checkpoint для P3-A: S0=`023bf85e`; fixture contract — `cycle_id` + current AS
   задают scope, `participant_payload` — единственный вход условий, trace — сохранённая
@@ -24,7 +25,9 @@
   `EPERM`; после разрешённого локального loopback-повтора тесты прошли. Ошибочный
   запрос отсутствующего `tests/unit/test_m10_product_flow.py` не являлся тестовым
   прогоном; применимый projection-файл вошёл в backend minimum.
-- Активный шаг: review diff, локальный commit и подготовка visual-state маршрута.
+- Активный шаг: подготовка отдельного visual-state маршрута и review локального
+  кандидата. Техническая visual browser-проверка return/unknown/lost response есть;
+  физические iOS Safari/Android Chrome и решение владельца — NOT_RUN.
 - Внешние этапы: branch push/PR/version/merge/deploy — NOT_RUN, прямой допуск в
   текущем запросе отсутствует.
 - OPS01 исторического test Cycle — NOT_RUN: доступ к test и отдельный внешний этап
