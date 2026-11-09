@@ -41,5 +41,6 @@ release-кандидата перед merge. Реальные LLM/письма �
 ## Полномочия
 
 Ответ владельца «следующий patch» разрешил локальный `version_bump` до `2.0.87`.
-`branch_push=false`, `pr=false`, `merge=false`, `deploy=false`,
-`artifact_publish=false` до отдельного прямого допуска.
+Ответ «да» на прямой вопрос о `branch_push` и создании draft PR с открытым
+FAIL разрешил эти два этапа. `merge=false`, `deploy=false`,
+`artifact_publish=false`; перевод PR в Ready не разрешён при открытом AC10 FAIL.
