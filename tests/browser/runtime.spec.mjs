@@ -433,7 +433,7 @@ test('Recovery: lost response, unaccepted request, two tabs and owner boundaries
  await login(page,stand);await start(page);
  const initial=await runtime(page,stand);
  expect(JSON.stringify(initial)).not.toContain('execution_envelope');
- for(const accepted of [true,false]){
+ for(const [index,accepted] of [true,false].entries()){
    const seen=[];let first=true;
    await page.route('**/users/assessment/m5/situations/*/turns',async route=>{
      seen.push(route.request().postDataJSON());
@@ -443,9 +443,16 @@ test('Recovery: lost response, unaccepted request, two tabs and owner boundaries
    await page.locator('#interview-textarea').fill(fixture.answer);
    await page.locator('#interview-submit-button').click();
    await expect(page.locator('#interview-error')).toBeVisible();
-   await page.locator('#interview-submit-button').click();
+   await expect(page.locator('#interview-submit-button')).toBeDisabled();
+   const retry=page.locator('.interview-message.own .interview-message-retry:visible');
+   await expect(retry).toHaveCount(1);
+   await retry.click();
    await expect(page.locator('#interview-error')).toBeHidden();
    await expect(page.locator('#interview-submit-button')).toBeEnabled();
+   await expect.poll(async()=>{
+    const snapshot=await runtime(page,stand);
+    return snapshot.trace.turns.filter(turn=>turn.speaker_type==='assessee' && turn.content_text===fixture.answer).length;
+   }).toBe(index+1);
    expect(seen).toHaveLength(2);expect(seen[1]).toEqual(seen[0]);
    await page.unroute('**/users/assessment/m5/situations/*/turns');
  }
