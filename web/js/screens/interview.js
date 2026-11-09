@@ -263,8 +263,9 @@ const recoverProductInterviewAnswer = (operation, snapshot) => {
   productInterviewReadbacks.set(key, reading);
   void reading.then((value) => {
     if (!isProductInterviewPresentationCurrent(operation)) return;
-    if (applyProductInterviewAnswerStatus(operation, value, snapshot)
-        && productInterviewSnapshotMatches(confirmedProductInterviewSnapshot, operation)) {
+    const changed = applyProductInterviewAnswerStatus(operation, value, snapshot);
+    if (changed && value.status === 'accepted') showError(interviewError, '');
+    if (changed && productInterviewSnapshotMatches(confirmedProductInterviewSnapshot, operation)) {
       renderProductRuntime(confirmedProductInterviewSnapshot);
     }
   }).catch(() => { /* A failed readback keeps the original unknown operation. */ })

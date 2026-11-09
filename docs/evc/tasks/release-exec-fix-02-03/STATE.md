@@ -63,3 +63,11 @@ FROZEN/CURRENT=NO и выбранные M5 v1.1/M6 v1.8/M7 v1.3/M8 v1.2 без �
 - `npm run ready:prepare -- --candidate 2.0.90`: PASS; обновлены `pyproject.toml`, `uv.lock`, `web/js/config.js`, `web/index.html`, generated `web/dist`; consistency/release gate PASS.
 - После bump: frontend regression `48 passed`, `npm run lint:js` и `git diff --check` — PASS.
 - До перевода из Draft: commit/push точного release head и обязательный CI. Human review, merge, deploy и TEST scenarios пока `NOT_RUN`.
+
+## Full verification и адресная совместимость readback/retry
+
+- Release head `b93c69929962ce3d5626eb58ffbe6d38e48f1fa1` переведён в Ready; quick CI прошёл. Full verification run `42671959152`: попытка 1 — GitHub Internal server error; попытка 2 — integration и runtime shards 3/4, 4/4 PASS, итоговый aggregator получил GitHub Internal server error; попытка 3 воспроизвела реальный сбой runtime shard 2/4 в `Recovery: lost response, unaccepted request, two tabs and owner boundaries`.
+- Сбой воспроизведён локально на отдельном owned PostgreSQL `p4k-exec0203-pg`, порт `55449`, с реальными HTTP/PG/Chromium 153. Причина: прежний browser-критерий для уже committed Turn требовал ручной retry и второй POST, тогда как EXEC-FIX-03 теперь разрешает исход через receipt readback без новой записи; polling поэтому законно удалял retry DOM.
+- Адресная совместимость: подтверждённый accepted readback очищает устаревшее сообщение об ошибке; browser-критерий разделён на committed lost-response (`1 POST`, восстановление readback) и absent before-server (`2 POST` с теми же `request_id`/`turn_id`). Продуктовый контракт/endpoint и серверная идемпотентность не ослаблены.
+- Точный owned HTTP/PG/Chromium сценарий после исправления: `1 passed` (26.7 s); два ответа дают ровно два assessee Turns, accepted не записывается повторно, absent replay сохраняет идентичность. Frontend EXEC-01/03/P3-A regression: `58 passed`; `node --check`, `npm run build:web`, `npm run lint:js`, `git diff --check` — PASS.
+- Следующий шаг: commit/push нового release head и полный обязательный CI на этом SHA. Human review, merge, deploy и неизменный TEST остаются `NOT_RUN`.
