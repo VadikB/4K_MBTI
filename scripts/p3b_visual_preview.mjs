@@ -81,7 +81,12 @@ export const createP3BVisualServer = () => http.createServer(async (request, res
   const state = states.get(mode) || { continued: false, uncertain: false, attempts: 0 };
   states.set(mode, state);
   if (mode === 'unknown' && url.pathname === '/') state.uncertain = false;
-  if (url.pathname === '/users/version') return json(response, { version: '2.0.86' });
+  if (url.pathname === '/users/version') {
+    const config = await fs.readFile(path.join(root, 'web/js/config.js'), 'utf8');
+    const release = config.match(/^export const APP_RELEASE = "([^"]+)";$/m)?.[1];
+    return release ? json(response, { version: release })
+      : json(response, { detail: 'PREVIEW_RELEASE_NOT_FOUND' }, 500);
+  }
   if (url.pathname === '/users/session/restore') return json(response, { authenticated: true, user, is_admin: false, dashboard: {} });
   if (url.pathname === '/users/8/session-bootstrap') return json(response, { user, is_admin: false, dashboard: {} });
   if (url.pathname === '/users/8/journey-state') return json(response, {
