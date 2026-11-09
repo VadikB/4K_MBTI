@@ -19,8 +19,14 @@ endpoint/ASK/source phase, readback до retry и guards поздних callback
 
 План: (1) адресный source/code/evidence audit; (2) readback одного ответа по
 AS/request/Turn/ASK, phase/owner draft и reconciliation; (3) независимые C1–C9
-HTTP/PG/Chromium проверки и shared replay с владельцем01; (4) review, exact SHA,
+HTTP/PG/Chromium проверки собственного кандидата; (4) review, exact SHA,
 bundle, описание отдельного PR и вопросы архитектору.
+
+Последующее прямое указание владельца: «обработай без стыка с fix01.
+выгружаться в PR fix-01 fix-02 fix-03 будут отдельными PR». Оно заменяет
+требование общего прогона из приложенных документов. Source03 и bundle содержат
+только03; совместные исторические проверки не являются самостоятельным PASS03
+или условием его передачи. PR от аккаунта владельца исполнитель не создаёт.
 
 EXEC01 единолично меняет общие write admission/replay/time/return handlers;
 запрос координации отправлен в его существующий chat по поручению владельца.
@@ -55,7 +61,7 @@ owner-readback прямо предусмотрено карточкой; реа�
 Node frontend, lint/build/diff; backend/unit+HTTP, integration на marker-owned
 локальной PostgreSQL19332; Chromium real HTTP19331, route.fetch commit→abort,
 recovery+reload/two tabs/same key/content conflict/new identical answer/M7 ASK,
-owner/AS/question/late receipt, закрытие/time совместно с01. Считать сохранённые
+owner/AS/question/late receipt, ordinary закрытие/time. Считать сохранённые
 Turns/events/effects, не только DOM. Никаких успешных fake POST.
 CI/human review и TEST deploy/readback остаются архитектору; physical mobile
 keyboard/owner visual acceptance не объявлять PASS по Chromium.
@@ -75,11 +81,11 @@ Backend1018, HTTP142, integration254 PASS;2 real-provider tests пропущен
 дополнительной processing regression. Exact SHA/команды/exit/evidence и blob
 mapping содержатся во внешних CHECKS.csv/BACKEND_TEST_REUSE.json/HANDOFF.
 Actual Chromium ordinary loss-before/after commit, reload/two tabs/late response,
-keyboard320/account401/403, M7 phase/ASK и C9 проверяются в отдельном compose
-checkout01+03. Три полных сценария R1 прошли на2e11dab; финальный SHA и повтор
-после processing fix зафиксированы во внешнем HANDOFF, а не подменяются этим SHA.
-На base найден duplicate pipeline projection M7 replay, исправленный owner01;
-его исходные коммиты не включены в отдельный candidate03.
+keyboard320/account401/403 проверяются на собственной ветке. Исторический own
+M7 прогон подтвердил loss/reload/одну response до FAIL на повторной pipeline
+projection исходного main. Полный M7 replay/closed-boundary PASS самостоятельному
+кандидату03 не присваивается; этот shared handler не переписывается здесь.
+Статусы отдельных C1–C9 и фактические SHA находятся во внешнем HANDOFF.
 Полный CI/TEST/human visual acceptance не выполнялись и не заменены local PASS.
 
 ### Согласованное владение ordinary replay
@@ -107,7 +113,7 @@ Pending исходной AS восстанавливается также пос
 `processing.openProcessing` добавляет только вызов восстановления результата
 ответа; status/report pipeline и общий runtime loader не менялись.
 
-В отдельном R1 test entrypoint `exec03_preview.py` переиспользуются marker-owned
+В собственном R1 test entrypoint `exec03_preview.py` переиспользуются marker-owned
 bootstrap/seed из p3-a-preview и существующий deterministic AI gateway. Scope
 assessment, R1 snapshot,7200/259200 остаются реальными; QA usage switch выключен.
 Новые прогоны сохраняют server startup fingerprints API/JS/dist/spec и точный SHA.
