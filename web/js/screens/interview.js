@@ -271,7 +271,7 @@ const recoverProductInterviewAnswer = (operation, snapshot) => {
     .finally(() => { if (productInterviewReadbacks.get(key) === reading) productInterviewReadbacks.delete(key); });
 };
 
-const recoverPreviousProductInterviewAnswers = (snapshot) => {
+const recoverPreviousProductInterviewAnswers = (snapshot, { completedOnly = false } = {}) => {
   const ownerId = String(state.pendingUser?.id || '');
   const prefix = `agent4k.assessmentPending:${snapshot.cycle_id}:`;
   Object.keys(window.sessionStorage).filter((key) => key.startsWith(prefix) && key.endsWith(':' + ownerId))
@@ -291,6 +291,10 @@ const recoverPreviousProductInterviewAnswers = (snapshot) => {
         if (operation.ownerId !== String(state.pendingUser?.id || '')
             || operation.identityEpoch !== state.identityEpoch || operation.cycleId !== state.productCycleId
             || !['interview', 'processing'].includes(state.currentScreen)) return;
+        // Navigation to processing does not prove the source AS changed. Only
+        // a completed server receipt may retire its operation without runtime.
+        if (completedOnly && (value.status !== 'accepted'
+            || !['applied', 'answered', 'rejected_late'].includes(value.processing_status))) return;
         applyProductInterviewAnswerStatus(operation, value, snapshot);
       }).catch(() => { /* Unknown remains recoverable under its original AS. */ })
         .finally(() => { if (productInterviewReadbacks.get(requestKey) === reading) productInterviewReadbacks.delete(requestKey); });
@@ -299,7 +303,7 @@ const recoverPreviousProductInterviewAnswers = (snapshot) => {
 
 export const recoverCompletedInterviewAnswers = (cycleId) => {
   if (state.currentScreen === 'processing' && cycleId === state.productCycleId) {
-    recoverPreviousProductInterviewAnswers({ cycle_id: cycleId, current_situation: null });
+    recoverPreviousProductInterviewAnswers({ cycle_id: cycleId, current_situation: null }, { completedOnly: true });
   }
 };
 

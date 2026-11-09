@@ -53,3 +53,20 @@ test('EXEC03 late previous-AS recovery cannot clear a different login session', 
   assert.equal(h.storage.has(key), true);
   assert.equal(h.storage.get('agent4k.assessmentDraft:cycle-a:as-a'), 'Исходный ответ');
 });
+
+for (const status of ['absent', 'pending', 'failed']) {
+  test(`EXEC03 processing navigation retains ${status} identity without server source-phase proof`, async () => {
+    const { h, operation } = prepare();
+    const value = accepted(operation);
+    value.status = status === 'absent' ? 'absent' : 'accepted';
+    value.processing_status = status === 'absent' ? null : status;
+    if (status === 'absent') value.turn = null;
+    h.setFetch(async () => json(value));
+    h.state.currentScreen = 'processing';
+    h.subject.recoverCompletedInterviewAnswers('cycle-a'); await tick();
+    assert.equal(JSON.parse(h.storage.get(key)).requestId, operation.requestId);
+    assert.equal(JSON.parse(h.storage.get(key)).turnId, operation.turnId);
+    assert.equal(h.storage.get('agent4k.assessmentDraft:cycle-a:as-a'), operation.draftValue);
+    assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 0);
+  });
+}
