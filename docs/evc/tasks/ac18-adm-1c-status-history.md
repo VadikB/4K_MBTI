@@ -29,7 +29,8 @@
   C-AC04 — read-only обработка; C-AC10 — современная Cycle/Report-проекция без legacy/fake zero.
 - Завершено review diff: недостижимые legacy-агрегаторы `user_sessions` удалены из активного
   модуля; воспроизводимый визуальный маршрут покрыт адресными browser-тестами.
-- Следующий шаг: human visual acceptance; затем согласованный PATCH candidate, push/PR и CI.
+- Human visual acceptance владельца пройдена на кандидате `fc4b903c`; следующий шаг —
+  согласованный PATCH candidate, push/PR и CI.
 - Ветка: `codex/ac18-adm-1c-status-history`; base/head до изменений: `65a62aca…`.
 - `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`, `version_bump=false`,
   `artifact_publish=false`.
@@ -59,7 +60,8 @@
   FAIL инфраструктурно (нет локальной `.venv`, script отсутствует); эквивалентные прямые
   команды выше выполнены и PASS. Первый PG-вызов в sandbox — FAIL `Operation not permitted`,
   разрешённый повтор к тому же localhost owned DB — PASS.
-- CI, merge, deploy, test-stand readback и human visual acceptance текущего 1C — `NOT_RUN`.
+- Human visual acceptance владельца на локальном кандидате `fc4b903c` — PASS.
+  CI, merge, deploy и deploy/test-stand readback — `NOT_RUN`.
 
 ## Кандидат визуальной приёмки · 09.11.2026
 
@@ -78,8 +80,9 @@
   Синтетические M8-строки предназначены только для визуального предъявления; права,
   readback и сохранение отдельно проверяются actual HTTP/owned PG тестами.
 - Визуальный self-check: desktop Chromium/IAB — PASS для входа, сводки,
-  статусов/срока/пояса, read-only processing и карточки истории. Human acceptance
-  владельца, физическое устройство и deploy readback не присвоены.
+  статусов/срока/пояса, read-only processing и карточки истории. Владелец подтвердил
+  human visual acceptance кандидата `fc4b903c` 09.11.2026. Физическое устройство,
+  отдельное доказательство 200% zoom и deploy readback не проверялись.
 - Найден и исправлен дефект: старое отменённое поколение перезаписывало текущий этап
   нового поколения с тем же `assignment_ref`. Newest-first проекция теперь сохраняет
   первое поколение; регрессия добавлена в `test_admin_assessment_stage.py`.
@@ -88,19 +91,31 @@
 
 | Критерий | Происхождение | Фактическое поведение | Проверка | Статус | Остаток |
 | --- | --- | --- | --- | --- | --- |
-| C-AC01 · 33 строки | Существующие stage/mail guards + ADM-1C проекция | Один главный этап; mail/link/registration вторичны; unknown не становится missing | unit stage matrix, frontend contract, synthetic PG route | PASS | Human visual decision |
+| C-AC01 · 33 строки | Существующие stage/mail guards + ADM-1C проекция | Один главный этап; mail/link/registration вторичны; unknown не становится missing | unit stage matrix, frontend contract, synthetic PG route, owner visual acceptance | PASS | — |
 | C-AC02 · ранние/поздние этапы | Поздние Cycle/Report существовали; ADM-1C довёл ранние и loading/error | Active/processing/report выше старого письма; отсутствующий exact assignment поясняется отдельно | 12 unit + 5 frontend + self-check | PASS | — |
-| C-AC03 · карточка/история | used/revoked API существовал; история и generation priority — ADM-1C | Точное текущее назначение, Cycle и revoked→new history; новое поколение не затирается старым | owned PG UI + новая unit regression | PASS | Human visual decision |
+| C-AC03 · карточка/история | used/revoked API существовал; история и generation priority — ADM-1C | Точное текущее назначение, Cycle и revoked→new history; новое поколение не затирается старым | owned PG UI + новая unit regression + owner visual acceptance | PASS | — |
 | C-AC04 · processing/read rights | Endpoint существовал; handler/dialog — ADM-1C | Read-only пояснение; нет admin start/resume/retry; Report только при access | browser AC18 + self-check dialog | PASS | Direct 403 покрыт существующими access tests |
 | C-AC05 · срок/lifecycle | Guards accept/revoke/repeat существовали; factual expiry — ADM-1C | Реальный `expires_at`, GMT+3, used/revoked/expired и понятный delivery state | browser AC18 + owned PG UI | PASS | Реальная доставка не входит |
 | C-AC06 · ST-R1 | Ранее реализовано | Открытие/закрытие/Escape не создаёт mutation; destructive actions отдельно | frontend contract + прежняя ST-R1 regression | PASS | Не переписывалось |
 | C-AC07 · ST-R3/scope/late context | Ранее реализовано; exact operation guards дополнены ADM-1C | Identity/org/assessment/generation изолированы; поздний ответ не попадает в другой context | e2e + 6 Playwright AC18 | PASS | — |
-| C-AC08 · самостоятельный маршрут | Новый ADM-1C fixture/stand | Готовый вход и 14 состояний без SQL/создания пользователей владельцем | technical self-check desktop actual HTTP/PG | NOT_RUN | Решение владельца и device/human acceptance |
-| C-AC09 / ADM-09 | Release facts 1А/1Б существовали; отчёты актуализированы ADM-1C | CI/release/history отделены от actual PG и human acceptance | task reports + текущий owned PG route | NOT_RUN | 200% и физическое устройство; human acceptance 1А/1В |
+| C-AC08 · самостоятельный маршрут | Новый ADM-1C fixture/stand | Готовый вход и 14 состояний без SQL/создания пользователей владельцем | technical self-check desktop actual HTTP/PG + owner visual acceptance | PASS | Физическое устройство не проверялось |
+| C-AC09 / ADM-09 | Release facts 1А/1Б существовали; отчёты актуализированы ADM-1C | CI/release/history отделены от actual PG и human acceptance | task reports + текущий owned PG route + owner visual acceptance | PASS | CI/deploy readback, 200% и физическое устройство — NOT_RUN |
 | C-AC10 / ADM-10 | Новая ADM-1C modern projection | M5 Cycle/M8 Report counters; started/closed; нет legacy index/fake zeros; pre-M1–M8 не учитывается | unit metrics, owned PG, dashboard self-check | PASS | Физическая очистка рабочей БД — отдельная операция |
-| C-AC11 / B-RES01 | Остаток 1Б исправлен ADM-1C | Confirmed POST не отменяется failed refresh; unknown подтверждается только exact receipt; stale/null не успех | HTTP/e2e, owned PG, Playwright cases 1–3 | PASS | Human visual decision |
+| C-AC11 / B-RES01 | Остаток 1Б исправлен ADM-1C | Confirmed POST не отменяется failed refresh; unknown подтверждается только exact receipt; stale/null не успех | HTTP/e2e, owned PG, Playwright cases 1–3 + owner visual acceptance | PASS | — |
 | C-AC12 / B-RES02 | Остаток 1Б исправлен ADM-1C | Per-person queued/error/uncertain/registered; без raw operation_id и provider=0; unknown имеет readback | HTTP/e2e, owned PG, Playwright cases 4–6 | PASS | Реальная почта не входит |
 
 После интеграции main и исправления generation priority: backend profile — 30/30 PASS,
 frontend contract — 5/5 PASS, Playwright ADM-1C — 6/6 PASS, `git diff --check` — PASS.
-Полный CI, push, PR, deploy и human visual acceptance — `NOT_RUN`.
+Human visual acceptance владельца на `fc4b903c` — PASS. Полный CI, push, PR и deploy —
+`NOT_RUN`; физическое устройство и отдельное доказательство 200% zoom — `NOT_RUN`.
+
+## Release-preflight после визуальной приёмки · 09.11.2026
+
+- `git fetch origin main` — PASS; `origin/main` остаётся на `61f94edfb7db5c382b8d327aca232d3ea79b7c20`.
+- `scripts/check_release_version.py --base-ref origin/main` ожидаемо остановлен: product paths
+  изменены, а версия кандидата остаётся `2.0.84`.
+- `scripts/prepare_ready_release.py --base-ref origin/main --release-type patch` подтвердил
+  требование одобренного кандидата `2.0.84 → 2.0.85` и завершился с gate-кодом 2 до любых
+  изменений версии, сборки и публикации.
+- Version bump, push, PR, CI и deploy не выполнялись; для следующего внешнего этапа требуется
+  отдельное разрешение владельца.
