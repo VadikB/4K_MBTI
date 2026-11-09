@@ -10,8 +10,9 @@
 - EXEC-FIX-01 включён в `origin/main` commit `60234f2a1d8d8389567fbfb012f4b83eb3b4a21f` (#200); integration обновлена merge-коммитом `ee27ae117e6cdf34f2153c9879eae5083608dc82`.
 - После создания Draft PR #202 база продвинулась до `3290421966214ffac4d6193975fd5723b7e19b21` (#201); интеграция повторно актуализирована. Конфликты затронули только generated `web/dist`, который очищен и пересобран из автоматически объединённых source-файлов; source-конфликтов не было.
 - Текущий шаг: Draft PR на release head после записи финальных результатов.
-- Следующий шаг: выбрать release version, выполнить `ready:prepare`, повторить обязательный CI на актуальном head и получить human review до Ready/merge.
-- Стоп-условия: предметных/схемных/миграционных новых решений не выявлено; Ready и merge заблокированы до version decision/preflight, актуального CI и human review.
+- Release version: владелец одобрил PATCH `2.0.89 → 2.0.90`; `npm run ready:prepare -- --candidate 2.0.90` — PASS, product paths: 51.
+- Следующий шаг: commit/push подготовленного release head, полный обязательный CI и human review до merge.
+- Стоп-условия: предметных/схемных/миграционных новых решений не выявлено; merge заблокирован до актуального полного CI и human review.
 - Полномочия: import/local checks/branch push/PR разрешены; paid LLM запрещены; version bump не назначен; merge/deploy только после действующего допуска и обязательных gates.
 - Откат: revert импортированных commit-цепочек и интеграционных адресных исправлений; сохранённые Turns/receipts/history/snapshots не удалять.
 
@@ -55,3 +56,10 @@ FROZEN/CURRENT=NO и выбранные M5 v1.1/M6 v1.8/M7 v1.3/M8 v1.2 без �
 - Merge с #201 не дал source-конфликтов; все rename/content-конфликты находились в generated `web/dist`. Выполнены `npm run build:web` из объединённых source-файлов и `git diff --check` — PASS.
 - Frontend regression стыка FIX-01/FIX-03/delivery после #201: `48 passed`; `npm run lint:js` — PASS.
 - Обязательные GitHub checks до разрешения конфликта имели статус expected/waiting; после push должны запускаться на новом release head. Human review, merge и TEST deploy остаются `NOT_RUN`.
+
+## Release candidate 2.0.90
+
+- Read-only preflight на актуальном `origin/main` определил единственного PATCH-преемника: `2.0.89 → 2.0.90`; владелец явно одобрил `version_bump`.
+- `npm run ready:prepare -- --candidate 2.0.90`: PASS; обновлены `pyproject.toml`, `uv.lock`, `web/js/config.js`, `web/index.html`, generated `web/dist`; consistency/release gate PASS.
+- После bump: frontend regression `48 passed`, `npm run lint:js` и `git diff --check` — PASS.
+- До перевода из Draft: commit/push точного release head и обязательный CI. Human review, merge, deploy и TEST scenarios пока `NOT_RUN`.
