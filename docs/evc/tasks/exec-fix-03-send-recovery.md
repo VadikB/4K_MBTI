@@ -12,10 +12,10 @@ Base: `46a5532336e41c5cdedf9684ba7bd5a9c5c202d1` (2.0.87, P3А+P3Б #199).
 
 Уже имеются prepared/unknown/accepted/saved, устойчивые request/Turn ID,
 endpoint/ASK/source phase, readback до retry и guards поздних callbacks.
-Остатки: старый draft переносится в новый вопрос той же AS; неизвестная отправка
-отсутствует, но смена фазы оставляет бессрочную блокировку. Текущий runtime не
-показывает старую AS и не публикует request identity. Нужен узкий owner readback
-исходной операции, безопасный при закрытии/возврате, без новой записи.
+Исправлены перенос draft в другой вопрос той же AS, отсутствие точного readback
+старой AS и бессрочная блокировка отсутствующей операции после смены фазы.
+Добавлен узкий owner readback исходной операции, доступный после закрытия/возврата,
+без новой записи. Существующий delivery механизм сохранён и расширен адресно.
 
 План: (1) адресный source/code/evidence audit; (2) readback одного ответа по
 AS/request/Turn/ASK, phase/owner draft и reconciliation; (3) независимые C1–C9
@@ -24,7 +24,8 @@ bundle, описание отдельного PR и вопросы архите�
 
 EXEC01 единолично меняет общие write admission/replay/time/return handlers;
 запрос координации отправлен в его существующий chat по поручению владельца.
-EXEC03 меняет только новый readback route/helper и delivery/draft hunks; общий
+EXEC03 меняет новый readback route/helper, delivery/draft и делегированный ниже
+ordinary applied replay; общий
 loader/presence/Finish/Next, schema, опубликованные snapshots не переписывает.
 Новый GET совместим со старыми клиентами; возвращает только один собственный
 Turn и его обработку, без hidden cards/history/AI. Отсутствие — наблюдение под
@@ -62,20 +63,23 @@ keyboard/owner visual acceptance не объявлять PASS по Chromium.
 Turn/историю/snapshots не удалять. Клиентские legacy ordinary drafts сохраняются;
 не привязывать их автоматически к ASK или другому owner.
 
-## Локальный результат до совместной приёмки
+## Локальные проверки и совместная приёмка
 
 Исправлены draft owner/ASK/revision и capture до lazy import, legacy revision
 migration; неизвестный исход восстанавливается точным non-cacheable owner GET.
 Документированные external delivery/submit/wiring sections7f0a77b совпадают с
 base46a5532 побайтно (EXTERNAL_REUSE.json); готовое не реализовано повторно.
-205 frontend,997 backend,122 HTTP PASS;247 уникальных integration PASS после
-исправления STAND_ADMIN_URL;2 real-provider integration NOT_RUN. Narrow readback
-unit/HTTP32 и closed-AS PG1 входят в эти наборы. Lint/build/diff PASS.
+Backend1018, HTTP142, integration254 PASS;2 real-provider tests пропущены.
+Эти полные наборы выполнены на867dbdd; весь API и pytest source с тех пор
+побайтно неизменен. Финальные frontend211, lint/build/diff PASS после
+дополнительной processing regression. Exact SHA/команды/exit/evidence и blob
+mapping содержатся во внешних CHECKS.csv/BACKEND_TEST_REUSE.json/HANDOFF.
 Actual Chromium ordinary loss-before/after commit, reload/two tabs/late response,
-keyboard320/account401/403 и C7 phase/draft/ASK recovery пройдены до shared M7
-replay assertion: на base46a5532 identical replay меняет pipeline revision.
-Эта красная регрессия передана01, не замаскирована как local PASS. Общий C9
-вынесен в отдельный compose checkout01+03; exact SHA/evidence во внешнем HANDOFF.
+keyboard320/account401/403, M7 phase/ASK и C9 проверяются в отдельном compose
+checkout01+03. Три полных сценария R1 прошли на2e11dab; финальный SHA и повтор
+после processing fix зафиксированы во внешнем HANDOFF, а не подменяются этим SHA.
+На base найден duplicate pipeline projection M7 replay, исправленный owner01;
+его исходные коммиты не включены в отдельный candidate03.
 Полный CI/TEST/human visual acceptance не выполнялись и не заменены local PASS.
 
 ### Согласованное владение ordinary replay
@@ -96,7 +100,10 @@ Pending исходной AS восстанавливается также пос
 экрана обработки. Читаются только существующие pending ключи текущего owner/Cycle;
 исходные endpoint/identity не меняются. Ответ старой AS не рендерится в новой,
 поздний readback проверяет owner/identityEpoch/Cycle и снимает только свой slot и
-свою draft revision. Добавлены3 production-function регрессии (208 Node PASS).
+свою draft revision. На processing без серверного runtime разрешена только
+очистка conclusive accepted applied/answered/rejected_late; absent/pending/failed
+сохраняют исходную identity и draft. Сам переход экрана не доказывает смену фазы.
+Добавлены6 production-function регрессий, включая этот крайний случай.
 `processing.openProcessing` добавляет только вызов восстановления результата
 ответа; status/report pipeline и общий runtime loader не менялись.
 
