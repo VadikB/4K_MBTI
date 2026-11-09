@@ -251,7 +251,8 @@ test('P3-AC02 saved new trace preserves reading position until the participant r
   const history = page.locator('#interview-scroll-area');
   await history.scrollIntoViewIfNeeded();
   await page.waitForTimeout(400); // initial RAF/legacy delayed alignment must finish
-  await history.evaluate((node) => { node.scrollTop = 320; });
+  await history.evaluate((node) => { node.scrollTo({ top: 320, behavior: 'instant' }); });
+  await expect.poll(() => history.evaluate((node) => node.scrollTop)).toBe(320);
   const before = await history.evaluate((node) => node.scrollTop);
   const answer = `Синтетическая новая сохранённая реплика ${randomUUID()}`;
   const accepted = await page.request.post(`${base}/users/assessment/m5/situations/${state.p3_a_previews.long.assessment_situation_id}/turns`, {
@@ -260,6 +261,9 @@ test('P3-AC02 saved new trace preserves reading position until the participant r
   expect(accepted.ok()).toBe(true);
   await expect(page.locator('.interview-message.own').filter({ hasText: answer })).toHaveCount(1);
   const after = await history.evaluate((node) => node.scrollTop);
+  fs.writeFileSync(path.join(evidence, 'new-trace-scroll-observation.json'), JSON.stringify({
+    before, after, expected_max_delta: 2, setup: 'scrollTo instant; confirmed reached320 before submitting the other-tab turn',
+  }, null, 2) + '\n');
   expect(Math.abs(after - before)).toBeLessThanOrEqual(2);
   await capture(page, 'new-trace-keeps-reading');
   const latest = page.locator('#interview-messages-scroll');
