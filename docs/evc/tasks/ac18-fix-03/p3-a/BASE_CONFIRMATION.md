@@ -16,7 +16,7 @@
 
 Проверка фактического стыка базы:
 
-- `Api/m5_scenario_runtime.py:record_turn` сохраняет/commit Turn до внешней
+- `Api/m5_scenario_runtime.py:submit_turn_detached` сохраняет/commit Turn до внешней
   обработки. Ошибка HTTP/provider после этого не доказывает отсутствие Turn.
   Существующая пара request_id/turn_id сохраняется для повтора той же операции.
 - M5 POST возвращает `{turn, events, idempotent}`. `turn.turn_id` и content_text

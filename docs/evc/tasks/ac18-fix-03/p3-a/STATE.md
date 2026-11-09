@@ -1,42 +1,50 @@
-# STATE — P3-A
+# STATE — P3-A, передача R1 (09.11.2026)
 
-- Исполнитель: локальный Codex/macOS, отдельный чат 01a1c01f-1464-7550-adb2-c875950faf18.
-- Worktree: `/private/tmp/p4k-p3-a-chat-mobile-20261109`.
-- Ветка: `codex/ac18-p3-a-chat-mobile`; repository `VadikB/4K_MBTI`.
-- Base/HEAD при старте: `023bf85ec796d212d29b33218d906a1ed2023941`, source 2.0.86.
-- Общая база подтверждена владельцем: `023bf85ec796d212d29b33218d906a1ed2023941`.
-  Стык/владение — CONTRACT_AND_OWNERSHIP пакета + проверенный код/fixtures базы.
-  Отдельная квитанция/version checkpoint архитектора не предоставлена.
-- Решения/источники/полномочия: TASK.md; local разрешён, внешние флаги false.
-- Сделано: распаковка/checksums, свежий fetch, worktree, адресное чтение,
-  аудит JS; независимые HTML/CSS: убраны вкладки, ограничена высота истории,
-  перенос мобильных кнопок с полноширинной отправкой, accessible labels, canvas/safe-area;
-  независимые presenter/scroll: новая AS сверху, чтение сохраняется при обновлении,
-  разрешённые object materials отображаются без точного начального дубля.
-- Рабочий source-коммит: `f55be32a525e63650419a42f756728d02879f825`.
-  Независимые UI/fixtures реализованы; source 2.0.86, release-флаги false.
-- На f55be32: Node 166/166, JS lint/build/diff PASS, существующий E01 browser PASS;
-  runtime browser 4 PASS / 1 FAIL. Пятый тест прочитал smooth scroll до окончания
-  движения; исправлен только test setup (instant + ожидание 320px), требование
-  сохранения позиции <=2px не ослаблено. Повтор на `f6ccbb2ada742939e17846d697641cbe5e3f92ba`
-  PASS: 320px до/после обновления, управляемый переход к последним сообщениям.
-  Точные итоги, SHA, PG-readback и cleanup во внешнем CHECKS.csv/HANDOFF.md.
-  Исторический unknown delivery FAIL сохранён; его исправление и строгие регрессии
-  сейчас в работе. Новый R1 initial assessment fixture прошёл предварительный real
-  HTTP/PG Continue (та же AS/ответ/черновик, 0 replacement), не AC18 admission.
-  Синтетический text-only 200% обнаружил nowrap topbar overflow; правка CSS в работе.
-  Физическая клавиатура/устройства и native browser text-zoom не проверены.
-- Ресурсы: отдельный PG cluster `/private/tmp/p4k-p3-a-pg-20261109`, localhost:18932;
-  тестовая БД/preview ещё создаются. Рабочая .env и прежние процессы не менялись.
-- Сделано B1–B5: scope/owner/epoch до await; persisted request_id/UUID turn_id;
-  unknown/saved/accepted/readback; исходный raw draft очищается только при совпадении;
-  retry сначала читает факт, phase/UI lock, точные receipts, отсутствие stale callback.
-  Source API/БД/time/return/polling не менялись. Node 186/186, lint/build PASS перед
-  фиксацией source-кандидата; строгие browser probes пройдены предварительно.
-- Текущий шаг: зафиксировать source-кандидат и выполнить финальную browser матрицу.
-- Остаток: общий unversioned loader race 3Б (внешний SHARED_LOADER_3B.md, actual-function
-  VM probe, не HTTP/PG приёмка); не назначать whole 3А/3И PASS по собственным subsets;
-  после merge 3Б актуализировать base и затронутые проверки.
-- Ограничения: физические iOS/Android пока NOT_RUN; owner visual acceptance NOT_RUN.
-  Проверочный dist того же source/version сопровождает локальный JS-коммит по hook;
-  релизные версия/dist остаются отдельным этапом архитектора (TASK.md).
+- Исполнитель: локальный Codex/macOS; чат 01a1c01f-1464-7550-adb2-c875950faf18.
+- Repository: https://github.com/VadikB/4K_MBTI.git.
+- Ветка: `codex/ac18-p3-a-chat-mobile`; worktree `/private/tmp/p4k-p3-a-chat-mobile-20261109`.
+- S0 / подтверждённый владельцем base / свежий origin/main:
+  `023bf85ec796d212d29b33218d906a1ed2023941`; source APP_RELEASE 2.0.86.
+- Стандартный стык: CONTRACT_AND_OWNERSHIP входного пакета, SHA256
+  `53a6ea7ffd394657d7f1c522d4ce6b6f0ad83373bd07ec95407adfb7556840a0`.
+  Отдельная квитанция/version checkpoint архитектора не предоставлена;
+  фактический неизменившийся стык проверен по коду и saved fixtures (BASE_CONFIRMATION.md).
+- Решения: ARCH-A05/PILOT-120, PATH-PILOT-01/PATH-START-01-SCOPE,
+  SYN-CONTOUR-OWNERSHIP; UX-E01 ADD01, FIX-RETURN-01, R1 v2. Адресные основания — TASK.md.
+- Код и проверки: `7f0a77be8ba456a4e6bb52bb676d623672d8dcbc`.
+  Коммиты от base: f55be32 → f6ccbb2 → 65e33d9 → 7f0a77b.
+  Следующий коммит содержит только этот STATE и актуализацию TASK; точный delivery
+  head, связь SHA и byte-identical source proof — во внешних HANDOFF.md / RESULT.json.
+- Сделано: P3-AC01 — единый public chat, авторы/материалы, первое предъявление
+  сверху и сохранение места чтения; P3-AC02 — ограниченная история, доступный
+  мобильный ввод/кнопки, scope-safe raw draft/reload; P3-AC03 — одна отправка,
+  подтверждение факта/readback, сохранённые request/Turn IDs при неизвестном исходе,
+  защита owner/Cycle/AS до await и от поздних callbacks. Send не завершает AS.
+  При первом открытии ввод/Send/Finish ждут подтверждённого существующим renderer состояния.
+- Владение: DOM/CSS/presenter/scroll/draft/delivery и input hooks — 3А.
+  Общий loadProductRuntime, time/progress/return/presence и backend — 3Б, без правок.
+  web/dist — штатная локальная проверочная сборка той же версии по pre-commit;
+  релизную сборку и номер готовит архитектор.
+- На точном code SHA: Node 187/187 PASS; lint/build/diff PASS;
+  custom Chromium + real HTTP/owned PostgreSQL 12/12 PASS;
+  AUTH/F01/V01/E01/P03/UX-AUD29-03 subset 25/25 PASS.
+  Первичное evidence и команды — outputs/p4k-p3-a-20261109/CHECKS.csv
+  в рабочем каталоге задачи; отдельный handoff сопровождает Git bundle.
+- Визуальный маршрут: http://127.0.0.1:18931/p3-a/ ; synthetic auto-login,
+  short/long/pause/R1 Continue/delayed/unknown/restored.
+  320/390/430/768/1440, reduced viewport, synthetic text200 / emulated page scale — проверены.
+  Physical iOS Safari/Android Chrome/software keyboard/native textzoom — NOT_RUN.
+  Owner visual acceptance — NOT_RUN; итоговый AC10/сочетание — 3И.
+- Ресурсы: отдельный PG cluster `/private/tmp/p4k-p3-a-pg-20261109`, port18932;
+  финальный preview run_id `fefb8b9946914042b0ae8b14086f8810`, PID95481, port18931,
+  private state `/private/tmp/p4k-p3-a-preview-final-20261109/state.json` (0600).
+  Стенд оставлен для просмотра; stop/owned cleanup описаны в VISUAL.md.
+  Все suite-owned БД удалены после сохранения evidence. Рабочая .env/БД не менялись.
+- Остаток: OPEN_SHARED_3B — unversioned initial/visibility loader применяет ответ
+  старого scope к новому экрану (реальная функция, VM probe; не HTTP/PG приёмка).
+  Исправление принадлежит 3Б. До него whole 3А/AC10 PASS не присваивается.
+  После merge 3Б: свежий base, разрешение hunks и адресные повторные checks, новая ревизия.
+- Полномочия: local=true (запрос владельца + START_CODEX), branch_push/pr/version_bump/
+  merge/deploy/artifact_publish=false. Подготовлен локальный bundle; внешних операций нет.
+- Release head/PR/CI/human review/merge/TEST readback: NOT_RUN / не назначены.
+  Передача R1 — локальный кандидат с явным остатком, не релизное или визуальное принятие.
