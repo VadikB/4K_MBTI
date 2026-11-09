@@ -273,7 +273,7 @@ def start_session(connection, *, session_id: str) -> dict[str, Any]:
         """
         INSERT INTO m5_cycle_time_intervals
             (cycle_db_id,session_db_id,interval_type,started_at,reason)
-        VALUES (%s,%s,'collecting',NOW(),'session_started')
+        VALUES (%s,%s,'collecting',clock_timestamp(),'session_started')
         """,
         (session["cycle_db_id"], session["id"]),
     )
@@ -302,19 +302,19 @@ def transition_session(connection, *, session_id: str, action: str, reason: str)
     session_status, cycle_status = target
     ended = action in {"interrupt", "complete"}
     connection.execute(
-        "UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL",
+        "UPDATE m5_cycle_time_intervals SET ended_at=clock_timestamp() WHERE cycle_db_id=%s AND ended_at IS NULL",
         (session["cycle_db_id"],),
     )
     if action == "pause":
         connection.execute(
             "INSERT INTO m5_cycle_time_intervals (cycle_db_id,session_db_id,interval_type,started_at,reason) "
-            "VALUES (%s,%s,'authorized_pause',NOW(),%s)",
+            "VALUES (%s,%s,'authorized_pause',clock_timestamp(),%s)",
             (session["cycle_db_id"], session["id"], reason),
         )
     elif action == "resume":
         connection.execute(
             "INSERT INTO m5_cycle_time_intervals (cycle_db_id,session_db_id,interval_type,started_at,reason) "
-            "VALUES (%s,%s,'collecting',NOW(),%s)",
+            "VALUES (%s,%s,'collecting',clock_timestamp(),%s)",
             (session["cycle_db_id"], session["id"], reason),
         )
     row = connection.execute(
@@ -340,7 +340,7 @@ def _can_continue(connection, cycle: dict[str, Any]) -> bool:
     calendar_elapsed = max(0, int((now - started_at).total_seconds()))
     consumed = connection.execute(
         """
-        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at,NOW())-started_at))),0)::BIGINT AS value
+        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at,clock_timestamp())-started_at))),0)::BIGINT AS value
         FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting'
         """,
         (cycle["id"],),
@@ -365,7 +365,7 @@ def assert_collecting(connection, *, cycle_db_id: int, session_db_id: int) -> di
         raise ValueError("M7_BLOCKING_SYSTEM_WAIT")
     if not _can_continue(connection, dict(row)):
         connection.execute(
-            "UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL",
+            "UPDATE m5_cycle_time_intervals SET ended_at=clock_timestamp() WHERE cycle_db_id=%s AND ended_at IS NULL",
             (cycle_db_id,),
         )
         connection.execute(
@@ -385,10 +385,10 @@ def begin_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, ope
         (cycle_db_id,operation_ref)).fetchone()
     if existing:return dict(existing)
     assert_collecting(connection,cycle_db_id=cycle_db_id,session_db_id=session_db_id)
-    connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE cycle_db_id=%s AND ended_at IS NULL",(cycle_db_id,))
+    connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=clock_timestamp() WHERE cycle_db_id=%s AND ended_at IS NULL",(cycle_db_id,))
     return dict(connection.execute("""INSERT INTO m5_cycle_time_intervals
         (cycle_db_id,session_db_id,interval_type,started_at,reason,operation_ref)
-        VALUES(%s,%s,'blocking_system_wait',NOW(),%s,%s) RETURNING *""",(cycle_db_id,session_db_id,reason,operation_ref)).fetchone())
+        VALUES(%s,%s,'blocking_system_wait',clock_timestamp(),%s,%s) RETURNING *""",(cycle_db_id,session_db_id,reason,operation_ref)).fetchone())
 
 
 def end_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, operation_ref: str, reason: str) -> dict[str, Any]:
@@ -396,7 +396,7 @@ def end_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, opera
         (cycle_db_id,operation_ref)).fetchone()
     if not interval:raise ValueError('M7_BLOCKING_WAIT_NOT_FOUND')
     if interval['ended_at']:return dict(interval)
-    connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=NOW() WHERE id=%s",(interval['id'],))
+    connection.execute("UPDATE m5_cycle_time_intervals SET ended_at=clock_timestamp() WHERE id=%s",(interval['id'],))
     state=connection.execute("SELECT c.status,s.status AS session_status FROM m5_cycles c JOIN m5_cycle_sessions s ON s.id=%s WHERE c.id=%s FOR UPDATE OF c,s",
         (session_db_id,cycle_db_id)).fetchone()
     another_wait=connection.execute("""SELECT 1 FROM m5_cycle_time_intervals
@@ -404,7 +404,7 @@ def end_blocking_wait(connection, *, cycle_db_id: int, session_db_id: int, opera
         (cycle_db_id,)).fetchone()
     if state and state['status']=='active' and state['session_status']=='active' and not another_wait:
         connection.execute("""INSERT INTO m5_cycle_time_intervals(cycle_db_id,session_db_id,interval_type,started_at,reason)
-            VALUES(%s,%s,'collecting',NOW(),%s)""",(cycle_db_id,session_db_id,reason))
+            VALUES(%s,%s,'collecting',clock_timestamp(),%s)""",(cycle_db_id,session_db_id,reason))
     return dict(connection.execute('SELECT * FROM m5_cycle_time_intervals WHERE id=%s',(interval['id'],)).fetchone())
 
 
@@ -419,7 +419,7 @@ def read_cycle(connection, cycle_id: str) -> dict[str, Any]:
     result["sessions"] = [dict(x) for x in sessions]
     consumed = connection.execute(
         """
-        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at,NOW())-started_at))),0)::BIGINT AS value
+        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at,clock_timestamp())-started_at))),0)::BIGINT AS value
         FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting'
         """,
         (cycle["id"],),
