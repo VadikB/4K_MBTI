@@ -9,7 +9,7 @@ from urllib import error, request
 
 from Api.config import settings
 from Api.database import pause_thread_connections_for_external_io
-from Api.llm.contracts import LlmGatewayError, LlmMessage, LlmResponse
+from Api.llm.contracts import LlmCapacityError, LlmGatewayError, LlmMessage, LlmResponse
 from Api.llm.provider_contract import GATEWAY_VERSION, load_provider_contract
 
 
@@ -99,8 +99,9 @@ class DeepSeekGateway:
                 queue_wait_ms,
                 settings.deepseek_max_concurrency,
             )
-            raise RuntimeError(
-                "Сервис обработки ответов сейчас перегружен. Подождите немного и повторите отправку."
+            raise LlmCapacityError(
+                "Сервис обработки ответов сейчас перегружен. Подождите немного и повторите отправку.",
+                sent={}, provider={"transport_attempts": [], "queue_wait_ms": queue_wait_ms},
             )
 
         request_payload = {

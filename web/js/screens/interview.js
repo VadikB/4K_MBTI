@@ -522,6 +522,15 @@ const renderProductRuntime = (snapshot) => {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button';
     button.textContent = 'Приступить к следующей ситуации';
     const status = document.createElement('p'); status.setAttribute('role', 'status');
+    const preparation = snapshot.preparation_operation;
+    if (preparation?.status === 'failed') {
+      status.textContent = preparation.error?.message || 'Не удалось подготовить следующую ситуацию.';
+      button.disabled = preparation.retry_allowed !== true;
+      if (!button.disabled) button.textContent = 'Повторить подготовку';
+    } else if (['queued', 'running'].includes(preparation?.status)) {
+      status.textContent = 'Подготавливаем следующую ситуацию…';
+      button.disabled = true;
+    }
     button.addEventListener('click', async () => {
       button.disabled = true; status.textContent = 'Проверяем готовность следующей ситуации…';
       try {
@@ -545,7 +554,11 @@ const renderProductRuntime = (snapshot) => {
         }
         status.textContent = 'Следующая ситуация ещё не готова. Попробуйте ещё раз.';
         button.disabled = false;
-      } catch (error) { status.textContent = error.message; button.disabled = false; }
+      } catch (error) {
+        status.textContent = error.message;
+        button.disabled = error.name === 'PreparationFailed' && !error.retryAllowed;
+        if (error.name === 'PreparationFailed' && error.retryAllowed) button.textContent = 'Повторить подготовку';
+      }
     });
     card.append(title, copy, button, status); interviewMessages.appendChild(card);
     interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
