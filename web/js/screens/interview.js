@@ -57,6 +57,9 @@ let returnPresenceCycleId = null;
 let returnPresenceGeneration = 0;
 let activeInterviewDraftKey = null;
 let renderedProductMessages = null;
+let interviewScrollAlignmentGeneration = 0;
+let interviewScrollAlignmentFrame = null;
+let interviewScrollAlignmentTimers = [];
 const returnClientId = (() => {
   const key = 'agent4k.returnClientId';
   let value = window.sessionStorage.getItem(key);
@@ -145,15 +148,25 @@ const addProductSituationMessage = (payload) => {
 };
 
 const productEventText = (event) => {
+  if (!['material_disclosed', 'mandatory_update'].includes(event?.event_type)) return null;
   const payload = event?.payload_json || {};
-  const content = payload.content || payload.message || payload.character_response;
-  return typeof content === 'string' ? content : null;
+  if (payload.recipient && payload.recipient !== 'assessee') return null;
+  const content = payload.content;
+  if (typeof content === 'string') return content;
+  if (!content || typeof content !== 'object' || Array.isArray(content)) return null;
+  const title = payloadText(content, ['title', 'name', 'label']);
+  const body = payloadText(content, ['text', 'content', 'description']);
+  return [title, body].filter(Boolean).join(': ') || null;
 };
 
 const renderProductRuntime = (snapshot) => {
   const current = snapshot.current_situation;
   const previousCaseKey = state.activeInterviewCaseKey;
   const previousScrollTop = interviewScrollArea?.scrollTop || 0;
+  const wasNearBottom = isInterviewNearBottom();
+  const sameSituation = renderedProductMessages?.cycleId === snapshot.cycle_id
+    && renderedProductMessages?.situationId === current?.assessment_situation_id
+    && renderedProductMessages?.node === interviewMessages.firstChild;
   const routePositions = Array.isArray(snapshot.route?.positions) ? snapshot.route.positions : [];
   const currentPosition = routePositions.find((position) =>
     position.current_assessment_situation_id === current?.assessment_situation_id)
@@ -173,42 +186,51 @@ const renderProductRuntime = (snapshot) => {
   persistAssessmentContext();
   restoreInterviewDraft();
 
+  const initialMaterials = current?.participant_payload?.initial_materials;
+  const initialMaterialTextById = new Map((Array.isArray(initialMaterials) ? initialMaterials : [])
+    .map((material) => [material?.material_id, payloadItems({ materials: [material] }, ['materials'])[0]])
+    .filter(([id, text]) => id && text));
   const dialogue = [
     ...(snapshot.trace?.turns || []).map((item) => ({...item, text:item.content_text,
       role:item.speaker_type === 'assessee' ? 'user' : 'assistant'})),
-    ...(snapshot.trace?.events || []).map((event) => ({...event, text:productEventText(event), role:'assistant'})),
+    ...(snapshot.trace?.events || []).map((event) => ({...event, text:productEventText(event), role:'assistant'}))
+      // The start message already contains initial materials. Preserve later
+      // content changes and mandatory updates, even when they reuse an ID.
+      .filter((event) => event.event_type !== 'material_disclosed'
+        || event.text !== initialMaterialTextById.get(event.material_id)),
   ].sort((a, b) => a.sequence_no - b.sequence_no);
   const clarification = snapshot.clarification;
   // Polling the same saved AS must not collapse/recreate its long DOM and move
   // the document back to the message while the participant reads or uses controls.
   // Include only rendered content; status, time and actionability still refresh.
-  const messageKey = JSON.stringify([current?.assessment_situation_id,
+  const messageKey = JSON.stringify([snapshot.cycle_id, current?.assessment_situation_id,
     current?.participant_payload, dialogue, clarification]);
   const messagesChanged = renderedProductMessages?.key !== messageKey
     || renderedProductMessages?.node !== interviewMessages.firstChild;
   if (messagesChanged) {
+    cancelInterviewScrollAlignment();
     interviewMessages.innerHTML = '';
     if (current) addProductSituationMessage(current.participant_payload);
     for (const item of dialogue) {
       if (item.text) {
         const label = item.speaker_type === 'character' ? item.speaker_name || 'Персонаж'
           : item.speaker_type === 'assessment' ? 'Уточнение к вашему ответу' : 'Материал ситуации';
-        const row = addInterviewMessage(item.role, item.text, label);
+        const row = addInterviewMessage(item.role, item.text, label, { scroll: false });
         if (item.turn_id) row.dataset.turnId = item.turn_id;
       }
     }
     if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
         !(snapshot.trace?.turns || []).some((turn) => turn.turn_id === clarification.question_turn_id)) {
-      addInterviewMessage('assistant', clarification.question.text, 'Уточнение к вашему ответу');
+      addInterviewMessage('assistant', clarification.question.text, 'Уточнение к вашему ответу', { scroll: false });
     }
-    renderedProductMessages = { key: messageKey, node: interviewMessages.firstChild };
+    renderedProductMessages = { key: messageKey, node: interviewMessages.firstChild,
+      cycleId: snapshot.cycle_id, situationId: current?.assessment_situation_id };
   }
-  if (interviewScrollArea) {
+  if (interviewScrollArea && messagesChanged) {
     const targetTop = current && previousCaseKey !== current.assessment_situation_id ? 0 : previousScrollTop;
-    interviewScrollArea.scrollTop = targetTop;
-    window.requestAnimationFrame?.(() => {
-      interviewScrollArea.scrollTop = targetTop;
-      updateInterviewMessagesScrollIndicator();
+    scheduleInterviewScrollAlignment({
+      top: sameSituation ? targetTop : 0,
+      followBottom: sameSituation && wasNearBottom,
     });
   }
   renderInterviewMeta();
@@ -287,7 +309,7 @@ const renderProductRuntime = (snapshot) => {
         ? 'Проверяем, требуется ли уточнение.'
         : 'Ответы сохраняются в текущей Assessment Situation.';
   updateInterviewTimer();
-  if (messagesChanged) scheduleInterviewBottomAlignment();
+  updateInterviewMessagesScrollIndicator();
   return snapshot;
 };
 
@@ -639,7 +661,8 @@ const renderInterviewStructuredBlock = ({ label, body = '', items = [], variant 
   return section;
 };
 
-export const addInterviewMessage = (role, text, speakerLabel = null) => {
+export const addInterviewMessage = (role, text, speakerLabel = null, { scroll = true } = {}) => {
+  const followBottom = scroll && (role === 'user' || isInterviewNearBottom());
   const row = document.createElement('div');
   row.className = 'interview-message' + (role === 'user' ? ' own' : '');
   row.dataset.messageText = role === 'user' ? String(text ?? '').trim() : '';
@@ -702,7 +725,8 @@ export const addInterviewMessage = (role, text, speakerLabel = null) => {
     row.appendChild(delivery);
   }
   interviewMessages.appendChild(row);
-  scrollInterviewToBottom();
+  if (followBottom) scrollInterviewToBottom();
+  else updateInterviewMessagesScrollIndicator();
   return row;
 };
 
@@ -712,6 +736,7 @@ export const setInterviewMessageDeliveryState = (row, deliveryState, onRetry = n
   const status = row.querySelector('.interview-message-delivery-status');
   const retryButton = row.querySelector('.interview-message-retry');
   if (!delivery || !status || !retryButton) return;
+  const followBottom = row.isConnected && isInterviewNearBottom();
 
   row.classList.toggle('delivery-pending', deliveryState === 'pending');
   row.classList.toggle('delivery-failed', deliveryState === 'failed');
@@ -731,43 +756,65 @@ export const setInterviewMessageDeliveryState = (row, deliveryState, onRetry = n
     status.textContent = '';
     retryButton.hidden = true;
   }
-  scrollInterviewToBottom();
+  if (followBottom) scrollInterviewToBottom();
+  else updateInterviewMessagesScrollIndicator();
 };
 
-const scrollInterviewToBottom = () => {
+const isInterviewNearBottom = () => !interviewScrollArea
+  || interviewScrollArea.scrollHeight - interviewScrollArea.scrollTop - interviewScrollArea.clientHeight <= 24;
+
+const cancelInterviewScrollAlignment = () => {
+  interviewScrollAlignmentGeneration += 1;
+  if (interviewScrollAlignmentFrame !== null) window.cancelAnimationFrame?.(interviewScrollAlignmentFrame);
+  interviewScrollAlignmentFrame = null;
+  interviewScrollAlignmentTimers.forEach((timer) => window.clearTimeout(timer));
+  interviewScrollAlignmentTimers = [];
+};
+
+const setInterviewScrollTop = (top) => {
   if (interviewScrollArea) {
-    interviewScrollArea.scrollTop = interviewScrollArea.scrollHeight;
+    // Restoring a reading position must not inherit CSS smooth scrolling.
+    interviewScrollArea.scrollTo({ top, behavior: 'instant' });
   }
   updateInterviewMessagesScrollIndicator();
 };
 
-const ensureLatestInterviewMessageVisible = () => {
-  if (!interviewMessages || !interviewScrollArea) {
-    return;
-  }
-  const lastMessage = interviewMessages.lastElementChild;
-  if (!(lastMessage instanceof HTMLElement)) {
-    scrollInterviewToBottom();
-    return;
-  }
-  lastMessage.scrollIntoView({ block: 'end', inline: 'nearest' });
-  scrollInterviewToBottom();
+const scrollInterviewToBottom = () => {
+  cancelInterviewScrollAlignment();
+  setInterviewScrollTop(interviewScrollArea?.scrollHeight || 0);
 };
 
-const scheduleInterviewBottomAlignment = () => {
-  const align = () => ensureLatestInterviewMessageVisible();
-  if (typeof window.requestAnimationFrame === 'function') {
-    window.requestAnimationFrame(() => {
-      align();
-      window.setTimeout(align, 80);
-      window.setTimeout(align, 220);
-    });
-    return;
-  }
+const scheduleInterviewScrollAlignment = ({ top = 0, followBottom = false } = {}) => {
+  cancelInterviewScrollAlignment();
+  if (!interviewScrollArea) return;
+  const generation = interviewScrollAlignmentGeneration;
+  const node = interviewMessages.firstChild;
+  const scope = JSON.stringify([state.currentScreen, state.productCycleId, state.activeInterviewCaseKey]);
+  let expectedTop = interviewScrollArea.scrollTop;
+  const current = () => generation === interviewScrollAlignmentGeneration
+    && node === interviewMessages.firstChild
+    && scope === JSON.stringify([state.currentScreen, state.productCycleId, state.activeInterviewCaseKey]);
+  const align = () => {
+    if (!current()) return;
+    // A participant can scroll between a render and its layout callbacks.
+    if (Math.abs(interviewScrollArea.scrollTop - expectedTop) > 1) {
+      cancelInterviewScrollAlignment();
+      return;
+    }
+    setInterviewScrollTop(followBottom ? interviewScrollArea.scrollHeight : top);
+    expectedTop = interviewScrollArea.scrollTop;
+  };
   align();
-  window.setTimeout(align, 80);
-  window.setTimeout(align, 220);
+  if (typeof window.requestAnimationFrame === 'function') {
+    interviewScrollAlignmentFrame = window.requestAnimationFrame(() => {
+      interviewScrollAlignmentFrame = null;
+      align();
+    });
+  }
+  interviewScrollAlignmentTimers = [window.setTimeout(align, 80), window.setTimeout(align, 220)];
 };
+
+const scheduleInterviewBottomAlignment = () => scheduleInterviewScrollAlignment({ followBottom: true });
 
 const updateInterviewMessagesScrollIndicator = () => {
   if (!interviewScrollArea) return;
@@ -1392,6 +1439,7 @@ export const handleAssessmentEntryClick = async () => {
 
 export const initInterview = () => {
   window.addEventListener('agent4k:assessment-context-cleared', () => {
+    cancelInterviewScrollAlignment();
     const pending = assessmentEntryPending;
     assessmentEntryPending = null;
     pending?.buttons.forEach((button, index) => { button.disabled = pending.disabled[index]; });
@@ -1410,11 +1458,16 @@ export const initInterview = () => {
 
   if (interviewMessagesScroll && interviewScrollArea) {
     interviewMessagesScroll.addEventListener('click', () => {
+      cancelInterviewScrollAlignment();
       interviewScrollArea.scrollTo({ top: interviewScrollArea.scrollHeight, behavior: 'smooth' });
     });
   }
 
   if (interviewScrollArea) {
+    ['wheel', 'touchstart', 'pointerdown', 'keydown'].forEach((eventName) => {
+      interviewScrollArea.addEventListener(eventName, cancelInterviewScrollAlignment, { passive: true });
+    });
+    interviewTextarea.addEventListener('focus', cancelInterviewScrollAlignment);
     interviewScrollArea.addEventListener('scroll', updateInterviewMessagesScrollIndicator, { passive: true });
     window.addEventListener('resize', updateInterviewMessagesScrollIndicator);
     const messagesObserver = new MutationObserver(updateInterviewMessagesScrollIndicator);
@@ -1446,6 +1499,7 @@ export const initInterview = () => {
   });
 
   registerLeaveInterviewCleanup(() => {
+    cancelInterviewScrollAlignment();
     clearInterviewTimer();
     stopProductPresence();
     void pauseAssessmentTimerIfNeeded();
