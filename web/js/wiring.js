@@ -1861,6 +1861,9 @@ if (adminOrganizationsList) {
     const card = field?.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     if (!field || !organizationId || field.getAttribute('name') === 'assignment_ref') return;
+    if (field instanceof HTMLInputElement && field.type === 'file' && field.files?.length) {
+      field.closest('form')?.querySelector('[data-csv-reselect]')?.remove();
+    }
     if (!field.closest('[data-action="preview-early-data"], [data-action="preview-questionnaire"], .admin-questionnaire-preview')) return;
     const preview = field.closest('.admin-questionnaire-preview');
     if (preview && ['questionnaire_recipient', 'questionnaire_recipient_user'].includes(field.getAttribute('name'))) {
@@ -1895,6 +1898,12 @@ if (adminOrganizationsList) {
     const card = button.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
+    // The collection recovery control is outside any organization card.
+    if (button.dataset.action === 'refresh-admin-organizations') {
+      button.disabled = true;
+      withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
+      return;
+    }
     if (button.dataset.action === 'purge-account') {
       const userId = Number(button.dataset.userId);
       const email = String(button.dataset.email || '').trim();
@@ -2013,9 +2022,8 @@ if (adminOrganizationsList) {
         module.retryAdminOrganizationQuestionnaireLoad(organizationId));
       return;
     }
-    if (button.dataset.action === 'refresh-admin-organizations') {
-      button.disabled = true;
-      withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
+    if (button.dataset.action === 'check-program-connection') {
+      withScreen(loadAdminOrganizations, (module) => module.checkAdminOrganizationProgram(organizationId));
       return;
     }
     if (button.dataset.action === 'refresh-questionnaire-preview') {

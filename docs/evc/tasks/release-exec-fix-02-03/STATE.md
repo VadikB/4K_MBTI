@@ -8,6 +8,7 @@
 - EXEC-FIX-03: base `46a5532336e41c5cdedf9684ba7bd5a9c5c202d1`, source/tested `b19171997118d490cff334ce44b8f664a5ee6b4e`, imported range `447b7731..fe2c9ede`.
 - Integration/tested head до STATE-коммита: `fe2c9edef5d0dd5f1bdd0582541e9502b2cde4ff`; generated `web/dist` пересобран из объединённых source-файлов при разрешении конфликтов.
 - EXEC-FIX-01 включён в `origin/main` commit `60234f2a1d8d8389567fbfb012f4b83eb3b4a21f` (#200); integration обновлена merge-коммитом `ee27ae117e6cdf34f2153c9879eae5083608dc82`.
+- После создания Draft PR #202 база продвинулась до `3290421966214ffac4d6193975fd5723b7e19b21` (#201); интеграция повторно актуализирована. Конфликты затронули только generated `web/dist`, который очищен и пересобран из автоматически объединённых source-файлов; source-конфликтов не было.
 - Текущий шаг: Draft PR на release head после записи финальных результатов.
 - Следующий шаг: выбрать release version, выполнить `ready:prepare`, повторить обязательный CI на актуальном head и получить human review до Ready/merge.
 - Стоп-условия: предметных/схемных/миграционных новых решений не выявлено; Ready и merge заблокированы до version decision/preflight, актуального CI и human review.
@@ -47,3 +48,10 @@ FROZEN/CURRENT=NO и выбранные M5 v1.1/M6 v1.8/M7 v1.3/M8 v1.2 без �
 - FIX-02 Chromium first/next × retry allowed/blocked/reload: `4 passed`.
 - FIX-03 actual HTTP/PG Chromium ordinary C1–C6: `1 passed`, 31.6 s; startup fingerprints и merge SHA совпали.
 - Paid/provider LLM: `NOT_RUN` по запрету. CI/human review/TEST: `NOT_RUN` до Draft PR.
+
+## Актуализация после PR #202 и PR #201
+
+- GitHub локализовал конфликт Draft PR #202 в generated `web/dist/main.js`; актуальный `origin/main` оказался `3290421966214ffac4d6193975fd5723b7e19b21` (#201).
+- Merge с #201 не дал source-конфликтов; все rename/content-конфликты находились в generated `web/dist`. Выполнены `npm run build:web` из объединённых source-файлов и `git diff --check` — PASS.
+- Frontend regression стыка FIX-01/FIX-03/delivery после #201: `48 passed`; `npm run lint:js` — PASS.
+- Обязательные GitHub checks до разрешения конфликта имели статус expected/waiting; после push должны запускаться на новом release head. Human review, merge и TEST deploy остаются `NOT_RUN`.
