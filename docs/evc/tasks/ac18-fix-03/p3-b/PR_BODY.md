@@ -1,13 +1,14 @@
 # AC18 FIX-03 — совместный кандидат P3-A+P3-B
 
 Решение владельца после совместного кандидата: человеческий review пройден,
-допуск к переводу существующего PR #199 в Ready получен (прямое сообщение
-в текущем чате). Обязательный полный CI запускается на новом head после Ready;
-его результат не выводится из review. На уточнение владелец ответил «Только
-Ready и полный CI»; `merge=false`, `deploy=false`. Физические устройства и
-whole AC10 не становятся PASS автоматически.
+PR #199 переведён в Ready на `261e3057`. Первоначальный допуск «Только Ready
+и полный CI» позднее расширен прямым сообщением: merge в `main` и автоматический
+deploy после успешного PR. Текущий `merge=true`, `deploy=true` условен: PASS
+обязательных checks актуального head, свежая база/версия и штатный squash merge.
+Pilot promotion не разрешён.
+Физические устройства и whole AC10 не становятся PASS автоматически.
 
-Существующие ветка `codex/ac18-p3-b-time-return` и draft PR #199.
+Существующие ветка `codex/ac18-p3-b-time-return` и PR #199.
 База `origin/main=023bf85ec796d212d29b33218d906a1ed2023941` (2.0.86);
 PATCH-кандидат `2.0.87` согласован ранее. Проверенный кодовый SHA:
 `abce5f73cb452a6a71e9369e7a45d94533436a4e`.
@@ -53,6 +54,23 @@ P3-A `5b502f13`/OPEN_SHARED_3B — stale unversioned loader. Более ранн
 P3-A unknown/text200/initial-readiness также остаются в переданном
 `CHECKS.csv`; их отдельный PASS не считался проверкой сочетания.
 
+Первый полный CI Ready PR на `261e3057722d59cb1752264375befb080724bdd3`
+— **FAIL** ([run 42634935985](https://github.com/VadikB/4K_MBTI/actions/runs/42634935985)):
+integration и browser fast PASS, четыре runtime shard FAIL. Быстрый CI
+([run 42634936107](https://github.com/VadikB/4K_MBTI/actions/runs/42634936107))
+дал `frontend`/`pytest` PASS. В runtime-тестах сохранились старые ожидания:
+повторное включение «Отправить» после сохранённого уточнения и retry через
+общую кнопку при неизвестной доставке. Они противоречат новому фазовому
+контракту, не показывают потерю Turn. На `c2ebf5bf1abe7d3a09b401990f5c1e6abadb1824`
+G10.7 локально PASS 1/1 с HTTP-квитанцией и runtime readback; на
+`cfeadc24de798c377b8e515995dda75942576f05` Recovery локально PASS 1/1
+с retry конкретного сообщения, идентичными `request_id`/`turn_id` и серверным
+readback. Production-файлы с `abce5f73` не менялись. Новый полный CI для
+обновлённого head обязателен; локальные PASS не закрывают старый CI FAIL.
+Дополнительно на `cfeadc24de798c377b8e515995dda75942576f05` четыре
+затронутых runtime-сценария (S10-A/T11-10, S10-B, character, REV-02) локально
+PASS 4/4 на изолированном real HTTP/PG стенде.
+
 Физические iOS Safari/Android Chrome, native text zoom/software keyboard,
 owner visual acceptance, исторический TEST Cycle/OPS01 и полный путь AC18 —
 NOT_RUN. Поэтому whole AC10 и VISUAL_ACCEPTED не заявлены. Платный LLM и
@@ -61,10 +79,9 @@ NOT_RUN. Поэтому whole AC10 и VISUAL_ACCEPTED не заявлены. П�
 На screenshot 200% длинные подписи кнопок переносятся на несколько строк;
 читаемость остаётся предметом человеческого визуального review.
 
-Draft PR сохраняется до человеческого review/визуальной приёмки и отдельного
-решения о Ready. Быстрые CI jobs нужно проверить на актуальном опубликованном
-head; `full-verification` обязателен после Ready и до merge. Действующий
-допуск не разрешает сейчас merge в `main` или автоматический deploy.
+PR остаётся Ready. `full-verification` нужен на актуальном опубликованном head.
+После успешных обязательных gates владелец разрешил squash merge в `main` и
+наблюдение автоматического `deploy-test` на test; не pilot.
 
 ## История P3-B до объединения
 
