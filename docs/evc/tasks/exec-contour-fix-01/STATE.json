@@ -10,7 +10,7 @@
   "source_candidate_sha": "a5dfb995ec80c278cda210488411e78cbf12335c",
   "tested_sha": "a5dfb995ec80c278cda210488411e78cbf12335c",
   "pr": "https://github.com/VadikB/4K_MBTI/pull/205",
-  "pr_state": "draft",
+  "pr_state": "ready",
   "release_head_sha": null,
   "merge_sha": null,
   "deployed_sha": null,
@@ -32,8 +32,8 @@
     "H7 marker-owned browser database and state removed",
     "ignored .test-stand/h7-43c5/evidence retained"
   ],
-  "current": "PATCH 2.0.94 release tree locally checked; rebased draft PR #205 not yet pushed; full CI and owner review pending",
-  "next": "commit and push release candidate; Ready/full CI and owner review; then authorized merge/TEST deploy",
+  "current": "PR #205 Ready on PATCH 2.0.94; H7 controlled PASS on a5dfb995; fast CI passed, full verification pending after Ready synchronize",
+  "next": "full CI on current Ready HEAD, owner review of PR #205, then authorized merge/TEST deploy",
   "checks": [
     "validator/normalizer 61 PASS",
     "backend 1048 PASS on a16a413c",
@@ -54,14 +54,16 @@
     "release 2.0.94 backend 1055 PASS",
     "release 2.0.94 HTTP 144 PASS",
     "release 2.0.94 frontend 226 PASS",
-    "release 2.0.94 lint/build PASS"
+    "release 2.0.94 lint/build PASS",
+    "PR #205 fast CI frontend/pytest PASS on de224f18; full verification skip from draft synchronize is not PASS"
   ],
   "blockers": [
     "full paid composite excluded by direct instruction",
-    "PR #205 owner review and full CI pending before merge"
+    "PR #205 full verification and owner review pending before merge"
   ],
   "original_base_sha": "48e175da2a5dffd27e0722e0f50588f87a88fdbf",
   "original_source_candidate_sha": "7da924400000e97a83b7f58a3c73d7c8ab0aecd8",
   "h7_tested_sha": "a5dfb995ec80c278cda210488411e78cbf12335c",
-  "release_candidate_version": "2.0.94"
+  "release_candidate_version": "2.0.94",
+  "release_pre_ready_sha": "de224f186f880b7d1c3ce18ceb7611b8b3acf943"
 }

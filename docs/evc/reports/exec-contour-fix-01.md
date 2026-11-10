@@ -178,3 +178,5 @@ PR #206 включён в `main` squash commit `43c5da5e004d7772d554b1f71077e894
 Для отдельного PR #205 штатный `npm run ready:prepare -- --candidate 2.0.94` на `main@43c5da5` прошёл preflight и собрал `web/dist`. Номер `2.0.94` следует за выпущенным FIX04 `2.0.93`. Финальный release HEAD, CI, ревью владельца, merge и TEST deploy фиксируются после соответствующих действий.
 
 Локальная проверка release-дерева `2.0.94`: `npm run test:backend` 1055 PASS, 482 deselected, 1 dependency warning; `npm run test:backend:http` 144 PASS, 12 deselected, 1 dependency warning; `node --test tests/frontend/*.test.mjs` 226 PASS; `npm run lint:js` PASS; build/web в `ready:prepare` PASS. Новый paid/provider run не запускался.
+
+PR #205 опубликован после rebase с release HEAD `de224f186f880b7d1c3ce18ceb7611b8b3acf943` и переведён в Ready. Быстрые CI `frontend` и `pytest` прошли; `Full verification` для прежней draft-синхронизации был пропущен и не засчитывается. Последующий документальный `synchronize` на Ready запускает полный CI для нового HEAD; его результат записывается отдельно.
