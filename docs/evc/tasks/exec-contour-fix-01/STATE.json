@@ -1,0 +1,69 @@
+{
+  "task_id": "EXEC-CONTOUR-FIX-01",
+  "executor": "Codex архитектора",
+  "active_writer": "один исполнитель",
+  "branch": "codex/exec-contour-fix-01",
+  "assigned_worktree_slot": "ARCH_WORKTREES/exec-contour-fix-01",
+  "absolute_worktree": "/Users/vadim_bogachev/Developer/4K/ARCH_WORKTREES/exec-contour-fix-01",
+  "session_id": "P4K-EXEC-CONTOUR-FIX-01-ARCH",
+  "base_sha": "43c5da5e004d7772d554b1f71077e89463747cae",
+  "source_candidate_sha": "a5dfb995ec80c278cda210488411e78cbf12335c",
+  "tested_sha": "a5dfb995ec80c278cda210488411e78cbf12335c",
+  "pr": "https://github.com/VadikB/4K_MBTI/pull/205",
+  "pr_state": "ready",
+  "release_head_sha": null,
+  "merge_sha": null,
+  "deployed_sha": null,
+  "permissions": [
+    "local implementation",
+    "free synthetic tests",
+    "own-account PR",
+    "CI and human review",
+    "authorized merge and TEST deploy"
+  ],
+  "excluded": [
+    "new paid/provider run",
+    "production/test working data",
+    "subject artifact publication"
+  ],
+  "resources": [
+    "owned PostgreSQL container exec-contour-h7-43c5-pg removed",
+    "H7 EXEC03 HTTP server stopped",
+    "H7 marker-owned browser database and state removed",
+    "ignored .test-stand/h7-43c5/evidence retained"
+  ],
+  "current": "PR #205 Ready on PATCH 2.0.94; H7 controlled PASS on a5dfb995; fast CI passed, full verification pending after Ready synchronize",
+  "next": "full CI on current Ready HEAD, owner review of PR #205, then authorized merge/TEST deploy",
+  "checks": [
+    "validator/normalizer 61 PASS",
+    "backend 1048 PASS on a16a413c",
+    "frontend 226 PASS",
+    "targeted integration 67 PASS",
+    "controlled completion browser 2 PASS including repeated ASK",
+    "calendar while analysis pending browser 1 PASS",
+    "remote end from second tab browser 1 PASS",
+    "standalone PATH29 free browser 1 PASS after guard refactor",
+    "EXEC03 C1-C9 browser 3 PASS",
+    "JS lint and web build PASS",
+    "paid/provider NOT_RUN",
+    "H7 after FIX04: fractional PG 7 PASS at a5dfb995",
+    "H7 after FIX04: EXEC03 C1-C9 browser 3 PASS at a5dfb995",
+    "combined backend 1055 PASS, frontend 226 PASS, lint PASS",
+    "initial combined integration 79 PASS 1 clock-fixture FAIL; fixture corrected and addressed test PASS",
+    "ready:prepare candidate 2.0.94 PASS on main@43c5da5",
+    "release 2.0.94 backend 1055 PASS",
+    "release 2.0.94 HTTP 144 PASS",
+    "release 2.0.94 frontend 226 PASS",
+    "release 2.0.94 lint/build PASS",
+    "PR #205 fast CI frontend/pytest PASS on de224f18; full verification skip from draft synchronize is not PASS"
+  ],
+  "blockers": [
+    "full paid composite excluded by direct instruction",
+    "PR #205 full verification and owner review pending before merge"
+  ],
+  "original_base_sha": "48e175da2a5dffd27e0722e0f50588f87a88fdbf",
+  "original_source_candidate_sha": "7da924400000e97a83b7f58a3c73d7c8ab0aecd8",
+  "h7_tested_sha": "a5dfb995ec80c278cda210488411e78cbf12335c",
+  "release_candidate_version": "2.0.94",
+  "release_pre_ready_sha": "de224f186f880b7d1c3ce18ceb7611b8b3acf943"
+}

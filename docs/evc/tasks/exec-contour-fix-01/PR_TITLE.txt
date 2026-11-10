@@ -1,0 +1,1 @@
+EXEC-CONTOUR-FIX-01: достоверный receipt и безопасный cleanup

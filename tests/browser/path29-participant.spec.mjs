@@ -8,7 +8,7 @@ import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from './fi
 import { capturePathViewports } from './fixtures/path-viewports.mjs';
 import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
 import { captureFailurePage } from './fixtures/failure-page.mjs';
-import { completeStartedAssessment } from './fixtures/assessment-completion-profile.mjs';
+import { completeStartedAssessment, readExecutionExport, terminalExecutionKnown, destroyOwnedStandIfAdmitted } from './fixtures/assessment-completion-profile.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -54,6 +54,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   let step = 'create_owned_database';
   let preparationReceiptRequired = false;
   let terminalPreparationReceiptSaved = false;
+  let executionStarted = false;
+  let executionCycleId;
   const save = (name, value) => persistReceipt(path.join(dir, name + '.json'), value);
   cli('create');
   try {
@@ -61,7 +63,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     runId = initialState.run_id;
     save('run', { run_id: initialState.run_id, database: initialState.database, port,
       provider_mode: initialState.provider_mode,
-      profile: compositeProfile ? 'assessment-execution-contour/1' : 'assessment-first-case/1.1',
+      profile: compositeProfile ? 'assessment-execution-contour/2' : 'assessment-first-case/1.1',
       program_source: fullPath ? process.env.P4K_PROGRAM_SOURCE : undefined,
       published_release_ref: fullPath ? requestedRelease : undefined,
       code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
@@ -473,6 +475,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       });
       if (compositeProfile) {
         step = 'complete_started_assessment_to_report';
+        executionStarted = true;
+        executionCycleId = receipt.cycle.cycle_id;
         const firstCaseReceipt = finalReceipt;
         const contourReceipt = await completeStartedAssessment({
           page, base, cycleId: receipt.cycle.cycle_id, runId,
@@ -536,6 +540,20 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       classification: preparationError ? 'product_preparation_blocker' : 'diagnostic_assertion_or_environment_failure' });
     throw error;
   } finally {
+    let terminalExecutionExportSaved = false;
+    if (executionStarted) {
+      try {
+        if (!server || server.exitCode !== null) throw new Error('EXECUTION_SERVER_UNAVAILABLE');
+        const exported = await readExecutionExport(page, base, executionCycleId, runId, dir);
+        if (!terminalExecutionKnown(exported.value)) throw new Error('EXECUTION_OUTCOME_UNKNOWN');
+        terminalExecutionExportSaved = true;
+      } catch (exportError) {
+        try {
+          save('cleanup-deferred', { run_id: runId, reason: 'TERMINAL_EXECUTION_EXPORT_UNVERIFIED',
+            detail: exportError.message, database_preserved: true });
+        } catch { /* Preserve the DB even when diagnostic storage is unavailable. */ }
+      }
+    }
     try {
       if (server && server.exitCode === null) {
         const exited = new Promise((resolve) => server.once('exit', resolve)); server.kill('SIGTERM');
@@ -544,12 +562,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       }
     } finally {
       try {
-        if (preparationReceiptRequired && !terminalPreparationReceiptSaved) {
-          save('cleanup-deferred', { reason: 'TERMINAL_PREPARATION_RECEIPT_NOT_PERSISTED',
-            state_path: statePath, database_preserved: true });
-          throw new Error('Cleanup deferred: preserve owned DB until diagnostic receipt is saved');
-        }
-        cli('destroy');
+        destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutionExportSaved,
+          preparationReceiptRequired, terminalPreparationReceiptSaved,
+          statePath, runId, save, cli });
       }
       finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
       if (fullPath) save('completion', { run_id: runId, status: scenarioCompleted ? 'completed' : 'failed',

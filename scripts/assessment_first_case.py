@@ -63,6 +63,7 @@ def code_identity():
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
         'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs',
         'tests/assessment_completion_evidence.py',
+        'tests/assessment_execution_export.py',
         'tests/browser/fixtures/assessment-completion-profile.mjs',
         'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs',
         'tests/browser/fixtures/path-viewports.mjs',
@@ -149,11 +150,13 @@ def summarize_runs(directory, exit_code):
                 or not run.get('database') or cleanup.get('run_id') != run.get('run_id')
                 or cleanup.get('database') != run.get('database')):
             errors.append('CLEANUP_NOT_VERIFIED')
-        for name in ('failure', 'failure-receipt', 'cleanup-deferred'):
+        for name in ('failure', 'failure-receipt', 'cleanup-deferred', 'cleanup-error'):
             if (run_directory / (name + '.json')).exists():
                 errors.append('FAILURE_ARTIFACT:' + name)
         bootstrap = run.get('scope') == 'bootstrap_repeat'
-        composite = run.get('profile') == 'assessment-execution-contour/1'
+        composite = run.get('profile') in ('assessment-execution-contour/1', 'assessment-execution-contour/2')
+        if composite and process is None:
+            errors.append('PROCESS_RESULT_MISSING')
         receipt_name = 'source-provenance' if bootstrap else 'first-case-receipt'
         receipt_path = run_directory / (receipt_name + '.json')
         receipt = read(receipt_name)
@@ -242,8 +245,9 @@ def summarize_runs(directory, exit_code):
             'provider_completions': completions,
             'usage_note': 'Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace.'})
     success = exit_code == 0 and bool(runs) and all(run['result'] != 'FAIL' for run in runs)
-    profile = ('assessment-execution-contour/1'
-               if any(item.get('run', {}).get('profile') == 'assessment-execution-contour/1' for item in runs)
+    profiles = {item.get('run', {}).get('profile') for item in runs}
+    profile = ('assessment-execution-contour/2' if 'assessment-execution-contour/2' in profiles
+               else 'assessment-execution-contour/1' if 'assessment-execution-contour/1' in profiles
                else 'assessment-first-case/1.1')
     return {'profile': profile, 'scope': 'synthetic_diagnostic',
         'process_exit_code': exit_code, 'exit_code': exit_code if exit_code else (0 if success else 1),

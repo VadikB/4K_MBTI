@@ -81,6 +81,12 @@ def participant_state():
         }.items()}
 
 
+@app.get('/__pytest__/execution-export/{cycle_id}')
+def execution_export(cycle_id: str):
+    from tests.assessment_execution_export import execution_export as readback
+    return readback(cycle_id)
+
+
 @app.get('/__pytest__/path-receipt')
 def path_receipt():
     """Safe source-to-runtime trace; excludes prompts, responses and credentials."""
