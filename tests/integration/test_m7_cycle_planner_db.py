@@ -711,8 +711,9 @@ def test_pilot_120_actual_collection_boundary(db, consumed_seconds, allowed):
         session=c.execute('SELECT id FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal DESC LIMIT 1',
                           (cycle['id'],)).fetchone()
         c.execute("UPDATE m5_cycles SET time_budget_seconds=7200,calendar_window_seconds=259200")
+        # Fixed elapsed time keeps the boundary independent of fixture/runtime delay.
         c.execute("""UPDATE m5_cycle_time_intervals
-            SET started_at=NOW()-(%s*INTERVAL '1 second'),ended_at=NULL
+            SET started_at=NOW()-(%s*INTERVAL '1 second'),ended_at=NOW()
             WHERE cycle_db_id=%s AND interval_type='collecting'""",(consumed_seconds,cycle['id']))
         if allowed:
             assert assert_collecting(c,cycle_db_id=cycle['id'],session_db_id=session['id'])['status']=='active'
