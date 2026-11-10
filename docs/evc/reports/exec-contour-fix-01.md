@@ -7,7 +7,8 @@
 Документальный follow-up фиксирует mapping в `STATE.json`; release head,
 merge и deploy фиксируются по мере появления.
 Отдельный [draft PR #205](https://github.com/VadikB/4K_MBTI/pull/205)
-опубликован от `VadikB`; быстрый CI запущен, полный CI и human review — до merge.
+опубликован от `VadikB`; быстрый CI для предыдущего HEAD прошёл, полный CI и
+human review — до merge. Новый browser/guard follow-up требует CI на новом HEAD.
 
 ## Источники и связь
 
@@ -66,13 +67,15 @@ test-only gateway `Api/m10_test_gateway.py`
 | --- | --- | --- |
 | Validator + normalizer unit (`pytest -q tests/unit/test_assessment_completion_evidence.py tests/unit/test_assessment_run_summary.py`) | PASS 61 | После последней правки validator. |
 | F02 архивная offline-проба | PASS: valid `/2` принят, 5 semantic mutations и неполный общий normalizer отклонены, historical standalone принят | Хеш отчёта пробы `0930cc3df80f0cb51997c138d871f222201c011c9538d0e80cf05c071a08de41`; fixture синтетический. |
-| JS driver/export adapter | PASS 6 | Second ASK, другая вкладка, календарное закрытие, export write/readback/HTTP faults. |
+| JS driver/export adapter/cleanup guard | PASS 7 | Second ASK, другая вкладка, календарное закрытие, export write/readback/HTTP faults; реальный coordinator guard не вызывает `destroy` без export. |
 | Runner/preparation Node | PASS 66 | Regression. |
 | `npm run lint:js`; `npm run build:web` | PASS; PASS | Сборка не изменила `web/dist`. |
 | `npm run test:backend` | PASS 1048, 476 deselected, 1 dependency warning | На итоговом diff, без integration на отдельной БД. |
-| `node --test tests/frontend/*.test.mjs` | PASS 225 | Frontend/adapter. |
+| `node --test tests/frontend/*.test.mjs` | PASS 226 | Frontend/adapter, включая cleanup guard. |
 | Три адресных integration-файла на `product4k_pytest_exec_contour_fix_01_int` | PASS 67, 1 dependency warning | Реальный PostgreSQL, без provider. БД удалена, собственный контейнер остановлен. Первая sandbox-попытка дала setup ERROR из-за недоступного localhost; повтор с доступом PASS. |
 | Playwright controlled completion profile | PASS 2 | Owned PostgreSQL/browser, 2 AS того же Cycle; terminal export `calculated`/`ready`, финализация `queued`. Повторный ASK: 3 interim handoffs в первой AS, затем Report. Это test-only technical gateway, не полный AC18 composite. |
+| Playwright C2 calendar while analysis pending | PASS 1 | После первого Turn обработка отложена за 30-секундное окно; browser/PG закрыли сбор по `calendar_deadline`, открыли Report, без UI transition/finish. |
+| Playwright remote end from second tab | PASS 1 | Другая вкладка завершила первую AS; driver не отправил дублирующий transition для первой AS, дошёл до Report того же Cycle. |
 | Playwright standalone PATH29 free | PASS 1 | Component boundary; cleanup owner/database/state подтверждены. Paid published selector не запускался. |
 | EXEC03 browser `EXEC03_WITH_FIX01=1` | PASS 3 (C1–C9) | Реальные HTTP/PG/browser, provider disabled; accepted/lost, absent-before-server, reload/two tabs, ASK, replay/conflict, Next/time boundary. |
 | `git diff --check` | PASS | До commit. |
@@ -95,8 +98,14 @@ Controlled completion terminal export SHA
 повторный ASK terminal export SHA
 `af9c7fbf7f16398e25453d0bbccadfb6d185a96fe010b16ea17d11a087fae50c`,
 cleanup SHA `3ea49bca9bd18db664fba1c50fb8cc4859a2b82057507c54f6a294ffa97ff304`;
-standalone free cleanup SHA
-`73291fe42ff7d95209a2b2ff2464c7b70a2ed32847cb5c08581f462627b2ceb3`.
+calendar terminal export SHA
+`21d6a6e710d9073e7562c23991b3cf8ef1080674e2179e5134fe5f5a0fd926aa`,
+cleanup SHA `63f2d62af15c0d90f4002919926d33e1c0863c4a7157472768a59c7813379e8f`;
+remote-end terminal export SHA
+`29cef8f74a949247d5224f363af8bb0973ce16a4f2f5da2cc3f32dca975713c2`,
+cleanup SHA `54a56b33e7f225352c8f4e2d0d61a23e406157445ae0e8739edc1511d5a898ea`;
+standalone free cleanup SHA после guard refactor
+`1d3f84cdb90ed74c0e7d2c1874470525955ccc8e523c0b93787ce756278c8f7`.
 Marker, credentials, cookies, raw prompts, production/test working data в отчёт
 не включены. Эти ignored evidence остаются локально, в PR идёт manifest.
 
@@ -104,19 +113,24 @@ Marker, credentials, cookies, raw prompts, production/test working data в от�
 `npm run lint:js`, `npm run build:web`,
 `npx playwright test tests/browser/runtime.spec.mjs --grep 'EXEC-CONTOUR technical profile' --workers=1`,
 `npx playwright test tests/browser/runtime.spec.mjs --grep 'EXEC-CONTOUR repeated ASK' --workers=1`,
+`npx playwright test tests/browser/runtime.spec.mjs --grep 'EXEC-CONTOUR C2 calendar closes' --workers=1`,
+`npx playwright test tests/browser/runtime.spec.mjs --grep 'EXEC-CONTOUR scenario end from another tab' --workers=1`,
 `npx playwright test tests/browser/path29-participant.spec.mjs --grep 'PATH29 owned backend' --workers=1`,
 `EXEC03_WITH_FIX01=1 npx playwright test --config tests/frontend/exec03-browser.config.mjs exec03-send-recovery.spec.mjs --workers=1`.
 Browser runs использовали только `STAND_ADMIN_URL` собственного контейнера на
 `127.0.0.1:19622`; его значение и credentials в отчёт не копируются.
+Черновой browser-тест другой вкладки сначала дважды дал FAIL из-за неготовой
+вкладки/диалога, затем один раз из-за слишком широкого утверждения, включавшего
+переход следующей AS; после уточнения первого AS итоговый прогон PASS.
 
 ## Q01–Q08
 
 | ID | Состояние | Основание и предел |
 | --- | --- | --- |
 | Q01 | PARTIAL | Контрпримеры отвергнуты, synthetic valid `/2` и historical standalone приняты; настоящий полный paid owned composite не запускался. |
-| Q02 | PARTIAL | Second ASK подтверждён JS adapter и отдельным real browser/PG: 3 interim handoffs первой AS; remote end/calendar закрыты adapter и integration. Отдельный real browser calendar во время анализа не воспроизведён. |
+| Q02 | PASS_CONTROLLED | Second ASK: 3 interim handoffs первой AS; calendar во время ожидающего анализа и remote end другой вкладкой подтверждены отдельными browser/PG прогонами. Полный paid composite исключён. |
 | Q03 | PASS_CONTROLLED | Driver Next ждёт active presented AS; controlled browser 2 AS, EXEC03 C7–C9 и integration guards. |
-| Q04 | PARTIAL | Fault injection write/readback/HTTP и unknown terminal проверены adapter; обычный owned cleanup подтверждён browser. Unknown после commit в полном composite coordinator browser отдельно не запускался. |
+| Q04 | PASS_CONTROLLED_WITH_LIMIT | Fault injection write/readback/HTTP и unknown terminal проверены adapter; тот же cleanup guard, который вызывает coordinator, проверен с `cli` spy: `destroy` не вызван при неподтверждённом export. Обычный owned cleanup подтверждён browser. Unknown после commit в полном paid composite coordinator browser не запускался. |
 | Q05 | PARTIAL | `/2` contract и terminal DB export проверены controlled browser; end-to-end paid first-case→Report того же run запрещён и NOT_RUN. |
 | Q06 | PASS_CONTROLLED | Standalone free path, historical offline receipt, negative normalizer/process/cleanup/foreign context. Paid AC18 не повторялся. |
 | Q07 | PARTIAL | C7–C9 browser/PG PASS; итог H7 ждёт включения EXEC-FIX-04. |
@@ -132,7 +146,7 @@ Browser runs использовали только `STAND_ADMIN_URL` собст�
 | H4 | PASS_CONTROLLED | Повторный ASK browser/PG: 3 interim handoffs в первой AS; integration и adapter. |
 | H5 | PASS_CONTROLLED | EXEC03 C7 accepted/lost и absent, reload/two tabs; replay/fencing. |
 | H6 | PASS_CONTROLLED | C8/C9 и integration не создали новый Cycle/дубль AS; actual DB effects проверены. |
-| H7 | PARTIAL_DEPENDENT | Controlled budget/time и calendar adapter; итог после merge EXEC-FIX-04, длинный wall-clock NOT_RUN. |
+| H7 | PARTIAL_DEPENDENT | Controlled budget/time, calendar browser/PG и C9 replay; итог после включения EXEC-FIX-04, длинный wall-clock NOT_RUN. |
 | H8 | PASS_CONTROLLED | Явный Next, ожидание active presented AS, 2 AS controlled; C8/C9. |
 | H9 | PASS_CONTROLLED | Закрытие Cycle, C-46, pipeline в controlled browser/PG; M10 integration. |
 | H10 | PASS_CONTROLLED | Owner Report открыт и readback `ready`; semantic/provider качество NOT_RUN. |

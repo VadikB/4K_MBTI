@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { readExecutionExport, terminalExecutionKnown } from '../browser/fixtures/assessment-completion-profile.mjs';
+import { readExecutionExport, terminalExecutionKnown, destroyOwnedStandIfAdmitted } from '../browser/fixtures/assessment-completion-profile.mjs';
 
 const terminal = { run_id: 'run-1', cycle_id: 'cycle-1', collection_status: 'calculated',
   close_reason: 'route_completed', collection_closed_at: '2026-11-10T10:00:00Z',
@@ -15,6 +15,18 @@ test('cleanup requires a known terminal execution outcome after preparation', ()
   assert.equal(terminalExecutionKnown({ ...terminal, situations: [{ status: 'active' }] }), false);
   assert.equal(terminalExecutionKnown({ ...terminal, collection_status: 'active' }), false);
   assert.equal(terminalExecutionKnown({ ...terminal, pipeline: { status: 'processing' } }), false);
+});
+
+test('coordinator preserves owned DB when execution export is missing', () => {
+  const actions = [];
+  const options = { executionStarted: true, terminalExecutionExportSaved: false,
+    preparationReceiptRequired: true, terminalPreparationReceiptSaved: true,
+    runId: 'run-1', statePath: 'owned-state',
+    save: (kind) => actions.push(kind), cli: (action) => actions.push(action) };
+  assert.throws(() => destroyOwnedStandIfAdmitted(options), /Cleanup deferred/);
+  assert.deepEqual(actions, []);
+  destroyOwnedStandIfAdmitted({ ...options, terminalExecutionExportSaved: true });
+  assert.deepEqual(actions, ['destroy']);
 });
 
 test('terminal export is persisted and checked before cleanup admission', async () => {

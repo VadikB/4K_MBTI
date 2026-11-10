@@ -44,6 +44,24 @@ export function terminalExecutionKnown(value) {
     && ['ready', 'failed'].includes(value.pipeline?.status);
 }
 
+export function destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutionExportSaved,
+  preparationReceiptRequired, terminalPreparationReceiptSaved, statePath, runId, save, cli }) {
+  if (executionStarted && !terminalExecutionExportSaved) {
+    throw new Error('Cleanup deferred: terminal execution export or readback unavailable');
+  }
+  if (preparationReceiptRequired && !terminalPreparationReceiptSaved) {
+    save('cleanup-deferred', { reason: 'TERMINAL_PREPARATION_RECEIPT_NOT_PERSISTED',
+      state_path: statePath, database_preserved: true });
+    throw new Error('Cleanup deferred: preserve owned DB until diagnostic receipt is saved');
+  }
+  try { cli('destroy'); }
+  catch (cleanupError) {
+    save('cleanup-error', { run_id: runId, reason: 'OWNED_DESTROY_FAILED',
+      detail: cleanupError.message });
+    throw cleanupError;
+  }
+}
+
 async function waitRuntime(page, base, cycleId, predicate, timeout = 120000) {
   const started = Date.now();
   let last;

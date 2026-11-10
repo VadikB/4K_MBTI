@@ -8,7 +8,7 @@ import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from './fi
 import { capturePathViewports } from './fixtures/path-viewports.mjs';
 import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
 import { captureFailurePage } from './fixtures/failure-page.mjs';
-import { completeStartedAssessment, readExecutionExport, terminalExecutionKnown } from './fixtures/assessment-completion-profile.mjs';
+import { completeStartedAssessment, readExecutionExport, terminalExecutionKnown, destroyOwnedStandIfAdmitted } from './fixtures/assessment-completion-profile.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -562,20 +562,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       }
     } finally {
       try {
-        if (executionStarted && !terminalExecutionExportSaved) {
-          throw new Error('Cleanup deferred: terminal execution export or readback unavailable');
-        }
-        if (preparationReceiptRequired && !terminalPreparationReceiptSaved) {
-          save('cleanup-deferred', { reason: 'TERMINAL_PREPARATION_RECEIPT_NOT_PERSISTED',
-            state_path: statePath, database_preserved: true });
-          throw new Error('Cleanup deferred: preserve owned DB until diagnostic receipt is saved');
-        }
-        try { cli('destroy'); }
-        catch (cleanupError) {
-          save('cleanup-error', { run_id: runId, reason: 'OWNED_DESTROY_FAILED',
-            detail: cleanupError.message });
-          throw cleanupError;
-        }
+        destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutionExportSaved,
+          preparationReceiptRequired, terminalPreparationReceiptSaved,
+          statePath, runId, save, cli });
       }
       finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
       if (fullPath) save('completion', { run_id: runId, status: scenarioCompleted ? 'completed' : 'failed',

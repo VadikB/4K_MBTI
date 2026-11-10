@@ -20,9 +20,9 @@
   M7 clarification/completion contracts, профиль первого Case и исходная
   карточка EXEC-CONTOUR-01/H1–H12. M1 v1.4 FROZEN/CURRENT=NO, M6 v1.8,
   M7 v1.3 и M8 v1.2 FROZEN; это источники смысла, не автоматический runtime-допуск.
-- Пробел: повторный ASK подтверждён browser/PG; календарное закрытие в середине
-  анализа доказано bounded adapter/integration, не отдельным browser run. Paid full
-  PATH/семантическая приёмка остаются NOT_RUN по прямому запрету новых платных прогонов.
+- Повторный ASK, календарное закрытие во время ожидания анализа и завершение AS
+  из другой вкладки подтверждены browser/PG. Paid full PATH/семантическая приёмка
+  остаются NOT_RUN по прямому запрету новых платных прогонов.
 
 ## Контракт producer → validator `/2`
 
