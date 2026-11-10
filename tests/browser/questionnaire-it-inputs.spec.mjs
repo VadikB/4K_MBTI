@@ -69,13 +69,17 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
     const form = card.locator('[data-action="preview-early-data"]');
     await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
-    for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+    for (const [name, value] of Object.entries(values)) {
+      if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+    }
     const assertValues = async () => {
-      for (const [name, value] of Object.entries(values)) await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
+      for (const [name, value] of Object.entries(values)) {
+        if (name !== 'source_author') await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
+      }
     };
     await assertValues();
     await capturePathViewports(page, directory, 'it-questionnaire', [
-      { name: 'author', locator: form.locator('[name="source_author"]') },
+      { name: 'responsible-contact', locator: form.locator('[name="responsible_contact"]') },
       { name: 'organization-name', locator: form.locator('[name="organization_name"]') },
       { name: 'organization-type', locator: form.locator('[name="organization_type"]') },
       { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }) },
@@ -100,17 +104,18 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     const saved = await response.json();
     save('http-readback', saved);
     expect(saved.status).toBe('confirmed');
-    expect(saved.source_author).toBe(values.source_author);
+    expect(saved.source_author).toBe('');
+    expect(saved.uploaded_by_user_id).toBeGreaterThan(0);
     expect(saved.answers_json.C01.name).toBe(values.organization_name);
     expect(saved.answers_json.C01.organization_type).toBe(values.organization_type);
     await page.screenshot({ path: path.join(directory, 'confirmed-1440.png'), fullPage: true });
     await page.reload();
-    await expect(form.locator('[name="source_author"]')).toHaveValue(values.source_author);
+    await expect(form.locator('[name="source_author"]')).toHaveCount(0);
     await assertValues();
     const db = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath, '--revision-id', revisionId]));
     save('database-readback', db);
     expect(db.revision.status).toBe('confirmed');
-    expect(db.revision.source_author).toBe(saved.source_author);
+    expect(db.revision.source_author).toBe('');
     expect(db.revision.answers_json).toEqual(saved.answers_json);
     for (const name of ['assignments', 'profiles', 'preparation_operations', 'cycles', 'assessment_situations', 'assessment_answers']) {
       expect(db.counts[name], `${name}: unchanged since synthetic seed`).toBe(baseline.counts[name]);

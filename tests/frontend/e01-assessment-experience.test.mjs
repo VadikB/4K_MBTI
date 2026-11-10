@@ -32,10 +32,13 @@ test('E01 scopes editable drafts to cycle and assessment situation', () => {
   assert.match(interviewEntry, /clearInterviewDraft/);
 });
 
-test('E01 protects supplied materials without blocking own text or pasted answers', () => {
+test('E01 protects supplied materials and silently blocks transferred answers', () => {
   assert.match(wiring, /protectedSelection/);
   assert.match(wiring, /\.interview-message:not\(\.own\)/);
-  assert.doesNotMatch(wiring, /interviewTextarea\.addEventListener\('paste'/);
+  assert.match(wiring, /interviewTextarea\.addEventListener\('paste'/);
+  assert.match(wiring, /insertFromPaste/);
+  assert.match(wiring, /event\.shiftKey && key === 'insert'/);
+  assert.doesNotMatch(wiring, /Копирование условия, материалов и реплик собеседника ограничено/);
   assert.match(styles, /\.interview-message\.own[\s\S]*user-select: text/);
 });
 

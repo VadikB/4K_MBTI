@@ -69,7 +69,9 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
       activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель', results_usage: 'Для развития',
       result_recipients: 'Участник', organizer: 'Синтетический HR', responsible_contact: 'admin@example.test',
       case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' };
-    for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+    for (const [name, value] of Object.entries(values)) {
+      if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+    }
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     const preview = card.locator('.admin-questionnaire-preview');
     await expect(preview).toContainText('Готово к подтверждению');
@@ -98,7 +100,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
       data: { recipients: ['participant'], recipient_user_ids: [] },
     })).status()).toBe(409);
     await page.reload();
-    await expect(form.locator('[name="source_author"]')).toHaveValue(values.source_author);
+    await expect(form.locator('[name="source_author"]')).toHaveCount(0);
     await expect(form.locator('[name="purpose"]')).toHaveValue(values.purpose);
     await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await card.locator('input[name="invitation_email"]').evaluateAll((fields) => fields.forEach((field) => {

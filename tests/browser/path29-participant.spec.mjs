@@ -161,9 +161,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       activity_description: 'Синтетическая проверка пути участника', purpose: 'Синтетическая цель развития',
       results_usage: 'Для синтетического плана развития', result_recipients: 'Участник', organizer: 'Синтетический HR',
       responsible_contact: state.path29.admin_email, case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' };
-    for (const [name, value] of Object.entries(values)) await form.locator(`[name="${name}"]`).fill(value);
+    for (const [name, value] of Object.entries(values)) {
+      if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+    }
     await capturePathViewports(admin, dir, 'admin-questionnaire', [
-      { name: 'source-author', locator: form.locator('[name="source_author"]') },
+      { name: 'responsible-contact', locator: form.locator('[name="responsible_contact"]') },
       { name: 'purpose', locator: form.locator('[name="purpose"]') },
       { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }) },
     ]);

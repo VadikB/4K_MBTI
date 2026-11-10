@@ -6,23 +6,16 @@ const organizations = readFileSync('web/js/screens/admin/organizations.js', 'utf
 const wiring = readFileSync('web/js/wiring.js', 'utf8');
 const entry = readFileSync('web/js/entries/admin-organizations.js', 'utf8');
 
-test('ARCH30 renders superadmin transfer control and sends explicit source, target and role', () => {
-  assert.match(organizations, /data-action="transfer-member"/);
-  assert.match(organizations, /expected_source_organization_id: Number\(organizationId\)/);
-  assert.match(organizations, /target_organization_id: Number\(targetOrganizationId\)/);
-  assert.match(organizations, /target_role: targetRole === 'admin' \? 'admin' : 'member'/);
-  assert.match(wiring, /form\.dataset\.action === 'transfer-member'/);
-  assert.match(wiring, /Старые назначения и приглашения будут отозваны/);
-  assert.match(entry, /transferAdminOrganizationMember/);
+test('ARCH30 removes organization transfer from the product UI', () => {
+  assert.doesNotMatch(organizations, /data-action="transfer-member"/);
+  assert.doesNotMatch(organizations, /transferAdminOrganizationMember/);
+  assert.doesNotMatch(wiring, /form\.dataset\.action === 'transfer-member'/);
+  assert.doesNotMatch(entry, /transferAdminOrganizationMember/);
 });
 
-test('ARCH30 explains every protected transfer conflict', () => {
-  for (const code of [
-    'ORGANIZATION_TRANSFER_LAST_ADMIN',
-    'ORGANIZATION_TRANSFER_ACTIVE_ACQUAINTANCE',
-    'ORGANIZATION_TRANSFER_SOURCE_CHANGED',
-    'ORGANIZATION_TRANSFER_TARGET_INACTIVE',
-  ]) assert.match(organizations, new RegExp(code));
+test('ARCH30 removes obsolete transfer conflict copy', () => {
+  assert.doesNotMatch(organizations, /ORGANIZATION_TRANSFER_LAST_ADMIN/);
+  assert.doesNotMatch(organizations, /ORGANIZATION_TRANSFER_ACTIVE_ACQUAINTANCE/);
 });
 
 test('ARCH30 keeps deactivation reversible through an explicit restore action', () => {

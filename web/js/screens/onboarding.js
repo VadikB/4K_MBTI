@@ -157,7 +157,7 @@ const readinessStep = () => {
         Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин.</strong>Время на выполнение</div></div>',
       action: 'start', button: 'Приступить к оценке' };
   }
-  return { title: 'Готовим вашу оценку', description: 'Ваши ответы сохранены. Дождитесь готовности плана и первой ситуации. Время выполнения ещё не идёт; закрытие вкладки не отменяет серверную подготовку.',
+  return { title: 'Готовим вашу оценку', description: 'Готовим первую ситуацию с учётом ваших сведений. Ответы сохранены. Время оценки ещё не началось.',
     body: '<p role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
       (model?.preparation_operation?.status === 'queued' ? 'Операция в очереди' :
         model?.preparation_operation?.status === 'running' ? 'Подготовка выполняется' : 'Проверяем подготовку') + '</p>' + reference,

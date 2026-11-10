@@ -9,6 +9,7 @@ import pytest
 from fastapi import HTTPException
 
 from Api.routes import _lock_membership_by_email, _reject_foreign_membership
+from Api.database import ensure_organization_membership_participation_column
 
 
 pytestmark = pytest.mark.integration
@@ -67,3 +68,29 @@ def test_concurrent_addition_rechecks_membership_after_email_lock(test_database_
     finally:
         first.close()
         second.close()
+
+
+def test_participation_backfill_is_idempotent_and_preserves_admin_authority(test_database_url, membership_schema):
+    connection = _connect(test_database_url, membership_schema)
+    try:
+        connection.execute(
+            "INSERT INTO organization_memberships(organization_id,user_id,role) VALUES (3,7,'admin')"
+        )
+        ensure_organization_membership_participation_column(connection)
+        ensure_organization_membership_participation_column(connection)
+        row = connection.execute(
+            "SELECT role,is_participant FROM organization_memberships WHERE user_id=7"
+        ).fetchone()
+        assert row == {"role": "admin", "is_participant": True}
+
+        connection.execute(
+            "UPDATE organization_memberships SET is_participant=FALSE WHERE user_id=7"
+        )
+        assert connection.execute(
+            "SELECT COUNT(*) AS count FROM organization_memberships WHERE role='admin'"
+        ).fetchone()["count"] == 1
+        assert connection.execute(
+            "SELECT COUNT(*) AS count FROM organization_memberships WHERE is_participant=TRUE"
+        ).fetchone()["count"] == 0
+    finally:
+        connection.close()

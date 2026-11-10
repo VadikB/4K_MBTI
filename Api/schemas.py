@@ -1072,7 +1072,7 @@ class QuestionnairePreviewRequest(BaseModel):
     channel: Literal["csv", "product_form", "external_form"] = "csv"
     csv_text: str | None = None
     answers: dict = Field(default_factory=dict)
-    source_author: str = Field(min_length=1, max_length=500)
+    source_author: str | None = Field(default=None, max_length=500)
     idempotency_key: str = Field(min_length=1, max_length=200)
 
 

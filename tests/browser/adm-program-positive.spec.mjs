@@ -126,11 +126,11 @@ for (const channel of ['product_form', 'csv']) {
       await expect(form).toBeVisible();
       await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
       await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
-      const sourceAuthor = channel === 'csv' ? `${fixture.fields.source_author} · CSV` : fixture.fields.source_author;
       if (channel === 'product_form') {
-        for (const [name, value] of Object.entries(fixture.fields)) await form.locator(`[name="${name}"]`).fill(value);
+        for (const [name, value] of Object.entries(fixture.fields)) {
+          if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+        }
       } else {
-        await form.locator('[name="source_author"]').fill(sourceAuthor);
         await form.locator('[name="csv"]').setInputFiles({ name: 'example.synthetic.csv',
           mimeType: 'text/csv', buffer: Buffer.from(csvText) });
       }
@@ -168,14 +168,15 @@ for (const channel of ['product_form', 'csv']) {
       expect(saved.status).toBe('confirmed');
       expect(saved.assignment_ref).toBe('ADM28 isolated');
       expect(saved.channel).toBe(channel);
-      expect(saved.source_author).toBe(sourceAuthor);
+      expect(saved.source_author).toBe('');
+      expect(saved.uploaded_by_user_id).toBeGreaterThan(0);
       expect(saved.answers_json.C01.name).toBe(channel === 'csv' ? 'Синтетическая организация' : fixture.fields.organization_name);
       const db = readDb(revisionId);
       save('database-readback', db);
       expect(db.owner_verified).toBe(true);
       expect(db.read_only_rollback).toBe(true);
       expect(db.revision.status).toBe('confirmed');
-      expect(db.revision.source_author).toBe(sourceAuthor);
+      expect(db.revision.source_author).toBe('');
       expect(db.revision.assignment_ref).toBe(saved.assignment_ref);
       expect(db.revision.answers_json).toEqual(saved.answers_json);
       for (const name of unchangedCounts) expect(db.counts[name], `${name}: unchanged since synthetic seed`).toBe(baseline.counts[name]);
@@ -184,9 +185,11 @@ for (const channel of ['product_form', 'csv']) {
       await page.reload();
       await expect(card).toBeVisible();
       await card.locator(`.admin-organization-step[data-view="${channel === 'csv' ? 'questionnaire' : 'organization-data'}"]`).click();
-      await expect(form.locator('[name="source_author"]')).toHaveValue(sourceAuthor);
+      await expect(form.locator('[name="source_author"]')).toHaveCount(0);
       if (channel === 'product_form') {
-        for (const [name, value] of Object.entries(fixture.fields)) await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
+        for (const [name, value] of Object.entries(fixture.fields)) {
+          if (name !== 'source_author') await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
+        }
       }
       await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
       const listResponse = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`);

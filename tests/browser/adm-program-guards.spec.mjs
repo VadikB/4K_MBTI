@@ -181,14 +181,14 @@ for (const superadmin of [false, true]) {
     await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
     await expect(manual(page)).toContainText(message);
     await expect(manual(page)).not.toContainText('исторический ключ');
-    await manual(page).locator('[name="source_author"]').fill('Синтетический автор без программы');
+    await manual(page).locator('[name="responsible_contact"]').fill('contact-absent@example.test');
     await forcedSubmit(manual(page));
     await settled(page);
     await view(page, 'Анкета');
     await expect(csv(page).locator('[name="assignment_ref"]')).toHaveCount(0);
     await expect(csv(page)).toContainText(message);
     await expect(csv(page)).not.toContainText('исторический ключ');
-    await csv(page).locator('[name="source_author"]').fill('Синтетический CSV-автор без программы');
+    await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
     await csv(page).locator('input[type="file"]').setInputFiles(file('absent'));
     await forcedSubmit(csv(page));
     await settled(page);
@@ -220,8 +220,11 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
     await view(page, label);
     await expect(form).toContainText('Подключение программы пока не подтверждено');
     await expect(form.locator('[name="assignment_ref"]')).toHaveCount(0);
-    await form.locator('[name="source_author"]').fill('Синтетический автор неизвестного scope');
-    if (label === 'Анкета') await form.locator('input[type="file"]').setInputFiles(file('unknown-initial'));
+    if (label === 'Данные организации') {
+      await form.locator('[name="responsible_contact"]').fill('contact-unknown@example.test');
+    } else {
+      await form.locator('input[type="file"]').setInputFiles(file('unknown-initial'));
+    }
     await forcedSubmit(form);
   }
   await forceAssignment(page);
@@ -232,18 +235,18 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
 test('ADM-PROGRAM AC04 absent to first connection preserves both unscoped drafts', async ({ page }, info) => {
   const state = await fixture(page, { program: null });
   await view(page, 'Данные организации');
-  await manual(page).locator('[name="source_author"]').fill('Синтетический первый автор');
+  await manual(page).locator('[name="responsible_contact"]').fill('contact-manual@example.test');
   await manual(page).locator('[name="organization_name"]').fill('Синтетические первые сведения');
   await view(page, 'Анкета');
-  await csv(page).locator('[name="source_author"]').fill('Синтетический первый CSV автор');
+  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('first'));
   await connectForm(page).locator('[name="program_definition_id"]').selectOption('11');
   await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
   await expect(csv(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-11');
-  await expect(csv(page).locator('[name="source_author"]')).toHaveValue('Синтетический первый CSV автор');
+  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await expect(csv(page).locator('[data-csv-reselect]')).toBeVisible();
   await view(page, 'Данные организации');
-  await expect(manual(page).locator('[name="source_author"]')).toHaveValue('Синтетический первый автор');
+  await expect(manual(page).locator('[name="responsible_contact"]')).toHaveValue('contact-manual@example.test');
   await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('Синтетические первые сведения');
   expect(scopedPosts(state)).toEqual([]);
   await evidence(page, state, info, 'first-connection-drafts');
@@ -252,7 +255,7 @@ test('ADM-PROGRAM AC04 absent to first connection preserves both unscoped drafts
 test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B', async ({ page }, info) => {
   const state = await fixture(page, { saved: [revision('pilot-11')] });
   await view(page, 'Данные организации');
-  await manual(page).locator('[name="source_author"]').fill('Синтетический A автор');
+  await manual(page).locator('[name="responsible_contact"]').fill('contact-a@example.test');
   await manual(page).getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
   await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
   const before = scopedPosts(state).length;
@@ -301,29 +304,29 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
 test('ADM-PROGRAM AC04 manual and CSV authors remain scoped across A to B to A; file reselect is explicit', async ({ page }, info) => {
   const state = await fixture(page);
   await view(page, 'Данные организации');
-  await manual(page).locator('[name="source_author"]').fill('Синтетический автор A');
+  await manual(page).locator('[name="responsible_contact"]').fill('contact-a@example.test');
   await manual(page).locator('[name="organization_name"]').fill('Синтетическая организация A');
   await view(page, 'Анкета');
-  await csv(page).locator('[name="source_author"]').fill('Синтетический CSV-автор A');
+  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('A'));
   await connectForm(page).locator('[name="program_definition_id"]').selectOption('12');
   await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
   await expect(csv(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
-  await expect(csv(page).locator('[name="source_author"]')).toHaveValue('');
-  await csv(page).locator('[name="source_author"]').fill('Синтетический CSV-автор B');
+  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
+  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('B'));
   await view(page, 'Данные организации');
-  await expect(manual(page).locator('[name="source_author"]')).toHaveValue('');
+  await expect(manual(page).locator('[name="responsible_contact"]')).toHaveValue('');
   await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('');
-  await manual(page).locator('[name="source_author"]').fill('Синтетический автор B');
+  await manual(page).locator('[name="responsible_contact"]').fill('contact-b@example.test');
   await manual(page).locator('[name="organization_name"]').fill('Синтетическая организация B');
   await connectForm(page).locator('[name="program_definition_id"]').selectOption('11');
   await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-11');
-  await expect(manual(page).locator('[name="source_author"]')).toHaveValue('Синтетический автор A');
+  await expect(manual(page).locator('[name="responsible_contact"]')).toHaveValue('contact-a@example.test');
   await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('Синтетическая организация A');
   await view(page, 'Анкета');
-  await expect(csv(page).locator('[name="source_author"]')).toHaveValue('Синтетический CSV-автор A');
+  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await expect(csv(page).locator('[data-csv-reselect]')).toContainText('Выберите CSV-файл повторно');
   await expect(csv(page).locator('[data-csv-reselect]')).toHaveAttribute('data-csv-reselect', 'synthetic-A.csv');
   expect(await csv(page).locator('input[type="file"]').evaluate((input) => input.files.length)).toBe(0);
@@ -336,7 +339,7 @@ for (const channel of ['manual', 'csv']) {
     const state = await fixture(page);
     await view(page, channel === 'manual' ? 'Данные организации' : 'Анкета');
     const form = channel === 'manual' ? manual(page) : csv(page);
-    await form.locator('[name="source_author"]').fill('Синтетический автор');
+    await expect(form.locator('[name="source_author"]')).toHaveCount(0);
     if (channel === 'csv') await form.locator('input[type="file"]').setInputFiles(file('tamper'));
     await form.locator('[name="assignment_ref"]').evaluate((input) => { input.value = 'invented-or-stale-ref'; });
     await forcedSubmit(form);
@@ -350,7 +353,7 @@ for (const channel of ['manual', 'csv']) {
 test('ADM-PROGRAM AC02 delayed CSV File.text is rechecked after scope becomes unknown', async ({ page }, info) => {
   const state = await fixture(page);
   await view(page, 'Анкета');
-  await csv(page).locator('[name="source_author"]').fill('Синтетический CSV-автор A');
+  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('delayed-A'));
   // Delay this selected native File's read only; product handlers remain intact.
   await csv(page).locator('input[type="file"]').evaluate((input) => {
@@ -396,8 +399,8 @@ for (const channel of ['manual', 'csv']) test(
     await expect.poll(() => state.collectionReads).toBe(reads + 1);
     await view(page, channel === 'manual' ? 'Данные организации' : 'Анкета');
     const form = channel === 'manual' ? manual(page) : csv(page);
-    await form.locator('[name="source_author"]').fill('Синтетический live автор после начала GET');
     if (channel === 'manual') {
+      await form.locator('[name="responsible_contact"]').fill('live-contact@example.test');
       await form.locator('[name="organization_name"]').fill('Синтетические live сведения после начала GET');
     } else {
       await form.locator('input[type="file"]').setInputFiles(file('live-after-GET'));
@@ -405,8 +408,8 @@ for (const channel of ['manual', 'csv']) test(
     pending.release();
     await expect(page.locator('[data-organizations-stale]')).toBeVisible();
     await expect(form).toContainText('Подключение программы пока не подтверждено');
-    await expect(form.locator('[name="source_author"]')).toHaveValue('Синтетический live автор после начала GET');
     if (channel === 'manual') {
+      await expect(form.locator('[name="responsible_contact"]')).toHaveValue('live-contact@example.test');
       await expect(form.locator('[name="organization_name"]')).toHaveValue('Синтетические live сведения после начала GET');
     } else {
       await expect(form.locator('[data-csv-reselect]')).toHaveAttribute('data-csv-reselect', 'synthetic-live-after-GET.csv');
@@ -418,10 +421,14 @@ for (const channel of ['manual', 'csv']) test(
     await page.getByRole('button', { name: 'Обновить безопасно', exact: true }).click();
     await expect.poll(() => state.collectionReads).toBe(nextReads + 1);
     await expect(page.getByRole('button', { name: 'Обновить безопасно', exact: true })).toBeDisabled();
-    await form.locator('[name="source_author"]').fill('Синтетический самый новый автор');
+    if (channel === 'manual') {
+      await form.locator('[name="responsible_contact"]').fill('newest-contact@example.test');
+    }
     nextPending.release();
     await expect(page.getByRole('button', { name: 'Обновить безопасно', exact: true })).toBeEnabled();
-    await expect(form.locator('[name="source_author"]')).toHaveValue('Синтетический самый новый автор');
+    if (channel === 'manual') {
+      await expect(form.locator('[name="responsible_contact"]')).toHaveValue('newest-contact@example.test');
+    }
     await expect(form).toContainText('Подключение программы пока не подтверждено');
     expect(scopedPosts(state).filter((request) => !request.path.endsWith('/assessment-assignments'))).toEqual([]);
     await evidence(page, state, info, `failed-refresh-latest-${channel}`);
@@ -470,7 +477,7 @@ test('ADM-PROGRAM AC02 older import collection cannot authorize stale program A'
   pending.release(); await importResponse; await settled(page);
   await view(page, 'Данные организации');
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
-  await manual(page).locator('[name="source_author"]').fill('Синтетический автор B');
+  await manual(page).locator('[name="responsible_contact"]').fill('contact-b@example.test');
   await manual(page).getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
   await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
   expect(scopedPosts(state).map((r) => r.body.assignment_ref)).toEqual(['pilot-12']);

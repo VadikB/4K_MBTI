@@ -295,7 +295,7 @@ async function adm28Preview(page) {
   });
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 synthetic');
-  await form.locator('[name="source_author"]').fill('Synthetic owner');
+  await expect(form.locator('[name="source_author"]')).toHaveCount(0);
   await form.locator('[name="purpose"]').fill('Synthetic purpose');
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
@@ -1823,14 +1823,14 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
   await card.getByRole('button', { name: 'Данные организации' }).click();
   const form = card.locator('[data-action="preview-early-data"]');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published A');
-  await expect(form.locator('[name="source_author"]')).toHaveValue('Автор A');
+  await expect(form.locator('[name="source_author"]')).toHaveCount(0);
   const assignment = form.locator('[name="assignment_ref"]');
   await expect(assignment).toHaveAttribute('type', 'hidden');
   await observeConnectedAssessment(page, organization, 'B');
   await expect(assignment).toHaveValue('B');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published B');
   await expect(form.locator('[name="organization_name"]')).toHaveValue('Организация B');
-  await expect(form.locator('[name="source_author"]')).toHaveValue('Автор B');
+  await expect(form.locator('[name="source_author"]')).toHaveCount(0);
 
   await form.locator('[name="purpose"]').fill('Draft B');
   await card.getByRole('button', { name: 'Участники' }).click();
@@ -1857,7 +1857,7 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   const questionnaire = card.locator('[data-action="preview-questionnaire"]');
   await expect(questionnaire.locator('[name="assignment_ref"]')).toHaveValue('Поток A');
-  await questionnaire.locator('[name="source_author"]').fill('Автор черновика');
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
 
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await expect(memberForm.locator('[name="email"]')).toHaveValue('draft.member@example.test');
@@ -1869,23 +1869,22 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
   await expect(earlyData.locator('[name="assignment_ref"]')).toHaveValue('Поток A');
   await expect(earlyData.locator('[name="purpose"]')).toHaveValue('Несохранённая цель A');
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
-  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор черновика');
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
 
   const assignment = questionnaire.locator('[name="assignment_ref"]');
   await expect(assignment).toHaveAttribute('type', 'hidden');
   await observeConnectedAssessment(page, organization, 'Поток B');
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
-  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('');
-  await questionnaire.locator('[name="source_author"]').fill('Автор B');
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
   await observeConnectedAssessment(page, organization, 'Поток A', 7);
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
-  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор черновика');
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
   await observeConnectedAssessment(page, organization, 'Поток B');
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
-  await expect(questionnaire.locator('[name="source_author"]')).toHaveValue('Автор B');
+  await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
 });
 
 test('UX-FIX20-02 clears account A drafts and ignores its late preview after account B login', async ({ page }) => {
@@ -1911,7 +1910,9 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
     results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
     responsible_contact: 'a@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
-  for (const [name, value] of Object.entries(valuesA).filter(([name]) => name !== 'assignment_ref')) await formA.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(valuesA).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) {
+    await formA.locator(`[name="${name}"]`).fill(value);
+  }
   await formA.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
 
   await page.evaluate(() => document.getElementById('admin-logout-button').click());
@@ -1977,7 +1978,7 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
-  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) {
+  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) {
     await form.locator(`[name="${name}"]`).fill(value);
   }
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
@@ -2107,7 +2108,7 @@ test('ADM19-01 saves early organization data through the versioned product form 
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
-  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) await form.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await form.locator(`[name="${name}"]`).fill(value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
 
   await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview'))
@@ -2173,7 +2174,7 @@ test('UX-ADM28-01 changes recipients without invalidating content preview and ap
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
-  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) await form.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await form.locator(`[name="${name}"]`).fill(value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   const preview = card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview');
   await expect(preview).toContainText('Что увидит участник');
@@ -2242,7 +2243,7 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
-  for (const [name, value] of Object.entries(values).filter(([name]) => name !== 'assignment_ref')) await form.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await form.locator(`[name="${name}"]`).fill(value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
   await form.locator('[name="purpose"]').fill('Draft after confirm');
@@ -2343,7 +2344,7 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   const boundAssignment = page.locator('[data-action="preview-early-data"] [name="assignment_ref"]');
   await expect(boundAssignment).toHaveAttribute('type', 'hidden');
   await expect(boundAssignment).toHaveValue('competencies_4k');
-  await expect(page.locator('[data-action="preview-early-data"] [name="source_author"]')).toHaveValue('Точный автор');
+  await expect(page.locator('[data-action="preview-early-data"] [name="source_author"]')).toHaveCount(0);
   await expect(page.locator('[data-action="preview-early-data"] [name="purpose"]')).toHaveValue('Точная цель');
   await page.getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await page.getByRole('button', { name: 'Назначить оценку' }).click();

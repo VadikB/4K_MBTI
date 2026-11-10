@@ -105,7 +105,7 @@ for (const scenario of [
     const http = await response.json(), db = readDb(revisionId);
     save('confirmed-readback', { http, database: db });
     expect(db.revision.status).toBe('confirmed'); expect(db.revision.answers_json).toEqual(http.answers_json);
-    expect(db.revision.source_author).toBe(fixture.fields.source_author);
+    expect(db.revision.source_author).toBe('');
     for (const name of ['assignments', 'profiles', 'preparation_operations', 'cycles', 'assessment_situations', 'assessment_answers']) {
       expect(db.counts[name]).toBe(baseline.counts[name]);
     }
