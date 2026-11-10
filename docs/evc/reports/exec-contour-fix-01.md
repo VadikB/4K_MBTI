@@ -2,7 +2,7 @@
 
 Дата: 10.11.2026. Задача: `docs/evc/tasks/exec-contour-fix-01.md`.
 Исполнитель и писатель: один, `codex/exec-contour-fix-01` в
-`ARCH_WORKTREES/exec-contour-fix-01`. Основание: `origin/main@48e175da2a5dffd27e0722e0f50588f87a88fdbf`.
+`ARCH_WORKTREES/exec-contour-fix-01`. Исходное основание: `origin/main@48e175da2a5dffd27e0722e0f50588f87a88fdbf`; после EXEC-FIX-04 — `origin/main@43c5da5e004d7772d554b1f71077e89463747cae`.
 Проверенный source candidate: `7da92440` (полный SHA в `STATE.json`).
 Документальный follow-up фиксирует mapping в `STATE.json`; release head,
 merge и deploy фиксируются по мере появления.
@@ -133,7 +133,7 @@ Browser runs использовали только `STAND_ADMIN_URL` собст�
 | Q04 | PASS_CONTROLLED_WITH_LIMIT | Fault injection write/readback/HTTP и unknown terminal проверены adapter; тот же cleanup guard, который вызывает coordinator, проверен с `cli` spy: `destroy` не вызван при неподтверждённом export. Обычный owned cleanup подтверждён browser. Unknown после commit в полном paid composite coordinator browser не запускался. |
 | Q05 | PARTIAL | `/2` contract и terminal DB export проверены controlled browser; end-to-end paid first-case→Report того же run запрещён и NOT_RUN. |
 | Q06 | PASS_CONTROLLED | Standalone free path, historical offline receipt, negative normalizer/process/cleanup/foreign context. Paid AC18 не повторялся. |
-| Q07 | PARTIAL | C7–C9 browser/PG PASS; итог H7 ждёт включения EXEC-FIX-04. |
+| Q07 | PASS_CONTROLLED | C7–C9 browser/PG повторены после включения EXEC-FIX-04; итог H7 PASS_CONTROLLED на `a5dfb995ec80c278cda210488411e78cbf12335c`. Длинный wall-clock и paid путь NOT_RUN. |
 | Q08 | PARTIAL | Матрица, источники, проверки, PR текст и откат подготовлены; release/CI/review/merge/deploy зависят от внешней публикации и FIX04. |
 
 ## H1–H12 на текущем основании
@@ -146,7 +146,7 @@ Browser runs использовали только `STAND_ADMIN_URL` собст�
 | H4 | PASS_CONTROLLED | Повторный ASK browser/PG: 3 interim handoffs в первой AS; integration и adapter. |
 | H5 | PASS_CONTROLLED | EXEC03 C7 accepted/lost и absent, reload/two tabs; replay/fencing. |
 | H6 | PASS_CONTROLLED | C8/C9 и integration не создали новый Cycle/дубль AS; actual DB effects проверены. |
-| H7 | PARTIAL_DEPENDENT | Controlled budget/time, calendar browser/PG и C9 replay; итог после включения EXEC-FIX-04, длинный wall-clock NOT_RUN. |
+| H7 | PASS_CONTROLLED | На `main@43c5da5` + контур `a5dfb995`: fractional PG 7 PASS, browser C7–C9 3 PASS с replay и запретом новой записи после budget. Длинный wall-clock NOT_RUN. |
 | H8 | PASS_CONTROLLED | Явный Next, ожидание active presented AS, 2 AS controlled; C8/C9. |
 | H9 | PASS_CONTROLLED | Закрытие Cycle, C-46, pipeline в controlled browser/PG; M10 integration. |
 | H10 | PASS_CONTROLLED | Owner Report открыт и readback `ready`; semantic/provider качество NOT_RUN. |
@@ -155,8 +155,7 @@ Browser runs использовали только `STAND_ADMIN_URL` собст�
 
 ## Открытые условия и откат
 
-Свежий `main` перед release должен включить EXEC-FIX-04; затем повторить адресные
-H7 checks на точном SHA. До Ready нужны `ready:prepare`, согласованный номер,
+Свежий `main` включает EXEC-FIX-04; адресные H7 checks на точном SHA выполнены ниже. До Ready нужны `ready:prepare`, согласованный номер,
 обязательный полный CI и human review. TEST deploy только после merge; окно
 приёмки не сдвигается. Новые платные/provider прогоны `NOT_RUN` по прямому
 запрету. Содержательное качество IA/Results/Report `NOT_RUN`.
@@ -165,3 +164,13 @@ H7 checks на точном SHA. До Ready нужны `ready:prepare`, согл
 не менять. При `cleanup-deferred` сохранить owned state/DB и восстановить по
 marker перед штатным удалением. Merge/deploy SHA и результат TEST readback
 записать после фактических действий, не подменяя их локальным PASS.
+
+## Итоговый H7 после EXEC-FIX-04 (10.11.2026)
+
+PR #206 включён в `main` squash commit `43c5da5e004d7772d554b1f71077e89463747cae`; его дерево совпадает с release HEAD FIX04 `1033cb10a00a2bbd8cafe56a9dabdb56931183db`. Исходный HEAD PR #205 `dc013bede57c156773dbf702b4d49cac99f3ae09` перенесён без конфликтов на `main`. После поправки тестовой fixture проверенный совмещённый SHA: `a5dfb995ec80c278cda210488411e78cbf12335c`; `git diff --check` PASS. PR #205 оставался draft во время H7.
+
+Адресный real PostgreSQL 16/H7 набор сначала дал 79 PASS, 1 FAIL: старый `test_cycle_session_membership_freeze_and_collection_boundary` ставил `started_at=NOW()-20 minutes`, где PostgreSQL `NOW()` фиксируется в начале транзакции. Подготовка AS заняла около 3 секунд, и точная проекция вернула 1497 вместо диапазона 1498–1500. Fixture переключена на `clock_timestamp()`; этот тест затем PASS, а на точном SHA `a5dfb995` файл `test_exec_fix04_time_precision_db.py` и исправленный тест: 7 PASS, 1 dependency warning. Продуктовый код не менялся.
+
+На том же SHA с provider disabled и собственным marker-owned PostgreSQL/HTTP browser `EXEC03_WITH_FIX01=1` дал 3 PASS за 2.3 минуты: C1–C6, C7 M7 ASK, C8/C9 Next и budget/replay. Сохранены безопасные ignored evidence в `.test-stand/h7-43c5/evidence/`: `source-identity.json` SHA-256 `9d0e6138b51bbde45cd33fa381b1cb0c928322c55e81b09300e0591afca75383`; C7 `ask-lost-response-recovered.json` SHA-256 `fe56012b1ac920d58b4ee8e53b8df21d511b5a6709d2e985d3f55fffd842982c` (8 Turns, 3 C-45 handoffs, 2 clarifications, 6 operations/events); C9 before `budget-accepted-response-held-before-clock.json` SHA-256 `89aa9d6074894136c9e7ebd1801387e0ac08fb255cc4a938a8ee91ea87aa1220` (1 Turn/1 operation), after `budget-after-replay-new-write-rejected.json` SHA-256 `fd5517ce4c8fa2201e6567a2f88d79ef549a24360612eb95ae47ef56af41e264` (1 Turn/1 operation, 1 handoff). Clock input SHA-256 `161b2eca1fa7d0863f521c61691916b48d2a4212b0db4b9637bb09ce0728a8e8`. Browser source identity указывает `a5dfb995...`; provider mode `disabled`.
+
+Локальный минимум на этом составе: backend 1055 PASS, 482 deselected, 1 dependency warning; frontend 226 PASS; `npm run lint:js` PASS. Browser stand удалён через штатный marker-guarded `destroy` (`cleanup.json`), собственный PostgreSQL контейнер удалён. Другие контейнеры не затронуты. TEST после FIX04: CI `deploy-test` на `43c5da5` PASS; публичный `/users/version` вернул `2.0.93`, HTML и 76 связанных assets совпали с деревом merge commit. Публичный readback не раскрывает уникальный backend SHA; точный commit подтверждает успешный deploy job. Paid/provider и длинный wall-clock по прежнему NOT_RUN.
