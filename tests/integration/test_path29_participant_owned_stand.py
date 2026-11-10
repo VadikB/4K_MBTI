@@ -235,7 +235,11 @@ def internal():
         removed = admin.delete(base + '/members', params={'email': email})
         assert removed.status_code == 200, removed.text
         with get_connection() as c:
-            assert c.execute("SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='member'", (org, uid)).fetchone() is None
+            membership = c.execute(
+                "SELECT role,is_participant FROM organization_memberships WHERE organization_id=%s AND user_id=%s",
+                (org, uid),
+            ).fetchone()
+            assert membership == {'role': 'member', 'is_participant': False}
         # The removed membership cannot grant organization administration; the user's own saved
         # assessment state remains stored under the existing owner contract.
         assert participant.get(base + '/assessment-source-options').status_code in {401, 403, 404}
@@ -245,7 +249,10 @@ def internal():
             'full_name': 'Synthetic new participant', 'role_description': 'Synthetic actual position'})
         assert restored.status_code == 200, restored.text
         with get_connection() as c:
-            assert c.execute("SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='member'", (org, uid)).fetchone()
+            assert c.execute(
+                "SELECT role,is_participant FROM organization_memberships WHERE organization_id=%s AND user_id=%s",
+                (org, uid),
+            ).fetchone() == {'role': 'member', 'is_participant': True}
             assert c.execute('SELECT id FROM users WHERE email=%s', (email,)).fetchone()['id'] == uid
             assert c.execute('SELECT COUNT(*) AS n FROM organization_invitations WHERE organization_id=%s AND LOWER(recipient_email)=%s',
                 (org, email)).fetchone()['n'] == invitations_before
