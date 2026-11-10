@@ -62,6 +62,8 @@ def code_identity():
         'assessment_definitions/providers/deepseek/v1/manifest.json',
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
         'tests/assessment_first_case_evidence.py', 'tests/browser/path29-participant.spec.mjs',
+        'tests/assessment_completion_evidence.py',
+        'tests/browser/fixtures/assessment-completion-profile.mjs',
         'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs',
         'tests/browser/fixtures/path-viewports.mjs',
         'tests/browser/fixtures/auth-password-form.mjs', 'tests/browser/fixtures/failure-page.mjs',
@@ -151,14 +153,17 @@ def summarize_runs(directory, exit_code):
             if (run_directory / (name + '.json')).exists():
                 errors.append('FAILURE_ARTIFACT:' + name)
         bootstrap = run.get('scope') == 'bootstrap_repeat'
+        composite = run.get('profile') == 'assessment-execution-contour/1'
         receipt_name = 'source-provenance' if bootstrap else 'first-case-receipt'
         receipt_path = run_directory / (receipt_name + '.json')
         receipt = read(receipt_name)
+        terminal_receipt_path = (run_directory / 'execution-contour-receipt.json'
+                                 if composite else receipt_path)
         try:
-            receipt_digest = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+            receipt_digest = hashlib.sha256(terminal_receipt_path.read_bytes()).hexdigest()
         except OSError:
             receipt_digest = None
-        if (completion.get('receipt_file') != receipt_path.name or not receipt_digest
+        if (completion.get('receipt_file') != terminal_receipt_path.name or not receipt_digest
                 or completion.get('receipt_sha256') != receipt_digest):
             errors.append('COMPLETION_RECEIPT_MISMATCH')
         selected = run.get('published_release_ref')
@@ -216,6 +221,13 @@ def summarize_runs(directory, exit_code):
                 errors.append('FIRST_CASE_EVIDENCE_INVALID')
             if not (run_directory / 'first-case.png').is_file():
                 errors.append('PRESENTATION_SCREENSHOT_MISSING')
+            if composite:
+                try:
+                    from tests.assessment_completion_evidence import validate_completion
+                    errors.extend(validate_completion(run_directory, run=run, first_case=receipt,
+                        completion=completion, cleanup=cleanup, process_exit=process_exit))
+                except (OSError, ValueError, KeyError, TypeError):
+                    errors.append('COMPOSITE_VALIDATOR_UNAVAILABLE')
         log = run_directory / 'server.log'
         completions = [{'duration_ms': float(match[0]), 'routing_key': match[1]}
             for match in re.findall(
@@ -230,7 +242,10 @@ def summarize_runs(directory, exit_code):
             'provider_completions': completions,
             'usage_note': 'Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace.'})
     success = exit_code == 0 and bool(runs) and all(run['result'] != 'FAIL' for run in runs)
-    return {'profile': 'assessment-first-case/1.1', 'scope': 'synthetic_diagnostic',
+    profile = ('assessment-execution-contour/1'
+               if any(item.get('run', {}).get('profile') == 'assessment-execution-contour/1' for item in runs)
+               else 'assessment-first-case/1.1')
+    return {'profile': profile, 'scope': 'synthetic_diagnostic',
         'process_exit_code': exit_code, 'exit_code': exit_code if exit_code else (0 if success else 1),
         'result': 'PASS' if success else 'FAIL', 'runs': runs}
 
@@ -254,6 +269,8 @@ def main()->int:
     p.add_argument('--program-receipt', type=Path, help='Exact published source receipt; requires SHA256 and program version')
     p.add_argument('--program-receipt-sha256', help='Expected SHA256 of the receipt bytes, not the program definition')
     p.add_argument('--program-version', help='Expected program version in the selected published receipt; never latest')
+    p.add_argument('--profile', choices=('first-case', 'ac18-to-report'), default='first-case',
+        help='Keep standalone AC18, or continue its owned DB/Cycle through explicit Report opening')
     p.add_argument('--summarize-only', action='store_true', help='Rebuild normalized summary from existing evidence; no credentials or LLM')
     a=p.parse_args()
     if a.summarize_only:
@@ -305,6 +322,8 @@ def main()->int:
     env.update(BROWSER_PYTHON=a.python,P4K_FULL_PATH='1',P4K_REAL_PROVIDER='1',
                P4K_EVIDENCE_DIRECTORY=str(a.directory.resolve()),P4K_PORT=str(a.port),
                P4K_CODE_IDENTITY=json.dumps(identity))
+    if a.profile == 'ac18-to-report':
+        env['P4K_COMPLETION_PROFILE'] = '1'
     previous = set(a.directory.glob('*/run.json'))
     completed = subprocess.run(['npx','playwright','test','tests/browser/path29-participant.spec.mjs',
         '--workers=1','--reporter=line'],cwd=ROOT,env=env)
