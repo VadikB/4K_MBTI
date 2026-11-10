@@ -32,8 +32,8 @@
     "H7 marker-owned browser database and state removed",
     "ignored .test-stand/h7-43c5/evidence retained"
   ],
-  "current": "rebased draft PR #205 on merged EXEC-FIX-04; final controlled H7 PASS on exact SHA; release candidate and full CI pending",
-  "next": "prepare next PATCH release, publish rebased draft head, run full CI and owner review, then authorized merge/TEST deploy",
+  "current": "PATCH 2.0.94 release tree locally checked; rebased draft PR #205 not yet pushed; full CI and owner review pending",
+  "next": "commit and push release candidate; Ready/full CI and owner review; then authorized merge/TEST deploy",
   "checks": [
     "validator/normalizer 61 PASS",
     "backend 1048 PASS on a16a413c",
@@ -49,7 +49,12 @@
     "H7 after FIX04: fractional PG 7 PASS at a5dfb995",
     "H7 after FIX04: EXEC03 C1-C9 browser 3 PASS at a5dfb995",
     "combined backend 1055 PASS, frontend 226 PASS, lint PASS",
-    "initial combined integration 79 PASS 1 clock-fixture FAIL; fixture corrected and addressed test PASS"
+    "initial combined integration 79 PASS 1 clock-fixture FAIL; fixture corrected and addressed test PASS",
+    "ready:prepare candidate 2.0.94 PASS on main@43c5da5",
+    "release 2.0.94 backend 1055 PASS",
+    "release 2.0.94 HTTP 144 PASS",
+    "release 2.0.94 frontend 226 PASS",
+    "release 2.0.94 lint/build PASS"
   ],
   "blockers": [
     "full paid composite excluded by direct instruction",
@@ -57,5 +62,6 @@
   ],
   "original_base_sha": "48e175da2a5dffd27e0722e0f50588f87a88fdbf",
   "original_source_candidate_sha": "7da924400000e97a83b7f58a3c73d7c8ab0aecd8",
-  "h7_tested_sha": "a5dfb995ec80c278cda210488411e78cbf12335c"
+  "h7_tested_sha": "a5dfb995ec80c278cda210488411e78cbf12335c",
+  "release_candidate_version": "2.0.94"
 }

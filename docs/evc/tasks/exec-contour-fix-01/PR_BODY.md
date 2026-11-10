@@ -21,6 +21,8 @@
 - После rebase на EXEC-FIX-04 `main@43c5da5`: backend 1055 PASS;
   fractional H7 integration 7 PASS на отдельной test/pytest БД.
 - Frontend 226 PASS; validator/normalizer 61 PASS; lint PASS.
+- Release `2.0.94`: HTTP 144 PASS, backend 1055 PASS, frontend 226 PASS,
+  lint/build/ready:prepare PASS.
 - Controlled browser completion 2 PASS (включая повторный ASK), standalone PATH29 free 1 PASS.
 - EXEC03 browser C1–C9: 3 PASS, включая C7–C9 на HTTP/PG/browser;
   после EXEC-FIX-04 повторено 3 PASS на `a5dfb995ec80c278cda210488411e78cbf12335c`.
@@ -34,8 +36,9 @@ fault/calendar контрпримеров. H7 итогово PASS_CONTROLLED п�
 
 ## Выпуск и откат
 
-База обновлена после EXEC-FIX-04, H7 подтверждён. До merge: подготовить номер
-кандидата, полный CI и отдельное ревью владельца этого PR. Merge запускает автоматический TEST deploy;
+База обновлена после EXEC-FIX-04, H7 подтверждён, PATCH-кандидат `2.0.94`
+подготовлен штатным `ready:prepare`. До merge: полный CI и отдельное ревью
+владельца этого PR. Merge запускает автоматический TEST deploy;
 сохранить прежнее окно приёмки. Откат — revert PR. При `cleanup-deferred`
 восстановить owned DB по marker, затем штатно удалить её; published артефакты
 и исторические receipts не менять.
