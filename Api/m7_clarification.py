@@ -5,7 +5,7 @@ from uuid import UUID,uuid4
 
 from Api.m5_case_runtime import checksum
 from Api.assessment_configuration import definition_checksum
-from Api.m5_cycle_runtime import read_cycle
+from Api.m5_cycle_runtime import _remaining_collecting_seconds, read_cycle
 from Api.m5_scenario_runtime import _next_sequence,build_c45
 from Api.m7_clarification_package import load_mechanism
 from Api.m7_clarification_service import generate
@@ -112,7 +112,7 @@ def _decision_snapshot(connection, *, c54_revision_id: str, key: str):
     status='NO_QUESTION';explanation={'code':'M7_NO_ASSESSMENT_UNCERTAINTY'}
     if source['mode']!='interim' or source['status']!='scenario_ended':status='STOP';explanation={'code':'M7_AS_NOT_OPEN_AFTER_SCENARIO'}
     elif cycle['status'] not in {'active','paused'}:status='STOP';explanation={'code':'M7_COLLECTION_CLOSED'}
-    elif cycle['started_at'] and (cycle['remaining_seconds']<minimum_seconds or (cycle['calendar_deadline'] and datetime.now(timezone.utc)>=cycle['calendar_deadline'])):status='STOP';explanation={'code':'M7_CLARIFICATION_TIME_UNAVAILABLE'}
+    elif cycle['started_at'] and (_remaining_collecting_seconds(connection,cycle)<minimum_seconds or (cycle['calendar_deadline'] and datetime.now(timezone.utc)>=cycle['calendar_deadline'])):status='STOP';explanation={'code':'M7_CLARIFICATION_TIME_UNAVAILABLE'}
     elif any(x['uncertainty']['requires_new_independent_action'] for x in uncertainties):status='NEW_AS';explanation={'code':'M7_NEW_INDEPENDENT_ACTION_REQUIRED','indicator_ids':[x['indicator_id'] for x in uncertainties if x['uncertainty']['requires_new_independent_action']]}
     return {'source':source,'as_db':as_db,'request_hash':request_hash,'mechanism':mechanism,
         'input_value':input_value,'status':status,'explanation':explanation,
@@ -186,7 +186,7 @@ def present(connection,*,decision_id:str,expected_c54_revision_id:str):
     if source['status']!='scenario_ended' or not latest or str(latest['id'])!=expected_c54_revision_id:raise ValueError('M7_CLARIFICATION_STATE_CHANGED')
     cycle=read_cycle(connection,str(connection.execute('SELECT cycle_id FROM m5_cycles WHERE id=%s',(source['cycle_db_id'],)).fetchone()['cycle_id']))
     minimum_seconds=decision['mechanism_json']['decision']['minimum_remaining_seconds']
-    if cycle['status']!='active' or cycle['remaining_seconds']<minimum_seconds or (cycle['calendar_deadline'] and datetime.now(timezone.utc)>=cycle['calendar_deadline']):raise ValueError('M7_CLARIFICATION_TIME_UNAVAILABLE')
+    if cycle['status']!='active' or _remaining_collecting_seconds(connection,cycle)<minimum_seconds or (cycle['calendar_deadline'] and datetime.now(timezone.utc)>=cycle['calendar_deadline']):raise ValueError('M7_CLARIFICATION_TIME_UNAVAILABLE')
     end_interim_wait(connection,source)
     turn_id=UUID(str(decision['id']));seq=_next_sequence(connection,source['id'])
     connection.execute("""INSERT INTO m5_dialogue_turns(assessment_situation_db_id,turn_id,sequence_no,speaker_type,speaker_id,content_text,request_id)

@@ -21,12 +21,12 @@ def _effective_limit(connection,cycle):
     now=datetime.now(timezone.utc);deadline=state['calendar_deadline']
     if deadline and now>=deadline:return 'calendar_deadline',deadline
     if state['remaining_seconds']<=0:
-        remaining=int(cycle['time_budget_seconds'])
+        remaining=timedelta(seconds=int(cycle['time_budget_seconds']))
         rows=connection.execute("SELECT started_at,COALESCE(ended_at,clock_timestamp()) AS ended_at FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting' ORDER BY started_at,id",(cycle['id'],)).fetchall()
         for row in rows:
-            seconds=max(0,int((row['ended_at']-row['started_at']).total_seconds()))
-            if seconds>=remaining:return 'time_budget',row['started_at']+timedelta(seconds=remaining)
-            remaining-=seconds
+            duration=max(timedelta(0),row['ended_at']-row['started_at'])
+            if duration>=remaining:return 'time_budget',row['started_at']+remaining
+            remaining-=duration
         return 'time_budget',now
     return None,None
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from math import ceil
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -330,6 +332,18 @@ def transition_session(connection, *, session_id: str, action: str, reason: str)
     return dict(row)
 
 
+def _remaining_collecting_seconds(connection, cycle: dict[str, Any]) -> Decimal:
+    """Return the precise budget remainder for server-side decisions."""
+    consumed = connection.execute(
+        """
+        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at,clock_timestamp())-started_at))),0) AS value
+        FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting'
+        """,
+        (cycle["id"],),
+    ).fetchone()["value"]
+    return int(cycle["time_budget_seconds"]) - consumed
+
+
 def _can_continue(connection, cycle: dict[str, Any]) -> bool:
     started_at = cycle.get("started_at")
     if not started_at:
@@ -338,14 +352,10 @@ def _can_continue(connection, cycle: dict[str, Any]) -> bool:
     if started_at.tzinfo is None:
         started_at = started_at.replace(tzinfo=timezone.utc)
     calendar_elapsed = max(0, int((now - started_at).total_seconds()))
-    consumed = connection.execute(
-        """
-        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at,clock_timestamp())-started_at))),0)::BIGINT AS value
-        FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting'
-        """,
-        (cycle["id"],),
-    ).fetchone()["value"]
-    return calendar_elapsed < int(cycle["calendar_window_seconds"]) and int(consumed) < int(cycle["time_budget_seconds"])
+    return (
+        calendar_elapsed < int(cycle["calendar_window_seconds"])
+        and _remaining_collecting_seconds(connection, cycle) > 0
+    )
 
 
 def assert_collecting(connection, *, cycle_db_id: int, session_db_id: int) -> dict[str, Any]:
@@ -417,15 +427,11 @@ def read_cycle(connection, cycle_id: str) -> dict[str, Any]:
     ).fetchall()
     result = dict(cycle)
     result["sessions"] = [dict(x) for x in sessions]
-    consumed = connection.execute(
-        """
-        SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_at,clock_timestamp())-started_at))),0)::BIGINT AS value
-        FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting'
-        """,
-        (cycle["id"],),
-    ).fetchone()["value"]
-    result["consumed_seconds"] = int(consumed)
-    result["remaining_seconds"] = max(0, int(cycle["time_budget_seconds"]) - int(consumed))
+    remaining_exact = _remaining_collecting_seconds(connection, cycle)
+    result["consumed_seconds"] = int(cycle["time_budget_seconds"] - remaining_exact)
+    # Keep the public integer projection positive until the exact budget is spent.
+    # Admission compares the precise sum in _can_continue, never this UI value.
+    result["remaining_seconds"] = max(0, ceil(remaining_exact))
     result["calendar_deadline"] = (
         cycle["started_at"] + timedelta(seconds=int(cycle["calendar_window_seconds"]))
         if cycle["started_at"] else None
