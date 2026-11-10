@@ -24,9 +24,10 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
       const form = view === 'people' ? card.locator('.admin-assignment-readiness')
         : card.locator(`form[data-action="${view === 'questionnaire' ? 'preview-questionnaire' : 'preview-early-data'}"]`);
       await expect(form).toBeVisible();
-      const author = view === 'people' ? card.locator('input[name="invitation_email"]') : form.locator('[name="source_author"]');
+      const author = view === 'people' ? card.locator('input[name="invitation_email"]')
+        : view === 'questionnaire' ? form.locator('input[type="file"]') : form.locator('[name="responsible_contact"]');
       if (view === 'people') await author.check();
-      else await author.fill('Синтетический автор · длинные сведения для проверки доступности формы');
+      else if (view === 'organization-data') await author.fill('synthetic-contact@example.test');
       if (view === 'questionnaire') await form.locator('input[type="file"]').setInputFiles({
         name: 'synthetic-questionnaire-long-file-name.csv', mimeType: 'text/csv',
         buffer: Buffer.from('question_id,field,value\nC01,name,Синтетическая организация\n'),
@@ -53,7 +54,8 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
       const metrics = await form.evaluate((node) => {
         const isReadiness = node.classList.contains('admin-assignment-readiness');
         const scope = isReadiness ? node.closest('[data-organization-id]') : node;
-        const source = scope.querySelector(isReadiness ? 'input[name="invitation_email"]' : '[name="source_author"]');
+        const source = scope.querySelector(isReadiness ? 'input[name="invitation_email"]'
+          : node.dataset.action === 'preview-questionnaire' ? 'input[type="file"]' : '[name="responsible_contact"]');
         const submit = scope.querySelector(isReadiness ? 'form[data-action="assign-member-assessment"] button[type="submit"]' : 'button[type="submit"]');
         return { viewport: innerWidth,
         document: document.documentElement.scrollWidth, form: node.getBoundingClientRect().toJSON(),

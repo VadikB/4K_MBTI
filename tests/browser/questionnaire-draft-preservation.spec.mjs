@@ -21,7 +21,7 @@ for (const scenario of [
   fs.mkdirSync(directory, { recursive: true });
   const statePath = path.join(directory, 'state.json'), port = '18874', base = `http://127.0.0.1:${port}`;
   const fixture = JSON.parse(fs.readFileSync(path.join(root, 'tests/browser/fixtures/questionnaire-it-synthetic-v1.json'), 'utf8'));
-  const entries = Object.entries(fixture.fields);
+  const entries = Object.entries(fixture.fields).filter(([name]) => name !== 'source_author');
   const save = (name, value) => persistReceipt(path.join(directory, `${name}.json`), value);
   const run = (script, args) => {
     const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 90000 });
@@ -105,7 +105,7 @@ for (const scenario of [
     const http = await response.json(), db = readDb(revisionId);
     save('confirmed-readback', { http, database: db });
     expect(db.revision.status).toBe('confirmed'); expect(db.revision.answers_json).toEqual(http.answers_json);
-    expect(db.revision.source_author).toBe(fixture.fields.source_author);
+    expect(db.revision.source_author).toBe('');
     for (const name of ['assignments', 'profiles', 'preparation_operations', 'cycles', 'assessment_situations', 'assessment_answers']) {
       expect(db.counts[name]).toBe(baseline.counts[name]);
     }

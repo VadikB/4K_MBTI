@@ -192,19 +192,6 @@ const membershipErrorMessage = (error, fallback) => {
   return message || fallback;
 };
 
-const transferErrorMessage = (error) => {
-  const message = String(error?.message || '');
-  const labels = {
-    ORGANIZATION_TRANSFER_LAST_ADMIN: 'Нельзя перенести последнего администратора организации. Сначала назначьте другого администратора.',
-    ORGANIZATION_TRANSFER_ACTIVE_ACQUAINTANCE: 'Перенос заблокирован: участник проходит знакомство с оценкой.',
-    ORGANIZATION_TRANSFER_SOURCE_CHANGED: 'Состав организации изменился. Обновите список и повторите перенос.',
-    ORGANIZATION_TRANSFER_TARGET_INACTIVE: 'Целевая организация неактивна.',
-    ORGANIZATION_TRANSFER_TARGET_NOT_FOUND: 'Целевая организация не найдена.',
-  };
-  const code = Object.keys(labels).find((item) => message.includes(item));
-  return code ? labels[code] : membershipErrorMessage(error, 'Не удалось перенести участника.');
-};
-
 const invitationRevokeErrorMessage = (error) => {
   const message = String(error?.message || '');
   const errorCode = String(error?.code || '');
@@ -301,7 +288,7 @@ const restoreFormDraft = (organizationId, form) => {
     const notice = document.createElement('p');
     notice.dataset.csvReselect = draft.csvFileName;
     notice.className = 'form-status';
-    notice.textContent = 'Выберите CSV-файл повторно. Автор сведений и остальные поля сохранены.';
+    notice.textContent = 'Выберите CSV-файл повторно. Остальные поля сохранены.';
     form.querySelector('input[type="file"][name="csv"]').after(notice);
   }
   form.querySelector('[name="' + CSS.escape(draft.focusedName || '') + '"]')?.focus({ preventScroll: true });
@@ -310,9 +297,7 @@ const restoreFormDraft = (organizationId, form) => {
 
 const restoreConfirmedRevisionForm = (form, revision) => {
   if (!form || !revision) return false;
-  const sourceAuthor = form.querySelector('[name="source_author"]');
-  if (sourceAuthor && revision.source_author) sourceAuthor.value = String(revision.source_author);
-  if (form.dataset.action !== 'preview-early-data') return Boolean(sourceAuthor?.value);
+  if (form.dataset.action !== 'preview-early-data') return true;
   const answers = revision.answers_json || {};
   const values = {
     organization_name: answers.C01?.name,
@@ -952,32 +937,9 @@ export const deleteAdminOrganizationMember = async (organizationId, email) => {
     const action = result?.membership_action;
     setStatus(action?.result === 'already_absent'
       ? 'Связь участника с организацией уже отсутствовала. Аккаунт пользователя не изменён.'
-      : 'Участник убран из организации. Аккаунт пользователя сохранён; повторное добавление не потребует новой регистрации.', 'success');
+      : 'Участие в оценке отключено. Аккаунт и административные полномочия сохранены.', 'success');
   } catch (error) {
     setStatus(error.message || 'Не удалось отвязать участника.', 'error');
-  }
-};
-
-export const transferAdminOrganizationMember = async (organizationId, userId, targetOrganizationId, targetRole) => {
-  try {
-    await requestOrganizations(
-      '/users/admin/users/' + Number(userId) + '/transfer-organization',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          expected_source_organization_id: Number(organizationId),
-          target_organization_id: Number(targetOrganizationId),
-          target_role: targetRole === 'admin' ? 'admin' : 'member',
-          operation_id: createOperationId(),
-        }),
-      },
-      'Не удалось перенести участника.',
-    );
-    setStatus('Участник перенесён. Старые назначения и приглашения отозваны, активные веб-сессии завершены.', 'success');
-    return true;
-  } catch (error) {
-    setStatus(transferErrorMessage(error), 'error');
-    return false;
   }
 };
 
@@ -1971,7 +1933,7 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
   );
 };
 
-const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '', selectedAssessmentLabel = '', transferTargets = [] } = {}) => {
+const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '', selectedAssessmentLabel = '' } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
   }
@@ -2062,12 +2024,6 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
         const primaryAction = reportButton || processingButton || checkPreparationButton || (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
           ? invitationButton : '');
         const menuActions = (primaryAction === invitationButton ? '' : invitationButton) + revokeButton + cancelButton + preparationButton + removeButton;
-        const transferForm = !isSuperadmin || !transferTargets.length ? '' :
-          '<form class="admin-organization-transfer-form" data-action="transfer-member" data-user-id="' + Number(item.user_id) + '">' +
-          '<label><span>Перенести в</span><select name="target_organization_id" required><option value="">Выберите организацию</option>' +
-          transferTargets.map((target) => '<option value="' + Number(target.id) + '">' + escapeHtml(target.name) + '</option>').join('') +
-          '</select></label><label><span>Роль</span><select name="target_role"><option value="member">Участник</option><option value="admin">Администратор</option></select></label>' +
-          '<button class="ghost-button compact-ghost" type="submit">Перенести</button></form>';
         return (
           '<article class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
@@ -2081,7 +2037,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
           '<div class="admin-organization-member-actions">' +
           primaryAction +
           '<details class="admin-organization-member-menu"><summary aria-label="Другие действия" aria-haspopup="menu">⋯</summary><div role="menu">' + menuActions + '</div></details>' +
-          '</div>' + transferForm +
+          '</div>' +
           '</article>'
         );
       })
@@ -2330,6 +2286,8 @@ export const renderAdminOrganizations = () => {
         '" data-questionnaire-revision-id="' + Number(questionnairePreview.id) + '"><strong>' +
         (!programConfirmed ? 'Сохранённый предпросмотр выбранной оценки' : questionnairePreview.status === 'ready_for_confirmation'
           ? 'Готово к подтверждению' : 'Нужно исправить анкету') + '</strong>' +
+        '<p>Внёс данные: ' + escapeHtml(questionnairePreview.uploaded_by_name ||
+          questionnairePreview.uploaded_by_email || ('аккаунт #' + Number(questionnairePreview.uploaded_by_user_id))) + '</p>' +
         (previewIsStale ? '<p class="form-status error" data-preview-stale>Данные изменились. Обновите предпросмотр перед подтверждением. ' +
           '<button type="button" class="text-button" data-action="refresh-questionnaire-preview">Обновить предпросмотр</button></p>' : '') +
         (humanProblems.length ? '<p>Проверьте: ' + escapeHtml([...new Set(humanProblems)].join(', ')) + '.</p>' :
@@ -2417,7 +2375,6 @@ export const renderAdminOrganizations = () => {
           selectedAssessmentLabel: currentProgram
             ? programIdentity(currentProgram) + ' · ' + roleIdentity(allowedRoles)
             : 'выбранная оценка',
-          transferTargets: organizations.filter((candidate) => candidate.is_active !== false && Number(candidate.id) !== orgId),
         }) +
         '<form class="admin-organization-member-form" data-action="add-member">' +
         '<h4>Добавить участника</h4><p>Для добавления нужны email, ФИО и должность.</p>' +
@@ -2446,7 +2403,6 @@ export const renderAdminOrganizations = () => {
         '<p>Черновик можно редактировать. Участники увидят новые сведения после подтверждения.</p>' + legacyProfileMarkup +
         '<form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' + escapeHtml(selectedRef) + '">' +
         assessmentFieldMarkup +
-        '<label><span>Автор сведений</span><input name="source_author" type="text" value="' + escapeHtml(currentRevision?.source_author || '') + '" placeholder="Ответственный со стороны заказчика" required></label>' +
         '<fieldset class="admin-questionnaire-field-group"><legend>Об организации</legend>' +
         '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '"></label>' +
         '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
@@ -2467,7 +2423,6 @@ export const renderAdminOrganizations = () => {
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire" data-assessment-ref="' + escapeHtml(selectedRef) + '">' +
         assessmentFieldMarkup +
-        '<label><span>Автор сведений</span><input name="source_author" type="text" value="' + escapeHtml(currentRevision?.source_author || '') + '" placeholder="Автор сведений со стороны заказчика" required></label>' +
         '<input name="csv" type="file" accept=".csv,text/csv" required>' +
         '<button class="ghost-button compact-ghost" type="submit"' + (programConfirmed ? '' : ' disabled') + '>Предпросмотр анкеты</button></form>' +
         (activeView === 'questionnaire' ? confirmationMarkup + previewMarkup : '') +

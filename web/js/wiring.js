@@ -1730,25 +1730,12 @@ if (adminOrganizationsList) {
       });
       return;
     }
-    if (form.dataset.action === 'transfer-member') {
-      const formData = new FormData(form);
-      const targetOrganizationId = Number(formData.get('target_organization_id'));
-      const targetRole = String(formData.get('target_role') || 'member');
-      const userId = Number(form.dataset.userId);
-      if (!targetOrganizationId || !userId) return;
-      if (!window.confirm('Перенести участника в другую организацию? Старые назначения и приглашения будут отозваны, активные сессии завершены.')) return;
-      withScreen(loadAdminOrganizations, (module) =>
-        module.transferAdminOrganizationMember(organizationId, userId, targetOrganizationId, targetRole),
-      );
-      return;
-    }
     if (form.dataset.action === 'preview-early-data') {
       const formData = new FormData(form);
       const value = (name) => String(formData.get(name) || '').trim();
       withScreen(loadAdminOrganizations, (module) =>
         module.previewAdminOrganizationQuestionnaire(organizationId, {
           assignment_ref: value('assignment_ref'),
-          source_author: value('source_author'),
           channel: 'product_form',
           template_variant: 'corporate',
           template_version: '0.1',
@@ -1799,7 +1786,6 @@ if (adminOrganizationsList) {
         withScreen(loadAdminOrganizations, async (module) => {
           await module.previewAdminOrganizationQuestionnaire(organizationId, {
             assignment_ref: String(formData.get('assignment_ref') || '').trim(),
-            source_author: String(formData.get('source_author') || '').trim(),
             channel: 'csv', template_variant: 'corporate', template_version: '0.1',
             csv_text: csvText, answers: {}, idempotency_key: createOperationId(),
           });
@@ -2137,6 +2123,7 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'delete-admin') {
+      if (!window.confirm('Снять административный доступ у ' + value + '? Участие в оценке и аккаунт сохранятся.')) return;
       withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationAdmin(organizationId, value));
       return;
     }
@@ -2146,7 +2133,7 @@ if (adminOrganizationsList) {
         window.alert('Autotest-пользователей нельзя отвязывать из списка организаций. Используйте очистку регрессионных тестов.');
         return;
       }
-      if (!window.confirm('Убрать ' + value + ' из участников этой организации? Аккаунт пользователя, пароль, результаты и связи с другими организациями сохранятся. Повторное добавление не потребует новой регистрации.')) {
+      if (!window.confirm('Убрать ' + value + ' из участников оценки? Аккаунт, административный доступ, назначения и история сохранятся.')) {
         return;
       }
       withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationMember(organizationId, value));
@@ -2974,15 +2961,26 @@ if (!ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED) {
   const blockProtectedCopy = (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (event.clipboardData) {
-      event.clipboardData.clearData();
-      event.clipboardData.setData('text/plain', '');
-    }
-    showError(
-      interviewError,
-      'Копирование условия, материалов и реплик собеседника ограничено для этой оценки.',
-    );
   };
+
+  const blockAnswerTransfer = (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
+  interviewTextarea.addEventListener('paste', blockAnswerTransfer, true);
+  interviewTextarea.addEventListener('drop', blockAnswerTransfer, true);
+  interviewTextarea.addEventListener('beforeinput', (event) => {
+    if (event.inputType === 'insertFromPaste' || event.inputType === 'insertFromDrop') {
+      blockAnswerTransfer(event);
+    }
+  }, true);
+  interviewTextarea.addEventListener('keydown', (event) => {
+    const key = String(event.key || '').toLowerCase();
+    if (((event.ctrlKey || event.metaKey) && key === 'v') || (event.shiftKey && key === 'insert')) {
+      blockAnswerTransfer(event);
+    }
+  }, true);
 
   const isInterviewScreenActive = () => {
     return state.currentScreen === 'interview' && !interviewPanel.classList.contains('hidden');

@@ -30,8 +30,8 @@ test.afterAll(async () => new Promise((resolve) => server.close(resolve)));
 const json = (route, value, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
 const card = (page, id = 3) => page.locator(`[data-organization-id="${id}"]`);
 const form = (page, id = 3) => card(page, id).locator('[data-action="preview-early-data"]');
-const fields = (label) => ({ source_author: `Синтетический автор ${label}`,
-  organization_name: `Синтетическая ИТ-компания ${label}`, organization_type: `ИТ-разработка ${label}` });
+const fields = (label) => ({ organization_name: `Синтетическая ИТ-компания ${label}`,
+  organization_type: `ИТ-разработка ${label}`, responsible_contact: `contact-${label || 'empty'}@example.test` });
 async function fill(page, values, id = 3) {
   for (const [name, value] of Object.entries(values)) await form(page, id).locator(`[name="${name}"]`).fill(value);
 }
@@ -40,8 +40,11 @@ async function assertValues(page, values, id = 3) {
 }
 const empty = Object.fromEntries(Object.keys(fields('')).map((name) => [name, '']));
 const confirmed = { id: 201, status: 'confirmed', channel: 'product_form', assignment_ref: 'pilot-11',
-  source_author: fields('сервер').source_author,
-  answers_json: { C01: { name: fields('сервер').organization_name, organization_type: fields('сервер').organization_type } } };
+  source_author: 'Исторический автор',
+  answers_json: {
+    C01: { name: fields('сервер').organization_name, organization_type: fields('сервер').organization_type },
+    C21: { responsible_contact: fields('сервер').responsible_contact },
+  } };
 
 async function fixture(page, { status = 200, items = [] } = {}) {
   test.info().annotations.push({ type: 'synthetic_http', description: 'Q-DRAFT identity/org/assessment/denial lifecycle only; no DB/provider/PATH admission' });

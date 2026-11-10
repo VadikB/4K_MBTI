@@ -3815,6 +3815,14 @@ def ensure_organization_membership_admission_source_constraint(connection) -> No
     )
 
 
+def ensure_organization_membership_participation_column(connection) -> None:
+    """Additive backfill: every existing membership remains an active participant."""
+    connection.execute(
+        "ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS is_participant "
+        "BOOLEAN NOT NULL DEFAULT TRUE"
+    )
+
+
 def ensure_core_schema() -> None:
     with get_connection() as connection:
         connection.execute(
@@ -4589,6 +4597,7 @@ def ensure_core_schema() -> None:
                 organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
                 user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'admin')),
+                is_participant BOOLEAN NOT NULL DEFAULT TRUE,
                 admission_source TEXT NOT NULL DEFAULT 'legacy_unclassified',
                 admitted_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
                 admitted_at TIMESTAMP,
@@ -4714,6 +4723,7 @@ def ensure_core_schema() -> None:
             "BIGINT REFERENCES users(id) ON DELETE SET NULL"
         )
         connection.execute("ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS admitted_at TIMESTAMP")
+        ensure_organization_membership_participation_column(connection)
         ensure_organization_membership_admission_source_constraint(connection)
         connection.execute(
             """

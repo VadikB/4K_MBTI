@@ -24,11 +24,15 @@ class _Connection:
 
     def execute(self, query, params=None):
         self.queries.append((" ".join(query.split()), params))
-        self.rowcount = self.delete_rowcount if "DELETE FROM organization_memberships" in query else 0
+        normalized = " ".join(query.split())
+        self.rowcount = self.delete_rowcount if (
+            "DELETE FROM organization_memberships" in normalized
+            or "UPDATE organization_memberships SET is_participant=FALSE" in normalized
+        ) else 0
         return self
 
     def fetchone(self):
-        return {"id": 3, "is_active": False}
+        return {"id": 3, "code": "synthetic-org", "is_active": False}
 
     def commit(self):
         self.committed = True
@@ -89,7 +93,7 @@ def test_org_admin_conflict_is_409_without_foreign_tenant_leak(monkeypatch, memb
     assert not connection.committed
 
 
-def test_superadmin_conflict_includes_open_or_transfer_action(monkeypatch, membership_http):
+def test_superadmin_conflict_identifies_current_organization_without_transfer(monkeypatch, membership_http):
     http, connection = membership_http
     monkeypatch.setattr(
         routes,
@@ -113,7 +117,8 @@ def test_superadmin_conflict_includes_open_or_transfer_action(monkeypatch, membe
 
     assert response.status_code == 409
     assert "Организация А" in response.json()["detail"]
-    assert "перенесите пользователя" in response.json()["detail"]
+    assert "Управляйте его участием" in response.json()["detail"]
+    assert "перенес" not in response.json()["detail"]
     assert not connection.committed
 
 
@@ -219,7 +224,45 @@ def test_organization_admin_cannot_call_superadmin_transfer(monkeypatch, members
 
     assert response.status_code == 403
     assert response.json()["detail"] == "Superadmin access required"
-    assert not connection.committed
+
+
+def test_admin_authority_is_removed_without_erasing_participation(monkeypatch, membership_http):
+    http, connection = membership_http
+    monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: None)
+
+    response = http.delete(
+        "/users/admin/organizations/4/admins",
+        params={"email": "person@example.test"},
+    )
+
+    assert response.status_code == 200
+    assert any(
+        "SET role='member'" in query and "is_participant=TRUE" in query
+        for query, _params in connection.queries
+    )
+    assert any(
+        "role='admin' AND is_participant=FALSE" in query
+        for query, _params in connection.queries
+    )
+
+
+def test_removed_transfer_endpoint_is_gone_for_superadmin(monkeypatch, membership_http):
+    http, _connection = membership_http
+    monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: None)
+
+    response = http.post(
+        "/users/admin/users/7/transfer-organization",
+        json={
+            "expected_source_organization_id": 3,
+            "target_organization_id": 4,
+            "target_role": "member",
+            "operation_id": "transfer-operation-removed",
+        },
+    )
+
+    assert response.status_code == 410
+    assert response.json()["detail"] == "ORGANIZATION_TRANSFER_REMOVED"
+    assert not _connection.committed
 
 
 def test_superadmin_can_explicitly_restore_deactivated_organization(monkeypatch, membership_http):

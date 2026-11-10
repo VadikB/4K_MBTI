@@ -1415,6 +1415,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                   AND oa.revoked_at IS NULL
             ) assignments ON TRUE
             WHERE om.organization_id = ANY(%s)
+              AND om.is_participant = TRUE
             ORDER BY LOWER(COALESCE(u.email, '')) ASC
             LIMIT 500
             """,
@@ -1467,6 +1468,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             SELECT organization_id, COUNT(*)::int AS member_count
             FROM organization_memberships
             WHERE organization_id = ANY(%s)
+              AND is_participant = TRUE
             GROUP BY organization_id
             """,
             (org_ids,),
@@ -1780,14 +1782,14 @@ def _reject_foreign_membership(
             status_code=409,
             detail=(
                 "ORGANIZATION_MEMBERSHIP_CONFLICT: Пользователь связан с организацией "
-                f"«{organization_name}». Откройте организацию или перенесите пользователя."
+                f"«{organization_name}». Управляйте его участием в текущей организации."
             ),
         )
     raise HTTPException(
         status_code=409,
         detail=(
             "ORGANIZATION_MEMBERSHIP_CONFLICT: Не удалось добавить пользователя: он связан "
-            "с другой организацией. Обратитесь к суперадминистратору для переноса."
+            "с другой организацией. Обратитесь к суперадминистратору."
         ),
     )
 
@@ -1859,7 +1861,8 @@ def _attach_user_to_organization(
         )
         VALUES (%s, %s, 'member', %s, %s, NOW())
         ON CONFLICT (organization_id, user_id) DO UPDATE
-        SET admission_source = EXCLUDED.admission_source,
+        SET is_participant = TRUE,
+            admission_source = EXCLUDED.admission_source,
             admitted_by_user_id = EXCLUDED.admitted_by_user_id,
             admitted_at = EXCLUDED.admitted_at,
             updated_at = NOW()
@@ -4676,7 +4679,8 @@ def assign_organization_assessment(
                 """SELECT om.user_id
                    FROM organization_memberships om
                    JOIN organizations o ON o.id=om.organization_id
-                   WHERE om.organization_id=%s AND om.user_id=%s AND o.is_active=TRUE
+                   WHERE om.organization_id=%s AND om.user_id=%s
+                     AND om.is_participant=TRUE AND o.is_active=TRUE
                    LIMIT 1""",
                 (organization_id, user_id),
             ).fetchone()
@@ -5209,9 +5213,14 @@ def add_admin_organization_admin(organization_id: int, payload: AdminOrganizatio
         raise HTTPException(status_code=400, detail="Valid admin email is required")
     with get_connection() as connection:
         _require_superadmin(connection, user)
-        org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
+        org_row = connection.execute("SELECT id,code FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
         if org_row is None:
             raise HTTPException(status_code=404, detail="Organization not found")
+        connection.execute(
+            """DELETE FROM configured_access_suppressions
+               WHERE email=%s AND access_kind='organization_admin' AND organization_code=%s""",
+            (normalized_email, str(org_row["code"])),
+        )
         membership = _lock_membership_by_email(connection, email=normalized_email)
         _reject_foreign_membership(
             membership,
@@ -5256,6 +5265,11 @@ def delete_admin_organization_admin(organization_id: int, email: str, request: R
         raise HTTPException(status_code=400, detail="Valid admin email is required")
     with get_connection() as connection:
         _require_superadmin(connection, user)
+        organization = connection.execute(
+            "SELECT code FROM organizations WHERE id=%s LIMIT 1", (organization_id,),
+        ).fetchone()
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Organization not found")
         user_row = connection.execute(
             """
             SELECT id
@@ -5267,12 +5281,25 @@ def delete_admin_organization_admin(organization_id: int, email: str, request: R
         ).fetchone()
         if user_row is not None:
             connection.execute(
-                """
-                DELETE FROM organization_memberships
-                WHERE organization_id = %s
-                  AND user_id = %s
-                  AND role = 'admin'
-                """,
+                """UPDATE organization_memberships
+                   SET role='member', updated_at=NOW()
+                   WHERE organization_id=%s AND user_id=%s
+                     AND role='admin' AND is_participant=TRUE""",
+                (organization_id, int(user_row["id"])),
+            )
+            connection.execute(
+                """INSERT INTO configured_access_suppressions(
+                       email,access_kind,organization_code,reason,created_by_user_id
+                   ) VALUES(%s,'organization_admin',%s,'superadmin_revoke',%s)
+                   ON CONFLICT(email,access_kind,organization_code) DO UPDATE
+                   SET reason=EXCLUDED.reason,created_by_user_id=EXCLUDED.created_by_user_id,
+                       created_at=NOW()""",
+                (normalized_email, str(organization["code"]), int(user.id)),
+            )
+            connection.execute(
+                """DELETE FROM organization_memberships
+                   WHERE organization_id=%s AND user_id=%s
+                     AND role='admin' AND is_participant=FALSE""",
                 (organization_id, int(user_row["id"])),
             )
             connection.commit()
@@ -5313,148 +5340,7 @@ def transfer_admin_organization_user(
     actor = web_session_service.get_user_by_token(token)
     with get_connection() as connection:
         _require_superadmin(connection, actor)
-        prior_operation = connection.execute(
-            """SELECT user_id,expected_source_organization_id,target_organization_id,target_role
-               FROM organization_transfer_operations WHERE operation_id=%s FOR UPDATE""",
-            (payload.operation_id,),
-        ).fetchone()
-        requested_operation = (
-            user_id,
-            int(payload.expected_source_organization_id),
-            int(payload.target_organization_id),
-            payload.target_role,
-        )
-        if prior_operation is not None:
-            recorded_operation = (
-                int(prior_operation["user_id"]),
-                int(prior_operation["expected_source_organization_id"]),
-                int(prior_operation["target_organization_id"]),
-                prior_operation["target_role"],
-            )
-            if recorded_operation != requested_operation:
-                raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_OPERATION_CONFLICT")
-            return _build_admin_organizations(connection)
-        membership = connection.execute(
-            """
-            SELECT membership.organization_id, membership.role, membership.admission_source,
-                   organization.name AS organization_name, user_row.email
-            FROM organization_memberships membership
-            JOIN organizations organization ON organization.id=membership.organization_id
-            JOIN users user_row ON user_row.id=membership.user_id
-            WHERE membership.user_id=%s
-            FOR UPDATE OF membership
-            """,
-            (user_id,),
-        ).fetchone()
-        if membership is None:
-            raise HTTPException(status_code=404, detail="ORGANIZATION_MEMBERSHIP_NOT_FOUND")
-        source_organization_id = int(membership["organization_id"])
-        target = connection.execute(
-            "SELECT id, name, is_active FROM organizations WHERE id=%s FOR UPDATE",
-            (payload.target_organization_id,),
-        ).fetchone()
-        if target is None:
-            raise HTTPException(status_code=404, detail="ORGANIZATION_TRANSFER_TARGET_NOT_FOUND")
-        if not bool(target["is_active"]):
-            raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_TARGET_INACTIVE")
-        if source_organization_id == int(payload.target_organization_id):
-            if membership["role"] == "admin" and payload.target_role != "admin":
-                another_admin = connection.execute(
-                    """SELECT 1 FROM organization_memberships
-                       WHERE organization_id=%s AND role='admin' AND user_id<>%s LIMIT 1""",
-                    (source_organization_id, user_id),
-                ).fetchone()
-                if another_admin is None:
-                    raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_LAST_ADMIN")
-            connection.execute(
-                "UPDATE organization_memberships SET role=%s, admission_source='superadmin_transfer', "
-                "admitted_by_user_id=%s, admitted_at=NOW(), updated_at=NOW() WHERE user_id=%s",
-                (payload.target_role, int(actor.id), user_id),
-            )
-            connection.execute(
-                """INSERT INTO organization_transfer_operations
-                   (operation_id,user_id,expected_source_organization_id,target_organization_id,target_role)
-                   VALUES(%s,%s,%s,%s,%s)""",
-                (payload.operation_id, *requested_operation),
-            )
-            connection.commit()
-            return _build_admin_organizations(connection)
-        if source_organization_id != int(payload.expected_source_organization_id):
-            raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_SOURCE_CHANGED")
-        if membership["role"] == "admin":
-            another_admin = connection.execute(
-                """SELECT 1 FROM organization_memberships
-                   WHERE organization_id=%s AND role='admin' AND user_id<>%s LIMIT 1""",
-                (source_organization_id, user_id),
-            ).fetchone()
-            if another_admin is None:
-                raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_LAST_ADMIN")
-        active_cycle = connection.execute(
-            """SELECT cycle_id, status FROM m5_cycles
-               WHERE owner_user_id=%s AND organization_id=%s
-                 AND status IN ('prepared','active','paused','interrupted')
-               ORDER BY created_at DESC LIMIT 1 FOR UPDATE""",
-            (user_id, source_organization_id),
-        ).fetchone()
-        if active_cycle is not None:
-            try:
-                m7_completion.complete(
-                    connection, cycle_id=str(active_cycle["cycle_id"]),
-                    key=f"organization-transfer:{payload.operation_id}", action="complete",
-                    reason="organization_transfer", initiated_by=int(actor.id),
-                )
-            except ValueError as exc:
-                raise HTTPException(status_code=409, detail=str(exc)) from exc
-        acquaintance_state = connection.execute(
-            """SELECT status FROM participant_acquaintance_states
-               WHERE user_id=%s AND organization_id=%s FOR UPDATE""",
-            (user_id, source_organization_id),
-        ).fetchone()
-        if acquaintance_state and acquaintance_state["status"] == "in_progress":
-            raise HTTPException(status_code=409, detail="ORGANIZATION_TRANSFER_ACTIVE_ACQUAINTANCE")
-
-        if membership["admission_source"] == "configured_admin":
-            connection.execute(
-                """INSERT INTO configured_organization_membership_suppressions
-                   (user_id,organization_id,reason,created_by_user_id)
-                   VALUES(%s,%s,'superadmin_transfer',%s)
-                   ON CONFLICT(user_id,organization_id) DO NOTHING""",
-                (user_id, source_organization_id, int(actor.id)),
-            )
-        connection.execute(
-            """UPDATE organization_assessment_assignments
-               SET status='revoked', revoked_at=COALESCE(revoked_at,NOW())
-               WHERE organization_id=%s AND recipient_user_id=%s
-                 AND status='active' AND revoked_at IS NULL""",
-            (source_organization_id, user_id),
-        )
-        connection.execute(
-            """UPDATE organization_invitations
-               SET revoked_at=COALESCE(revoked_at,NOW())
-               WHERE organization_id=%s AND LOWER(recipient_email)=LOWER(%s)
-                 AND revoked_at IS NULL""",
-            (source_organization_id, membership["email"]),
-        )
-        connection.execute(
-            "DELETE FROM participant_acquaintance_states WHERE user_id=%s AND organization_id=%s",
-            (user_id, source_organization_id),
-        )
-        connection.execute(
-            """UPDATE organization_memberships
-               SET organization_id=%s, role=%s, admission_source='superadmin_transfer',
-                   admitted_by_user_id=%s, admitted_at=NOW(), updated_at=NOW()
-               WHERE user_id=%s AND organization_id=%s""",
-            (payload.target_organization_id, payload.target_role, int(actor.id), user_id, source_organization_id),
-        )
-        connection.execute("DELETE FROM web_user_sessions WHERE user_id=%s", (user_id,))
-        connection.execute(
-            """INSERT INTO organization_transfer_operations
-               (operation_id,user_id,expected_source_organization_id,target_organization_id,target_role)
-               VALUES(%s,%s,%s,%s,%s)""",
-            (payload.operation_id, *requested_operation),
-        )
-        connection.commit()
-        return _build_admin_organizations(connection)
+        raise HTTPException(status_code=410, detail="ORGANIZATION_TRANSFER_REMOVED")
 
 
 @router.delete("/admin/organizations/{organization_id}/members", response_model=AdminOrganizationsResponse)
@@ -5481,12 +5367,10 @@ def delete_admin_organization_member(organization_id: int, email: str, request: 
         target_user_id = int(user_row["id"]) if user_row is not None else None
         if user_row is not None:
             result = connection.execute(
-                """
-                DELETE FROM organization_memberships
-                WHERE organization_id = %s
-                  AND user_id = %s
-                  AND role = 'member'
-                """,
+                """UPDATE organization_memberships
+                   SET is_participant=FALSE, updated_at=NOW()
+                   WHERE organization_id=%s AND user_id=%s
+                     AND is_participant=TRUE""",
                 (organization_id, int(user_row["id"])),
             )
             affected_rows = int(result.rowcount or 0)
@@ -5578,6 +5462,7 @@ def prepare_admin_organization_member_assessment(
             JOIN organization_memberships om ON om.user_id = u.id
             WHERE u.id = %s
               AND om.organization_id = %s
+              AND om.is_participant = TRUE
             """,
             (user_id, organization_id),
         ).fetchone()
@@ -5703,7 +5588,7 @@ def prepare_admin_organization_assessments(
             + """
             JOIN organization_memberships om ON om.user_id = u.id
             WHERE om.organization_id = %s
-              AND om.role = 'member'
+              AND om.is_participant = TRUE
               AND u.id <> %s
             ORDER BY u.id
             """,
@@ -5883,8 +5768,12 @@ def list_admin_organization_questionnaire_revisions(organization_id: int, reques
     with get_connection() as connection:
         _require_organization_admin(connection, user, organization_id)
         rows = connection.execute(
-            """SELECT * FROM questionnaire_response_revisions
-               WHERE organization_id=%s ORDER BY created_at DESC,id DESC LIMIT 100""",
+            """SELECT revision.*, uploader.email AS uploaded_by_email,
+                      uploader.full_name AS uploaded_by_name
+               FROM questionnaire_response_revisions revision
+               LEFT JOIN users uploader ON uploader.id=revision.uploaded_by_user_id
+               WHERE revision.organization_id=%s
+               ORDER BY revision.created_at DESC,revision.id DESC LIMIT 100""",
             (organization_id,),
         ).fetchall()
         latest = {}
@@ -5918,8 +5807,18 @@ def preview_admin_organization_questionnaire(
                 channel=payload.channel, template_variant=payload.template_variant,
                 template_version=payload.template_version, answers=payload.answers,
                 raw_text=payload.csv_text, uploaded_by=int(user.id),
-                source_author=payload.source_author, idempotency_key=payload.idempotency_key,
+                source_author="", idempotency_key=payload.idempotency_key,
             )
+            uploader = connection.execute(
+                "SELECT email,full_name FROM users WHERE id=%s",
+                (int(user.id),),
+            ).fetchone()
+            if uploader is not None:
+                result = {
+                    **result,
+                    "uploaded_by_email": uploader["email"],
+                    "uploaded_by_name": uploader["full_name"],
+                }
             confirmed = connection.execute(
                 """SELECT * FROM questionnaire_response_revisions
                    WHERE organization_id=%s AND assignment_ref=%s AND status='confirmed' AND id<>%s
@@ -5945,7 +5844,11 @@ def get_admin_organization_questionnaire_revision(organization_id: int, revision
     with get_connection() as connection:
         _require_organization_admin(connection, user, organization_id)
         row = connection.execute(
-            "SELECT * FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s",
+            """SELECT revision.*, uploader.email AS uploaded_by_email,
+                      uploader.full_name AS uploaded_by_name
+               FROM questionnaire_response_revisions revision
+               LEFT JOIN users uploader ON uploader.id=revision.uploaded_by_user_id
+               WHERE revision.id=%s AND revision.organization_id=%s""",
             (revision_id, organization_id),
         ).fetchone()
         if row is None:

@@ -68,7 +68,7 @@ def test_foreign_membership_hides_tenant_from_organization_admin():
     assert "с другой организацией" in raised.value.detail
 
 
-def test_foreign_membership_gives_superadmin_transfer_action():
+def test_foreign_membership_gives_superadmin_membership_action_without_transfer():
     with pytest.raises(HTTPException) as raised:
         _reject_foreign_membership(
             {"organization_id": 3, "organization_name": "Организация А"},
@@ -78,7 +78,8 @@ def test_foreign_membership_gives_superadmin_transfer_action():
 
     assert raised.value.status_code == 409
     assert "Организация А" in raised.value.detail
-    assert "перенесите пользователя" in raised.value.detail
+    assert "Управляйте его участием" in raised.value.detail
+    assert "перенесите" not in raised.value.detail
 
 
 def test_unique_violation_rolls_back_savepoint_and_returns_business_conflict():

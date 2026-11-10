@@ -65,6 +65,15 @@ let interviewScrollAlignmentTimers = [];
 let confirmedProductInterviewSnapshot = null;
 let confirmedProductInterviewCanSend = false;
 const productInterviewRequests = new Map();
+const assessmentRuntimeErrorMessage = (error, { draftSaved = false } = {}) => {
+  const raw = String(error?.message || '');
+  if (error instanceof TypeError || raw === 'Failed to fetch' || /networkerror/i.test(raw)) {
+    return draftSaved
+      ? 'Не удалось обновить состояние оценки. Проверьте соединение. Введённый текст сохранён.'
+      : 'Не удалось обновить состояние оценки. Проверьте соединение.';
+  }
+  return raw || 'Не удалось обновить состояние оценки. Повторите действие.';
+};
 const returnClientId = (() => {
   const key = 'agent4k.returnClientId';
   let value = window.sessionStorage.getItem(key);
@@ -701,7 +710,7 @@ const renderProductRuntime = (snapshot) => {
         status.textContent = 'Следующая ситуация ещё не готова. Попробуйте ещё раз.';
         button.disabled = false;
       } catch (error) {
-        status.textContent = error.message;
+        status.textContent = assessmentRuntimeErrorMessage(error, { draftSaved: true });
         button.disabled = error.name === 'PreparationFailed' && !error.retryAllowed;
         if (error.name === 'PreparationFailed' && error.retryAllowed) button.textContent = 'Повторить подготовку';
       }
@@ -782,7 +791,7 @@ const startProductPresence = (initialContract = null) => {
       returnHeartbeatTimer = window.setTimeout(tick, intervalSeconds * 1000);
     } catch (error) {
       if (generation !== returnPresenceGeneration) return;
-      showError(interviewError, error.message);
+      showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: true }));
       returnHeartbeatTimer = window.setTimeout(tick, PRODUCT_RUNTIME_POLL_MS);
     }
   };
@@ -893,7 +902,7 @@ const renderReturnCard = (value) => {
         }
         // The newly rendered card reuses the pending key after server readback.
       } catch (_readbackError) {
-        status.textContent = `${error.message} Результат пока неизвестен. Обновите состояние перед повтором.`;
+        status.textContent = `${assessmentRuntimeErrorMessage(error, { draftSaved: true })} Результат пока неизвестен. Обновите состояние перед повтором.`;
         return;
       }
     }
@@ -965,7 +974,7 @@ export const loadProductRuntime = async ({ generation = null } = {}) => {
       }
     } catch (error) {
       if (!current()) return null;
-      showError(interviewError, error.message);
+      showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: true }));
       returnPresenceCycleId = saved.cycle_id;
       startProductPresence();
     }
@@ -1908,7 +1917,7 @@ export const resumeProductRuntimePolling = () => {
   clearInterviewTimer();
   state.assessmentTimerId = window.setInterval(() => {
     if (!document.hidden && !interviewPanel.classList.contains('hidden')) {
-      void loadProductRuntime({ generation: productRuntimePollGeneration }).catch((error) => showError(interviewError, error.message));
+      void loadProductRuntime({ generation: productRuntimePollGeneration }).catch((error) => showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: true })));
     }
   }, PRODUCT_RUNTIME_POLL_MS);
 };
@@ -1927,7 +1936,7 @@ export const openInterview = () => {
     interviewTextarea.disabled = true;
     interviewSubmitButton.disabled = true;
     interviewFinishButton.disabled = true;
-    void loadProductRuntime().catch((error) => showError(interviewError, error.message));
+    void loadProductRuntime().catch((error) => showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: true })));
     resumeProductRuntimePolling();
   }
 };
@@ -1985,9 +1994,9 @@ const startAssessmentInterview = async ({ preparedCycleId = null } = {}) => {
     state.assessmentPreparationStatus = 'failed';
     state.assessmentPreparationProgressPercent = 0;
     state.assessmentPreparationTitle = 'Не удалось подготовить кейсы';
-    state.assessmentPreparationMessage = error.message || 'Попробуйте запустить подготовку еще раз.';
+    state.assessmentPreparationMessage = assessmentRuntimeErrorMessage(error);
     renderAssessmentPreparationState();
-    showError(prechatError, error.message);
+    showError(prechatError, assessmentRuntimeErrorMessage(error));
   }
 };
 
@@ -2033,7 +2042,7 @@ export const handleAssessmentEntryClick = async () => {
     if (anchor) {
       const message = document.createElement('p'); message.id = 'assessment-entry-error';
       message.className = 'error'; message.setAttribute('role', 'alert');
-      message.textContent = error.message || 'Не удалось проверить состояние оценки. Повторите действие.';
+      message.textContent = assessmentRuntimeErrorMessage(error);
       anchor.insertAdjacentElement('afterend', message);
     }
   } finally {
@@ -2109,7 +2118,7 @@ export const initInterview = () => {
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && isCycleAssessment()) {
-      void loadProductRuntime().catch((error) => showError(interviewError, error.message));
+      void loadProductRuntime().catch((error) => showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: true })));
     }
   });
 
