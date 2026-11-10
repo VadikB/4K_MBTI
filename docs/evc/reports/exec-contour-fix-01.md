@@ -3,7 +3,7 @@
 Дата: 10.11.2026. Задача: `docs/evc/tasks/exec-contour-fix-01.md`.
 Исполнитель и писатель: один, `codex/exec-contour-fix-01` в
 `ARCH_WORKTREES/exec-contour-fix-01`. Основание: `origin/main@48e175da2a5dffd27e0722e0f50588f87a88fdbf`.
-Проверенный source candidate: `a16a413c9d82262f43051d36ce4772c5ae295178`.
+Проверенный source candidate: `7da92440` (полный SHA в `STATE.json`).
 Документальный follow-up фиксирует mapping в `STATE.json`; release head,
 merge и deploy фиксируются по мере появления.
 Отдельный [draft PR #205](https://github.com/VadikB/4K_MBTI/pull/205)
@@ -55,9 +55,9 @@ SHA-256 ключевых файлов: `tests/assessment_completion_evidence.py`
 `tests/assessment_execution_export.py`
 `76ad973927893e67056ed511acc9c3f74a30589594a86b804286b4af7c348d7a`,
 `tests/browser/fixtures/assessment-completion-profile.mjs`
-`edf7b27d91f7ae14579f761436751414a5876415e3d17ad6e6ce68b4a88715c4`,
+`5b9e0b569403c7592c21866da8250b2a3ac87ee86af0c15d2b5bbf1fba17a092`,
 `tests/browser/path29-participant.spec.mjs`
-`8544bf321e60f05bd35948cbb1865f8460afefb219448eb14bbdc7727882930b`,
+`a6f7f30d1488c65aec7a7a8adecd4186bba612acd257c19a3871a6a527c9b5c8`,
 test-only gateway `Api/m10_test_gateway.py`
 `b4aa4347d18823240e0e7cf66d8cff01d89c758101260f4d8ad13181ed34a05b`.
 
@@ -70,7 +70,7 @@ test-only gateway `Api/m10_test_gateway.py`
 | JS driver/export adapter/cleanup guard | PASS 7 | Second ASK, другая вкладка, календарное закрытие, export write/readback/HTTP faults; реальный coordinator guard не вызывает `destroy` без export. |
 | Runner/preparation Node | PASS 66 | Regression. |
 | `npm run lint:js`; `npm run build:web` | PASS; PASS | Сборка не изменила `web/dist`. |
-| `npm run test:backend` | PASS 1048, 476 deselected, 1 dependency warning | На итоговом diff, без integration на отдельной БД. |
+| `npm run test:backend` | PASS 1048, 476 deselected, 1 dependency warning | На предыдущем source candidate `a16a413c`; последующий follow-up изменил только JS browser/guard и документацию. |
 | `node --test tests/frontend/*.test.mjs` | PASS 226 | Frontend/adapter, включая cleanup guard. |
 | Три адресных integration-файла на `product4k_pytest_exec_contour_fix_01_int` | PASS 67, 1 dependency warning | Реальный PostgreSQL, без provider. БД удалена, собственный контейнер остановлен. Первая sandbox-попытка дала setup ERROR из-за недоступного localhost; повтор с доступом PASS. |
 | Playwright controlled completion profile | PASS 2 | Owned PostgreSQL/browser, 2 AS того же Cycle; terminal export `calculated`/`ready`, финализация `queued`. Повторный ASK: 3 interim handoffs в первой AS, затем Report. Это test-only technical gateway, не полный AC18 composite. |
