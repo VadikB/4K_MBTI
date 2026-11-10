@@ -17,7 +17,7 @@
   "permissions": ["local implementation", "free synthetic tests", "own-account PR", "CI and human review", "authorized merge and TEST deploy"],
   "excluded": ["new paid/provider run", "production/test working data", "subject artifact publication"],
   "resources": ["owned PostgreSQL container p4k-exec-contour-fix-01-pg stopped", "EXEC03 HTTP server stopped", "owned test/pytest databases removed", "ignored .test-stand evidence retained"],
-  "current": "separate draft PR #205 published; previous quick CI passed, browser/guard follow-up prepared for push",
+  "current": "separate draft PR #205 updated with browser/guard proof; quick CI tracked on PR, full CI waits for Ready",
   "next": "integrate EXEC-FIX-04, verify final H7, release preflight, Ready/full CI/human review, merge/TEST deploy",
   "checks": ["validator/normalizer 61 PASS", "backend 1048 PASS on a16a413c", "frontend 226 PASS", "targeted integration 67 PASS", "controlled completion browser 2 PASS including repeated ASK", "calendar while analysis pending browser 1 PASS", "remote end from second tab browser 1 PASS", "standalone PATH29 free browser 1 PASS after guard refactor", "EXEC03 C1-C9 browser 3 PASS", "JS lint and web build PASS", "paid/provider NOT_RUN"],
   "blockers": ["H7 final check depends on inclusion of EXEC-FIX-04", "full paid composite excluded by direct instruction"]
