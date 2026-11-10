@@ -93,4 +93,8 @@ def create_app():
     state = json.loads(Path(os.environ["STAND_STATE"]).read_bytes())
     install(state)
     from main import app
+    @app.get('/__pytest__/execution-export/{cycle_id}')
+    def execution_export(cycle_id: str):
+        from tests.assessment_execution_export import execution_export as readback
+        return readback(cycle_id)
     return app

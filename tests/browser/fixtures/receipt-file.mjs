@@ -6,13 +6,17 @@ import path from 'node:path';
 
 export function persistReceipt(file, value) {
   const bytes = JSON.stringify(value, null, 2) + '\n';
-  const fd = fs.openSync(file, 'w', 0o600);
+  const temporary = `${file}.${process.pid}.tmp`;
+  const fd = fs.openSync(temporary, 'wx', 0o600);
   try {
     fs.writeFileSync(fd, bytes);
     fs.fsyncSync(fd);
   } finally {
     fs.closeSync(fd);
   }
+  fs.renameSync(temporary, file);
+  const directory = fs.openSync(path.dirname(file), 'r');
+  try { fs.fsyncSync(directory); } finally { fs.closeSync(directory); }
   const readback = fs.readFileSync(file, 'utf8');
   if (readback !== bytes) throw new Error('RECEIPT_PERSISTENCE_READBACK_MISMATCH');
   return createHash('sha256').update(readback).digest('hex');

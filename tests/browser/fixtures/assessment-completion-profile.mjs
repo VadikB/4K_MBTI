@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { persistReceipt } from './receipt-file.mjs';
 
 const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
@@ -9,7 +10,38 @@ async function json(response, label) {
   return response.json();
 }
 async function runtime(page, base, cycleId) {
-  return json(await page.request.get(`${base}/users/assessment/cycles/${cycleId}/runtime`), 'runtime');
+  const value = await json(await page.request.get(`${base}/users/assessment/cycles/${cycleId}/runtime`), 'runtime');
+  if (value.cycle_id !== cycleId) throw new Error('COMPOSITE_CYCLE_CHANGED');
+  return value;
+}
+
+const closedStatuses = ['collection_closed', 'calculation_pending', 'calculated'];
+const collectionClosed = (value) => closedStatuses.includes(value?.status?.collection_status);
+const presented = (value) => value?.current_situation?.status === 'active'
+  && Boolean(value.current_situation.participant_payload);
+
+export async function readExecutionExport(page, base, cycleId, runId, evidenceDir, fault) {
+  const value = await json(await page.request.get(`${base}/__pytest__/execution-export/${cycleId}`), 'execution export');
+  if (value.run_id !== runId || value.cycle_id !== cycleId || !Array.isArray(value.situations)) {
+    throw new Error('EXECUTION_EXPORT_CONTEXT_MISMATCH');
+  }
+  const file = path.join(evidenceDir, 'terminal-execution-export.json');
+  if (fault === 'write') throw new Error('INJECTED_EXECUTION_EXPORT_WRITE_FAILURE');
+  const digest = persistReceipt(file, value);
+  if (fault === 'readback') fs.appendFileSync(file, 'corrupted readback');
+  if (sha256(file) !== digest || JSON.parse(fs.readFileSync(file, 'utf8')).run_id !== runId) {
+    throw new Error('EXECUTION_EXPORT_READBACK_MISMATCH');
+  }
+  return { value, file: path.basename(file), sha256: digest };
+}
+
+export function terminalExecutionKnown(value) {
+  return closedStatuses.includes(value?.collection_status)
+    && Boolean(value.close_reason) && Boolean(value.collection_closed_at)
+    && Array.isArray(value.situations)
+    && value.situations.some((item) => ['closed', 'terminated'].includes(item.status))
+    && !value.situations.some((item) => ['active', 'paused', 'scenario_ended'].includes(item.status))
+    && ['ready', 'failed'].includes(value.pipeline?.status);
 }
 
 async function waitRuntime(page, base, cycleId, predicate, timeout = 120000) {
@@ -20,7 +52,7 @@ async function waitRuntime(page, base, cycleId, predicate, timeout = 120000) {
     if (predicate(last)) return last;
     await page.waitForTimeout(500);
   }
-  throw new Error(`completion profile timeout: ${JSON.stringify({
+  throw new Error(`COMPOSITE_TECHNICAL_TIMEOUT: ${JSON.stringify({
     cycle: cycleId,
     status: last?.status?.collection_status,
     situation: last?.current_situation?.assessment_situation_id,
@@ -60,58 +92,103 @@ export async function completeStartedAssessment({
   const seen = new Set();
   for (let position = 1; position <= maxSituations; position += 1) {
     let snapshot = await runtime(page, base, cycleId);
-    if (!snapshot.current_situation) break;
+    if (collectionClosed(snapshot)) break;
+    if (!snapshot.current_situation) throw new Error('COMPOSITE_CURRENT_AS_UNKNOWN');
     const situationId = snapshot.current_situation.assessment_situation_id;
     if (seen.has(situationId)) throw new Error('COMPOSITE_SITUATION_REPEATED');
     seen.add(situationId);
-    const turnCountBefore = (snapshot.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length;
-    await submit(page, answerFor(position, snapshot));
-    await advanceWorkers();
-    snapshot = await waitRuntime(page, base, cycleId, (value) =>
-      (value.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length > turnCountBefore);
-
-    const transition = page.waitForResponse((item) => item.request().method() === 'POST'
-      && new URL(item.url()).pathname.endsWith('/transitions'));
-    await page.locator('#interview-finish-button').click();
-    if (!(await transition).ok()) throw new Error('SCENARIO_END_REJECTED');
-    await advanceWorkers();
-    snapshot = await waitRuntime(page, base, cycleId, (value) =>
-      (value.clarification?.status === 'ASK' && !value.clarification?.response_outcome)
-      || value.finish_availability?.allowed === true || value.between_situations === true);
-
-    let clarified = false;
-    if (snapshot.clarification?.status === 'ASK' && !snapshot.clarification?.response_outcome) {
-      await submit(page, clarificationFor(position, snapshot));
-      clarified = true;
+    const initialTurnCount = (snapshot.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length;
+    if (snapshot.current_situation.status === 'active') {
+      if (!presented(snapshot)) throw new Error('COMPOSITE_AS_NOT_PRESENTED');
+      await submit(page, answerFor(position, snapshot));
       await advanceWorkers();
-      snapshot = await waitRuntime(page, base, cycleId, (value) => value.finish_availability?.allowed === true);
+      snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+        || value.current_situation?.status === 'scenario_ended'
+        || (value.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length > initialTurnCount);
     }
-    if (!snapshot.between_situations) {
-      const closed = page.waitForResponse((item) => item.request().method() === 'POST'
-        && new URL(item.url()).pathname.endsWith('/finish-situation'));
+    if (!collectionClosed(snapshot) && snapshot.current_situation?.status === 'active') {
+      const transition = page.waitForResponse((item) => item.request().method() === 'POST'
+        && new URL(item.url()).pathname.endsWith('/transitions'));
       await page.locator('#interview-finish-button').click();
-      if (!(await closed).ok()) throw new Error('SITUATION_CLOSE_REJECTED');
+      if (!(await transition).ok()) throw new Error('SCENARIO_END_REJECTED');
       await advanceWorkers();
-      snapshot = await waitRuntime(page, base, cycleId, (value) => value.between_situations === true
-        || ['collection_closed', 'calculation_pending', 'calculated'].includes(value.status?.collection_status));
+    }
+    snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+      || value.between_situations || value.current_situation?.status === 'scenario_ended');
+    let clarified = false;
+    while (!collectionClosed(snapshot) && !snapshot.between_situations) {
+      if (snapshot.current_situation?.assessment_situation_id !== situationId) {
+        throw new Error('COMPOSITE_AS_CHANGED_DURING_CLARIFICATION');
+      }
+      const ask = snapshot.clarification;
+      if (ask?.status === 'ASK' && !ask.response_outcome) {
+        if (!ask.id || !ask.question_turn_id) throw new Error('COMPOSITE_ASK_NOT_DELIVERED');
+        await submit(page, clarificationFor(position, snapshot));
+        clarified = true;
+        await advanceWorkers();
+        snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+          || value.between_situations || value.finish_availability?.allowed === true
+          || (value.clarification?.id !== ask.id && value.clarification?.status === 'ASK'));
+        continue;
+      }
+      if (snapshot.finish_availability?.allowed === true) break;
+      await advanceWorkers();
+      snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+        || value.between_situations || value.finish_availability?.allowed === true
+        || (value.clarification?.status === 'ASK' && !value.clarification?.response_outcome));
+    }
+    if (!collectionClosed(snapshot) && !snapshot.between_situations) {
+      snapshot = await runtime(page, base, cycleId);
+      if (!collectionClosed(snapshot)) {
+        if (snapshot.current_situation?.assessment_situation_id !== situationId
+            || snapshot.finish_availability?.allowed !== true) throw new Error('COMPOSITE_FINISH_NOT_ADMITTED');
+        const closed = page.waitForResponse((item) => item.request().method() === 'POST'
+          && new URL(item.url()).pathname.endsWith('/finish-situation'));
+        await page.locator('#interview-finish-button').click();
+        if (!(await closed).ok()) throw new Error('SITUATION_CLOSE_REJECTED');
+        await advanceWorkers();
+        snapshot = await waitRuntime(page, base, cycleId, (value) => value.between_situations === true
+          || collectionClosed(value));
+      }
+    }
+    const closedExport = await json(await page.request.get(`${base}/__pytest__/execution-export/${cycleId}`), 'AS close readback');
+    const closedAs = closedExport.situations?.find((item) => item.assessment_situation_id === situationId);
+    if (!closedAs || !['closed', 'terminated'].includes(closedAs.status)
+        || !closedAs.session_id || !closedAs.final_handoff_id || !closedAs.finalization_status) {
+      throw new Error('COMPOSITE_AS_CLOSE_NOT_PROVEN');
     }
     stages.push({ stage: 'assessment_situation_closed', position, cycle_id: cycleId,
-      assessment_situation_id: situationId, clarified, status: 'completed',
-      assessee_turns: (snapshot.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length });
+      session_id: closedAs.session_id, assessment_situation_id: situationId, clarified, status: 'completed',
+      close_status: closedAs.status, final_handoff_id: closedAs.final_handoff_id,
+      finalization_status: closedAs.finalization_status, assessee_turns_before: initialTurnCount,
+      assessee_turns: Number(closedAs.assessee_turns),
+      interim_handoffs: Number(closedAs.interim_handoffs), c54_receipts: Number(closedAs.c54_receipts) });
 
-    if (!snapshot.between_situations) break;
-    const next = page.getByRole('button', { name: /Приступить к следующей ситуации|Повторить подготовку/ });
+    if (collectionClosed(snapshot)) break;
+    if (!snapshot.between_situations) throw new Error('COMPOSITE_NEXT_BOUNDARY_UNKNOWN');
+    const next = page.getByRole('button', { name: 'Приступить к следующей ситуации' });
     await next.waitFor({ state: 'visible' });
     const nextResponse = page.waitForResponse((item) => item.request().method() === 'POST'
       && new URL(item.url()).pathname.endsWith('/next'));
     await next.click();
     if (!(await nextResponse).ok()) throw new Error('NEXT_REJECTED');
     await advanceWorkers();
-    snapshot = await waitRuntime(page, base, cycleId, (value) =>
-      value.current_situation?.assessment_situation_id !== situationId
-      || ['collection_closed', 'calculation_pending', 'calculated'].includes(value.status?.collection_status));
-    if (!snapshot.current_situation) break;
+    snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+      || (value.current_situation?.assessment_situation_id !== situationId && presented(value)));
+    if (collectionClosed(snapshot)) break;
   }
+
+  const closedRuntime = await runtime(page, base, cycleId);
+  if (!collectionClosed(closedRuntime)) throw new Error('COMPOSITE_COLLECTION_NOT_CLOSED');
+  const terminal = await readExecutionExport(page, base, cycleId, runId, evidenceDir);
+  const exported = terminal.value;
+  if (!closedStatuses.includes(exported.collection_status) || !exported.close_reason
+      || !exported.collection_closed_at || !exported.c46?.id) {
+    throw new Error('COMPOSITE_COLLECTION_CLOSE_NOT_PROVEN');
+  }
+  stages.push({ stage: 'collection_closed', status: 'completed', cycle_id: cycleId,
+    close_reason: exported.close_reason, closed_at: exported.collection_closed_at,
+    c46_revision_id: exported.c46.id });
 
   await advanceWorkers();
   const userId = await page.evaluate(() => JSON.parse(localStorage.getItem('agent4k.pendingUser') || 'null')?.id);
@@ -132,15 +209,25 @@ export async function completeStartedAssessment({
   await page.locator('#report-panel').waitFor({ state: 'visible' });
   const report = await json(await page.request.get(
     `${base}/users/assessment/m8/cycles/${cycleId}/reports/latest`), 'report');
-  if (report.cycle_id !== cycleId) throw new Error('REPORT_CYCLE_MISMATCH');
+  if (report.cycle_id !== cycleId || report.owner_user_id !== userId
+      || report.status !== 'ready' || report.audience !== 'assessee') throw new Error('REPORT_CONTEXT_MISMATCH');
+  const finalExport = await readExecutionExport(page, base, cycleId, runId, evidenceDir);
+  if (finalExport.value.pipeline?.status !== 'ready'
+      || finalExport.value.report?.id !== report.id
+      || finalExport.value.results?.id !== report.results_revision_id
+      || finalExport.value.report?.created_by !== userId
+      || finalExport.value.pipeline?.latest_report_id !== report.id) {
+    throw new Error('REPORT_PIPELINE_READBACK_MISMATCH');
+  }
   const screenshot = path.join(evidenceDir, 'available-report.png');
   await page.screenshot({ path: screenshot, fullPage: true });
   stages.push({ stage: 'report_opened', status: 'completed', cycle_id: cycleId,
     report_id: report.id, results_revision_id: report.results_revision_id,
     report_revision_no: report.revision_no, owner_user_id: userId,
     screenshot: path.basename(screenshot), screenshot_sha256: sha256(screenshot) });
-  return { contract: 'assessment-execution-contour/1', run_id: runId,
+  return { contract: 'assessment-execution-contour/2', run_id: runId,
     scope: 'synthetic_technical', cycle_id: cycleId, initial_assessment_situation_id: initialSituationId,
     situation_count: seen.size, report_id: report.id, results_revision_id: report.results_revision_id,
+    terminal_export: { file: finalExport.file, sha256: finalExport.sha256 },
     stages, substitutions: ['scripted_participant'], report_opened: true };
 }

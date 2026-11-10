@@ -73,7 +73,8 @@ def _acceptance_output(value, fixture):
                 'limitations':[fixture['limitation']],'contradictions':[]})
         return result
     interim=value['mode']=='interim'
-    clarified=any(x.get('speaker_type')=='assessment' for x in material['turns'])
+    clarification_turns=sum(x.get('speaker_type')=='assessment' for x in material['turns'])
+    clarified=clarification_turns >= (2 if os.getenv('AGENT4K_BROWSER_REPEAT_ASK') == '1' else 1)
     targets=[]
     for criterion in material['criteria']:
         indicator=criterion['id'];action=actions.get(indicator)

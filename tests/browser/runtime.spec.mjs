@@ -19,6 +19,9 @@ const test=base.extend({context:async({browser},use)=>{
   try{
     cli('bootstrap');
     {const inputs=JSON.parse(fs.readFileSync(statePath));inputs.qa_orchestration=true;inputs.browser_scenario='acceptance-v1';fs.writeFileSync(statePath,JSON.stringify(inputs));}
+    if(info.title.includes('repeated ASK')){
+      const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_repeat_ask=true;fs.writeFileSync(statePath,JSON.stringify(inputs));
+    }
     if(!info.title.includes('Unapproved LIMITED')){
       const inputs=JSON.parse(fs.readFileSync(statePath));inputs.component_plan_fixture='browser-component-plan-boundary/1';fs.writeFileSync(statePath,JSON.stringify(inputs));
       info.annotations.push({type:'synthetic_upstream',description:'Static component plan-policy fixture only; NOT pilot/human admission. Real AS/start/time checks remain.'});
@@ -376,7 +379,7 @@ test('EXEC-CONTOUR technical profile continues one owned Cycle to an opened Repo
    page,base:stand.url,cycleId,runId:stand.state.run_id,evidenceDir:stand.dir,
    initialSituationId,advanceWorkers:async()=>stand.cli('drain'),
  });
- expect(receipt.contract).toBe('assessment-execution-contour/1');
+ expect(receipt.contract).toBe('assessment-execution-contour/2');
  expect(receipt.cycle_id).toBe(cycleId);
  expect(receipt.initial_assessment_situation_id).toBe(initialSituationId);
  expect(receipt.situation_count).toBeGreaterThan(0);
@@ -385,6 +388,19 @@ test('EXEC-CONTOUR technical profile continues one owned Cycle to an opened Repo
  await info.attach('execution-contour-receipt',{
    body:JSON.stringify(receipt,null,2),contentType:'application/json',
  });
+});
+test('EXEC-CONTOUR repeated ASK remains in one AS before Report',async({page,stand})=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);
+ const first=await runtime(page,stand);
+ const receipt=await completeStartedAssessment({
+   page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+   initialSituationId:first.current_situation.assessment_situation_id,
+   advanceWorkers:async()=>stand.cli('drain'),
+ });
+ expect(receipt.report_opened).toBe(true);
+ expect(receipt.stages[1].clarified).toBe(true);
+ expect(receipt.stages[1].interim_handoffs).toBeGreaterThanOrEqual(2);
 });
 async function runtime(page,stand){
  const cycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
