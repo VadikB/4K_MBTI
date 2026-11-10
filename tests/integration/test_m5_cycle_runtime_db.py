@@ -147,7 +147,7 @@ def test_cycle_session_membership_freeze_and_collection_boundary(test_database_u
 
         deadline = saved["calendar_deadline"]
         connection.execute(
-            "UPDATE m5_cycle_time_intervals SET started_at=NOW()-INTERVAL '20 minutes' WHERE cycle_db_id=%s",
+            "UPDATE m5_cycle_time_intervals SET started_at=clock_timestamp()-INTERVAL '20 minutes' WHERE cycle_db_id=%s",
             (cycle["id"],),
         )
         transition_session(connection, session_id=str(session["session_id"]), action="pause", reason="authorized")
