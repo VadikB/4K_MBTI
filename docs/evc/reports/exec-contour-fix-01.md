@@ -3,8 +3,9 @@
 Дата: 10.11.2026. Задача: `docs/evc/tasks/exec-contour-fix-01.md`.
 Исполнитель и писатель: один, `codex/exec-contour-fix-01` в
 `ARCH_WORKTREES/exec-contour-fix-01`. Основание: `origin/main@48e175da2a5dffd27e0722e0f50588f87a88fdbf`.
-Проверки ниже относятся к рабочему diff поверх этой базы. SHA кандидата,
-release head, merge и deploy фиксируются в `STATE.json` по мере появления.
+Проверенный source candidate: `a16a413c9d82262f43051d36ce4772c5ae295178`.
+Документальный follow-up фиксирует mapping в `STATE.json`; release head,
+merge и deploy фиксируются по мере появления.
 
 ## Источники и связь
 
