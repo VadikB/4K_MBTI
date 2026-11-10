@@ -8,6 +8,7 @@
 - Decisions: D01–D06 accepted for this task; owner visual acceptance `PENDING`; historical hang `UNKNOWN`
 - AC: implementation SUP 8/8, ADM 6/6, PART 6/6; local verification is detailed in `CHECKS.md`; owner visual acceptance `PENDING`
 - External authority: push + one PR allowed; merge/deploy/permanent DB migration not allowed by this task
+- Release candidate: `2.0.92`, prepared once by the repository Ready preflight after the owner's continuation instruction
 - Next: review diff, commit, push one branch and create one PR; observe mandatory CI
 
 ## Прочитано

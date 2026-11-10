@@ -8,6 +8,7 @@
 | Python compile | PASS | изменённые `Api/*.py`, `PYTHONPYCACHEPREFIX=/tmp/p4k_remarks_pycache` |
 | JS lint | PASS | `npm run lint:js` |
 | Source → dist | PASS | `npm run build:web` |
+| Ready preflight | PASS | `npm run ready:prepare -- --candidate 2.0.92`; fresh `origin/main`, release gate и rebuild |
 | Frontend | PASS | `node --test tests/frontend/*.test.mjs`: 219/219 |
 | Backend без integration/e2e/llm | PARTIAL → FIXED | 1039 PASS, 1 устаревшее ожидание transfer; после исправления адресно 7/7 PASS |
 | Membership HTTP e2e | PASS | `tests/e2e/test_arch30_membership_http.py`: 9/9 |
