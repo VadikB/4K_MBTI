@@ -6,6 +6,8 @@
 Проверенный source candidate: `a16a413c9d82262f43051d36ce4772c5ae295178`.
 Документальный follow-up фиксирует mapping в `STATE.json`; release head,
 merge и deploy фиксируются по мере появления.
+Отдельный [draft PR #205](https://github.com/VadikB/4K_MBTI/pull/205)
+опубликован от `VadikB`; быстрый CI запущен, полный CI и human review — до merge.
 
 ## Источники и связь
 

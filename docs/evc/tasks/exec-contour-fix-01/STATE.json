@@ -9,14 +9,16 @@
   "base_sha": "48e175da2a5dffd27e0722e0f50588f87a88fdbf",
   "source_candidate_sha": "a16a413c9d82262f43051d36ce4772c5ae295178",
   "tested_sha": "a16a413c9d82262f43051d36ce4772c5ae295178",
+  "pr": "https://github.com/VadikB/4K_MBTI/pull/205",
+  "pr_state": "draft",
   "release_head_sha": null,
   "merge_sha": null,
   "deployed_sha": null,
   "permissions": ["local implementation", "free synthetic tests", "own-account PR", "CI and human review", "authorized merge and TEST deploy"],
   "excluded": ["new paid/provider run", "production/test working data", "subject artifact publication"],
   "resources": ["owned PostgreSQL container p4k-exec-contour-fix-01-pg stopped", "EXEC03 HTTP server stopped", "owned test/pytest databases removed", "ignored .test-stand evidence retained"],
-  "current": "candidate checked locally; publication pending",
-  "next": "commit, push, create separate PR, integrate EXEC-FIX-04, verify final H7, release preflight, CI/review, merge/TEST deploy",
+  "current": "separate draft PR #205 published; quick CI running",
+  "next": "integrate EXEC-FIX-04, verify final H7, release preflight, Ready/full CI/human review, merge/TEST deploy",
   "checks": ["validator/normalizer 61 PASS", "backend 1048 PASS", "frontend 225 PASS", "targeted integration 67 PASS", "controlled completion browser 2 PASS including repeated ASK", "standalone PATH29 free browser 1 PASS", "EXEC03 C1-C9 browser 3 PASS", "JS lint and web build PASS", "paid/provider NOT_RUN"],
   "blockers": ["H7 final check depends on inclusion of EXEC-FIX-04", "full paid composite excluded by direct instruction"]
 }
