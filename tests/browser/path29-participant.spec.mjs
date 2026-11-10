@@ -8,6 +8,7 @@ import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from './fi
 import { capturePathViewports } from './fixtures/path-viewports.mjs';
 import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
 import { captureFailurePage } from './fixtures/failure-page.mjs';
+import { completeStartedAssessment } from './fixtures/assessment-completion-profile.mjs';
 
 function canonical(value) {
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
@@ -29,6 +30,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const statePath = path.join(dir, 'state.json'), base = 'http://127.0.0.1:' + port;
   const fullPath = process.env.P4K_FULL_PATH === '1';
   const realProvider = process.env.P4K_REAL_PROVIDER === '1';
+  const compositeProfile = process.env.P4K_COMPLETION_PROFILE === '1';
   const requestedRelease = process.env.P4K_PUBLISHED_RELEASE_REF
     ? JSON.parse(process.env.P4K_PUBLISHED_RELEASE_REF) : undefined;
   if (fullPath && !realProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_REAL_PROVIDER');
@@ -46,6 +48,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   let activeActor = 'superadmin';
   let server;
   let finalReceipt;
+  let terminalReceiptFile = 'first-case-receipt.json';
   let runId;
   let scenarioCompleted = false;
   let step = 'create_owned_database';
@@ -58,6 +61,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     runId = initialState.run_id;
     save('run', { run_id: initialState.run_id, database: initialState.database, port,
       provider_mode: initialState.provider_mode,
+      profile: compositeProfile ? 'assessment-execution-contour/1' : 'assessment-first-case/1.1',
       program_source: fullPath ? process.env.P4K_PROGRAM_SOURCE : undefined,
       published_release_ref: fullPath ? requestedRelease : undefined,
       code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
@@ -465,6 +469,26 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await test.info().attach('superadmin-to-first-case-first-case', {
         path: path.join(dir, 'first-case.png'), contentType: 'image/png',
       });
+      if (compositeProfile) {
+        step = 'complete_started_assessment_to_report';
+        const firstCaseReceipt = finalReceipt;
+        const contourReceipt = await completeStartedAssessment({
+          page, base, cycleId: receipt.cycle.cycle_id, runId,
+          evidenceDir: dir,
+          initialSituationId: receipt.assessment_situation.assessment_situation_id,
+        });
+        contourReceipt.first_case_receipt = {
+          file: 'first-case-receipt.json',
+          sha256: createHash('sha256').update(fs.readFileSync(path.join(dir, 'first-case-receipt.json'))).digest('hex'),
+          assessment_answers: firstCaseReceipt.assessment_answers,
+        };
+        save('execution-contour-receipt', contourReceipt);
+        finalReceipt = contourReceipt;
+        terminalReceiptFile = 'execution-contour-receipt.json';
+        await test.info().attach('execution-contour-receipt', {
+          path: path.join(dir, terminalReceiptFile), contentType: 'application/json',
+        });
+      }
       scenarioCompleted = true;
       return;
     }
@@ -527,9 +551,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       }
       finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
       if (fullPath) save('completion', { run_id: runId, status: scenarioCompleted ? 'completed' : 'failed',
-        exit_code: scenarioCompleted ? 0 : 1, receipt_file: 'first-case-receipt.json',
+        exit_code: scenarioCompleted ? 0 : 1, receipt_file: terminalReceiptFile,
         receipt_sha256: scenarioCompleted
-          ? createHash('sha256').update(fs.readFileSync(path.join(dir, 'first-case-receipt.json'))).digest('hex') : null });
+          ? createHash('sha256').update(fs.readFileSync(path.join(dir, terminalReceiptFile))).digest('hex') : null });
     }
   }
 });

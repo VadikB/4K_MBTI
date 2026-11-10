@@ -1,0 +1,47 @@
+{
+  "task_id": "EXEC-CONTOUR-01",
+  "executor": "Codex архитектора",
+  "machine": "local architect workstation",
+  "branch": "codex/exec-contour-01-assessment",
+  "absolute_worktree": "/Users/vadim_bogachev/Developer/4K/ARCH_WORKTREES/exec-contour-01",
+  "session_id": "P4K-EXEC-CONTOUR-ARCH",
+  "active_writer": "Codex архитектора",
+  "base_sha": "0c2412012209cfa92adafa803183852a2c231c5e",
+  "head_sha": "0c2412012209cfa92adafa803183852a2c231c5e",
+  "origin_main_sha": "0c2412012209cfa92adafa803183852a2c231c5e",
+  "external_implementations": [
+    "EXEC-FIX-01@60234f2a",
+    "EXEC-FIX-02/03@0c241201"
+  ],
+  "resources": [
+    "preferred_http_port=19341",
+    "preferred_pg_port=19342",
+    ".test-stand/exec-contour-01/<run_id>/evidence"
+  ],
+  "permissions": [
+    "local implementation and free checks",
+    "branch push, separate PR, CI/review, authorized merge/deploy",
+    "paid provider run requires separate direct authorization"
+  ],
+  "completed": [
+    "read package start/card/routing/release documents",
+    "read applicable repository sources and contracts",
+    "verify EXEC-FIX-01/02/03 in origin/main",
+    "create assigned branch/worktree checkpoint"
+  ],
+  "current": "release candidate 2.0.91 prepared; final review and PR",
+  "next": "commit, push, PR, CI and human review",
+  "blockers": [],
+  "checks": [
+    "completion validator: 8 passed",
+    "runner/provider/preparation: 76 Python + 65 Node passed",
+    "controlled completion browser: passed",
+    "standalone PATH29 free regression: passed",
+    "EXEC-FIX integration: 40 passed plus 10/10 allowlisted rerun passed",
+    "backend non-integration: 1040 passed, 478 deselected",
+    "real provider: NOT_RUN pending direct authorization",
+    "ready:prepare 2.0.91: passed"
+  ],
+  "assigned_worktree_slot": "ARCH_WORKTREES/exec-contour-01",
+  "assigned_session_label": "P4K-EXEC-CONTOUR-ARCH"
+}

@@ -3,6 +3,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { completeStartedAssessment } from './fixtures/assessment-completion-profile.mjs';
 const root=process.cwd(), python=process.env.BROWSER_PYTHON || path.join(root,'.venv/bin/python');
 const fixture=JSON.parse(fs.readFileSync('tests/browser/fixtures/v1.json','utf8'));
 const test=base.extend({context:async({browser},use)=>{
@@ -363,6 +364,27 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
    expect(fresh.c67.descriptive.input).toEqual(saved.c67.descriptive.input);
  }
 
+});
+
+test('EXEC-CONTOUR technical profile continues one owned Cycle to an opened Report',async({page,stand},info)=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);
+ const first=await runtime(page,stand);
+ const cycleId=first.cycle_id;
+ const initialSituationId=first.current_situation.assessment_situation_id;
+ const receipt=await completeStartedAssessment({
+   page,base:stand.url,cycleId,runId:stand.state.run_id,evidenceDir:stand.dir,
+   initialSituationId,advanceWorkers:async()=>stand.cli('drain'),
+ });
+ expect(receipt.contract).toBe('assessment-execution-contour/1');
+ expect(receipt.cycle_id).toBe(cycleId);
+ expect(receipt.initial_assessment_situation_id).toBe(initialSituationId);
+ expect(receipt.situation_count).toBeGreaterThan(0);
+ expect(receipt.report_opened).toBe(true);
+ expect(receipt.stages.at(-1).stage).toBe('report_opened');
+ await info.attach('execution-contour-receipt',{
+   body:JSON.stringify(receipt,null,2),contentType:'application/json',
+ });
 });
 async function runtime(page,stand){
  const cycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
