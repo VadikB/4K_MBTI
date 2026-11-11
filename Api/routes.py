@@ -77,12 +77,14 @@ from Api.pdf_report_service import pdf_report_service
 from Api.progress_service import operation_progress_service
 from Api.org_access import (
     AdminScope,
+    LOCAL_SUPERADMIN_EMAIL,
     admin_scope_sql,
     assign_user_organization_from_email,
     configured_org_admin_emails,
     configured_superadmin_emails,
     ensure_configured_organizations,
     get_admin_scope,
+    is_platform_protected_account,
     normalize_org_code,
 )
 from Api.organization_invitation_service import (
@@ -279,7 +281,7 @@ SESSION_COOKIE_NAME = "agent4k_session_token"
 ADMIN_ROLE_CODE = "admin"
 ADMIN_ROLE_NAME = "Администратор"
 ADMIN_FULL_NAME = "Администратор системы"
-ADMIN_EMAIL = "admin@agent4k.local"
+ADMIN_EMAIL = LOCAL_SUPERADMIN_EMAIL
 ADMIN_PERIODS = {
     "7d": {"days": 7, "bucket": "day", "label": "Последние 7 дней"},
     "14d": {"days": 14, "bucket": "day", "label": "Последние 14 дней"},
@@ -1172,6 +1174,21 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
         scope_params,
     ).fetchall()
     org_ids = [int(row["id"]) for row in org_rows]
+    hidden_user_sql = ""
+    hidden_user_params: tuple = ()
+    if scope is not None and not scope.is_superadmin:
+        hidden_user_sql = """
+          AND LOWER(u.email) <> ALL(%s)
+          AND NOT EXISTS (
+              SELECT 1
+              FROM user_platform_roles platform_assignment
+              JOIN platform_role_permissions platform_permission
+                ON platform_permission.platform_role_id = platform_assignment.platform_role_id
+              WHERE platform_assignment.user_id = u.id
+                AND platform_assignment.revoked_at IS NULL
+          )
+        """
+        hidden_user_params = (sorted(configured_superadmin_emails() | {LOCAL_SUPERADMIN_EMAIL}),)
     domains_by_org: dict[int, list[str]] = {org_id: [] for org_id in org_ids}
     admins_by_org: dict[int, list[dict]] = {org_id: [] for org_id in org_ids}
     members_by_org_list: dict[int, list[dict]] = {org_id: [] for org_id in org_ids}
@@ -1195,15 +1212,16 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             domains_by_org.setdefault(int(row["organization_id"]), []).append(str(row["domain"] or ""))
 
         admin_rows = connection.execute(
-            """
+            f"""
             SELECT om.organization_id, u.id AS user_id, u.email, u.full_name
             FROM organization_memberships om
             JOIN users u ON u.id = om.user_id
             WHERE om.organization_id = ANY(%s)
               AND om.role = 'admin'
+              {hidden_user_sql}
             ORDER BY LOWER(COALESCE(u.email, '')) ASC
             """,
-            (org_ids,),
+            (org_ids, *hidden_user_params),
         ).fetchall()
         for row in admin_rows:
             email = str(row["email"] or "").strip()
@@ -1374,7 +1392,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             )
 
         member_detail_rows = connection.execute(
-            """
+            f"""
             SELECT
                 om.organization_id,
                 om.role,
@@ -1435,10 +1453,11 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             ) assignments ON TRUE
             WHERE om.organization_id = ANY(%s)
               AND om.is_participant = TRUE
+              {hidden_user_sql}
             ORDER BY LOWER(COALESCE(u.email, '')) ASC
             LIMIT 500
             """,
-            (org_ids,),
+            (org_ids, *hidden_user_params),
         ).fetchall()
         for row in member_detail_rows:
             email = str(row["email"] or "").strip()
@@ -1483,14 +1502,16 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             )
 
         member_rows = connection.execute(
-            """
-            SELECT organization_id, COUNT(*)::int AS member_count
-            FROM organization_memberships
-            WHERE organization_id = ANY(%s)
-              AND is_participant = TRUE
-            GROUP BY organization_id
+            f"""
+            SELECT om.organization_id, COUNT(*)::int AS member_count
+            FROM organization_memberships om
+            JOIN users u ON u.id = om.user_id
+            WHERE om.organization_id = ANY(%s)
+              AND om.is_participant = TRUE
+              {hidden_user_sql}
+            GROUP BY om.organization_id
             """,
-            (org_ids,),
+            (org_ids, *hidden_user_params),
         ).fetchall()
         for row in member_rows:
             members_by_org[int(row["organization_id"])] = int(row["member_count"] or 0)
@@ -1816,6 +1837,14 @@ def _reject_foreign_membership(
     )
 
 
+def _reject_platform_protected_account(connection, *, email: str, user_id: int | None = None) -> None:
+    if is_platform_protected_account(connection, email=email, user_id=user_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Не удалось добавить пользователя в организацию.",
+        )
+
+
 def _execute_membership_write(
     connection,
     *,
@@ -1861,6 +1890,11 @@ def _attach_user_to_organization(
     if org_row is None:
         raise HTTPException(status_code=404, detail="Active organization not found")
     membership = _lock_membership_by_email(connection, email=email)
+    _reject_platform_protected_account(
+        connection,
+        email=email,
+        user_id=int(membership["user_id"]) if membership is not None else None,
+    )
     _reject_foreign_membership(
         membership,
         organization_id=organization_id,
@@ -4328,6 +4362,8 @@ def send_personal_organization_invitations(
             invitation_url = build_public_link(settings.app_base_url, {"invite": raw_token}, mode=settings.app_origin_mode)
             with get_connection() as connection:
                 _require_organization_admin(connection, current_user, organization_id)
+                if is_platform_protected_account(connection, email=email):
+                    raise ValueError("Участник не добавлен в эту организацию.")
                 readiness = questionnaire_sources.assignment_readiness(
                     connection, organization_id=organization_id, assignment_ref=assignment_ref,
                 )
@@ -4404,6 +4440,8 @@ def send_personal_organization_invitations(
                     _require_organization_admin(connection, current_user, organization_id)
                 except HTTPException as exc:
                     raise ValueError("Права отправителя на организацию отозваны.") from exc
+                if is_platform_protected_account(connection, email=email):
+                    raise ValueError("Участник не добавлен в эту организацию.")
                 if questionnaire_sources.assignment_readiness(
                     connection, organization_id=organization_id, assignment_ref=assignment_ref,
                 )["status"] != "ready":
@@ -5238,16 +5276,21 @@ def add_admin_organization_admin(organization_id: int, payload: AdminOrganizatio
         org_row = connection.execute("SELECT id,code FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
         if org_row is None:
             raise HTTPException(status_code=404, detail="Organization not found")
-        connection.execute(
-            """DELETE FROM configured_access_suppressions
-               WHERE email=%s AND access_kind='organization_admin' AND organization_code=%s""",
-            (normalized_email, str(org_row["code"])),
-        )
         membership = _lock_membership_by_email(connection, email=normalized_email)
+        _reject_platform_protected_account(
+            connection,
+            email=normalized_email,
+            user_id=int(membership["user_id"]) if membership is not None else None,
+        )
         _reject_foreign_membership(
             membership,
             organization_id=organization_id,
             expose_organization=True,
+        )
+        connection.execute(
+            """DELETE FROM configured_access_suppressions
+               WHERE email=%s AND access_kind='organization_admin' AND organization_code=%s""",
+            (normalized_email, str(org_row["code"])),
         )
         user_id = _ensure_org_admin_user(connection, email=normalized_email, full_name=payload.full_name)
         connection.execute(

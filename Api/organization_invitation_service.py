@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 
-from Api.org_access import EXPLICIT_MEMBER_ADMISSION_SOURCES, normalize_email_for_access
+from Api.org_access import (
+    EXPLICIT_MEMBER_ADMISSION_SOURCES,
+    is_platform_protected_account,
+    normalize_email_for_access,
+)
 
 
 class OrganizationInvitationError(ValueError):
@@ -121,6 +125,10 @@ def ensure_email_admitted_to_invitation(connection, *, email: str, invitation: O
     normalized = normalize_email_for_access(email)
     if invitation.recipient_email and invitation.recipient_email != normalized:
         raise OrganizationInvitationError("Приглашение выпущено для другого email.")
+    if is_platform_protected_account(connection, email=normalized):
+        raise OrganizationInvitationError(
+            "Этот email не добавлен в список участников выбранной организации."
+        )
     row = connection.execute(
         """
         SELECT DISTINCT membership.role, membership.admission_source

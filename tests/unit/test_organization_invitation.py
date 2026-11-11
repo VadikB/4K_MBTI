@@ -81,7 +81,10 @@ def test_email_must_be_admitted_to_the_invited_organization() -> None:
     invitation = resolve_invitation(_Connection(invitation=_invitation()), token="shared-secret")
     allowed = _Connection(memberships=[{"role": "member", "admission_source": "admin_add"}])
     ensure_email_admitted_to_invitation(allowed, email="person@example.test", invitation=invitation)
-    assert allowed.calls[0][1] == (3, "person@example.test", "person@example.test")
+    assert any(
+        params == (3, "person@example.test", "person@example.test")
+        for _query, params in allowed.calls
+    )
 
     with pytest.raises(OrganizationInvitationError, match="выбранной организации"):
         ensure_email_admitted_to_invitation(
@@ -89,6 +92,17 @@ def test_email_must_be_admitted_to_the_invited_organization() -> None:
             email="member-of-b@example.test",
             invitation=invitation,
         )
+
+
+def test_protected_email_cannot_use_existing_wrong_invitation(monkeypatch) -> None:
+    monkeypatch.setattr(auth_module.settings, "superadmin_emails_raw", "protected@example.test")
+    invitation = resolve_invitation(_Connection(invitation=_invitation()), token="shared-secret")
+    connection = _Connection(memberships=[{"role": "member", "admission_source": "admin_add"}])
+    with pytest.raises(OrganizationInvitationError, match="выбранной организации"):
+        ensure_email_admitted_to_invitation(
+            connection, email="protected@example.test", invitation=invitation
+        )
+    assert connection.calls == []
 
 
 def test_same_domain_is_not_an_invitation_admission_rule() -> None:
