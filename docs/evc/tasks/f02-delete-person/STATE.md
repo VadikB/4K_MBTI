@@ -40,3 +40,8 @@
   Активно: canonical PATCH2.0.98 preflight → PR/CI → squash main → TEST/readback.
   Детали этапа в RELEASE.md. Соседние карточки не запускать.
 - При восстановлении сессии перечитать этот STATE и исходную карточку F02.
+- PR210 создан. Первый release head32bb932: frontend/pytest и все5 browser
+  lanes PASS; full integration380 PASS/5 FAIL/2 SKIP из-за отсутствия пароля
+  во вторичном тестовом DSN. Test-only correction, independent review no findings,
+  targeted SCRAM PostgreSQL22 PASS. Новый exact-head CI обязателен; remote status
+  и окончание выпуска в `../outputs/p4k-f02-release-20261111/STATE.md` от корня repo.

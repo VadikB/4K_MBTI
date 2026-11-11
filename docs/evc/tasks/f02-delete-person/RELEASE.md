@@ -32,3 +32,19 @@ release unit11 PASS; `check_release_version.py --base-ref origin/main` PASS.
 Rules main прочитаны через API: squash-only PR, обязательные `frontend`, `pytest`,
 `full-verification`, strict current base, required approval count0; bypass не
 используется. Фактический PR review/status проверяется ещё раз перед merge.
+
+PR: https://github.com/VadikB/4K_MBTI/pull/210, Ready, release head32bb932.
+Первый CI43064975341: frontend/pytest PASS. Full43064975365: все5 browser
+lanes PASS, integration380 PASS/5 FAIL/2 SKIP. Пять новых concurrency cases
+падали при открытии второго подключения: `Connection.info.dsn` не содержит
+пароль, что было скрыто локальной trust-аутентификацией PostgreSQL.
+
+Исправление ограничено тестовым файлом: четыре дополнительных соединения
+получают исходный guarded `test_database_url`; assertions, scope guards,
+timeouts, concurrency и runtime сохранены. Независимое review: no findings.
+Проверка всего файла на новом marker-owned PostgreSQL16 с SCRAM-аутентификацией
+и UTC:22 PASS/2.69s; evidence/release/password-auth-check.log.
+Кандидат остаётся2.0.98: выпуск ещё не merged. Следующий обязательный CI
+должен проверить новый exact head того же PR перед merge. Предыдущий failed
+run не является допуском; далее состояние remote/merge/TEST фиксируется
+в workspace outputs/p4k-f02-release-20261111/STATE.md без второго PR.

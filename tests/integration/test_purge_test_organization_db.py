@@ -367,12 +367,12 @@ def _cascade_scope_fixture(connection):
     return schema
 
 
-def test_concurrent_scope_change_after_validation_cannot_escape_via_user_cascade(purge_db):
+def test_concurrent_scope_change_after_validation_cannot_escape_via_user_cascade(purge_db, test_database_url):
     schema = _cascade_scope_fixture(purge_db)
     attempted = []
     def validate(tables, keys):
         _validate_organization_two_plan(purge_db, tables, keys)
-        with psycopg.connect(purge_db.info.dsn) as concurrent:
+        with psycopg.connect(test_database_url) as concurrent:
             concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
             concurrent.execute("SET lock_timeout='100ms'")
             with pytest.raises(psycopg.errors.LockNotAvailable):
@@ -384,10 +384,10 @@ def test_concurrent_scope_change_after_validation_cannot_escape_via_user_cascade
     assert purge_db.execute('SELECT id,organization_id FROM scoped_cascade_record').fetchall() == [(1000, 1)]
 
 
-def test_concurrent_change_while_waiting_for_row_lock_rejects_stale_ctid_before_intent(purge_db):
+def test_concurrent_change_while_waiting_for_row_lock_rejects_stale_ctid_before_intent(purge_db, test_database_url):
     schema = _cascade_scope_fixture(purge_db)
     callbacks = []
-    with psycopg.connect(purge_db.info.dsn) as concurrent:
+    with psycopg.connect(test_database_url) as concurrent:
         concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
         concurrent.execute('UPDATE scoped_cascade_record SET organization_id=1 WHERE id=999')
         with ThreadPoolExecutor(max_workers=1) as executor:
@@ -413,7 +413,7 @@ def test_concurrent_change_while_waiting_for_row_lock_rejects_stale_ctid_before_
 
 
 @pytest.mark.parametrize('scope_row', ['attribution', 'ancestor'])
-def test_attribution_and_indirect_ancestor_organization_are_locked_during_authorization(purge_db, scope_row):
+def test_attribution_and_indirect_ancestor_organization_are_locked_during_authorization(purge_db, scope_row, test_database_url):
     schema = _cascade_scope_fixture(purge_db)
     if scope_row == 'ancestor':
         purge_db.execute('CREATE TABLE scope_parent(id BIGINT PRIMARY KEY,organization_id BIGINT REFERENCES organizations(id))')
@@ -426,7 +426,7 @@ def test_attribution_and_indirect_ancestor_organization_are_locked_during_author
         if scope_row == 'attribution' else 'UPDATE scope_parent SET organization_id=1 WHERE id=9')
     def validate(tables, keys):
         _validate_organization_two_plan(purge_db, tables, keys)
-        with psycopg.connect(purge_db.info.dsn) as concurrent:
+        with psycopg.connect(test_database_url) as concurrent:
             concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
             concurrent.execute("SET lock_timeout='100ms'")
             with pytest.raises(psycopg.errors.LockNotAvailable):
@@ -438,7 +438,7 @@ def test_attribution_and_indirect_ancestor_organization_are_locked_during_author
         assert purge_db.execute('SELECT organization_id FROM scope_parent WHERE id=9').fetchone() == (2,)
 
 
-def test_late_foreign_child_inserted_before_parent_pin_is_included_and_denied_before_intent(purge_db, monkeypatch):
+def test_late_foreign_child_inserted_before_parent_pin_is_included_and_denied_before_intent(purge_db, monkeypatch, test_database_url):
     from scripts import purge_test_organization as purge_module
     schema = _cascade_scope_fixture(purge_db)
     purge_db.execute('''CREATE TABLE late_foreign_child(id BIGINT PRIMARY KEY,
@@ -449,7 +449,7 @@ def test_late_foreign_child_inserted_before_parent_pin_is_included_and_denied_be
     inserted = []
     def insert_before_parent_pin(connection, tables, staging_tables):
         if not inserted:
-            with psycopg.connect(purge_db.info.dsn) as concurrent:
+            with psycopg.connect(test_database_url) as concurrent:
                 concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
                 concurrent.execute("SET lock_timeout='500ms'")
                 concurrent.execute('INSERT INTO late_foreign_child VALUES(9001,999,1)')
