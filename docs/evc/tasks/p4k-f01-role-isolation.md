@@ -135,8 +135,16 @@ PostgreSQL 15 на `127.0.0.1:55492` и marker-owned
 Локальная реализация, проверки и собственные commit завершены. После отчёта
 владелец прямо ответил «Продолжаем»; в контексте обозначенного следующего этапа
 это допуск на `branch_push=true` и `pr=true` для ветки F01 и draft PR к `main`.
-`merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`.
-Вложенная карточка сама по себе такого допуска не давала. Для Ready PR нужен
-отдельный выбор номера продукта, `ready:prepare` и затем CI `frontend`, `pytest`,
-`full-verification` для точного head/base. Визуальная приёмка владельцем — после
-разрешённого TEST. Действующие данные и аккаунт суперадминистратора не изменять.
+Затем владелец отдельно утвердил patch-кандидат `2.0.98` и перевод PR в Ready:
+`version_bump=true`, `ready=true`; `merge=false`, `deploy=false`,
+`artifact_publish=false`. Вложенная карточка сама по себе такого допуска не
+давала. `npm run ready:prepare` предложил `2.0.97 → 2.0.98`. Первый запуск с
+кандидатом остановился на отсутствии `esbuild` в изолированном worktree после
+обновления version-файлов и очистки `web/dist`; lockfile совпал с основной
+копией, временная ссылка на её установленный `node_modules` позволила повторить
+штатный `ready:prepare -- --candidate 2.0.98` — PASS. Дополнительно
+`npm run lint:js` — PASS; `node --test tests/frontend/*.test.mjs` — 250 PASS;
+`git diff --check` — PASS. Временная ссылка на зависимости удалена до commit.
+Для Ready нужен полный CI `frontend`, `pytest`, `full-verification` точного
+head/base. Визуальная приёмка владельцем — после разрешённого TEST. Действующие
+данные и аккаунт суперадминистратора не изменять.

@@ -29,6 +29,6 @@
 Перед merge требуются обязательный CI для точного head/base и человеческое
 review. TEST и визуальная приёмка владельца — отдельный этап.
 
-Draft PR: https://github.com/VadikB/4K_MBTI/pull/211. Номер нового кандидата
-ещё не выбран; переход в Ready требует `ready:prepare` и отдельного решения
-о `version_bump`.
+PR: https://github.com/VadikB/4K_MBTI/pull/211. Владелец утвердил patch-кандидат
+`2.0.98` и переход в Ready. `ready:prepare -- --candidate 2.0.98`, JS lint и
+250 frontend tests прошли локально; после push обязателен полный CI точного head.

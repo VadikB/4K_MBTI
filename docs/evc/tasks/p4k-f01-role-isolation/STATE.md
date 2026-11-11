@@ -11,8 +11,9 @@
   `P4K-F01_Role_Isolation.txt` v1.0. Исключения: действующие данные,
   реальные письма, LLM, merge/deploy. После локального отчёта владелец ответил
   «Продолжаем»: `branch_push=true`, `pr=true` для draft PR F01 к `main`;
-  `merge=false`, `deploy=false`, `version_bump=false`,
-  `artifact_publish=false`. Вложение само по себе не давало допуска на push/PR.
+  затем прямо утвердил patch `2.0.98` и Ready: `version_bump=true`,
+  `ready=true`, `merge=false`, `deploy=false`, `artifact_publish=false`.
+  Вложение само по себе не давало допуска на push/PR.
 - Реализация: общий разбор `SUPERADMIN_EMAILS`, проверка configured/local/active
   platform permissions до записи во всех действующих входах, скрытие
   ошибочных связей из ответа обычному admin, auth и повтор приглашения.
@@ -28,7 +29,13 @@
   Обе одноразовые БД удалены, локальный PG остановлен, временный токен удалён.
   Быстрый CI на `428c1337`:
   https://github.com/VadikB/4K_MBTI/actions/runs/43065958463 — frontend PASS,
+  pytest PASS. На `b155cc08`:
+  https://github.com/VadikB/4K_MBTI/actions/runs/43066470788 — frontend PASS,
   pytest PASS. Полный workflow и deploy-test ожидаемо SKIPPED в draft.
   TEST/human visual NOT_RUN.
-- Следующий шаг: проверить CI после документального commit на новом head/base;
-  затем решение владельца о версии/Ready и отдельное review.
+- Подготовка `2.0.98`: первый `ready:prepare` остановился на отсутствующем
+  `esbuild` после очистки `web/dist`; lockfile совпадает с исходной копией.
+  Повтор со временной ссылкой на её установленный `node_modules` — PASS;
+  `npm run lint:js` PASS, frontend 250 PASS, `git diff --check` PASS.
+- Следующий шаг: commit и push кандидата, Ready PR #211, полный CI на точном
+  head/base; затем человеческое review. Merge/deploy не разрешены.
