@@ -46,6 +46,11 @@ browser/HTTP/PG сценарии на owned синтетических данн�
 head draft CI `frontend` и `pytest` прошли; `full-verification` запустится
 после перевода PR в review. Итог release head и CI сверяются перед merge.
 
+Первый полный CI на release head выявил гонку в новом combined browser-тесте:
+он принимал текст `<option>` за завершённое подключение. Ожидание A/B исправлено
+на точный UI readback `Подключено`; адресный повтор на owned PG — PASS. Полный
+CI на commit исправления обязателен до merge.
+
 ## Риски
 
 - Конфиг: нет новых параметров.

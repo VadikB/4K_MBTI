@@ -50,3 +50,16 @@
 - `merge=false`, `deploy=false`, `artifact_publish=false`. До merge необходимы
   полный CI на release head и человеческое review; TEST/readback SHA и owner
   visual остаются отдельной стадией. Действия публикации программы не разрешены.
+
+## CI и исправление ожидания
+
+- PR #212 переведён в `Ready for review` на head
+  `11b91319e9ee38afb54f5a3e58c0e1c6ab088d96`.
+- CI: `frontend`, `pytest`, integration и четыре runtime browser lanes — PASS;
+  browser fast — FAIL 1 из 231, итоговый `full-verification` — FAIL. Новый
+  combined тест ожидал текст версии в форме, который присутствовал ещё до
+  завершения connect. CI успел перерисовать форму и очистить введённый email.
+- Исправлено только ожидание нового теста: обе версии A/B теперь проверяются
+  по подтверждённому состоянию `Подключено` после readback. Адресный тест на
+  owned PostgreSQL — PASS (1, 36.9s). Следующий шаг — commit/push исправления,
+  обязательный полный CI и человеческое review на новом SHA.

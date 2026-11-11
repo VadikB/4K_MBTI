@@ -87,3 +87,22 @@
 Эта секция фиксирует состояние до commit release-кандидата. Полный CI на его
 точном SHA, человеческое review, merge/deploy/TEST и новый рабочий выпуск
 программы остаются отдельными проверками.
+
+## Регрессия CI на release head и исправление
+
+На `11b91319e9ee38afb54f5a3e58c0e1c6ab088d96` обязательные `frontend` и
+`pytest`, integration и четыре runtime browser lanes — PASS. Browser fast:
+`229 PASS, 1 FAIL, 1 SKIP`; сводный `full-verification` — FAIL. Единственный
+отказ — новый `f23-f10-f11-combined.spec.mjs:82`: после connect A проверка
+`toContainText('Синтетическая программа 1.0')` срабатывала по тексту `<option>`
+до подтверждения операции. При последующем render поле email терялось, а grant
+отвечал «Укажите email администратора.» Это ошибка ожидания теста, не отказ
+server grant/readback.
+
+Оба подключения A/B теперь ожидают `[data-program-connection-state]` с точной
+строкой `Подключено: ...` после readback. Адресный повтор на owned PG:
+`npx playwright test tests/browser/f23-f10-f11-combined.spec.mjs --workers=1`
+— PASS, 1 тест, 36.9s. База тестового стенда создана и удалена штатным
+`test_stand.py` (`owner_verified`, `database_absent`, `state_absent` — true);
+отдельный собственный контейнер PostgreSQL удалён, `docker ps -a` пусто по
+его имени. Полный CI требуется повторить на commit исправления.

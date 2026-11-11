@@ -75,7 +75,9 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     const connect = superCard.locator('form[data-action="connect-assessment-program"]');
     await connect.locator('[name="program_definition_id"]').selectOption(String(programA.id));
     await connect.getByRole('button', { name: 'Подключить', exact: true }).click();
-    await expect(connect).toContainText('Синтетическая программа 1.0');
+    // Текст option виден до завершения команды; ждём точный readback подключения.
+    await expect(connect.locator('[data-program-connection-state]'))
+      .toContainText('Подключено: Синтетическая программа 1.0 · 1.0');
     const grant = superCard.locator('form[data-action="add-admin"]');
     await grant.locator('input[type="email"]').fill('participant@example.test');
     await grant.getByRole('button', { name: 'Добавить', exact: true }).click();
@@ -146,7 +148,8 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     save('saved-a', frozen);
     await connect.locator('[name="program_definition_id"]').selectOption(String(programB.id));
     await connect.getByRole('button', { name: 'Подключить', exact: true }).click();
-    await expect(connect).toContainText('Синтетическая программа 2.0');
+    await expect(connect.locator('[data-program-connection-state]'))
+      .toContainText('Подключено: Синтетическая программа 2.0 · 2.0');
     await userPage.reload();
     await expect(userPage.locator(`[data-organization-id="${orgId}"]`)).toContainText('Синтетическая программа 2.0');
     const switched = fixture('readback');
