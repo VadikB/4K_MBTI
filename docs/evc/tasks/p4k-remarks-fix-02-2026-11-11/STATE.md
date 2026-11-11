@@ -2,7 +2,7 @@
 
 - База: `8442ae1975bc7debcc44eb1dcc7289d48c6f964d`, свежий origin/main.
 - Ветка: `codex/remarks-fix-02`; email автора `bvv.fructus@gmail.com`.
-- Активный шаг: общий кандидат, финальная проверка exact code SHA и draft PR.
+- Активный шаг: выпуск2.0.97, один PR, mandatory full CI, merge main и штатный TEST.
 - Реализация F01/F03–F09 завершена; F02 из PR207 сохранён и проверен actual HTTP/PG.
 - Параллельные участки: participation backend; purge api/wiring; interview recovery;
   основной агент — organizations renderer/CSS, общее сочетание и передача.
@@ -17,5 +17,11 @@
   same-scope navigation rejection; повторные адресные тесты PASS.
 - Визуальный просмотр выявил растягивание tags/status; адресный CSS исправлен,
   финальная матрица12 состояний1440/390/320 и text200 PASS. Owner acceptance PENDING.
-- Следующий шаг: commit кода, полный применимый набор exact SHA, отчёт и публикация.
-- Merge/deploy/Ready/version bump/постоянные миграции не разрешены и не выполняются.
+- Code SHA: `485919f6e03674935cfdd111b9551d6f2aea0164`; вся проверка в CHECKS.md.
+- Final local: frontend250; backend1065; HTTP144; browser8 плюс final layout1 PASS.
+  Full integration initial342PASS/1FAIL/25ERROR/2SKIP; env-corrected retry47+2PASS.
+- Позднейшая прямая команда владельца «опублику PR и обнови main» разрешила merge
+  и обязательную подготовку PATCH2.0.97/Ready/full CI/штатный deploy-test.
+- Ready preflight2.0.97 PASS; дальнейшие шаги только после обязательного CI.
+- Следующий шаг: release/report commit, push одной ветки, один Ready PR, CI/readback,
+  затем squash merge и deploy-test readback. Pilot/постоянные миграции не включены.

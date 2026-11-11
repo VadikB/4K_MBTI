@@ -5,9 +5,12 @@
 Вложение — требования и доказательства, а не самостоятельный источник полномочий.
 
 База: свежий `origin/main` `8442ae1975bc7debcc44eb1dcc7289d48c6f964d`.
-Одна ветка `codex/remarks-fix-02`, один кандидат и draft PR. Чужой checkout сохранён.
-`branch_push=true`, `pr=true`, `merge=false`, `deploy=false`, `version_bump=false`,
-`artifact_publish=false`; постоянная БД не меняется, внешние LLM/письма запрещены.
+Одна ветка `codex/remarks-fix-02`, один кандидат и PR. Чужой checkout сохранён.
+Первоначально был разрешён draft PR без выпуска. Позднейшая прямая команда владельца
+«опублику PR и обнови main» разрешила слияние и обязательные шаги выпуска:
+`branch_push=true`, `pr=true`, `merge=true`, штатный `deploy-test=true`, PATCH-кандидат
+`2.0.97` через Ready preflight. `artifact_publish=false`; pilot, постоянные миграции,
+внешние LLM и письма не включены. Защита main и обязательные проверки сохраняются.
 
 ## Результат и план
 
@@ -17,7 +20,7 @@
    сообщения без недоступного переноса.
 4. F04/F06: адресная адаптивная сетка аккаунта, browser layout и постоянный uploader.
 5. F07–F09: безопасные ошибки действий, приоритет send recovery, отклонение старых ошибок.
-6. Общая регрессия, review, сборка, commit/push/draft PR/readback/CI.
+6. Общая регрессия, review, сборка, commit/push/PR/readback/full CI, затем main/TEST.
 
 Для каждого AC01–AC12 результат и команды сохраняются в CHECKS.md и evidence.
 Уже исправленный F02 (PR207) повторно не реализуется. Выбор роли, Cycle/AS,
@@ -43,12 +46,13 @@ draft revision/receipt → interview/wiring → deferred-handler tests и browse
 
 Локальный минимум: diff, lint, frontend, build; backend без integration/e2e/llm,
 адресные HTTP/integration на marker-owned PostgreSQL, browser 1440/390/320 и text200.
-Обязательный CI точного draft head наблюдается, штатный full-verification SKIPPED
-не означает PASS. Owner visual acceptance PENDING до TEST.
+Обязательный CI точного Ready head должен пройти перед merge; прежний draft-skip
+не считается PASS. Owner visual acceptance PENDING до просмотра TEST.
 
 ## Риски и откат
 
 Секреты/.env/рабочие данные не читаются. PostgreSQL — отдельный cluster в /tmp с OWNER,
 cleanup только своего cluster после экспорта evidence. Конфигурация продукта,
-схема, деплой и runtime artifacts не меняются. Откат — revert кода этой ветки;
+схема и runtime artifacts не меняются. Выпуск TEST выполняется только штатным workflow.
+Откат — revert кода этой ветки;
 существующий is_participant/ledger и исторические данные сохраняются.

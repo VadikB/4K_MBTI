@@ -1,0 +1,76 @@
+{
+  "base_sha": "8442ae1975bc7debcc44eb1dcc7289d48c6f964d",
+  "behavior_sha": "0fb071b48b46d5fa8ac52b1888924b2d6a764b79",
+  "code_sha": "485919f6e03674935cfdd111b9551d6f2aea0164",
+  "source_sha256": {
+    "Api/assessment_assignment_sources.py": "36964fe7e5eae8e97b7dee0441455c1f4a1873814fbcbef6ca6dc4bd8e49cfc2",
+    "web/js/api.js": "97efda75335f2db24eb8f77588bff8144026e9aea875da17b7760d76ce66ad09",
+    "web/js/assessment-errors.js": "f2b1994d1a45035c6d81111bb1faac9e3e066edbd8505c51db6d7e1f76359606",
+    "web/js/config.js": "6c7763df252e9cd8323404b452fa26854a8a0f152fb5e11ef1e86edf6a6af37b",
+    "web/js/entries/admin-organizations.js": "12437372d966bc26fad2f092f5b1c7e8ffa236ee2bc5e276f4d448e2a9ce748c",
+    "web/js/entries/interview.js": "b5543792c9c099feb631939174a155c5523500a689aac4d81c9e6b476a1229c3",
+    "web/js/screens/admin/organizations.js": "8a0f9f4f6f80949a868ac98c5d46c6606a6b6f65f8e810a4ea7fc279dfbfcd0b",
+    "web/js/screens/interview.js": "ecd088001eab815fd70a4db299a19e115a4ac8c395aa31f69c323cd351acd506",
+    "web/js/wiring.js": "57c6f8bb7d02be5127ed43560a48186e1085fd01a9d67f4bd40d0aace3c9f7a8",
+    "web/styles/screens/admin-organizations.css": "df451e68de914b161ddb9a8de102aa3c651577ee4e9f641721444a1eeaf3ace2"
+  },
+  "backend_full": {
+    "sha": "0fb071b48b46d5fa8ac52b1888924b2d6a764b79",
+    "pass": 1065
+  },
+  "http_full": {
+    "sha": "0fb071b48b46d5fa8ac52b1888924b2d6a764b79",
+    "pass": 144
+  },
+  "frontend_full": {
+    "sha": "62f1304b0280a95ff6c92f305e416c873b5d7c72",
+    "pass": 250
+  },
+  "integration_initial": {
+    "sha": "0fb071b48b46d5fa8ac52b1888924b2d6a764b79",
+    "pass": 342,
+    "fail": 1,
+    "error": 25,
+    "skip": 2,
+    "resolved": "25 fixtures on allowed agent4k_pytest name PASS; auth on UTC owned PG PASS"
+  },
+  "integration_target_retry": {
+    "sha": "62f1304b0280a95ff6c92f305e416c873b5d7c72",
+    "pass": 47
+  },
+  "auth_and_actor_retry": {
+    "sha": "485919f6e03674935cfdd111b9551d6f2aea0164",
+    "pass": 2
+  },
+  "browser": {
+    "sha": "0fb071b48b46d5fa8ac52b1888924b2d6a764b79",
+    "admin_http_pg": 5,
+    "chat_synthetic_transport": 3,
+    "final_layout_sha": "485919f6e03674935cfdd111b9551d6f2aea0164",
+    "final_layout_tests": 1,
+    "layout_states": 12,
+    "physical_devices": "NOT_RUN",
+    "native_zoom": "NOT_RUN",
+    "text_200_percent": "PASS",
+    "css_zoom_200_percent_chat": "PASS"
+  },
+  "real_provider": "NOT_RUN_NOT_AUTHORIZED",
+  "mail": false,
+  "owner_visual_acceptance": "PENDING",
+  "evidence_sha256": {
+    "purge-browser-final.json": "db5442f1cacf957b98a9eb5c79628feb62cd398c1de8ec4c0468cb054258119a",
+    "questionnaire-actor-checks.json": "418b2961bb75bedee5e28de63e4e1653e88eeb87aea94230ff02fd7690100699",
+    "chat-stale-rejections.json": "e7e9123b77671a26331df937234d5d24799a099d68006a382fa97bee9fc77a7d",
+    "purge-cleanup-final.json": "232539df3f93d3e1e8f3af04f80a6c4cfcfebf47a8a904506f2ef7ed9fe5326f",
+    "purge-cleanup.json": "9819131e09c25a307e314f50e21c9196c98ace640d1b3060e0d2643a2b5b3c6e",
+    "participation-checks.json": "7b239878653a4b3ead573648c1828d180b03b43b5d3d1d17f957b38d06bc95ea",
+    "chat-handler-errors.json": "575a35d88797721de7fc8a56cc610925cdd0bf7a9063bc3225de8b890b1e5830",
+    "purge-browser.json": "cd5d0f28eb92303f2edd087ebeaf250dbc1cbdc6fe876ce22542a87f23e5754f",
+    "participation-cleanup.json": "37190ecb81dca17ad74031ea89372baeaad733424dad55f31374bc4651eaef86",
+    "purge-checks.json": "2a3621dcbfdb31d64417a84320ec2e167c288190f0e737711ea3b37025ee96fa",
+    "questionnaire-actor-cleanup.json": "b93d13d1519ea0ebf2d82d80b40d4750bb9e1c71017a3c989e21d26649a1f159"
+  },
+  "source_sha256_phase": "release_working_tree_after_ready_2.0.97",
+  "release_version": "2.0.97",
+  "owner_merge_authorization": "direct user message: опублику PR и обнови main"
+}

@@ -1,0 +1,1035 @@
+{
+  "contract": "remarks-participation-http-pg/1",
+  "result": "PASS",
+  "synthetic_only": true,
+  "actual_http_socket": true,
+  "actual_postgresql": true,
+  "database": "product4k_pytest_d361a9c0ec974f69ac81170739f6187b",
+  "owner_verified": true,
+  "postgresql": "PostgreSQL 16.15 (Homebrew) on aarch64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.4.2), 64-bit",
+  "external_credentials_absent": true,
+  "events": [
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/admins",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/preview",
+      "status": 201,
+      "expected_status": 201,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/1/confirm",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/assessment/profile/options",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/role-profiles/selection",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/session/reopen-profile",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/1/assessment/start",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/assessment/profile/options",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/role-profiles/selection",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/session/reopen-profile",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/1/assessment/start",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/1/session-bootstrap",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/session/restore",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/assessment/profile/options",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/role-profiles/selection",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/session/reopen-profile",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/2/assessment/start",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/assessment/profile/options",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/role-profiles/selection",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/session/reopen-profile",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/2/assessment/start",
+      "status": 409,
+      "expected_status": 409,
+      "expected_code": "W02_MANAGED_ASSIGNMENT:",
+      "detail_code": "W02_MANAGED_ASSIGNMENT"
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/assessment-assignments",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/2/session-bootstrap",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/session/restore",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/assessment-source-options",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/members",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/users/5/purge-preview",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/users/5/purge-preview",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/admin/organizations/1/admins",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    }
+  ],
+  "snapshots": [
+    {
+      "context": "managed_guards",
+      "user_id": 1,
+      "before": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "after": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "unchanged": true
+    },
+    {
+      "context": "managed_guards",
+      "user_id": 1,
+      "before": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "after": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "unchanged": true
+    },
+    {
+      "context": "managed_guards",
+      "user_id": 2,
+      "before": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "after": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "unchanged": true
+    },
+    {
+      "context": "managed_guards",
+      "user_id": 2,
+      "before": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "after": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "unchanged": true
+    },
+    {
+      "context": "exclude_login_assign",
+      "before": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "after": {
+        "organization_assessment_assignments": {
+          "count": 2,
+          "sha256": "13e24f33e0bee215845f821802023e78ef1650f713782bf83ca1e6a1b5f42ee3"
+        },
+        "organization_assessment_source_bindings": {
+          "count": 2,
+          "sha256": "2e2d16a5b4eb1529416fdf9e84e4d8f90e39bded6c0caee7b0464a8a3bf6d36f"
+        },
+        "questionnaire_response_revisions": {
+          "count": 1,
+          "sha256": "9bd21c6155a27f18226403f83a3b085afbafc24af4dfd03c33878a493f692091"
+        },
+        "assessment_personalized_profiles": {
+          "count": 2,
+          "sha256": "78951f3af2f00b77487221bfb8c8aee27ca6aea950704e7501f519294c3cc046"
+        },
+        "m5_cycles": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "assessment_preparation_jobs": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "product_cycle_preparation_operations": {
+          "count": 0,
+          "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "user_profile_selection": [
+          {
+            "id": 1,
+            "active_profile_id": 1,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 2,
+            "active_profile_id": 2,
+            "selected_role_profile_version_id": 4
+          },
+          {
+            "id": 3,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 4,
+            "active_profile_id": 3,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 5,
+            "active_profile_id": 4,
+            "selected_role_profile_version_id": null
+          },
+          {
+            "id": 6,
+            "active_profile_id": null,
+            "selected_role_profile_version_id": null
+          }
+        ]
+      },
+      "unchanged": true
+    }
+  ]
+}
