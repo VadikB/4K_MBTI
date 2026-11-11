@@ -174,3 +174,53 @@ test('storage read/write failure resuming an old unknown command never claims th
     assert.equal(requests, 0);
   }
 });
+
+for (const fail of ['read', 'write']) {
+  test(`F02/R01 success receipt survives ${fail} failure during local cleanup and reload checks the same operation`, async () => {
+    const backing = storage();
+    globalThis.localStorage = backing;
+    const operation = confirmed();
+    const commands = [];
+    const original = backing[fail === 'read' ? 'getItem' : 'setItem'];
+    globalThis.fetch = async (_url, options) => {
+      commands.push(JSON.parse(options.body));
+      backing[fail === 'read' ? 'getItem' : 'setItem'] = () => { throw new Error('storage denied after server success'); };
+      return reply({ ok: true, deleted: true, operation_id: operation.operationId });
+    };
+    const receipt = await executeAccountPurge(operation, { actorId: 1 });
+    assert.equal(receipt.ok, true);
+    assert.equal(receipt.operation_id, operation.operationId);
+    assert.deepEqual(getPendingAccountPurges(1), []);
+    assert.equal(await executeAccountPurge(operation, { actorId: 1 }), receipt);
+    assert.equal(commands.length, 1, 'the known receipt never sends a second request in the same session');
+    backing[fail === 'read' ? 'getItem' : 'setItem'] = original;
+    const reloaded = await import(`../../web/js/api.js?purge-cleanup-${fail}`);
+    const recovered = reloaded.getPendingAccountPurges(1)[0];
+    assert.equal(recovered.operationId, operation.operationId);
+    globalThis.fetch = async (_url, options) => {
+      commands.push(JSON.parse(options.body));
+      return reply({ ok: true, deleted: true, operation_id: operation.operationId, idempotent: true });
+    };
+    assert.equal((await reloaded.executeAccountPurge(recovered, { actorId: 1 })).idempotent, true);
+    assert.deepEqual(commands[0], commands[1]);
+    assert.deepEqual(reloaded.getPendingAccountPurges(1), []);
+  });
+}
+
+for (const [code, status, expected] of [
+  ['CANNOT_PURGE_CONFIGURED_ACCOUNT', 409, /защищён настройками/],
+  ['CANNOT_PURGE_LAST_ORGANIZATION_ADMIN', 409, /последнего администратора/],
+  ['ACCOUNT_PURGE_SCOPE_FORBIDDEN', 403, /всех связанных данных/],
+]) {
+  test(`F02 explicit ${code} refusal is actionable and never shown as deletion success`, async () => {
+    globalThis.localStorage = storage();
+    const operation = confirmed();
+    globalThis.fetch = async () => reply({ detail: code }, status);
+    await assert.rejects(executeAccountPurge(operation, { actorId: 1 }), (error) => {
+      assert.match(accountPurgeErrorMessage(error), expected);
+      assert.equal(error.outcomeUnknown, false);
+      return true;
+    });
+    assert.deepEqual(getPendingAccountPurges(1), []);
+  });
+}

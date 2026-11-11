@@ -1,0 +1,10 @@
+
+Running 3 tests using 1 worker
+
+(node:5963) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/account-delete-owned.spec.mjs:7:1 › F02 current people → HTTP → PostgreSQL, full graph, scope guards, receipt recovery (21.8s)
+  ✓  2 tests/browser/remarks-admin-render.spec.mjs:10:1 › F02 current people actions and FIX02 AC05/06: tags, program groups and revision attribution (9.6s)
+  ✓  3 tests/browser/remarks-purge-recovery.spec.mjs:7:1 › F02 AC03/04 current people, real clicks, HTTP and owned PostgreSQL: failure, lost reply before/after commit, reload, same receipt (19.5s)
+
+  3 passed (51.9s)

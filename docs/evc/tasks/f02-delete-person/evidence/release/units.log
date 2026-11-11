@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-remarks-fix-02
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.16.0
+collected 11 items
+
+tests/unit/test_release_version.py ...........                           [100%]
+
+============================== 11 passed in 0.05s ==============================

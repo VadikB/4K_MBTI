@@ -997,10 +997,10 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
       admin_dashboard: { metrics: [], insights: [], activity_series: [], competency_average: [] },
     });
     if (pathname === '/users/admin/organizations' && route.request().method() === 'GET') {
-      return fulfillJson(route, { is_superadmin: isSuperadmin, items: [organization] });
+      return fulfillJson(route, { is_superadmin: isSuperadmin, purge_preview_available: true, items: [organization] });
     }
     if (pathname === '/users/admin/organizations/3' && route.request().method() === 'PATCH') {
-      return fulfillJson(route, { is_superadmin: isSuperadmin, items: [organization] });
+      return fulfillJson(route, { is_superadmin: isSuperadmin, purge_preview_available: true, items: [organization] });
     }
     if (pathname === '/users/admin/organizations/3/questionnaire') {
       const fallback = { items: [{ id: 11, assignment_ref: 'competencies_4k',
@@ -1571,11 +1571,23 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await page.getByRole('button', { name: 'Участники оценки' }).click();
   await expect(rows.first().locator('[data-action="send-member-invitation"]')).toHaveAttribute('data-value', longEmail);
   await rows.first().locator('.admin-organization-member-menu summary').click();
+  let purgePosts = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && /\/users\/admin\/users\/8\/purge$/.test(request.url())) purgePosts += 1;
+  });
+  await page.route('**/users/admin/users/8/purge-preview', (route) => fulfillJson(route, {
+    fingerprint: 'synthetic-current-person-delete', tables: { users: 1 },
+  }));
   page.once('dialog', async (dialog) => {
     expect(dialog.message()).toContain(longEmail);
     await dialog.dismiss();
   });
-  await rows.first().locator('[data-action="delete-member"]').click();
+  const deletePerson = rows.first().getByRole('button', { name: 'Удалить человека', exact: true });
+  await deletePerson.click();
+  await expect(deletePerson).toBeEnabled();
+  expect(purgePosts).toBe(0);
+  await expect(rows).toHaveCount(2);
+  await expect(page.locator('.admin-purge-recovery')).toHaveCount(0);
 });
 
 test('ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports', async ({ page }) => {

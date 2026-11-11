@@ -96,6 +96,7 @@ from Api.organization_invitation_service import (
 )
 from scripts.purge_test_organization import (
     build_account_purge_plan, build_purge_plan, purge_account, purge_organization, purge_plan_fingerprint,
+    require_account_plan_organization_scope,
 )
 from Api.deletion_ledger import append_intent, read_receipt, record_receipt
 from Api.report_growth_logic import (
@@ -938,13 +939,14 @@ def _is_admin_user(connection, user: UserResponse | None) -> bool:
     return get_admin_scope(connection, user).can_admin
 
 
-def _get_admin_scope_or_403(connection, user: UserResponse | None) -> AdminScope:
+def _get_admin_scope_or_403(connection, user: UserResponse | None, *, commit_scope: bool = True) -> AdminScope:
     if user is None:
         raise HTTPException(status_code=401, detail="Admin session not found")
     if str(user.email or "").strip().lower() == ADMIN_EMAIL.lower():
         return AdminScope(is_superadmin=True, actor_user_id=int(user.id))
     scope = get_admin_scope(connection, user)
-    connection.commit()
+    if commit_scope:
+        connection.commit()
     if not scope.can_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
     return AdminScope(
@@ -1003,23 +1005,66 @@ def _physical_organization_purge_available() -> bool:
     return bool(settings.deletion_ledger_path) or "test" in database_name or "pytest" in database_name
 
 
-def _suppress_configured_access_for_deleted_email(connection, *, email: str, actor_user_id: int) -> None:
-    normalized = normalize_email(email)
-    if normalized in configured_superadmin_emails():
-        connection.execute(
-            """INSERT INTO configured_access_suppressions
-               (email,access_kind,organization_code,reason,created_by_user_id)
-               VALUES(%s,'superadmin','','account_purge',%s) ON CONFLICT DO NOTHING""",
-            (normalized, actor_user_id),
-        )
-    for organization_code, emails in configured_org_admin_emails().items():
-        if normalized in emails:
-            connection.execute(
-                """INSERT INTO configured_access_suppressions
-                   (email,access_kind,organization_code,reason,created_by_user_id)
-                   VALUES(%s,'organization_admin',%s,'account_purge',%s) ON CONFLICT DO NOTHING""",
-                (normalized, organization_code, actor_user_id),
-            )
+def _protected_account_emails() -> set[str]:
+    return configured_superadmin_emails() | {normalize_email(ADMIN_EMAIL)} | {
+        email for emails in configured_org_admin_emails().values() for email in emails}
+
+
+def _account_has_configured_access(connection, account) -> bool:
+    protected = _protected_account_emails()
+    if normalize_email(account['email']) in protected:
+        return True
+    # Verified identities are authentication addresses of the same account.
+    # A configured alias can recreate access just like its primary email.
+    return connection.execute("""SELECT 1 FROM user_identities
+        WHERE user_id=%s AND is_verified=TRUE AND LOWER(email)=ANY(%s) LIMIT 1""",
+        (int(account['id']), sorted(protected))).fetchone() is not None
+
+
+def _require_account_purge_target(connection, *, scope: AdminScope, actor, account) -> None:
+    user_id = int(account['id'])
+    if int(actor.id) == user_id:
+        raise HTTPException(409, detail='CANNOT_PURGE_CURRENT_ACCOUNT')
+    # Configuration can recreate access. Refuse instead of retaining the email
+    # in a purge blacklist or silently removing another configured superadmin.
+    if _account_has_configured_access(connection, account):
+        raise HTTPException(409, detail='CANNOT_PURGE_CONFIGURED_ACCOUNT')
+    memberships = connection.execute("""SELECT organization_id,role,is_participant
+        FROM organization_memberships WHERE user_id=%s ORDER BY organization_id FOR UPDATE""",
+        (user_id,)).fetchall()
+    if not scope.is_superadmin and (not any(row['is_participant'] for row in memberships)
+            or any(int(row['organization_id']) not in scope.organization_ids for row in memberships)):
+        raise HTTPException(403, detail='ACCOUNT_PURGE_SCOPE_FORBIDDEN')
+    admin_organizations = [int(row['organization_id']) for row in memberships if row['role'] == 'admin']
+    if admin_organizations:
+        connection.execute('SELECT id FROM organizations WHERE id=ANY(%s) ORDER BY id FOR UPDATE',
+                           (admin_organizations,)).fetchall()
+        last_admin = connection.execute("""SELECT organization_id FROM organization_memberships
+            WHERE organization_id=ANY(%s) AND role='admin' GROUP BY organization_id
+            HAVING COUNT(*)<=1 LIMIT 1""", (admin_organizations,)).fetchone()
+        if last_admin:
+            raise HTTPException(409, detail='CANNOT_PURGE_LAST_ORGANIZATION_ADMIN')
+
+
+def _validate_account_purge_plan(connection, *, scope: AdminScope, user_id: int,
+                                 tables, foreign_keys) -> None:
+    if scope.is_superadmin:
+        return
+    try:
+        require_account_plan_organization_scope(connection, user_id=user_id,
+            organization_ids=scope.organization_ids, tables=tables, foreign_keys=foreign_keys)
+    except ValueError as exc:
+        raise HTTPException(409 if str(exc) == 'PURGE_PREVIEW_STALE' else 403, detail=str(exc)) from exc
+
+
+def _invalidate_deleted_accounts(user_ids) -> None:
+    # The receipt and physical deletion are already committed. A failed cache
+    # eviction cannot turn a known successful deletion into a retryable failure.
+    for user_id in user_ids:
+        try:
+            interviewer_agent.invalidate_user(int(user_id))
+        except Exception:
+            logger.exception('Deleted account cache invalidation failed user_id=%s', user_id)
 
 
 def _project_admin_assessment_stage(row: dict) -> dict:
@@ -1137,25 +1182,6 @@ def _remember_newest_assessment_stage(stages: dict, member_key: tuple[int, int],
                                       assignment_ref: str, stage: dict) -> None:
     """Keep the first row from a newest-first assignment projection."""
     stages.setdefault(member_key, {}).setdefault(assignment_ref, stage)
-
-
-def _discover_excluded_accounts(connection, protected_emails: set[str]) -> list[dict]:
-    """Find saved ordinary accounts with no current participant or admin membership."""
-    rows = connection.execute("""
-        SELECT u.id AS user_id, u.email, u.full_name,
-               o.id AS organization_id, o.name AS organization_name
-        FROM organization_memberships m
-        JOIN users u ON u.id = m.user_id
-        JOIN organizations o ON o.id = m.organization_id
-        WHERE m.role = 'member' AND m.is_participant = FALSE
-          AND NOT EXISTS (
-              SELECT 1 FROM organization_memberships current_membership
-              WHERE current_membership.user_id = u.id
-                AND (current_membership.is_participant = TRUE OR current_membership.role = 'admin')
-          )
-        ORDER BY LOWER(u.email), u.id, o.id
-    """).fetchall()
-    return [dict(row) for row in rows if normalize_email(row['email']) not in protected_emails]
 
 
 def _build_admin_organizations(connection, scope: AdminScope | None = None, *, actor_user_id: int | None = None) -> AdminOrganizationsResponse:
@@ -1552,26 +1578,14 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             if program:
                 programs_by_org[organization_id] = program
 
-    detached_accounts = []
-    excluded_accounts = []
-    if scope is None or scope.is_superadmin:
-        protected_emails = configured_superadmin_emails() | {
-            email for emails in configured_org_admin_emails().values() for email in emails}
-        excluded_accounts = _discover_excluded_accounts(connection, protected_emails)
-        detached_accounts = [dict(row) for row in connection.execute("""SELECT u.id AS user_id,u.email,u.full_name
-            FROM users u WHERE NOT EXISTS(SELECT 1 FROM organization_memberships m WHERE m.user_id=u.id)
-            ORDER BY LOWER(u.email),u.id""").fetchall()
-            if normalize_email(row['email']) not in protected_emails]
     return AdminOrganizationsResponse(
         title="Организации",
         subtitle="Управление доменами и администраторами организаций.",
         is_superadmin=bool(scope is None or scope.is_superadmin),
         physical_purge_available=_physical_organization_purge_available(),
-        purge_preview_available=bool(scope is None or scope.is_superadmin),
+        purge_preview_available=bool(scope is None or scope.can_admin),
         assessment_programs=assessment_programs.list_published(connection)
             if scope is None or scope.is_superadmin else [],
-        detached_accounts=detached_accounts,
-        excluded_accounts=excluded_accounts,
         items=[
             AdminOrganizationItem(
                 id=int(row["id"]),
@@ -4133,24 +4147,22 @@ def preview_admin_organization_purge(organization_id: int, request: Request) -> 
             FROM organization_memberships membership JOIN users u ON u.id=membership.user_id
             WHERE membership.organization_id=%s ORDER BY LOWER(u.email),u.id""",
             (organization_id,organization_id)).fetchall()
-        protected_emails = configured_superadmin_emails() | {
-            email for emails in configured_org_admin_emails().values() for email in emails}
         preview_accounts = []
         for row in accounts:
             preserved_reason = None
-            configured_access_will_be_revoked = False
             if int(row['id']) == int(user.id):
                 preserved_reason = 'current_account'
-            elif normalize_email(row['email']) in protected_emails:
-                configured_access_will_be_revoked = bool(row['will_delete_account'])
+            elif row['will_delete_account'] and _account_has_configured_access(connection, row):
+                preserved_reason = 'configured_account'
             preview_accounts.append({'user_id': int(row['id']), 'email': row['email'],
                 'will_delete_account': bool(row['will_delete_account']) and preserved_reason is None,
-                'preserved_reason': preserved_reason,
-                'configured_access_will_be_revoked': configured_access_will_be_revoked})
+                'preserved_reason': preserved_reason})
         try:
             counts,_,_ = build_purge_plan(connection, organization_id)
         except LookupError as exc:
             raise HTTPException(404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
         except RuntimeError as exc:
             code = str(exc).split(':', 1)[0]
             if code == 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE':
@@ -4170,14 +4182,23 @@ def preview_admin_organization_purge(organization_id: int, request: Request) -> 
 def preview_admin_user_purge(user_id: int, request: Request) -> dict:
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     with get_connection() as connection:
-        _require_superadmin(connection, user)
-        account = connection.execute('SELECT id,email FROM users WHERE id=%s', (user_id,)).fetchone()
+        _get_admin_scope_or_403(connection, user)
+        connection.execute('SELECT pg_advisory_xact_lock(%s)', (8_044_001,))
+        connection.execute("""SELECT organization_id FROM organization_memberships
+            WHERE user_id=%s AND role='admin' ORDER BY organization_id FOR SHARE""", (int(user.id),)).fetchall()
+        scope = _get_admin_scope_or_403(connection, user, commit_scope=False)
+        account = connection.execute('SELECT id,email FROM users WHERE id=%s FOR UPDATE', (user_id,)).fetchone()
         if not account:
             raise HTTPException(404, detail='User not found')
+        _require_account_purge_target(connection, scope=scope, actor=user, account=account)
         try:
-            counts,_,_ = build_account_purge_plan(connection,user_id)
+            counts,tables,foreign_keys = build_account_purge_plan(connection,user_id)
+            _validate_account_purge_plan(connection, scope=scope, user_id=user_id,
+                                         tables=tables, foreign_keys=foreign_keys)
         except LookupError as exc:
             raise HTTPException(404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
         except RuntimeError as exc:
             code = str(exc).split(':', 1)[0]
             if code == 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE':
@@ -4186,12 +4207,7 @@ def preview_admin_user_purge(user_id: int, request: Request) -> dict:
             raise
         return {'target_type':'account','target_id':user_id,'email':account['email'],
             'fingerprint':purge_plan_fingerprint(connection),
-            'tables':counts,'total_rows':sum(counts.values()),
-            'configured_access_will_be_revoked': normalize_email(account['email']) in (
-                configured_superadmin_emails() | {
-                    email for emails in configured_org_admin_emails().values() for email in emails
-                }
-            )}
+            'tables':counts,'total_rows':sum(counts.values())}
 
 
 @router.get('/admin/assessment-programs')
@@ -5088,10 +5104,12 @@ def purge_admin_organization(
     confirmation_code = str(payload.confirmation_code or "").strip()
     with get_connection() as connection:
         _require_superadmin(connection, user)
+        connection.execute('SELECT pg_advisory_xact_lock(%s)', (8_044_001,))
         try:
             prior = read_receipt(connection, operation_id=payload.operation_id,
                 target_type="organization", target_id=organization_id,
-                fingerprint=payload.preview_fingerprint)
+                fingerprint=payload.preview_fingerprint,
+                actor_user_id=int(user.id), allow_legacy_actor=True)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         if prior:
@@ -5112,11 +5130,9 @@ def purge_admin_organization(
             ORDER BY u.id""", (organization_id, organization_id)).fetchall()
         if any(int(row['id']) == int(user.id) for row in protected_account):
             raise HTTPException(status_code=409, detail="CANNOT_PURGE_ORGANIZATION_WITH_CURRENT_ACCOUNT")
+        if any(_account_has_configured_access(connection, row) for row in protected_account):
+            raise HTTPException(status_code=409, detail="CANNOT_PURGE_ORGANIZATION_WITH_CONFIGURED_ACCOUNT")
         try:
-            for row in protected_account:
-                _suppress_configured_access_for_deleted_email(
-                    connection, email=row['email'], actor_user_id=int(user.id)
-                )
             intent = {"operation_id": payload.operation_id, "target_type": "organization",
                 "target_id": organization_id, "preview_fingerprint": payload.preview_fingerprint}
             def persist_intent(validated_fingerprint: str) -> None:
@@ -5132,10 +5148,8 @@ def purge_admin_organization(
                 expected_fingerprint=payload.preview_fingerprint,
                 on_validated=persist_intent,
             )
-            record_receipt(connection, intent)
+            record_receipt(connection, {**intent, 'actor_user_id': int(user.id)})
             connection.commit()
-            for row in protected_account:
-                interviewer_agent.invalidate_user(int(row['id']))
         except (LookupError, ValueError) as exc:
             connection.rollback()
             raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -5149,6 +5163,7 @@ def purge_admin_organization(
             connection.rollback()
             logger.exception("Physical organization purge failed organization_id=%s", organization_id)
             raise HTTPException(status_code=409, detail="PURGE_EXECUTION_FAILED") from exc
+        _invalidate_deleted_accounts(int(row['id']) for row in protected_account)
         logger.warning(
             "Physical organization purge completed organization_id=%s actor_user_id=%s rows=%s operation_id=%s",
             organization_id,
@@ -5167,11 +5182,16 @@ def purge_admin_account(user_id: int, payload: AdminAccountPurgeRequest, request
     if not payload.acknowledge_irreversible:
         raise HTTPException(status_code=400, detail="Irreversible purge acknowledgement is required")
     with get_connection() as connection:
-        _require_superadmin(connection, actor)
+        _get_admin_scope_or_403(connection, actor)
+        connection.execute('SELECT pg_advisory_xact_lock(%s)', (8_044_001,))
+        connection.execute("""SELECT organization_id FROM organization_memberships
+            WHERE user_id=%s AND role='admin' ORDER BY organization_id FOR SHARE""", (int(actor.id),)).fetchall()
+        scope = _get_admin_scope_or_403(connection, actor, commit_scope=False)
         try:
             prior = read_receipt(connection, operation_id=payload.operation_id,
                 target_type="account", target_id=user_id,
-                fingerprint=payload.preview_fingerprint)
+                fingerprint=payload.preview_fingerprint, actor_user_id=int(actor.id),
+                allow_legacy_actor=scope.is_superadmin)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         if prior:
@@ -5182,12 +5202,8 @@ def purge_admin_account(user_id: int, payload: AdminAccountPurgeRequest, request
             raise HTTPException(status_code=404, detail="User not found")
         if normalize_email(payload.confirmation_email) != normalize_email(account["email"]):
             raise HTTPException(status_code=409, detail="Confirmation email does not match account")
-        if int(actor.id) == user_id:
-            raise HTTPException(status_code=409, detail="CANNOT_PURGE_CURRENT_ACCOUNT")
+        _require_account_purge_target(connection, scope=scope, actor=actor, account=account)
         try:
-            _suppress_configured_access_for_deleted_email(
-                connection, email=account['email'], actor_user_id=int(actor.id)
-            )
             intent = {"operation_id": payload.operation_id, "target_type": "account",
                 "target_id": user_id, "preview_fingerprint": payload.preview_fingerprint}
             def persist_intent(validated_fingerprint: str) -> None:
@@ -5196,10 +5212,14 @@ def purge_admin_account(user_id: int, payload: AdminAccountPurgeRequest, request
                     intent = append_intent(settings.deletion_ledger_path, operation_id=payload.operation_id,
                         target_type="account", target_id=user_id, fingerprint=validated_fingerprint)
             counts = purge_account(connection, user_id=user_id,
-                expected_fingerprint=payload.preview_fingerprint, on_validated=persist_intent)
-            record_receipt(connection, intent)
+                expected_fingerprint=payload.preview_fingerprint, on_validated=persist_intent,
+                validate_scope=lambda tables, foreign_keys: _validate_account_purge_plan(
+                    connection, scope=scope, user_id=user_id, tables=tables, foreign_keys=foreign_keys))
+            record_receipt(connection, {**intent, 'actor_user_id': int(actor.id)})
             connection.commit()
-            interviewer_agent.invalidate_user(user_id)
+        except HTTPException:
+            connection.rollback()
+            raise
         except (LookupError, ValueError) as exc:
             connection.rollback()
             raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -5213,6 +5233,7 @@ def purge_admin_account(user_id: int, payload: AdminAccountPurgeRequest, request
             connection.rollback()
             logger.exception("Physical account purge failed user_id=%s", user_id)
             raise HTTPException(status_code=409, detail="PURGE_EXECUTION_FAILED") from exc
+        _invalidate_deleted_accounts([user_id])
         logger.warning("Physical account purge completed user_id=%s actor_user_id=%s rows=%s operation_id=%s",
             user_id, int(actor.id) if actor and actor.id is not None else None,
             sum(counts.values()), payload.operation_id)
@@ -5331,7 +5352,7 @@ def delete_admin_organization_admin(organization_id: int, email: str, request: R
     with get_connection() as connection:
         _require_superadmin(connection, user)
         organization = connection.execute(
-            "SELECT code FROM organizations WHERE id=%s LIMIT 1", (organization_id,),
+            "SELECT code FROM organizations WHERE id=%s LIMIT 1 FOR UPDATE", (organization_id,),
         ).fetchone()
         if organization is None:
             raise HTTPException(status_code=404, detail="Organization not found")
@@ -5410,54 +5431,10 @@ def transfer_admin_organization_user(
 
 @router.delete("/admin/organizations/{organization_id}/members", response_model=AdminOrganizationsResponse)
 def delete_admin_organization_member(organization_id: int, email: str, request: Request) -> AdminOrganizationsResponse:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    normalized_email = normalize_email(email)
-    if not normalized_email:
-        raise HTTPException(status_code=400, detail="Valid member email is required")
-    if normalized_email.startswith("__autotest__") or normalized_email.endswith("@autotest.local"):
-        raise HTTPException(status_code=400, detail="Autotest members are protected. Use regression test cleanup instead.")
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     with get_connection() as connection:
-        scope = _require_organization_admin(connection, user, organization_id)
-        user_row = connection.execute(
-            """
-            SELECT id
-            FROM users
-            WHERE LOWER(email) = %s
-            LIMIT 1
-            """,
-            (normalized_email,),
-        ).fetchone()
-        affected_rows = 0
-        target_user_id = int(user_row["id"]) if user_row is not None else None
-        if user_row is not None:
-            result = connection.execute(
-                """UPDATE organization_memberships
-                   SET is_participant=FALSE, updated_at=NOW()
-                   WHERE organization_id=%s AND user_id=%s
-                     AND is_participant=TRUE""",
-                (organization_id, int(user_row["id"])),
-            )
-            affected_rows = int(result.rowcount or 0)
-        action_result = "removed" if affected_rows else "already_absent"
-        connection.execute(
-            """
-            INSERT INTO organization_membership_action_audit (
-                actor_user_id, target_user_id, organization_id, relationship_type,
-                action, result, affected_rows
-            ) VALUES (%s, %s, %s, 'member', 'remove', %s, %s)
-            """,
-            (int(user.id), target_user_id, organization_id, action_result, affected_rows),
-        )
-        connection.commit()
-        response = _build_admin_organizations(connection, scope)
-        return response.model_copy(update={"membership_action": {
-            "target_user_id": target_user_id,
-            "organization_id": organization_id,
-            "relationship_type": "member",
-            "result": action_result,
-            "affected_rows": affected_rows,
-        }})
+        _require_organization_admin(connection, user, organization_id)
+        raise HTTPException(status_code=410, detail="MEMBER_EXCLUSION_REMOVED_USE_ACCOUNT_PURGE")
 
 
 @router.post("/admin/organizations/{organization_id}/members/reset-password", response_model=AdminOrganizationsResponse)

@@ -1,0 +1,90 @@
+
+> test:backend:integration
+> .venv/bin/python -m pytest --run-integration -m integration
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-remarks-fix-02
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0, anyio-4.16.0
+collected 1621 items / 1234 deselected / 387 selected
+
+tests/integration/test_adm1c_status_history_db.py ..                     [  0%]
+tests/integration/test_adm_layout_31_cancellation_db.py ................ [  4%]
+                                                                         [  4%]
+tests/integration/test_arch30_membership_db.py ...                       [  5%]
+tests/integration/test_arch30_program_definition_db.py .....             [  6%]
+tests/integration/test_assessment_analysis_queue_db.py ........          [  8%]
+tests/integration/test_assessment_authoring_workflow_db.py .......       [ 10%]
+tests/integration/test_assessment_evaluation_material_repository_db.py . [ 10%]
+                                                                         [ 10%]
+tests/integration/test_assessment_first_case_export_db.py .              [ 11%]
+tests/integration/test_assessment_indicator_repository_db.py ..          [ 11%]
+tests/integration/test_assessment_queue_db.py ......                     [ 13%]
+tests/integration/test_assessment_shadow_aggregate_db.py ..              [ 13%]
+tests/integration/test_clean_bootstrap_db.py ...                         [ 14%]
+tests/integration/test_exec03_answer_status_db.py .                      [ 14%]
+tests/integration/test_exec03_turn_replay_db.py .......                  [ 16%]
+tests/integration/test_exec_fix01_clarification_db.py .................. [ 21%]
+...............                                                          [ 25%]
+tests/integration/test_exec_fix01_lock_time_db.py .                      [ 25%]
+tests/integration/test_exec_fix01_pause_question_db.py .                 [ 25%]
+tests/integration/test_exec_fix01_presence_db.py ......                  [ 27%]
+tests/integration/test_exec_fix01_replay_http_db.py .                    [ 27%]
+tests/integration/test_exec_fix01_waits_db.py .........                  [ 29%]
+tests/integration/test_exec_fix02_additional_db.py ...............       [ 33%]
+tests/integration/test_exec_fix02_retry_db.py ..........                 [ 36%]
+tests/integration/test_exec_fix04_time_precision_db.py ......            [ 37%]
+tests/integration/test_exec_fix05_first_deadline_db.py ................. [ 42%]
+......                                                                   [ 43%]
+tests/integration/test_f02_tokens_owned_stand.py .                       [ 43%]
+tests/integration/test_f05_runtime_matrix_db.py .                        [ 44%]
+tests/integration/test_integrated_acceptance_db.py .....                 [ 45%]
+tests/integration/test_m10_product_path_db.py ...................        [ 50%]
+tests/integration/test_m3_role_profiles_db.py .                          [ 50%]
+tests/integration/test_m4_contexts_db.py .                               [ 50%]
+tests/integration/test_m5_catalog_integrity_db.py .                      [ 51%]
+tests/integration/test_m5_cycle_runtime_db.py ...                        [ 51%]
+tests/integration/test_m5_functional_package_db.py ...                   [ 52%]
+tests/integration/test_m5_generation_lab_db.py .                         [ 52%]
+tests/integration/test_m5_runtime_db.py ...                              [ 53%]
+tests/integration/test_m5_sales_package_db.py ..                         [ 54%]
+tests/integration/test_m6_evidence_db.py .........................       [ 60%]
+tests/integration/test_m6_substantive_admission_db.py ......             [ 62%]
+tests/integration/test_m7_cycle_planner_db.py .......................... [ 68%]
+.....                                                                    [ 70%]
+tests/integration/test_m7_parameter_resolution_db.py ..........          [ 72%]
+tests/integration/test_m8_recommendation_basis_db.py ......              [ 74%]
+tests/integration/test_m8_report_access_db.py ..                         [ 74%]
+tests/integration/test_managed_assignment_participation_db.py .......... [ 77%]
+                                                                         [ 77%]
+tests/integration/test_path29_participant_owned_stand.py .               [ 77%]
+tests/integration/test_path29_scope_states_db.py .                       [ 78%]
+tests/integration/test_path_ac02_organization_create_db.py ..            [ 78%]
+tests/integration/test_path_admin_contract_owned_stand.py .              [ 78%]
+tests/integration/test_path_start_assignment_lineage_db.py ...           [ 79%]
+tests/integration/test_pilot_start_admission_db.py ........              [ 81%]
+tests/integration/test_profile_access_owned_stand.py .                   [ 81%]
+tests/integration/test_profile_to_m4_owned_stand.py .                    [ 82%]
+tests/integration/test_program01_invitation_revoke_db.py ..              [ 82%]
+tests/integration/test_program_publication_retirement_db.py ............ [ 85%]
+.....                                                                    [ 87%]
+tests/integration/test_published_release_seed_db.py ...                  [ 87%]
+tests/integration/test_purge_test_organization_db.py ................... [ 92%]
+...                                                                      [ 93%]
+tests/integration/test_questionnaire_sources_db.py .                     [ 93%]
+tests/integration/test_r03_auth_full_flow_db.py .                        [ 94%]
+tests/integration/test_r03_auth_invitation_db.py ..............          [ 97%]
+tests/integration/test_remarks_participation_owned_stand.py .            [ 97%]
+tests/integration/test_remarks_questionnaire_actor_owned_stand.py .      [ 98%]
+tests/integration/test_removed_personality_schema_cleanup_db.py .        [ 98%]
+tests/integration/test_review_m4_confirmation_db.py .                    [ 98%]
+tests/integration/test_review_report_history_db.py .                     [ 98%]
+tests/integration/test_w02_acquaintance_db.py ..                         [ 99%]
+tests/llm/test_m10_real_cycle_db.py ss                                   [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/llm/test_m10_real_cycle_db.py:148: explicit real-provider acceptance run
+SKIPPED [1] tests/llm/test_m10_real_cycle_db.py:338: explicit real-provider acceptance run
+========= 385 passed, 2 skipped, 1234 deselected in 276.03s (0:04:36) ==========

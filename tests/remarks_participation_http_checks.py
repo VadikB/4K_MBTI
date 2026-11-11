@@ -158,61 +158,39 @@ def main(base):
                                    (admin, 'other@example.test', admin_id)]:
         client.request('POST', '/users/auth/email/password-login', payload={'email': email, 'password': state['password']})
         assert_managed_guards(client, user_id, student)
-        superadmin.request('DELETE', org_path + '/members', params={'email': email})
-        assert_managed_guards(client, user_id, student)
-        denied = superadmin.request('POST', org_path + '/assessment-assignments', payload={
-            'user_ids': [user_id], 'assignment_ref': ref, 'operation_id': 'remarks-excluded-' + str(user_id)})
-        assert denied['items'] == [{'user_id': user_id, 'status': 'not_assigned',
-            'assignment_id': None, 'error': 'Участник не связан с этой активной организацией.'}]
-        client.request('POST', '/users/auth/email/password-login', payload={'email': email, 'password': state['password']})
-        client.request('GET', f'/users/{user_id}/session-bootstrap')
-        client.request('GET', '/users/session/restore')
+        superadmin.request('DELETE', org_path + '/members', params={'email': email},
+            expected=410, code='MEMBER_EXCLUSION_REMOVED_USE_ACCOUNT_PURGE')
         with get_connection() as connection:
             membership = connection.execute('''SELECT role,is_participant FROM organization_memberships
                 WHERE user_id=%s AND organization_id=%s''', (user_id, org)).fetchone()
-            assert membership == {'role': 'member' if user_id == member_id else 'admin', 'is_participant': False}
+            assert membership == {'role': 'member' if user_id == member_id else 'admin', 'is_participant': True}
             assert assessment_assignment_sources.has_managed_assignment(connection, user_id=user_id)
-    superadmin.request('DELETE', org_path + '/members', params={'email': 'excluded-candidate@example.test'})
-    excluded_frozen = snapshot()
-    assert frozen == excluded_frozen, 'exclusion, login or denied assignment changed frozen assessment sources'
-    SNAPSHOTS.append({'context': 'exclude_login_assign', 'before': frozen,
-        'after': excluded_frozen, 'unchanged': True})
+    assert snapshot() == frozen, 'removed exclusion endpoint mutated frozen assessment sources'
+    SNAPSHOTS.append({'context': 'removed_exclusion_preserves_managed_sources', 'before': frozen,
+        'after': snapshot(), 'unchanged': True})
     listed = superadmin.request('GET', '/users/admin/organizations')
+    assert 'excluded_accounts' not in listed and 'detached_accounts' not in listed
     organization = next(item for item in listed['items'] if item['id'] == org)
-    assert organization['members_count'] == 0 and organization['members'] == []
+    assert organization['members_count'] == 3
     assert admin_id in [item['user_id'] for item in organization['admins']]
-    assert {item['user_id'] for item in listed['excluded_accounts']} == {member_id, candidate_id}
-    assert detached_id in [item['user_id'] for item in listed['detached_accounts']]
-    assert admin_id not in [item['user_id'] for item in listed['detached_accounts']]
-    assert member_id not in [item['user_id'] for item in listed['detached_accounts']]
     scoped = admin.request('GET', '/users/admin/organizations')
     assert [item['id'] for item in scoped['items']] == [org]
-    assert scoped['excluded_accounts'] == [] and scoped['detached_accounts'] == []
+    assert scoped['purge_preview_available'] is True
+    assert 'excluded_accounts' not in scoped and 'detached_accounts' not in scoped
     admin.request('GET', org_path + '/assessment-source-options')
     admin.request('POST', f'/users/admin/organizations/{foreign_org}/members', expected=403, payload={
         'email': 'forbidden@example.test', 'full_name': 'Synthetic forbidden', 'role_description': 'Synthetic position'})
-    admin.request('GET', f'/users/admin/users/{candidate_id}/purge-preview', expected=403)
-    superadmin.request('GET', f'/users/admin/users/{candidate_id}/purge-preview')
-    for email, user_id in [('participant@example.test', member_id), ('other@example.test', admin_id),
-                           ('excluded-candidate@example.test', candidate_id)]:
-        superadmin.request('POST', org_path + '/members', payload={
-            'email': email, 'full_name': 'Synthetic restored account', 'role_description': 'Synthetic position'})
-        with get_connection() as connection:
-            membership = connection.execute('''SELECT user_id,role,is_participant FROM organization_memberships
-                WHERE user_id=%s AND organization_id=%s''', (user_id, org)).fetchone()
-            assert membership == {'user_id': user_id,
-                'role': 'admin' if user_id == admin_id else 'member', 'is_participant': True}
-    restored = superadmin.request('GET', '/users/admin/organizations')
-    assert restored['excluded_accounts'] == []
-    assert next(item for item in restored['items'] if item['id'] == org)['members_count'] == 3
-    assert snapshot() == frozen, 'reinclude changed immutable assignment/questionnaire/profile/Cycle state'
-    # Removing authority from a participating admin keeps their participation.
+    superadmin.request('POST', f'/users/admin/users/{candidate_id}/transfer-organization', expected=410,
+        code='ORGANIZATION_TRANSFER_REMOVED', payload={'expected_source_organization_id': org,
+            'target_organization_id': foreign_org, 'target_role': 'member', 'operation_id': 'removed-transfer-test'})
+    # Revoking authority remains a distinct action and keeps participation.
     superadmin.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'})
     with get_connection() as connection:
         assert connection.execute('''SELECT role,is_participant FROM organization_memberships
             WHERE user_id=%s''', (admin_id,)).fetchone() == {'role': 'member', 'is_participant': True}
         assert connection.execute('SELECT COUNT(*) AS n FROM organizations WHERE id=%s', (foreign_org,)).fetchone()['n'] == 1
         assert connection.execute("SELECT COUNT(*) AS n FROM users WHERE email='foreign-control@example.test'").fetchone()['n'] == 1
+        assert connection.execute('SELECT id FROM users WHERE id=%s', (detached_id,)).fetchone()['id'] == detached_id
 
 
 def run_http_checks(checker, *, evidence_file_env='REMARKS_PARTICIPATION_EVIDENCE',

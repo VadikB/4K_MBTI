@@ -912,6 +912,25 @@
     cursor: pointer;
 }
 
+.admin-organizations-tag.admin {
+    flex-wrap: wrap;
+    border-radius: var(--radius-2);
+}
+
+.admin-organizations-tag.admin > span {
+    flex-basis: 100%;
+}
+
+.admin-organizations-tag.admin button {
+    width: auto;
+    min-height: 44px;
+    height: auto;
+    flex: 0 1 auto;
+    padding: 6px 10px;
+    border-radius: var(--radius-2);
+    overflow-wrap: anywhere;
+}
+
 .admin-organizations-empty {
     margin: 0;
     color: var(--text-muted);
@@ -1038,7 +1057,7 @@
 .admin-organization-member-menu summary::-webkit-details-marker { display: none; }
 .admin-organization-member-menu > div {
     position: absolute; z-index: 20; top: calc(100% + 6px); right: 0;
-    display: grid; gap: 4px; width: min(280px, 80vw); padding: 8px;
+    display: grid; gap: 4px; width: min(280px, calc(100vw - 104px)); padding: 8px;
     border: 1px solid var(--palette-graphite-200); border-radius: var(--radius-sm);
     background: #fff; box-shadow: 0 12px 32px rgb(15 23 42 / 18%);
 }

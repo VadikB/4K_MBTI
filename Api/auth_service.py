@@ -104,6 +104,13 @@ def _hash_magic_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
+def _lock_account_lifecycle(connection) -> None:
+    # Purge takes the exclusive form of this transaction lock. Authentication
+    # may run concurrently, but an admitted request cannot issue a surviving
+    # email-only token or recreate an account across a committed deletion.
+    connection.execute("SELECT pg_advisory_xact_lock_shared(%s)", (8_044_001,))
+
+
 def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
     password_value = str(password or "")
     if not password_value:
@@ -288,6 +295,7 @@ class AuthService:
         requested_at = _utc_now()
         expires_at = requested_at + timedelta(minutes=max(settings.auth_action_token_ttl_minutes, 5))
         with get_connection() as connection:
+            _lock_account_lifecycle(connection)
             invitation = self._ensure_email_can_authenticate(
                 connection,
                 email=normalized_email,
@@ -382,28 +390,31 @@ class AuthService:
         if not cleaned_token:
             raise ValueError("Ссылка недействительна.")
         with get_connection() as connection:
-            row = connection.execute(
-                """
-                SELECT id, email, expires_at, used_at, organization_invitation_id FROM auth_action_tokens
-                WHERE token_hash = %s AND purpose = %s LIMIT 1
-                """,
-                (_hash_magic_token(cleaned_token), purpose),
-            ).fetchone()
-            if row is None or row["used_at"] is not None:
-                raise ValueError("Ссылка недействительна или уже использована.")
-            if _is_expired(row["expires_at"]):
-                raise ValueError("Срок действия ссылки истек.")
-            email = normalize_email(row["email"])
-            invitation_id = int(row["organization_invitation_id"]) if row["organization_invitation_id"] else None
-            self._ensure_email_can_authenticate(
-                connection,
-                email=email,
-                organization_invitation_id=invitation_id,
+            _lock_account_lifecycle(connection)
+            result = self._verify_auth_action_token_in_transaction(
+                connection, token=cleaned_token, purpose=purpose, consume=consume,
             )
             if consume:
-                connection.execute("UPDATE auth_action_tokens SET used_at = NOW() WHERE id = %s", (row["id"],))
                 connection.commit()
-            return email, invitation_id
+            return result
+
+    def _verify_auth_action_token_in_transaction(self, connection, *, token: str,
+                                               purpose: str, consume: bool = False) -> tuple[str, int | None]:
+        row = connection.execute(
+            """SELECT id,email,expires_at,used_at,organization_invitation_id FROM auth_action_tokens
+               WHERE token_hash=%s AND purpose=%s LIMIT 1 FOR UPDATE""",
+            (_hash_magic_token(str(token or "").strip()), purpose),
+        ).fetchone()
+        if row is None or row["used_at"] is not None:
+            raise ValueError("Ссылка недействительна или уже использована.")
+        if _is_expired(row["expires_at"]):
+            raise ValueError("Срок действия ссылки истек.")
+        email = normalize_email(row["email"])
+        invitation_id = int(row["organization_invitation_id"]) if row["organization_invitation_id"] else None
+        self._ensure_email_can_authenticate(connection, email=email, organization_invitation_id=invitation_id)
+        if consume:
+            connection.execute("UPDATE auth_action_tokens SET used_at=NOW() WHERE id=%s", (row["id"],))
+        return email, invitation_id
 
     def _ensure_email_can_authenticate(
         self,
@@ -510,6 +521,7 @@ class AuthService:
         expires_at = _utc_now() + timedelta(minutes=max(settings.auth_magic_link_ttl_minutes, 5))
 
         with get_connection() as connection:
+            _lock_account_lifecycle(connection)
             invitation = self._ensure_email_can_authenticate(
                 connection,
                 email=normalized_email,
@@ -571,12 +583,13 @@ class AuthService:
 
         token_hash = _hash_magic_token(cleaned_token)
         with get_connection() as connection:
+            _lock_account_lifecycle(connection)
             link_row = connection.execute(
                 """
                 SELECT id, email, expires_at, used_at, organization_invitation_id
                 FROM auth_magic_links
                 WHERE token_hash = %s
-                LIMIT 1
+                LIMIT 1 FOR UPDATE
                 """,
                 (token_hash,),
             ).fetchone()
@@ -852,6 +865,13 @@ class AuthService:
             invitation_id = personal_invitation_id
 
         with get_connection() as connection:
+            _lock_account_lifecycle(connection)
+            if verification_token and personal_invitation_id is None:
+                current_email, current_invitation_id = self._verify_auth_action_token_in_transaction(
+                    connection, token=verification_token, purpose="email_verification",
+                )
+                if current_email != normalized_email or current_invitation_id != invitation_id:
+                    raise ValueError("Ссылка подтверждения выпущена для другого email или приглашения.")
             invitation = self._ensure_email_can_authenticate(
                 connection,
                 email=normalized_email,
@@ -961,10 +981,14 @@ class AuthService:
     def reset_password(self, *, token: str, password: str, password_confirm: str) -> str:
         if not settings.auth_password_reset_enabled:
             raise ValueError("Восстановление пароля отключено.")
+        self.ensure_schema()
         validate_password_strength(password, password_confirm=password_confirm)
-        email = self.verify_auth_action_token(token=token, purpose="password_reset", consume=True)
         salt, password_hash = _hash_password(password)
         with get_connection() as connection:
+            _lock_account_lifecycle(connection)
+            email, _invitation_id = self._verify_auth_action_token_in_transaction(
+                connection, token=token, purpose="password_reset", consume=True,
+            )
             row = connection.execute(
                 "SELECT user_id FROM auth_password_credentials WHERE LOWER(email) = %s LIMIT 1",
                 (email,),

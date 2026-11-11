@@ -1,0 +1,36 @@
+{
+  "code_sha": "15232259d5915d564c7c9551dd80941862c3cd9a",
+  "base_sha": "748be43e55587aa3b7e3a3945189c5ac737f59eb",
+  "branch": "codex/f02-delete-person",
+  "ac": {
+    "F02-AC01": "PASS",
+    "F02-AC02": "PASS",
+    "F02-AC03": "PASS",
+    "F02-AC04": "PASS",
+    "F02-AC05": "PASS"
+  },
+  "local": {
+    "backend": 1086,
+    "http": 144,
+    "frontend": 261,
+    "integration_passed": 385,
+    "integration_skipped_real_llm": 2,
+    "browser": 3,
+    "lint": "PASS",
+    "build_idempotent": "PASS",
+    "diff_check": "PASS",
+    "independent_review": "PASS"
+  },
+  "ci": "NOT_RUN",
+  "new_test_release": "NOT_RUN",
+  "owner_visual": "PENDING",
+  "release_flags": {
+    "branch_push": false,
+    "pr": false,
+    "merge": false,
+    "deploy": false,
+    "version_bump": false,
+    "artifact_publish": false
+  },
+  "owned_cleanup": "PASS"
+}

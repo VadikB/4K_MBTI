@@ -162,47 +162,16 @@ def test_member_csv_skips_rows_without_name_or_position(monkeypatch, membership_
     assert connection.committed
 
 
-def test_member_removal_reports_and_audits_affected_rows(monkeypatch, membership_http):
+def test_legacy_member_exclusion_is_gone_without_partial_changes(monkeypatch, membership_http):
     http, connection = membership_http
-    monkeypatch.setattr(
-        routes,
-        "_require_organization_admin",
-        lambda *_args: AdminScope(is_superadmin=False, organization_ids=(4,)),
-    )
-
-    response = http.delete(
-        "/users/admin/organizations/4/members",
-        params={"email": "person@example.test"},
-    )
-
-    assert response.status_code == 200
-    assert response.json()["membership_action"] == {
-        "target_user_id": 3,
-        "organization_id": 4,
-        "relationship_type": "member",
-        "result": "removed",
-        "affected_rows": 1,
-    }
-    assert any(
-        "INSERT INTO organization_membership_action_audit" in query
-        and params == (18, 3, 4, "removed", 1)
-        for query, params in connection.queries
-    )
-    assert connection.committed
-
-    connection.delete_rowcount = 0
-    repeated = http.delete(
-        "/users/admin/organizations/4/members",
-        params={"email": "person@example.test"},
-    )
-    assert repeated.status_code == 200
-    assert repeated.json()["membership_action"]["result"] == "already_absent"
-    assert repeated.json()["membership_action"]["affected_rows"] == 0
-    assert any(
-        "INSERT INTO organization_membership_action_audit" in query
-        and params == (18, 3, 4, "already_absent", 0)
-        for query, params in connection.queries
-    )
+    monkeypatch.setattr(routes, "_require_organization_admin",
+        lambda *_args: AdminScope(is_superadmin=False, organization_ids=(4,)))
+    response = http.delete("/users/admin/organizations/4/members",
+        params={"email": "person@example.test"})
+    assert response.status_code == 410
+    assert response.json()["detail"] == "MEMBER_EXCLUSION_REMOVED_USE_ACCOUNT_PURGE"
+    assert connection.queries == []
+    assert not connection.committed
 
 
 def test_organization_admin_cannot_call_superadmin_transfer(monkeypatch, membership_http):

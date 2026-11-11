@@ -1,0 +1,23 @@
+{
+  "code_sha": "15232259d5915d564c7c9551dd80941862c3cd9a",
+  "references": [
+    {
+      "run_id": "392e9f7be7d84df2a6474ccdaf35fd77",
+      "database": "product4k_pytest_392e9f7be7d84df2a6474ccdaf35fd77",
+      "owner_verified": true,
+      "database_absent": true,
+      "state_absent": true,
+      "force": false
+    },
+    {
+      "run_id": "cc13a3c974764f5a872c5193d84d5655",
+      "database": "product4k_pytest_cc13a3c974764f5a872c5193d84d5655",
+      "owner_verified": true,
+      "database_absent": true,
+      "state_absent": true,
+      "force": false
+    }
+  ],
+  "remaining_test_databases": [],
+  "cluster_stopped": true
+}

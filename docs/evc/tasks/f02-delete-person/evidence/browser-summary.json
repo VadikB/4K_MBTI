@@ -1,0 +1,46 @@
+{
+  "code_sha": "15232259d5915d564c7c9551dd80941862c3cd9a",
+  "stats": {
+    "startTime": "2026-11-11T16:54:43.177Z",
+    "duration": 51861.193999999996,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "F02 current people → HTTP → PostgreSQL, full graph, scope guards, receipt recovery",
+      "ok": true,
+      "file": "account-delete-owned.spec.mjs",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 21830
+        }
+      ]
+    },
+    {
+      "title": "F02 current people actions and FIX02 AC05/06: tags, program groups and revision attribution",
+      "ok": true,
+      "file": "remarks-admin-render.spec.mjs",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 9629
+        }
+      ]
+    },
+    {
+      "title": "F02 AC03/04 current people, real clicks, HTTP and owned PostgreSQL: failure, lost reply before/after commit, reload, same receipt",
+      "ok": true,
+      "file": "remarks-purge-recovery.spec.mjs",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 19511
+        }
+      ]
+    }
+  ]
+}
