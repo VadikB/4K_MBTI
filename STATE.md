@@ -10,9 +10,11 @@ Final local: backend1086/HTTP144/frontend261/integration385+2SKIP/browser3 PASS,
 lint/build/idempotent dist/diff-check PASS. AC01–AC05 PASS на собственном synthetic
 UI→HTTP→PostgreSQL контуре; user data/.env/paid LLM/реальные письма не затронуты.
 Owned cleanup/absence и stop PostgreSQL выполнены; legacy false не мигрированы.
-Branch push/PR/bump/merge/deploy/publication false, CI NOT_RUN, TEST нового выпуска
-NOT_RUN, Human visual PENDING. Подготовлен текст одного PR; следующий этап требует
-допуска владельца публикации/выпуска. Разрешения других задач не переносятся.
+После передачи владелец прямо поручил «выложи на main»: push/один PR/необходимый
+PATCH/mandatory CI/merge/штатный TEST разрешены; publication/pilot false.
+Активно: PATCH2.0.98 → PR/CI → main/TEST; `f02-delete-person/RELEASE.md`.
+GitHub actor `bvvfructus-jpg`, fresh main748be43. Human visual PENDING.
+Разрешения других задач не переносятся.
 Следующую карточку автоматически не запускать.
 
 Ниже сохранённая история; её активные формулировки относятся к прежним задачам.

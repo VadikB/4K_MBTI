@@ -15,7 +15,7 @@
 - Промежуточно backend1081/HTTP144/frontend261 PASS, lint/build PASS; targeted
   scope/alias43 PASS. В первом integration ошибочно использован
   bootstrapped reference вместо пустой БД; failed fixtures затем PASS19 на
-  на новой marker-owned empty reference `product4k_pytest_cc13a3c974764f5a872c5193d84d5655`.
+  новой marker-owned empty reference `product4k_pytest_cc13a3c974764f5a872c5193d84d5655`.
 - Concurrency UPDATE/INSERT scope races закрыты: pin/re-expand до стабильной
   области, CTID consistency, locked ancestors/actor memberships. Backend50 адресных
   PASS, независимое review без новых actionable findings.
@@ -33,8 +33,10 @@
   Human visual PENDING, приёмка владельца не заявляется.
 - Собственные test БД удалены через marker без FORCE, independent remaining
   readback0; новый локальный PostgreSQL остановлен. Evidence сохранены.
-- Все release flags false. Локальная реализация/проверки/передача завершены.
-  Следующий этап по отдельному допуску владельца: push одной ветки/один PR,
-  согласованный candidate+Ready/full CI; затем отдельные review/merge/TEST/visual.
-  Новый main fetch подтвердил прежний748be43. Соседние карточки не запускать.
+- Новый прямой допуск владельца после передачи54f4b52: «выложи на main».
+  Push/один PR/необходимый PATCH/mandatory CI/merge/штатный TEST разрешены;
+  artifact_publish и pilot deploy false, Human visual PENDING.
+- Fresh main748be43/2.0.97, фактический GitHub actor `bvvfructus-jpg`, push=true.
+  Активно: canonical PATCH2.0.98 preflight → PR/CI → squash main → TEST/readback.
+  Детали этапа в RELEASE.md. Соседние карточки не запускать.
 - При восстановлении сессии перечитать этот STATE и исходную карточку F02.
