@@ -12,6 +12,10 @@
   `ed141abbbbcc3f1033737b93282f58984a2156d4` (PATCH `2.0.95`);
   автоматический `deploy-test` для этого SHA прошёл:
   `https://github.com/VadikB/4K_MBTI/actions/runs/43008683483`.
+- Владелец отдельно утвердил `version_bump` PATCH `2.0.96` для PR #207
+  на базе `ed141abbbbcc3f1033737b93282f58984a2156d4`, commit/push
+  кандидата и перевод в `Ready for review`. Merge и deploy этого PR
+  данным решением не разрешены.
 - Архив `P4K_ACCOUNT_DELETE_FIX_01_2026-11-11.zip`:
   SHA-256 `fc56089c0bd015483b6b3de667ac59b818a3ddb7d1d44e1c045f016ecd09b2f5`;
   13 записей `SHA256SUMS` проверены, 0 расхождений. Прочитаны `START.txt`,
@@ -73,6 +77,7 @@ browser stand создаёт и уничтожает только собстве
 | `npm run lint:js` | PASS |
 | `node --test tests/frontend/*.test.mjs` | 226 PASS |
 | `npm run build:web` | PASS; `web/dist` собран из текущих `web/js` |
+| `npm run ready:prepare -- --candidate 2.0.96` | PASS после интеграции EXEC-FIX-05: `2.0.95 → 2.0.96`, release gate 40 продуктовых путей |
 | Python `pytest -m 'not integration and not e2e and not llm' -q` | 1055 PASS на исходном head; 1065 PASS после интеграции EXEC-FIX-05 |
 | Python `pytest -m e2e tests/e2e -q` | 144 PASS |
 | Python `pytest --run-integration -q tests/integration/test_arch30_membership_db.py tests/integration/test_purge_test_organization_db.py` на `account_delete_pytest` | 9 PASS |
@@ -107,6 +112,6 @@ Chromium/HTTP/owned PostgreSQL (1 PASS). Конфликты были тольк�
 
 Общий TEST/production и реальные пользователи не затронуты проверками этой задачи.
 Платные/provider вызовы не выполнялись. Для ACCOUNT-DELETE-FIX-01 остаются
-согласование следующего release number, Ready preflight, CI точного PR head,
-человеческое review и отдельное решение о merge/deploy в окне выпуска.
+CI точного PR head после перевода в Ready, человеческое review и отдельное
+решение о merge/deploy в окне выпуска.
 Рекомендуемый порядок: EXEC-FIX-05 → ACCOUNT-DELETE-FIX-01 → EXEC-CONTOUR-FIX-02.
