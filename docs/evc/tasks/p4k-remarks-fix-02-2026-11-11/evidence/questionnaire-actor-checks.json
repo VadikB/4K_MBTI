@@ -1,0 +1,503 @@
+{
+  "contract": "remarks-questionnaire-actor-http-pg/1",
+  "result": "PASS",
+  "synthetic_only": true,
+  "actual_http_socket": true,
+  "actual_postgresql": true,
+  "database": "product4k_pytest_4d82f3049a954ddabb0b472c6e84419d",
+  "owner_verified": true,
+  "postgresql": "PostgreSQL 16.15 (Homebrew) on aarch64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.4.2), 64-bit",
+  "external_credentials_absent": true,
+  "events": [
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/admins",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/admins",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/2/admins",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/preview",
+      "status": 201,
+      "expected_status": 201,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/1/confirm",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/1",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/1",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/1",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/1",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire/1",
+      "status": 404,
+      "expected_status": 404,
+      "expected_code": null,
+      "detail_code": "QUESTIONNAIRE_REVISION_NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/1",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/preview",
+      "status": 201,
+      "expected_status": 201,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/2/confirm",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/2",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/2",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/2",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/2",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire/2",
+      "status": 404,
+      "expected_status": 404,
+      "expected_code": null,
+      "detail_code": "QUESTIONNAIRE_REVISION_NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/1",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/preview",
+      "status": 201,
+      "expected_status": 201,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/3/confirm",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/3",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/3",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/3",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/3",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire/3",
+      "status": 404,
+      "expected_status": 404,
+      "expected_code": null,
+      "detail_code": "QUESTIONNAIRE_REVISION_NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/3",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/preview",
+      "status": 201,
+      "expected_status": 201,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/questionnaire/4/confirm",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/4",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/4",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-login",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/4",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/4",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire",
+      "status": 403,
+      "expected_status": 403,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/2/questionnaire/4",
+      "status": 404,
+      "expected_status": 404,
+      "expected_code": null,
+      "detail_code": "QUESTIONNAIRE_REVISION_NOT_FOUND"
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/organizations/1/questionnaire/3",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    }
+  ],
+  "snapshots": [
+    {
+      "context": "questionnaire_actor",
+      "channel": "product_form",
+      "revision_id": 1,
+      "uploader_user_id": 1,
+      "confirmer_user_id": 2,
+      "before": "ed5fae5d9abd368d12d21ba51360c93eb597e110589e82badb39be0b28c26ce2",
+      "after": "ed5fae5d9abd368d12d21ba51360c93eb597e110589e82badb39be0b28c26ce2",
+      "unchanged": true,
+      "historical_revision_unchanged": true,
+      "foreign_scope_denied": true,
+      "contact_and_c04_preserved": true,
+      "legacy_manual_author_ignored": true
+    },
+    {
+      "context": "questionnaire_actor",
+      "channel": "product_form",
+      "revision_id": 2,
+      "uploader_user_id": 2,
+      "confirmer_user_id": 1,
+      "before": "a79a58715c06d58c83677127374cd7202bad0d78e560c3d229c8d10a88817aba",
+      "after": "a79a58715c06d58c83677127374cd7202bad0d78e560c3d229c8d10a88817aba",
+      "unchanged": true,
+      "historical_revision_unchanged": true,
+      "foreign_scope_denied": true,
+      "contact_and_c04_preserved": true,
+      "legacy_manual_author_ignored": true
+    },
+    {
+      "context": "questionnaire_actor",
+      "channel": "csv",
+      "revision_id": 3,
+      "uploader_user_id": 1,
+      "confirmer_user_id": 2,
+      "before": "61c78e38ac0f67fd8013ea8820084779c2360dc7497321e4e46880ffdf27c16a",
+      "after": "61c78e38ac0f67fd8013ea8820084779c2360dc7497321e4e46880ffdf27c16a",
+      "unchanged": true,
+      "historical_revision_unchanged": true,
+      "foreign_scope_denied": true,
+      "contact_and_c04_preserved": true,
+      "legacy_manual_author_ignored": true
+    },
+    {
+      "context": "questionnaire_actor",
+      "channel": "csv",
+      "revision_id": 4,
+      "uploader_user_id": 2,
+      "confirmer_user_id": 1,
+      "before": "84472120181a5f51fa03f79f952a823e75cae715d013b7872083cf288f2ec921",
+      "after": "84472120181a5f51fa03f79f952a823e75cae715d013b7872083cf288f2ec921",
+      "unchanged": true,
+      "historical_revision_unchanged": true,
+      "foreign_scope_denied": true,
+      "contact_and_c04_preserved": true,
+      "legacy_manual_author_ignored": true
+    }
+  ]
+}

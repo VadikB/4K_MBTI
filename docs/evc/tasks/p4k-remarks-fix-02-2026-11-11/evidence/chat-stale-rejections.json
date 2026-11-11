@@ -1,0 +1,9 @@
+{
+  "pageErrors": [],
+  "channels": [
+    "poll",
+    "action",
+    "same-scope-action"
+  ],
+  "result": "PASS"
+}

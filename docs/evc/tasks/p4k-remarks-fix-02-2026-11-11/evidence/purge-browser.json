@@ -1,0 +1,274 @@
+{
+  "events": [
+    {
+      "phase": "real_permission_and_self_guards",
+      "preview403": true,
+      "self409": true,
+      "sql": {
+        "super": {
+          "exists": true,
+          "receipts": []
+        },
+        "ordinary": {
+          "exists": true,
+          "receipts": []
+        },
+        "before": {
+          "exists": true,
+          "receipts": []
+        },
+        "after": {
+          "exists": true,
+          "receipts": []
+        }
+      }
+    },
+    {
+      "phase": "preview_refusal_network",
+      "message": "Не удалось получить состав удаления. Проверьте соединение и повторите предварительный просмотр. Удаление не отправлено."
+    },
+    {
+      "phase": "preview_refusal_403",
+      "message": "Управление полным удалением доступно только суперадминистратору. Проверьте текущий аккаунт."
+    },
+    {
+      "phase": "preview_refusal_409",
+      "message": "Удаление остановлено: обнаружена небезопасная ссылка авторства. Передайте код обращения техническому администратору."
+    },
+    {
+      "phase": "preview_refusal_503",
+      "message": "Не удалось получить состав удаления. Проверьте соединение и повторите предварительный просмотр. Удаление не отправлено."
+    },
+    {
+      "phase": "real_execute_403",
+      "message": "Управление полным удалением доступно только суперадминистратору. Проверьте текущий аккаунт.",
+      "sql": {
+        "super": {
+          "exists": true,
+          "receipts": []
+        },
+        "ordinary": {
+          "exists": true,
+          "receipts": []
+        },
+        "before": {
+          "exists": true,
+          "receipts": []
+        },
+        "after": {
+          "exists": true,
+          "receipts": []
+        }
+      }
+    },
+    {
+      "phase": "real_execute_409",
+      "message": "Состав удаления изменился. Обновите предварительный просмотр и подтвердите новый состав; удаление не выполнено.",
+      "sql": {
+        "super": {
+          "exists": true,
+          "receipts": []
+        },
+        "ordinary": {
+          "exists": true,
+          "receipts": []
+        },
+        "before": {
+          "exists": true,
+          "receipts": []
+        },
+        "after": {
+          "exists": true,
+          "receipts": []
+        }
+      }
+    },
+    {
+      "phase": "lost_before_commit",
+      "command": {
+        "confirmation_email": "purge-before@example.test",
+        "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921",
+        "operation_id": "190a7d4d-132f-4139-92ea-f75e516a052b",
+        "acknowledge_irreversible": true
+      },
+      "sql": {
+        "super": {
+          "exists": true,
+          "receipts": []
+        },
+        "ordinary": {
+          "exists": true,
+          "receipts": []
+        },
+        "before": {
+          "exists": true,
+          "receipts": []
+        },
+        "after": {
+          "exists": true,
+          "receipts": []
+        }
+      }
+    },
+    {
+      "phase": "recovered_before",
+      "sql": {
+        "super": {
+          "exists": true,
+          "receipts": []
+        },
+        "ordinary": {
+          "exists": true,
+          "receipts": []
+        },
+        "before": {
+          "exists": false,
+          "receipts": [
+            {
+              "operation_id": "190a7d4d-132f-4139-92ea-f75e516a052b",
+              "target_id": 3,
+              "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921"
+            }
+          ]
+        },
+        "after": {
+          "exists": true,
+          "receipts": []
+        }
+      },
+      "same_operation": true,
+      "previewRequests": 0
+    },
+    {
+      "phase": "lost_after_commit",
+      "command": {
+        "confirmation_email": "purge-after@example.test",
+        "preview_fingerprint": "72b6791cf9f61aa0b10aaf643dd364bac22318f2aafeb36b08a2d7994498b7cc",
+        "operation_id": "fa76b0e4-39d1-41b8-9e49-bc5669bbbe70",
+        "acknowledge_irreversible": true
+      },
+      "sql": {
+        "super": {
+          "exists": true,
+          "receipts": []
+        },
+        "ordinary": {
+          "exists": true,
+          "receipts": []
+        },
+        "before": {
+          "exists": false,
+          "receipts": [
+            {
+              "operation_id": "190a7d4d-132f-4139-92ea-f75e516a052b",
+              "target_id": 3,
+              "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921"
+            }
+          ]
+        },
+        "after": {
+          "exists": false,
+          "receipts": [
+            {
+              "operation_id": "fa76b0e4-39d1-41b8-9e49-bc5669bbbe70",
+              "target_id": 4,
+              "preview_fingerprint": "72b6791cf9f61aa0b10aaf643dd364bac22318f2aafeb36b08a2d7994498b7cc"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "phase": "recovered_after",
+      "sql": {
+        "super": {
+          "exists": true,
+          "receipts": []
+        },
+        "ordinary": {
+          "exists": true,
+          "receipts": []
+        },
+        "before": {
+          "exists": false,
+          "receipts": [
+            {
+              "operation_id": "190a7d4d-132f-4139-92ea-f75e516a052b",
+              "target_id": 3,
+              "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921"
+            }
+          ]
+        },
+        "after": {
+          "exists": false,
+          "receipts": [
+            {
+              "operation_id": "fa76b0e4-39d1-41b8-9e49-bc5669bbbe70",
+              "target_id": 4,
+              "preview_fingerprint": "72b6791cf9f61aa0b10aaf643dd364bac22318f2aafeb36b08a2d7994498b7cc"
+            }
+          ]
+        }
+      },
+      "same_operation": true,
+      "previewRequests": 0
+    }
+  ],
+  "pageErrors": [],
+  "posts": [
+    {
+      "url": "http://127.0.0.1:18879/users/admin/users/3/purge",
+      "command": {
+        "confirmation_email": "purge-before@example.test",
+        "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921",
+        "operation_id": "18d060e4-3713-41c1-9d8e-b882051b6770",
+        "acknowledge_irreversible": true
+      }
+    },
+    {
+      "url": "http://127.0.0.1:18879/users/admin/users/3/purge",
+      "command": {
+        "confirmation_email": "purge-before@example.test",
+        "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921",
+        "operation_id": "90fa5ec7-fd26-4854-8f7e-1785f8e3900e",
+        "acknowledge_irreversible": true
+      }
+    },
+    {
+      "url": "http://127.0.0.1:18879/users/admin/users/3/purge",
+      "command": {
+        "confirmation_email": "purge-before@example.test",
+        "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921",
+        "operation_id": "190a7d4d-132f-4139-92ea-f75e516a052b",
+        "acknowledge_irreversible": true
+      }
+    },
+    {
+      "url": "http://127.0.0.1:18879/users/admin/users/3/purge",
+      "command": {
+        "confirmation_email": "purge-before@example.test",
+        "preview_fingerprint": "8c1fe05e9c1f70bf20c73b5ab9e401faf4f999f6cea66a4e32b565c362e0c921",
+        "operation_id": "190a7d4d-132f-4139-92ea-f75e516a052b",
+        "acknowledge_irreversible": true
+      }
+    },
+    {
+      "url": "http://127.0.0.1:18879/users/admin/users/4/purge",
+      "command": {
+        "confirmation_email": "purge-after@example.test",
+        "preview_fingerprint": "72b6791cf9f61aa0b10aaf643dd364bac22318f2aafeb36b08a2d7994498b7cc",
+        "operation_id": "fa76b0e4-39d1-41b8-9e49-bc5669bbbe70",
+        "acknowledge_irreversible": true
+      }
+    },
+    {
+      "url": "http://127.0.0.1:18879/users/admin/users/4/purge",
+      "command": {
+        "confirmation_email": "purge-after@example.test",
+        "preview_fingerprint": "72b6791cf9f61aa0b10aaf643dd364bac22318f2aafeb36b08a2d7994498b7cc",
+        "operation_id": "fa76b0e4-39d1-41b8-9e49-bc5669bbbe70",
+        "acknowledge_irreversible": true
+      }
+    }
+  ]
+}

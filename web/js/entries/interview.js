@@ -4,6 +4,8 @@ export {
   addInterviewMessage,
   setInterviewMessageDeliveryState,
   clearInterviewDraft,
+  showInterviewRuntimeError,
+  restoreInterviewActionControls,
   clearInterviewTimer,
   resumeProductRuntimePolling,
   startAssessmentInterview,

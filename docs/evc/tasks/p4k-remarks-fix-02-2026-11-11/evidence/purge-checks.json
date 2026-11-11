@@ -1,0 +1,32 @@
+{
+  "base_sha": "8442ae1975bc7debcc44eb1dcc7289d48c6f964d",
+  "code_state": "working_tree_before_candidate_commit",
+  "browser": {
+    "status": "PASS",
+    "tests": 1,
+    "actual_localhost_http": true,
+    "real_postgresql": true,
+    "owned_synthetic_only": true,
+    "page_errors": 0,
+    "preview_during_recovery": 0,
+    "physical_devices": "NOT_RUN",
+    "evidence": "purge-browser.json",
+    "cleanup": "purge-cleanup.json",
+    "source_update_after_pass": "Only storage read/write recovery-error branch was added after browser PASS and covered by actual controller tests. Final candidate build/regression is tracked in common CHECKS."
+  },
+  "frontend": {
+    "status": "PASS",
+    "tests": 32,
+    "command": "node --test tests/frontend/account-purge-recovery.test.mjs tests/frontend/api-safe-errors.test.mjs"
+  },
+  "source_sha256": {
+    "web/js/api.js": "97efda75335f2db24eb8f77588bff8144026e9aea875da17b7760d76ce66ad09",
+    "web/js/wiring.js": "57c6f8bb7d02be5127ed43560a48186e1085fd01a9d67f4bd40d0aace3c9f7a8",
+    "web/js/screens/admin/organizations.js": "8a0f9f4f6f80949a868ac98c5d46c6606a6b6f65f8e810a4ea7fc279dfbfcd0b",
+    "web/js/entries/admin-organizations.js": "12437372d966bc26fad2f092f5b1c7e8ffa236ee2bc5e276f4d448e2a9ce748c",
+    "tests/frontend/account-purge-recovery.test.mjs": "6674f15229b695496adb01c4cd3777a0ef24cc1dcd5ca01500216862c42bb6bd",
+    "tests/frontend/api-safe-errors.test.mjs": "7b5a5fc70e172048b8070af274a4f3fe6624213f7c1cbdf9fecbf4e998f109b8",
+    "tests/browser/remarks-purge-recovery.spec.mjs": "ee73d77a641515397bee1c59229198df97b14fff883f05170ca7490132c9e1cc",
+    "tests/remarks_purge_browser_inputs.py": "85f2660921cbae05c76096474629c6fd3eb73ff2e7e57493ca22a172db744d23"
+  }
+}

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { assessmentRuntimeErrorMessage } from '../../../web/js/assessment-errors.js';
 
 const source = fs.readFileSync(new URL('../../../web/js/screens/interview.js', import.meta.url), 'utf8');
 const section = (start, end) => source.slice(source.indexOf(start), source.indexOf(end));
@@ -18,6 +19,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
   const fetchCalls = [];
   const errors = [];
   let pollingResumes = 0;
+  let viewGeneration = 0;
   const createOperationId = () => `00000000-0000-4000-8000-${String(++nextOperation).padStart(12, '0')}`;
   const enqueue = (callback) => { callbacks.set(++nextCallback, callback); return nextCallback; };
   class Element {
@@ -77,6 +79,9 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
   let leaveCleanup;
   const context = vm.createContext({
     state, HTMLElement: Element,
+    assessmentRuntimeErrorMessage,
+    getAssessmentViewGeneration: () => viewGeneration,
+    advanceAssessmentViewGeneration: () => { viewGeneration += 1; },
     window: {
       requestAnimationFrame: animationFrame ? enqueue : undefined,
       cancelAnimationFrame: (id) => callbacks.delete(id),
@@ -129,7 +134,8 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     globalThis.subject = {renderProductRuntime, addInterviewMessage, setInterviewMessageDeliveryState,
       scheduleInterviewScrollAlignment, scheduleInterviewBottomAlignment, cancelInterviewScrollAlignment,
       productEventText, initInterview, sendProductInterviewAnswer, readProductInterviewAnswer, isCycleAssessment,
-      clearInterviewDraft, prepareProductInterviewAnswer, submitAssessmentMessage, openInterview};
+      clearInterviewDraft, prepareProductInterviewAnswer, submitAssessmentMessage, openInterview,
+      showInterviewRuntimeError, restoreInterviewActionControls, isCurrentInterviewDraftSaved};
   `, context);
   const flush = () => {
     while (callbacks.size) {

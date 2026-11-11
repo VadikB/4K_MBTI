@@ -33,8 +33,11 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
   const renders = [];
   const cards = [];
   const effects = [];
+  let viewGeneration = 0;
   const context = vm.createContext({
     state, encodeURIComponent,
+    getAssessmentViewGeneration: () => viewGeneration,
+    advanceAssessmentViewGeneration: () => { viewGeneration += 1; },
     fetch: (url) => { requested.resolve(url); return response.promise; },
     readApiResponse: async (value) => value.syntheticPayload,
     renderReturnCard: (value) => cards.push(value),
@@ -50,7 +53,8 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     ${actualReturnState ? returnSource : 'const loadReturnState = async () => false;'}
     ${runtimeSource}
     globalThis.subject = { loadProductRuntime, loadReturnState,
-      advanceGeneration: () => { productRuntimePollGeneration += 1; } };`, context);
+      advanceGeneration: () => { productRuntimePollGeneration += 1; },
+      advanceViewGeneration: advanceAssessmentViewGeneration };`, context);
   return { state, context, requested: requested.promise, resolve: response.resolve,
     renders, cards, effects, subject: context.subject };
 };
@@ -62,6 +66,7 @@ test('P3-A+3B loader rejects late runtime for another owner, Cycle, AS or screen
     (h) => { h.state.productAssessmentSituationId = 'as-B'; },
     (h) => { h.state.currentScreen = 'prechat'; },
     (h) => { h.subject.advanceGeneration(); },
+    (h) => { h.subject.advanceViewGeneration(); },
   ];
   for (const change of changes) {
     const h = harness();
@@ -78,7 +83,7 @@ test('P3-A+3B loader rejects late runtime for another owner, Cycle, AS or screen
   }
 });
 
-test('P3-A+3B unversioned initial/visibility load rejects old AS but accepts server advance', async () => {
+test('P3-A+3B default initial/visibility load rejects old AS but accepts server advance', async () => {
   const stale = harness();
   const loading = stale.subject.loadProductRuntime();
   await stale.requested;
