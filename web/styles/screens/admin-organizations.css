@@ -197,7 +197,7 @@
     margin-top: auto;
 }
 
-.admin-organization-inline-form > [data-operation-status] {
+.admin-organization-inline-form > .admin-organizations-status[data-operation-status] {
     grid-column: 1 / -1;
     min-width: 0;
     overflow-wrap: anywhere;

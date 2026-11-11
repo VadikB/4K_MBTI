@@ -78,6 +78,7 @@ test('FIX02 AC05/06: account rows, tags, program groups and revision attribution
       }));
       const statuses = [...document.querySelectorAll('.admin-organization-columns [data-operation-status]')].map((node) => ({
         width: node.getBoundingClientRect().width, formWidth: node.parentElement.getBoundingClientRect().width,
+        radius: parseFloat(getComputedStyle(node).borderTopLeftRadius),
       }));
       return { document: document.documentElement.scrollWidth, viewport: innerWidth,
         identity: identity.toJSON(), groups, outliers, tags, statuses };
@@ -87,7 +88,10 @@ test('FIX02 AC05/06: account rows, tags, program groups and revision attribution
     expect(layout.outliers).toEqual([]);
     expect(layout.groups).toHaveLength(2);
     for (const tag of layout.tags) expect(tag.height).toBeLessThanOrEqual(tag.contentHeight + 18);
-    for (const status of layout.statuses) expect(status.width).toBeGreaterThanOrEqual(status.formWidth - 2);
+    for (const status of layout.statuses) {
+      expect(status.width).toBeGreaterThanOrEqual(status.formWidth - 2);
+      expect(status.radius).toBeLessThanOrEqual(20);
+    }
     expect(layout.identity.bottom).toBeLessThanOrEqual(layout.groups[0].top);
     await page.screenshot({ path: info.outputPath(`admin-${width}-text${textScale * 100}-${populated ? 'long' : 'empty'}.png`), fullPage: true });
     if (populated) await card.locator('.admin-organization-columns').screenshot({ path: info.outputPath(`tags-${width}-text${textScale * 100}.png`) });
