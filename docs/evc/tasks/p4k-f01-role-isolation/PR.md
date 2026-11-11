@@ -29,5 +29,6 @@
 Перед merge требуются обязательный CI для точного head/base и человеческое
 review. TEST и визуальная приёмка владельца — отдельный этап.
 
-PR создаётся как draft: номер нового кандидата ещё не выбран, переход в
-Ready требует `ready:prepare` и отдельного решения о `version_bump`.
+Draft PR: https://github.com/VadikB/4K_MBTI/pull/211. Номер нового кандидата
+ещё не выбран; переход в Ready требует `ready:prepare` и отдельного решения
+о `version_bump`.

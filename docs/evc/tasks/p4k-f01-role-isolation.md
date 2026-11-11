@@ -121,9 +121,14 @@ PostgreSQL 15 на `127.0.0.1:55492` и marker-owned
   `1 passed`. Полный повтор в корректной среде:
   `372 passed, 2 skipped, 1224 deselected` — PASS. Два skip относятся к
   явному real-provider LLM acceptance, который не входит в стандартный прогон.
-- CI, main, TEST, human visual — NOT_RUN / PENDING на момент локального
-  отчёта; выпуска и человеческой приёмки не было. Локальный Playwright не равен
-  визуальной приёмке владельца.
+- Draft PR [#211](https://github.com/VadikB/4K_MBTI/pull/211) создан к `main`.
+  Для head `428c1337e144e261c2f1f86186d8a49ecb5a98ae` быстрый
+  [CI](https://github.com/VadikB/4K_MBTI/actions/runs/43065958463):
+  `frontend` PASS, `pytest` PASS. `full-verification` и `deploy-test`
+  пропущены по правилам draft PR. После этого документального обновления
+  быстрый CI нового head требуется сверить повторно.
+- Main merge, TEST и human visual — NOT_RUN / PENDING; выпуска и человеческой
+  приёмки не было. Локальный Playwright не равен визуальной приёмке владельца.
 
 ## Полномочия и следующий шаг
 

@@ -2,6 +2,8 @@
 
 - База: `origin/main` `748be43e55587aa3b7e3a3945189c5ac737f59eb`,
   2.0.97; ветка `codex/p4k-f01-role-isolation` в отдельном worktree.
+- Передача: опубликована ветка и открыт draft PR
+  https://github.com/VadikB/4K_MBTI/pull/211 к `main`.
 - Реализация/тесты: `da3304b76cbb71c4d165a4763f0746a38a68c881`,
   12 путей, 452 добавления, 32 удаления к базе. Локальный отчёт и PR-body:
   `e4573cbd6cee912eb34d3aaefea4c0e081bff7b9`.
@@ -24,6 +26,9 @@
   1 — timezone локального PG (UTC, адресно1 PASS). Полный повтор:
   372 PASS/2 SKIP/1224 DESELECTED, 0 FAIL.
   Обе одноразовые БД удалены, локальный PG остановлен, временный токен удалён.
-  CI/TEST/human visual NOT_RUN.
-- Следующий шаг: push ветки F01 и draft PR, проверить быстрый CI на точном
-  head/base; затем решение владельца о версии/Ready и отдельное review.
+  Быстрый CI на `428c1337`:
+  https://github.com/VadikB/4K_MBTI/actions/runs/43065958463 — frontend PASS,
+  pytest PASS. Полный workflow и deploy-test ожидаемо SKIPPED в draft.
+  TEST/human visual NOT_RUN.
+- Следующий шаг: проверить CI после документального commit на новом head/base;
+  затем решение владельца о версии/Ready и отдельное review.
