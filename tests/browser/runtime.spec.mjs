@@ -442,6 +442,9 @@ test('EXEC-CONTOUR scenario end from another tab needs no duplicate transition',
          && new URL(item.url()).pathname.endsWith('/transitions'));
        await other.locator('#interview-finish-button').click();
        expect((await response).ok()).toBe(true);
+       // The original tab must observe the transition made in the other tab
+       // before the shared completion helper decides whether to finish this AS.
+       await page.reload();
      }
      stand.cli('drain');
    },

@@ -50,6 +50,21 @@ PR [#208](https://github.com/VadikB/4K_MBTI/pull/208) создан как draft 
 frontend-тестов, `scripts/check_release_version.py --base-ref origin/main` и
 `git diff --check`. Исходные Api/tests не менялись после приёмки на SHA выше.
 
-Следующий шаг: commit/push подготовленного выпуска, перевод PR в Ready и
-проверка обязательных CI `frontend`, `pytest`, `full-verification` на новом SHA.
+Подготовка версии закоммичена как `d3f2d81475757d8034aecd1c35fb887f566022b7`,
+ветка отправлена, PR переведён в Ready. На этом SHA CI `frontend`, `pytest`,
+integration и четыре из пяти browser shards прошли. Browser runtime shard 2/4
+дважды остановился на существующем сценарии завершения AS из другой вкладки:
+исходная вкладка уже показывала следующую ситуацию, тогда как общий helper
+ожидал ответ `/finish-situation`. Артефакт CI показывает успешный переход из
+другой вкладки и отсутствие POST `/finish-situation` из исходной.
+
+В тесте после подтверждения перехода из другой вкладки добавлена перезагрузка
+исходной вкладки перед продолжением общего helper. Предметный код и версия не
+изменены. Адресный браузерный сценарий прошёл дважды на двух новых собственных
+PostgreSQL (`exec05_pytest`), 1/1 PASS в каждом прогоне; обе БД остановлены.
+Повторный `npm run ready:prepare -- --candidate 2.0.95` после правки теста —
+PASS, версия и сборка не изменились; `check_release_version.py`,
+`node --check tests/browser/runtime.spec.mjs` и `git diff --check` — PASS.
+
+Следующий шаг: commit/push тестовой синхронизации и полный CI на новом SHA.
 Human review и отдельное решение о merge остаются за владельцем.
