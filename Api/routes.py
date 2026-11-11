@@ -5335,6 +5335,7 @@ def add_admin_organization_admin(organization_id: int, payload: AdminOrganizatio
                 admitted_by_user_id = EXCLUDED.admitted_by_user_id,
                 admitted_at = EXCLUDED.admitted_at,
                 updated_at = NOW()
+            WHERE organization_memberships.role IS DISTINCT FROM 'admin'
             """,
             params=(organization_id, user_id, int(user.id)),
         )
@@ -5377,9 +5378,7 @@ def delete_admin_organization_admin(organization_id: int, email: str, request: R
                 """INSERT INTO configured_access_suppressions(
                        email,access_kind,organization_code,reason,created_by_user_id
                    ) VALUES(%s,'organization_admin',%s,'superadmin_revoke',%s)
-                   ON CONFLICT(email,access_kind,organization_code) DO UPDATE
-                   SET reason=EXCLUDED.reason,created_by_user_id=EXCLUDED.created_by_user_id,
-                       created_at=NOW()""",
+                   ON CONFLICT(email,access_kind,organization_code) DO NOTHING""",
                 (normalized_email, str(organization["code"]), int(user.id)),
             )
             connection.execute(

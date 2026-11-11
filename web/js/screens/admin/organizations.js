@@ -873,11 +873,15 @@ export const addAdminOrganizationAdmin = async (organizationId, email) => {
     return;
   }
   try {
+    const identityEpoch = state.identityEpoch;
+    const identityKey = currentIdentityKey();
     await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/admins',
       { method: 'POST', body: JSON.stringify({ email: normalizedEmail }) },
       'Не удалось добавить администратора.',
     );
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+        !await refreshAdminOrganizationsSafely()) return;
     setStatus('Администратор добавлен.', 'success');
   } catch (error) {
     setStatus(membershipErrorMessage(error, 'Не удалось добавить администратора.'), 'error');
@@ -886,11 +890,15 @@ export const addAdminOrganizationAdmin = async (organizationId, email) => {
 
 export const deleteAdminOrganizationAdmin = async (organizationId, email) => {
   try {
+    const identityEpoch = state.identityEpoch;
+    const identityKey = currentIdentityKey();
     await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/admins?email=' + encodeURIComponent(email),
       { method: 'DELETE', headers: {} },
       'Не удалось снять права администратора.',
     );
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+        !await refreshAdminOrganizationsSafely()) return;
     setStatus('Права администратора сняты.', 'success');
   } catch (error) {
     setStatus(error.message || 'Не удалось снять права администратора.', 'error');
