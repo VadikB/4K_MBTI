@@ -17,17 +17,22 @@ def _cycle(connection,cycle_id,lock=True):
     return dict(row)
 
 def _effective_limit(connection,cycle):
-    state=read_cycle(connection,str(cycle['cycle_id']))
-    now=datetime.now(timezone.utc);deadline=state['calendar_deadline']
-    if deadline and now>=deadline:return 'calendar_deadline',deadline
-    if state['remaining_seconds']<=0:
-        remaining=timedelta(seconds=int(cycle['time_budget_seconds']))
-        rows=connection.execute("SELECT started_at,COALESCE(ended_at,clock_timestamp()) AS ended_at FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting' ORDER BY started_at,id",(cycle['id'],)).fetchall()
-        for row in rows:
-            duration=max(timedelta(0),row['ended_at']-row['started_at'])
-            if duration>=remaining:return 'time_budget',row['started_at']+remaining
-            remaining-=duration
-        return 'time_budget',now
+    # One observation after the Cycle lock also bounds every open interval.
+    observed_at=connection.execute('SELECT clock_timestamp() AS value').fetchone()['value']
+    deadline=(cycle['started_at']+timedelta(seconds=int(cycle['calendar_window_seconds']))
+              if cycle['started_at'] else None)
+    budget_at=None;remaining=timedelta(seconds=int(cycle['time_budget_seconds']))
+    rows=connection.execute("SELECT started_at,COALESCE(ended_at,%s) AS ended_at FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting' ORDER BY started_at,id",(observed_at,cycle['id'])).fetchall()
+    for row in rows:
+        duration=max(timedelta(0),row['ended_at']-row['started_at'])
+        if duration>=remaining:
+            budget_at=row['started_at']+remaining
+            break
+        remaining-=duration
+    # Preserve the existing calendar priority only when both boundaries coincide.
+    if deadline and observed_at>=deadline and (budget_at is None or deadline<=budget_at):
+        return 'calendar_deadline',deadline
+    if budget_at is not None:return 'time_budget',budget_at
     return None,None
 
 def _finalize_as(connection,row,reason,key):
