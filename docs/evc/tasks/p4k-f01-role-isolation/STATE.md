@@ -1,7 +1,9 @@
 # STATE — P4K-F01
 
-- База: `origin/main` `748be43e55587aa3b7e3a3945189c5ac737f59eb`,
-  2.0.97; ветка `codex/p4k-f01-role-isolation` в отдельном worktree.
+- Первоначальная база: `origin/main`
+  `748be43e55587aa3b7e3a3945189c5ac737f59eb`, 2.0.97. Актуальная база:
+  `3beb84596ea27bd7f19b06a2f5b8ee4533908043`, 2.0.98 (F02 #210).
+  Ветка `codex/p4k-f01-role-isolation` в отдельном worktree.
 - Передача: опубликована ветка и открыт draft PR
   https://github.com/VadikB/4K_MBTI/pull/211 к `main`.
 - Реализация/тесты: `da3304b76cbb71c4d165a4763f0746a38a68c881`,
@@ -13,6 +15,7 @@
   «Продолжаем»: `branch_push=true`, `pr=true` для draft PR F01 к `main`;
   затем прямо утвердил patch `2.0.98` и Ready: `version_bump=true`,
   `ready=true`, `merge=false`, `deploy=false`, `artifact_publish=false`.
+  После появления F02 в `main` владелец утвердил следующий patch `2.0.99`.
   Вложение само по себе не давало допуска на push/PR.
 - Реализация: общий разбор `SUPERADMIN_EMAILS`, проверка configured/local/active
   platform permissions до записи во всех действующих входах, скрытие
@@ -32,10 +35,20 @@
   pytest PASS. На `b155cc08`:
   https://github.com/VadikB/4K_MBTI/actions/runs/43066470788 — frontend PASS,
   pytest PASS. Полный workflow и deploy-test ожидаемо SKIPPED в draft.
+  Для `e733db81` на прежней базе: быстрый CI
+  https://github.com/VadikB/4K_MBTI/actions/runs/43067617362 PASS, полный CI
+  https://github.com/VadikB/4K_MBTI/actions/runs/43067617348 PASS; эти результаты
+  устарели после нового `main`.
   TEST/human visual NOT_RUN.
 - Подготовка `2.0.98`: первый `ready:prepare` остановился на отсутствующем
   `esbuild` после очистки `web/dist`; lockfile совпадает с исходной копией.
   Повтор со временной ссылкой на её установленный `node_modules` — PASS;
   `npm run lint:js` PASS, frontend 250 PASS, `git diff --check` PASS.
-- Следующий шаг: commit и push кандидата, Ready PR #211, полный CI на точном
-  head/base; затем человеческое review. Merge/deploy не разрешены.
+- Обновление базы: `749707e481361e4cd336d5e170e88f529ca048cb` включает F02;
+  конфликты только в `web/dist`, разрешены пересборкой. Повтор после объединения:
+  backend 1089 PASS, HTTP 152 PASS, frontend 261 PASS, integration 389 PASS/
+  2 SKIP, браузер F01 PASS на полной схеме; обе БД и сессия удалены.
+  `ready:prepare -- --candidate 2.0.99` — PASS.
+- Следующий шаг: опубликовать подготовленный кандидат 2.0.99 и проверить
+  повторный CI на точном head/base; затем человеческое review. Merge/deploy
+  не разрешены.

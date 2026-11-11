@@ -1,8 +1,10 @@
 # P4K-F01 — три роли и изоляция платформенного аккаунта
 
 Дата: 11.11.2026. Тип: исправление подтверждённого дефекта. Результат: один
-самостоятельный PR. База: `origin/main` `748be43e55587aa3b7e3a3945189c5ac737f59eb`,
-версия 2.0.97; ветка `codex/p4k-f01-role-isolation`, отдельный worktree.
+самостоятельный PR. Первоначальная база: `origin/main`
+`748be43e55587aa3b7e3a3945189c5ac737f59eb`, версия 2.0.97. Актуальная
+база после F02: `3beb84596ea27bd7f19b06a2f5b8ee4533908043`, версия 2.0.98;
+ветка `codex/p4k-f01-role-isolation`, отдельный worktree.
 Рабочая копия `codex/tg-student-channel-api` с чужими изменениями не затронута.
 Реализация и тесты: commit `da3304b76cbb71c4d165a4763f0746a38a68c881`
 поверх указанной базы (12 путей, 452 добавления, 32 удаления).
@@ -126,7 +128,23 @@ PostgreSQL 15 на `127.0.0.1:55492` и marker-owned
   [CI](https://github.com/VadikB/4K_MBTI/actions/runs/43065958463):
   `frontend` PASS, `pytest` PASS. `full-verification` и `deploy-test`
   пропущены по правилам draft PR. После этого документального обновления
-  быстрый CI нового head требуется сверить повторно.
+  быстрый CI нового head требуется сверить повторно. На head `e733db81` до
+  обновления `main` прошли [быстрый CI](https://github.com/VadikB/4K_MBTI/actions/runs/43067617362)
+  и [полный CI](https://github.com/VadikB/4K_MBTI/actions/runs/43067617348)
+  (`frontend`, `pytest`, integration, browser, `full-verification` — PASS).
+  После этого в `main` вошёл F02 `3beb8459` с версией 2.0.98; старый CI
+  устарел для новой базы.
+- Свежий `main` интегрирован в ветку merge commit
+  `749707e481361e4cd336d5e170e88f529ca048cb`. Конфликты возникли только
+  в генерируемом `web/dist`; bundle пересобран из объединённых исходников.
+  Повтор на новой базе: backend `1089 passed`, HTTP `152 passed`, JS lint PASS,
+  frontend `261 passed`, integration на отдельной marker-owned БД
+  `389 passed, 2 skipped, 1245 deselected`, синтетический
+  Playwright → HTTP → PostgreSQL PASS. Обе повторные БД и временный токен
+  удалены, локальный PostgreSQL остановлен.
+- Владелец утвердил следующий patch `2.0.99`, поскольку F02 занял 2.0.98.
+  `npm run ready:prepare -- --candidate 2.0.99` на новой базе — PASS;
+  `web/dist` пересобран. CI точного нового head требуется после push.
 - Main merge, TEST и human visual — NOT_RUN / PENDING; выпуска и человеческой
   приёмки не было. Локальный Playwright не равен визуальной приёмке владельца.
 
@@ -145,6 +163,8 @@ PostgreSQL 15 на `127.0.0.1:55492` и marker-owned
 штатный `ready:prepare -- --candidate 2.0.98` — PASS. Дополнительно
 `npm run lint:js` — PASS; `node --test tests/frontend/*.test.mjs` — 250 PASS;
 `git diff --check` — PASS. Временная ссылка на зависимости удалена до commit.
-Для Ready нужен полный CI `frontend`, `pytest`, `full-verification` точного
-head/base. Визуальная приёмка владельцем — после разрешённого TEST. Действующие
-данные и аккаунт суперадминистратора не изменять.
+После входа F02 `2.0.98` в `main` владелец прямо утвердил `2.0.99`; новый
+`ready:prepare` прошёл на базе `3beb8459`. Для Ready нужен повторный полный CI
+`frontend`, `pytest`, `full-verification` точного head/base. Визуальная приёмка
+владельцем — после разрешённого TEST. Действующие данные и аккаунт
+суперадминистратора не изменять.

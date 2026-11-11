@@ -29,6 +29,9 @@
 Перед merge требуются обязательный CI для точного head/base и человеческое
 review. TEST и визуальная приёмка владельца — отдельный этап.
 
-PR: https://github.com/VadikB/4K_MBTI/pull/211. Владелец утвердил patch-кандидат
-`2.0.98` и переход в Ready. `ready:prepare -- --candidate 2.0.98`, JS lint и
-250 frontend tests прошли локально; после push обязателен полный CI точного head.
+PR: https://github.com/VadikB/4K_MBTI/pull/211. F02 вошёл в `main` с версией
+`2.0.98`; ветка F01 обновлена до `3beb8459`, а владелец утвердил следующий patch
+`2.0.99`. На объединённой базе прошли backend 1089, HTTP 152, frontend 261,
+integration 389 и синтетический browser F01.
+`ready:prepare -- --candidate 2.0.99` — PASS; после push нужен полный CI
+точного нового head.
