@@ -1,3 +1,22 @@
+# STATE — F02, локальная передача11.11.2026
+
+Текущая карточка: [F02 — удаление человека](docs/evc/tasks/f02-delete-person/TASK.md).
+Исходник/детальное состояние/доказательства — в том же каталоге (SOURCE.txt,
+STATE.md, CHECKS.md, evidence/). Одна ветка `codex/f02-delete-person`,
+code SHA `15232259d5915d564c7c9551dd80941862c3cd9a`, база/main748be43/2.0.97.
+Прямое удаление/отдельное снятие прав, server scope+configured/self/last-admin,
+actor receipt/R01/auth locks и concurrent dependency closure реализованы.
+Final local: backend1086/HTTP144/frontend261/integration385+2SKIP/browser3 PASS,
+lint/build/idempotent dist/diff-check PASS. AC01–AC05 PASS на собственном synthetic
+UI→HTTP→PostgreSQL контуре; user data/.env/paid LLM/реальные письма не затронуты.
+Owned cleanup/absence и stop PostgreSQL выполнены; legacy false не мигрированы.
+Branch push/PR/bump/merge/deploy/publication false, CI NOT_RUN, TEST нового выпуска
+NOT_RUN, Human visual PENDING. Подготовлен текст одного PR; следующий этап требует
+допуска владельца публикации/выпуска. Разрешения других задач не переносятся.
+Следующую карточку автоматически не запускать.
+
+Ниже сохранённая история; её активные формулировки относятся к прежним задачам.
+
 # STATE — AC18-FINAL-REL-01
 
 07.11.2026. После приёмки branch PATH владелец «делаем»: готовим один финальный

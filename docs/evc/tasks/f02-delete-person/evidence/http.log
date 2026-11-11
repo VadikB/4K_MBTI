@@ -1,0 +1,35 @@
+
+> test:backend:http
+> .venv/bin/python -m pytest -m e2e tests/e2e
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0
+rootdir: /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-remarks-fix-02
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.16.0
+collected 156 items / 12 deselected / 144 selected
+
+tests/e2e/test_adm19_02_self_assignment_http.py ..                       [  1%]
+tests/e2e/test_adm27_assignment_http.py ..................               [ 13%]
+tests/e2e/test_adm28_confirmation_http.py ...                            [ 15%]
+tests/e2e/test_adm28_static_http.py .......                              [ 20%]
+tests/e2e/test_arch30_membership_http.py .........                       [ 27%]
+tests/e2e/test_assessment_authoring_http.py ...                          [ 29%]
+tests/e2e/test_assessment_shadow_admin_http.py .....                     [ 32%]
+tests/e2e/test_email_admission_http.py ......                            [ 36%]
+tests/e2e/test_exec03_answer_status_http.py ............                 [ 45%]
+tests/e2e/test_exec03_m5_applied_replay_http.py ....................     [ 59%]
+tests/e2e/test_m10_processing_recovery_http.py ....                      [ 61%]
+tests/e2e/test_m3_role_profile_selection_http.py ....                    [ 64%]
+tests/e2e/test_m5_catalog_http.py ..                                     [ 65%]
+tests/e2e/test_m5_generation_lab_http.py .......                         [ 70%]
+tests/e2e/test_m5_runtime_http.py ...........                            [ 78%]
+tests/e2e/test_m6_evidence_http.py .......                               [ 83%]
+tests/e2e/test_m8_report_access_http.py .                                [ 84%]
+tests/e2e/test_m8_report_comparison_http.py ..                           [ 85%]
+tests/e2e/test_path_start_readiness_http.py ..                           [ 86%]
+tests/e2e/test_program01_invitation_revoke_http.py ....                  [ 89%]
+tests/e2e/test_review_profile_http.py ..........                         [ 96%]
+tests/e2e/test_ux_fix20_04_admin_readiness_http.py .....                 [100%]
+
+===================== 144 passed, 12 deselected in 10.16s ======================

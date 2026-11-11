@@ -1,0 +1,758 @@
+{
+  "scope": "actual_renderer_synthetic_http",
+  "physical_devices": "NOT_RUN",
+  "native_zoom": "NOT_RUN",
+  "text_zoom": "200%",
+  "metrics": [
+    {
+      "width": 1440,
+      "textScale": 1,
+      "longTags": false,
+      "peopleLayout": {
+        "viewport": 1440,
+        "document": 1440,
+        "outliers": []
+      },
+      "document": 1440,
+      "viewport": 1440,
+      "identity": {
+        "x": 202,
+        "y": 717.171875,
+        "width": 362,
+        "height": 200,
+        "top": 717.171875,
+        "right": 564,
+        "bottom": 917.171875,
+        "left": 202
+      },
+      "groups": [
+        {
+          "x": 202,
+          "y": 933.171875,
+          "width": 740,
+          "height": 495,
+          "top": 933.171875,
+          "right": 942,
+          "bottom": 1428.171875,
+          "left": 202
+        },
+        {
+          "x": 202,
+          "y": 1444.171875,
+          "width": 740,
+          "height": 551,
+          "top": 1444.171875,
+          "right": 942,
+          "bottom": 1995.171875,
+          "left": 202
+        }
+      ],
+      "outliers": [],
+      "tags": [],
+      "statuses": [
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        },
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "textScale": 1,
+      "longTags": true,
+      "peopleLayout": {
+        "viewport": 1440,
+        "document": 1440,
+        "outliers": []
+      },
+      "document": 1440,
+      "viewport": 1440,
+      "identity": {
+        "x": 202,
+        "y": 709.171875,
+        "width": 362,
+        "height": 200,
+        "top": 709.171875,
+        "right": 564,
+        "bottom": 909.171875,
+        "left": 202
+      },
+      "groups": [
+        {
+          "x": 202,
+          "y": 925.171875,
+          "width": 740,
+          "height": 495,
+          "top": 925.171875,
+          "right": 942,
+          "bottom": 1420.171875,
+          "left": 202
+        },
+        {
+          "x": 202,
+          "y": 1436.171875,
+          "width": 740,
+          "height": 551,
+          "top": 1436.171875,
+          "right": 942,
+          "bottom": 1987.171875,
+          "left": 202
+        }
+      ],
+      "outliers": [],
+      "tags": [
+        {
+          "height": 77,
+          "contentHeight": 85
+        },
+        {
+          "height": 129,
+          "contentHeight": 151
+        }
+      ],
+      "statuses": [
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        },
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "textScale": 2,
+      "longTags": false,
+      "peopleLayout": {
+        "viewport": 1440,
+        "document": 1440,
+        "outliers": []
+      },
+      "document": 1440,
+      "viewport": 1440,
+      "identity": {
+        "x": 202,
+        "y": 910,
+        "width": 362,
+        "height": 496,
+        "top": 910,
+        "right": 564,
+        "bottom": 1406,
+        "left": 202
+      },
+      "groups": [
+        {
+          "x": 202,
+          "y": 1422,
+          "width": 740,
+          "height": 636,
+          "top": 1422,
+          "right": 942,
+          "bottom": 2058,
+          "left": 202
+        },
+        {
+          "x": 202,
+          "y": 2074,
+          "width": 740,
+          "height": 653,
+          "top": 2074,
+          "right": 942,
+          "bottom": 2727,
+          "left": 202
+        }
+      ],
+      "outliers": [],
+      "tags": [],
+      "statuses": [
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        },
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "textScale": 2,
+      "longTags": true,
+      "peopleLayout": {
+        "viewport": 1440,
+        "document": 1440,
+        "outliers": []
+      },
+      "document": 1440,
+      "viewport": 1440,
+      "identity": {
+        "x": 202,
+        "y": 901.796875,
+        "width": 362,
+        "height": 496,
+        "top": 901.796875,
+        "right": 564,
+        "bottom": 1397.796875,
+        "left": 202
+      },
+      "groups": [
+        {
+          "x": 202,
+          "y": 1413.796875,
+          "width": 740,
+          "height": 636,
+          "top": 1413.796875,
+          "right": 942,
+          "bottom": 2049.796875,
+          "left": 202
+        },
+        {
+          "x": 202,
+          "y": 2065.796875,
+          "width": 740,
+          "height": 653,
+          "top": 2065.796875,
+          "right": 942,
+          "bottom": 2718.796875,
+          "left": 202
+        }
+      ],
+      "outliers": [],
+      "tags": [
+        {
+          "height": 224,
+          "contentHeight": 232
+        },
+        {
+          "height": 281.796875,
+          "contentHeight": 309.59375
+        }
+      ],
+      "statuses": [
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        },
+        {
+          "width": 506,
+          "formWidth": 506,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "textScale": 1,
+      "longTags": false,
+      "peopleLayout": {
+        "viewport": 390,
+        "document": 390,
+        "outliers": []
+      },
+      "document": 390,
+      "viewport": 390,
+      "identity": {
+        "x": 50,
+        "y": 1039.859375,
+        "width": 290,
+        "height": 200,
+        "top": 1039.859375,
+        "right": 340,
+        "bottom": 1239.859375,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 1255.859375,
+          "width": 290,
+          "height": 705.5,
+          "top": 1255.859375,
+          "right": 340,
+          "bottom": 1961.359375,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 1977.359375,
+          "width": 290,
+          "height": 646.5,
+          "top": 1977.359375,
+          "right": 340,
+          "bottom": 2623.859375,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [],
+      "statuses": [
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        },
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "textScale": 1,
+      "longTags": true,
+      "peopleLayout": {
+        "viewport": 390,
+        "document": 390,
+        "outliers": []
+      },
+      "document": 390,
+      "viewport": 390,
+      "identity": {
+        "x": 50,
+        "y": 1039.859375,
+        "width": 290,
+        "height": 200,
+        "top": 1039.859375,
+        "right": 340,
+        "bottom": 1239.859375,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 1255.859375,
+          "width": 290,
+          "height": 705.5,
+          "top": 1255.859375,
+          "right": 340,
+          "bottom": 1961.359375,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 1977.359375,
+          "width": 290,
+          "height": 646.5,
+          "top": 1977.359375,
+          "right": 340,
+          "bottom": 2623.859375,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [
+        {
+          "height": 119,
+          "contentHeight": 127
+        },
+        {
+          "height": 171,
+          "contentHeight": 193
+        }
+      ],
+      "statuses": [
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        },
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "textScale": 2,
+      "longTags": false,
+      "peopleLayout": {
+        "viewport": 390,
+        "document": 390,
+        "outliers": []
+      },
+      "document": 390,
+      "viewport": 390,
+      "identity": {
+        "x": 50,
+        "y": 1997.4375,
+        "width": 290,
+        "height": 640,
+        "top": 1997.4375,
+        "right": 340,
+        "bottom": 2637.4375,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 2653.4375,
+          "width": 290,
+          "height": 1109,
+          "top": 2653.4375,
+          "right": 340,
+          "bottom": 3762.4375,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 3778.4375,
+          "width": 290,
+          "height": 933,
+          "top": 3778.4375,
+          "right": 340,
+          "bottom": 4711.4375,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [],
+      "statuses": [
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        },
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "textScale": 2,
+      "longTags": true,
+      "peopleLayout": {
+        "viewport": 390,
+        "document": 390,
+        "outliers": []
+      },
+      "document": 390,
+      "viewport": 390,
+      "identity": {
+        "x": 50,
+        "y": 1997.03125,
+        "width": 290,
+        "height": 640,
+        "top": 1997.03125,
+        "right": 340,
+        "bottom": 2637.03125,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 2653.03125,
+          "width": 290,
+          "height": 1109,
+          "top": 2653.03125,
+          "right": 340,
+          "bottom": 3762.03125,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 3778.03125,
+          "width": 290,
+          "height": 933,
+          "top": 3778.03125,
+          "right": 340,
+          "bottom": 4711.03125,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [
+        {
+          "height": 392,
+          "contentHeight": 400
+        },
+        {
+          "height": 507.59375,
+          "contentHeight": 477.59375
+        }
+      ],
+      "statuses": [
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        },
+        {
+          "width": 290,
+          "formWidth": 290,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "textScale": 1,
+      "longTags": false,
+      "peopleLayout": {
+        "viewport": 320,
+        "document": 320,
+        "outliers": []
+      },
+      "document": 320,
+      "viewport": 320,
+      "identity": {
+        "x": 50,
+        "y": 1150.546875,
+        "width": 220,
+        "height": 224,
+        "top": 1150.546875,
+        "right": 270,
+        "bottom": 1374.546875,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 1390.546875,
+          "width": 220,
+          "height": 725,
+          "top": 1390.546875,
+          "right": 270,
+          "bottom": 2115.546875,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 2131.546875,
+          "width": 220,
+          "height": 666,
+          "top": 2131.546875,
+          "right": 270,
+          "bottom": 2797.546875,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [],
+      "statuses": [
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        },
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "textScale": 1,
+      "longTags": true,
+      "peopleLayout": {
+        "viewport": 320,
+        "document": 320,
+        "outliers": []
+      },
+      "document": 320,
+      "viewport": 320,
+      "identity": {
+        "x": 50,
+        "y": 1150.546875,
+        "width": 220,
+        "height": 224,
+        "top": 1150.546875,
+        "right": 270,
+        "bottom": 1374.546875,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 1390.546875,
+          "width": 220,
+          "height": 725,
+          "top": 1390.546875,
+          "right": 270,
+          "bottom": 2115.546875,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 2131.546875,
+          "width": 220,
+          "height": 666,
+          "top": 2131.546875,
+          "right": 270,
+          "bottom": 2797.546875,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [
+        {
+          "height": 161,
+          "contentHeight": 169
+        },
+        {
+          "height": 244,
+          "contentHeight": 214
+        }
+      ],
+      "statuses": [
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        },
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "textScale": 2,
+      "longTags": false,
+      "peopleLayout": {
+        "viewport": 320,
+        "document": 320,
+        "outliers": []
+      },
+      "document": 320,
+      "viewport": 320,
+      "identity": {
+        "x": 50,
+        "y": 2524.828125,
+        "width": 220,
+        "height": 784,
+        "top": 2524.828125,
+        "right": 270,
+        "bottom": 3308.828125,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 3324.828125,
+          "width": 220,
+          "height": 1391,
+          "top": 3324.828125,
+          "right": 270,
+          "bottom": 4715.828125,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 4731.828125,
+          "width": 220,
+          "height": 1011,
+          "top": 4731.828125,
+          "right": 270,
+          "bottom": 5742.828125,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [],
+      "statuses": [
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        },
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "textScale": 2,
+      "longTags": true,
+      "peopleLayout": {
+        "viewport": 320,
+        "document": 320,
+        "outliers": []
+      },
+      "document": 320,
+      "viewport": 320,
+      "identity": {
+        "x": 50,
+        "y": 2525.21875,
+        "width": 220,
+        "height": 784,
+        "top": 2525.21875,
+        "right": 270,
+        "bottom": 3309.21875,
+        "left": 50
+      },
+      "groups": [
+        {
+          "x": 50,
+          "y": 3325.21875,
+          "width": 220,
+          "height": 1391,
+          "top": 3325.21875,
+          "right": 270,
+          "bottom": 4716.21875,
+          "left": 50
+        },
+        {
+          "x": 50,
+          "y": 4732.21875,
+          "width": 220,
+          "height": 1011,
+          "top": 4732.21875,
+          "right": 270,
+          "bottom": 5743.21875,
+          "left": 50
+        }
+      ],
+      "outliers": [],
+      "tags": [
+        {
+          "height": 560,
+          "contentHeight": 568
+        },
+        {
+          "height": 671.390625,
+          "contentHeight": 641.390625
+        }
+      ],
+      "statuses": [
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        },
+        {
+          "width": 220,
+          "formWidth": 220,
+          "radius": 8
+        }
+      ]
+    }
+  ]
+}

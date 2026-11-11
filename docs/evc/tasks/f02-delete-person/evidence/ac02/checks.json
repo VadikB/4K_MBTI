@@ -1,0 +1,288 @@
+{
+  "contract": "f02-tokens-http-pg/1",
+  "result": "PASS",
+  "synthetic_only": true,
+  "actual_http_socket": true,
+  "actual_postgresql": true,
+  "database": "product4k_pytest_7e5f29b8d13f4a42949472fb618e7ac7",
+  "owner_verified": true,
+  "postgresql": "PostgreSQL 16.15 (Homebrew) on aarch64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.6.4.2), 64-bit",
+  "external_credentials_absent": true,
+  "events": [
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/4/session-bootstrap",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/users/4/purge-preview",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/users/4/purge",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/4/session-bootstrap",
+      "status": 401,
+      "expected_status": 401,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/verify",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/confirm",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/password/reset/validate",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/organization-invitations/{redacted}",
+      "status": 404,
+      "expected_status": 404
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/4/session-bootstrap",
+      "status": 401,
+      "expected_status": 401,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/verify",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/confirm",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/password/reset/validate",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-register",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/password/reset",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/organization-invitations/{redacted}",
+      "status": 404,
+      "expected_status": 404
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/admin/users/9/purge-preview",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/users/9/purge",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/admin/organizations/1/members",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/email/password-register",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/11/session-bootstrap",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/password/reset",
+      "status": 200,
+      "expected_status": 200,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "GET",
+      "path": "/users/11/session-bootstrap",
+      "status": 401,
+      "expected_status": 401,
+      "expected_code": null,
+      "detail_code": null
+    },
+    {
+      "method": "POST",
+      "path": "/users/auth/password/reset",
+      "status": 400,
+      "expected_status": 400,
+      "expected_code": null,
+      "detail_code": null
+    }
+  ],
+  "snapshots": [
+    {
+      "context": "f02-concurrent-magic_issue",
+      "purge_waited_for_admitted_auth": true,
+      "account_and_email_tokens_absent_after_delete": true
+    },
+    {
+      "context": "f02-concurrent-action_issue",
+      "purge_waited_for_admitted_auth": true,
+      "account_and_email_tokens_absent_after_delete": true
+    },
+    {
+      "context": "f02-concurrent-magic_verify",
+      "purge_waited_for_admitted_auth": true,
+      "account_and_email_tokens_absent_after_delete": true
+    },
+    {
+      "context": "f02-registration-token-preverified-before-delete",
+      "same_email_readded_with_new_id": true,
+      "old_registration_failed": true,
+      "new_account_has_no_credentials_or_verified_identities": true
+    },
+    {
+      "context": "f02-password-actions-positive-regression",
+      "registration_and_reset_work": true,
+      "reset_is_single_use": true,
+      "old_password_replaced": true,
+      "old_sessions_revoked": true
+    },
+    {
+      "context": "f02-ac02",
+      "old_account_absent": true,
+      "old_tokens_invalid_before_and_after_readd": true,
+      "captured_worker_stopped": true,
+      "late_fk_write_rejected": true,
+      "new_account_id_differs": true,
+      "new_account_has_no_credentials_assessed_profiles_cycles_or_queued_history": true
+    }
+  ]
+}
