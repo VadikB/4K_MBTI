@@ -8,6 +8,7 @@ from Api.config import settings
 
 ORG_ADMIN_ROLE = "admin"
 ORG_MEMBER_ROLE = "member"
+LOCAL_SUPERADMIN_EMAIL = "admin@agent4k.local"
 EXPLICIT_MEMBER_ADMISSION_SOURCES = frozenset({"admin_add", "csv_import", "superadmin_transfer"})
 
 
@@ -77,7 +78,32 @@ def normalize_org_code(value: str | None) -> str:
 
 
 def configured_superadmin_emails() -> set[str]:
-    return {normalize_email_for_access(item) for item in _split_csv(settings.superadmin_emails_raw)}
+    return {
+        normalize_email_for_access(item)
+        for item in _split_csv(str(settings.superadmin_emails_raw or "").replace(";", ","))
+    }
+
+
+def is_platform_protected_account(connection, *, email: str | None, user_id: int | None = None) -> bool:
+    """Keep platform principals out of organization membership and invitations."""
+    normalized_email = normalize_email_for_access(email)
+    if normalized_email in configured_superadmin_emails() or normalized_email == LOCAL_SUPERADMIN_EMAIL:
+        return True
+    if not normalized_email and user_id is None:
+        return False
+    return connection.execute(
+        """
+        SELECT 1
+        FROM users account
+        JOIN user_platform_roles assignment ON assignment.user_id = account.id
+        JOIN platform_role_permissions permission
+          ON permission.platform_role_id = assignment.platform_role_id
+        WHERE assignment.revoked_at IS NULL
+          AND (account.id = %s OR LOWER(account.email) = %s)
+        LIMIT 1
+        """,
+        (user_id, normalized_email),
+    ).fetchone() is not None
 
 
 def configured_access_suppressed(connection, *, email: str, access_kind: str,
@@ -163,6 +189,8 @@ def assign_user_organization_from_email(connection, *, user_id: int, email: str 
     for org_code, emails in admin_map.items():
         if normalized_email not in emails:
             continue
+        if is_platform_protected_account(connection, email=normalized_email, user_id=user_id):
+            return
         if configured_access_suppressed(
             connection, email=normalized_email, access_kind="organization_admin",
             organization_code=org_code,
@@ -283,10 +311,15 @@ def get_admin_scope(connection, user) -> AdminScope:
     if user is None:
         return AdminScope()
     email = normalize_email_for_access(getattr(user, "email", None))
+    if email == LOCAL_SUPERADMIN_EMAIL:
+        return AdminScope(is_superadmin=True)
     if email and email in configured_superadmin_emails() and not configured_access_suppressed(
         connection, email=email, access_kind="superadmin"
     ):
         return AdminScope(is_superadmin=True)
+
+    if is_platform_protected_account(connection, email=email, user_id=int(user.id)):
+        return AdminScope()
 
     assign_user_organization_from_email(connection, user_id=int(user.id), email=email)
     rows = connection.execute(

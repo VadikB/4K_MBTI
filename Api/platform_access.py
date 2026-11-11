@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from Api.org_access import configured_superadmin_emails, normalize_email_for_access
-
-
-LOCAL_SUPERADMIN_EMAIL = "admin@agent4k.local"
+from Api.org_access import LOCAL_SUPERADMIN_EMAIL, configured_superadmin_emails, normalize_email_for_access
 
 
 def has_platform_permission(connection, user, permission_code: str) -> bool:

@@ -10,7 +10,12 @@ from Api.config import settings
 from Api.database import get_connection
 from Api.email_service import send_auth_action_email, send_magic_link_email
 from Api.public_origin import build_public_link
-from Api.org_access import assign_user_organization_from_email, email_has_organization_access, ensure_configured_organizations
+from Api.org_access import (
+    assign_user_organization_from_email,
+    configured_superadmin_emails,
+    email_has_organization_access,
+    ensure_configured_organizations,
+)
 from Api.organization_invitation_service import (
     OrganizationInvitationContext,
     OrganizationInvitationError,
@@ -763,12 +768,7 @@ class AuthService:
         )
 
     def _is_superadmin_email(self, email: str) -> bool:
-        normalized_superadmin_emails = {
-            normalize_email(value)
-            for value in str(settings.superadmin_emails_raw or "").replace(";", ",").split(",")
-            if str(value or "").strip()
-        }
-        return email in normalized_superadmin_emails
+        return normalize_email(email) in configured_superadmin_emails()
 
     def _find_or_create_superadmin_user(self, connection, *, email: str) -> tuple[int, bool]:
         if not self._is_superadmin_email(email):

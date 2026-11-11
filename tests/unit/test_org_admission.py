@@ -99,6 +99,21 @@ def test_assignment_does_not_create_member_from_domain(monkeypatch) -> None:
     )
 
 
+def test_configured_admin_overlap_does_not_assign_superadmin(monkeypatch) -> None:
+    monkeypatch.setattr(org_access.settings, "superadmin_emails_raw", "protected@example.test")
+    monkeypatch.setattr(org_access, "configured_org_admin_emails",
+                        lambda: {"synthetic": ["protected@example.test"]})
+    monkeypatch.setattr(org_access, "ensure_configured_organizations", lambda _connection: None)
+
+    class _NoQueryConnection:
+        def execute(self, *_args, **_kwargs):
+            raise AssertionError("protected account must not reach membership writes")
+
+    org_access.assign_user_organization_from_email(
+        _NoQueryConnection(), user_id=42, email="protected@example.test"
+    )
+
+
 def test_configured_bootstrap_never_reactivates_or_renames_existing_organization(monkeypatch) -> None:
     statements = []
 

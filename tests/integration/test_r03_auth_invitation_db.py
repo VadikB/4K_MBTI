@@ -31,6 +31,11 @@ def invitation_database(test_database_url, monkeypatch, request):
         connection.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
         connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
         connection.execute("CREATE TABLE users(id BIGSERIAL PRIMARY KEY, email TEXT NOT NULL)")
+        connection.execute("""CREATE TABLE user_platform_roles(
+            user_id BIGINT NOT NULL REFERENCES users(id), platform_role_id BIGINT NOT NULL,
+            revoked_at TIMESTAMP)""")
+        connection.execute("""CREATE TABLE platform_role_permissions(
+            platform_role_id BIGINT NOT NULL, permission_id BIGINT NOT NULL)""")
         connection.execute("CREATE TABLE auth_password_credentials(email TEXT PRIMARY KEY)")
         connection.execute("CREATE TABLE organizations(id BIGSERIAL PRIMARY KEY, code TEXT UNIQUE, name TEXT, invitation_intro TEXT, is_active BOOLEAN NOT NULL DEFAULT TRUE)")
         connection.execute("""CREATE TABLE organization_memberships(

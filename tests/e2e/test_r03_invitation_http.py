@@ -37,6 +37,8 @@ class _InvitationConnection:
         self.rows: list[dict] = []
 
     def execute(self, query, params=()):
+        if "JOIN user_platform_roles assignment" in query:
+            return _Result(one=None)
         if "FROM organization_memberships om" in query:
             return _Result(one={"id": 18})
         if "INSERT INTO organization_invitations" in query:
@@ -168,6 +170,23 @@ def test_personal_invitation_repeated_operation_has_one_effect(monkeypatch) -> N
     assert len(sent) == 1
     expires_at = datetime.fromisoformat(first.json()["items"][0]["expires_at"])
     assert timedelta(hours=71, minutes=59) < expires_at - _utcnow() <= timedelta(hours=72)
+
+
+def test_personal_invitation_retry_rechecks_newly_protected_email(monkeypatch) -> None:
+    connection = _InvitationConnection()
+    sent = []
+    client = _client(monkeypatch, connection, sent)
+    payload = {"emails": ["person@example.test"], "operation_id": "f01-delayed-repeat"}
+    first = client.post("/users/admin/organizations/3/personal-invitations", json=payload)
+    assert first.json()["items"][0]["status"] == "accepted"
+    monkeypatch.setattr(routes.settings, "superadmin_emails_raw", "person@example.test")
+
+    repeated = client.post("/users/admin/organizations/3/personal-invitations", json=payload)
+    assert repeated.status_code == 200
+    assert repeated.json()["items"][0]["status"] == "error"
+    assert "супер" not in repeated.text.lower()
+    assert len(connection.rows) == 1
+    assert len(sent) == 1
 
 
 def test_personal_delivery_and_explicit_resend_ignore_attacker_host(monkeypatch) -> None:
