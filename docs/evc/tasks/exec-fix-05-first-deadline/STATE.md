@@ -33,3 +33,23 @@ checksums и независимый импорт. Финальные candidate/t
 `branch_push/pr/merge/deploy/version_bump/artifact_publish=false`.
 Paid LLM/shared TEST/Prod не использовались. Временные собственные PG остановлены;
 диагностика сохраняется. CI/human review/release preflight — этап архитектора.
+
+## Продолжение: PR и подготовка Ready
+
+11.11.2026. Владелец прямым запросом разрешил `branch_push/pr`, затем отдельно
+утвердил `version_bump` PATCH `2.0.95` и перевод PR в Ready. Прежние флаги выше
+фиксируют границы этапа исполнителя. `merge/deploy/artifact_publish=false`.
+
+PR [#208](https://github.com/VadikB/4K_MBTI/pull/208) создан как draft на
+`c06ee5228ada2af15e3420b0fa45f1b938979e77`, base
+`e6b294e43811fb67afb695506f15547e5efc5f9e`. Удалённый `main` повторно
+сверен, быстрые CI `frontend` и `pytest` для этого SHA прошли.
+`npm run ready:prepare -- --candidate 2.0.95` прошёл; изменены только файлы
+версии `pyproject.toml`, `uv.lock`, `web/js/config.js`, `web/index.html` и
+результат штатной сборки `web/dist`. Локально прошли `npm run lint:js`, 226
+frontend-тестов, `scripts/check_release_version.py --base-ref origin/main` и
+`git diff --check`. Исходные Api/tests не менялись после приёмки на SHA выше.
+
+Следующий шаг: commit/push подготовленного выпуска, перевод PR в Ready и
+проверка обязательных CI `frontend`, `pytest`, `full-verification` на новом SHA.
+Human review и отдельное решение о merge остаются за владельцем.
