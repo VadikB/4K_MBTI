@@ -1887,11 +1887,6 @@ if (adminOrganizationsList) {
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
     // The collection recovery control is outside any organization card.
-    if (button.dataset.action === 'restore-excluded-account') {
-      withScreen(loadAdminOrganizations, (module) => module.restoreExcludedAccountForm(
-        button.dataset.userId, button.dataset.restoreOrganizationId));
-      return;
-    }
     if (button.dataset.action === 'refresh-admin-organizations') {
       button.disabled = true;
       withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
@@ -1920,15 +1915,14 @@ if (adminOrganizationsList) {
           const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
             .map(([name, count]) => name + ': ' + Number(count)).join(', ');
           const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
-            (preview.configured_access_will_be_revoked
-              ? 'Настроенные полномочия этого email будут постоянно отозваны. ' : '') +
+            'Все функции участника и администратора, доступ, оценки и отчёты этого человека будут удалены. ' +
             'Общие методологические материалы останутся. Для подтверждения введите email: ' + email);
           if (typed === null) return;
           if (String(typed).trim().toLowerCase() !== email.toLowerCase()) {
             window.alert('Email подтверждения не совпадает. Удаление отменено.');
             return;
           }
-          if (!window.confirm('Удалить аккаунт «' + email + '» полностью? Действие необратимо.')) return;
+          if (!window.confirm('Удалить человека «' + email + '» и его аккаунт? Действие необратимо.')) return;
           phase = 'execute';
           await module.purgeAdminAccount(userId, email, preview.fingerprint);
         } catch (error) {
@@ -1961,7 +1955,7 @@ if (adminOrganizationsList) {
           .map(([name, count]) => name + ': ' + Number(count)).join(', ');
         const preserved = sharedAccounts.map((account) => account.email +
           (account.preserved_reason === 'current_account' ? ' (текущий аккаунт)' :
-            '')).join(', ') || 'нет';
+            account.preserved_reason === 'configured_account' ? ' (защищён настройками доступа)' : '')).join(', ') || 'нет';
         const revokedConfigured = deletedAccounts.filter((account) => account.configured_access_will_be_revoked)
           .map((account) => account.email).join(', ');
         const summary = 'Будут удалены организация, связанные записи и аккаунты без других организаций. ' +
@@ -2156,18 +2150,6 @@ if (adminOrganizationsList) {
     if (button.dataset.action === 'delete-admin') {
       if (!window.confirm('Снять административный доступ у ' + value + '? Участие в оценке и аккаунт сохранятся.')) return;
       withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationAdmin(organizationId, value));
-      return;
-    }
-    if (button.dataset.action === 'delete-member') {
-      const normalizedValue = value.trim().toLowerCase();
-      if (normalizedValue.startsWith('__autotest__') || normalizedValue.endsWith('@autotest.local')) {
-        window.alert('Autotest-пользователей нельзя отвязывать из списка организаций. Используйте очистку регрессионных тестов.');
-        return;
-      }
-      if (!window.confirm('Убрать ' + value + ' из участников оценки? Аккаунт, административный доступ, назначения и история сохранятся.')) {
-        return;
-      }
-      withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationMember(organizationId, value));
       return;
     }
     if (button.dataset.action === 'reset-member-password') {

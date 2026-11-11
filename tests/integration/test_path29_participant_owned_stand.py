@@ -228,34 +228,48 @@ def internal():
         assert restored.status_code == 200, restored.text
         assert restored.json()['preparation_operation']['error'] == completed.json()['error']
         assert 'M7_NO_ADMISSIBLE_CASE' not in restored.text
+
+        def retained_person_state(connection):
+            return {
+                'user': connection.execute('SELECT id FROM users WHERE email=%s', (email,)).fetchone(),
+                'membership': connection.execute(
+                    'SELECT role,is_participant FROM organization_memberships WHERE organization_id=%s AND user_id=%s',
+                    (org, uid),
+                ).fetchone(),
+                'profiles': connection.execute(
+                    'SELECT id,checksum FROM assessment_personalized_profiles WHERE user_id=%s ORDER BY id',
+                    (uid,),
+                ).fetchall(),
+                'assignments': connection.execute(
+                    'SELECT id,status FROM organization_assessment_assignments WHERE recipient_user_id=%s ORDER BY id',
+                    (uid,),
+                ).fetchall(),
+                'invitations': connection.execute(
+                    'SELECT id FROM organization_invitations WHERE organization_id=%s AND LOWER(recipient_email)=%s ORDER BY id',
+                    (org, email),
+                ).fetchall(),
+                'credential_ids': connection.execute(
+                    'SELECT id FROM auth_password_credentials WHERE user_id=%s ORDER BY id', (uid,),
+                ).fetchall(),
+            }
+
         with get_connection() as c:
             assert c.execute('SELECT COUNT(*) AS n FROM m5_cycles WHERE owner_user_id=%s', (uid,)).fetchone()['n'] == 0
-            invitations_before = c.execute('SELECT COUNT(*) AS n FROM organization_invitations WHERE organization_id=%s AND LOWER(recipient_email)=%s',
-                (org, email)).fetchone()['n']
+            before_refusal = retained_person_state(c)
+            assert before_refusal['membership'] == {'role': 'member', 'is_participant': True}
+            assert before_refusal['user'] == {'id': uid}
+            assert len(before_refusal['profiles']) == 1
+            assert before_refusal['credential_ids']
+        # F02 retires exclude/restore. This legacy command must refuse without changing
+        # the participant, frozen M4, assignment, invitations or existing access.
         removed = admin.delete(base + '/members', params={'email': email})
-        assert removed.status_code == 200, removed.text
+        assert removed.status_code == 410, removed.text
+        assert removed.json()['detail'] == 'MEMBER_EXCLUSION_REMOVED_USE_ACCOUNT_PURGE'
         with get_connection() as c:
-            membership = c.execute(
-                "SELECT role,is_participant FROM organization_memberships WHERE organization_id=%s AND user_id=%s",
-                (org, uid),
-            ).fetchone()
-            assert membership == {'role': 'member', 'is_participant': False}
-        # The removed membership cannot grant organization administration; the user's own saved
-        # assessment state remains stored under the existing owner contract.
+            assert retained_person_state(c) == before_refusal
         assert participant.get(base + '/assessment-source-options').status_code in {401, 403, 404}
-        with get_connection() as c:
-            assert c.execute('SELECT COUNT(*) AS n FROM assessment_personalized_profiles WHERE user_id=%s', (uid,)).fetchone()['n'] == 1
-        restored = admin.post(base + '/members', json={'email': email,
-            'full_name': 'Synthetic new participant', 'role_description': 'Synthetic actual position'})
-        assert restored.status_code == 200, restored.text
-        with get_connection() as c:
-            assert c.execute(
-                "SELECT role,is_participant FROM organization_memberships WHERE organization_id=%s AND user_id=%s",
-                (org, uid),
-            ).fetchone() == {'role': 'member', 'is_participant': True}
-            assert c.execute('SELECT id FROM users WHERE email=%s', (email,)).fetchone()['id'] == uid
-            assert c.execute('SELECT COUNT(*) AS n FROM organization_invitations WHERE organization_id=%s AND LOWER(recipient_email)=%s',
-                (org, email)).fetchone()['n'] == invitations_before
+        assert participant.get(path).json()['late_readiness']['personalized_profile_id'] == profile_id
+        assert participant.get(path).json()['state']['answers_json'] == answers
         participant.cookies.clear()
         assert participant.post('/users/auth/email/password-login', json={
             'email': email, 'password': 'SyntheticPass1!'}).status_code == 200

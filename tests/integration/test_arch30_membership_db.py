@@ -8,7 +8,7 @@ from psycopg.rows import dict_row
 import pytest
 from fastapi import HTTPException
 
-from Api.routes import _discover_excluded_accounts, _lock_membership_by_email, _reject_foreign_membership
+from Api.routes import _lock_membership_by_email, _reject_foreign_membership
 from Api.database import ensure_organization_membership_participation_column
 
 
@@ -96,23 +96,15 @@ def test_participation_backfill_is_idempotent_and_preserves_admin_authority(test
         connection.close()
 
 
-def test_excluded_account_discovery_keeps_admin_and_foreign_membership_distinct(test_database_url, membership_schema):
+def test_legacy_inactive_membership_is_preserved_by_schema_upgrade(test_database_url, membership_schema):
     connection = _connect(test_database_url, membership_schema)
     try:
         ensure_organization_membership_participation_column(connection)
-        connection.execute("""INSERT INTO users(id,email) VALUES
-            (8,'other@example.test'), (9,'admin@example.test'), (10,'detached@example.test'),
-            (11,'protected@example.test')""")
         connection.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,is_participant)
-            VALUES (3,7,'member',FALSE), (4,8,'member',TRUE), (3,9,'admin',FALSE),
-                   (3,11,'member',FALSE)""")
-        assert _discover_excluded_accounts(connection, {'protected@example.test'}) == [{
-            'user_id': 7, 'email': 'person@example.test', 'full_name': None,
-            'organization_id': 3, 'organization_name': 'Организация А',
-        }]
+            VALUES (3,7,'member',FALSE)""")
+        ensure_organization_membership_participation_column(connection)
         assert connection.execute("SELECT id FROM users WHERE id=7").fetchone()['id'] == 7
-        connection.execute("UPDATE organization_memberships SET is_participant=TRUE WHERE user_id=7")
-        assert _discover_excluded_accounts(connection, {'protected@example.test'}) == []
-        assert connection.execute("SELECT role FROM organization_memberships WHERE user_id=9").fetchone()['role'] == 'admin'
+        assert connection.execute("SELECT is_participant FROM organization_memberships WHERE user_id=7").fetchone() == {
+            'is_participant': False}
     finally:
         connection.close()

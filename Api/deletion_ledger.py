@@ -83,31 +83,43 @@ def ensure_receipt_schema(connection) -> None:
         target_type TEXT NOT NULL CHECK(target_type IN ('organization','account')),
         target_id BIGINT NOT NULL,
         preview_fingerprint TEXT NOT NULL,
+        actor_user_id BIGINT,
         applied_at TIMESTAMP NOT NULL DEFAULT NOW()
     )""")
+    # Numeric attribution has no user FK: deleting the actor must not remove a
+    # receipt or make an old backup look reconciled without replaying deletion.
+    connection.execute("ALTER TABLE data_deletion_receipts ADD COLUMN IF NOT EXISTS actor_user_id BIGINT")
 
 
 def record_receipt(connection, record: dict) -> None:
     connection.execute("""INSERT INTO data_deletion_receipts
-        (operation_id,target_type,target_id,preview_fingerprint) VALUES(%s,%s,%s,%s)
+        (operation_id,target_type,target_id,preview_fingerprint,actor_user_id) VALUES(%s,%s,%s,%s,%s)
         ON CONFLICT(operation_id) DO NOTHING""",(record['operation_id'],record['target_type'],
-        record['target_id'],record['preview_fingerprint']))
-    saved=connection.execute("""SELECT target_type,target_id,preview_fingerprint
+        record['target_id'],record['preview_fingerprint'],record.get('actor_user_id')))
+    saved=connection.execute("""SELECT target_type,target_id,preview_fingerprint,actor_user_id
         FROM data_deletion_receipts WHERE operation_id=%s""",(record['operation_id'],)).fetchone()
     if (_get(saved,'target_type',0),int(_get(saved,'target_id',1)),_get(saved,'preview_fingerprint',2)) != (
             record['target_type'],int(record['target_id']),record['preview_fingerprint']):
         raise ValueError('DELETION_RECEIPT_CONFLICT')
+    if record.get('actor_user_id') is not None and _get(saved, 'actor_user_id', 3) != record['actor_user_id']:
+        raise ValueError('DELETION_RECEIPT_ACTOR_MISMATCH')
 
 
 def read_receipt(connection, *, operation_id: str, target_type: str,
-                 target_id: int, fingerprint: str) -> dict | None:
-    row=connection.execute("""SELECT operation_id,target_type,target_id,preview_fingerprint,applied_at
+                 target_id: int, fingerprint: str, actor_user_id: int | None = None,
+                 allow_legacy_actor: bool = False) -> dict | None:
+    row=connection.execute("""SELECT operation_id,target_type,target_id,preview_fingerprint,applied_at,actor_user_id
         FROM data_deletion_receipts WHERE operation_id=%s""",(operation_id,)).fetchone()
     if row is None:
         return None
     if (_get(row,'target_type',1),int(_get(row,'target_id',2)),_get(row,'preview_fingerprint',3)) != (
             target_type,int(target_id),fingerprint):
         raise ValueError('DELETION_RECEIPT_CONFLICT')
+    if actor_user_id is not None:
+        saved_actor = _get(row, 'actor_user_id', 5)
+        if (saved_actor is None and not allow_legacy_actor) or (
+                saved_actor is not None and int(saved_actor) != int(actor_user_id)):
+            raise ValueError('DELETION_RECEIPT_ACTOR_MISMATCH')
     return dict(row) if isinstance(row,dict) else {'operation_id':_get(row,'operation_id',0)}
 
 

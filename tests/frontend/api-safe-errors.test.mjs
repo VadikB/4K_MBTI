@@ -94,6 +94,13 @@ test('stale purge preview tells the operator to refresh without claiming deletio
   );
 });
 
+test('F02 protected configured account blocks organization purge with a safe explicit reason', async () => {
+  await assert.rejects(readApiResponse(new Response(JSON.stringify({ detail:
+    'CANNOT_PURGE_ORGANIZATION_WITH_CONFIGURED_ACCOUNT' }), { status: 409 }), 'Не удалось удалить организацию.'),
+    (error) => error.code === 'CANNOT_PURGE_ORGANIZATION_WITH_CONFIGURED_ACCOUNT' &&
+      error.message.includes('защищённым настройками доступа') && !error.outcomeUnknown);
+});
+
 for (const detail of [
   'ORGANIZATION_MEMBERSHIP_CONFLICT',
   { code: 'ORGANIZATION_MEMBERSHIP_CONFLICT', message: 'Пользователь связан с другой организацией. Обратитесь к суперадминистратору.' },
@@ -114,7 +121,7 @@ test('actual add-member handler displays the scoped API reason through productio
   const source = fs.readFileSync('web/js/screens/admin/organizations.js', 'utf8');
   const formatter = source.slice(source.indexOf('const membershipErrorMessage ='), source.indexOf('const invitationRevokeErrorMessage ='));
   const handler = source.slice(source.indexOf('export const addAdminOrganizationMember ='),
-    source.indexOf('export const deleteAdminOrganizationMember =')).replace('export const ', 'const ');
+    source.indexOf('export const resetAdminOrganizationMemberPassword =')).replace('export const ', 'const ');
   const messages = [];
   const context = vm.createContext({
     setStatus: (message, tone) => messages.push({ message, tone }),

@@ -356,9 +356,12 @@ def _stage_user_attributions(
     foreign_keys: Iterable[ForeignKey],
 ) -> None:
     """Freeze non-owned user references for preview and reject unsafe schema."""
-    connection.execute("""CREATE TEMP TABLE organization_purge_attribution_rows(
+    connection.execute("""CREATE TEMP TABLE IF NOT EXISTS organization_purge_attribution_rows(
         table_oid OID NOT NULL,row_ctid TID NOT NULL,fk_name TEXT NOT NULL,
         PRIMARY KEY(table_oid,row_ctid,fk_name)) ON COMMIT DROP""")
+    connection.execute("""DELETE FROM organization_purge_attribution_rows attribution
+        USING organization_purge_rows owned
+        WHERE attribution.table_oid=owned.table_oid AND attribution.row_ctid=owned.row_ctid""")
     users = next((table for table in tables.values() if table.name == "users"), None)
     if users is None:
         return
@@ -398,21 +401,55 @@ def _clear_user_attributions(connection: psycopg.Connection, tables: dict[int, T
     users = next((table for table in tables.values() if table.name == "users"), None)
     if users is None:
         return
+    by_table: dict[int, dict[str, set[str]]] = {}
     for foreign_key in foreign_keys:
         if foreign_key.parent_oid != users.oid or all(
             column in USER_OWNERSHIP_COLUMNS for column in foreign_key.child_columns
         ):
             continue
-        child = tables[foreign_key.child_oid]
-        assignments = sql.SQL(",").join(
-            sql.SQL("{}=NULL").format(sql.Identifier(column)) for column in foreign_key.child_columns
-        )
-        connection.execute(
-            sql.SQL("UPDATE {}.{} child SET {} FROM organization_purge_attribution_rows selected "
-                    "WHERE selected.table_oid=%s AND selected.fk_name=%s AND selected.row_ctid=child.ctid").format(
-                sql.Identifier(child.schema), sql.Identifier(child.name), assignments),
-            (child.oid, foreign_key.name),
-        )
+        columns = by_table.setdefault(foreign_key.child_oid, {})
+        for column in foreign_key.child_columns:
+            columns.setdefault(column, set()).add(foreign_key.name)
+    for oid, columns in by_table.items():
+        table = tables[oid]
+        assignments = []
+        for column, names in columns.items():
+            assignments.append(sql.SQL("""{}=CASE WHEN EXISTS(
+                SELECT 1 FROM organization_purge_attribution_rows selected
+                WHERE selected.table_oid={} AND selected.row_ctid=child.ctid AND selected.fk_name IN ({}))
+                THEN NULL ELSE child.{} END""").format(sql.Identifier(column), sql.Literal(oid),
+                sql.SQL(',').join(sql.Literal(name) for name in sorted(names)), sql.Identifier(column)))
+        # One UPDATE per table also clears several user references on one row:
+        # separate UPDATEs would invalidate that row's staged ctid after the first.
+        connection.execute(sql.SQL("""UPDATE {}.{} child SET {} WHERE EXISTS(
+            SELECT 1 FROM organization_purge_attribution_rows selected
+            WHERE selected.table_oid=%s AND selected.row_ctid=child.ctid)""").format(
+            sql.Identifier(table.schema), sql.Identifier(table.name), sql.SQL(',').join(assignments)), (oid,))
+
+
+def _disable_purge_triggers(connection, tables: dict[int, TableRef], selected_oids) -> list:
+    attribution_oids = connection.execute(
+        'SELECT DISTINCT table_oid::bigint AS table_oid FROM organization_purge_attribution_rows').fetchall()
+    affected = set(selected_oids) | {int(_get(row, 'table_oid', 0)) for row in attribution_oids}
+    previous = []
+    for oid in sorted(affected):
+        table = tables[oid]
+        states = connection.execute('SELECT tgname,tgenabled FROM pg_trigger WHERE tgrelid=%s AND NOT tgisinternal',
+                                    (oid,)).fetchall()
+        previous.append((table, states))
+        connection.execute(sql.SQL('ALTER TABLE {}.{} DISABLE TRIGGER USER').format(
+            sql.Identifier(table.schema), sql.Identifier(table.name)))
+    return previous
+
+
+def _restore_purge_triggers(connection, previous) -> None:
+    modes = {'O': 'ENABLE', 'D': 'DISABLE', 'R': 'ENABLE REPLICA', 'A': 'ENABLE ALWAYS'}
+    for table, states in reversed(previous):
+        for state in states:
+            connection.execute(sql.SQL('ALTER TABLE {}.{} {} TRIGGER {}').format(
+                sql.Identifier(table.schema), sql.Identifier(table.name),
+                sql.SQL(modes[str(_get(state, 'tgenabled', 1))]),
+                sql.Identifier(str(_get(state, 'tgname', 0)))))
 
 
 def _delete_order(selected_oids: set[int], foreign_keys: Iterable[ForeignKey]) -> list[int]:
@@ -439,6 +476,48 @@ def _delete_order(selected_oids: set[int], foreign_keys: Iterable[ForeignKey]) -
         if iteration == len(selected_oids) - 1:
             raise RuntimeError("Cyclic foreign-key dependency prevents safe automatic purge.")
     return []
+
+
+def _lock_purge_rows(connection, tables: dict[int, TableRef], staging_tables: Iterable[str]) -> None:
+    selectors = sql.SQL(' UNION ').join(sql.SQL('SELECT table_oid,row_ctid FROM {}').format(
+        sql.Identifier(name)) for name in staging_tables)
+    rows = connection.execute(sql.SQL('SELECT table_oid::bigint,row_ctid::text FROM ({}) selected').format(
+        selectors)).fetchall()
+    expected: dict[int, set[str]] = {}
+    for row in rows:
+        expected.setdefault(int(_get(row, 'table_oid', 0)), set()).add(str(_get(row, 'row_ctid', 1)))
+    for oid in sorted(expected):
+        table = tables[oid]
+        locked = connection.execute(sql.SQL('''SELECT ctid::text AS row_ctid FROM {}.{}
+            WHERE ctid=ANY(%s::tid[]) ORDER BY ctid FOR UPDATE''').format(
+            sql.Identifier(table.schema), sql.Identifier(table.name)), (sorted(expected[oid]),)).fetchall()
+        # An UPDATE committed before/while acquiring the lock changes ctid. Do
+        # not authorize the old physical selector or let ON DELETE CASCADE turn
+        # it into deletion of a row whose organization has changed meanwhile.
+        if {str(_get(row, 'row_ctid', 0)) for row in locked} != expected[oid]:
+            raise ValueError('PURGE_PREVIEW_STALE')
+
+
+def _freeze_purge_plan(connection, tables: dict[int, TableRef], foreign_keys: list[ForeignKey]) -> None:
+    _expand_foreign_keys(connection, tables, foreign_keys)
+    _stage_user_attributions(connection, tables, foreign_keys)
+    while True:
+        _lock_purge_rows(connection, tables, ('organization_purge_rows', 'organization_purge_attribution_rows'))
+        before = connection.execute("""SELECT
+            (SELECT COUNT(*) FROM organization_purge_rows) AS owned,
+            (SELECT COUNT(*) FROM organization_purge_attribution_rows) AS attribution""").fetchone()
+        # A child inserted before its selected parent's row lock can reference
+        # only that parent, so the root user lock cannot prevent its insertion.
+        # Expand again after pinning parents, then pin every newly found child.
+        # Once the closure is stable, FK inserts are blocked by these row locks.
+        _expand_foreign_keys(connection, tables, foreign_keys)
+        _stage_user_attributions(connection, tables, foreign_keys)
+        after = connection.execute("""SELECT
+            (SELECT COUNT(*) FROM organization_purge_rows) AS owned,
+            (SELECT COUNT(*) FROM organization_purge_attribution_rows) AS attribution""").fetchone()
+        if (_get(before, 'owned', 0), _get(before, 'attribution', 1)) == (
+                _get(after, 'owned', 0), _get(after, 'attribution', 1)):
+            return
 
 
 def build_purge_plan(connection: psycopg.Connection, organization_id: int) -> tuple[dict[str, int], dict[int, TableRef], list[ForeignKey]]:
@@ -471,8 +550,7 @@ def build_purge_plan(connection: psycopg.Connection, organization_id: int) -> tu
     _seed_by_organization_id(connection, tables, organization_id)
     _seed_orphan_users(connection, tables, organization_id)
     _seed_legacy_assessment_rows(connection, tables)
-    _expand_foreign_keys(connection, tables, foreign_keys)
-    _stage_user_attributions(connection, tables, foreign_keys)
+    _freeze_purge_plan(connection, tables, foreign_keys)
 
     rows = connection.execute(
         "SELECT table_oid::bigint AS table_oid, COUNT(*)::bigint AS row_count "
@@ -492,12 +570,88 @@ def build_account_purge_plan(connection: psycopg.Connection, user_id: int) -> tu
     tables = _tables(connection)
     foreign_keys = _foreign_keys(connection)
     _seed_selected_user(connection, tables, user_id)
-    _expand_foreign_keys(connection, tables, foreign_keys)
-    _stage_user_attributions(connection, tables, foreign_keys)
+    _freeze_purge_plan(connection, tables, foreign_keys)
     rows = connection.execute("""SELECT table_oid::bigint AS table_oid,COUNT(*)::bigint AS row_count
         FROM organization_purge_rows GROUP BY table_oid""").fetchall()
     counts = {tables[int(_get(row,'table_oid',0))].label: int(_get(row,'row_count',1)) for row in rows}
     return counts,tables,foreign_keys
+
+
+def require_account_plan_organization_scope(connection: psycopg.Connection, *,
+        user_id: int, organization_ids: Iterable[int], tables: dict[int, TableRef],
+        foreign_keys: Iterable[ForeignKey]) -> None:
+    """Authorize every planned delete/detachment, including indirect parents.
+
+    Membership alone cannot authorize a global account purge: an old assignment,
+    invitation matched by email, or nullable operator reference can belong to a
+    different organization. Unknown unscoped attribution is superadmin-only.
+    """
+    allowed = list(organization_ids)
+    organization_columns = set(_column_tables(connection, 'organization_id'))
+    users = next(table for table in tables.values() if table.name == 'users')
+    if connection.execute(sql.SQL("""SELECT 1 FROM {}.{} target
+            JOIN organization_purge_rows selected ON selected.row_ctid=target.ctid
+            WHERE selected.table_oid=%s AND target.id<>%s LIMIT 1""").format(
+            sql.Identifier(users.schema), sql.Identifier(users.name)), (users.oid, user_id)).fetchone():
+        raise ValueError('ACCOUNT_PURGE_SCOPE_FORBIDDEN')
+    # The plan only deletes an account. An ownership/schema mistake must never
+    # turn an organization-admin request into deletion of an organization.
+    organizations = next(table for table in tables.values() if table.name == 'organizations')
+    if connection.execute('SELECT 1 FROM organization_purge_rows WHERE table_oid=%s LIMIT 1',
+                          (organizations.oid,)).fetchone():
+        raise ValueError('ACCOUNT_PURGE_SCOPE_FORBIDDEN')
+    for column in USER_OWNERSHIP_COLUMNS:
+        for oid in _column_tables(connection, column):
+            table = tables[oid]
+            if connection.execute(sql.SQL("""SELECT 1 FROM {}.{} target
+                    JOIN organization_purge_rows selected ON selected.row_ctid=target.ctid
+                    WHERE selected.table_oid=%s AND target.{} IS NOT NULL AND target.{}<>%s LIMIT 1""")
+                    .format(sql.Identifier(table.schema), sql.Identifier(table.name),
+                            sql.Identifier(column), sql.Identifier(column)), (oid, user_id)).fetchone():
+                raise ValueError('ACCOUNT_PURGE_SCOPE_FORBIDDEN')
+    attribution_oids = connection.execute(
+        'SELECT DISTINCT table_oid::bigint AS table_oid FROM organization_purge_attribution_rows'
+    ).fetchall()
+    if any(int(_get(row, 'table_oid', 0)) not in organization_columns for row in attribution_oids):
+        raise ValueError('ACCOUNT_PURGE_SCOPE_FORBIDDEN')
+    connection.execute("""CREATE TEMP TABLE account_purge_scope_rows(
+        table_oid OID NOT NULL,row_ctid TID NOT NULL,PRIMARY KEY(table_oid,row_ctid)) ON COMMIT DROP""")
+    connection.execute("""INSERT INTO account_purge_scope_rows
+        SELECT table_oid,row_ctid FROM organization_purge_rows UNION
+        SELECT table_oid,row_ctid FROM organization_purge_attribution_rows""")
+    # Follow references towards parents too: a row may carry only cycle_id or
+    # assignment_id, while its organization lives on that parent.
+    while True:
+        inserted = 0
+        for fk in foreign_keys:
+            parent, child = tables[fk.parent_oid], tables[fk.child_oid]
+            if parent.name == 'users' and not all(column in USER_OWNERSHIP_COLUMNS
+                                                for column in fk.child_columns):
+                continue
+            predicates = [sql.SQL('child.{}=parent.{}').format(sql.Identifier(child_column),
+                sql.Identifier(parent_column)) for child_column, parent_column in
+                zip(fk.child_columns, fk.parent_columns, strict=True)]
+            result = connection.execute(sql.SQL("""INSERT INTO account_purge_scope_rows(table_oid,row_ctid)
+                SELECT %s,parent.ctid FROM {}.{} child JOIN {}.{} parent ON {}
+                JOIN account_purge_scope_rows selected ON selected.table_oid=%s
+                  AND selected.row_ctid=child.ctid ON CONFLICT DO NOTHING""").format(
+                sql.Identifier(child.schema), sql.Identifier(child.name),
+                sql.Identifier(parent.schema), sql.Identifier(parent.name), sql.SQL(' AND ').join(predicates)),
+                (parent.oid, child.oid))
+            inserted += int(result.rowcount or 0)
+        if not inserted:
+            break
+    _lock_purge_rows(connection, tables, ('account_purge_scope_rows',))
+    for oid in organization_columns | {organizations.oid}:
+        table = tables[oid]
+        column = 'id' if oid == organizations.oid else 'organization_id'
+        if connection.execute(sql.SQL("""SELECT 1 FROM {}.{} target
+                JOIN account_purge_scope_rows selected ON selected.row_ctid=target.ctid
+                WHERE selected.table_oid=%s AND target.{} IS NOT NULL
+                  AND NOT(target.{}=ANY(%s)) LIMIT 1""").format(sql.Identifier(table.schema),
+                sql.Identifier(table.name), sql.Identifier(column), sql.Identifier(column)),
+                (oid, allowed)).fetchone():
+            raise ValueError('ACCOUNT_PURGE_SCOPE_FORBIDDEN')
 
 
 def purge_plan_fingerprint(connection: psycopg.Connection) -> str:
@@ -548,6 +702,7 @@ def purge_organization(
     # A nested transaction is a savepoint when the caller already has an active
     # transaction. Any failure restores both deleted rows and trigger state.
     with connection.transaction():
+        trigger_states = _disable_purge_triggers(connection, tables, order)
         _clear_user_attributions(connection, tables, foreign_keys)
         users = next((table for table in tables.values() if table.name == "users"), None)
         if users is not None:
@@ -572,15 +727,6 @@ def purge_organization(
                 ).format(sql.Identifier(users.schema), sql.Identifier(users.name)),
                 (users.oid,),
             )
-        disabled: list[TableRef] = []
-        for oid in order:
-            table = tables[oid]
-            connection.execute(
-                sql.SQL("ALTER TABLE {}.{} DISABLE TRIGGER USER").format(
-                    sql.Identifier(table.schema), sql.Identifier(table.name)
-                )
-            )
-            disabled.append(table)
         for oid in order:
             table = tables[oid]
             connection.execute(
@@ -590,12 +736,7 @@ def purge_organization(
                 ).format(sql.Identifier(table.schema), sql.Identifier(table.name)),
                 (oid,),
             )
-        for table in reversed(disabled):
-            connection.execute(
-                sql.SQL("ALTER TABLE {}.{} ENABLE TRIGGER USER").format(
-                    sql.Identifier(table.schema), sql.Identifier(table.name)
-                )
-            )
+        _restore_purge_triggers(connection, trigger_states)
 
         if connection.execute("SELECT 1 FROM organizations WHERE id = %s", (organization_id,)).fetchone():
             raise RuntimeError("Purge verification failed: organization still exists.")
@@ -623,10 +764,13 @@ def purge_organization(
 
 def purge_account(connection: psycopg.Connection, *, user_id: int,
                   expected_fingerprint: str | None = None,
+                  validate_scope: Callable[[dict[int, TableRef], list[ForeignKey]], None] | None = None,
                   on_validated: Callable[[str], None] | None = None) -> dict[str, int]:
     """Delete one account and all reachable/email-owned data, regardless of membership."""
     connection.execute('SELECT pg_advisory_xact_lock(%s)', (8_044_001,))
     counts,tables,foreign_keys = build_account_purge_plan(connection,user_id)
+    if validate_scope is not None:
+        validate_scope(tables, foreign_keys)
     current_fingerprint = purge_plan_fingerprint(connection)
     if expected_fingerprint is not None and current_fingerprint != expected_fingerprint:
         raise ValueError('PURGE_PREVIEW_STALE')
@@ -636,6 +780,7 @@ def purge_account(connection: psycopg.Connection, *, user_id: int,
     order = _delete_order({label_to_oid[label] for label in counts},foreign_keys)
     users = next(table for table in tables.values() if table.name == 'users')
     with connection.transaction():
+        trigger_states = _disable_purge_triggers(connection, tables, order)
         _clear_user_attributions(connection, tables, foreign_keys)
         connection.execute(sql.SQL("""UPDATE {}.{} SET active_profile_id=NULL WHERE id=%s""").format(
             sql.Identifier(users.schema),sql.Identifier(users.name)), (user_id,))
@@ -643,23 +788,32 @@ def purge_account(connection: psycopg.Connection, *, user_id: int,
         connection.execute(sql.SQL("""INSERT INTO organization_purge_rows(table_oid,row_ctid)
             SELECT %s,target.ctid FROM {}.{} target WHERE target.id=%s""").format(
             sql.Identifier(users.schema),sql.Identifier(users.name)),(users.oid,user_id))
-        disabled=[]
-        for oid in order:
-            table=tables[oid]
-            connection.execute(sql.SQL('ALTER TABLE {}.{} DISABLE TRIGGER USER').format(
-                sql.Identifier(table.schema),sql.Identifier(table.name)))
-            disabled.append(table)
         for oid in order:
             table=tables[oid]
             connection.execute(sql.SQL("""DELETE FROM {}.{} target
                 USING organization_purge_rows selected
                 WHERE selected.table_oid=%s AND selected.row_ctid=target.ctid""").format(
                 sql.Identifier(table.schema),sql.Identifier(table.name)),(oid,))
-        for table in reversed(disabled):
-            connection.execute(sql.SQL('ALTER TABLE {}.{} ENABLE TRIGGER USER').format(
-                sql.Identifier(table.schema),sql.Identifier(table.name)))
+        _restore_purge_triggers(connection, trigger_states)
         if connection.execute('SELECT 1 FROM users WHERE id=%s',(user_id,)).fetchone():
             raise RuntimeError('Purge verification failed: user still exists.')
+        for column in USER_OWNERSHIP_COLUMNS:
+            for oid in _column_tables(connection, column):
+                table = tables[oid]
+                if connection.execute(sql.SQL('SELECT 1 FROM {}.{} WHERE {}=%s LIMIT 1').format(
+                        sql.Identifier(table.schema), sql.Identifier(table.name), sql.Identifier(column)),
+                        (user_id,)).fetchone():
+                    raise RuntimeError(f'Purge verification failed: owned rows remain in {table.label}.')
+        for column in ('email', 'recipient_email'):
+            for oid in _column_tables(connection, column):
+                table = tables[oid]
+                if table.name in EMAIL_SCOPE_EXCLUDED_TABLES:
+                    continue
+                if connection.execute(sql.SQL('''SELECT 1 FROM {}.{} target
+                        JOIN organization_purge_orphan_users account ON LOWER(account.email)=LOWER(target.{})
+                        LIMIT 1''').format(sql.Identifier(table.schema), sql.Identifier(table.name),
+                                         sql.Identifier(column))).fetchone():
+                    raise RuntimeError(f'Purge verification failed: email-owned rows remain in {table.label}.')
     return counts
 
 
