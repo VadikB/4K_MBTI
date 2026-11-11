@@ -102,8 +102,12 @@ const apiErrorMessages = {
   PURGE_ATTRIBUTION_SCHEMA_UNSAFE: 'Удаление остановлено: обнаружена небезопасная ссылка авторства. Передайте код обращения техническому администратору.',
   PURGE_EXECUTION_FAILED: 'Не удалось подтвердить результат удаления. Проверьте исход той же подтверждённой операции; при повторном отказе передайте код обращения техническому администратору.',
   DELETION_RECEIPT_CONFLICT: 'Подтверждённая команда не соответствует квитанции удаления. Не повторяйте удаление с другими параметрами; обратитесь к техническому администратору.',
-  CANNOT_PURGE_CURRENT_ACCOUNT: 'Нельзя удалить аккаунт, под которым выполнен текущий вход. Используйте другой аккаунт суперадминистратора.',
+  CANNOT_PURGE_CURRENT_ACCOUNT: 'Нельзя удалить аккаунт, под которым выполнен текущий вход.',
+  CANNOT_PURGE_CONFIGURED_ACCOUNT: 'Этот аккаунт защищён настройками доступа. Удаление недоступно; обратитесь к техническому администратору.',
+  CANNOT_PURGE_LAST_ORGANIZATION_ADMIN: 'Нельзя удалить последнего администратора организации. Сначала назначьте другого администратора.',
+  ACCOUNT_PURGE_SCOPE_FORBIDDEN: 'Недостаточно полномочий для удаления этого человека и всех связанных данных. Обратитесь к суперадминистратору.',
   CANNOT_PURGE_ORGANIZATION_WITH_CURRENT_ACCOUNT: 'Нельзя удалить организацию вместе с аккаунтом текущего входа. Используйте другой аккаунт суперадминистратора.',
+  CANNOT_PURGE_ORGANIZATION_WITH_CONFIGURED_ACCOUNT: 'Нельзя удалить организацию вместе с аккаунтом, защищённым настройками доступа. Обратитесь к техническому администратору.',
   ORGANIZATION_MEMBERSHIP_CONFLICT: 'Пользователь уже состоит в другой организации. Добавление в другую организацию недоступно. Обратитесь к суперадминистратору.',
   ORGANIZATION_TRANSFER_LAST_ADMIN: 'Смена организации недоступна. Управляйте полномочиями в текущей организации.',
   ORGANIZATION_TRANSFER_ACTIVE_ACQUAINTANCE: 'Смена организации недоступна. Обратитесь к суперадминистратору.',
@@ -257,6 +261,8 @@ export const createOperationId = () =>
 
 const accountPurgeStorageKey = (actorId) => 'agent4k.accountPurge.' + Number(actorId);
 const accountPurgeRequests = new Set();
+// A confirmed server receipt remains authoritative even when local cleanup fails.
+const completedAccountPurges = new Map();
 const purgeCommandFields = ['actorId', 'targetUserId', 'email', 'fingerprint', 'operationId'];
 const samePurgeCommand = (left, right) => purgeCommandFields.every((field) => left?.[field] === right?.[field]);
 const purgeStorageError = () => new ApiResponseError(
@@ -273,7 +279,8 @@ const readAccountPurges = (actorId) => {
   if (!Array.isArray(operations)) throw purgeStorageError();
   return operations.filter((operation) => Number(operation?.actorId) === Number(actorId) &&
     Number.isInteger(operation?.targetUserId) && operation.targetUserId > 0 &&
-    operation.email && operation.fingerprint && operation.operationId);
+    operation.email && operation.fingerprint && operation.operationId &&
+    !samePurgeCommand(completedAccountPurges.get(operation.operationId)?.operation, operation));
 };
 const saveAccountPurges = (actorId, operations) => {
   try {
@@ -317,8 +324,8 @@ export const accountPurgeErrorMessage = (error, { phase = 'execute', unknown = e
     return 'Исход удаления пока неизвестен. Проверьте результат той же подтверждённой операции. Новый состав удаления и новое подтверждение не требуются.';
   }
   if (error?.status === 401) return 'Сессия завершилась. Войдите снова, чтобы продолжить управление аккаунтами.';
-  if (error?.status === 403) return 'Управление полным удалением доступно только суперадминистратору. Проверьте текущий аккаунт.';
   if (error?.code && apiErrorMessages[error.code]) return error.message;
+  if (error?.status === 403) return 'Недостаточно полномочий для удаления этого человека. Проверьте текущий аккаунт и организацию.';
   if (phase === 'preview') {
     return error?.status === 404
       ? 'Аккаунт или предварительный просмотр недоступен. Обновите список аккаунтов.'
@@ -338,6 +345,8 @@ export const executeAccountPurge = async (operation, { actorId } = {}) => {
   if (Number(actorId) !== operation?.actorId) {
     throw new ApiResponseError('Подтверждение удаления относится к другому аккаунту входа.', 403);
   }
+  const completed = completedAccountPurges.get(operation?.operationId);
+  if (samePurgeCommand(completed?.operation, operation)) return completed.result;
   let pending;
   try { pending = readAccountPurges(actorId); } catch (_error) { throw purgeRecoveryStorageError(); }
   const saved = pending.find((item) => item.targetUserId === operation.targetUserId);
@@ -367,14 +376,21 @@ export const executeAccountPurge = async (operation, { actorId } = {}) => {
     if (result?.ok !== true || result.operation_id !== saved.operationId) {
       throw new ApiResponseError('Не удалось подтвердить результат удаления.', 0, { outcomeUnknown: true });
     }
-    saveAccountPurges(actorId, readAccountPurges(actorId).filter((item) => !samePurgeCommand(item, saved)));
+    completedAccountPurges.set(saved.operationId, { operation: saved, result });
+    try {
+      saveAccountPurges(actorId, readAccountPurges(actorId));
+    } catch (_error) {
+      // Keep the known success. After reload, the saved command still recovers this same receipt.
+    }
     return result;
   } catch (error) {
     const authoritativeRefusal = ['PURGE_PREVIEW_STALE', 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE'].includes(error?.code);
     const knownRefusal = error instanceof ApiResponseError && error.status >= 400 && error.status < 500 &&
       !error.outcomeUnknown && (!wasUnknown || authoritativeRefusal);
     if (knownRefusal) {
-      saveAccountPurges(actorId, readAccountPurges(actorId).filter((item) => !samePurgeCommand(item, saved)));
+      try {
+        saveAccountPurges(actorId, readAccountPurges(actorId).filter((item) => !samePurgeCommand(item, saved)));
+      } catch (_error) { /* Local cleanup cannot change an explicit server refusal. */ }
       throw error;
     }
     throw new ApiResponseError(accountPurgeErrorMessage(error, { unknown: true }), error?.status || 0,

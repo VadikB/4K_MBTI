@@ -1,0 +1,317 @@
+{
+  "events": [
+    {
+      "phase": "ordinary",
+      "preview": 403,
+      "execute": 403
+    },
+    {
+      "phase": "foreign",
+      "preview": 403,
+      "execute": 403
+    },
+    {
+      "phase": "cross_scope_history",
+      "preview": 403,
+      "execute": 403
+    },
+    {
+      "phase": "self",
+      "preview": 409,
+      "execute": 409
+    },
+    {
+      "phase": "configured_superadmin",
+      "preview": 409,
+      "execute": 409
+    },
+    {
+      "phase": "last_admin",
+      "preview": 409,
+      "execute": 409
+    },
+    {
+      "phase": "member_delete_storage_failure",
+      "sql": {
+        "super": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 0,
+            "auth_password_credentials": 1,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 1
+          },
+          "receipts": []
+        },
+        "member": {
+          "counts": {
+            "organization_assessment_assignments": 0,
+            "assessment_personalized_profiles": 0,
+            "m5_cycles": 0,
+            "m5_cycle_sessions": 0,
+            "m5_assessment_situations": 0,
+            "m5_dialogue_turns": 0,
+            "m7_c46_revisions": 0,
+            "m6_cycle_calculations": 0,
+            "m8_results": 0,
+            "m8_result_revisions": 0,
+            "m8_reports": 0,
+            "assessment_preparation_jobs": 0,
+            "users": 0,
+            "organization_memberships": 0,
+            "auth_password_credentials": 0,
+            "user_identities": 0,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": [
+            {
+              "operation_id": "1f1d528a-83fd-4c75-98f2-5814e3bec3de",
+              "target_id": 4,
+              "actor_user_id": 6
+            }
+          ]
+        },
+        "dual": {
+          "counts": {
+            "organization_assessment_assignments": 1,
+            "assessment_personalized_profiles": 1,
+            "m5_cycles": 1,
+            "m5_cycle_sessions": 1,
+            "m5_assessment_situations": 1,
+            "m5_dialogue_turns": 1,
+            "m7_c46_revisions": 1,
+            "m6_cycle_calculations": 1,
+            "m8_results": 1,
+            "m8_result_revisions": 1,
+            "m8_reports": 1,
+            "assessment_preparation_jobs": 1,
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 1,
+            "user_identities": 1,
+            "user_role_profiles": 1,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "admin": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 1
+          },
+          "receipts": []
+        },
+        "foreign": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "last_admin": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "scope": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "legacy": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "organizations": [
+          {
+            "id": 1,
+            "code": "e102_synthetic",
+            "name": "Синтетическая организация E10.2",
+            "is_active": true
+          },
+          {
+            "id": 2,
+            "code": "f02_control",
+            "name": "Synthetic F02 control",
+            "is_active": true
+          }
+        ]
+      }
+    },
+    {
+      "phase": "dual_lost_commit_reply_recovered",
+      "same_command": true,
+      "previewRequests": 0,
+      "sql": {
+        "super": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 0,
+            "auth_password_credentials": 1,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 1
+          },
+          "receipts": []
+        },
+        "member": {
+          "counts": {
+            "organization_assessment_assignments": 0,
+            "assessment_personalized_profiles": 0,
+            "m5_cycles": 0,
+            "m5_cycle_sessions": 0,
+            "m5_assessment_situations": 0,
+            "m5_dialogue_turns": 0,
+            "m7_c46_revisions": 0,
+            "m6_cycle_calculations": 0,
+            "m8_results": 0,
+            "m8_result_revisions": 0,
+            "m8_reports": 0,
+            "assessment_preparation_jobs": 0,
+            "users": 0,
+            "organization_memberships": 0,
+            "auth_password_credentials": 0,
+            "user_identities": 0,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": [
+            {
+              "operation_id": "1f1d528a-83fd-4c75-98f2-5814e3bec3de",
+              "target_id": 4,
+              "actor_user_id": 6
+            }
+          ]
+        },
+        "dual": {
+          "counts": {
+            "organization_assessment_assignments": 0,
+            "assessment_personalized_profiles": 0,
+            "m5_cycles": 0,
+            "m5_cycle_sessions": 0,
+            "m5_assessment_situations": 0,
+            "m5_dialogue_turns": 0,
+            "m7_c46_revisions": 0,
+            "m6_cycle_calculations": 0,
+            "m8_results": 0,
+            "m8_result_revisions": 0,
+            "m8_reports": 0,
+            "assessment_preparation_jobs": 0,
+            "users": 0,
+            "organization_memberships": 0,
+            "auth_password_credentials": 0,
+            "user_identities": 0,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": [
+            {
+              "operation_id": "ae403a76-91d3-4168-8e0c-0044dbef2a73",
+              "target_id": 5,
+              "actor_user_id": 6
+            }
+          ]
+        },
+        "admin": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 1
+          },
+          "receipts": []
+        },
+        "foreign": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "last_admin": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "scope": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "legacy": {
+          "counts": {
+            "users": 1,
+            "organization_memberships": 1,
+            "auth_password_credentials": 0,
+            "user_identities": 1,
+            "user_role_profiles": 0,
+            "web_user_sessions": 0
+          },
+          "receipts": []
+        },
+        "organizations": [
+          {
+            "id": 1,
+            "code": "e102_synthetic",
+            "name": "Синтетическая организация E10.2",
+            "is_active": true
+          },
+          {
+            "id": 2,
+            "code": "f02_control",
+            "name": "Synthetic F02 control",
+            "is_active": true
+          }
+        ]
+      }
+    }
+  ],
+  "pageErrors": []
+}

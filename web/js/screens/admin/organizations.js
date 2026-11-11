@@ -519,7 +519,7 @@ const trackOperation = (event) => {
       : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
   // Keep the result anchor, but a confirmation dialog is not a running command.
-  if (!['cancel-member-assignment', 'revoke-member-invitation', 'delete-member'].includes(button?.dataset.action)) {
+  if (!['cancel-member-assignment', 'revoke-member-invitation', 'purge-account'].includes(button?.dataset.action)) {
     setStatus('Выполняем действие…', 'loading');
   }
 };
@@ -739,21 +739,6 @@ export const selectAdminOrganizationView = (organizationId, view) => {
   renderAdminOrganizations();
 };
 
-export const restoreExcludedAccountForm = (userId, organizationId) => {
-  if (!state.adminOrganizations?.is_superadmin) return;
-  const account = (state.adminOrganizations.excluded_accounts || []).find((item) =>
-    Number(item.user_id) === Number(userId) && Number(item.organization_id) === Number(organizationId));
-  if (!account || pendingAdminAccountPurges().some((item) => item.targetUserId === Number(userId))) return;
-  selectAdminOrganization(organizationId);
-  selectAdminOrganizationView(organizationId, 'people');
-  const form = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"] form[data-action="add-member"]');
-  if (!form) return;
-  form.elements.namedItem('email').value = account.email;
-  form.elements.namedItem('full_name').value = account.full_name || '';
-  form.elements.namedItem(account.full_name ? 'role_description' : 'full_name').focus();
-  form.scrollIntoView({ block: 'center' });
-};
-
 export const selectAdminOrganizationAssessment = (organizationId, form, assessmentRef, previousRef = '') => {
   const nextRef = String(assessmentRef || '').trim();
   const oldRef = String(previousRef || selectedAssessmentRefs.get(organizationKey(organizationId)) || '').trim();
@@ -904,11 +889,11 @@ export const deleteAdminOrganizationAdmin = async (organizationId, email) => {
     await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/admins?email=' + encodeURIComponent(email),
       { method: 'DELETE', headers: {} },
-      'Не удалось удалить администратора.',
+      'Не удалось снять права администратора.',
     );
-    setStatus('Администратор удален.', 'success');
+    setStatus('Права администратора сняты.', 'success');
   } catch (error) {
-    setStatus(error.message || 'Не удалось удалить администратора.', 'error');
+    setStatus(error.message || 'Не удалось снять права администратора.', 'error');
   }
 };
 
@@ -939,23 +924,6 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
   } catch (error) {
     setStatus(membershipErrorMessage(error, 'Не удалось привязать участника.'), 'error');
     return false;
-  }
-};
-
-export const deleteAdminOrganizationMember = async (organizationId, email) => {
-  setStatus('Выполняем действие…', 'loading');
-  try {
-    const result = await requestOrganizations(
-      '/users/admin/organizations/' + organizationId + '/members?email=' + encodeURIComponent(email),
-      { method: 'DELETE', headers: {} },
-      'Не удалось отвязать участника.',
-    );
-    const action = result?.membership_action;
-    setStatus(action?.result === 'already_absent'
-      ? 'Связь участника с организацией уже отсутствовала. Аккаунт пользователя не изменён.'
-      : 'Участие в оценке отключено. Аккаунт и административные полномочия сохранены.', 'success');
-  } catch (error) {
-    setStatus(error.message || 'Не удалось отвязать участника.', 'error');
   }
 };
 
@@ -1917,6 +1885,7 @@ export const showAdminAccountPurgeError = (error, phase = 'execute', actorId = c
 export const previewAdminAccountPurge = (userId) => previewAccountPurge(userId);
 
 const performConfirmedAccountPurge = async (operation, actorId) => {
+  setStatus('Проверяем результат удаления человека…', 'loading');
   try {
     await executeAccountPurge(operation, { actorId: Number(actorId) });
   } catch (error) {
@@ -1956,7 +1925,16 @@ export const recoverAdminAccountPurge = async (userId) => {
   await performConfirmedAccountPurge(operation, actorId);
 };
 
-const renderTagList = (items, emptyText, className, deleteAction) => {
+const renderAccountPurgeButton = (account, { available = false } = {}) => {
+  const userId = Number(account.user_id);
+  const pending = pendingAdminAccountPurges().some((item) => item.targetUserId === userId);
+  if (!userId || userId === Number(currentIdentityKey()) || (!pending && !available)) return '';
+  return '<button class="admin-organization-remove-button" type="button" data-action="' +
+    (pending ? 'recover-purge-account' : 'purge-account') + '" data-user-id="' + userId +
+    '" data-email="' + escapeHtml(account.email) + '">' + (pending ? 'Проверить удаление' : 'Удалить человека') + '</button>';
+};
+
+const renderTagList = (items, emptyText, className, deleteAction, { canDeletePerson = false } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">' + escapeHtml(emptyText) + '</p>';
   }
@@ -1974,7 +1952,9 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
           deleteAction +
           '" data-value="' +
           escapeHtml(label) +
-          '" aria-label="Удалить">×</button>' : '') +
+          '" aria-label="' + (deleteAction === 'delete-admin' ? 'Снять права администратора' : 'Удалить домен') + '">' +
+          (deleteAction === 'delete-admin' ? 'Снять права' : '×') + '</button>' : '') +
+          (className === 'admin' ? renderAccountPurgeButton(item, { available: canDeletePerson }) : '') +
           '</span>'
         );
       })
@@ -1983,7 +1963,7 @@ const renderTagList = (items, emptyText, className, deleteAction) => {
   );
 };
 
-const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef = '', selectedAssessmentLabel = '' } = {}) => {
+const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false, selectedAssessmentRef = '', selectedAssessmentLabel = '' } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
   }
@@ -1992,7 +1972,6 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
     items
       .map((item) => {
         const email = String(item.email || '');
-        const isAutotest = email.toLowerCase().startsWith('__autotest__') || email.toLowerCase().endsWith('@autotest.local');
         const hasPassword = item.has_password === true;
         const participantName = item.full_name || email;
         const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
@@ -2010,11 +1989,7 @@ const renderMemberList = (items, { isSuperadmin = false, selectedAssessmentRef =
               '"' +
               (canPrepare ? '' : ' disabled title="Заполните роль, обязанности и сферу деятельности"') +
               '>Подготовить кейсы</button>';
-        const removeButton = isAutotest
-          ? ''
-          : '<button class="admin-organization-remove-button" type="button" data-action="delete-member" data-value="' +
-            escapeHtml(email) +
-            '" title="Аккаунт сохранится; повторная регистрация не потребуется" aria-label="Убрать из участников">Убрать из участников</button>';
+        const removeButton = renderAccountPurgeButton(item, { available: canDeletePerson });
         const invitationStatus = String(item.invitation_status || 'not_sent');
         const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', sending: 'Исход отправки уточняется', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
         const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', sending: 'Письмо: исход неизвестен', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
@@ -2119,15 +2094,7 @@ export const renderAdminOrganizations = () => {
   const isSuperadmin = Boolean(data?.is_superadmin);
   const physicalPurgeAvailable = Boolean(data?.physical_purge_available);
   const purgePreviewAvailable = Boolean(data?.purge_preview_available);
-  const detachedAccounts = Array.isArray(data?.detached_accounts) ? data.detached_accounts : [];
-  const excludedAccounts = Array.isArray(data?.excluded_accounts) ? data.excluded_accounts : [];
-  const pendingPurges = isSuperadmin ? pendingAdminAccountPurges() : [];
-  const purgeAccountButton = (account) => {
-    const pending = pendingPurges.some((item) => item.targetUserId === Number(account.user_id));
-    return '<button class="ghost-button compact-ghost danger" type="button" data-action="' +
-      (pending ? 'recover-purge-account' : 'purge-account') + '" data-user-id="' + Number(account.user_id) +
-      '" data-email="' + escapeHtml(account.email) + '">' + (pending ? 'Проверить удаление' : 'Удалить полностью') + '</button>';
-  };
+  const pendingPurges = pendingAdminAccountPurges();
   const purgeRecoveryMarkup = pendingPurges.length ? '<section class="card card--inset admin-purge-recovery" role="status">' +
     '<h3>Проверка полного удаления</h3><p>Исход подтверждённой операции пока не установлен. ' +
     'Проверьте результат той же операции перед другими действиями с аккаунтом.</p>' +
@@ -2137,20 +2104,6 @@ export const renderAdminOrganizations = () => {
   const staleMarkup = organizationsReadStale ? '<div class="form-status error" role="status" data-organizations-stale>' +
     '<strong>Показано последнее подтверждённое состояние.</strong> ' + escapeHtml(organizationsReadStaleReason) +
     ' <button type="button" class="text-button" data-action="refresh-admin-organizations">Обновить безопасно</button></div>' : '';
-  const detachedMarkup = isSuperadmin ? '<section class="card card--inset admin-detached-accounts"><h3>Ранее отвязанные аккаунты</h3>' +
-    (detachedAccounts.length ? detachedAccounts.map((account) => '<div class="admin-account-row"><span>' +
-      escapeHtml(account.email) + '</span>' + purgeAccountButton(account) + '</div>').join('') :
-      '<p class="admin-organizations-empty">Ранее отвязанных аккаунтов нет.</p>') + '</section>' : '';
-  const excludedMarkup = isSuperadmin ? '<section class="card card--inset admin-excluded-accounts"><h3>Исключённые участники</h3>' +
-    '<p>Аккаунты и история сохранены. Полное удаление выполняется отдельно после проверки состава.</p>' +
-    (excludedAccounts.length ? excludedAccounts.map((account) => '<div class="admin-account-row"><span>' +
-      escapeHtml(account.email) + ' · ' + escapeHtml(account.organization_name) +
-      '</span><div class="admin-account-actions">' +
-      (pendingPurges.some((item) => item.targetUserId === Number(account.user_id)) ? '' :
-        '<button class="ghost-button compact-ghost" type="button" data-action="restore-excluded-account" data-user-id="' +
-        Number(account.user_id) + '" data-restore-organization-id="' + Number(account.organization_id) + '">Повторно включить</button>') +
-      purgeAccountButton(account) + '</div></div>').join('') :
-      '<p class="admin-organizations-empty">Исключённых участников нет.</p>') + '</section>' : '';
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
@@ -2159,7 +2112,7 @@ export const renderAdminOrganizations = () => {
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
-    adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + excludedMarkup + detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
+    adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + '<p class="report-empty-state">' + (isSuperadmin
       ? 'Организации пока не созданы.'
       : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
     return;
@@ -2178,7 +2131,7 @@ export const renderAdminOrganizations = () => {
       )
       .join('');
   }
-  adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + excludedMarkup + detachedMarkup + organizations
+  adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);
@@ -2432,7 +2385,9 @@ export const renderAdminOrganizations = () => {
         (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-domain"><input type="text" placeholder="company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
         '</section>' +
         '<section><h4>Администраторы</h4>' +
-        renderTagList(org.admins || [], 'Администраторы не заданы.', 'admin', isSuperadmin ? 'delete-admin' : '') +
+        renderTagList(org.admins || [], 'Администраторы не заданы.', 'admin', isSuperadmin ? 'delete-admin' : '', {
+          canDeletePerson: purgePreviewAvailable,
+        }) +
         (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-admin"><input type="email" placeholder="admin@company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
         '</section>' +
         '</div>' : '') +
@@ -2450,6 +2405,7 @@ export const renderAdminOrganizations = () => {
         (assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button></form></div>' +
         renderMemberList(org.members || [], {
           isSuperadmin,
+          canDeletePerson: purgePreviewAvailable,
           selectedAssessmentRef: selectedRef,
           selectedAssessmentLabel: currentProgram
             ? programIdentity(currentProgram) + ' · ' + roleIdentity(allowedRoles)

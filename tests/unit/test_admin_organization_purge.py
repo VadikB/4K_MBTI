@@ -8,9 +8,10 @@ from Api.schemas import AdminOrganizationPurgeRequest, AdminOrganizationsRespons
 
 
 class FakeConnection:
-    def __init__(self, organization=None, protected_accounts=None):
+    def __init__(self, organization=None, protected_accounts=None, verified_aliases=()):
         self.organization = organization
         self.protected_accounts = protected_accounts or []
+        self.verified_aliases = set(verified_aliases)
         self.committed = False
         self.rolled_back = False
         self.statements = []
@@ -23,6 +24,11 @@ class FakeConnection:
 
     def execute(self, query, _params=()):
         self.statements.append((str(query), _params))
+        if "SELECT pg_advisory_xact_lock" in str(query):
+            return SimpleNamespace()
+        if "SELECT 1 FROM user_identities" in str(query):
+            return SimpleNamespace(fetchone=lambda: {'protected': 1}
+                if self.verified_aliases.intersection(_params[1]) else None)
         if "SELECT id, code, is_active FROM organizations" in str(query):
             return SimpleNamespace(fetchone=lambda: self.organization)
         if "FROM organization_memberships membership JOIN users" in str(query):
@@ -137,7 +143,7 @@ def test_purge_rejects_organization_that_would_delete_current_account(monkeypatc
     assert failure.value.detail == "CANNOT_PURGE_ORGANIZATION_WITH_CURRENT_ACCOUNT"
 
 
-def test_purge_revokes_configured_access_before_deleting_orphan_account(monkeypatch):
+def test_purge_blocks_configured_account_without_blacklist_or_commit(monkeypatch):
     connection = FakeConnection(
         {"id": 1, "code": "test-org", "is_active": False},
         [{"id": 12, "email": "configured@example.test"}],
@@ -145,16 +151,50 @@ def test_purge_revokes_configured_access_before_deleting_orphan_account(monkeypa
     request = setup_route(monkeypatch, connection)
     monkeypatch.setattr(routes, "configured_superadmin_emails", lambda: {"configured@example.test"})
     monkeypatch.setattr(routes, "configured_org_admin_emails", lambda: {})
+    with pytest.raises(HTTPException) as failure:
+        routes.purge_admin_organization(1, payload(), request)
+    assert failure.value.status_code == 409
+    assert failure.value.detail == "CANNOT_PURGE_ORGANIZATION_WITH_CONFIGURED_ACCOUNT"
+    assert not connection.committed
+    assert not any("INSERT INTO configured_access_suppressions" in query for query, _ in connection.statements)
 
-    monkeypatch.setattr(routes, "purge_organization", lambda *_args, **_kwargs: {"public.organizations": 1})
-    invalidated = []
-    monkeypatch.setattr(routes.interviewer_agent, "invalidate_user", invalidated.append)
 
-    routes.purge_admin_organization(1, payload(), request)
+def test_organization_preview_exposes_configured_target_as_execution_blocker(monkeypatch):
+    connection = FakeConnection(protected_accounts=[{
+        'id': 12, 'email': 'configured@example.test', 'will_delete_account': True}])
+    request = setup_route(monkeypatch, connection)
+    monkeypatch.setattr(routes, 'configured_superadmin_emails', lambda: {'configured@example.test'})
+    monkeypatch.setattr(routes, 'configured_org_admin_emails', lambda: {})
+    monkeypatch.setattr(routes, 'build_purge_plan', lambda *_args: ({'public.users': 1}, {}, []))
+    result = routes.preview_admin_organization_purge(1, request)
+    assert result['accounts'][0]['will_delete_account'] is False
+    assert result['execution_blockers'] == [{
+        'user_id': 12, 'email': 'configured@example.test', 'reason': 'configured_account'}]
 
-    suppression = [statement for statement in connection.statements
-        if "INSERT INTO configured_access_suppressions" in statement[0]]
-    assert len(suppression) == 1
-    assert suppression[0][1] == ("configured@example.test", 99)
-    assert invalidated == [12]
-    assert connection.committed
+
+def test_organization_purge_preview_and_execute_protect_verified_configured_alias(monkeypatch):
+    connection = FakeConnection(
+        organization={'id': 1, 'code': 'test-org', 'is_active': False},
+        protected_accounts=[{'id': 12, 'email': 'person@example.test', 'will_delete_account': True}],
+        verified_aliases=['configured@example.test'])
+    request = setup_route(monkeypatch, connection)
+    monkeypatch.setattr(routes, 'configured_superadmin_emails', lambda: {'configured@example.test'})
+    monkeypatch.setattr(routes, 'configured_org_admin_emails', lambda: {})
+    monkeypatch.setattr(routes, 'build_purge_plan', lambda *_args: ({'public.users': 1}, {}, []))
+    preview = routes.preview_admin_organization_purge(1, request)
+    assert preview['execution_blockers'][0]['reason'] == 'configured_account'
+    with pytest.raises(HTTPException) as failure:
+        routes.purge_admin_organization(1, payload(), request)
+    assert failure.value.detail == 'CANNOT_PURGE_ORGANIZATION_WITH_CONFIGURED_ACCOUNT'
+    assert not connection.committed
+
+
+def test_organization_preview_maps_changed_physical_rows_to_explicit_stale_refusal(monkeypatch):
+    connection = FakeConnection()
+    request = setup_route(monkeypatch, connection)
+    def stale(*_args):
+        raise ValueError('PURGE_PREVIEW_STALE')
+    monkeypatch.setattr(routes, 'build_purge_plan', stale)
+    with pytest.raises(HTTPException) as failure:
+        routes.preview_admin_organization_purge(1, request)
+    assert (failure.value.status_code, failure.value.detail) == (409, 'PURGE_PREVIEW_STALE')

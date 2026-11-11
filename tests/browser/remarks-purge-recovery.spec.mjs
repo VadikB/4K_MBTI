@@ -4,16 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-test('FIX02 AC03/04 real clicks, HTTP and owned PostgreSQL: failure, lost reply before/after commit, reload, same receipt', async ({ browser }) => {
+test('F02 AC03/04 current people, real clicks, HTTP and owned PostgreSQL: failure, lost reply before/after commit, reload, same receipt', async ({ browser }) => {
   test.setTimeout(180000);
   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit owned localhost STAND_ADMIN_URL required');
   const python = process.env.BROWSER_PYTHON || path.join(process.cwd(), '.venv/bin/python');
   const directory = path.join(process.env.REMARKS_PURGE_EVIDENCE || '.test-stand/remarks-purge', randomUUID());
   fs.mkdirSync(directory, { recursive: true });
   const statePath = path.resolve(directory, 'state.json');
-  const base = 'http://127.0.0.1:18879';
+  const port = '18880', base = `http://127.0.0.1:${port}`;
   const cli = (action) => {
-    const result = spawnSync(python, ['scripts/test_stand.py', action, '--state', statePath, '--port', '18879'], { encoding: 'utf8', timeout: 180000 });
+    const result = spawnSync(python, ['scripts/test_stand.py', action, '--state', statePath, '--port', port], { encoding: 'utf8', timeout: 180000 });
     fs.appendFileSync(path.join(directory, 'stand.log'), result.stdout + result.stderr);
     if (result.status !== 0) throw new Error('stand ' + action + ' failed; see stand.log');
   };
@@ -43,11 +43,17 @@ test('FIX02 AC03/04 real clicks, HTTP and owned PostgreSQL: failure, lost reply 
       await page.goto(base);
       await page.getByRole('button', { name: 'Организации', exact: true }).click();
       await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+      await page.locator('#admin-organization-select').selectOption(String(prepared.organization_id));
     };
     await openOrganizations();
-    const status = page.locator('#admin-organizations-status');
+    const status = page.locator('#admin-organizations-panel [data-operation-status]:visible, #admin-organizations-status:visible').last();
     const before = prepared.users.before, after = prepared.users.after;
     const purge = (user) => page.locator(`button[data-action="purge-account"][data-user-id="${user.id}"]`);
+    const clickPurge = async (user) => {
+      const menu = purge(user).locator('xpath=ancestor::details');
+      if (await menu.getAttribute('open') === null) await menu.locator('summary').click();
+      await purge(user).click();
+    };
     const recovery = (user) => page.locator(`.admin-purge-recovery button[data-action="recover-purge-account"][data-user-id="${user.id}"]`);
     let confirmEmail = before.email;
     page.on('dialog', async (dialog) => dialog.type() === 'prompt' ? dialog.accept(confirmEmail) : dialog.accept());
@@ -57,21 +63,22 @@ test('FIX02 AC03/04 real clicks, HTTP and owned PostgreSQL: failure, lost reply 
     await ordinaryContext.addCookies([{ name: prepared.cookie_name, value: prepared.ordinary_session, url: base }]);
     expect((await ordinaryContext.request.get(base + `/users/admin/users/${before.id}/purge-preview`)).status()).toBe(403);
     const previewSelf = await page.request.get(base + `/users/admin/users/${prepared.users.super.id}/purge-preview`);
-    expect(previewSelf.status()).toBe(200);
+    expect(previewSelf.status()).toBe(409);
+    expect((await previewSelf.json()).detail).toBe('CANNOT_PURGE_CURRENT_ACCOUNT');
     const selfDenied = await page.request.post(base + `/users/admin/users/${prepared.users.super.id}/purge`, { data: {
-      confirmation_email: prepared.users.super.email, preview_fingerprint: (await previewSelf.json()).fingerprint,
+      confirmation_email: prepared.users.super.email, preview_fingerprint: '0'.repeat(64),
       operation_id: randomUUID(), acknowledge_irreversible: true,
     } });
     expect(selfDenied.status()).toBe(409);
     expect((await selfDenied.json()).detail).toBe('CANNOT_PURGE_CURRENT_ACCOUNT');
-    events.push({ phase: 'real_permission_and_self_guards', preview403: true, self409: true, sql: inputs('readback') });
+    events.push({ phase: 'real_permission_and_self_guards', preview403: true, selfPreview409: true, selfExecute409: true, sql: inputs('readback') });
 
     for (const fault of ['network', '403', '409', '503']) {
       const previewUrl = base + `/users/admin/users/${before.id}/purge-preview`;
       await page.route(previewUrl, async (route) => fault === 'network' ? route.abort('failed') : route.fulfill({
         status: Number(fault), contentType: 'application/json', body: JSON.stringify({ detail: fault === '409' ? 'PURGE_ATTRIBUTION_SCHEMA_UNSAFE' : 'Technical unsafe internal detail' }),
       }), { times: 1 });
-      await purge(before).click();
+      await clickPurge(before);
       await expect(status).toBeVisible();
       await expect(status).not.toContainText('Failed to fetch');
       await expect(status).not.toContainText('Technical unsafe');
@@ -91,7 +98,7 @@ test('FIX02 AC03/04 real clicks, HTTP and owned PostgreSQL: failure, lost reply 
         expect(response.status()).toBe(Number(fault));
         await route.fulfill({ response });
       }, { times: 1 });
-      await purge(before).click();
+      await clickPurge(before);
       await expect(status).toContainText(fault === '403' ? 'суперадминистратору' : 'Состав удаления изменился');
       await expect(purge(before)).toBeEnabled();
       expect(await recovery(before).count()).toBe(0);
@@ -111,7 +118,7 @@ test('FIX02 AC03/04 real clicks, HTTP and owned PostgreSQL: failure, lost reply 
         intercepted = true;
         await route.abort('failed');
       }, { times: 1 });
-      await purge(user).click();
+      await clickPurge(user);
       await expect.poll(() => intercepted).toBe(true);
       await expect(status).toContainText('Исход удаления пока неизвестен');
       const uncertain = inputs('readback');

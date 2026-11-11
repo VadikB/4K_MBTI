@@ -1,4 +1,6 @@
 import hashlib
+import time
+from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
 import psycopg
@@ -8,6 +10,7 @@ from Api.deletion_ledger import append_intent, assert_reconciled, ensure_receipt
 from scripts.purge_test_organization import (
     build_account_purge_plan, build_purge_plan, purge_account,
     purge_organization, purge_plan_fingerprint,
+    require_account_plan_organization_scope,
 )
 
 
@@ -275,3 +278,190 @@ def test_external_ledger_blocks_startup_until_restore_replay_is_receipted(purge_
     purge_db.commit()
     assert_reconciled(purge_db,str(ledger))
     assert sum(counts.values()) > 0
+
+
+def _validate_organization_two_plan(connection, tables, foreign_keys):
+    require_account_plan_organization_scope(connection, user_id=20, organization_ids=[2],
+        tables=tables, foreign_keys=foreign_keys)
+
+
+def test_org_admin_purge_authorizes_own_scope_and_preserves_foreign_rows(purge_db):
+    # Shared, unscoped published-artifact attribution requires a superadmin;
+    # this target has no such attribution in the allowed scenario.
+    purge_db.execute('UPDATE program_definitions SET created_by_user_id=NULL WHERE created_by_user_id=20')
+    counts = purge_account(purge_db, user_id=20,
+        validate_scope=lambda tables, keys: _validate_organization_two_plan(purge_db, tables, keys))
+    purge_db.commit()
+    assert any(name.endswith('.users') and value == 1 for name, value in counts.items())
+    assert purge_db.execute('SELECT id FROM users ORDER BY id').fetchall() == [(10,), (30,)]
+    assert purge_db.execute('SELECT id FROM organizations ORDER BY id').fetchall() == [(1,), (2,)]
+    assert purge_db.execute('SELECT id FROM m5_cycles ORDER BY id').fetchall() == [(500,), (600,)]
+
+
+@pytest.mark.parametrize('foreign_dependency', ['cycle', 'indirect_parent', 'attribution', 'other_owner', 'unscoped_attribution'])
+def test_org_admin_purge_checks_entire_destructive_and_attribution_scope(purge_db, foreign_dependency):
+    if foreign_dependency != 'unscoped_attribution':
+        purge_db.execute('UPDATE program_definitions SET created_by_user_id=NULL WHERE created_by_user_id=20')
+    if foreign_dependency == 'cycle':
+        purge_db.execute("INSERT INTO m5_cycles VALUES(700,1,20,'active')")
+    elif foreign_dependency == 'indirect_parent':
+        purge_db.execute('''CREATE TABLE indirect_account_record(id BIGINT PRIMARY KEY,
+            user_id BIGINT REFERENCES users(id), cycle_id BIGINT REFERENCES m5_cycles(id))''')
+        purge_db.execute('INSERT INTO indirect_account_record VALUES(1,20,500)')
+    elif foreign_dependency == 'attribution':
+        purge_db.execute('UPDATE organization_invitations SET organization_id=1 WHERE id=703')
+    elif foreign_dependency == 'other_owner':
+        purge_db.execute("INSERT INTO auth_password_credentials VALUES(999,30,'other@example.test')")
+    purge_db.commit()
+    callbacks = []
+    with pytest.raises(ValueError, match='ACCOUNT_PURGE_SCOPE_FORBIDDEN'):
+        purge_account(purge_db, user_id=20, on_validated=callbacks.append,
+            validate_scope=lambda tables, keys: _validate_organization_two_plan(purge_db, tables, keys))
+    purge_db.rollback()
+    assert callbacks == []
+    assert purge_db.execute('SELECT id FROM users ORDER BY id').fetchall() == [(10,), (20,), (30,)]
+    assert purge_db.execute('SELECT COUNT(*) FROM organizations').fetchone()[0] == 2
+
+
+def test_account_purge_clears_multiple_frozen_attributions_and_restores_trigger_states(purge_db):
+    purge_db.execute('''CREATE TRIGGER frozen_questionnaire BEFORE UPDATE OR DELETE
+        ON questionnaire_response_revisions FOR EACH ROW EXECUTE FUNCTION prevent_result_delete()''')
+    purge_db.execute('''CREATE TRIGGER already_disabled BEFORE UPDATE OR DELETE
+        ON program_definitions FOR EACH ROW EXECUTE FUNCTION prevent_result_delete()''')
+    purge_db.execute('ALTER TABLE program_definitions DISABLE TRIGGER already_disabled')
+    purge_db.commit()
+    purge_account(purge_db, user_id=20)
+    purge_db.commit()
+    assert purge_db.execute('''SELECT uploaded_by_user_id,confirmed_by_user_id,status,answers_json->>'answer'
+        FROM questionnaire_response_revisions WHERE id=902''').fetchone() == (
+            None, None, 'confirmed', 'foreign control')
+    assert purge_db.execute("SELECT tgname,tgenabled FROM pg_trigger WHERE tgname IN ('frozen_questionnaire','already_disabled') ORDER BY tgname").fetchall() == [
+        ('already_disabled', 'D'), ('frozen_questionnaire', 'O')]
+    with pytest.raises(psycopg.errors.RaiseException, match='immutable result'):
+        purge_db.execute("UPDATE questionnaire_response_revisions SET status='changed' WHERE id=902")
+    purge_db.rollback()
+
+
+@pytest.mark.parametrize(('alias', 'protected'), [
+    ('verified-alias@example.test', True), ('unverified-alias@example.test', False)])
+@pytest.mark.parametrize('source', ['superadmin', 'organization_admin'])
+def test_configured_account_protection_uses_verified_identity_ownership(purge_db, monkeypatch, alias, protected, source):
+    from Api import routes
+    monkeypatch.setattr(routes, 'configured_superadmin_emails',
+        lambda: {alias} if source == 'superadmin' else set())
+    monkeypatch.setattr(routes, 'configured_org_admin_emails',
+        lambda: {'purge-me': [alias]} if source == 'organization_admin' else {})
+    assert routes._account_has_configured_access(purge_db,
+        {'id': 10, 'email': 'orphan@example.test'}) is protected
+    assert purge_db.execute('SELECT id FROM users ORDER BY id').fetchall() == [(10,), (20,), (30,)]
+
+
+def _cascade_scope_fixture(connection):
+    connection.execute('UPDATE program_definitions SET created_by_user_id=NULL WHERE created_by_user_id=20')
+    connection.execute('''CREATE TABLE scoped_cascade_record(id BIGINT PRIMARY KEY,
+        user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+        organization_id BIGINT REFERENCES organizations(id))''')
+    connection.execute('INSERT INTO scoped_cascade_record VALUES(999,20,2),(1000,30,1)')
+    schema = connection.execute('SELECT current_schema()').fetchone()[0]
+    connection.commit()
+    return schema
+
+
+def test_concurrent_scope_change_after_validation_cannot_escape_via_user_cascade(purge_db, test_database_url):
+    schema = _cascade_scope_fixture(purge_db)
+    attempted = []
+    def validate(tables, keys):
+        _validate_organization_two_plan(purge_db, tables, keys)
+        with psycopg.connect(test_database_url) as concurrent:
+            concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
+            concurrent.execute("SET lock_timeout='100ms'")
+            with pytest.raises(psycopg.errors.LockNotAvailable):
+                concurrent.execute('UPDATE scoped_cascade_record SET organization_id=1 WHERE id=999')
+            attempted.append('blocked')
+    purge_account(purge_db, user_id=20, validate_scope=validate)
+    purge_db.commit()
+    assert attempted == ['blocked']
+    assert purge_db.execute('SELECT id,organization_id FROM scoped_cascade_record').fetchall() == [(1000, 1)]
+
+
+def test_concurrent_change_while_waiting_for_row_lock_rejects_stale_ctid_before_intent(purge_db, test_database_url):
+    schema = _cascade_scope_fixture(purge_db)
+    callbacks = []
+    with psycopg.connect(test_database_url) as concurrent:
+        concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
+        concurrent.execute('UPDATE scoped_cascade_record SET organization_id=1 WHERE id=999')
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            waiting = executor.submit(purge_account, purge_db, user_id=20,
+                validate_scope=lambda tables, keys: _validate_organization_two_plan(purge_db, tables, keys),
+                on_validated=callbacks.append)
+            deadline = time.monotonic() + 5
+            blocked = False
+            while time.monotonic() < deadline:
+                blockers = concurrent.execute('SELECT pg_blocking_pids(%s)', (purge_db.info.backend_pid,)).fetchone()[0]
+                if concurrent.info.backend_pid in blockers:
+                    blocked = True
+                    break
+                time.sleep(.01)
+            concurrent.commit()
+            assert blocked, 'purge must wait for the concurrently modified selected row'
+            with pytest.raises(ValueError, match='PURGE_PREVIEW_STALE'):
+                waiting.result(timeout=5)
+    purge_db.rollback()
+    assert callbacks == []
+    assert purge_db.execute('SELECT id FROM users WHERE id=20').fetchone() == (20,)
+    assert purge_db.execute('SELECT organization_id FROM scoped_cascade_record WHERE id=999').fetchone() == (1,)
+
+
+@pytest.mark.parametrize('scope_row', ['attribution', 'ancestor'])
+def test_attribution_and_indirect_ancestor_organization_are_locked_during_authorization(purge_db, scope_row, test_database_url):
+    schema = _cascade_scope_fixture(purge_db)
+    if scope_row == 'ancestor':
+        purge_db.execute('CREATE TABLE scope_parent(id BIGINT PRIMARY KEY,organization_id BIGINT REFERENCES organizations(id))')
+        purge_db.execute('INSERT INTO scope_parent VALUES(9,2)')
+        purge_db.execute('''CREATE TABLE indirect_scope_row(id BIGINT PRIMARY KEY,user_id BIGINT REFERENCES users(id),
+            parent_id BIGINT REFERENCES scope_parent(id))''')
+        purge_db.execute('INSERT INTO indirect_scope_row VALUES(99,20,9)')
+        purge_db.commit()
+    mutation = ('UPDATE organization_invitations SET organization_id=1 WHERE id=703'
+        if scope_row == 'attribution' else 'UPDATE scope_parent SET organization_id=1 WHERE id=9')
+    def validate(tables, keys):
+        _validate_organization_two_plan(purge_db, tables, keys)
+        with psycopg.connect(test_database_url) as concurrent:
+            concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
+            concurrent.execute("SET lock_timeout='100ms'")
+            with pytest.raises(psycopg.errors.LockNotAvailable):
+                concurrent.execute(mutation)
+    purge_account(purge_db, user_id=20, validate_scope=validate)
+    purge_db.commit()
+    assert purge_db.execute('SELECT organization_id FROM organization_invitations WHERE id=703').fetchone() == (2,)
+    if scope_row == 'ancestor':
+        assert purge_db.execute('SELECT organization_id FROM scope_parent WHERE id=9').fetchone() == (2,)
+
+
+def test_late_foreign_child_inserted_before_parent_pin_is_included_and_denied_before_intent(purge_db, monkeypatch, test_database_url):
+    from scripts import purge_test_organization as purge_module
+    schema = _cascade_scope_fixture(purge_db)
+    purge_db.execute('''CREATE TABLE late_foreign_child(id BIGINT PRIMARY KEY,
+        parent_id BIGINT REFERENCES scoped_cascade_record(id) ON DELETE CASCADE,
+        organization_id BIGINT REFERENCES organizations(id))''')
+    purge_db.commit()
+    original_lock = purge_module._lock_purge_rows
+    inserted = []
+    def insert_before_parent_pin(connection, tables, staging_tables):
+        if not inserted:
+            with psycopg.connect(test_database_url) as concurrent:
+                concurrent.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
+                concurrent.execute("SET lock_timeout='500ms'")
+                concurrent.execute('INSERT INTO late_foreign_child VALUES(9001,999,1)')
+            inserted.append('committed_before_parent_pin')
+        return original_lock(connection, tables, staging_tables)
+    monkeypatch.setattr(purge_module, '_lock_purge_rows', insert_before_parent_pin)
+    callbacks = []
+    with pytest.raises(ValueError, match='ACCOUNT_PURGE_SCOPE_FORBIDDEN'):
+        purge_account(purge_db, user_id=20, on_validated=callbacks.append,
+            validate_scope=lambda tables, keys: _validate_organization_two_plan(purge_db, tables, keys))
+    purge_db.rollback()
+    assert inserted == ['committed_before_parent_pin'] and callbacks == []
+    assert purge_db.execute('SELECT id FROM users WHERE id=20').fetchone() == (20,)
+    assert purge_db.execute('SELECT id,organization_id FROM late_foreign_child').fetchall() == [(9001, 1)]
+    assert purge_db.execute('SELECT id FROM scoped_cascade_record ORDER BY id').fetchall() == [(999,), (1000,)]

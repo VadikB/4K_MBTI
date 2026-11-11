@@ -23,9 +23,10 @@ test('full deletion shows exact preview and keeps production execution gated', (
   assert.match(wiring, /Действие необратимо/);
 });
 
-test('removing a member preserves their account for another organization', () => {
-  assert.match(organizations, /Аккаунт сохранится; повторная регистрация не потребуется/);
-  assert.match(organizations, /Убрать из участников/);
+test('deleting a person uses the full account operation from the current list', () => {
+  assert.match(organizations, /Удалить человека/);
+  assert.match(organizations, /const removeButton = renderAccountPurgeButton\(item, \{ available: canDeletePerson \}\)/);
+  assert.doesNotMatch(organizations, /Аккаунт сохранится; повторная регистрация не потребуется|Убрать из участников/);
 });
 
 test('physical purge request includes all backend confirmations', () => {
@@ -35,15 +36,15 @@ test('physical purge request includes all backend confirmations', () => {
   assert.match(organizations, /acknowledge_irreversible: true/);
 });
 
-test('detached accounts remain visible when no organizations exist', () => {
-  const detachedMarkupIndex = organizations.indexOf('const detachedMarkup');
-  const emptyOrganizationsIndex = organizations.indexOf('if (!organizations.length)');
-  assert.ok(detachedMarkupIndex >= 0 && detachedMarkupIndex < emptyOrganizationsIndex);
-  assert.match(organizations, /adminOrganizationsList\.innerHTML = purgeRecoveryMarkup \+ staleMarkup \+ excludedMarkup \+ detachedMarkup \+ '<p class="report-empty-state">'/);
+test('account operation recovery remains available without a remaining organization', () => {
+  assert.match(organizations, /const pendingPurges = pendingAdminAccountPurges\(\)/);
+  assert.match(organizations, /adminOrganizationsList\.innerHTML = purgeRecoveryMarkup \+ staleMarkup \+ '<p class="report-empty-state">'/);
+  assert.doesNotMatch(organizations, /excluded_accounts|detached_accounts|restore-excluded-account/);
 });
 
 test('purge preview explains protected accounts', () => {
   assert.match(wiring, /preserved_reason === 'current_account'/);
+  assert.match(wiring, /preserved_reason === 'configured_account'/);
   assert.match(wiring, /configured_access_will_be_revoked/);
   assert.match(wiring, /Настроенные полномочия будут отозваны/);
   assert.match(wiring, /preview\.execution_blockers/);

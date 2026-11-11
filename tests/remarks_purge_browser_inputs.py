@@ -41,13 +41,17 @@ def main():
                         (email, 'Synthetic purge ' + label)).fetchone()['id']
                     connection.execute("INSERT INTO user_identities(user_id,provider,email,is_primary,is_verified,verified_at) VALUES(%s,'email_magic_link',%s,TRUE,TRUE,NOW())", (uid, email))
                     users[label] = {'id': uid, 'email': email}
-                organization_id = connection.execute("INSERT INTO organizations(code,name) VALUES('purge_guard_control','Synthetic permission control') RETURNING id").fetchone()['id']
-                connection.execute("INSERT INTO organization_memberships(organization_id,user_id,role,admission_source,admitted_at) VALUES(%s,%s,'admin','admin_add',NOW())", (organization_id, users['ordinary']['id']))
+                organization_id = connection.execute("INSERT INTO organizations(code,name) VALUES('purge_current_people','Synthetic current people') RETURNING id").fetchone()['id']
+                for label, role in [('super', 'admin'), ('before', 'member'), ('after', 'member')]:
+                    connection.execute("INSERT INTO organization_memberships(organization_id,user_id,role,is_participant,admission_source,admitted_at) VALUES(%s,%s,%s,%s,'admin_add',NOW())",
+                        (organization_id, users[label]['id'], role, role == 'member'))
+                control_organization_id = connection.execute("INSERT INTO organizations(code,name) VALUES('purge_guard_control','Synthetic permission control') RETURNING id").fetchone()['id']
+                connection.execute("INSERT INTO organization_memberships(organization_id,user_id,role,is_participant,admission_source,admitted_at) VALUES(%s,%s,'admin',FALSE,'admin_add',NOW())", (control_organization_id, users['ordinary']['id']))
                 connection.commit()
             state['remarks_purge'] = users
             args.state.write_text(json.dumps(state, default=str))
             # Private subprocess data only: never export these synthetic session values.
-            print(json.dumps({'users': users, 'cookie_name': SESSION_COOKIE_NAME,
+            print(json.dumps({'users': users, 'organization_id': organization_id, 'cookie_name': SESSION_COOKIE_NAME,
                 'super_session': web_session_service.create_session(users['super']['id']),
                 'ordinary_session': web_session_service.create_session(users['ordinary']['id'])}))
         else:
