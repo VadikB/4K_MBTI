@@ -8,7 +8,7 @@ from psycopg.rows import dict_row
 import pytest
 from fastapi import HTTPException
 
-from Api.routes import _lock_membership_by_email, _reject_foreign_membership
+from Api.routes import _discover_excluded_accounts, _lock_membership_by_email, _reject_foreign_membership
 from Api.database import ensure_organization_membership_participation_column
 
 
@@ -21,7 +21,7 @@ def membership_schema(test_database_url):
     with psycopg.connect(test_database_url) as connection:
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET search_path TO {}").format(psycopg.sql.Identifier(schema)))
-        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY, email TEXT NOT NULL UNIQUE)")
+        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY, email TEXT NOT NULL UNIQUE, full_name TEXT)")
         connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY, name TEXT NOT NULL)")
         connection.execute("""CREATE TABLE organization_memberships(
             organization_id BIGINT NOT NULL REFERENCES organizations(id),
@@ -92,5 +92,27 @@ def test_participation_backfill_is_idempotent_and_preserves_admin_authority(test
         assert connection.execute(
             "SELECT COUNT(*) AS count FROM organization_memberships WHERE is_participant=TRUE"
         ).fetchone()["count"] == 0
+    finally:
+        connection.close()
+
+
+def test_excluded_account_discovery_keeps_admin_and_foreign_membership_distinct(test_database_url, membership_schema):
+    connection = _connect(test_database_url, membership_schema)
+    try:
+        ensure_organization_membership_participation_column(connection)
+        connection.execute("""INSERT INTO users(id,email) VALUES
+            (8,'other@example.test'), (9,'admin@example.test'), (10,'detached@example.test'),
+            (11,'protected@example.test')""")
+        connection.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,is_participant)
+            VALUES (3,7,'member',FALSE), (4,8,'member',TRUE), (3,9,'admin',FALSE),
+                   (3,11,'member',FALSE)""")
+        assert _discover_excluded_accounts(connection, {'protected@example.test'}) == [{
+            'user_id': 7, 'email': 'person@example.test', 'full_name': None,
+            'organization_id': 3, 'organization_name': 'Организация А',
+        }]
+        assert connection.execute("SELECT id FROM users WHERE id=7").fetchone()['id'] == 7
+        connection.execute("UPDATE organization_memberships SET is_participant=TRUE WHERE user_id=7")
+        assert _discover_excluded_accounts(connection, {'protected@example.test'}) == []
+        assert connection.execute("SELECT role FROM organization_memberships WHERE user_id=9").fetchone()['role'] == 'admin'
     finally:
         connection.close()
