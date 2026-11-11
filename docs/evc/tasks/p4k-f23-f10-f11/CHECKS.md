@@ -70,3 +70,20 @@
 человеческое review. После отдельного допуска: push/PR, релизная подготовка по
 `ready:prepare` с согласованной версией, TEST/readback deployed SHA и визуальная
 приёмка владельца. Эти статусы нельзя выводить из локального PASS.
+
+## Продолжение: draft CI и release preflight
+
+| Проверка/действие | Факт на 11.11.2026 |
+| --- | --- |
+| GitHub draft PR #212, head `b8654a8943b628145a2995da6f8f3bd54d35f82b` | `frontend` PASS, `pytest` PASS; `full-verification` SKIPPED по условию draft; review/merge/TEST NOT_RUN |
+| `git fetch origin main`, `git merge-base HEAD origin/main` | PASS; база `aeea4e10014f9852e269eff0da8bf8cabe8d4427`, версия `2.0.99`, ветка актуальна |
+| `npm run ready:prepare` без candidate | Ожидаемый exit 2, без изменения файлов; предложен PATCH `2.0.100` |
+| `python3.12 scripts/prepare_release.py patch --dry-run` | PASS; ровно `pyproject.toml`, `uv.lock`, `web/js/config.js`, `web/index.html` |
+| `npm run ready:prepare -- --candidate 2.0.100` после прямого решения владельца | PASS; release gate, сборка `web/dist`, 39 product paths |
+| `python3.12 scripts/check_release_version.py --base-ref origin/main`, `git diff --check` | PASS; версия `2.0.100`, замечаний по diff нет |
+| `node --test tests/frontend/*.test.mjs`, `npm run lint:js` | 261 PASS; lint PASS |
+| `/Users/vadim_bogachev/Developer/4K/.venv/bin/python -m pytest -m 'not integration and not e2e and not llm' -q` | 1089 PASS, 550 deselected, 1 dependency warning |
+
+Эта секция фиксирует состояние до commit release-кандидата. Полный CI на его
+точном SHA, человеческое review, merge/deploy/TEST и новый рабочий выпуск
+программы остаются отдельными проверками.

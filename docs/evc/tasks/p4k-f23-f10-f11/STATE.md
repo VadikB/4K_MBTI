@@ -32,3 +32,21 @@
   `P4K.DEV.PRINCIPLES`/glossary/F23/F10/F11 не доступны отдельно от входного
   объединённого задания. Для локального точечного исправления это не требует
   нового предметного решения.
+
+## Продолжение релиза 11.11.2026
+
+- Владелец отдельно разрешил push `b8654a8943b628145a2995da6f8f3bd54d35f82b`
+  и один PR к `main`. Создан draft PR #212, GitHub подтвердил точный head SHA.
+  На этом head CI `frontend` и `pytest` — PASS; `full-verification` пропущен
+  условием `draft == false`.
+- Затем владелец прямо утвердил PATCH `2.0.100`, `ready:prepare`, commit/push
+  обновления PR #212 и перевод в `Ready for review`. Свежий
+  `origin/main=aeea4e10014f9852e269eff0da8bf8cabe8d4427`, версия базы
+  `2.0.99`, `merge-base` совпадает с базой. `ready:prepare` без кандидата
+  предложил `2.0.100` без записи (ожидаемый exit 2). С утверждённым кандидатом
+  preflight — PASS: четыре файла версии и производный `web/dist`, release gate
+  и сборка пройдены. Финальный SHA release commit и результаты CI фиксируются
+  после push.
+- `merge=false`, `deploy=false`, `artifact_publish=false`. До merge необходимы
+  полный CI на release head и человеческое review; TEST/readback SHA и owner
+  visual остаются отдельной стадией. Действия публикации программы не разрешены.

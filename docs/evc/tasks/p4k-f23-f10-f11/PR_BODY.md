@@ -40,6 +40,12 @@ browser/HTTP/PG сценарии на owned синтетических данн�
 Рабочая публикация общей программы не выполнялась: `artifact_publish=false`.
 Реальные письма/LLM и полный EXEC не выполнялись по границе задачи.
 
+После создания draft PR #212 владелец утвердил PATCH `2.0.100` и перевод в
+`Ready for review`. Штатный `ready:prepare` прошёл на свежем `origin/main`
+(`2.0.99`) с четырьмя файлами версии и пересборкой `web/dist`. На исходном
+head draft CI `frontend` и `pytest` прошли; `full-verification` запустится
+после перевода PR в review. Итог release head и CI сверяются перед merge.
+
 ## Риски
 
 - Конфиг: нет новых параметров.
