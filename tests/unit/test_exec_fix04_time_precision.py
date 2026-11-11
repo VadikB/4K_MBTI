@@ -58,7 +58,7 @@ def test_exact_admission_and_integer_projection(consumed, allowed, remaining, di
     assert isinstance(result["remaining_seconds"], int)
 
 
-def test_effective_limit_sums_fractional_intervals_without_rounding(monkeypatch):
+def test_effective_limit_sums_fractional_intervals_without_rounding():
     start = datetime(2026, 1, 1, tzinfo=timezone.utc)
     rows = [
         {"started_at": start, "ended_at": start + timedelta(seconds=3599.8)},
@@ -67,15 +67,15 @@ def test_effective_limit_sums_fractional_intervals_without_rounding(monkeypatch)
     ]
 
     class Connection:
-        def execute(self, query, _params):
+        def execute(self, query, _params=None):
+            if query == 'SELECT clock_timestamp() AS value':
+                return _Result({'value': start + timedelta(days=1)})
             assert "FROM m5_cycle_time_intervals" in query
             return _Result(rows)
 
-    monkeypatch.setattr(m7_completion, "read_cycle", lambda *_: {
-        "calendar_deadline": datetime.now(timezone.utc) + timedelta(days=30), "remaining_seconds": 0,
-    })
     kind, effective_at = m7_completion._effective_limit(
-        Connection(), {"cycle_id": uuid4(), "id": 1, "time_budget_seconds": 7200}
+        Connection(), {"cycle_id": uuid4(), "id": 1, "time_budget_seconds": 7200,
+                       "started_at": start, "calendar_window_seconds": 259200}
     )
     assert kind == "time_budget"
     assert effective_at == start + timedelta(seconds=7200.2)

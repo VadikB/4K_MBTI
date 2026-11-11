@@ -7,7 +7,11 @@
   сессия `P4K-ACCOUNT-DELETE-01-ARCH`. Изменение назначения из сообщения владельца
   имеет приоритет над реквизитами в архиве. Один исполнитель изменений на ветке.
 - Base `main` и проверенный `origin/main`:
-  `e6b294e43811fb67afb695506f15547e5efc5f9e` (11.11.2026).
+  `e6b294e43811fb67afb695506f15547e5efc5f9e` (11.11.2026). После
+  согласованного squash merge EXEC-FIX-05 (#208) интегрирован новый `origin/main`
+  `ed141abbbbcc3f1033737b93282f58984a2156d4` (PATCH `2.0.95`);
+  автоматический `deploy-test` для этого SHA прошёл:
+  `https://github.com/VadikB/4K_MBTI/actions/runs/43008683483`.
 - Архив `P4K_ACCOUNT_DELETE_FIX_01_2026-11-11.zip`:
   SHA-256 `fc56089c0bd015483b6b3de667ac59b818a3ddb7d1d44e1c045f016ecd09b2f5`;
   13 записей `SHA256SUMS` проверены, 0 расхождений. Прочитаны `START.txt`,
@@ -69,11 +73,23 @@ browser stand создаёт и уничтожает только собстве
 | `npm run lint:js` | PASS |
 | `node --test tests/frontend/*.test.mjs` | 226 PASS |
 | `npm run build:web` | PASS; `web/dist` собран из текущих `web/js` |
-| Python `pytest -m 'not integration and not e2e and not llm' -q` | 1055 PASS |
+| Python `pytest -m 'not integration and not e2e and not llm' -q` | 1055 PASS на исходном head; 1065 PASS после интеграции EXEC-FIX-05 |
 | Python `pytest -m e2e tests/e2e -q` | 144 PASS |
 | Python `pytest --run-integration -q tests/integration/test_arch30_membership_db.py tests/integration/test_purge_test_organization_db.py` на `account_delete_pytest` | 9 PASS |
 | Python `pytest --run-integration -q tests/integration/test_path29_participant_owned_stand.py` на marker-owned stand | 1 PASS |
 | Playwright `tests/browser/account-delete-owned.spec.mjs` на marker-owned stand | 1 PASS; actual Chromium/HTTP/PostgreSQL |
+
+После интеграции `ed141abb` повторно выполнены lint, 226 frontend-тестов, сборка,
+1065 backend, 144 HTTP, 9 адресных PostgreSQL integration, PATH29 (1 PASS) и
+Chromium/HTTP/owned PostgreSQL (1 PASS). Конфликты были только в генерируемом
+`web/dist`; он пересобран штатной командой из объединённых исходников.
+Изолированный PostgreSQL после проверок остановлен и удалён.
+
+Первый запуск `initdb` и integration в sandbox не получил доступ к shared memory
+и localhost TCP соответственно; повторы с разрешённым локальным доступом прошли.
+Первая сборка после удаления конфликтного `web/dist` остановилась из-за отсутствия
+каталога; пустой каталог создан и штатная сборка прошла. Продуктовый код от этих
+ошибок не менялся.
 
 Первая адресная integration попытка выявила неполный synthetic fixture без
 `users.full_name`: 1 FAIL, 8 PASS. Fixture дополнен полем, повторный прогон 9 PASS.
@@ -89,7 +105,8 @@ browser stand создаёт и уничтожает только собстве
 пользователя, replay того же operation id идемпотентен; контрольные аккаунты
 сохранены. Существующая PATH29 регрессия отдельно проверяет сохранённый пароль.
 
-Общий TEST/production и реальные пользователи не затронуты. Платные/provider
-вызовы не выполнялись. CI точного PR head и человеческое review требуются перед
-merge; release number и окно deploy решаются в действующем процессе. Рекомендуемый
-порядок: EXEC-FIX-05 → ACCOUNT-DELETE-FIX-01 → EXEC-CONTOUR-FIX-02.
+Общий TEST/production и реальные пользователи не затронуты проверками этой задачи.
+Платные/provider вызовы не выполнялись. Для ACCOUNT-DELETE-FIX-01 остаются
+согласование следующего release number, Ready preflight, CI точного PR head,
+человеческое review и отдельное решение о merge/deploy в окне выпуска.
+Рекомендуемый порядок: EXEC-FIX-05 → ACCOUNT-DELETE-FIX-01 → EXEC-CONTOUR-FIX-02.
