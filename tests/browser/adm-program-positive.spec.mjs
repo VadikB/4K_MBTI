@@ -170,6 +170,8 @@ for (const channel of ['product_form', 'csv']) {
       expect(saved.channel).toBe(channel);
       expect(saved.source_author).toBe('');
       expect(saved.uploaded_by_user_id).toBeGreaterThan(0);
+      const uploaderLabel = saved.uploaded_by_name || saved.uploaded_by_email || 'аккаунт #' + saved.uploaded_by_user_id;
+      await expect(card.locator('.admin-questionnaire-confirmation .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploaderLabel);
       expect(saved.answers_json.C01.name).toBe(channel === 'csv' ? 'Синтетическая организация' : fixture.fields.organization_name);
       const db = readDb(revisionId);
       save('database-readback', db);
@@ -192,6 +194,8 @@ for (const channel of ['product_form', 'csv']) {
         }
       }
       await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+      await expect(card.locator('.admin-questionnaire-confirmation .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploaderLabel);
+      await expect(card.locator('.admin-questionnaire-confirmation .admin-questionnaire-uploader')).toHaveAttribute('data-questionnaire-revision-id', String(revisionId));
       const listResponse = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`);
       expect(listResponse.status()).toBe(200);
       const list = await listResponse.json();

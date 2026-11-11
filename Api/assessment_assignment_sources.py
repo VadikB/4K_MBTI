@@ -72,13 +72,17 @@ def schema_available(connection) -> bool:
 
 
 def has_managed_assignment(connection, *, user_id: int) -> bool:
+    """Read existing managed scope independently of eligibility for a new assignment.
+
+    Excluding participation retains the membership and its active assignment. The
+    assignment's own cancellation/revocation guards still determine its lifetime.
+    """
     if not schema_available(connection):
         return False
     return bool(connection.execute('''SELECT 1 FROM questionnaire_response_revisions q
         WHERE q.status='confirmed' AND EXISTS (
           SELECT 1 FROM organization_memberships m JOIN organizations o ON o.id=m.organization_id
-          WHERE m.user_id=%s AND m.organization_id=q.organization_id
-            AND m.is_participant=TRUE AND o.is_active=TRUE)
+          WHERE m.user_id=%s AND m.organization_id=q.organization_id AND o.is_active=TRUE)
         AND (EXISTS (SELECT 1 FROM organization_assessment_assignments a
                      WHERE a.recipient_user_id=%s AND a.organization_id=q.organization_id
                        AND a.assignment_ref=q.assignment_ref AND a.status='active' AND a.revoked_at IS NULL)

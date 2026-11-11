@@ -1,4 +1,5 @@
-import { createOperationId, readApiResponse, fetchWithDeadline as fetch } from '../../api.js';
+import { createOperationId, readApiResponse, fetchWithDeadline as fetch, previewAccountPurge,
+  getPendingAccountPurges, confirmAccountPurge, executeAccountPurge, accountPurgeErrorMessage } from '../../api.js';
 import {
   adminOrganizationCodeInput,
   adminOrganizationCreateButton,
@@ -736,6 +737,21 @@ export const selectAdminOrganizationView = (organizationId, view) => {
   organizationViews.set(Number(organizationId), allowed.has(view) ? view : 'people');
   saveManagementSelection();
   renderAdminOrganizations();
+};
+
+export const restoreExcludedAccountForm = (userId, organizationId) => {
+  if (!state.adminOrganizations?.is_superadmin) return;
+  const account = (state.adminOrganizations.excluded_accounts || []).find((item) =>
+    Number(item.user_id) === Number(userId) && Number(item.organization_id) === Number(organizationId));
+  if (!account || pendingAdminAccountPurges().some((item) => item.targetUserId === Number(userId))) return;
+  selectAdminOrganization(organizationId);
+  selectAdminOrganizationView(organizationId, 'people');
+  const form = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"] form[data-action="add-member"]');
+  if (!form) return;
+  form.elements.namedItem('email').value = account.email;
+  form.elements.namedItem('full_name').value = account.full_name || '';
+  form.elements.namedItem(account.full_name ? 'role_description' : 'full_name').focus();
+  form.scrollIntoView({ block: 'center' });
 };
 
 export const selectAdminOrganizationAssessment = (organizationId, form, assessmentRef, previousRef = '') => {
@@ -1890,20 +1906,54 @@ export const previewAdminOrganizationPurge = async (organizationId) => {
   return readApiResponse(response, 'Не удалось построить состав полного удаления.');
 };
 
-export const previewAdminAccountPurge = async (userId) => {
-  const response = await fetch('/users/admin/users/' + Number(userId) + '/purge-preview', { credentials: 'same-origin' });
-  return readApiResponse(response, 'Не удалось построить состав полного удаления аккаунта.');
+export const pendingAdminAccountPurges = () => getPendingAccountPurges(Number(currentIdentityKey()));
+
+export const showAdminAccountPurgeError = (error, phase = 'execute', actorId = currentIdentityKey()) => {
+  if (String(actorId) !== currentIdentityKey()) return;
+  renderAdminOrganizations();
+  setStatus(accountPurgeErrorMessage(error, { phase }), 'error');
+};
+
+export const previewAdminAccountPurge = (userId) => previewAccountPurge(userId);
+
+const performConfirmedAccountPurge = async (operation, actorId) => {
+  try {
+    await executeAccountPurge(operation, { actorId: Number(actorId) });
+  } catch (error) {
+    showAdminAccountPurgeError(error, 'execute', actorId);
+    return;
+  }
+  if (String(actorId) !== currentIdentityKey()) return;
+  try {
+    await loadAdminOrganizations();
+  } catch (_error) {
+    if (String(actorId) !== currentIdentityKey()) return;
+    setStatus('Удаление аккаунта подтверждено. Не удалось обновить список; обновите страницу.', 'success');
+    return;
+  }
+  if (String(actorId) === currentIdentityKey()) {
+    setStatus('Аккаунт «' + operation.email + '» и связанные данные полностью удалены.', 'success');
+  }
 };
 
 export const purgeAdminAccount = async (userId, email, previewFingerprint) => {
-  const response = await fetch('/users/admin/users/' + Number(userId) + '/purge', {
-    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ confirmation_email: email, preview_fingerprint: previewFingerprint,
-      operation_id: createOperationId(), acknowledge_irreversible: true }),
-  });
-  await readApiResponse(response, 'Не удалось полностью удалить аккаунт.');
-  await loadAdminOrganizations();
-  setStatus('Аккаунт «' + email + '» и связанные данные полностью удалены.', 'success');
+  const actorId = currentIdentityKey();
+  try {
+    const operation = confirmAccountPurge({ actorId, targetUserId: Number(userId), email, fingerprint: previewFingerprint });
+    await performConfirmedAccountPurge(operation, actorId);
+  } catch (error) {
+    showAdminAccountPurgeError(error, 'execute', actorId);
+  }
+};
+
+export const recoverAdminAccountPurge = async (userId) => {
+  const actorId = currentIdentityKey();
+  const operation = pendingAdminAccountPurges().find((item) => item.targetUserId === Number(userId));
+  if (!operation) {
+    setStatus('Подтверждённая операция не найдена для текущего аккаунта входа. Обновите список.', 'error');
+    return;
+  }
+  await performConfirmedAccountPurge(operation, actorId);
 };
 
 const renderTagList = (items, emptyText, className, deleteAction) => {
@@ -2071,20 +2121,35 @@ export const renderAdminOrganizations = () => {
   const purgePreviewAvailable = Boolean(data?.purge_preview_available);
   const detachedAccounts = Array.isArray(data?.detached_accounts) ? data.detached_accounts : [];
   const excludedAccounts = Array.isArray(data?.excluded_accounts) ? data.excluded_accounts : [];
+  const pendingPurges = isSuperadmin ? pendingAdminAccountPurges() : [];
+  const purgeAccountButton = (account) => {
+    const pending = pendingPurges.some((item) => item.targetUserId === Number(account.user_id));
+    return '<button class="ghost-button compact-ghost danger" type="button" data-action="' +
+      (pending ? 'recover-purge-account' : 'purge-account') + '" data-user-id="' + Number(account.user_id) +
+      '" data-email="' + escapeHtml(account.email) + '">' + (pending ? 'Проверить удаление' : 'Удалить полностью') + '</button>';
+  };
+  const purgeRecoveryMarkup = pendingPurges.length ? '<section class="card card--inset admin-purge-recovery" role="status">' +
+    '<h3>Проверка полного удаления</h3><p>Исход подтверждённой операции пока не установлен. ' +
+    'Проверьте результат той же операции перед другими действиями с аккаунтом.</p>' +
+    pendingPurges.map((operation) => '<div class="admin-account-row"><span>' + escapeHtml(operation.email) +
+      '</span><button class="ghost-button compact-ghost" type="button" data-action="recover-purge-account" data-user-id="' +
+      operation.targetUserId + '">Проверить результат удаления</button></div>').join('') + '</section>' : '';
   const staleMarkup = organizationsReadStale ? '<div class="form-status error" role="status" data-organizations-stale>' +
     '<strong>Показано последнее подтверждённое состояние.</strong> ' + escapeHtml(organizationsReadStaleReason) +
     ' <button type="button" class="text-button" data-action="refresh-admin-organizations">Обновить безопасно</button></div>' : '';
   const detachedMarkup = isSuperadmin ? '<section class="card card--inset admin-detached-accounts"><h3>Ранее отвязанные аккаунты</h3>' +
-    (detachedAccounts.length ? detachedAccounts.map((account) => '<div class="admin-organization-member"><span>' +
-      escapeHtml(account.email) + '</span><button class="ghost-button compact-ghost danger" type="button" data-action="purge-account" data-user-id="' +
-      Number(account.user_id) + '" data-email="' + escapeHtml(account.email) + '">Удалить полностью</button></div>').join('') :
+    (detachedAccounts.length ? detachedAccounts.map((account) => '<div class="admin-account-row"><span>' +
+      escapeHtml(account.email) + '</span>' + purgeAccountButton(account) + '</div>').join('') :
       '<p class="admin-organizations-empty">Ранее отвязанных аккаунтов нет.</p>') + '</section>' : '';
   const excludedMarkup = isSuperadmin ? '<section class="card card--inset admin-excluded-accounts"><h3>Исключённые участники</h3>' +
     '<p>Аккаунты и история сохранены. Полное удаление выполняется отдельно после проверки состава.</p>' +
-    (excludedAccounts.length ? excludedAccounts.map((account) => '<div class="admin-organization-member"><span>' +
+    (excludedAccounts.length ? excludedAccounts.map((account) => '<div class="admin-account-row"><span>' +
       escapeHtml(account.email) + ' · ' + escapeHtml(account.organization_name) +
-      '</span><button class="ghost-button compact-ghost danger" type="button" data-action="purge-account" data-user-id="' +
-      Number(account.user_id) + '" data-email="' + escapeHtml(account.email) + '">Удалить полностью</button></div>').join('') :
+      '</span><div class="admin-account-actions">' +
+      (pendingPurges.some((item) => item.targetUserId === Number(account.user_id)) ? '' :
+        '<button class="ghost-button compact-ghost" type="button" data-action="restore-excluded-account" data-user-id="' +
+        Number(account.user_id) + '" data-restore-organization-id="' + Number(account.organization_id) + '">Повторно включить</button>') +
+      purgeAccountButton(account) + '</div></div>').join('') :
       '<p class="admin-organizations-empty">Исключённых участников нет.</p>') + '</section>' : '';
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
@@ -2094,7 +2159,7 @@ export const renderAdminOrganizations = () => {
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
-    adminOrganizationsList.innerHTML = staleMarkup + excludedMarkup + detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
+    adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + excludedMarkup + detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
       ? 'Организации пока не созданы.'
       : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
     return;
@@ -2113,7 +2178,7 @@ export const renderAdminOrganizations = () => {
       )
       .join('');
   }
-  adminOrganizationsList.innerHTML = staleMarkup + excludedMarkup + detachedMarkup + organizations
+  adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + excludedMarkup + detachedMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);
@@ -2251,10 +2316,14 @@ export const renderAdminOrganizations = () => {
         '" aria-pressed="' + String(activeView === view) + '">' + label + '</button>';
       const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(assessmentKey(orgId, selectedRef));
       const confirmationOutcome = questionnaireConfirmOutcomes.get(assessmentKey(orgId, selectedRef));
+      const revisionAttribution = (revision) => '<p class="admin-questionnaire-uploader" data-questionnaire-revision-id="' +
+        Number(revision.id) + '">Внёс данные: ' + escapeHtml(revision.uploaded_by_name || revision.uploaded_by_email ||
+          (Number(revision.uploaded_by_user_id) > 0 ? 'аккаунт #' + Number(revision.uploaded_by_user_id) : 'сведения не сохранены')) + '</p>';
       const confirmationMarkup = confirmationOutcome || publishedRevision
         ? '<div class="admin-questionnaire-confirmation" role="status"><strong>' +
           (!programConfirmed ? 'Сохранённые сведения выбранной оценки' : confirmationOutcome?.status === 'unknown'
             ? 'Итог подтверждения неизвестен' : 'Сведения подтверждены') + '</strong>' +
+          (publishedRevision ? revisionAttribution(publishedRevision) : '') +
           (!programConfirmed ? '<p>Доступность для текущей программы будет определена после проверки подключения.</p>' : '') +
           (publishedRevision ? '<p>Получатели: участник' + (publishedRevision.recipient_user_ids?.length
             ? ' и выбранные представители (' + publishedRevision.recipient_user_ids.length + ')' : '') + '.</p>' : '') +
@@ -2263,7 +2332,9 @@ export const renderAdminOrganizations = () => {
             : confirmationOutcome.status === 'refresh_failed' ? 'Не удалось обновить готовность.' : 'Готовность обновляется…') +
             '</p><button type="button" class="ghost-button compact-ghost" data-action="check-questionnaire-confirmation" data-value="' +
             Number(confirmationOutcome.revisionId) + '">Проверить результат</button>' :
-            '<button type="button" class="text-button" data-action="show-admin-view" data-view="people">Перейти к участникам и назначению</button>') + '</div>' : '';
+            '<button type="button" class="text-button" data-action="show-admin-view" data-view="people">Перейти к участникам и назначению</button>') + '</div>' :
+          (currentRevision && !questionnairePreview ? '<div class="admin-questionnaire-saved-revision"><strong>Сохранённая редакция</strong>' +
+            revisionAttribution(currentRevision) + '</div>' : '');
       const participant = questionnairePreview?.participant_preview || {};
       const fieldLabels = { organization_name: 'Организация', organization_type: 'Тип организации',
         industry: 'Сфера деятельности', activity_description: 'Описание деятельности', purpose: 'Цель оценки',

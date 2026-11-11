@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'node:fs';
+import vm from 'node:vm';
 
 import { ApiResponseError, readApiResponse } from '../../web/js/api.js';
 
@@ -56,13 +58,13 @@ for (const [code, expected] of [
     );
   });
 }
-test('membership conflict preserves the already scope-filtered server action', async () => {
+test('membership conflict preserves scoped reason and removes unavailable legacy action', async () => {
   await assert.rejects(
     readApiResponse(new Response(JSON.stringify({
       detail: 'ORGANIZATION_MEMBERSHIP_CONFLICT: Пользователь связан с организацией «Организация А». Откройте организацию или перенесите пользователя.',
     }), { status: 409, headers: { 'content-type': 'application/json' } }), 'Не удалось добавить.'),
     (error) => error.code === 'ORGANIZATION_MEMBERSHIP_CONFLICT' &&
-      error.message.includes('Организация А') && error.message.includes('перенесите пользователя'),
+      error.message.includes('Организация А') && !/перенос|перенес/i.test(error.message),
   );
 });
 for (const [name, body, contentType] of [
@@ -90,4 +92,39 @@ test('stale purge preview tells the operator to refresh without claiming deletio
     (error) => error.code === 'PURGE_PREVIEW_STALE' && error.message.includes('Обновите предварительный просмотр') &&
       error.message.includes('удаление не выполнено'),
   );
+});
+
+for (const detail of [
+  'ORGANIZATION_MEMBERSHIP_CONFLICT',
+  { code: 'ORGANIZATION_MEMBERSHIP_CONFLICT', message: 'Пользователь связан с другой организацией. Обратитесь к суперадминистратору.' },
+]) {
+  test('membership conflict string/object code never proposes disabled transfer', async () => {
+    await assert.rejects(readApiResponse(new Response(JSON.stringify({ detail }), { status: 409 }), 'Ошибка'),
+      (error) => error.code === 'ORGANIZATION_MEMBERSHIP_CONFLICT' && !/перенос|перенес/i.test(error.message));
+  });
+}
+
+test('scoped organization name containing transfer word remains an exact reason', async () => {
+  await assert.rejects(readApiResponse(new Response(JSON.stringify({ detail:
+    'ORGANIZATION_MEMBERSHIP_CONFLICT: Пользователь связан с организацией «Перенос технологий». Управляйте его участием в текущей организации.' }), { status: 409 }), 'Ошибка'),
+    (error) => error.message.includes('«Перенос технологий»') && error.message.includes('Управляйте его участием'));
+});
+
+test('actual add-member handler displays the scoped API reason through production membership formatter', async () => {
+  const source = fs.readFileSync('web/js/screens/admin/organizations.js', 'utf8');
+  const formatter = source.slice(source.indexOf('const membershipErrorMessage ='), source.indexOf('const invitationRevokeErrorMessage ='));
+  const handler = source.slice(source.indexOf('export const addAdminOrganizationMember ='),
+    source.indexOf('export const deleteAdminOrganizationMember =')).replace('export const ', 'const ');
+  const messages = [];
+  const context = vm.createContext({
+    setStatus: (message, tone) => messages.push({ message, tone }),
+    requestOrganizations: async () => readApiResponse(new Response(JSON.stringify({ detail:
+      'ORGANIZATION_MEMBERSHIP_CONFLICT: Пользователь связан с организацией «Синтетический заказчик». Управляйте его участием в текущей организации.' }), { status: 409 }), 'Ошибка'),
+  });
+  vm.runInContext(formatter + handler + '\nthis.addMember = addAdminOrganizationMember;', context);
+  assert.equal(await context.addMember(5, { email: 'member@example.test', full_name: 'Synthetic', role_description: 'Synthetic role' }), false);
+  assert.equal(messages[0].tone, 'error');
+  assert.match(messages[0].message, /«Синтетический заказчик»/);
+  assert.match(messages[0].message, /Управляйте его участием/);
+  assert.doesNotMatch(messages[0].message, /перенос|перенес|ORGANIZATION_MEMBERSHIP_CONFLICT/);
 });

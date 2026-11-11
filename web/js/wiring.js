@@ -1,3 +1,4 @@
+import { assessmentRuntimeErrorMessage, getAssessmentViewGeneration } from './assessment-errors.js';
 import { state, persistAssessmentContext, clearAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen, applyJourneyAssessmentContext } from './state.js';
 import {
   authEmailForm,
@@ -155,6 +156,7 @@ import {
   newUserExitButton,
   prechatExitButton,
   prechatStartButton,
+  prechatError,
   assessmentActionButton,
   startFirstAssessmentButton,
   libraryStartButton,
@@ -226,7 +228,7 @@ document.getElementById('organization-invitation-keep-session-button')?.addEvent
   try { window.sessionStorage.removeItem('agent4k.organizationInvitationToken'); } catch (_error) { /* optional */ }
   window.location.assign('/');
 });
-import { advanceSessionGeneration, authenticatedJourneyErrorMessage, readApiResponse, createOperationId } from './api.js';
+import { advanceSessionGeneration, authenticatedJourneyErrorMessage, readApiResponse, createOperationId, accountPurgeErrorMessage } from './api.js';
 import {
   buildExistingUserAgentMessage,
   shouldOfferNoChangesQuickReply,
@@ -1885,29 +1887,58 @@ if (adminOrganizationsList) {
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
     // The collection recovery control is outside any organization card.
+    if (button.dataset.action === 'restore-excluded-account') {
+      withScreen(loadAdminOrganizations, (module) => module.restoreExcludedAccountForm(
+        button.dataset.userId, button.dataset.restoreOrganizationId));
+      return;
+    }
     if (button.dataset.action === 'refresh-admin-organizations') {
       button.disabled = true;
       withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
       return;
     }
-    if (button.dataset.action === 'purge-account') {
+    if (['purge-account', 'recover-purge-account'].includes(button.dataset.action)) {
       const userId = Number(button.dataset.userId);
       const email = String(button.dataset.email || '').trim();
-      withScreen(loadAdminOrganizations, async (module) => {
-        const preview = await module.previewAdminAccountPurge(userId);
-        const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
-          .map(([name, count]) => name + ': ' + Number(count)).join(', ');
-        const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
-          (preview.configured_access_will_be_revoked
-            ? 'Настроенные полномочия этого email будут постоянно отозваны. ' : '') +
-          'Общие методологические материалы останутся. Для подтверждения введите email: ' + email);
-        if (typed === null || String(typed).trim().toLowerCase() !== email.toLowerCase()) {
-          window.alert('Email подтверждения не совпадает. Удаление отменено.');
-          return;
+      const actorId = Number(state.pendingUser?.id);
+      button.disabled = true;
+      void (async () => {
+        let module;
+        let phase = 'preview';
+        try {
+          module = await loadAdminOrganizations();
+          if (Number(state.pendingUser?.id) !== actorId) return;
+          // A disappeared target must be recoverable before any new preview is requested.
+          const pending = module.pendingAdminAccountPurges().find((item) => item.targetUserId === userId);
+          if (pending || button.dataset.action === 'recover-purge-account') {
+            phase = 'execute';
+            await module.recoverAdminAccountPurge(userId);
+            return;
+          }
+          const preview = await module.previewAdminAccountPurge(userId);
+          if (Number(state.pendingUser?.id) !== actorId) return;
+          const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
+            .map(([name, count]) => name + ': ' + Number(count)).join(', ');
+          const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
+            (preview.configured_access_will_be_revoked
+              ? 'Настроенные полномочия этого email будут постоянно отозваны. ' : '') +
+            'Общие методологические материалы останутся. Для подтверждения введите email: ' + email);
+          if (typed === null) return;
+          if (String(typed).trim().toLowerCase() !== email.toLowerCase()) {
+            window.alert('Email подтверждения не совпадает. Удаление отменено.');
+            return;
+          }
+          if (!window.confirm('Удалить аккаунт «' + email + '» полностью? Действие необратимо.')) return;
+          phase = 'execute';
+          await module.purgeAdminAccount(userId, email, preview.fingerprint);
+        } catch (error) {
+          if (Number(state.pendingUser?.id) !== actorId) return;
+          if (typeof module?.showAdminAccountPurgeError === 'function') module.showAdminAccountPurgeError(error, phase, actorId);
+          else window.alert(accountPurgeErrorMessage(error, { phase }));
+        } finally {
+          button.disabled = false;
         }
-        if (!window.confirm('Удалить аккаунт «' + email + '» полностью? Действие необратимо.')) return;
-        await module.purgeAdminAccount(userId, email, preview.fingerprint);
-      });
+      })();
       return;
     }
     if (!organizationId) {
@@ -2750,9 +2781,17 @@ libraryStartButton.addEventListener('click', () => {
 });
 
 prechatStartButton.addEventListener('click', () => {
+  const ownerId = state.pendingUser?.id, epoch = state.identityEpoch, screen = state.currentScreen;
   void (async () => {
-    const interviewModule = await loadInterview();
-    void interviewModule.startAssessmentInterview();
+    try {
+      const interviewModule = await loadInterview();
+      if (state.pendingUser?.id !== ownerId || state.identityEpoch !== epoch || state.currentScreen !== screen) return;
+      await interviewModule.startAssessmentInterview();
+    } catch (error) {
+      if (state.pendingUser?.id === ownerId && state.identityEpoch === epoch && state.currentScreen === screen) {
+        showError(prechatError, assessmentRuntimeErrorMessage(error));
+      }
+    }
   })();
 });
 
@@ -2775,6 +2814,7 @@ const captureInterviewSendContext = () => ({
   situationId: state.productAssessmentSituationId, sessionCode: state.assessmentSessionCode,
   ownerId: String(state.pendingUser?.id || ''), identityEpoch: state.identityEpoch,
   clarificationId: state.productClarificationDecisionId || null,
+  viewGeneration: getAssessmentViewGeneration(),
 });
 
 const isInterviewSendContextCurrent = (context) => context.screen === 'interview'
@@ -2782,7 +2822,8 @@ const isInterviewSendContextCurrent = (context) => context.screen === 'interview
   && state.productCycleId === context.cycleId && state.productAssessmentSituationId === context.situationId
   && state.assessmentSessionCode === context.sessionCode
   && String(state.pendingUser?.id || '') === context.ownerId && state.identityEpoch === context.identityEpoch
-  && (state.productClarificationDecisionId || null) === context.clarificationId;
+  && (state.productClarificationDecisionId || null) === context.clarificationId
+  && context.viewGeneration === getAssessmentViewGeneration();
 
 const setInterviewSubmitLabel = (label) => {
   if (interviewSubmitLabel) {
@@ -2811,8 +2852,10 @@ const logAssessmentClientEvent = (event, messageType = 'answer', errorType = nul
 const resumeInterviewTimerAfterSendError = (interviewModule) => {
   // Keep the failed row and its request identity until retry/reload; Cycle time is server-owned.
   if (interviewModule.isCycleAssessment()) return;
+  const context = captureInterviewSendContext();
   if (!interviewModule.updateInterviewTimer()) {
     state.assessmentTimerId = window.setInterval(() => {
+      if (!isInterviewSendContextCurrent(context)) return;
       if (typeof state.assessmentRemainingSeconds === 'number' && state.assessmentRemainingSeconds > 0) {
         state.assessmentRemainingSeconds -= 1;
       }
@@ -2821,7 +2864,9 @@ const resumeInterviewTimerAfterSendError = (interviewModule) => {
         interviewTextarea.disabled = true;
         interviewSubmitButton.disabled = true;
         interviewFinishButton.disabled = true;
-        void interviewModule.submitAssessmentMessage('__timeout__');
+        void interviewModule.submitAssessmentMessage('__timeout__').catch((error) => {
+          if (isInterviewSendContextCurrent(context)) showError(interviewError, assessmentRuntimeErrorMessage(error));
+        });
       }
     }, 1000);
   }
@@ -2868,11 +2913,7 @@ const sendInterviewAnswer = async (text, existingMessageRow = null) => {
     return true;
   } catch (error) {
     if (!isInterviewSendContextCurrent(context)) return false;
-    const rawErrorMessage = String(error?.message || '');
-    const errorMessage = /failed to fetch|networkerror|load failed/i.test(rawErrorMessage)
-      ? 'Ответ не отправлен. Проверьте соединение и повторите попытку.'
-      : rawErrorMessage || 'Не удалось отправить ответ. Проверьте соединение и попробуйте еще раз.';
-    showError(interviewError, errorMessage);
+    showError(interviewError, assessmentRuntimeErrorMessage(error));
     logAssessmentClientEvent('request_failed', 'answer', error?.name || 'unknown');
     failedInterviewMessage = { row: messageRow, text };
     interviewModule.setInterviewMessageDeliveryState(messageRow, 'failed', () => {
@@ -2935,7 +2976,7 @@ const submitCurrentInterviewAnswer = async () => {
     }
   } catch (error) {
     if (!current()) return;
-    showError(interviewError, error?.message || 'Не удалось подготовить отправку ответа. Повторите попытку.');
+    showError(interviewError, assessmentRuntimeErrorMessage(error));
     logAssessmentClientEvent('request_failed', 'answer', error?.name || 'prepare_failed');
     setInterviewSubmitLabel('Повторить отправку');
     if (state.assessmentRuntimeKind !== 'cycle') {
@@ -3030,7 +3071,13 @@ interviewSubmitButton.addEventListener('click', (event) => {
   void submitCurrentInterviewAnswer();
 });
 
+let interviewActionGeneration = 0;
+
 interviewFinishButton.addEventListener('click', async () => {
+  const context = captureInterviewSendContext();
+  const generation = ++interviewActionGeneration;
+  const current = () => generation === interviewActionGeneration && isInterviewSendContextCurrent(context);
+  let interviewModule;
   showError(interviewError, '');
 
   if (interviewTextarea.value.trim()) {
@@ -3053,7 +3100,8 @@ interviewFinishButton.addEventListener('click', async () => {
   interviewFinishButton.disabled = true;
 
   try {
-    const interviewModule = await loadInterview();
+    interviewModule = await loadInterview();
+    if (!current()) return;
     interviewModule.clearInterviewTimer();
     logAssessmentClientEvent('finish_clicked', 'finish');
     if (interviewModule.isCycleAssessment()) {
@@ -3062,37 +3110,57 @@ interviewFinishButton.addEventListener('click', async () => {
       await interviewModule.submitAssessmentMessage('__finish_case__');
     }
   } catch (error) {
-    showError(interviewError, error.message);
-    interviewTextarea.disabled = false;
-    interviewSubmitButton.disabled = false;
-    interviewFinishButton.disabled = false;
+    if (!current()) return;
+    if (interviewModule?.isCycleAssessment()) {
+      interviewModule.restoreInterviewActionControls();
+      interviewModule.showInterviewRuntimeError(error);
+    } else {
+      showError(interviewError, assessmentRuntimeErrorMessage(error));
+      interviewTextarea.disabled = false;
+      interviewSubmitButton.disabled = false;
+      interviewFinishButton.disabled = false;
+    }
   }
 });
 
 if (interviewPauseButton) {
   interviewPauseButton.addEventListener('click', async () => {
+    const context = captureInterviewSendContext();
+    const generation = ++interviewActionGeneration;
+    const current = () => generation === interviewActionGeneration && isInterviewSendContextCurrent(context);
+    let interviewModule;
     showError(interviewError, '');
     try {
-      const interviewModule = await loadInterview();
+      interviewModule = await loadInterview();
+      if (!current()) return;
       await interviewModule.toggleProductPause();
     } catch (error) {
-      showError(interviewError, error.message);
+      if (!current()) return;
+      if (interviewModule?.showInterviewRuntimeError) interviewModule.showInterviewRuntimeError(error);
+      else showError(interviewError, assessmentRuntimeErrorMessage(error));
     }
   });
 }
 
 if (interviewAdditionalButton) {
   interviewAdditionalButton.addEventListener('click', async () => {
+    const context = captureInterviewSendContext();
+    const generation = ++interviewActionGeneration;
+    const current = () => generation === interviewActionGeneration && isInterviewSendContextCurrent(context);
+    let interviewModule;
     showError(interviewError, '');
     if (!window.confirm('Завершить текущую сессию и открыть допустимую дополнительную сессию?')) return;
     interviewAdditionalButton.disabled = true;
     try {
-      const interviewModule = await loadInterview();
+      interviewModule = await loadInterview();
+      if (!current()) return;
       await interviewModule.createProductAdditionalSession();
     } catch (error) {
-      showError(interviewError, error.message);
+      if (!current()) return;
+      if (interviewModule?.showInterviewRuntimeError) interviewModule.showInterviewRuntimeError(error);
+      else showError(interviewError, assessmentRuntimeErrorMessage(error));
     } finally {
-      interviewAdditionalButton.disabled = false;
+      if (current()) interviewAdditionalButton.disabled = false;
     }
   });
 }
