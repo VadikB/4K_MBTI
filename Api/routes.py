@@ -1137,6 +1137,25 @@ def _remember_newest_assessment_stage(stages: dict, member_key: tuple[int, int],
     stages.setdefault(member_key, {}).setdefault(assignment_ref, stage)
 
 
+def _discover_excluded_accounts(connection, protected_emails: set[str]) -> list[dict]:
+    """Find saved ordinary accounts with no current participant or admin membership."""
+    rows = connection.execute("""
+        SELECT u.id AS user_id, u.email, u.full_name,
+               o.id AS organization_id, o.name AS organization_name
+        FROM organization_memberships m
+        JOIN users u ON u.id = m.user_id
+        JOIN organizations o ON o.id = m.organization_id
+        WHERE m.role = 'member' AND m.is_participant = FALSE
+          AND NOT EXISTS (
+              SELECT 1 FROM organization_memberships current_membership
+              WHERE current_membership.user_id = u.id
+                AND (current_membership.is_participant = TRUE OR current_membership.role = 'admin')
+          )
+        ORDER BY LOWER(u.email), u.id, o.id
+    """).fetchall()
+    return [dict(row) for row in rows if normalize_email(row['email']) not in protected_emails]
+
+
 def _build_admin_organizations(connection, scope: AdminScope | None = None, *, actor_user_id: int | None = None) -> AdminOrganizationsResponse:
     ensure_configured_organizations(connection)
     connection.commit()
@@ -1513,9 +1532,11 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 programs_by_org[organization_id] = program
 
     detached_accounts = []
+    excluded_accounts = []
     if scope is None or scope.is_superadmin:
         protected_emails = configured_superadmin_emails() | {
             email for emails in configured_org_admin_emails().values() for email in emails}
+        excluded_accounts = _discover_excluded_accounts(connection, protected_emails)
         detached_accounts = [dict(row) for row in connection.execute("""SELECT u.id AS user_id,u.email,u.full_name
             FROM users u WHERE NOT EXISTS(SELECT 1 FROM organization_memberships m WHERE m.user_id=u.id)
             ORDER BY LOWER(u.email),u.id""").fetchall()
@@ -1529,6 +1550,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
         assessment_programs=assessment_programs.list_published(connection)
             if scope is None or scope.is_superadmin else [],
         detached_accounts=detached_accounts,
+        excluded_accounts=excluded_accounts,
         items=[
             AdminOrganizationItem(
                 id=int(row["id"]),

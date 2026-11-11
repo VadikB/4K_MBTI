@@ -2070,6 +2070,7 @@ export const renderAdminOrganizations = () => {
   const physicalPurgeAvailable = Boolean(data?.physical_purge_available);
   const purgePreviewAvailable = Boolean(data?.purge_preview_available);
   const detachedAccounts = Array.isArray(data?.detached_accounts) ? data.detached_accounts : [];
+  const excludedAccounts = Array.isArray(data?.excluded_accounts) ? data.excluded_accounts : [];
   const staleMarkup = organizationsReadStale ? '<div class="form-status error" role="status" data-organizations-stale>' +
     '<strong>Показано последнее подтверждённое состояние.</strong> ' + escapeHtml(organizationsReadStaleReason) +
     ' <button type="button" class="text-button" data-action="refresh-admin-organizations">Обновить безопасно</button></div>' : '';
@@ -2078,6 +2079,13 @@ export const renderAdminOrganizations = () => {
       escapeHtml(account.email) + '</span><button class="ghost-button compact-ghost danger" type="button" data-action="purge-account" data-user-id="' +
       Number(account.user_id) + '" data-email="' + escapeHtml(account.email) + '">Удалить полностью</button></div>').join('') :
       '<p class="admin-organizations-empty">Ранее отвязанных аккаунтов нет.</p>') + '</section>' : '';
+  const excludedMarkup = isSuperadmin ? '<section class="card card--inset admin-excluded-accounts"><h3>Исключённые участники</h3>' +
+    '<p>Аккаунты и история сохранены. Полное удаление выполняется отдельно после проверки состава.</p>' +
+    (excludedAccounts.length ? excludedAccounts.map((account) => '<div class="admin-organization-member"><span>' +
+      escapeHtml(account.email) + ' · ' + escapeHtml(account.organization_name) +
+      '</span><button class="ghost-button compact-ghost danger" type="button" data-action="purge-account" data-user-id="' +
+      Number(account.user_id) + '" data-email="' + escapeHtml(account.email) + '">Удалить полностью</button></div>').join('') :
+      '<p class="admin-organizations-empty">Исключённых участников нет.</p>') + '</section>' : '';
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
@@ -2086,7 +2094,7 @@ export const renderAdminOrganizations = () => {
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
-    adminOrganizationsList.innerHTML = staleMarkup + detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
+    adminOrganizationsList.innerHTML = staleMarkup + excludedMarkup + detachedMarkup + '<p class="report-empty-state">' + (isSuperadmin
       ? 'Организации пока не созданы.'
       : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
     return;
@@ -2105,7 +2113,7 @@ export const renderAdminOrganizations = () => {
       )
       .join('');
   }
-  adminOrganizationsList.innerHTML = staleMarkup + detachedMarkup + organizations
+  adminOrganizationsList.innerHTML = staleMarkup + excludedMarkup + detachedMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);

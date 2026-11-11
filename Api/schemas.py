@@ -982,6 +982,7 @@ class AdminOrganizationsResponse(BaseModel):
     purge_preview_available: bool = False
     assessment_programs: list[dict] = Field(default_factory=list)
     detached_accounts: list[dict] = Field(default_factory=list)
+    excluded_accounts: list[dict] = Field(default_factory=list)
     membership_action: dict | None = None
     items: list[AdminOrganizationItem]
 
