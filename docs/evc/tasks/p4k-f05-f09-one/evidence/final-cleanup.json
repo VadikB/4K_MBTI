@@ -1,0 +1,10 @@
+{
+  "contract": "p4k-f05-f09-final-owned-cleanup/1",
+  "cluster": "dedicated-postgresql-15-port-55432",
+  "database": "p4k_f05_pytest",
+  "expected_owner_marker": "p4k-f05-f09-one-owned-2026-11-12",
+  "owner_marker_verified_before_drop": true,
+  "drop_result": "DROP DATABASE",
+  "remaining_owned_test_databases": [],
+  "cluster_stopped": true
+}

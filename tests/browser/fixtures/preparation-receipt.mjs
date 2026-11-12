@@ -19,7 +19,7 @@ export function verifyPublishedProgram(receipt, selected) {
   }
 }
 
-export function verifyPreparation(receipt) {
+export function verifyPreparation(receipt, { controlledProvider = false } = {}) {
   const generated = receipt.functional_generation;
   assert.equal(receipt.preparation_operation.status, 'completed', 'PREPARATION_NOT_COMPLETED');
   same(receipt.program_definition.catalog_version_id, receipt.catalog.id, 'PROGRAM_CATALOG_REF');
@@ -117,19 +117,20 @@ export function verifyPreparation(receipt) {
   for (const call of calls) {
     required(receipt.preparation_operation.operation_id, 'PREPARATION_ID_REQUIRED');
     assert.ok(call.operation_id.startsWith(receipt.preparation_operation.operation_id + ':'), 'OPERATION_OWNER_REF');
-    assert.equal(call.provider, 'deepseek', 'PROVIDER');
+    assert.equal(call.provider, controlledProvider ? 'controlled_fixture' : 'deepseek', 'PROVIDER');
+    if (controlledProvider) assert.equal(call.endpoint, 'test://controlled-functional-provider', 'NO_EXTERNAL_PROVIDER');
     assert.equal(call.requested_model, 'deepseek-flash', 'REQUESTED_MODEL');
-    assert.equal(call.actual_model, 'deepseek-flash', 'ACTUAL_MODEL');
+    assert.equal(call.actual_model, controlledProvider ? 'controlled-functional-v1' : 'deepseek-flash', 'ACTUAL_MODEL');
   }
 }
 
-export function verifyFirstCase(receipt, before, selected) {
+export function verifyFirstCase(receipt, before, selected, { controlledProvider = false } = {}) {
   if (selected !== undefined) {
     verifyPublishedProgram(before, selected);
     verifyPublishedProgram(receipt, selected);
   }
-  verifyPreparation(before);
-  verifyPreparation(receipt);
+  verifyPreparation(before, { controlledProvider });
+  verifyPreparation(receipt, { controlledProvider });
   if (Object.hasOwn(before, 'assignment_lineage')) {
     same(receipt.plan?.revision_id, before.plan?.revision_id, 'PRE_START_PLAN_CHANGED');
     same(receipt.plan?.content_checksum, before.plan?.content_checksum, 'PRE_START_PLAN_CHANGED');

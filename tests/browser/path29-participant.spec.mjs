@@ -20,7 +20,8 @@ function canonical(value) {
 const checksum = (value) => createHash('sha256').update(canonical(value) + '\n').digest('hex');
 
 test('PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case', async ({ browser }) => {
-  test.setTimeout(process.env.P4K_REAL_PROVIDER === '1' ? 900000 : 240000);
+  test.setTimeout(process.env.P4K_REAL_PROVIDER === '1' || process.env.P4K_CONTROLLED_PROVIDER === '1'
+    ? 900000 : 240000);
   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit isolated STAND_ADMIN_URL required');
   const root = process.cwd(), python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');
   const evidenceRoot = process.env.P4K_EVIDENCE_DIRECTORY || path.join(root, '.test-stand/path29');
@@ -30,11 +31,17 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const statePath = path.join(dir, 'state.json'), base = 'http://127.0.0.1:' + port;
   const fullPath = process.env.P4K_FULL_PATH === '1';
   const realProvider = process.env.P4K_REAL_PROVIDER === '1';
+  const controlledProvider = process.env.P4K_CONTROLLED_PROVIDER === '1';
   const compositeProfile = process.env.P4K_COMPLETION_PROFILE === '1';
   const requestedRelease = process.env.P4K_PUBLISHED_RELEASE_REF
     ? JSON.parse(process.env.P4K_PUBLISHED_RELEASE_REF) : undefined;
-  if (fullPath && !realProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_REAL_PROVIDER');
+  if (fullPath && !realProvider && !controlledProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_PROVIDER');
+  if (controlledProvider && (!fullPath || realProvider || process.env.P4K_PROGRAM_SOURCE !== 'published-pilot')) {
+    throw new Error('CONTROLLED_PROVIDER_REQUIRES_PUBLISHED_OWNED_PATH');
+  }
   if (realProvider) test.info().annotations.push({ type: 'llm', description: 'Explicit real DeepSeek synthetic diagnostic' });
+  if (controlledProvider) test.info().annotations.push({ type: 'synthetic_provider',
+    description: 'Scripted PM-03 transport; published source and product admission unchanged; no external LLM' });
   const run = (script, args) => {
     const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 180000 });
     if (result.status !== 0) throw new Error(script + ': ' + result.stderr + result.stdout);
@@ -63,11 +70,14 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     runId = initialState.run_id;
     save('run', { run_id: initialState.run_id, database: initialState.database, port,
       provider_mode: initialState.provider_mode,
+      provider_transport: controlledProvider ? 'controlled_fixture' : realProvider ? 'deepseek' : 'disabled',
       profile: compositeProfile ? 'assessment-execution-contour/2' : 'assessment-first-case/1.1',
       program_source: fullPath ? process.env.P4K_PROGRAM_SOURCE : undefined,
       published_release_ref: fullPath ? requestedRelease : undefined,
       code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
     initialState.browser_case = 'specialist';
+    if (controlledProvider) initialState.path29_controlled_provider = true;
+    if (controlledProvider && process.env.P4K_F09_LONG_NEXT === '1') initialState.path29_hold_next = true;
     if (!fullPath && !realProvider) {
       initialState.component_plan_fixture = 'browser-component-plan-boundary/1';
       if (process.env.P4K_F06_A_B_A === '1') initialState.f06_second_org = true;
@@ -175,7 +185,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
     await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
-    if (!fullPath) {
+    if (!fullPath || controlledProvider) {
       const questionnaireUrl = `${base}/users/admin/organizations/${state.path29.organization_id}/questionnaire`;
       const beforeDraft = await (await admin.request.get(questionnaireUrl)).json();
       const assignmentRef = state.path29.assignment_ref || 'PATH29 browser';
@@ -395,7 +405,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     expect(await page.locator('#onboarding-title').innerText()).toBe('Можно приступать к оценке');
     if (fullPath) {
       if (state.path29.input_mode === 'published-pilot') verifyPublishedProgram(preparationReceipt, selectedRelease);
-      verifyPreparation(preparationReceipt);
+      verifyPreparation(preparationReceipt, { controlledProvider });
     }
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
@@ -602,7 +612,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const runtimeResponse = await page.request.get(base + '/users/assessment/cycles/' + receipt.cycle.cycle_id + '/runtime');
       expect(runtimeResponse.status()).toBe(200);
       const runtime = await runtimeResponse.json();
-      verifyPreparation(receipt);
+      verifyPreparation(receipt, { controlledProvider });
       expect(receipt.cycle.started_at).toBeTruthy();
       expect(receipt.sessions[0].started_at).toBeTruthy();
       expect(receipt.assessment_situation.started_at).toBeTruthy();
@@ -627,7 +637,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
           dom_introduction_matched: true, screenshot: 'first-case.png',
         } };
       save('first-case-receipt', finalReceipt);
-      verifyFirstCase(finalReceipt, preparationReceipt, selectedRelease);
+      verifyFirstCase(finalReceipt, preparationReceipt, selectedRelease, { controlledProvider });
       expect(['functional-diagnostic', 'published-pilot']).toContain(state.path29.input_mode);
       expect(receipt.program_definition.id).toBe(state.path29.program_id);
       expect(receipt.program_definition.assessment_configuration_id).toBe(state.path29.configuration_id);
@@ -659,22 +669,88 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         executionStarted = true;
         executionCycleId = receipt.cycle.cycle_id;
         const firstCaseReceipt = finalReceipt;
+        let nextPostCount = 0;
+        if (state.path29_hold_next) page.on('request', (request) => {
+          if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/next')) nextPostCount += 1;
+        });
         const contourReceipt = await completeStartedAssessment({
           page, base, cycleId: receipt.cycle.cycle_id, runId,
           evidenceDir: dir,
           initialSituationId: receipt.assessment_situation.assessment_situation_id,
+          reloadAtBoundary: controlledProvider,
+          stopAfterFirstNext: controlledProvider,
+          onNextAccepted: state.path29_hold_next ? async ({ operation, cycleId, situationId }) => {
+            const operationId = operation.operation_id;
+            expect(operationId).toBeTruthy();
+            const statusPath = base + '/users/assessment/cycles/preparation/' + encodeURIComponent(operationId);
+            await expect.poll(async () => (await (await fresh.request.get(statusPath)).json()).status,
+              { timeout: 15000 }).toBe('running');
+            await expect(page.locator('#interview-panel')).toContainText(
+              /Подготавливаем следующую ситуацию|Подготовка следующей ситуации выполняется/);
+            // Outlive the client's bounded wait while the real worker keeps its
+            // durable running operation. No second POST may be sent by polling.
+            await expect(page.getByRole('button', { name: 'Проверить состояние', exact: true }))
+              .toBeEnabled({ timeout: 75000 });
+            expect(nextPostCount).toBe(1);
+            expect((await (await fresh.request.get(statusPath)).json()).status).toBe('running');
+            await page.locator('#interview-exit-button').click();
+            await expect(page.locator('#email-input')).toBeVisible();
+            await page.locator('#email-input').fill(state.path29.admin_email);
+            await page.locator('#request-magic-link-button').click();
+            await page.locator('#magic-token-input').fill(state.password);
+            await page.locator('#verify-magic-link-button').click();
+            await expect(page.locator('#interview-panel')).toBeHidden();
+            try {
+              const released = await fresh.request.post(base + '/__pytest__/release-next-preparation');
+              expect(released.status()).toBe(200);
+              await expect.poll(async () => (await (await fresh.request.get(statusPath)).json()).status,
+                { timeout: 45000 }).toBe('completed');
+            } finally {
+              await fresh.request.post(base + '/__pytest__/release-next-preparation');
+            }
+            const nextRuntime = await (await fresh.request.get(base +
+              '/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime')).json();
+            const nextSituationId = nextRuntime.current_situation?.assessment_situation_id;
+            expect(nextSituationId).toBeTruthy();
+            expect(nextSituationId).not.toBe(situationId);
+            expect(nextPostCount).toBe(1);
+            expect((await snapshot()).operations).toBe(2);
+            expect((await page.request.get(statusPath)).status()).toBe(404);
+            await expect(page.locator('#interview-panel')).toBeHidden();
+            await page.screenshot({ path: path.join(dir, 'f09-late-worker-new-owner.png'), fullPage: true });
+            save('f09-long-next', { operation_id: operationId, queued_or_running_readback: true,
+              bounded_wait: true, next_post_count: nextPostCount,
+              old_assessment_situation_id: situationId,
+              next_assessment_situation_id: nextSituationId,
+              new_owner_operation_status: 404, stale_interview_hidden: true });
+            return { ownershipChanged: true, nextSituationId };
+          } : async () => null,
+          advanceWorkers: controlledProvider ? async () => {
+            const drained = await fetch(base + '/__pytest__/drain-controlled-orchestration', {
+              method: 'POST', signal: AbortSignal.timeout(15000),
+            });
+            if (!drained.ok) throw new Error('CONTROLLED_ORCHESTRATION_DRAIN_FAILED: ' + drained.status);
+          } : async () => {},
         });
         contourReceipt.first_case_receipt = {
           file: 'first-case-receipt.json',
           sha256: createHash('sha256').update(fs.readFileSync(path.join(dir, 'first-case-receipt.json'))).digest('hex'),
           assessment_answers: firstCaseReceipt.assessment_answers,
         };
+        if (controlledProvider) contourReceipt.provider_transport = 'controlled_fixture';
         save('execution-contour-receipt', contourReceipt);
         finalReceipt = contourReceipt;
         terminalReceiptFile = 'execution-contour-receipt.json';
         await test.info().attach('execution-contour-receipt', {
           path: path.join(dir, terminalReceiptFile), contentType: 'application/json',
         });
+        if (controlledProvider) {
+          expect(contourReceipt.contract).toBe('assessment-first-next/1');
+          const cleanup = await page.request.post(base + '/__pytest__/terminalize-controlled-path/' +
+            encodeURIComponent(receipt.cycle.cycle_id));
+          expect(cleanup.status()).toBe(200);
+          save('controlled-terminal-cleanup', await cleanup.json());
+        }
       }
       scenarioCompleted = true;
       return;

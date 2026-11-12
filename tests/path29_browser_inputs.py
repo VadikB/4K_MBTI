@@ -239,7 +239,17 @@ if __name__ == '__main__':
             if state['path29_program_source'] == 'published-pilot':
                 from tests.path_start_release_source import load_release_receipt, stage_release_receipt
                 selected = os.getenv('P4K_PUBLISHED_RELEASE_REF')
-                reference = json.loads(selected) if selected else load_release_receipt()[1]
+                if selected:
+                    reference = json.loads(selected)
+                elif state.get('path29_controlled_provider') is True:
+                    # The pinned 1.2 receipt carries the already approved exact
+                    # pilot binding. The historical 1.1 default is fail-closed.
+                    reference = load_release_receipt(
+                        path=ROOT / 'docs/evc/evidence/pilot-program-publication-execution/published-release-source.json',
+                        sha256='09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b',
+                        version='1.2')[1]
+                else:
+                    reference = load_release_receipt()[1]
                 state['path29_release_receipt'] = stage_release_receipt(reference, args.state.parent)
             args.state.write_text(json.dumps(state))
         subprocess.run([sys.executable, __file__, '--state', str(args.state), '--child'],

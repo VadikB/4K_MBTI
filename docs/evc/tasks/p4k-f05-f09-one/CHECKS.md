@@ -162,6 +162,55 @@ QA orchestration сделало каталог недоступным до на�
 проверенные ранее отдельные owned browser/PG контуры остаются доказательством
 только своих частей. Тестовые БД этих попыток удалены по marker.
 
+E31 — `tests/integration/test_m10_product_path_db.py` на отдельной owned
+`p4k_f05_pytest` (19 PASS, 1 warning, 68.43 с): функциональный Cycle и Next
+через реальные HTTP handlers; один ID проходит queued→running→completed;
+повтор того же POST возвращает этот ID, другой owner получает 404 на status
+и 403 на Next, в PG нет второго выбранного Next. Прогоны выполнялись
+последовательно: два одновременно запущенных процесса конфликтовали с
+изоляционной проверкой тестового gateway, после остановки обоих один чистый
+повтор дал 19 PASS. Это дефект процедуры запуска, не продукта.
+
+E32 — `P4K_FULL_PATH=1 P4K_PROGRAM_SOURCE=published-pilot
+P4K_CONTROLLED_PROVIDER=1 P4K_COMPLETION_PROFILE=1` и
+`tests/browser/path29-participant.spec.mjs` (1 PASS, Chromium, ~1.1 мин):
+один owned browser/HTTP/PG путь F05 confirmed #1 + draft #2 → назначение
+по действующей #1 → подготовка и продуктовый admission функциональной AS →
+первый Turn → Finish/ASK/закрытие → явный Next → новая AS. Тестовый provider
+помечен `controlled_fixture` и возвращает синтетический кандидат на основе
+опубликованного v1.2 источника с SHA-256
+`09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b`;
+продуктовые validators, сохранение и admission действуют штатно. Безопасная
+[сводка](evidence/functional-owned-summary.json) содержит ID редакций/AS,
+checksum receipts и подтверждённый marker cleanup. После проверенного первого
+Next тест отдельно закрывает fixture для удаления БД: `pipeline.status=failed`
+от незавершённой второй AS относится только к cleanup, не к проверяемому
+переходу и не является доказательством Report.
+
+E33 — тот же путь с `P4K_F09_LONG_NEXT=1` (1 PASS, Chromium, ~2.1 мин):
+Next worker удержан в running за пределом клиентского ожидания; UI предлагает
+«Проверить состояние», один Next POST и один operation ID. После logout
+участника/login администратора worker завершил операцию, readback прежнего
+owner нашёл новую AS, новый owner получил 404 на старый operation status,
+старое интервью не появилось. Owned DB удалена по marker. Дополнительный
+компонентный F06 stale response и отдельные F07/F08/F09 fault branches остаются
+E9–E30, а E32/E33 закрепляют их совместимость в одном кандидате.
+
+Воспроизведение E31: `TEST_DATABASE_URL=<owned-test-url> .venv/bin/pytest -q
+tests/integration/test_m10_product_path_db.py` в единственном процессе.
+Воспроизведение E32/E33: `STAND_ADMIN_URL=<isolated-admin-url>
+P4K_FULL_PATH=1 P4K_PROGRAM_SOURCE=published-pilot P4K_CONTROLLED_PROVIDER=1
+P4K_COMPLETION_PROFILE=1 BROWSER_PYTHON=.venv/bin/python
+node_modules/.bin/playwright test tests/browser/path29-participant.spec.mjs`;
+для E33 добавить `P4K_F09_LONG_NEXT=1`. Адреса должны указывать только на
+выделенный owned test кластер; browser fixtures сами проверяют marker и удаляют
+свои БД. Финальная [проверка очистки](evidence/final-cleanup.json): marker
+`p4k_f05_pytest` совпал, БД удалена, других owned test БД нет, кластер остановлен.
+`node --check` трёх изменённых `.mjs`, `npm run lint:js`, `git diff --check`
+и `py_compile` четырёх изменённых Python файлов с кэшем в `/private/tmp` — PASS.
+Первый `py_compile` системным Python не смог создать кэш в защищённом
+`~/Library/Caches`; повтор с `PYTHONPYCACHEPREFIX` прошёл, исходники не менялись.
+
 | ID | Статус | Проверенный синтетический путь / остаток |
 | --- | --- | --- |
 | F05-AC01 | PASS | E5/E7/E10: confirmed #1 + draft #2, GET/reload/новая сессия; UI показывает #1 действующей и #2 в редактируемой форме. Назначение и первый Turn на #1, в PG две редакции и один Cycle. |
@@ -178,13 +227,13 @@ QA orchestration сделало каталог недоступным до на�
 | F08-AC01 | PASS | E9/E11: owned UI→HTTP→PG Finish→ASK→закрытие AS→between, новая AS только после Next. E25: отдельный допустимый маршрут `NO_QUESTION` закрывает AS без ASK, прежний ввод недоступен, после явного Next открыта вторая AS; обе ветви дошли до Report без дополнительного Cycle. |
 | F08-AC02 | PASS | E11: потерянный ответ после commit, неизвестный исход, блокировка ввода, reload, один `scenario_end` в PG. E20: отдельные зависания заголовков и тела после commit, ограниченное ожидание и terminal export. E23: контролируемый 409 показан как определённый отказ, AS остаётся active, затем штатное завершение и Report. |
 | F08-AC03 | PASS | E1: owner/AS scope; E4: закрытие AS и запрет нового Turn; E9: второй tab не создаёт второй `scenario_end`. E30: поздний Finish после перехода второй вкладки к новой AS не перерисовал старую ситуацию и не перезапустил таймер; один `scenario_end` и терминальный Report на owned PG. |
-| F09-AC01 | PARTIAL | E1: клиентский предел и тот же ID без нового POST; E11: потерянный ответ после commit показывает проверку той же операции, reload открывает новую AS, один первый Next POST. E21: зависшие заголовки после commit ограничены 30 секундами, одна команда и terminal export. Долгий queued/running на PG/browser не проверен: текущий технический runtime использует статический Next, а PATH29 component fixture не даёт функционально сгенерированную AS. |
+| F09-AC01 | PASS | E1/E11/E21: timeout заголовков, неизвестный исход и readback той же команды. E31: реальные HTTP/PG queued→running→completed одного ID. E33: browser на owned PG удержал worker в running за клиентским пределом, увидел статус и «Проверить состояние», сохранил один Next POST без ложного failed. |
 | F09-AC02 | PASS | E6: `failed/retry_allowed` true/false и reload; E4: owned PG retry/admission; E9/E11: ready и явный Next без дубликата при потере ответа; E28: две вкладки отправили Next, обе сошлись на одной второй AS после reload, терминальный экспорт — две AS и один Cycle. |
-| F09-AC03 | PARTIAL | E1: scope owner/Cycle/AS, новая AS очищает старый Next ID. E28: поздний ответ Next после ухода на главный экран не открыл интервью; явный возврат показал одну новую AS. Поздний worker/poll при смене owner/Cycle/AS в браузере не проверен. |
+| F09-AC03 | PASS | E1: scope owner/Cycle/AS и очистка старого ID; E28: поздний ответ после ухода на главный экран не открыл интервью. E31: другой owner получает 404/403 на operation/Next. E33: worker завершил Next после смены owner в браузере; старая AS не появилась в новой сессии, прежний owner readback нашёл одну новую AS. |
 | F09-AC04 | PASS | E6/E14: реальный полный runtime UI на owned PG и отдельная CSS геометрия, 1440/390/320/200%, длинный статус, keyboard focus, широкая кнопка и отсутствие горизонтального overflow. Между AS старое поле скрыто; степень готовности и ETA не выдумываются. |
-| MERGE-AC01 | PARTIAL | Один diff: E10/E13 owned F05→assignment→первый Turn с поздними ответами F06; E9/E11/E29/E30 отдельный допустимый технический runtime через Turn→Finish→ASK→явный Next→Report, потерю и поздние ответы. Объединённый browser/PG прогон не выполнен: PATH29 component fixture остановилась на `GENERATION_MISSING`, реальный provider не разрешён. |
+| MERGE-AC01 | PASS | E32/E33: один candidate и один owned browser/HTTP/PG маршрут F05 confirmed #1 + draft #2 → назначение → функциональная AS через продуктовый admission → Turn → Finish/ASK → явный Next → одна новая AS. E13/E18/E19: поздний/отклонённый F06; E9/E11/E20/E21/E24/E28–E30: потери, зависшее тело, reload, поздние ответы и отсутствие дубликатов в допустимом техническом runtime; E33: длинный Next и смена owner. Контролируемый provider не доказывает реальный LLM, terminal cleanup не доказывает Report этого маршрута. |
 
-Полный PATH/F22 и качество реального LLM не заявлены. F03/F04 — отдельные
-зависимости. До PR нужны оставшиеся AC, CI `frontend`, `pytest`,
-`full-verification` на точном head и human review; до TEST и визуальной
-приёмки владельца кандидат не дошёл.
+Итого: 19 PASS из 19 локально. Полный PATH/F22 и качество реального LLM не
+заявлены. F03/F04 — отдельные зависимости. CI `frontend`, `pytest`,
+`full-verification` на точном head и human review до слияния не выполнены;
+до TEST и визуальной приёмки владельца кандидат не дошёл.

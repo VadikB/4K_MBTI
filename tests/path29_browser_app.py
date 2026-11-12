@@ -8,12 +8,37 @@ if (os.getenv('AGENT4K_ISOLATED_STAND') != '1' or os.getenv('AGENT4K_PATH29_TEST
     raise RuntimeError('PATH29_HARNESS_REQUIRES_OWNED_ISOLATED_STAND')
 
 from scripts.test_stand import owned
-with owned(json.loads(Path(os.environ['STAND_STATE']).read_text())):
+stand_state = json.loads(Path(os.environ['STAND_STATE']).read_text())
+with owned(stand_state):
     pass
 
 if os.getenv('AGENT4K_COMPONENT_PLAN_FIXTURE'):
     from tests.browser_component_app import install
-    install(json.loads(Path(os.environ['STAND_STATE']).read_text()))
+    install(stand_state)
+
+if stand_state.get('path29_controlled_provider') is True:
+    if (stand_state.get('path29_full_path') is not True
+            or stand_state.get('path29_program_source') != 'published-pilot'
+            or stand_state.get('provider_mode') != 'disabled'
+            or stand_state.get('gateway') != 1
+            or stand_state.get('component_plan_fixture')):
+        raise RuntimeError('CONTROLLED_PROVIDER_REQUIRES_PUBLISHED_OWNED_PATH')
+    from Api.llm import deepseek_gateway
+    from tests.controlled_functional_provider import ControlledFunctionalProvider
+    deepseek_gateway.DeepSeekGateway = ControlledFunctionalProvider
+    from Api import m10_test_gateway
+    class ControlledPathAssessmentGateway(m10_test_gateway.BrowserAcceptanceGateway):
+        def chat(self, messages, **kwargs):
+            value = json.loads(messages[1]['content'])
+            content = super().chat(messages, **kwargs)
+            if value.get('mode') != 'interim' or 'evidence_analysis' not in value:
+                return content
+            result = json.loads(content)
+            for target in result['targets']:
+                target.update(status='INTERIM', outcome=None, descriptor_basis=None)
+            return json.dumps(result, ensure_ascii=False)
+    m10_test_gateway.BrowserAcceptanceGateway = ControlledPathAssessmentGateway
+    print('SYNTHETIC_FUNCTIONAL_PROVIDER: NO_EXTERNAL_LLM NO_NEW_HUMAN_ADMISSION', flush=True)
 
 from main import app
 from Api import routes, auth_service as auth_module
@@ -39,16 +64,81 @@ def deliver_magic(*, email, login_url, expires_at):
     deliver(email=email, action_url=login_url, expires_at=expires_at, purpose='magic_link')
 auth_module.send_magic_link_email = deliver_magic
 preparation_gate = threading.Event()
+next_preparation_gate = threading.Event()
 original_process = product_cycle_preparation_queue._process_current_attempt
 
 
 def paused_process(job):
     if not preparation_gate.wait(timeout=60):
         raise RuntimeError('CONTROLLED_PREPARATION_GATE_TIMEOUT')
+    if (stand_state.get('path29_hold_next') is True
+            and job.get('request_json', {}).get('kind') == 'next'
+            and not next_preparation_gate.wait(timeout=90)):
+        raise RuntimeError('CONTROLLED_NEXT_GATE_TIMEOUT')
     original_process(job)
 
 
 product_cycle_preparation_queue._process_current_attempt = paused_process
+
+
+@app.post('/__pytest__/drain-controlled-orchestration')
+def drain_controlled_orchestration():
+    if stand_state.get('path29_controlled_provider') is not True:
+        raise HTTPException(404, 'CONTROLLED_PROVIDER_NOT_ACTIVE')
+    from Api import m10_orchestration
+    from Api.m10_test_gateway import BrowserAcceptanceGateway
+    gateway = BrowserAcceptanceGateway()
+    steps = 0
+    while steps < 50 and (m10_orchestration.advance_once(gateway=gateway)
+                          or m10_orchestration._run_browser_test_gateway_once()):
+        steps += 1
+    if steps >= 50:
+        raise HTTPException(500, 'CONTROLLED_ORCHESTRATION_STEP_LIMIT')
+    return {'steps': steps}
+
+
+@app.post('/__pytest__/terminalize-controlled-path/{cycle_id}')
+def terminalize_controlled_path(cycle_id: str):
+    """Close the technical fixture after the asserted first explicit Next."""
+    if stand_state.get('path29_controlled_provider') is not True:
+        raise HTTPException(404, 'CONTROLLED_PROVIDER_NOT_ACTIVE')
+    from Api.database import get_connection
+    from Api.m7_completion import complete
+    from Api import m10_orchestration
+    from Api.m10_test_gateway import BrowserAcceptanceGateway
+    from tests.assessment_execution_export import execution_export as readback
+    with get_connection() as connection:
+        row = connection.execute("""SELECT c.owner_user_id,c.status FROM m5_cycles c
+            JOIN users u ON u.id=c.owner_user_id
+            WHERE c.cycle_id=%s AND u.email='path29-new@example.test'""", (cycle_id,)).fetchone()
+        if not row or row['status'] not in ('active', 'paused'):
+            raise HTTPException(409, 'OWNED_ACTIVE_FIXTURE_REQUIRED')
+        count = connection.execute("""SELECT count(*) AS n FROM m5_assessment_situations s
+            JOIN m5_cycles c ON c.id=s.cycle_db_id WHERE c.cycle_id=%s""", (cycle_id,)).fetchone()['n']
+        if count < 2:
+            raise HTTPException(409, 'EXPLICIT_NEXT_REQUIRED_BEFORE_FIXTURE_CLEANUP')
+        closed = complete(connection, cycle_id=cycle_id,
+            key='controlled-first-next-fixture-terminalize', action='complete',
+            reason='controlled_fixture_cleanup_after_explicit_next',
+            initiated_by=row['owner_user_id'])
+        for handoff_id in closed['final_handoff_ids']:
+            m10_orchestration.enqueue_handoff(connection, handoff_id=handoff_id,
+                created_by=row['owner_user_id'])
+        connection.commit()
+    gateway = BrowserAcceptanceGateway()
+    for _ in range(50):
+        if not (m10_orchestration.advance_once(gateway=gateway)
+                or m10_orchestration._run_browser_test_gateway_once()):
+            break
+    else:
+        raise HTTPException(500, 'CONTROLLED_ORCHESTRATION_STEP_LIMIT')
+    exported = readback(cycle_id)
+    if (exported['collection_status'] not in ('collection_closed', 'calculation_pending', 'calculated')
+            or (exported['pipeline'] or {}).get('status') not in ('ready', 'failed')):
+        raise HTTPException(500, 'CONTROLLED_FIXTURE_TERMINAL_EXPORT_UNAVAILABLE')
+    return {'collection_status': exported['collection_status'],
+            'pipeline_status': exported['pipeline']['status'],
+            'situation_count': len(exported['situations'])}
 
 
 @app.get('/__pytest__/mailbox')
@@ -62,6 +152,14 @@ def read_mailbox(email: str, purpose: str):
 @app.post('/__pytest__/release-preparation')
 def release_preparation():
     preparation_gate.set()
+    return {'released': True}
+
+
+@app.post('/__pytest__/release-next-preparation')
+def release_next_preparation():
+    if stand_state.get('path29_hold_next') is not True:
+        raise HTTPException(404, 'CONTROLLED_NEXT_GATE_NOT_ACTIVE')
+    next_preparation_gate.set()
     return {'released': True}
 
 
