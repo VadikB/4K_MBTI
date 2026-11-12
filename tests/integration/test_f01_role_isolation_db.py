@@ -4,12 +4,15 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from fastapi import HTTPException
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 import psycopg
 from psycopg import sql
 from psycopg.rows import dict_row
 import pytest
 
 from Api import org_access, routes
+from Api.schemas import AdminOrganizationsResponse
 
 
 pytestmark = pytest.mark.integration
@@ -133,3 +136,67 @@ def test_assessment_role_alone_does_not_grant_admin_scope(
     with _connect(test_database_url, isolation_schema) as connection:
         user = SimpleNamespace(id=72, email="existing@example.test", role_id=99)
         assert not org_access.get_admin_scope(connection, user).can_admin
+
+
+def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(
+    test_database_url, isolation_schema, monkeypatch
+):
+    monkeypatch.setattr(org_access.settings, "superadmin_emails_raw", "")
+    with _connect(test_database_url, isolation_schema) as connection:
+        connection.execute("""CREATE TABLE configured_access_suppressions (
+            email TEXT NOT NULL, access_kind TEXT NOT NULL, organization_code TEXT NOT NULL,
+            reason TEXT, created_by_user_id INTEGER, created_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(email, access_kind, organization_code))""")
+        connection.execute("""CREATE TABLE configured_organization_membership_suppressions (
+            user_id INTEGER NOT NULL, organization_id INTEGER NOT NULL)""")
+        connection.execute("INSERT INTO organizations VALUES (5,'control','Контрольная Б',TRUE)")
+        connection.execute("""INSERT INTO organization_memberships
+            (organization_id,user_id,role,is_participant,admitted_at,updated_at)
+            VALUES(4,72,'member',TRUE,'2025-01-01','2025-01-01')""")
+        connection.commit()
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def get_connection():
+        with _connect(test_database_url, isolation_schema) as connection:
+            yield connection
+
+    monkeypatch.setattr(routes, "get_connection", get_connection)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                        lambda _token: SimpleNamespace(id=18, email="actor@example.test"))
+    monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: org_access.AdminScope(is_superadmin=True))
+    monkeypatch.setattr(routes, "_build_admin_organizations", lambda *_args: AdminOrganizationsResponse(
+        title="Организации", subtitle="", is_superadmin=True, items=[]))
+    app = FastAPI()
+    app.include_router(routes.router)
+    with TestClient(app) as http:
+        for attempt in range(2):
+            assert http.post("/users/admin/organizations/4/admins", json={
+                "email": "existing@example.test"}).status_code == 200
+            with _connect(test_database_url, isolation_schema) as connection:
+                row = connection.execute("""SELECT role,is_participant,admitted_at,updated_at
+                    FROM organization_memberships WHERE user_id=72""").fetchone()
+                assert row["role"] == "admin" and row["is_participant"] is True
+                if attempt == 0:
+                    granted = row
+                else:
+                    assert row == granted
+        for attempt in range(2):
+            assert http.delete("/users/admin/organizations/4/admins", params={
+                "email": "existing@example.test"}).status_code == 200
+            with _connect(test_database_url, isolation_schema) as connection:
+                row = connection.execute("""SELECT role,is_participant,updated_at
+                    FROM organization_memberships WHERE user_id=72""").fetchone()
+                suppression = connection.execute("""SELECT reason,created_by_user_id,created_at
+                    FROM configured_access_suppressions WHERE email='existing@example.test'""").fetchone()
+                assert row["role"] == "member" and row["is_participant"] is True
+                assert suppression is not None and suppression["reason"] == "superadmin_revoke"
+                if attempt == 0:
+                    revoked, first_suppression = row, suppression
+                else:
+                    assert row == revoked
+                    assert suppression == first_suppression
+        with _connect(test_database_url, isolation_schema) as connection:
+            assert connection.execute("SELECT COUNT(*) AS n FROM organization_memberships WHERE organization_id=5"
+                                     ).fetchone()["n"] == 0

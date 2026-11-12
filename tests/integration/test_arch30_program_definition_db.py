@@ -163,3 +163,79 @@ def test_existing_program_connection_actor_fk_migrates_without_rewriting_busines
         'program_definition_id': program_id, 'is_current': True,
         'operation_id': 'connect-program-migration', 'connected_by_user_id': None,
     }
+
+
+def test_a_to_b_connection_replay_keeps_exact_history_and_other_organization(program_db):
+    connection, program_a = program_db
+    connection.execute('INSERT INTO organizations VALUES(11)')
+    checksum = assessment_programs.definition_checksum(code='4k-pilot', version='2.0',
+        name='4K Pilot B', assignment_ref='competencies_4k', mode='dialogue',
+        configuration_id=30, role_version_ids=[50], catalog_version_id=20,
+        source_refs={'methodology_version_id': 1, 'scenario_version_id': 1})
+    program_b = connection.execute("""INSERT INTO assessment_program_definitions
+        (code,version,name,assignment_ref,mode,status,assessment_configuration_id,
+         catalog_version_id,source_refs_json,definition_checksum,published_by_user_id)
+        VALUES('4k-pilot','2.0','4K Pilot B','competencies_4k','dialogue','draft',30,20,
+            '{"methodology_version_id":1,"scenario_version_id":1}',%s,1) RETURNING id""",
+        (checksum,)).fetchone()['id']
+    connection.execute('INSERT INTO assessment_program_allowed_roles VALUES(%s,50,0)', (program_b,))
+    connection.execute("UPDATE assessment_program_definitions SET status='published' WHERE id=%s", (program_b,))
+    unavailable_checksum = assessment_programs.definition_checksum(code='4k-pilot', version='3.0',
+        name='4K Pilot C', assignment_ref='competencies_4k', mode='dialogue',
+        configuration_id=30, role_version_ids=[50], catalog_version_id=20,
+        source_refs={'methodology_version_id': 1, 'scenario_version_id': 1})
+    unavailable = connection.execute("""INSERT INTO assessment_program_definitions
+        (code,version,name,assignment_ref,mode,status,assessment_configuration_id,
+         catalog_version_id,source_refs_json,definition_checksum,published_by_user_id)
+        VALUES('4k-pilot','3.0','4K Pilot C','competencies_4k','dialogue','draft',30,20,
+            '{"methodology_version_id":1,"scenario_version_id":1}',%s,1) RETURNING id""",
+        (unavailable_checksum,)).fetchone()['id']
+    connection.execute('INSERT INTO assessment_program_allowed_roles VALUES(%s,50,0)', (unavailable,))
+    connection.commit()
+
+    with pytest.raises(ValueError, match='PROGRAM_NOT_AVAILABLE'):
+        assessment_programs.connect(connection, organization_id=10,
+            program_definition_id=unavailable, actor_user_id=1, operation_id='draft-denied')
+    connection.execute("UPDATE assessment_program_definitions SET status='published' WHERE id=%s", (unavailable,))
+    connection.execute("UPDATE assessment_program_definitions SET status='retired' WHERE id=%s", (unavailable,))
+    connection.commit()
+    with pytest.raises(ValueError, match='PROGRAM_NOT_AVAILABLE'):
+        assessment_programs.connect(connection, organization_id=10,
+            program_definition_id=unavailable, actor_user_id=1, operation_id='retired-denied')
+    assert connection.execute("SELECT COUNT(*) AS n FROM organization_assessment_program_connections"
+                              ).fetchone()['n'] == 0
+
+    # A transport loss before commit has no effect; the same operation can be retried.
+    assessment_programs.connect(connection, organization_id=10,
+        program_definition_id=program_a, actor_user_id=1, operation_id='lost-before-commit')
+    connection.rollback()
+    assert assessment_programs.current_connection(connection, organization_id=10) is None
+
+    first = assessment_programs.connect(connection, organization_id=10,
+        program_definition_id=program_a, actor_user_id=1, operation_id='connect-a')
+    assessment_programs.connect(connection, organization_id=11,
+        program_definition_id=program_a, actor_user_id=1, operation_id='control-a')
+    connection.commit()
+    second = assessment_programs.connect(connection, organization_id=10,
+        program_definition_id=program_b, actor_user_id=1, operation_id='connect-b')
+    connection.commit()
+
+    # A lost response after commit replays the exact earlier receipt, never rebinds A.
+    replay = assessment_programs.connect(connection, organization_id=10,
+        program_definition_id=program_a, actor_user_id=1, operation_id='connect-a')
+    assert replay['connection_id'] == first['connection_id']
+    assert assessment_programs.connect(connection, organization_id=10,
+        program_definition_id=program_b, actor_user_id=1,
+        operation_id='connect-b')['connection_id'] == second['connection_id']
+    with pytest.raises(ValueError, match='PROGRAM_CONNECTION_IDEMPOTENCY_CONFLICT'):
+        assessment_programs.connect(connection, organization_id=10,
+            program_definition_id=program_b, actor_user_id=1, operation_id='connect-a')
+    history = [dict(row) for row in connection.execute("""SELECT program_definition_id,is_current,
+        operation_id,superseded_at FROM organization_assessment_program_connections
+        WHERE organization_id=10 ORDER BY id""").fetchall()]
+    assert len(history) == 2
+    assert history[0]['program_definition_id'] == program_a
+    assert history[0]['is_current'] is False and history[0]['superseded_at'] is not None
+    assert history[1]['program_definition_id'] == program_b
+    assert history[1]['is_current'] is True and history[1]['superseded_at'] is None
+    assert assessment_programs.current_connection(connection, organization_id=11)['program_definition_id'] == program_a
