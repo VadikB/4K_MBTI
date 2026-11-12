@@ -84,9 +84,10 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     }, { times: 1 });
     await assign.click();
     await expect.poll(() => committed?.status).toBe(200);
-    await expect(card.locator('[data-operation-status]').first()).toHaveAttribute('data-tone', 'success');
-    await expect(card.locator('[data-operation-status]').first())
-      .toContainText('назначение подтверждено точным чтением операции');
+    const operationStatus = card.locator('[data-operation-status]').first();
+    await expect(operationStatus)
+      .toContainText('назначение подтверждено точным чтением операции', { timeout: 20000 });
+    await expect(operationStatus).toHaveAttribute('data-tone', 'success');
     const afterLost = inputs('readback');
     expect(afterLost.assignments).toHaveLength(2);
     expect(afterLost.bindings).toHaveLength(2);

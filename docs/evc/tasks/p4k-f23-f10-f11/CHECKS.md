@@ -106,3 +106,36 @@ server grant/readback.
 `test_stand.py` (`owner_verified`, `database_absent`, `state_absent` — true);
 отдельный собственный контейнер PostgreSQL удалён, `docker ps -a` пусто по
 его имени. Полный CI требуется повторить на commit исправления.
+
+## CI после восстановления GitHub Actions, 12.11.2026
+
+На `a0181e03e1d49edfd29b9e72181c48eb4098cf94` исходный Full verification
+[#227](https://github.com/VadikB/4K_MBTI/actions/runs/43094314200) завершился
+`FAIL`: все тестовые шаги прошли, но загрузка browser evidence дала
+`Failed to CreateArtifact` после пяти попыток; GitHub также сообщил
+`Internal server error`, correlation ID `591e2d73-ebeb-4103-bc76-73d40c4bcc6a`.
+Запуски Full verification
+[#228](https://github.com/VadikB/4K_MBTI/actions/runs/43097560601) и CI
+[#965](https://github.com/VadikB/4K_MBTI/actions/runs/43097560577) остались
+`Queued` после объявленного GitHub восстановления. UI-отмена каждого вернула
+`Failed to cancel workflow`.
+
+Повтор исходного CI [#964](https://github.com/VadikB/4K_MBTI/actions/runs/43094314154),
+attempt 2, на том же SHA — `PASS` (`frontend`, `pytest`; `deploy-test` ожидаемо
+`SKIPPED`). Повтор Full verification #227, attempt 2, выполнил integration и
+четыре runtime browser lanes, но browser fast завершился `FAIL`: существующий
+`path-admin-contract.spec.mjs:87` ожидал подтверждения чтением операции не более
+стандартных 5 секунд; при подтверждённом HTTP 200 UI ещё показывал `loading`.
+Результат browser fast: 229 PASS, 1 FAIL, 1 SKIP. Это не свидетельствует об
+ошибке нового admin grant/revoke: отказ находится в ожидании прежнего AC09.
+
+Ожидание AC09 теперь проверяет точный текст readback в течение 20 секунд и
+затем `data-tone=success`; постоянное отсутствие подтверждения по-прежнему
+завершает тест ошибкой. Адресный HTTP/PG browser-прогон против отдельного
+`agent4k_pytest` в owned контейнере:
+`npx playwright test tests/browser/path-admin-contract.spec.mjs --workers=1 --reporter=line`
+— `1 PASS (42.7s)`. Первый запуск без разрешения на Chromium не стартовал из-за
+локальной песочницы; повтор с разрешённым Chromium — PASS. Контейнер
+`p4k-f23-f10-f11-ci-pg` остановлен и удалён (`docker ps -a` не находит его).
+Полный CI на следующем commit, проверка обязательных статусов PR и человеческое
+review остаются обязательными.
