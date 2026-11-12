@@ -310,3 +310,18 @@ E38 — `aa8ce096` отправлен, PR #214 переведён в Ready. [П�
 `python3.12 scripts/check_release_version.py --base-ref origin/main` и
 `git diff --check` — PASS. Полный CI на новом SHA должен подтвердить регрессию;
 исходный прогон #237 не считается успешным gate.
+
+E39 — `c26aa6be` отправлен. [Полный CI
+#238](https://github.com/VadikB/4K_MBTI/actions/runs/43279911822): integration
+PASS, все четыре browser runtime shards PASS, включая ранее падавший 2/4.
+Browser fast lane на одном worker столкнулся с устаревшими синтетическими
+fixtures `adm-program-guards.spec.mjs` и `auth-r03.spec.mjs`, затем workflow
+достиг 15-минутного предела. Подтверждённые fixture revisions теперь содержат
+`effective_confirmed`, как требует F05 API. AC04 использует удерживаемый GET
+при безопасном обновлении того же экрана; файл ADM-PROGRAM локально 22/22
+PASS, адресный ADM28 lost POST — PASS, семь сценариев назначения и ответов
+в `auth-r03.spec.mjs` — PASS. Весь `auth-r03.spec.mjs` после исправлений:
+157 PASS / 1 SKIP за 3.3 минуты (`BROWSER_PYTHON` указан явно, так как
+отдельный worktree не имеет собственной `.venv`). Прогон #238 не является
+успешным gate; нужен новый CI на
+точном SHA после отправки исправленных fixtures.
