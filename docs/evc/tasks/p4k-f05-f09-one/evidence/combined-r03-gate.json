@@ -1,0 +1,25 @@
+{
+  "contract": "p4k-f05-f09-r03-combined-local-gate/1",
+  "f05_f09_candidate_sha": "5091e13e58d6841e7c797285a4bf055d572aa0ee",
+  "r03_independent_fix_sha": "4e6bffa4e1b2dd56203022f17870a928553ab472",
+  "temporary_combined_head_sha": "b6996a54260037c919340024a443ca00ef16a30c",
+  "temporary_checkout": "/private/tmp/p4k-f05-f09-r03-gate",
+  "full_integration": {
+    "passed": 393,
+    "skipped_explicit_real_provider": 2,
+    "deselected": 1246,
+    "failed": 0,
+    "warnings": 1,
+    "elapsed_seconds": 730.47,
+    "r03_utc_and_europe_moscow": "PASS"
+  },
+  "environment": "dedicated_local_postgresql_15_marker_owned_agent4k_pytest",
+  "owner_marker_verified_before_drop": true,
+  "owned_test_databases_remaining": 0,
+  "dedicated_cluster_stopped": true,
+  "external_llm_calls": 0,
+  "real_mail_calls": 0,
+  "f05_f09_branch_changed_by_combined_gate": false,
+  "ci": "NOT_RUN",
+  "conclusion": "COMBINED_LOCAL_INTEGRATION_GATE_PASS; F05_F09_BRANCH_REMAINS_SEPARATE"
+}

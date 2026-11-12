@@ -11,8 +11,9 @@
     "build_web": "PASS_NO_DIFF",
     "full_integration_first_run": {"passed": 353, "failed": 7, "errors": 25, "skipped": 9, "cause": "31 cases lacked required test stand URL parameters; one R03 Retry-After failure persisted with corrected parameters"},
     "full_integration_failed_cases_retry": {"passed": 31, "failed": 1, "case": "test_r03_auth_full_flow_db.py::test_password_registration_login_cookie_restore_on_owned_schema"},
-    "r03_isolated_candidate": "FAIL_RETRY_AFTER_ZERO",
-    "r03_isolated_unchanged_base": "FAIL_RETRY_AFTER_ZERO"
+    "r03_isolated_candidate": "FAIL_RETRY_AFTER_OUT_OF_EXPECTED_RANGE",
+    "r03_isolated_unchanged_base": "FAIL_RETRY_AFTER_OUT_OF_EXPECTED_RANGE",
+    "r03_exact_http_readback_on_unchanged_base_seconds": 10807
   },
   "environment": "dedicated_local_postgresql_15_marker_owned_test_databases",
   "external_llm_calls": 0,
