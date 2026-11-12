@@ -96,17 +96,21 @@ integration gate E34 один R03 FAIL, воспроизведённый на н
 pytest: точный HTTP readback показал 10807 секунд при cooldown 7 и зоне
 Europe/Moscow. Отдельный R03 commit `4e6bffa4` проверен вместе с кандидатом
 во временном checkout `b6996a54`: полный локальный integration gate E35 —
-393 PASS, 2 SKIP явного real-provider, 0 FAIL. Ветка F05–F09 не получила
-R03 fix; её точный SHA ещё требует зелёного CI после принятия R03.
+393 PASS, 2 SKIP явного real-provider, 0 FAIL. Изначальная ветка F05–F09 не
+получала R03 fix; после принятия PR #213 база обновлена до `e7cd26dc`.
 Ветка отправлена в `origin`, создан draft PR
-[#214](https://github.com/VadikB/4K_MBTI/pull/214); быстрый CI выполняется.
+[#214](https://github.com/VadikB/4K_MBTI/pull/214); быстрый CI на `6b23f69e`
+прошёл (`frontend`, `pytest`), полный CI для draft штатно пропущен.
 Полный CI, TEST и human review F05–F09 ещё не выполнены. Отдельный
 R03 PR [#213](https://github.com/VadikB/4K_MBTI/pull/213) на
 `a3f8eb54ba2378c25bafe62ebd6389b9243cb881` прошёл полный CI после
-повтора одного непостоянного browser timeout на том же SHA; human review и
-merge R03 ещё не выполнены. Следующие действия: принять R03 независимо,
-обновить F05–F09 на принятую базу, проверить точный SHA в CI, затем merge и
-TEST по процессу.
+повтора одного непостоянного browser timeout на том же SHA; владелец принял
+human review и разрешил squash merge с test deploy. R03 вошёл в `main` как
+`e7cd26dc`; `deploy-test` #973 PASS. Объединённая ветка F05–F09 локально
+прошла frontend 271, backend unit 1089, HTTP 153, lint/build/diff PASS;
+полный local integration точного merge SHA не повторялся. Следующие действия:
+проверить CI нового draft SHA, согласовать новую версию для F05–F09, выполнить
+Ready preflight и полный CI, затем отдельные приёмка/merge/TEST по процессу.
 
 ## Адресный review кандидата 12.11.2026
 

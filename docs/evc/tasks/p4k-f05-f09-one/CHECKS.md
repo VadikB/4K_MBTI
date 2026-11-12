@@ -274,3 +274,18 @@ R03 fix локальный gate зелёный. Это не CI и не изме�
 зависимости. CI `frontend`, `pytest`, `full-verification` на точном head и
 human review до слияния не выполнены; до TEST и визуальной приёмки владельца
 кандидат не дошёл.
+
+E36 — после разрешённого squash merge R03 PR #213 `origin/main` стал
+`e7cd26dc35d919976c202904dd40ca09d3bad790` (приложение `2.0.101`).
+`deploy-test` job [#973](https://github.com/VadikB/4K_MBTI/actions/runs/43275471959/job/131382576960)
+и шаг `Deploy main to test` — PASS. Draft PR #214 на `6b23f69e` до
+обновления базы: `frontend` и `pytest` PASS, полный workflow SKIP для draft.
+После `git fetch origin main` исходный код объединился без конфликтов;
+конфликты только в `web/dist` устранены `npm run build:web` с штатной очисткой.
+На объединённом дереве `node --test tests/frontend/*.test.mjs`: 271 PASS;
+`npm run lint:js`: PASS; `npm run test:backend`: 1089 PASS / 552 deselected;
+`npm run test:backend:http`: 153 PASS / 13 deselected; build и staged
+`git diff --check`: PASS. Полный local integration точного merge SHA не
+повторялся: E35 уже проверил тот же F05–F09 product code с R03 fix, а принятая
+база дополнительно содержит номер версии и release-сборку. Полный CI точного
+SHA остаётся обязательным после согласования версии и Ready.
