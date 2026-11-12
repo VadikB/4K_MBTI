@@ -66,6 +66,7 @@ function adapter(mode, dir) {
         : { id: 'report-1', cycle_id: cycle, owner_user_id: 501, status: 'ready', audience: 'assessee',
           results_revision_id: 'results-1', revision_no: 1 }) },
   locator, getByRole: () => locator('report-open'), evaluate: async () => 501, goto: async () => {},
+  on: () => {},
   waitForTimeout: async () => {}, screenshot: async ({ path: file }) => fs.writeFileSync(file, 'fixture image'),
   waitForResponse: (predicate) => new Promise((resolve, reject) => {
     const waiter = { predicate, resolve, timer: setTimeout(() => reject(Error('UNEXPECTED_POST_WAIT')), 300) };

@@ -1,0 +1,23 @@
+{
+  "contract": "p4k-f05-f09-local-verification/1",
+  "base_sha": "c06e94d5ff3784b2788b44089091a62a3921d301",
+  "candidate_product_sha_before_test_harness_fix": "9c946718cbbeb925f4c3254834c66e2b6bcdaa15",
+  "checks": {
+    "frontend_initial": {"passed": 267, "failed": 4, "cause": "frontend VM adapter lacked page.on for the new browser dialog listener"},
+    "frontend_after_adapter_fix": {"passed": 271, "failed": 0},
+    "backend_unit": {"passed": 1089, "deselected": 551},
+    "backend_http": {"passed": 153, "deselected": 13},
+    "lint_js": "PASS",
+    "build_web": "PASS_NO_DIFF",
+    "full_integration_first_run": {"passed": 353, "failed": 7, "errors": 25, "skipped": 9, "cause": "31 cases lacked required test stand URL parameters; one R03 Retry-After failure persisted with corrected parameters"},
+    "full_integration_failed_cases_retry": {"passed": 31, "failed": 1, "case": "test_r03_auth_full_flow_db.py::test_password_registration_login_cookie_restore_on_owned_schema"},
+    "r03_isolated_candidate": "FAIL_RETRY_AFTER_ZERO",
+    "r03_isolated_unchanged_base": "FAIL_RETRY_AFTER_ZERO"
+  },
+  "environment": "dedicated_local_postgresql_15_marker_owned_test_databases",
+  "external_llm_calls": 0,
+  "real_mail_calls": 0,
+  "owned_databases_removed": true,
+  "dedicated_cluster_stopped": true,
+  "conclusion": "F05_F09_ACCEPTANCE_PASS_FULL_INTEGRATION_GATE_FAILS_ON_REPRODUCED_BASE_R03_CASE"
+}

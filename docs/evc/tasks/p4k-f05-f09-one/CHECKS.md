@@ -211,6 +211,29 @@ node_modules/.bin/playwright test tests/browser/path29-participant.spec.mjs`;
 Первый `py_compile` системным Python не смог создать кэш в защищённом
 `~/Library/Caches`; повтор с `PYTHONPYCACHEPREFIX` прошёл, исходники не менялись.
 
+E34 — полный локальный pre-PR набор после `9c946718` и адресного исправления
+тестового VM-адаптера: первый frontend-прогон дал 267 PASS / 4 FAIL, потому что
+адаптер не реализовал новый `page.on('dialog')`; добавлен no-op listener для
+VM fixture, адресный повтор 4 PASS и весь frontend-набор 271 PASS. Остальные
+проверки: `npm run test:backend` 1089 PASS / 551 deselected;
+`npm run test:backend:http` 153 PASS / 13 deselected; `npm run lint:js` PASS;
+`npm run build:web` PASS без изменения `web/dist`; `git diff --check` PASS.
+Первый полный `TEST_DATABASE_URL=<owned-test-url> npm run
+test:backend:integration` на PostgreSQL 15: 353 PASS, 7 FAIL, 25 setup ERROR,
+9 SKIP. Причина 31 неуспеха на первом запуске — test stand требует
+`agent4k_pytest` либо `task11_pytest` и явного DB user, а owned-stand тесты
+также требуют `STAND_ADMIN_URL`; первоначальный URL этим условиям не отвечал.
+Ещё один FAIL R03 сохраняется при корректном URL.
+Адресный `--lf` с allowlisted именем, явным DB user и maintenance URL:
+31 PASS, 1 FAIL. Оставшийся `test_r03_auth_full_flow_db.py` дважды получил
+`Retry-After: 0` при ожидании 1–7. Тот же одиночный тест на неизменённом
+`origin/main@c06e94d5` в отдельном чистом worktree дал идентичный FAIL.
+Авторизация R03 и этот тест не менялись кандидатом; полный integration gate
+локально остаётся FAIL и не выдаётся за PASS. Безопасная
+[сводка](evidence/full-local-verification.json) и итоговая
+[очистка](evidence/final-cleanup.json) сохранены; обе marker-owned БД удалены,
+выделенный кластер остановлен, временный baseline worktree удалён.
+
 | ID | Статус | Проверенный синтетический путь / остаток |
 | --- | --- | --- |
 | F05-AC01 | PASS | E5/E7/E10: confirmed #1 + draft #2, GET/reload/новая сессия; UI показывает #1 действующей и #2 в редактируемой форме. Назначение и первый Turn на #1, в PG две редакции и один Cycle. |
@@ -233,7 +256,9 @@ node_modules/.bin/playwright test tests/browser/path29-participant.spec.mjs`;
 | F09-AC04 | PASS | E6/E14: реальный полный runtime UI на owned PG и отдельная CSS геометрия, 1440/390/320/200%, длинный статус, keyboard focus, широкая кнопка и отсутствие горизонтального overflow. Между AS старое поле скрыто; степень готовности и ETA не выдумываются. |
 | MERGE-AC01 | PASS | E32/E33: один candidate и один owned browser/HTTP/PG маршрут F05 confirmed #1 + draft #2 → назначение → функциональная AS через продуктовый admission → Turn → Finish/ASK → явный Next → одна новая AS. E13/E18/E19: поздний/отклонённый F06; E9/E11/E20/E21/E24/E28–E30: потери, зависшее тело, reload, поздние ответы и отсутствие дубликатов в допустимом техническом runtime; E33: длинный Next и смена owner. Контролируемый provider не доказывает реальный LLM, terminal cleanup не доказывает Report этого маршрута. |
 
-Итого: 19 PASS из 19 локально. Полный PATH/F22 и качество реального LLM не
-заявлены. F03/F04 — отдельные зависимости. CI `frontend`, `pytest`,
-`full-verification` на точном head и human review до слияния не выполнены;
-до TEST и визуальной приёмки владельца кандидат не дошёл.
+Итого по AC: 19 PASS из 19 локально. Полный integration-набор E34 имеет один
+подтверждённый на базе R03 FAIL, поэтому локальный gate перед PR не зелёный.
+Полный PATH/F22 и качество реального LLM не заявлены. F03/F04 — отдельные
+зависимости. CI `frontend`, `pytest`, `full-verification` на точном head и
+human review до слияния не выполнены; до TEST и визуальной приёмки владельца
+кандидат не дошёл.
