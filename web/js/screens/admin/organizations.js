@@ -1125,6 +1125,7 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
         PROGRAM_ASSIGNMENT_REF_MISMATCH: 'Не удалось сопоставить сведения с доступной оценкой. Обновите данные.',
         PROGRAM_SOURCE_SELECTION_STALE: 'Сведения об оценке изменились. Обновите состояние и повторите выбор.',
         PROGRAM_CONFIGURATION_NOT_AVAILABLE: 'Настройка оценки не завершена. Обратитесь к суперадминистратору.',
+        ASSIGNMENT_OPERATION_IDEMPOTENCY_CONFLICT: 'Операция уже относится к другому набору участников. Обновите список перед новой попыткой.',
       };
       const code = Object.keys(messages).find((item) => String(error?.message || '').includes(item));
       setStatus(code ? messages[code] : (error.message || 'Не удалось назначить оценку.'), 'error');

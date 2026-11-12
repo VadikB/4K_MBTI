@@ -25,6 +25,9 @@ const test=base.extend({context:async({browser},use)=>{
     if(info.title.includes('without ASK')){
       const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_no_ask=true;fs.writeFileSync(statePath,JSON.stringify(inputs));
     }
+    if(info.title.includes('without scenario reply')){
+      const inputs=JSON.parse(fs.readFileSync(statePath));inputs.browser_silent_turn=true;fs.writeFileSync(statePath,JSON.stringify(inputs));
+    }
     if(!info.title.includes('Unapproved LIMITED')){
       const inputs=JSON.parse(fs.readFileSync(statePath));inputs.component_plan_fixture='browser-component-plan-boundary/1';fs.writeFileSync(statePath,JSON.stringify(inputs));
       info.annotations.push({type:'synthetic_upstream',description:'Static component plan-policy fixture only; NOT pilot/human admission. Real AS/start/time checks remain.'});
@@ -614,6 +617,76 @@ test('F07 fresh 403 is explained without persisting the refused Turn',async({pag
  expect(receipt.report_opened).toBe(true);
  expect(refusedPosts).toBe(1);
 });
+test('F07 saved Turn without scenario reply does not invent a message',async({page,stand})=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);
+ const first=await runtime(page,stand);
+ const situationId=first.current_situation.assessment_situation_id;
+ const answerText='Синтетический ответ без обязательной реплики сценария.';
+ await answer(page,answerText);
+ const after=await runtime(page,stand);
+ expect(after.current_situation.assessment_situation_id).toBe(situationId);
+ expect(after.trace.turns.filter(turn=>turn.speaker_type==='assessee' && turn.content_text===answerText)).toHaveLength(1);
+ expect(after.trace.events.filter(event=>['mandatory_update','character_response'].includes(event.event_type))).toHaveLength(0);
+ await expect(page.locator('#interview-messages .own')).toContainText([answerText]);
+ const receipt=await completeStartedAssessment({
+   page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+   initialSituationId:situationId,advanceWorkers:async()=>stand.cli('drain'),
+ });
+ expect(receipt.report_opened).toBe(true);
+});
+test('F07 old runtime poll cannot replace the saved Turn after readback',async({page,stand})=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);
+ const first=await runtime(page,stand);
+ const situationId=first.current_situation.assessment_situation_id;
+ const runtimePath=`**/users/assessment/cycles/${first.cycle_id}/runtime`;
+ let releaseStale;
+ const staleGate=new Promise(resolve=>{releaseStale=resolve;});
+ let captureStale;
+ const captured=new Promise(resolve=>{captureStale=resolve;});
+ let confirmDelivery;
+ const delivered=new Promise(resolve=>{confirmDelivery=resolve;});
+ let heldPolls=0;
+ let routeRemoved=false;
+ await page.route(runtimePath,async route=>{
+   if(route.request().method()!=='GET' || heldPolls>0)return route.continue();
+   heldPolls+=1;
+   const stale=await route.fetch();
+   expect(stale.status()).toBe(200);
+   captureStale();
+   await staleGate;
+   try{await route.fulfill({response:stale});}catch{/* Navigation may cancel the old poll. */}
+   confirmDelivery();
+ });
+ try{
+   await Promise.race([captured,new Promise((_,reject)=>setTimeout(
+     ()=>reject(new Error('POLL_NOT_CAPTURED_WITHIN_15_SECONDS')),15000))]);
+   const answerText='Синтетический Turn для проверки позднего poll.';
+   await answer(page,answerText);
+   const saved=await runtime(page,stand);
+   expect(saved.trace.turns.filter(turn=>turn.content_text===answerText)).toHaveLength(1);
+   await expect(page.locator('#interview-messages .own')).toContainText([answerText]);
+   releaseStale();
+   await delivered;
+   await page.waitForTimeout(500);
+   await expect(page.locator('#interview-messages .own')).toContainText([answerText]);
+   await expect(page.locator('#interview-finish-button')).toBeEnabled();
+   await page.unroute(runtimePath);
+   routeRemoved=true;
+   await page.reload();
+   await expect(page.locator('#interview-messages .own')).toContainText([answerText]);
+   const receipt=await completeStartedAssessment({
+     page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+     initialSituationId:situationId,advanceWorkers:async()=>stand.cli('drain'),
+   });
+   expect(receipt.report_opened).toBe(true);
+ }finally{
+   releaseStale();
+   if(!routeRemoved&&!page.isClosed())await page.unroute(runtimePath);
+ }
+ expect(heldPolls).toBe(1);
+});
 test('F07 committed Turn with stalled body stays pending until exact readback',async({page,stand})=>{
  test.setTimeout(240000);
  await login(page,stand);await start(page);
@@ -781,6 +854,82 @@ test('F09 committed Next with stalled headers reaches bounded recovery for the s
  });
  expect(receipt.report_opened).toBe(true);
  expect(nextPosts).toBe(1);
+});
+test('F09 two tabs converge on one next AS without duplicate preparation',async({page,context,stand})=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);await answer(page);
+ const first=await runtime(page,stand);
+ const firstSituationId=first.current_situation.assessment_situation_id;
+ const end=page.waitForResponse(response=>response.request().method()==='POST'
+   && new URL(response.url()).pathname.endsWith('/transitions'));
+ await page.locator('#interview-finish-button').click();
+ expect((await end).ok()).toBe(true);
+ stand.cli('drain');
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+ await answer(page,fixture.clarification_answer);
+ const finish=page.waitForResponse(response=>response.request().method()==='POST'
+   && new URL(response.url()).pathname.endsWith('/finish-situation'));
+ await page.locator('#interview-finish-button').click();
+ expect((await finish).ok()).toBe(true);
+ stand.cli('drain');
+ const firstNext=page.getByRole('button',{name:'Приступить к следующей ситуации'});
+ await expect(firstNext).toBeVisible();
+ const second=await context.newPage();
+ await second.goto(`${stand.url}/?screen=interview&cycle_id=${encodeURIComponent(first.cycle_id)}`);
+ const secondNext=second.getByRole('button',{name:'Приступить к следующей ситуации'});
+ await expect(secondNext).toBeVisible();
+ const between=await runtime(page,stand);
+ expect(between.between_situations).toBe(true);
+ const runtimePath=`**/users/assessment/cycles/${first.cycle_id}/runtime`;
+ const nextPath=`**/users/assessment/m7/cycles/${first.cycle_id}/next`;
+ let releaseFirst;
+ const firstGate=new Promise(resolve=>{releaseFirst=resolve;});
+ let committedFirst;
+ const firstCommitted=new Promise(resolve=>{committedFirst=resolve;});
+ let firstPosts=0,secondPosts=0;
+ await second.route(runtimePath,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(between)}));
+ await page.route(nextPath,async route=>{
+   firstPosts+=1;
+   const committed=await route.fetch();
+   expect(committed.status()).toBe(201);
+   committedFirst();
+   await firstGate;
+   try{await route.fulfill({response:committed});}catch{/* The tab may reload. */}
+ });
+ await second.route(nextPath,async route=>{
+   secondPosts+=1;
+   return route.continue();
+ });
+ try{
+   await firstNext.click();
+   await firstCommitted;
+   const secondResponse=second.waitForResponse(response=>response.request().method()==='POST'
+     && new URL(response.url()).pathname.endsWith('/next'));
+   await secondNext.click();
+   expect([201,409]).toContain((await secondResponse).status());
+   expect(firstPosts).toBe(1);
+   expect(secondPosts).toBe(1);
+ }finally{
+   releaseFirst();
+   await page.unroute(nextPath);
+   await second.unroute(nextPath);
+   await second.unroute(runtimePath);
+ }
+ await page.reload();
+ await second.reload();
+ const pageRuntime=await runtime(page,stand);
+ const secondRuntime=await runtime(second,stand);
+ const nextSituationId=pageRuntime.current_situation.assessment_situation_id;
+ expect(nextSituationId).not.toBe(firstSituationId);
+ expect(secondRuntime.current_situation.assessment_situation_id).toBe(nextSituationId);
+ const receipt=await completeStartedAssessment({
+   page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+   initialSituationId:nextSituationId,advanceWorkers:async()=>stand.cli('drain'),
+ });
+ expect(receipt.report_opened).toBe(true);
+ const exported=JSON.parse(fs.readFileSync(path.join(stand.dir,'terminal-execution-export.json'),'utf8'));
+ expect(exported.situations).toHaveLength(2);
+ await second.close();
 });
 test('EXEC-CONTOUR repeated ASK remains in one AS before Report',async({page,stand})=>{
  test.setTimeout(240000);

@@ -573,19 +573,24 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const secondCheckbox = card.locator(`input[name="invitation_email"][value="${secondEmail}"]`);
       await secondCheckbox.check();
       const assignmentPath = `**/users/admin/organizations/${state.path29.organization_id}/assessment-assignments`;
-      let refusalPosts = 0;
-      await admin.route(assignmentPath, (route) => {
+      let refusalPosts = 0, seededPosts = 0;
+      await admin.route(assignmentPath, async (route) => {
         if (route.request().method() !== 'POST') return route.continue();
         refusalPosts += 1;
-        return route.fulfill({ status: 409, contentType: 'application/json',
-          body: JSON.stringify({ detail: 'PROGRAM_ROLE_NOT_AVAILABLE' }) });
+        const attempted = route.request().postDataJSON();
+        const seed = await route.fetch({ postData: JSON.stringify({ ...attempted, user_ids: [participantId] }) });
+        expect(seed.status()).toBe(200);
+        seededPosts += 1;
+        return route.continue();
       });
       try {
         await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
-        await expect(card).toContainText('Выбранная роль недоступна');
+        await expect(card).toContainText('Операция уже относится к другому набору участников');
         expect(refusalPosts).toBe(1);
+        expect(seededPosts).toBe(1);
         expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
         save('f06-current-refusal', { refused_status: 409, refusal_posts: refusalPosts,
+          server_generated_refusal: true, seeded_already_assigned_posts: seededPosts,
           feedback_visible: true, second_participant_email: secondEmail,
           participant_state: await snapshot() });
       } finally {

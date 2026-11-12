@@ -55,11 +55,12 @@
     "owned_databases_destroyed": true
   },
   "f06_current_409": {
-    "result": "PASS for current-session UI feedback with controlled HTTP 409",
+    "result": "PASS for current-session UI feedback with real handler HTTP 409",
     "refusal_posts": 1,
+    "seeded_already_assigned_posts": 1,
     "feedback_visible": true,
     "server_effect": "one profile, one cycle, one started cycle",
-    "server_generated_refusal": false,
+    "server_generated_refusal": true,
     "owned_database_destroyed": true
   },
   "runtime_contour": {
@@ -93,6 +94,22 @@
     "result": "PASS after expectation updated to delivery status beside message",
     "client_status": "unknown or confirmed saved by background exact readback",
     "turns_with_same_text_after_reload": 1,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f07_saved_turn_without_scenario_reply": {
+    "result": "PASS",
+    "fixture": "isolated controlled M5 outcome without mandatory update or character response",
+    "assessee_turns_with_same_text": 1,
+    "scenario_reply_events": 0,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f07_late_runtime_poll": {
+    "result": "PASS after product fix",
+    "reproduction": "old pre-Turn runtime GET arrived after POST/readback and rolled UI back",
+    "fix": "command generation guard plus append-only Turn/event snapshot monotonicity",
+    "saved_turn_preserved_after_old_poll": true,
     "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
     "owned_database_destroyed": true
   },
@@ -142,6 +159,16 @@
     "next_posts": 1,
     "new_situation_after_reload": true,
     "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f09_two_tabs_next": {
+    "result": "PASS",
+    "next_posts": 2,
+    "first_response_held_after_commit": true,
+    "second_response_status": 201,
+    "tabs_converged_on_same_as": true,
+    "terminal_situations": 2,
+    "terminal_execution_export": "calculated; pipeline and report ready",
     "owned_database_destroyed": true
   }
 }

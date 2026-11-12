@@ -53,6 +53,7 @@ import { startPreparedProductCycle } from '../product-cycle-start.js';
 const interviewCaseContextByKey = new Map();
 const PRODUCT_RUNTIME_POLL_MS = 1200;
 let productRuntimePollGeneration = 0;
+let productRuntimeMutationGeneration = 0;
 let returnHeartbeatTimer = null;
 let returnPresenceCycleId = null;
 let returnPresenceGeneration = 0;
@@ -568,6 +569,9 @@ export const sendProductInterviewAnswer = async (text, { draftValue = interviewT
     if (isProductInterviewPresentationCurrent(scope)) showInterviewRuntimeError(error);
     return { accepted: false };
   }
+  // A runtime poll started before this command may carry a valid but older
+  // projection. The command's own readback will load the authoritative state.
+  productRuntimeMutationGeneration += 1;
   productInterviewRequests.set(key, operation);
   if (isProductInterviewPresentationCurrent(operation)) {
     showError(interviewError, '');
@@ -716,7 +720,26 @@ const clearConfirmedReturnContinue = (snapshot) => {
   }
 };
 
+const olderProductRuntimeSnapshot = (incoming, presented) => {
+  if (!presented || incoming?.cycle_id !== presented.cycle_id
+      || incoming.current_situation?.assessment_situation_id !== presented.current_situation?.assessment_situation_id) {
+    return false;
+  }
+  // M5 Turn and scenario event history is append-only within one AS. A poll
+  // started before a command may arrive after its authoritative readback.
+  for (const [field, id] of [['turns', 'turn_id'], ['events', 'event_id']]) {
+    const known = presented.trace?.[field] || [];
+    if (!known.length) continue;
+    const received = new Set((incoming.trace?.[field] || []).map((item) => String(item[id])));
+    if (known.some((item) => !received.has(String(item[id])))) return true;
+  }
+  return false;
+};
+
 const renderProductRuntime = (snapshot) => {
+  if (olderProductRuntimeSnapshot(snapshot, confirmedProductInterviewSnapshot)) {
+    return confirmedProductInterviewSnapshot;
+  }
   interviewPanel.classList.toggle('between-situations', Boolean(snapshot.between_situations));
   const previousSituationId = state.productAssessmentSituationId;
   if (renderedProductCycleId !== snapshot.cycle_id) {
@@ -1174,6 +1197,7 @@ const renderReturnCard = (value) => {
 
 const loadReturnState = async ({ generation = productRuntimePollGeneration } = {}) => {
   const requestGeneration = generation ?? productRuntimePollGeneration;
+  const mutationGeneration = productRuntimeMutationGeneration;
   const viewGeneration = getAssessmentViewGeneration();
   const cycleId = state.productCycleId;
   const situationId = state.productAssessmentSituationId;
@@ -1183,7 +1207,9 @@ const loadReturnState = async ({ generation = productRuntimePollGeneration } = {
   const current = () => state.productCycleId === cycleId && state.pendingUser?.id === ownerId
     && state.productAssessmentSituationId === situationId && state.identityEpoch === identityEpoch
     && state.currentScreen === screen
-    && requestGeneration === productRuntimePollGeneration && viewGeneration === getAssessmentViewGeneration();
+    && requestGeneration === productRuntimePollGeneration
+    && mutationGeneration === productRuntimeMutationGeneration
+    && viewGeneration === getAssessmentViewGeneration();
   try {
     const response = await fetchWithDeadline('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId) + '/return-state', { credentials: 'same-origin' });
     if (!current()) return false;
@@ -1206,6 +1232,7 @@ const loadReturnState = async ({ generation = productRuntimePollGeneration } = {
 export const loadProductRuntime = async ({ generation = productRuntimePollGeneration } = {}) => {
   if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
   const requestGeneration = generation ?? productRuntimePollGeneration;
+  const mutationGeneration = productRuntimeMutationGeneration;
   const viewGeneration = getAssessmentViewGeneration();
   const cycleId = state.productCycleId;
   let situationId = state.productAssessmentSituationId;
@@ -1215,7 +1242,9 @@ export const loadProductRuntime = async ({ generation = productRuntimePollGenera
   const current = () => state.productCycleId === cycleId && state.pendingUser?.id === ownerId
     && state.productAssessmentSituationId === situationId && state.identityEpoch === identityEpoch
     && state.currentScreen === screen
-    && requestGeneration === productRuntimePollGeneration && viewGeneration === getAssessmentViewGeneration();
+    && requestGeneration === productRuntimePollGeneration
+    && mutationGeneration === productRuntimeMutationGeneration
+    && viewGeneration === getAssessmentViewGeneration();
   try {
     // Check the server-owned pause before fetching any AS content. Reload/login/GET
     // never resumes a recognized absence; only the explicit command above does.
@@ -1226,6 +1255,9 @@ export const loadProductRuntime = async ({ generation = productRuntimePollGenera
     });
     const saved = await readApiResponse(response, 'Не удалось восстановить состояние оценки.');
     if (!current() || saved.cycle_id !== cycleId) return null;
+    if (olderProductRuntimeSnapshot(saved, confirmedProductInterviewSnapshot)) {
+      return confirmedProductInterviewSnapshot;
+    }
     clearConfirmedReturnContinue(saved);
     state.productAssessmentSituationId = saved.current_situation?.assessment_situation_id || null;
     situationId = state.productAssessmentSituationId;

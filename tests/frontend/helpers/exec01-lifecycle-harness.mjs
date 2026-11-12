@@ -118,6 +118,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
   });
   vm.runInContext(`
     let productRuntimePollGeneration = 0;
+    let productRuntimeMutationGeneration = 0;
     let returnHeartbeatTimer = null;
     let returnPresenceCycleId = null;
     let returnPresenceGeneration = 0;

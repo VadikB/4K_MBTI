@@ -120,6 +120,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     let renderedProductCycleId = null;
     let confirmedProductInterviewSnapshot = null;
     let confirmedProductInterviewCanSend = false;
+    let productRuntimeMutationGeneration = 0;
     const productInterviewRequests = new Map();
     const nextSituationRequests = new Map();
     let interviewScrollAlignmentGeneration = 0;

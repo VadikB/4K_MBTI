@@ -9,7 +9,10 @@ from pathlib import Path
 def acceptance_fixture():
     if not enabled() or os.getenv('AGENT4K_BROWSER_SCENARIO') != 'acceptance-v1':
         return None
-    return json.loads((Path(__file__).resolve().parents[1] / 'tests/browser/fixtures/v1.json').read_text())
+    fixture = json.loads((Path(__file__).resolve().parents[1] / 'tests/browser/fixtures/v1.json').read_text())
+    if os.getenv('AGENT4K_BROWSER_SILENT_TURN') == '1':
+        fixture['mandatory_material_id'] = 'SYNTHETIC_NO_MANDATORY_UPDATE'
+    return fixture
 
 
 def acceptance_contracts():
