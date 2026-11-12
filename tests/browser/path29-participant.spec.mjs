@@ -70,6 +70,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     initialState.browser_case = 'specialist';
     if (!fullPath && !realProvider) {
       initialState.component_plan_fixture = 'browser-component-plan-boundary/1';
+      if (process.env.P4K_F06_A_B_A === '1') initialState.f06_second_org = true;
       test.info().annotations.push({type:'synthetic_upstream',description:
         'Static component only: upstream plan policy substituted, NOT human/pilot admission or full PATH; AS/start/time checks remain real'});
       save('component-boundary', {fixture:initialState.component_plan_fixture,
@@ -500,6 +501,94 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
           participant_state: await snapshot() });
       } finally {
         releaseResponse();
+        await admin.unroute(assignmentPath);
+      }
+    }
+    if (!fullPath && process.env.P4K_F06_A_B_A === '1') {
+      const secondOrgId = state.path29.second_organization_id;
+      expect(secondOrgId).toBeGreaterThan(0);
+      const switchContext = await browser.newContext();
+      extraContexts.push(switchContext);
+      const switchAdmin = await switchContext.newPage();
+      await switchAdmin.goto(base);
+      await switchAdmin.locator('#email-input').fill('superadmin@example.test');
+      await switchAdmin.locator('#request-magic-link-button').click();
+      await switchAdmin.locator('#magic-token-input').fill(state.password);
+      await switchAdmin.locator('#verify-magic-link-button').click();
+      await expect(switchAdmin.locator('#admin-panel')).toBeVisible();
+      await switchAdmin.locator('#admin-open-organizations-button').click();
+      await expect(switchAdmin.locator('#admin-organizations-panel')).toBeVisible();
+      const picker = switchAdmin.locator('#admin-organization-select');
+      await picker.selectOption(String(state.path29.organization_id));
+      const switchCard = switchAdmin.locator(`[data-organization-id="${state.path29.organization_id}"]`);
+      await switchCard.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+      const switchCheckbox = switchCard.locator(`input[name="invitation_email"][value="${state.path29.participant_email}"]`);
+      let releaseResponse, committedResponse;
+      const releaseGate = new Promise((resolve) => { releaseResponse = resolve; });
+      const committedGate = new Promise((resolve) => { committedResponse = resolve; });
+      const assignmentPath = `**/users/admin/organizations/${state.path29.organization_id}/assessment-assignments`;
+      const staleReply = Number(process.env.P4K_F06_A_B_A_REPLY || 200);
+      expect([200, 409]).toContain(staleReply);
+      let delayedPosts = 0;
+      await switchAdmin.route(assignmentPath, async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        delayedPosts += 1;
+        const committed = await route.fetch();
+        expect(committed.status()).toBe(200);
+        committedResponse();
+        await releaseGate;
+        if (staleReply === 200) await route.fulfill({ response: committed });
+        else await route.fulfill({ status: 409, contentType: 'application/json',
+          body: JSON.stringify({ detail: 'PROGRAM_ROLE_NOT_AVAILABLE' }) });
+      });
+      try {
+        await switchCheckbox.check();
+        await switchCard.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+        await committedGate;
+        await picker.selectOption(String(secondOrgId));
+        await expect(switchAdmin.locator(`[data-organization-id="${secondOrgId}"]`)).toBeVisible();
+        await picker.selectOption(String(state.path29.organization_id));
+        await expect(switchCard).toBeVisible();
+        const statusBefore = await switchAdmin.locator('#admin-organizations-status').textContent();
+        releaseResponse();
+        await switchAdmin.waitForTimeout(500);
+        expect(await switchAdmin.locator('#admin-organizations-status').textContent()).toBe(statusBefore);
+        expect(delayedPosts).toBe(1);
+        expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
+        save('f06-a-b-a-assignment', { second_organization_id: secondOrgId,
+          delayed_reply_status: staleReply, delayed_posts: delayedPosts,
+          status_unchanged_after_a_b_a: true, participant_state: await snapshot() });
+      } finally {
+        releaseResponse();
+        await switchAdmin.unroute(assignmentPath);
+      }
+    }
+    if (!fullPath && process.env.P4K_F06_CURRENT_ERROR === '1') {
+      const secondEmail = 'path29-f06-second@example.test';
+      await add.locator('[name="email"]').fill(secondEmail);
+      await add.locator('[name="full_name"]').fill('Второй синтетический участник F06');
+      await add.locator('[name="role_description"]').fill('Синтетическая роль для проверки отказа назначения');
+      await add.getByRole('button', { name: 'Добавить', exact: true }).click();
+      await expect(add.locator('[data-operation-status]')).toContainText('Участник привязан');
+      const secondCheckbox = card.locator(`input[name="invitation_email"][value="${secondEmail}"]`);
+      await secondCheckbox.check();
+      const assignmentPath = `**/users/admin/organizations/${state.path29.organization_id}/assessment-assignments`;
+      let refusalPosts = 0;
+      await admin.route(assignmentPath, (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        refusalPosts += 1;
+        return route.fulfill({ status: 409, contentType: 'application/json',
+          body: JSON.stringify({ detail: 'PROGRAM_ROLE_NOT_AVAILABLE' }) });
+      });
+      try {
+        await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+        await expect(card).toContainText('Выбранная роль недоступна');
+        expect(refusalPosts).toBe(1);
+        expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
+        save('f06-current-refusal', { refused_status: 409, refusal_posts: refusalPosts,
+          feedback_visible: true, second_participant_email: secondEmail,
+          participant_state: await snapshot() });
+      } finally {
         await admin.unroute(assignmentPath);
       }
     }

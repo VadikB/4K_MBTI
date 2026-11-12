@@ -30,6 +30,7 @@ def seed(state_path, state):
     from scripts.build_m5_functional_package import OUTPUT as FUNCTIONAL_OUTPUT
     from scripts.build_m5_sales_package import build_execution_rules
     from Api import assessment_programs
+    second_org_id = None
     with get_connection() as c:
         org = None
         if full_path:
@@ -201,10 +202,17 @@ def seed(state_path, state):
                  role_profile_version_id,configured_by_user_id)
                 VALUES(%s,'PATH29 browser','specialist-pilot/1',%s,%s,%s)""",
                 (org, other['id'], role_id, actor))
+            if state.get('f06_second_org') is True:
+                second_org_id = c.execute("""INSERT INTO organizations(code,name)
+                    VALUES('path29_f06_second','Синтетическая вторая организация F06') RETURNING id""").fetchone()['id']
+                assessment_programs.connect(c, organization_id=second_org_id,
+                    program_definition_id=program_id, actor_user_id=actor,
+                    operation_id='path29-f06-connect-second')
         assert c.execute("SELECT id FROM users WHERE email='path29-new@example.test'").fetchone() is None
         c.commit()
     state['path29'] = {'organization_id': None if full_path else org, 'configuration_id': other['id'], 'program_id': program_id,
                       'role_version_id': role_id,
+                      'second_organization_id': second_org_id,
                       'input_mode': 'functional-diagnostic' if full_path else 'legacy-static',
                       'admin_email': 'path29-admin@example.test', 'participant_email': 'path29-new@example.test'}
     state_path.write_text(json.dumps(state))

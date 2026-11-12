@@ -93,6 +93,22 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     const preview = card.locator('.admin-questionnaire-preview');
     await expect(preview).toContainText('Готово к подтверждению');
     const revisionId = await preview.getAttribute('data-questionnaire-revision-id');
+    if (process.env.P4K_F05_DRAFT_ONLY === '1') {
+      await page.reload();
+      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+      const readiness = card.locator('.admin-assignment-readiness');
+      await expect(readiness).toContainText('Назначение пока недоступно');
+      await expect(readiness).not.toContainText('Можно назначать');
+      const draft = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath,
+        '--revision-id', revisionId]));
+      expect(draft.revision.status).not.toBe('confirmed');
+      expect(draft.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 1);
+      expect(draft.counts.assignments).toBe(baseline.counts.assignments);
+      save('f05-draft-only', { revision_id: Number(revisionId), revision_status: draft.revision.status,
+        assignment_status: await readiness.innerText(), revision_count: draft.counts.questionnaire_revisions,
+        assignment_count: draft.counts.assignments, baseline_assignment_count: baseline.counts.assignments });
+      return;
+    }
     const confirmResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith(`/questionnaire/${revisionId}/confirm`));
     await preview.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
@@ -121,6 +137,58 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       expect(db.counts[name], `${name}: unchanged since synthetic seed`).toBe(baseline.counts[name]);
     }
     expect(db.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 1);
+    if (process.env.P4K_F05_INCOMPLETE_LATE_SAVE === '1') {
+      const incompleteName = values.organization_name + ' — неполный черновик';
+      await form.locator('[name="organization_name"]').fill(incompleteName);
+      await form.locator('[name="responsible_contact"]').fill('');
+      let releaseResponse, committedResponse;
+      const releaseGate = new Promise((resolve) => { releaseResponse = resolve; });
+      const committedGate = new Promise((resolve) => { committedResponse = resolve; });
+      const previewPath = `**/users/admin/organizations/${organizationId}/questionnaire/preview`;
+      let previewPosts = 0;
+      await page.route(previewPath, async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        previewPosts += 1;
+        const committed = await route.fetch();
+        expect(committed.status()).toBe(201);
+        committedResponse();
+        await releaseGate;
+        await route.fulfill({ response: committed });
+      });
+      try {
+        await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+        await committedGate;
+        await page.locator('#admin-organizations-logout-button').click();
+        await expect(page.locator('#email-input')).toBeVisible();
+        await page.locator('#email-input').fill('admin@example.test');
+        await page.locator('#request-magic-link-button').click();
+        await page.locator('#magic-token-input').fill(state.password);
+        await page.locator('#verify-magic-link-button').click();
+        await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+        releaseResponse();
+        await page.waitForTimeout(500);
+        await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+        await expect(card.locator('.admin-assignment-readiness')).toContainText(
+          `действует подтверждённая редакция #${revisionId}; новый черновик ещё не подтверждён`);
+        const revisions = await (await page.request.get(
+          `${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
+        const latest = revisions.items.find((item) => item.assignment_ref === saved.assignment_ref);
+        expect(latest.status).not.toBe('confirmed');
+        expect(latest.effective_confirmed.id).toBe(Number(revisionId));
+        const draft = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath,
+          '--revision-id', String(latest.id)]));
+        expect(draft.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 2);
+        expect(draft.counts.assignments).toBe(baseline.counts.assignments);
+        save('f05-incomplete-late-save', { confirmed_revision_id: Number(revisionId),
+          draft_revision_id: latest.id, draft_status: latest.status,
+          effective_confirmed_revision_id: latest.effective_confirmed.id,
+          delayed_preview_posts: previewPosts, assignment_count: draft.counts.assignments });
+        return;
+      } finally {
+        releaseResponse();
+        await page.unroute(previewPath);
+      }
+    }
     const draftName = values.organization_name + ' — черновик';
     await form.locator('[name="organization_name"]').fill(draftName);
     const draftResponse = page.waitForResponse((response) => response.request().method() === 'POST'

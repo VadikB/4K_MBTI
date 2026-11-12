@@ -52,6 +52,8 @@ def environment(state):
         env['AGENT4K_QA_ORCHESTRATION']='1'
         if state.get('browser_repeat_ask') is True:
             env['AGENT4K_BROWSER_REPEAT_ASK']='1'
+        if state.get('browser_no_ask') is True:
+            env['AGENT4K_BROWSER_NO_ASK']='1'
     if state.get('provider_mode') == 'real':
         # Explicit opt-in only. Values stay in the process environment and are
         # never copied to state.json, logs or evidence.
