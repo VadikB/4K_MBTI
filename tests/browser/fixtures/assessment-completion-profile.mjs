@@ -104,10 +104,13 @@ export async function completeStartedAssessment({
   advanceWorkers = async () => {}, maxSituations = 12, reloadAtBoundary = false,
   stopAfterFirstNext = false, onNextAccepted = async () => null,
 }) {
-  // The product asks for explicit Finish confirmation. Playwright otherwise
-  // dismisses it, leaving waitForResponse pending until the whole test expires.
-  const acceptFinishConfirmation = (dialog) => dialog.accept();
-  page.on('dialog', acceptFinishConfirmation);
+  // The product asks for explicit Finish confirmation. Runtime specs may have
+  // already registered this handler during login; two handlers race to accept
+  // the same dialog and fail the browser shard.
+  if (!page.acceptanceDialogHandler) {
+    page.on('dialog', (dialog) => dialog.accept());
+    page.acceptanceDialogHandler = true;
+  }
   const stages = [];
   const before = await runtime(page, base, cycleId);
   if (before.cycle_id !== cycleId || before.current_situation?.assessment_situation_id !== initialSituationId) {

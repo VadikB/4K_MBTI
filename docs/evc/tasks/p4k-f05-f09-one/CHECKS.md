@@ -299,3 +299,14 @@ E37 — draft PR #214 обновлён до `a5fe39ee`: [быстрый CI
 согласованные файлы версии, `npm run build:web` и release gate.
 `git diff --check` — PASS. Полный CI точного нового SHA требуется после
 commit, push и перевода PR в Ready.
+
+E38 — `aa8ce096` отправлен, PR #214 переведён в Ready. [Полный CI
+#237](https://github.com/VadikB/4K_MBTI/actions/runs/43278876015) выявил
+9 FAIL в `browser (runtime-2-of-4, 2/4)`: первый и остальные тесты получили
+`Error: dialog.accept: Cannot accept dialog which is already handled!` в
+`assessment-completion-profile.mjs:109`. `runtime.spec.mjs` уже подписывается
+на `dialog` во время login; helper подписывался второй раз. Helper теперь
+добавляет обработчик только если его ещё нет. `node --check` этого файла,
+`python3.12 scripts/check_release_version.py --base-ref origin/main` и
+`git diff --check` — PASS. Полный CI на новом SHA должен подтвердить регрессию;
+исходный прогон #237 не считается успешным gate.
