@@ -1,0 +1,90 @@
+{
+  "contract": "p4k-f05-f09-functional-owned-evidence/1",
+  "scope": "synthetic_browser_http_owned_postgresql",
+  "provider_transport": "controlled_fixture",
+  "external_llm_calls": 0,
+  "real_mail_calls": 0,
+  "published_source": {
+    "version": "1.2",
+    "sha256": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+  },
+  "runs": {
+    "combined": {
+      "run_id": "aad24110fc0644f4bb197ca7ca4aa2bf",
+      "result": "PASS",
+      "f05": {
+        "confirmed_revision_id": 1,
+        "draft_revision_id": 2,
+        "effective_confirmed_revision_id": 1,
+        "fresh_admin_session_verified": true
+      },
+      "flow": {
+        "cycle_id": "054fc0c9-f8ce-4c26-9efe-1f3328ea4166",
+        "first_assessment_situation_id": "c62e8226-d19d-4467-aeea-e912c1ebf3e3",
+        "next_assessment_situation_id": "4a002141-4734-43cf-bc68-0d73952479ca",
+        "stages": [
+          "first_case_started",
+          "assessment_situation_closed",
+          "explicit_next_presented"
+        ]
+      },
+      "fixture_cleanup": {
+        "collection_status": "collection_closed",
+        "pipeline_status": "failed",
+        "situation_count": 2,
+        "owner_verified": true,
+        "database_absent": true
+      },
+      "receipt_sha256": {
+        "f05-confirmed-draft-assignment.json": "0b5e19eed5d04b2b182b4bcaaffd243056fe44aac2e2ddf80c6b536c703d0189",
+        "execution-contour-receipt.json": "51fb66f789f99676c9cc83f306265b50b3aa5f464baf55b46f7cf12a94dad17b",
+        "terminal-execution-export.json": "82a31797baaa4da7f255b9e533f6a2fbee8b7b0d8fc2723213206a144a0913a6",
+        "published-release-source.json": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b"
+      }
+    },
+    "long_next": {
+      "run_id": "13cfe448e9d243b4a85c2f01c8775262",
+      "result": "PASS",
+      "f05": {
+        "confirmed_revision_id": 1,
+        "draft_revision_id": 2,
+        "effective_confirmed_revision_id": 1,
+        "fresh_admin_session_verified": true
+      },
+      "flow": {
+        "cycle_id": "130266ba-2b1c-4d01-a5a9-70c4c8e31805",
+        "first_assessment_situation_id": "c30594f1-1fff-43ad-b7be-28cbd1684e0f",
+        "next_assessment_situation_id": "d4d2c825-78fa-438d-8b13-043a4fc16173",
+        "stages": [
+          "first_case_started",
+          "assessment_situation_closed",
+          "explicit_next_presented"
+        ]
+      },
+      "fixture_cleanup": {
+        "collection_status": "collection_closed",
+        "pipeline_status": "failed",
+        "situation_count": 2,
+        "owner_verified": true,
+        "database_absent": true
+      },
+      "receipt_sha256": {
+        "f05-confirmed-draft-assignment.json": "0b5e19eed5d04b2b182b4bcaaffd243056fe44aac2e2ddf80c6b536c703d0189",
+        "execution-contour-receipt.json": "e5a5b6d403af4b2fb981fe184a93569caa712f143af2e929e7f47a4b8a993130",
+        "terminal-execution-export.json": "c8be22d3d0f0f2c0c63f0a7432215b5e9a1cc04cb70d9bf185ee1c0c1262f8b6",
+        "published-release-source.json": "09892e3882380d530e42142f4128884a2771861907c4c0c414e0f143e1fbe10b",
+        "f09-long-next.json": "6ae4450bd96282affc272e5d72d7aebee7a2c71767ce2cb7113ccc31193fbf1c"
+      },
+      "f09_long_next": {
+        "operation_id": "ff96594b-044f-42a3-a839-29f9c56b5632",
+        "queued_or_running_readback": true,
+        "bounded_wait": true,
+        "next_post_count": 1,
+        "old_assessment_situation_id": "c30594f1-1fff-43ad-b7be-28cbd1684e0f",
+        "next_assessment_situation_id": "d4d2c825-78fa-438d-8b13-043a4fc16173",
+        "new_owner_operation_status": 404,
+        "stale_interview_hidden": true
+      }
+    }
+  }
+}

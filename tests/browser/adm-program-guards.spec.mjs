@@ -41,6 +41,7 @@ const connection = (id) => id ? ({ organization_id: 3, program_definition_id: id
   role_capabilities: [{ version_id: 92, code: 'synthetic', name: 'Синтетическая роль', is_available: true }] }) : null;
 const revision = (ref, id = 201, status = 'confirmed', channel = 'product_form') => ({
   id, assignment_ref: ref, status, channel, source_author: 'Синтетический автор сервера',
+  effective_confirmed: status === 'confirmed' ? { id, assignment_ref: ref, confirmed_at: null } : null,
   answers_json: { C01: { name: 'Синтетическая организация сервера' } },
   participant_preview: { organization_name: 'Синтетическая организация сервера', result_recipients: 'Участник' },
   validation_json: { errors: [], missing: [] }, recipient_mapping: ['participant'], recipient_user_ids: [],
@@ -388,15 +389,7 @@ for (const channel of ['manual', 'csv']) test(
   `ADM-PROGRAM AC04 failed refresh retains latest ${channel} edits`,
   async ({ page }, info) => {
     const state = await fixture(page, { saved: [revision('pilot-11')] });
-    const reads = state.collectionReads;
-    const pending = gate();
-    state.collectionGate = pending.promise;
-    state.collectionStatus = 503;
-    await view(page, 'Участники оценки');
-    await card(page).locator('input[name="invitation_email"]').check();
-    await card(page).locator('form[data-action="assign-member-assessment"]')
-      .getByRole('button', { name: 'Назначить оценку', exact: true }).click();
-    await expect.poll(() => state.collectionReads).toBe(reads + 1);
+    await seedStaleCollectionThroughAssignment(page, state);
     await view(page, channel === 'manual' ? 'Данные организации' : 'Анкета');
     const form = channel === 'manual' ? manual(page) : csv(page);
     if (channel === 'manual') {
@@ -405,14 +398,14 @@ for (const channel of ['manual', 'csv']) test(
     } else {
       await form.locator('input[type="file"]').setInputFiles(file('live-after-GET'));
     }
-    pending.release();
     await expect(page.locator('[data-organizations-stale]')).toBeVisible();
     await expect(form).toContainText('Подключение программы пока не подтверждено');
     if (channel === 'manual') {
       await expect(form.locator('[name="responsible_contact"]')).toHaveValue('live-contact@example.test');
       await expect(form.locator('[name="organization_name"]')).toHaveValue('Синтетические live сведения после начала GET');
     } else {
-      await expect(form.locator('[data-csv-reselect]')).toHaveAttribute('data-csv-reselect', 'synthetic-live-after-GET.csv');
+      expect(await form.locator('input[type="file"]').evaluate((input) => input.files?.[0]?.name))
+        .toBe('synthetic-live-after-GET.csv');
     }
     // Now use the actual safe-refresh affordance; modify the same form again
     // while its GET is pending. This distinguishes latest input from snapshot.
@@ -428,6 +421,8 @@ for (const channel of ['manual', 'csv']) test(
     await expect(page.getByRole('button', { name: 'Обновить безопасно', exact: true })).toBeEnabled();
     if (channel === 'manual') {
       await expect(form.locator('[name="responsible_contact"]')).toHaveValue('newest-contact@example.test');
+    } else {
+      await expect(form.locator('[data-csv-reselect]')).toHaveAttribute('data-csv-reselect', 'synthetic-live-after-GET.csv');
     }
     await expect(form).toContainText('Подключение программы пока не подтверждено');
     expect(scopedPosts(state).filter((request) => !request.path.endsWith('/assessment-assignments'))).toEqual([]);

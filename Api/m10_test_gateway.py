@@ -9,7 +9,10 @@ from pathlib import Path
 def acceptance_fixture():
     if not enabled() or os.getenv('AGENT4K_BROWSER_SCENARIO') != 'acceptance-v1':
         return None
-    return json.loads((Path(__file__).resolve().parents[1] / 'tests/browser/fixtures/v1.json').read_text())
+    fixture = json.loads((Path(__file__).resolve().parents[1] / 'tests/browser/fixtures/v1.json').read_text())
+    if os.getenv('AGENT4K_BROWSER_SILENT_TURN') == '1':
+        fixture['mandatory_material_id'] = 'SYNTHETIC_NO_MANDATORY_UPDATE'
+    return fixture
 
 
 def acceptance_contracts():
@@ -74,7 +77,8 @@ def _acceptance_output(value, fixture):
         return result
     interim=value['mode']=='interim'
     clarification_turns=sum(x.get('speaker_type')=='assessment' for x in material['turns'])
-    clarified=clarification_turns >= (2 if os.getenv('AGENT4K_BROWSER_REPEAT_ASK') == '1' else 1)
+    clarified=(os.getenv('AGENT4K_BROWSER_NO_ASK') == '1'
+               or clarification_turns >= (2 if os.getenv('AGENT4K_BROWSER_REPEAT_ASK') == '1' else 1))
     targets=[]
     for criterion in material['criteria']:
         indicator=criterion['id'];action=actions.get(indicator)

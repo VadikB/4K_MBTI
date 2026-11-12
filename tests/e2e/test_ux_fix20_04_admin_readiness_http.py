@@ -26,17 +26,22 @@ class _Result:
 
 
 class _Connection:
-    def __init__(self):
+    def __init__(self, revisions=None):
         self.statements = []
+        self.revisions = revisions if revisions is not None else [{
+            "id": 8, "organization_id": 3, "assignment_ref": "assessment-a", "status": "confirmed",
+            "channel": "product_form", "validation_json": {}, "answers_json": {},
+            "confirmed_at": None,
+        }]
 
     def execute(self, query, params=()):
         self.statements.append((query, params))
         if "FROM questionnaire_response_revisions" in query:
-            return _Result(many=[{
-                "id": 8, "assignment_ref": "assessment-a", "status": "confirmed",
-                "channel": "product_form", "validation_json": {}, "answers_json": {},
-                "confirmed_at": None,
-            }])
+            rows = [row for row in self.revisions if row["organization_id"] == params[0]]
+            if "status='confirmed'" in query:
+                rows = [row for row in rows if row["status"] == "confirmed" and row["assignment_ref"] == params[1]]
+                return _Result(one=max(rows, key=lambda row: row["id"]) if rows else None)
+            return _Result(many=sorted(rows, key=lambda row: row["id"], reverse=True))
         return _Result()
 
     def commit(self):
@@ -110,3 +115,31 @@ def test_questionnaire_list_returns_server_readiness_for_the_same_assignment(mon
     assert response.status_code == 200
     assert response.json()["items"][0]["assignment_ref"] == "assessment-a"
     assert response.json()["items"][0]["readiness"]["assignment_ref"] == "assessment-a"
+
+
+def test_questionnaire_list_keeps_effective_confirmed_when_newer_draft_exists(monkeypatch):
+    def revision(identifier, organization, assignment, status):
+        return {"id": identifier, "organization_id": organization, "assignment_ref": assignment,
+                "status": status, "channel": "product_form", "validation_json": {},
+                "answers_json": {}, "confirmed_at": "2026-11-12T10:00:00+00:00" if status == "confirmed" else None}
+
+    connection = _Connection([
+        revision(42, 3, "assessment-a", "confirmed"),
+        revision(43, 3, "assessment-a", "draft"),
+        revision(44, 3, "assessment-b", "draft"),
+        revision(45, 4, "assessment-a", "confirmed"),
+    ])
+    client = _client(monkeypatch, connection, AdminScope(organization_ids=(3,)))
+    monkeypatch.setattr(routes.questionnaire_sources, "admin_assignment_readiness", lambda *_args, **kwargs: {
+        "status": "ready" if kwargs["assignment_ref"] == "assessment-a" else "data_missing",
+        "assignment_ref": kwargs["assignment_ref"],
+    })
+    response = client.get("/users/admin/organizations/3/questionnaire")
+    assert response.status_code == 200
+    items = {item["assignment_ref"]: item for item in response.json()["items"]}
+    assert items["assessment-a"]["id"] == 43
+    assert items["assessment-a"]["status"] == "draft"
+    assert items["assessment-a"]["effective_confirmed"]["id"] == 42
+    assert items["assessment-a"]["readiness"]["status"] == "ready"
+    assert items["assessment-b"]["effective_confirmed"] is None
+    assert client.get("/users/admin/organizations/4/questionnaire").status_code == 403

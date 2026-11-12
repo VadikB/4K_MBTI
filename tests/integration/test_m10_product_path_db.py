@@ -853,11 +853,47 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         connection.execute("UPDATE assessment_configurations SET catalog_version_id=NULL WHERE id=1")
         connection.commit()
 
+    # The actual participant HTTP handler must expose the same durable operation
+    # through queued/running/completed, with no second Next command on readback.
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+    with product_db() as connection:
+        connection.execute("INSERT INTO users VALUES(100)")
+    monkeypatch.setattr(routes, "get_connection", product_db)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                        lambda token: SimpleNamespace(id={"functional-owner": 99,
+                            "functional-other": 100}[token]) if token in
+                        {"functional-owner", "functional-other"} else None)
+    monkeypatch.setattr(routes, "product_cycle_preparation_queue", queue)
+    app = FastAPI()
+    app.include_router(routes.router)
     second_operation = "functional-cycle-next"
-    queue.enqueue(operation_id=second_operation, user_id=99, request={
-        "kind": "next", "cycle_id": cycle_id, "idempotency_key": second_operation,
-    })
-    queue._process(queue._claim())
+    with TestClient(app) as http:
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-owner")
+        next_path = f"/users/assessment/m7/cycles/{cycle_id}/next"
+        status_path = f"/users/assessment/cycles/preparation/{second_operation}"
+        accepted = http.post(next_path, json={"idempotency_key": second_operation})
+        assert accepted.status_code == 201, accepted.text
+        assert accepted.json() == {"operation_id": second_operation, "status": "queued"}
+        assert http.get(status_path).json()["status"] == "queued"
+        claimed = queue._claim()
+        assert claimed and claimed["operation_id"] == second_operation
+        assert http.get(status_path).json()["status"] == "running"
+        assert http.post(next_path, json={"idempotency_key": second_operation}).json()["operation_id"] == second_operation
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-other")
+        assert http.get(status_path).status_code == 404
+        assert http.post(next_path, json={"idempotency_key": "foreign-next"}).status_code == 403
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-owner")
+        queue._process(claimed)
+        finished = http.get(status_path)
+        assert finished.status_code == 200
+        assert finished.json()["status"] == "completed"
+        assert finished.json()["result"]["decision"]["status"] == "SELECTED"
+        with product_db() as connection:
+            assert connection.execute("SELECT COUNT(*) AS n FROM product_cycle_preparation_operations "
+                                      "WHERE request_json->>'kind'='next' AND request_json->>'cycle_id'=%s",
+                                      (cycle_id,)).fetchone()["n"] == 2  # WAITING_CURRENT_AS + selected Next.
     second = queue.get_status(second_operation)
     assert second["status"] == "completed", second
     assert FunctionalGateway.call_count > generation_calls

@@ -1,0 +1,195 @@
+{
+  "scope": "isolated synthetic browser/HTTP/PostgreSQL; controlled gateway, no paid LLM or real mail",
+  "f05_path29": {
+    "result": "PASS",
+    "confirmed_revision_id": 1,
+    "draft_revision_id": 2,
+    "effective_confirmed_revision_id": 1,
+    "fresh_admin_session_verified": true,
+    "assignment_and_first_turn": "PASS",
+    "owned_database_destroyed": true
+  },
+  "f05_draft_only": {
+    "result": "PASS",
+    "revision_id": 1,
+    "revision_status": "ready_for_confirmation",
+    "assignment_ready_in_browser": false,
+    "postgresql_revision_count": 1,
+    "postgresql_assignment_count": 0,
+    "owned_database_destroyed": true
+  },
+  "f05_incomplete_late_save": {
+    "result": "PASS",
+    "confirmed_revision_id": 1,
+    "incomplete_draft_revision_id": 2,
+    "incomplete_draft_status": "draft",
+    "effective_confirmed_revision_id": 1,
+    "delayed_preview_posts": 1,
+    "assignment_count": 0,
+    "fresh_admin_session_unchanged_by_old_response": true,
+    "owned_database_destroyed": true
+  },
+  "f05_confirm_lost_response": {
+    "result": "PASS",
+    "confirmed_revision_id": 1,
+    "newly_confirmed_revision_id": 2,
+    "confirm_posts": 1,
+    "effective_confirmed_revision_id_after_reload": 2,
+    "original_revision_still_confirmed": true,
+    "postgresql_revision_count": 2,
+    "owned_database_destroyed": true
+  },
+  "f06_stale_assignment_after_logout_login": {
+    "result": "PASS for delayed 200, 409 and 500 in separate owned browser runs",
+    "server_effect": "already_assigned; one profile, one cycle, one started cycle",
+    "fresh_session_status_unchanged": true,
+    "delayed_posts_per_run": 1,
+    "owned_databases_destroyed": true
+  },
+  "f06_a_b_a": {
+    "result": "PASS for delayed 200 and 409 in separate owned browser runs",
+    "fixture": "two synthetic organizations visible to a superadmin; regular admin remains scoped to the first",
+    "selection": "A to B to A before old response is released",
+    "fresh_screen_status_unchanged": true,
+    "server_effect": "already_assigned; one profile, one cycle, one started cycle",
+    "owned_databases_destroyed": true
+  },
+  "f06_current_409": {
+    "result": "PASS for current-session UI feedback with real handler HTTP 409",
+    "refusal_posts": 1,
+    "seeded_already_assigned_posts": 1,
+    "feedback_visible": true,
+    "server_effect": "one profile, one cycle, one started cycle",
+    "server_generated_refusal": true,
+    "owned_database_destroyed": true
+  },
+  "runtime_contour": {
+    "result": "PASS",
+    "closed_situations": 2,
+    "explicit_next": "POST /users/assessment/m7/cycles/{cycle_id}/next -> 201",
+    "report_opened": true,
+    "second_tab_scenario_end": "one transition despite two tabs",
+    "turn_recovery": "committed lost response: one POST; unaccepted request: retry with same identity; owner boundary enforced",
+    "owned_databases_destroyed": true
+  },
+  "f07_known_409": {
+    "result": "PASS",
+    "server_reason": "M7_BLOCKING_SYSTEM_WAIT",
+    "ui": "previous action still processing; check state before a new answer",
+    "rejected_turn_persisted": false,
+    "rejected_operation_checked_before_clarification": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline ready",
+    "owned_database_destroyed": true
+  },
+  "f07_fresh_403": {
+    "result": "PASS for controlled HTTP refusal and owned PG absence",
+    "refusal_posts": 1,
+    "rejected_turn_persisted": false,
+    "explicit_readback_before_new_answer": true,
+    "server_generated_refusal": false,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f07_committed_turn_stalled_body": {
+    "result": "PASS after expectation updated to delivery status beside message",
+    "client_status": "unknown or confirmed saved by background exact readback",
+    "turns_with_same_text_after_reload": 1,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f07_saved_turn_without_scenario_reply": {
+    "result": "PASS",
+    "fixture": "isolated controlled M5 outcome without mandatory update or character response",
+    "assessee_turns_with_same_text": 1,
+    "scenario_reply_events": 0,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f07_late_runtime_poll": {
+    "result": "PASS after product fix",
+    "reproduction": "old pre-Turn runtime GET arrived after POST/readback and rolled UI back",
+    "fix": "command generation guard plus append-only Turn/event snapshot monotonicity",
+    "saved_turn_preserved_after_old_poll": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f07_late_turn_after_as_advance": {
+    "result": "PASS",
+    "first_turn_posts": 1,
+    "first_receipt_held_after_commit": true,
+    "second_tab_advanced_to_new_as": true,
+    "first_tab_kept_new_as_after_old_receipt": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f08_committed_finish_lost_response": {
+    "result": "PASS",
+    "ui": "unknown outcome and disabled answer controls; reload recovers",
+    "transition_posts": 1,
+    "terminal_execution_export": "calculated; two closed situations; pipeline ready",
+    "owned_database_destroyed": true
+  },
+  "f08_late_finish_after_as_advance": {
+    "result": "PASS after an onboarding-only setup timeout in first run",
+    "first_transition_posts": 1,
+    "first_receipt_held_after_commit": true,
+    "second_tab_advanced_to_new_as": true,
+    "first_tab_kept_new_as_after_old_receipt": true,
+    "timer_remaining_did_not_increase": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f08_committed_finish_stalled_headers_and_body": {
+    "result": "PASS for two separate owned browser runs",
+    "client_wait_bounded_seconds": 30,
+    "ui": "unknown outcome; answer controls disabled until readback",
+    "reload_recovered": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_databases_destroyed": true
+  },
+  "f08_known_finish_refusal": {
+    "result": "PASS for controlled HTTP 409 and owned PG absence of transition",
+    "refusal_posts": 1,
+    "situation_status_after_refusal": "active",
+    "server_generated_refusal": false,
+    "subsequent_normal_finish_and_report": true,
+    "owned_database_destroyed": true
+  },
+  "f08_no_ask_direct_closure": {
+    "result": "PASS",
+    "fixture": "isolated gateway with no clarification uncertainty",
+    "first_situation_closed_without_ask": true,
+    "next_explicit": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f09_committed_next_lost_response": {
+    "result": "PASS after product message fix",
+    "reproduction": "generic network error incorrectly mentioned unsaved answer text",
+    "ui_after_fix": "check state of the same preparation operation",
+    "first_next_posts": 1,
+    "new_situation_after_reload": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline ready",
+    "owned_database_destroyed": true
+  },
+  "f09_committed_next_stalled_headers": {
+    "result": "PASS",
+    "client_wait_bounded_seconds": 30,
+    "next_posts": 1,
+    "new_situation_after_reload": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
+  "f09_two_tabs_next": {
+    "result": "PASS",
+    "next_posts": 2,
+    "first_response_held_after_commit": true,
+    "second_response_status": 201,
+    "tabs_converged_on_same_as": true,
+    "first_tab_navigated_home_before_late_receipt": true,
+    "late_receipt_did_not_reopen_interview": true,
+    "terminal_situations": 2,
+    "terminal_execution_export": "calculated; pipeline and report ready",
+    "owned_database_destroyed": true
+  }
+}

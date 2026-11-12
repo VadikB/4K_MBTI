@@ -5821,8 +5821,16 @@ def list_admin_organization_questionnaire_revisions(organization_id: int, reques
         for row in rows:
             key = str(row["assignment_ref"])
             if key not in latest:
+                confirmed = connection.execute(
+                    """SELECT * FROM questionnaire_response_revisions
+                       WHERE organization_id=%s AND assignment_ref=%s AND status='confirmed'
+                       ORDER BY confirmed_at DESC,id DESC LIMIT 1""",
+                    (organization_id, key),
+                ).fetchone()
                 latest[key] = {
-                    **questionnaire_sources.public_revision(dict(row)),
+                    **questionnaire_sources.public_revision(
+                        dict(row), confirmed_row=dict(confirmed) if confirmed is not None else None,
+                    ),
                     "readiness": questionnaire_sources.admin_assignment_readiness(
                         connection, organization_id=organization_id, assignment_ref=key,
                     ),

@@ -70,7 +70,7 @@ def test_public_preview_has_participant_projection_and_safe_diff():
     row = {"id": 2, "assignment_ref": "assessment-a", "status": "ready_for_confirmation",
            "source_author": "Синтетический заказчик",
            "channel": "csv", "validation_json": {}, "answers_json": proposed, "confirmed_at": None}
-    confirmed = {"answers_json": current}
+    confirmed = {"id": 1, "assignment_ref": "assessment-a", "answers_json": current}
     result = public_revision(row, confirmed_row=confirmed)
     assert result["participant_preview"]["purpose"] == "Новая цель"
     assert result["changes"] == [{

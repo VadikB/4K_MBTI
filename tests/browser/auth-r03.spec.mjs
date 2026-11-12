@@ -301,6 +301,7 @@ async function adm28Preview(page) {
   await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
   return { card, form, organization, preview: card.locator('.admin-questionnaire-preview'),
     saved: { id: 201, assignment_ref: 'ADM28 synthetic', status: 'confirmed', channel: 'product_form',
+      effective_confirmed: { id: 201, assignment_ref: 'ADM28 synthetic', confirmed_at: null },
       answers_json: { C02a: { participant_text: 'Synthetic purpose' } },
       recipient_mapping: ['participant'], recipient_user_ids: [] } };
 }
@@ -2315,6 +2316,7 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
       { id: 90, assignment_ref: 'same-visible-name-wrong-key', status: 'confirmed', channel: 'product_form',
         source_author: 'Чужой черновик', answers_json: { C02a: { participant_text: 'Не использовать' } } },
       { id: 91, assignment_ref: 'competencies_4k', status: 'confirmed', channel: 'product_form',
+        effective_confirmed: { id: 91, assignment_ref: 'competencies_4k', confirmed_at: null },
         source_author: 'Точный автор', answers_json: { C02a: { participant_text: 'Точная цель' } } },
     ] },
   });
@@ -2408,7 +2410,8 @@ test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting ze
   await openAdminOrganizations(page, (route) => fulfillJson(route, {
     items: [{ email: 'first@example.test', status: 'accepted' }],
   }), organization, { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot',
-    status: 'confirmed', channel: 'product_form', validation_json: {} }] } });
+    status: 'confirmed', channel: 'product_form', validation_json: {},
+    effective_confirmed: { id: 11, assignment_ref: 'specialist-pilot', confirmed_at: null } }] } });
   await page.locator('input[name="invitation_email"]').nth(0).check();
   await page.locator('input[name="invitation_email"]').nth(1).check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
@@ -2429,7 +2432,8 @@ test('AC18-ADM-1C confirms a lost assignment response only by exact operation re
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
     { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
-      channel: 'product_form', validation_json: {} }] } });
+      channel: 'product_form', validation_json: {},
+      effective_confirmed: { id: 11, assignment_ref: 'specialist-pilot', confirmed_at: null } }] } });
   await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => route.abort('failed'));
   await page.route('**/users/admin/organizations/3/assessment-assignments/operations/**', (route) =>
     fulfillJson(route, { items: [{ user_id: 8, status: 'already_assigned', assignment_id: 41 }] }));
@@ -2447,7 +2451,8 @@ test('AC18-ADM-1C does not accept stale assignment state when exact receipt is a
     members: [{ ...adminOrganization.members[0], user_id: 8, assessment_assignments: ['specialist-pilot'] }] };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
     { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
-      channel: 'product_form', validation_json: {} }] } });
+      channel: 'product_form', validation_json: {},
+      effective_confirmed: { id: 11, assignment_ref: 'specialist-pilot', confirmed_at: null } }] } });
   await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => route.abort('failed'));
   await page.route('**/users/admin/organizations/3/assessment-assignments/operations/**', (route) =>
     fulfillJson(route, { detail: 'ASSIGNMENT_OPERATION_NOT_FOUND' }, 404));
@@ -2467,7 +2472,8 @@ test('AC18-ADM-1C keeps a confirmed assignment when the following refresh fails'
       role_capabilities: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист', is_available: true }] } };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
     { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
-      channel: 'product_form', validation_json: {} }] } });
+      channel: 'product_form', validation_json: {},
+      effective_confirmed: { id: 11, assignment_ref: 'specialist-pilot', confirmed_at: null } }] } });
   await page.route('**/users/admin/organizations', (route) => {
     if (route.request().method() !== 'GET') return route.fallback();
     organizationReads += 1;

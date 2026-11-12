@@ -487,6 +487,7 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     current_projection = _participant_projection(
         dict((confirmed_row or {}).get("answers_json") or {}), recipient_mapping=current_mapping,
     )
+    effective = item if item["status"] == "confirmed" else confirmed_row
     return {
         "id": int(item["id"]), "assignment_ref": str(item["assignment_ref"]),
         "status": str(item["status"]), "channel": str(item["channel"]),
@@ -510,4 +511,9 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
             )["result_recipients"],
         },
         "confirmed_at": item.get("confirmed_at"),
+        "effective_confirmed": {
+            "id": int(effective["id"]),
+            "assignment_ref": str(effective["assignment_ref"]),
+            "confirmed_at": effective.get("confirmed_at"),
+        } if effective is not None else None,
     }

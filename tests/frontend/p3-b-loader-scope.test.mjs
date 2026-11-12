@@ -39,6 +39,7 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     getAssessmentViewGeneration: () => viewGeneration,
     advanceAssessmentViewGeneration: () => { viewGeneration += 1; },
     fetch: (url) => { requested.resolve(url); return response.promise; },
+    fetchWithDeadline: (url) => { requested.resolve(url); return response.promise; },
     readApiResponse: async (value) => value.syntheticPayload,
     renderReturnCard: (value) => cards.push(value),
     clearConfirmedReturnContinue: () => effects.push('clearContinue'),
@@ -49,7 +50,10 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     interviewPanel: { classList: { contains: () => true } },
     openProcessing: () => effects.push('openProcessing'),
   });
-  vm.runInContext(`let productRuntimePollGeneration = 7; let returnPresenceCycleId = null;
+  vm.runInContext(`let productRuntimePollGeneration = 7; let productRuntimeMutationGeneration = 0;
+    let returnPresenceCycleId = null;
+    const olderProductRuntimeSnapshot = () => false;
+    let confirmedProductInterviewSnapshot = null;
     ${actualReturnState ? returnSource : 'const loadReturnState = async () => false;'}
     ${runtimeSource}
     globalThis.subject = { loadProductRuntime, loadReturnState,

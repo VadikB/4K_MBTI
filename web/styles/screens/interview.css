@@ -976,6 +976,7 @@
         max-height: 104px;
     }
 }
+
 .interview-return-card {
     display: grid;
     gap: 12px;
@@ -992,7 +993,8 @@
 }
 
 .interview-return-card .primary-button {
-    justify-self: start;
+    justify-self: stretch;
+    width: min(100%, 360px);
 }
 
 /* UX-E01: assessment is a continuation of the W01 conversation. */
@@ -1161,10 +1163,13 @@
 
 .interview-form .primary-button,
 .interview-return-card .primary-button {
-    width: 200px;
     border-color: #18b8c6;
     background: #18b8c6;
     color: #222c30;
+}
+
+.interview-form .primary-button {
+    width: 200px;
 }
 
 .interview-form .primary-button:hover,
@@ -1291,4 +1296,36 @@
     .interview-panel .interview-form .primary-button {
         padding-inline: 12px;
     }
+}
+
+@media (max-width: 400px) {
+    .interview-return-card {
+        margin-inline: -8px;
+        padding: 12px;
+    }
+
+    .interview-return-card .primary-button {
+        padding-inline: 8px;
+    }
+}
+
+.interview-panel.between-situations .interview-case-guide,
+.interview-panel.between-situations .interview-form,
+.interview-panel.between-situations .interview-footnote,
+.interview-panel.between-situations .interview-messages-scroll {
+    display: none;
+}
+
+.interview-panel.between-situations .interview-messages-shell {
+    flex: 0 0 auto;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+
+.interview-panel.between-situations .interview-scroll-area {
+    overflow: visible;
+    padding: 0;
+    scrollbar-gutter: auto;
 }

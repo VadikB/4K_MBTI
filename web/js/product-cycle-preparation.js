@@ -1,19 +1,25 @@
 import { readApiResponse, fetchWithDeadline, getSessionGeneration } from './api.js';
 
 const POLL_INTERVAL_MS = 1500;
+// Technical client limit only. The queued server operation keeps running.
+const ACTIVE_WAIT_MS = 60000;
 
 const stopped = () => Object.assign(new Error('Локальное ожидание завершено; серверная подготовка продолжается.'), {
   name: 'PreparationWaitStopped',
 });
 
 export const waitForProductCyclePreparation = async (accepted, {
-  onStatus = () => {}, isCurrent = () => true, signal,
+  onStatus = () => {}, isCurrent = () => true, signal, maxWaitMs = ACTIVE_WAIT_MS,
 } = {}) => {
   const generation = getSessionGeneration();
   const current = () => generation === getSessionGeneration() && isCurrent() && !signal?.aborted;
   let operation = accepted;
   const operationId = accepted.operation_id;
   if (!operationId) throw new Error('Сервер не вернул идентификатор подготовки плана оценки.');
+  const startedAt = Date.now();
+  const waitLimit = () => Object.assign(new Error('Подготовка продолжается. Проверьте состояние той же операции.'), {
+    name: 'PreparationWaitLimit', operationId, operationStatus: operation.status,
+  });
   let delay = POLL_INTERVAL_MS;
   while (current()) {
     onStatus(operation);
@@ -24,11 +30,14 @@ export const waitForProductCyclePreparation = async (accepted, {
         retryAllowed: operation.retry_allowed === true,
       });
     }
+    if (Date.now() - startedAt >= maxWaitMs) throw waitLimit();
     await new Promise((resolve) => window.setTimeout(resolve, delay));
     if (!current()) throw stopped();
+    if (Date.now() - startedAt >= maxWaitMs) throw waitLimit();
     const statusResponse = await fetchWithDeadline(
       '/users/assessment/cycles/preparation/' + encodeURIComponent(operationId),
       { credentials: 'same-origin', signal },
+      Math.min(15000, maxWaitMs - (Date.now() - startedAt)),
     );
     operation = await readApiResponse(statusResponse, 'Не удалось получить статус подготовки плана оценки.');
     if (!current()) throw stopped();
