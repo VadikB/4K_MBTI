@@ -49,9 +49,9 @@ M5 execution и M7 planning/clarification/completion contracts; не перес�
 Связь требований: M1/И-2/3 и C-24/34 → подтверждённый источник организации,
 точная область назначения → `Api/questionnaire_sources.py`, `Api/routes.py`,
 `web/js/screens/admin/organizations.js` → E3/E4/E5. M1.6–8, C-45/54 и T05–T09
-→ один Turn, ASK и закрытие AS → `web/js/screens/interview.js` → E1/E4/E7.
+→ один Turn, ASK и закрытие AS → `web/js/screens/interview.js` → E1/E4/E7/E9/E11.
 M1.9–10, C-46 и T10 → явный Next и bounded техническое ожидание →
-`web/js/product-cycle-preparation.js`, `web/js/screens/interview.js` → E1/E4/E6.
+`web/js/product-cycle-preparation.js`, `web/js/screens/interview.js` → E1/E4/E6/E9/E11.
 Код не вводит новые предметные нормы, артефакты и схемы БД.
 
 ## Активный план
@@ -87,7 +87,7 @@ SHA. Схема БД и опубликованные определения не
 `effective_confirmed`, схема БД и опубликованные артефакты не меняются.
 
 **Проверки:** команды, фактические результаты и непокрытые AC в `CHECKS.md`.
-PR пока **не готов к слиянию**: все 19 критериев имеют остаток, CI на head не
-запускался, TEST не разворачивался. Следующие действия: закрыть остаток в
+PR пока **не готов к слиянию**: четыре критерия закрыты, 15 имеют остаток; CI на head
+не запускался, TEST не разворачивался. Следующие действия: закрыть остаток в
 одном owned UI→HTTP→PG сценарии и fault branches, затем push/PR по прямому
 поручению, обязательный CI/human review, merge и TEST по процессу.

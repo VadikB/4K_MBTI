@@ -142,6 +142,9 @@ const productInterviewRejectionMessage = (error) => {
   if (/M5_TURN_OPERATION_IN_PROGRESS/.test(reason)) {
     return 'Предыдущая отправка ещё обрабатывается. Проверьте сохранение этого ответа.';
   }
+  if (/M7_BLOCKING_SYSTEM_WAIT/.test(reason)) {
+    return 'Предыдущее действие ещё обрабатывается. Проверьте состояние ситуации перед новым ответом.';
+  }
   if (/M5_STATE_REVISION_CONFLICT|M5_TURN_ALREADY/.test(reason)) {
     return 'Состояние ситуации изменилось. Проверьте сохранённые ответы перед следующим действием.';
   }
@@ -714,6 +717,7 @@ const clearConfirmedReturnContinue = (snapshot) => {
 };
 
 const renderProductRuntime = (snapshot) => {
+  interviewPanel.classList.toggle('between-situations', Boolean(snapshot.between_situations));
   const previousSituationId = state.productAssessmentSituationId;
   if (renderedProductCycleId !== snapshot.cycle_id) {
     state.caseOutcomeByNumber = {};
@@ -938,9 +942,7 @@ const renderProductRuntime = (snapshot) => {
         } else if (visible()) {
           status.textContent = [403, 409].includes(Number(error?.status))
             ? productNextRefusalMessage(error)
-            : error.name === 'PreparationWaitLimit' || error.name === 'RequestDeadlineError'
-            ? 'Подготовка продолжается либо ответ не получен. Проверьте состояние той же операции.'
-            : assessmentRuntimeErrorMessage(error, { draftSaved: isCurrentInterviewDraftSaved() });
+            : 'Подготовка продолжается либо ответ не получен. Проверьте состояние той же операции.';
           button.textContent = 'Проверить состояние';
         }
       } finally {
@@ -2280,7 +2282,7 @@ export const openInterview = () => {
   persistAssessmentContext();
   syncUrlState('interview');
   hideAllPanels();
-  interviewPanel.classList.remove('completed');
+  interviewPanel.classList.remove('completed', 'between-situations');
   interviewCompleteActions.classList.add('hidden');
   interviewPanel.classList.remove('hidden');
   if (isCycleAssessment()) {

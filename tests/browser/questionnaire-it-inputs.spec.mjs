@@ -132,6 +132,44 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     const latest = (await draftList.json()).items.find((item) => item.assignment_ref === saved.assignment_ref);
     expect(latest.status).not.toBe('confirmed');
     expect(latest.effective_confirmed.id).toBe(Number(revisionId));
+    if (process.env.P4K_F05_CONFIRM_LOST === '1') {
+      const confirmPath = `**/users/admin/organizations/${organizationId}/questionnaire/${latest.id}/confirm`;
+      let confirmPosts = 0;
+      await page.route(confirmPath, async (route) => {
+        confirmPosts += 1;
+        const committed = await route.fetch();
+        expect(committed.status()).toBe(200);
+        await route.abort('failed');
+      });
+      await card.locator('.admin-questionnaire-preview').getByRole('button',
+        { name: 'Подтвердить сведения', exact: true }).click();
+      await expect(card).toContainText('Итог подтверждения неизвестен');
+      expect(confirmPosts).toBe(1);
+      await page.unroute(confirmPath);
+      const afterCommit = await (await page.request.get(
+        `${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
+      const effective = afterCommit.items.find((item) => item.assignment_ref === saved.assignment_ref);
+      expect(effective.id).toBe(latest.id);
+      expect(effective.status).toBe('confirmed');
+      expect(effective.effective_confirmed.id).toBe(latest.id);
+      const original = await (await page.request.get(
+        `${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}`)).json();
+      expect(original.status).toBe('confirmed');
+      await page.reload();
+      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+      await expect(card.locator('.admin-assignment-readiness')).toContainText('Можно назначать');
+      const confirmedDb = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath,
+        '--revision-id', String(latest.id)]));
+      expect(confirmedDb.revision.status).toBe('confirmed');
+      expect(confirmedDb.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 2);
+      save('f05-confirm-lost-response', { confirmed_revision_id: Number(revisionId),
+        newly_confirmed_revision_id: latest.id, confirm_posts: confirmPosts,
+        original_status: original.status, effective_confirmed_revision_id: effective.effective_confirmed.id,
+        database_revision_status: confirmedDb.revision.status,
+        database_revision_count: confirmedDb.counts.questionnaire_revisions,
+        baseline_revision_count: baseline.counts.questionnaire_revisions });
+      return;
+    }
     await page.reload();
     await expect(form.locator('[name="organization_name"]')).toHaveValue(draftName);
     await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();

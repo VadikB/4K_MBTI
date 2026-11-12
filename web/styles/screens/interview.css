@@ -1163,10 +1163,13 @@
 
 .interview-form .primary-button,
 .interview-return-card .primary-button {
-    width: 200px;
     border-color: #18b8c6;
     background: #18b8c6;
     color: #222c30;
+}
+
+.interview-form .primary-button {
+    width: 200px;
 }
 
 .interview-form .primary-button:hover,
@@ -1304,4 +1307,25 @@
     .interview-return-card .primary-button {
         padding-inline: 8px;
     }
+}
+
+.interview-panel.between-situations .interview-case-guide,
+.interview-panel.between-situations .interview-form,
+.interview-panel.between-situations .interview-footnote,
+.interview-panel.between-situations .interview-messages-scroll {
+    display: none;
+}
+
+.interview-panel.between-situations .interview-messages-shell {
+    flex: 0 0 auto;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+
+.interview-panel.between-situations .interview-scroll-area {
+    overflow: visible;
+    padding: 0;
+    scrollbar-gutter: auto;
 }

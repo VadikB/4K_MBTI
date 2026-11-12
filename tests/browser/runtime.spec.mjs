@@ -389,6 +389,140 @@ test('EXEC-CONTOUR technical profile continues one owned Cycle to an opened Repo
    body:JSON.stringify(receipt,null,2),contentType:'application/json',
  });
 });
+test('F08 committed Finish with lost response recovers through reload without a second transition',async({page,stand})=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);await answer(page);
+ const first=await runtime(page,stand);
+ const situationId=first.current_situation.assessment_situation_id;
+ let transitionPosts=0;
+ await page.route(`**/users/assessment/m5/situations/${situationId}/transitions`,async route=>{
+   transitionPosts+=1;
+   const committed=await route.fetch();
+   expect(committed.status()).toBe(200);
+   await route.abort('failed');
+ });
+ await page.locator('#interview-finish-button').click();
+ await expect(page.locator('#interview-error')).toContainText('Итог команды неизвестен');
+ await expect(page.locator('#interview-submit-button')).toBeDisabled();
+ await expect(page.locator('#interview-finish-button')).toBeDisabled();
+ expect(transitionPosts).toBe(1);
+ await page.unroute(`**/users/assessment/m5/situations/${situationId}/transitions`);
+ stand.cli('drain');
+ await page.reload();
+ const receipt=await completeStartedAssessment({
+   page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+   initialSituationId:situationId,advanceWorkers:async()=>stand.cli('drain'),
+ });
+ expect(receipt.report_opened).toBe(true);
+ expect(transitionPosts).toBe(1);
+});
+test('F07 known 409 from a closed AS is shown beside the answer without another Turn',async({page,stand})=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);await answer(page);
+ const first=await runtime(page,stand);
+ const situationId=first.current_situation.assessment_situation_id;
+ const runtimePath=`**/users/assessment/cycles/${first.cycle_id}/runtime`;
+ await page.route(runtimePath,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(first)}));
+ const closed=await page.request.post(`${stand.url}/users/assessment/m5/situations/${situationId}/transitions`,{
+   data:{action:'scenario_end',reason:'synthetic_other_tab',request_id:randomUUID()},
+ });
+ expect(closed.status()).toBe(200);
+ const rejectedText='Синтетический ответ после закрытия ситуации не должен стать Turn.';
+ await page.locator('#interview-textarea').fill(rejectedText);
+ const rejected=page.waitForResponse(response=>response.request().method()==='POST'
+   && new URL(response.url()).pathname.endsWith(`/situations/${situationId}/turns`));
+ await page.locator('#interview-submit-button').click();
+ expect((await rejected).status()).toBe(409);
+ await expect(page.locator('.interview-message.own').last().locator('.interview-message-delivery-status'))
+   .toContainText('Предыдущее действие ещё обрабатывается');
+ const server=await (await page.request.get(`${stand.url}/users/assessment/cycles/${first.cycle_id}/runtime`)).json();
+ expect(server.trace.turns.filter(turn=>turn.content_text===rejectedText)).toHaveLength(0);
+ await page.unroute(runtimePath);
+ stand.cli('drain');
+ await page.reload();
+ const checkRejected=page.locator('.interview-message-retry:visible').last();
+ await expect(checkRejected).toHaveText('Проверить состояние');
+ await checkRejected.click();
+ await expect(page.locator('#interview-submit-button')).toBeEnabled();
+ const receipt=await completeStartedAssessment({
+   page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+   initialSituationId:situationId,advanceWorkers:async()=>stand.cli('drain'),
+ });
+ expect(receipt.report_opened).toBe(true);
+});
+test('F09 committed Next with lost response opens the new AS after reload without duplicate preparation',async({page,stand})=>{
+ test.setTimeout(240000);
+ await login(page,stand);await start(page);await answer(page);
+ const first=await runtime(page,stand);
+ const firstSituationId=first.current_situation.assessment_situation_id;
+ const scenarioEnd=page.waitForResponse(response=>response.request().method()==='POST'
+   && new URL(response.url()).pathname.endsWith('/transitions'));
+ await page.locator('#interview-finish-button').click();
+ expect((await scenarioEnd).ok()).toBe(true);
+ stand.cli('drain');
+ await expect(page.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+ await answer(page,fixture.clarification_answer);
+ await expect(page.locator('#interview-finish-button')).toBeEnabled({timeout:30000});
+ const finish=page.waitForResponse(response=>response.request().method()==='POST'
+   && new URL(response.url()).pathname.endsWith('/finish-situation'));
+ await page.locator('#interview-finish-button').click();
+ expect((await finish).ok()).toBe(true);
+ stand.cli('drain');
+ const nextButton=page.getByRole('button',{name:'Приступить к следующей ситуации'});
+ await nextButton.waitFor({state:'visible'});
+ let nextPosts=0;
+ const nextPattern=`**/users/assessment/m7/cycles/${first.cycle_id}/next`;
+ await page.route(nextPattern,async route=>{
+   nextPosts+=1;
+   const committed=await route.fetch();
+   expect(committed.status()).toBe(201);
+   await route.abort('failed');
+ });
+ await nextButton.click();
+ await expect(page.locator('.interview-return-card [role="status"]'))
+   .toContainText('Проверьте состояние той же операции');
+ expect(nextPosts).toBe(1);
+ const layoutEvidence=path.resolve('docs/evc/tasks/p4k-f05-f09-one/evidence');
+ fs.mkdirSync(layoutEvidence,{recursive:true});
+ for(const [name,width,zoom] of [
+   ['desktop-1440',1440,1],['mobile-390',390,1],
+   ['mobile-320',320,1],['mobile-320-text-200',320,2],
+ ]){
+   await page.setViewportSize({width,height:900});
+   await page.evaluate(scale=>{document.documentElement.style.zoom=String(scale);},zoom);
+   const check=page.getByRole('button',{name:'Проверить состояние'});
+   await expect(check).toBeVisible();
+   await check.focus();
+   await expect(check).toBeFocused();
+   await expect(page.locator('.interview-return-card [role="status"]')).toBeVisible();
+   await expect(page.locator('#interview-textarea')).toBeHidden();
+   await expect(page.locator('#interview-textarea')).toBeDisabled();
+   const geometry=await page.evaluate(()=>({
+     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+     button:document.querySelector('.interview-return-card button').getBoundingClientRect().toJSON(),
+     card:document.querySelector('.interview-return-card').getBoundingClientRect().toJSON(),
+   }));
+   expect(geometry.overflow,`${name}: horizontal overflow`).toBeLessThanOrEqual(1);
+   expect(geometry.button.width,`${name}: button width`)
+     .toBeGreaterThan(Math.min(350,geometry.card.width*0.8));
+   expect(geometry.button.right,`${name}: button within card`).toBeLessThanOrEqual(geometry.card.right+1);
+   await page.screenshot({path:path.join(layoutEvidence,`f09-runtime-${name}.png`),fullPage:true});
+ }
+ await page.evaluate(()=>{document.documentElement.style.zoom='1';});
+ await page.unroute(nextPattern);
+ await page.reload();
+ const second=await runtime(page,stand);
+ expect(second.cycle_id).toBe(first.cycle_id);
+ expect(second.current_situation.assessment_situation_id).not.toBe(firstSituationId);
+ await expect(page.locator('#interview-textarea')).toBeEnabled();
+ const receipt=await completeStartedAssessment({
+   page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+   initialSituationId:second.current_situation.assessment_situation_id,
+   advanceWorkers:async()=>stand.cli('drain'),
+ });
+ expect(receipt.report_opened).toBe(true);
+ expect(nextPosts).toBe(1);
+});
 test('EXEC-CONTOUR repeated ASK remains in one AS before Report',async({page,stand})=>{
  test.setTimeout(240000);
  await login(page,stand);await start(page);

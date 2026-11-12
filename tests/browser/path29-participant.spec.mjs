@@ -195,9 +195,25 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
       await expect(card.locator('.admin-assignment-readiness')).toContainText(
         `действует подтверждённая редакция #${confirmedRevision.id}; новый черновик ещё не подтверждён`);
+      const freshAdminContext = await browser.newContext();
+      extraContexts.push(freshAdminContext);
+      const freshAdmin = await freshAdminContext.newPage();
+      await freshAdmin.goto(base);
+      await freshAdmin.locator('#email-input').fill(state.path29.admin_email);
+      await freshAdmin.locator('#request-magic-link-button').click();
+      await freshAdmin.locator('#magic-token-input').fill(state.password);
+      await freshAdmin.locator('#verify-magic-link-button').click();
+      const freshCard = freshAdmin.locator(`[data-organization-id="${state.path29.organization_id}"]`);
+      await expect(freshCard).toBeVisible();
+      await freshCard.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+      await expect(freshCard.locator('.admin-assignment-readiness')).toContainText(
+        `действует подтверждённая редакция #${confirmedRevision.id}; новый черновик ещё не подтверждён`);
+      await freshCard.getByRole('button', { name: 'Данные организации', exact: true }).click();
+      await expect(freshCard.locator('[data-action="preview-early-data"] [name="organization_name"]'))
+        .toHaveValue(values.organization_name + ' — черновик');
       save('f05-confirmed-draft-assignment', { confirmed_revision_id: confirmedRevision.id,
         draft_revision_id: draft.id, effective_confirmed_revision_id: draft.effective_confirmed.id,
-        assignment_ref: assignmentRef });
+        assignment_ref: assignmentRef, fresh_admin_session_verified: true });
     }
     if (state.path29.input_mode === 'published-pilot') {
       // A failed GET is not evidence that the already committed questionnaire
@@ -441,6 +457,52 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     save('post-start-assignment-replay', { status: repeatedAssignment.status(),
       result: repeatedAssignmentResult, participant_state: await snapshot(),
       scope: fullPath ? 'real-provider PATH' : 'SYNTHETIC component plan boundary; assignment/SQL real' });
+    if (!fullPath && process.env.P4K_F06_STALE_ASSIGNMENT === '1') {
+      let releaseResponse;
+      let committedResponse;
+      const releaseGate = new Promise((resolve) => { releaseResponse = resolve; });
+      const committedGate = new Promise((resolve) => { committedResponse = resolve; });
+      const assignmentPath = `**/users/admin/organizations/${state.path29.organization_id}/assessment-assignments`;
+      const staleReply = Number(process.env.P4K_F06_STALE_REPLY || 200);
+      expect([200, 409, 500]).toContain(staleReply);
+      let delayedPosts = 0;
+      await admin.route(assignmentPath, async (route) => {
+        if (route.request().method() !== 'POST') return route.continue();
+        delayedPosts += 1;
+        const committed = await route.fetch();
+        expect(committed.status()).toBe(200);
+        committedResponse();
+        await releaseGate;
+        if (staleReply === 200) await route.fulfill({ response: committed });
+        else await route.fulfill({ status: staleReply, contentType: 'application/json',
+          body: JSON.stringify({ detail: staleReply === 409
+            ? 'PROGRAM_ROLE_NOT_AVAILABLE' : 'SYNTHETIC_ASSIGNMENT_READBACK_FAILURE' }) });
+      });
+      try {
+        await checkbox.check();
+        await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+        await committedGate;
+        expect(delayedPosts).toBe(1);
+        await admin.locator('#admin-organizations-logout-button').click();
+        await expect(admin.locator('#email-input')).toBeVisible();
+        await admin.locator('#email-input').fill(state.path29.admin_email);
+        await admin.locator('#request-magic-link-button').click();
+        await admin.locator('#magic-token-input').fill(state.password);
+        await admin.locator('#verify-magic-link-button').click();
+        await expect(admin.locator('#admin-organizations-panel')).toBeVisible();
+        await expect(admin.locator('#admin-organizations-status')).toBeHidden();
+        releaseResponse();
+        await admin.waitForTimeout(500);
+        await expect(admin.locator('#admin-organizations-status')).toBeHidden();
+        expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
+        save('f06-stale-assignment', { delayed_posts: delayedPosts, delayed_reply_status: staleReply,
+          server_effect: 'already_assigned', fresh_session_status_hidden: true,
+          participant_state: await snapshot() });
+      } finally {
+        releaseResponse();
+        await admin.unroute(assignmentPath);
+      }
+    }
     if (fullPath) {
       const receipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
       const runtimeResponse = await page.request.get(base + '/users/assessment/cycles/' + receipt.cycle.cycle_id + '/runtime');
