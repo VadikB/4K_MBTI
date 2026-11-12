@@ -1,0 +1,24 @@
+{
+  "contract": "r03-retry-after-timezone-local-evidence/1",
+  "base_sha": "c06e94d5ff3784b2788b44089091a62a3921d301",
+  "observed_before": {
+    "database_timezone": "Europe/Moscow",
+    "configured_cooldown_seconds": 7,
+    "http_retry_after_seconds": 10807,
+    "same_failure_on_unchanged_base": true
+  },
+  "verified_after": {
+    "auth_action_and_magic_link_utc": "PASS",
+    "auth_action_and_magic_link_europe_moscow": "PASS",
+    "backend_unit_passed": 1089,
+    "backend_http_passed": 152,
+    "full_integration_passed": 393,
+    "full_integration_real_llm_skipped": 2,
+    "full_integration_failed": 0
+  },
+  "external_mail_calls": 0,
+  "external_llm_calls": 0,
+  "owned_database_marker_verified": true,
+  "owned_test_databases_remaining": 0,
+  "dedicated_cluster_stopped": true
+}

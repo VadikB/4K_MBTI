@@ -14,8 +14,10 @@ import pytest
 pytestmark = pytest.mark.integration
 
 
-def test_password_registration_login_cookie_restore_on_owned_schema(tmp_path, monkeypatch):
-    from scripts.test_stand import environment
+@pytest.mark.parametrize("database_timezone", ["UTC", "Europe/Moscow"])
+def test_password_registration_login_cookie_restore_on_owned_schema(tmp_path, monkeypatch, database_timezone):
+    from psycopg import sql
+    from scripts.test_stand import environment, owned
 
     env = {**os.environ, "STAND_ADMIN_URL": os.environ.get("STAND_ADMIN_URL") or os.environ.get("TEST_DATABASE_URL", "")}
     monkeypatch.setenv("STAND_ADMIN_URL", env["STAND_ADMIN_URL"])
@@ -30,6 +32,10 @@ def test_password_registration_login_cookie_restore_on_owned_schema(tmp_path, mo
 
     cli("create")
     try:
+        state = json.loads(state_path.read_text())
+        with owned(state) as maintenance:
+            maintenance.execute(sql.SQL("ALTER DATABASE {} SET TimeZone TO {}").format(
+                sql.Identifier(state["database"]), sql.Literal(database_timezone)))
         cli("bootstrap")
         cli("seed")
         isolated = environment(json.loads(state_path.read_text()))
@@ -104,8 +110,10 @@ def _internal() -> None:
 
     sent: list[dict] = []
     original_sender = auth_module.send_auth_action_email
+    original_magic_sender = auth_module.send_magic_link_email
     original_cooldown = auth_module.settings.auth_magic_link_resend_cooldown_seconds
     auth_module.send_auth_action_email = lambda **payload: sent.append(payload)
+    auth_module.send_magic_link_email = lambda **_payload: None
     auth_module.settings.auth_magic_link_resend_cooldown_seconds = 7
     try:
         with TestClient(app) as http:
@@ -121,6 +129,10 @@ def _internal() -> None:
             })
             assert throttled.status_code == 429
             assert 1 <= int(throttled.headers["Retry-After"]) <= 7
+            auth_module.auth_service.create_magic_link_request(email="participant@example.test")
+            with pytest.raises(auth_module.AuthRateLimitError) as magic_limit:
+                auth_module.auth_service.create_magic_link_request(email="participant@example.test")
+            assert 1 <= magic_limit.value.retry_after_seconds <= 7
             action_token = parse_qs(urlparse(sent[-1]["action_url"]).query)["token"][0]
             confirmed = http.post("/users/auth/email/confirm", json={"token": action_token})
             assert confirmed.status_code == 200 and confirmed.json()["auth_mode"] == "password_registration"
@@ -169,6 +181,7 @@ def _internal() -> None:
             assert runtime_counts_after == runtime_counts_before
     finally:
         auth_module.send_auth_action_email = original_sender
+        auth_module.send_magic_link_email = original_magic_sender
         auth_module.settings.auth_magic_link_resend_cooldown_seconds = original_cooldown
         close_connection_pool()
 
