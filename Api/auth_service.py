@@ -301,11 +301,12 @@ class AuthService:
                 email=normalized_email,
                 organization_invitation_token=organization_invitation_token,
             )
+            # created_at is a naive TIMESTAMP written by NOW() in the DB session zone.
             recent = connection.execute(
                 """
                 SELECT created_at,
                   GREATEST(0,CEIL(EXTRACT(EPOCH FROM (
-                    created_at + (%s * INTERVAL '1 second') - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                    created_at + (%s * INTERVAL '1 second') - LOCALTIMESTAMP
                   ))))::INTEGER AS retry_after_seconds
                 FROM auth_action_tokens
                 WHERE LOWER(email) = %s AND purpose = %s
@@ -455,11 +456,12 @@ class AuthService:
 
         cooldown_seconds = max(int(settings.auth_magic_link_resend_cooldown_seconds or 0), 0)
         if cooldown_seconds:
+            # Use the same session clock as the naive created_at column.
             recent_row = connection.execute(
                 """
                 SELECT created_at,
                   GREATEST(0,CEIL(EXTRACT(EPOCH FROM (
-                    created_at + (%s * INTERVAL '1 second') - (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+                    created_at + (%s * INTERVAL '1 second') - LOCALTIMESTAMP
                   ))))::INTEGER AS retry_after_seconds
                 FROM auth_magic_links
                 WHERE LOWER(email) = %s
