@@ -325,3 +325,17 @@ PASS, адресный ADM28 lost POST — PASS, семь сценариев н�
 отдельный worktree не имеет собственной `.venv`). Прогон #238 не является
 успешным gate; нужен новый CI на
 точном SHA после отправки исправленных fixtures.
+
+E40 — `7377fa73` отправлен. [Полный CI
+#239](https://github.com/VadikB/4K_MBTI/actions/runs/43285101147): integration
+PASS; runtime shards 1/3/4 PASS; shard 2 — 8 PASS / 1 FAIL на `F07 late Turn
+receipt`; browser fast — 230 PASS / 1 SKIP / 1 FAIL на F02 renderer.
+F02 synthetic GET ревизии дополнен `effective_confirmed` (адресно 1 PASS).
+F07 тест ранее ждал общий `localStorage`, который могла обновить вторая
+вкладка до перехода первой; теперь он ждёт видимый badge новой AS в первой
+вкладке перед выдачей удержанного ответа (owned PostgreSQL 15: 1 PASS).
+Соседний F08 тест учитывает, что Finish останавливает polling до ответа:
+после позднего ответа ждёт видимый badge новой AS (owned PostgreSQL 15:
+1 PASS). Начальный адресный повтор F08 с ожиданием до выдачи ответа закономерно
+не прошёл; повтор с верной последовательностью PASS. Нужен полный CI
+нового точного SHA.

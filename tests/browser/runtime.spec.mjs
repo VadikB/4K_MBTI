@@ -463,11 +463,13 @@ test('F08 late Finish receipt cannot restore a closed AS or restart the timer',a
    const after=await runtime(second,stand);
    const secondSituationId=after.current_situation.assessment_situation_id;
    expect(secondSituationId).not.toBe(firstSituationId);
-   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')),
-     {timeout:15000}).toBe(secondSituationId);
    const remaining=async()=>page.locator('#interview-timer-badge').textContent();
    const beforeTimer=await remaining();
-   releaseReceipt();await page.waitForTimeout(500);
+   // Finish stops polling while its response is pending. The late receipt must
+   // read the server's current AS and render position 2 before we inspect storage.
+   releaseReceipt();
+   await expect(page.locator('#interview-case-badge')).toContainText('Ситуация 2 из', {timeout:15000});
+   await page.waitForTimeout(500);
    expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))
      .toBe(secondSituationId);
    const afterTimer=await remaining();
@@ -807,8 +809,9 @@ test('F07 late Turn receipt cannot redraw an AS advanced in another tab',async({
    const after=await runtime(second,stand);
    const secondSituationId=after.current_situation.assessment_situation_id;
    expect(secondSituationId).not.toBe(firstSituationId);
-   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')),
-     {timeout:15000}).toBe(secondSituationId);
+   // The other tab can write this shared storage key before this page renders
+   // the new AS. Synchronize on this page's visible position before late receipt.
+   await expect(page.locator('#interview-case-badge')).toContainText('Ситуация 2 из', {timeout:15000});
    releaseReceipt();
    await page.waitForTimeout(500);
    expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))

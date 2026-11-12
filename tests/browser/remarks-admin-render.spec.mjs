@@ -24,6 +24,7 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
   });
   await page.route('**/users/admin/organizations/3/questionnaire', (route) => route.fulfill({ json: { items: [{
     id: revisionId, assignment_ref: 'synthetic-pilot-11', channel: 'csv', status: 'confirmed',
+    effective_confirmed: { id: revisionId, assignment_ref: 'synthetic-pilot-11', confirmed_at: null },
     answers_json: {}, uploaded_by_user_id: revisionId === 71 ? 40 : 41,
     uploaded_by_name: uploader, uploaded_by_email: 'uploader@example.test', recipient_user_ids: [],
   }] } }));
