@@ -976,6 +976,7 @@
         max-height: 104px;
     }
 }
+
 .interview-return-card {
     display: grid;
     gap: 12px;
@@ -992,7 +993,8 @@
 }
 
 .interview-return-card .primary-button {
-    justify-self: start;
+    justify-self: stretch;
+    width: min(100%, 360px);
 }
 
 /* UX-E01: assessment is a continuation of the W01 conversation. */
@@ -1290,5 +1292,16 @@
 
     .interview-panel .interview-form .primary-button {
         padding-inline: 12px;
+    }
+}
+
+@media (max-width: 400px) {
+    .interview-return-card {
+        margin-inline: -8px;
+        padding: 12px;
+    }
+
+    .interview-return-card .primary-button {
+        padding-inline: 8px;
     }
 }

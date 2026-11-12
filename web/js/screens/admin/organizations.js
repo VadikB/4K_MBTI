@@ -19,7 +19,7 @@ import { questionnaireAssignmentState } from './questionnaire-assignment-state.j
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
 const invitationOperationIds = new Map();
-const assignmentSourceRequests = new Set();
+const assignmentSourceRequests = new Map();
 const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
 const cancellationRequestsInFlight = new Set();
@@ -44,6 +44,7 @@ let programConnectionFeedbackGeneration = 0;
 let operationAnchor = null;
 let restoredManagementIdentity = null;
 let organizationsRequestGeneration = 0;
+let assignmentViewGeneration = 0;
 let organizationsReadStale = false;
 let organizationsReadStaleReason = '';
 
@@ -168,6 +169,13 @@ const isQuestionnaireRevisionNewer = (candidate, reference) => {
   const candidateTime = Date.parse(candidate?.confirmed_at || candidate?.created_at || '') || 0;
   const referenceTime = Date.parse(reference?.confirmed_at || reference?.created_at || '') || 0;
   return candidateTime > referenceTime;
+};
+const mergeQuestionnaireRevision = (received, cached) => {
+  if (!cached) return received;
+  const latest = isQuestionnaireRevisionNewer(cached, received) ? cached : received;
+  const confirmed = Number(cached.effective_confirmed?.id || 0) > Number(received.effective_confirmed?.id || 0)
+    ? cached.effective_confirmed : received.effective_confirmed;
+  return { ...latest, effective_confirmed: confirmed, readiness: received.readiness || latest.readiness };
 };
 const questionnaireErrorMessage = (error, fallback) => {
   const message = String(error?.message || '');
@@ -340,6 +348,7 @@ const restoreAdminOrganizationsDraft = () => {
 };
 
 const clearAdminOrganizationsSessionState = () => {
+  assignmentViewGeneration += 1;
   selectedOrganizationId = null;
   invitationRequestsInFlight.clear();
   invitationOperationIds.clear();
@@ -531,7 +540,7 @@ adminOrganizationsPanel?.addEventListener('change', (event) => {
   )) clearProgramConnectionFeedback();
 });
 
-const requestOrganizations = async (url, options, fallbackMessage) => {
+const requestOrganizations = async (url, options, fallbackMessage, isCurrent = () => true) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const requestGeneration = ++organizationsRequestGeneration;
@@ -541,7 +550,7 @@ const requestOrganizations = async (url, options, fallbackMessage) => {
     ...options,
   });
   const data = await readApiResponse(response, fallbackMessage);
-  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+  if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
       requestGeneration !== organizationsRequestGeneration) return null;
   // Preserve live input, not the earlier draft captured before this request.
   // Keep this after the identity/generation guard and before replacing the data.
@@ -605,7 +614,7 @@ const requestOrganizationsImport = async (url, csvText) => {
   return data;
 };
 
-export const loadAdminOrganizations = async () => {
+export const loadAdminOrganizations = async ({ isCurrent = () => true } = {}) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const requestGeneration = organizationsRequestGeneration + 1;
@@ -614,19 +623,19 @@ export const loadAdminOrganizations = async () => {
     data = await requestOrganizations(
       '/users/admin/organizations',
       { method: 'GET', headers: {} },
-      'Не удалось загрузить организации.',
+      'Не удалось загрузить организации.', isCurrent,
     );
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+    if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         organizationsRequestGeneration !== requestGeneration) return null;
     markOrganizationsReadStale('Не удалось подтвердить актуальное подключение программы.');
     throw error;
   }
-  if (!data || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  if (!data || !isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   await Promise.all((data.items || []).map((org) => loadQuestionnaireRevisions(
-    org.id, { identityEpoch, identityKey, render: false },
+    org.id, { identityEpoch, identityKey, render: false, isCurrent },
   )));
-  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   captureAdminOrganizationsDraft();
   renderAdminOrganizations();
   return data;
@@ -635,7 +644,7 @@ export const loadAdminOrganizations = async () => {
 const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
   const identityEpoch = context.identityEpoch ?? state.identityEpoch;
   const identityKey = context.identityKey ?? currentIdentityKey();
-  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  if (context.isCurrent?.() === false || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
   const key = organizationKey(organizationId);
   const generation = (questionnaireLoadGenerations.get(key) || 0) + 1;
   questionnaireLoadGenerations.set(key, generation);
@@ -649,13 +658,13 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
       credentials: 'same-origin',
     });
     const result = await readApiResponse(response, 'Не удалось загрузить сохранённые анкеты.');
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+    if (context.isCurrent?.() === false || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         questionnaireLoadGenerations.get(key) !== generation) return null;
     const items = Array.isArray(result?.items) ? result.items : [];
     const merged = new Map(items.map((item) => [item.assignment_ref, item]));
     for (const cached of questionnaireRevisions.get(key) || []) {
       const received = merged.get(cached.assignment_ref);
-      if (!received || isQuestionnaireRevisionNewer(cached, received)) merged.set(cached.assignment_ref, cached);
+      if (received) merged.set(cached.assignment_ref, mergeQuestionnaireRevision(received, cached));
     }
     questionnaireRevisions.set(key, [...merged.values()]);
     questionnaireLoadStates.set(key, { status: items.length ? 'ready' : 'empty' });
@@ -665,7 +674,7 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
     }
     return items;
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
+    if (context.isCurrent?.() === false || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         questionnaireLoadGenerations.get(key) !== generation) return null;
     const accessDenied = error?.status === 401 || error?.status === 403;
     if (accessDenied) {
@@ -724,6 +733,7 @@ export const createAdminOrganization = async () => {
 };
 
 export const selectAdminOrganization = (organizationId) => {
+  assignmentViewGeneration += 1;
   clearProgramConnectionFeedback();
   captureAdminOrganizationsDraft();
   selectedOrganizationId = Number(organizationId) || null;
@@ -732,6 +742,7 @@ export const selectAdminOrganization = (organizationId) => {
 };
 
 export const selectAdminOrganizationView = (organizationId, view) => {
+  assignmentViewGeneration += 1;
   captureAdminOrganizationsDraft();
   const allowed = new Set(['people', 'organization-data', 'questionnaire']);
   organizationViews.set(Number(organizationId), allowed.has(view) ? view : 'people');
@@ -740,6 +751,7 @@ export const selectAdminOrganizationView = (organizationId, view) => {
 };
 
 export const selectAdminOrganizationAssessment = (organizationId, form, assessmentRef, previousRef = '') => {
+  assignmentViewGeneration += 1;
   const nextRef = String(assessmentRef || '').trim();
   const oldRef = String(previousRef || selectedAssessmentRefs.get(organizationKey(organizationId)) || '').trim();
   if (oldRef && oldRef !== nextRef) {
@@ -1030,8 +1042,20 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
   const operationId = assignmentOperationIds.get(operationKey) || createOperationId();
   assignmentOperationIds.set(operationKey, operationId);
   if (assignmentSourceRequests.has(requestKey)) return false;
-  assignmentSourceRequests.add(requestKey);
+  const requestToken = Symbol('assignment');
+  assignmentSourceRequests.set(requestKey, requestToken);
   const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
+  const screen = state.currentScreen;
+  const selectedOrganization = Number(selectedOrganizationId);
+  const viewGeneration = assignmentViewGeneration;
+  const programId = Number(organizationById(organizationId)?.assessment_program?.program_definition_id || 0);
+  const isCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
+    state.currentScreen === screen && Number(selectedOrganizationId) === selectedOrganization &&
+    selectedOrganization === Number(organizationId) && assignmentViewGeneration === viewGeneration &&
+    String(getSelectedAdminOrganizationAssessment(organizationId) || '').trim() === assessment &&
+    Number(organizationById(organizationId)?.assessment_program?.program_definition_id || 0) === programId &&
+    assignmentSourceRequests.get(requestKey) === requestToken;
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-assignments', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
@@ -1039,6 +1063,7 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
         ...(roleProfileVersionId ? { role_profile_version_id: Number(roleProfileVersionId) } : {}) }),
     });
     const result = await readApiResponse(response, 'Не удалось назначить оценку.');
+    if (!isCurrent()) return false;
     const items = Array.isArray(result.items) ? result.items : [];
     const requestedIds = new Set(selected);
     const returnedIds = items.map((item) => Number(item.user_id));
@@ -1057,15 +1082,17 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
         already_assigned: 'эта оценка уже назначена', not_assigned: 'не назначена' })[item.status] +
         (item.error ? ' — ' + item.error : '')).join('. ') + '.';
     try {
-      await loadAdminOrganizations();
-      if (state.identityEpoch !== identityEpoch) return false;
+      await loadAdminOrganizations({ isCurrent });
+      if (!isCurrent()) return false;
       setStatus(outcome, failed.length ? 'error' : 'success');
     } catch (_refreshError) {
+      if (!isCurrent()) return false;
       setStatus(outcome + ' Не удалось обновить список; показанные данные могут быть устаревшими. Используйте «Обновить».',
         failed.length ? 'error' : 'success');
     }
     return failed.length === 0;
   } catch (error) {
+    if (!isCurrent()) return false;
     const isUnknown = error?.name === 'RequestDeadlineError' || error instanceof TypeError || error?.message === 'Failed to fetch';
     if (isUnknown) {
       try {
@@ -1074,7 +1101,7 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
         const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-assignments/operations/' +
           encodeURIComponent(operationId) + '?' + query.toString(), { credentials: 'same-origin' });
         const result = await readApiResponse(response, 'Итог назначения пока неизвестен.');
-        if (state.identityEpoch !== identityEpoch) return false;
+        if (!isCurrent()) return false;
         const items = Array.isArray(result.items) ? result.items : [];
         if (exactBatch(items, selected, (item) => Number(item?.user_id ?? item), ['assigned', 'already_assigned', 'not_assigned']) &&
           items.every((item) => item.status !== 'not_assigned')) {
@@ -1085,6 +1112,7 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
         }
         setStatus('Итог назначения пока неизвестен. Обновите список и повторите проверку; новая операция не создаётся.', 'error');
       } catch (_readbackError) {
+        if (!isCurrent()) return false;
         setStatus('Итог назначения пока неизвестен. Обновите список и повторите проверку; новая операция не создаётся.', 'error');
       }
     } else {
@@ -1104,7 +1132,7 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
     }
     return false;
   } finally {
-    assignmentSourceRequests.delete(requestKey);
+    if (assignmentSourceRequests.get(requestKey) === requestToken) assignmentSourceRequests.delete(requestKey);
   }
 };
 
@@ -1514,6 +1542,8 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     const cachedRevision = revisions.find((item) => String(item.assignment_ref || '').trim() === confirmedRef);
     const currentRevision = cachedRevision;
     if (currentRevision && isQuestionnaireRevisionNewer(currentRevision, confirmed)) {
+      questionnaireRevisions.set(revisionsKey, [mergeQuestionnaireRevision(confirmed, currentRevision),
+        ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
       renderAdminOrganizations();
       if (getSelectedAdminOrganizationAssessment(organizationId) === submittedRef) {
         setStatus('Подтверждение завершено. Показана более новая серверная редакция.', 'success');
@@ -1521,7 +1551,8 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
       return;
     }
     questionnaireRevisions.set(revisionsKey,
-      [confirmed, ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
+      [mergeQuestionnaireRevision(confirmed, cachedRevision),
+        ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
     const currentPreview = questionnairePreviews.get(confirmedKey);
     if (!currentPreview || Number(currentPreview.id) === Number(revisionId)) {
       questionnairePreviews.delete(confirmedKey);
@@ -1581,7 +1612,7 @@ const refreshConfirmedReadiness = async (organizationId, outcome, context) => {
     if (!isCurrent()) return;
     if (!Array.isArray(result.items)) throw new Error('Не удалось обновить готовность.');
     const refreshed = result.items.find((item) => item.assignment_ref === outcome.assignmentRef);
-    if (!refreshed || Number(refreshed.id) < Number(outcome.revisionId) || !refreshed.readiness) {
+    if (!refreshed || Number(refreshed.effective_confirmed?.id) < Number(outcome.revisionId) || !refreshed.readiness) {
       throw new Error('Готовность подтверждённой редакции ещё недоступна.');
     }
     const key = organizationKey(organizationId);
@@ -1589,7 +1620,7 @@ const refreshConfirmedReadiness = async (organizationId, outcome, context) => {
     const merged = new Map(cached.map((item) => [item.assignment_ref, item]));
     for (const item of result.items) {
       const prior = merged.get(item.assignment_ref);
-      if (!prior || !isQuestionnaireRevisionNewer(prior, item)) merged.set(item.assignment_ref, item);
+      merged.set(item.assignment_ref, mergeQuestionnaireRevision(item, prior));
     }
     captureAdminOrganizationsDraft();
     questionnaireRevisions.set(key, [...merged.values()]);
@@ -1639,9 +1670,8 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
     const revisionsKey = organizationKey(organizationId);
     const revisions = questionnaireRevisions.get(revisionsKey) || [];
     const latest = revisions.find((item) => item.assignment_ref === saved.assignment_ref);
-    if (!latest || !isQuestionnaireRevisionNewer(latest, saved)) {
-      questionnaireRevisions.set(revisionsKey, [saved, ...revisions.filter((item) => item.assignment_ref !== saved.assignment_ref)]);
-    }
+    questionnaireRevisions.set(revisionsKey, [mergeQuestionnaireRevision(saved, latest),
+      ...revisions.filter((item) => item.assignment_ref !== saved.assignment_ref)]);
     const preview = questionnairePreviews.get(requestKey);
     if (Number(preview?.id) === Number(revisionId)) questionnairePreviews.delete(requestKey);
     outcome.status = 'confirmed';
@@ -2190,10 +2220,14 @@ export const renderAdminOrganizations = () => {
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
       const roleCapabilities = Array.isArray(currentProgram?.role_capabilities)
         ? currentProgram.role_capabilities : allowedRoles.map((role) => ({ ...role, is_available: true }));
-      const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.status === 'confirmed');
+      const publishedRevision = revisions.find((item) => item.assignment_ref === selectedRef && item.effective_confirmed);
       const questionnaireAssignment = programConfirmed
         ? questionnaireAssignmentState(questionnaireLoadState, Boolean(publishedRevision))
         : { canAssign: false, label: 'ещё не проверена для программы' };
+      if (questionnaireAssignment.canAssign && publishedRevision && (questionnairePreview || currentRevision)?.status !== 'confirmed') {
+        questionnaireAssignment.label = 'действует подтверждённая редакция #' +
+          publishedRevision.effective_confirmed.id + '; новый черновик ещё не подтверждён';
+      }
       const rolesKnown = programConfirmed && Array.isArray(currentProgram?.roles);
       const roleAvailable = rolesKnown && roleCapabilities.some((role) => role.is_available === true && Number(role.version_id) > 0);
       const assignmentRoleLabel = !programConfirmed ? 'ещё не проверена для программы'
@@ -2481,6 +2515,7 @@ export const renderAdminOrganizations = () => {
 };
 
 export const openAdminOrganizations = async () => {
+  assignmentViewGeneration += 1;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   state.activeArea = 'management';

@@ -70,6 +70,9 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert preview["id"] == replay["id"]
         assert preview["status"] == "ready_for_confirmation"
         assert public_revision(preview)["source_author"] == "Синтетический заказчик"
+        assert public_revision(preview)["effective_confirmed"] is None
+        assert admin_assignment_readiness(connection, organization_id=10,
+                                          assignment_ref="synthetic-assignment")["early"]["status"] == "draft_unconfirmed"
         # The product form supplies the early minimum, without optional C02b.
         connection.execute("UPDATE questionnaire_response_revisions SET answers_json=answers_json-'C02b' WHERE id=%s", (preview['id'],))
 
@@ -98,6 +101,17 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             connection, revision_id=preview["id"], organization_id=10,
             confirmed_by=2, recipients=["participant", "organization_admin"], recipient_user_ids=[2],
         )["organization_context_version_id"] == confirmed["organization_context_version_id"]
+        incomplete = save_preview(connection, **{
+            **kwargs, "channel": "product_form", "raw_text": None,
+            "answers": {"C01": {"name": "Новый неполный черновик"}},
+            "idempotency_key": "preview-incomplete-next",
+        })
+        assert incomplete["status"] == "draft"
+        assert public_revision(incomplete, confirmed_row=confirmed)["effective_confirmed"]["id"] == confirmed["id"]
+        assert admin_assignment_readiness(connection, organization_id=10,
+                                          assignment_ref="synthetic-assignment")["early"]["status"] == "ready"
+        assert admin_assignment_readiness(connection, organization_id=10,
+                                          assignment_ref="missing-assignment")["early"]["status"] == "data_missing"
         with pytest.raises(ValueError, match="QUESTIONNAIRE_RECIPIENTS_CONFLICT"):
             confirm(connection, revision_id=preview["id"], organization_id=10,
                     confirmed_by=2, recipients=["participant"])

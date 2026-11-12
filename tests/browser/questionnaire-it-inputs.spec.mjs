@@ -121,6 +121,38 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       expect(db.counts[name], `${name}: unchanged since synthetic seed`).toBe(baseline.counts[name]);
     }
     expect(db.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 1);
+    const draftName = values.organization_name + ' — черновик';
+    await form.locator('[name="organization_name"]').fill(draftName);
+    const draftResponse = page.waitForResponse((response) => response.request().method() === 'POST'
+      && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
+    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+    expect((await draftResponse).status()).toBe(201);
+    const draftList = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`);
+    expect(draftList.status()).toBe(200);
+    const latest = (await draftList.json()).items.find((item) => item.assignment_ref === saved.assignment_ref);
+    expect(latest.status).not.toBe('confirmed');
+    expect(latest.effective_confirmed.id).toBe(Number(revisionId));
+    await page.reload();
+    await expect(form.locator('[name="organization_name"]')).toHaveValue(draftName);
+    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+    await expect(card.locator('.admin-assignment-readiness')).toContainText(
+      `действует подтверждённая редакция #${revisionId}; новый черновик ещё не подтверждён`);
+    for (const [name, width, zoom] of [
+      ['desktop-1440', 1440, 1], ['mobile-390', 390, 1],
+      ['mobile-320', 320, 1], ['mobile-320-text-200', 320, 2],
+    ]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate((scale) => { document.documentElement.style.zoom = String(scale); }, zoom);
+      await expect(card.locator('.admin-assignment-readiness')).toBeVisible();
+      await page.screenshot({ path: path.join(directory, `f05-confirmed-with-draft-${name}.png`), fullPage: true });
+    }
+    await page.evaluate(() => { document.documentElement.style.zoom = '1'; });
+    const draftDb = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath,
+      '--revision-id', String(latest.id)]));
+    expect(draftDb.revision.status).not.toBe('confirmed');
+    expect(draftDb.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 2);
+    save('confirmed-with-new-draft', { confirmed_revision_id: Number(revisionId), draft_revision_id: latest.id,
+      http: latest, database: draftDb });
     expect(requests.filter((item) => /\/(?:prepare|start)$/.test(item.path))).toEqual([]);
     save('result', { status: 'PASS_QUESTIONNAIRE_ONLY', scope: fixture.scope,
       actual_http: true, actual_postgresql: true, mock_resolver: false,

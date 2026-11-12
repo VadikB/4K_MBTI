@@ -38,7 +38,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
         toggle: (name, enabled = !classes.has(name)) => enabled ? classes.add(name) : classes.delete(name),
       };
     }
-    appendChild(child) { this.children.push(child); child.parentElement = this; child.isConnected = true; return child; }
+    appendChild(child) { this.children.push(child); if (typeof child === 'object') { child.parentElement = this; child.isConnected = true; } return child; }
     remove() { if (this.parentElement) this.parentElement.children = this.parentElement.children.filter((child) => child !== this); this.isConnected = false; }
     focus() { this.focused = true; }
     append(...children) { children.forEach((child) => this.appendChild(child)); }
@@ -104,6 +104,8 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     showError(_element, message) { errors.push(message); },
     createOperationId, crypto: { randomUUID: createOperationId },
     fetch: async (...args) => { fetchCalls.push(args); return fetchImpl(...args); },
+    // Deadline transport is verified separately; this harness injects its response.
+    fetchWithDeadline: async (...args) => { fetchCalls.push(args.slice(0, 2)); return fetchImpl(...args.slice(0, 2)); },
     readApiResponse: async (response) => { if (!response.ok) { const error = new Error(`HTTP ${response.status}`); error.status = response.status; throw error; } return response.json(); },
     resumeProductRuntimePolling() { pollingResumes += 1; },
     renderInterviewMeta() {}, renderCaseProgress() {}, updateInterviewTimer() {},
@@ -119,6 +121,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     let confirmedProductInterviewSnapshot = null;
     let confirmedProductInterviewCanSend = false;
     const productInterviewRequests = new Map();
+    const nextSituationRequests = new Map();
     let interviewScrollAlignmentGeneration = 0;
     let interviewScrollAlignmentFrame = null;
     let interviewScrollAlignmentTimers = [];

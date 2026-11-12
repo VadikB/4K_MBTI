@@ -1,0 +1,9 @@
+{
+  "task_id": "P4K-F05-F09-ONE",
+  "database": "p4k_f05_pytest",
+  "owner_marker_verified_before_drop": true,
+  "database_absent_after_drop": true,
+  "stand_databases_absent_after_tests": true,
+  "dedicated_postgresql_cluster_stopped": true,
+  "postgresql_major": 15
+}

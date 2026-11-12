@@ -174,6 +174,31 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
     await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+    if (!fullPath) {
+      const questionnaireUrl = `${base}/users/admin/organizations/${state.path29.organization_id}/questionnaire`;
+      const beforeDraft = await (await admin.request.get(questionnaireUrl)).json();
+      const assignmentRef = state.path29.assignment_ref || 'PATH29 browser';
+      const confirmedRevision = beforeDraft.items.find((item) => item.assignment_ref === assignmentRef);
+      expect(confirmedRevision.status).toBe('confirmed');
+      await form.locator('[name="organization_name"]').fill(values.organization_name + ' — черновик');
+      const draftResponse = admin.waitForResponse((response) => response.request().method() === 'POST'
+        && response.url().endsWith(`/users/admin/organizations/${state.path29.organization_id}/questionnaire/preview`));
+      await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+      expect((await draftResponse).status()).toBe(201);
+      await expect(card.locator('.admin-questionnaire-preview')).toContainText('Готово к подтверждению');
+      const afterDraft = await (await admin.request.get(questionnaireUrl)).json();
+      const draft = afterDraft.items.find((item) => item.assignment_ref === assignmentRef);
+      expect(draft.status).not.toBe('confirmed');
+      expect(draft.effective_confirmed.id).toBe(confirmedRevision.id);
+      await admin.reload();
+      await expect(card).toBeVisible();
+      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+      await expect(card.locator('.admin-assignment-readiness')).toContainText(
+        `действует подтверждённая редакция #${confirmedRevision.id}; новый черновик ещё не подтверждён`);
+      save('f05-confirmed-draft-assignment', { confirmed_revision_id: confirmedRevision.id,
+        draft_revision_id: draft.id, effective_confirmed_revision_id: draft.effective_confirmed.id,
+        assignment_ref: assignmentRef });
+    }
     if (state.path29.input_mode === 'published-pilot') {
       // A failed GET is not evidence that the already committed questionnaire
       // became unconfirmed. Exercise the actual built entry before any LLM cost.

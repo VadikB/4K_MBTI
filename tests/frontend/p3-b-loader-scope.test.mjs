@@ -39,6 +39,7 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     getAssessmentViewGeneration: () => viewGeneration,
     advanceAssessmentViewGeneration: () => { viewGeneration += 1; },
     fetch: (url) => { requested.resolve(url); return response.promise; },
+    fetchWithDeadline: (url) => { requested.resolve(url); return response.promise; },
     readApiResponse: async (value) => value.syntheticPayload,
     renderReturnCard: (value) => cards.push(value),
     clearConfirmedReturnContinue: () => effects.push('clearContinue'),
