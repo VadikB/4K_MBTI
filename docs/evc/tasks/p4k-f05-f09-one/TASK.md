@@ -98,7 +98,9 @@ Europe/Moscow. Отдельный R03 commit `4e6bffa4` проверен вме�
 во временном checkout `b6996a54`: полный локальный integration gate E35 —
 393 PASS, 2 SKIP явного real-provider, 0 FAIL. Ветка F05–F09 не получила
 R03 fix; её точный SHA ещё требует зелёного CI после принятия R03.
-Push/PR/CI для F05–F09, TEST и human review F05–F09 не выполнены. Отдельный
+Ветка отправлена в `origin`, создан draft PR
+[#214](https://github.com/VadikB/4K_MBTI/pull/214); быстрый CI выполняется.
+Полный CI, TEST и human review F05–F09 ещё не выполнены. Отдельный
 R03 PR [#213](https://github.com/VadikB/4K_MBTI/pull/213) на
 `a3f8eb54ba2378c25bafe62ebd6389b9243cb881` прошёл полный CI после
 повтора одного непостоянного browser timeout на том же SHA; human review и
