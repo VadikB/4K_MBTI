@@ -109,8 +109,9 @@ human review и разрешил squash merge с test deploy. R03 вошёл в 
 `e7cd26dc`; `deploy-test` #973 PASS. Объединённая ветка F05–F09 локально
 прошла frontend 271, backend unit 1089, HTTP 153, lint/build/diff PASS;
 полный local integration точного merge SHA не повторялся. Следующие действия:
-проверить CI нового draft SHA, согласовать новую версию для F05–F09, выполнить
-Ready preflight и полный CI, затем отдельные приёмка/merge/TEST по процессу.
+выполнить полный CI кандидата `2.1.0`, затем отдельные приёмка/merge/TEST
+по процессу. Владелец утвердил `minor` `2.1.0` и Ready; preflight
+`npm run ready:prepare -- --release-type minor --candidate 2.1.0` прошёл.
 
 ## Адресный review кандидата 12.11.2026
 

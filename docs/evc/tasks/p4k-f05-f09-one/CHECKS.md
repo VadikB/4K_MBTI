@@ -289,3 +289,13 @@ E36 — после разрешённого squash merge R03 PR #213 `origin/mai
 повторялся: E35 уже проверил тот же F05–F09 product code с R03 fix, а принятая
 база дополнительно содержит номер версии и release-сборку. Полный CI точного
 SHA остаётся обязательным после согласования версии и Ready.
+
+E37 — draft PR #214 обновлён до `a5fe39ee`: [быстрый CI
+#974](https://github.com/VadikB/4K_MBTI/actions/runs/43276619804) —
+`frontend` PASS, `pytest` PASS, `deploy-test` SKIP для PR;
+`full-verification` SKIP для draft. Владелец утвердил `2.1.0` (`minor`)
+и Ready. На актуальной `origin/main@e7cd26dc` команда
+`npm run ready:prepare -- --release-type minor --candidate 2.1.0` — PASS:
+согласованные файлы версии, `npm run build:web` и release gate.
+`git diff --check` — PASS. Полный CI точного нового SHA требуется после
+commit, push и перевода PR в Ready.
