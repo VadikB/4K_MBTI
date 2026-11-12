@@ -98,6 +98,29 @@ Europe/Moscow. Отдельный R03 commit `4e6bffa4` проверен вме�
 во временном checkout `b6996a54`: полный локальный integration gate E35 —
 393 PASS, 2 SKIP явного real-provider, 0 FAIL. Ветка F05–F09 не получила
 R03 fix; её точный SHA ещё требует зелёного CI после принятия R03.
-Push/PR/CI, TEST и human review не выполнены. Следующие действия: принять R03
-независимо, обновить F05–F09 на принятую базу, проверить точный SHA в CI,
-затем merge и TEST по процессу.
+Push/PR/CI для F05–F09, TEST и human review F05–F09 не выполнены. Отдельный
+R03 PR [#213](https://github.com/VadikB/4K_MBTI/pull/213) на
+`a3f8eb54ba2378c25bafe62ebd6389b9243cb881` прошёл полный CI после
+повтора одного непостоянного browser timeout на том же SHA; human review и
+merge R03 ещё не выполнены. Следующие действия: принять R03 независимо,
+обновить F05–F09 на принятую базу, проверить точный SHA в CI, затем merge и
+TEST по процессу.
+
+## Адресный review кандидата 12.11.2026
+
+Свежий `git fetch origin main` оставил базу `c06e94d5ff3784b2788b44089091a62a3921d301`.
+Проверен diff `origin/main...e5d903496c53c516ff46e6977ab732b43feaa221`:
+`Api/questionnaire_sources.py` и `Api/routes.py` добавляют действующую
+подтверждённую редакцию без смены схемы и предметных источников;
+`web/js/screens/admin/organizations.js` удерживает scope назначения и
+раздельно показывает draft; `web/js/screens/interview.js` и
+`web/js/product-cycle-preparation.js` сохраняют ID команд, ограничивают
+клиентское ожидание и делают readback; `Api/m10_test_gateway.py` и
+`scripts/test_stand.py` меняют только изолированный синтетический контур.
+Публичное поле `effective_confirmed` добавлено, существующие поля сохранены;
+новых миграций, runtime-предметных defaults и публикации артефактов нет.
+Адресные регрессии и owned browser/PG для этих границ указаны в `CHECKS.md`.
+`git diff --check origin/main...HEAD` — PASS, рабочее дерево до этого
+документального checkpoint было чистым. Новых дефектов review не выявил.
+Остаточный риск: прежние записи и старые клиентские состояния проверены только
+в описанных синтетических сценариях; полный PATH/F22 и реальный LLM не заявлены.
