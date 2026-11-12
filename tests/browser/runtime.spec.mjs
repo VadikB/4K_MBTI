@@ -422,6 +422,75 @@ test('F08 committed Finish with lost response recovers through reload without a 
  expect(receipt.report_opened).toBe(true);
  expect(transitionPosts).toBe(1);
 });
+test('F08 late Finish receipt cannot restore a closed AS or restart the timer',async({page,context,stand})=>{
+ test.setTimeout(120000);
+ await login(page,stand);await start(page);await answer(page);
+ const first=await runtime(page,stand);
+ const firstSituationId=first.current_situation.assessment_situation_id;
+ const transitionPath=`**/users/assessment/m5/situations/${firstSituationId}/transitions`;
+ let releaseReceipt;
+ const receiptGate=new Promise(resolve=>{releaseReceipt=resolve;});
+ let markCommitted;
+ const committed=new Promise(resolve=>{markCommitted=resolve;});
+ let posts=0;
+ await page.route(transitionPath,async route=>{
+   posts+=1;
+   const receipt=await route.fetch();
+   expect(receipt.status()).toBe(200);
+   markCommitted();
+   await receiptGate;
+   try{await route.fulfill({response:receipt});}catch{/* The AS may have advanced. */}
+ });
+ let second;
+ try{
+   await page.locator('#interview-finish-button').click();
+   await Promise.race([committed,new Promise((_,reject)=>setTimeout(
+     ()=>reject(new Error('FINISH_NOT_COMMITTED_WITHIN_15_SECONDS')),15000))]);
+   stand.cli('drain');
+   second=await context.newPage();second.on('dialog',dialog=>dialog.accept());
+   await second.goto(`${stand.url}/?screen=interview&cycle_id=${encodeURIComponent(first.cycle_id)}`);
+   await expect(second.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+   await answer(second,fixture.clarification_answer);
+   const finish=second.waitForResponse(response=>response.request().method()==='POST'
+     && new URL(response.url()).pathname.endsWith('/finish-situation'));
+   await second.locator('#interview-finish-button').click();
+   expect((await finish).ok()).toBe(true);
+   stand.cli('drain');
+   const next=second.waitForResponse(response=>response.request().method()==='POST'
+     && new URL(response.url()).pathname.endsWith('/next'));
+   await second.getByRole('button',{name:'Приступить к следующей ситуации'}).click();
+   expect((await next).ok()).toBe(true);
+   const after=await runtime(second,stand);
+   const secondSituationId=after.current_situation.assessment_situation_id;
+   expect(secondSituationId).not.toBe(firstSituationId);
+   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')),
+     {timeout:15000}).toBe(secondSituationId);
+   const remaining=async()=>page.locator('#interview-timer-badge').textContent();
+   const beforeTimer=await remaining();
+   releaseReceipt();await page.waitForTimeout(500);
+   expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))
+     .toBe(secondSituationId);
+   const afterTimer=await remaining();
+   const seconds=value=>{const match=String(value).match(/(\d{2}):(\d{2})/);return match?Number(match[1])*60+Number(match[2]):null;};
+   expect(seconds(beforeTimer)).not.toBeNull();
+   expect(seconds(afterTimer)).not.toBeNull();
+   expect(seconds(afterTimer)).toBeLessThanOrEqual(seconds(beforeTimer)+1);
+   expect(posts).toBe(1);
+   await page.unroute(transitionPath);
+   await page.reload();
+   expect((await runtime(page,stand)).current_situation.assessment_situation_id).toBe(secondSituationId);
+   await second.close();second=null;
+   const receipt=await completeStartedAssessment({
+     page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+     initialSituationId:secondSituationId,advanceWorkers:async()=>stand.cli('drain'),
+   });
+   expect(receipt.report_opened).toBe(true);
+ }finally{
+   releaseReceipt();
+   if(!page.isClosed())try{await page.unroute(transitionPath);}catch{/* Browser may close on timeout. */}
+   if(second&&!second.isClosed())try{await second.close();}catch{/* Browser may close on timeout. */}
+ }
+});
 test('F08 committed Finish with stalled headers reaches a bounded unknown state',async({page,stand})=>{
  test.setTimeout(240000);
  await login(page,stand);await start(page);await answer(page);
@@ -687,6 +756,81 @@ test('F07 old runtime poll cannot replace the saved Turn after readback',async({
  }
  expect(heldPolls).toBe(1);
 });
+test('F07 late Turn receipt cannot redraw an AS advanced in another tab',async({page,context,stand})=>{
+ test.setTimeout(120000);
+ await login(page,stand);await start(page);
+ const first=await runtime(page,stand);
+ const firstSituationId=first.current_situation.assessment_situation_id;
+ const answerText='Синтетический Turn с поздним ответом после смены AS.';
+ const turnPath=`**/users/assessment/m5/situations/${firstSituationId}/turns`;
+ let releaseReceipt;
+ const receiptGate=new Promise(resolve=>{releaseReceipt=resolve;});
+ let markCommitted;
+ const committed=new Promise(resolve=>{markCommitted=resolve;});
+ let posts=0;
+ await page.route(turnPath,async route=>{
+   posts+=1;
+   const receipt=await route.fetch();
+   expect(receipt.status()).toBe(200);
+   markCommitted();
+   await receiptGate;
+   try{await route.fulfill({response:receipt});}catch{/* The page may have left the AS. */}
+ });
+ let second;
+ try{
+   await page.locator('#interview-textarea').fill(answerText);
+   await page.locator('#interview-submit-button').click();
+   await Promise.race([committed,new Promise((_,reject)=>setTimeout(
+     ()=>reject(new Error('TURN_NOT_COMMITTED_WITHIN_15_SECONDS')),15000))]);
+   stand.cli('drain');
+   second=await context.newPage();
+   second.on('dialog',dialog=>dialog.accept());
+   await second.goto(`${stand.url}/?screen=interview&cycle_id=${encodeURIComponent(first.cycle_id)}`);
+   await expect(second.locator('#interview-messages .own')).toContainText([answerText]);
+   const end=second.waitForResponse(response=>response.request().method()==='POST'
+     && new URL(response.url()).pathname.endsWith('/transitions'));
+   await expect(second.locator('#interview-finish-button')).toBeEnabled({timeout:15000});
+   await second.locator('#interview-finish-button').click({timeout:15000});
+   expect((await end).ok()).toBe(true);
+   stand.cli('drain');
+   await expect(second.locator('#interview-messages')).toContainText(fixture.question,{timeout:30000});
+   await answer(second,fixture.clarification_answer);
+   const finish=second.waitForResponse(response=>response.request().method()==='POST'
+     && new URL(response.url()).pathname.endsWith('/finish-situation'));
+   await second.locator('#interview-finish-button').click();
+   expect((await finish).ok()).toBe(true);
+   stand.cli('drain');
+   const next=second.waitForResponse(response=>response.request().method()==='POST'
+     && new URL(response.url()).pathname.endsWith('/next'));
+   await second.getByRole('button',{name:'Приступить к следующей ситуации'}).click();
+   expect((await next).ok()).toBe(true);
+   const after=await runtime(second,stand);
+   const secondSituationId=after.current_situation.assessment_situation_id;
+   expect(secondSituationId).not.toBe(firstSituationId);
+   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')),
+     {timeout:15000}).toBe(secondSituationId);
+   releaseReceipt();
+   await page.waitForTimeout(500);
+   expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))
+     .toBe(secondSituationId);
+   expect(posts).toBe(1);
+   await page.unroute(turnPath);
+   await page.reload();
+   const current=await runtime(page,stand);
+   expect(current.current_situation.assessment_situation_id).toBe(secondSituationId);
+   expect(current.trace.turns.filter(turn=>turn.content_text===answerText)).toHaveLength(0);
+   await second.close();second=null;
+   const receipt=await completeStartedAssessment({
+     page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
+     initialSituationId:secondSituationId,advanceWorkers:async()=>stand.cli('drain'),
+   });
+   expect(receipt.report_opened).toBe(true);
+ }finally{
+   releaseReceipt();
+   if(!page.isClosed())try{await page.unroute(turnPath);}catch{/* Browser may close on timeout. */}
+   if(second&&!second.isClosed())try{await second.close();}catch{/* Browser may close on timeout. */}
+ }
+});
 test('F07 committed Turn with stalled body stays pending until exact readback',async({page,stand})=>{
  test.setTimeout(240000);
  await login(page,stand);await start(page);
@@ -887,6 +1031,7 @@ test('F09 two tabs converge on one next AS without duplicate preparation',async(
  let committedFirst;
  const firstCommitted=new Promise(resolve=>{committedFirst=resolve;});
  let firstPosts=0,secondPosts=0;
+ let advancedSituationId;
  await second.route(runtimePath,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(between)}));
  await page.route(nextPath,async route=>{
    firstPosts+=1;
@@ -909,13 +1054,23 @@ test('F09 two tabs converge on one next AS without duplicate preparation',async(
    expect([201,409]).toContain((await secondResponse).status());
    expect(firstPosts).toBe(1);
    expect(secondPosts).toBe(1);
+   const advanced=await runtime(second,stand);
+   advancedSituationId=advanced.current_situation.assessment_situation_id;
+   expect(advancedSituationId).not.toBe(firstSituationId);
+   await page.locator('#interview-profile-button').click();
+   await expect(page.locator('#dashboard-panel')).toBeVisible();
  }finally{
    releaseFirst();
+   await page.waitForTimeout(500);
+   if(advancedSituationId){
+     await expect(page.locator('#dashboard-panel')).toBeVisible();
+     await expect(page.locator('#interview-panel')).toBeHidden();
+   }
    await page.unroute(nextPath);
    await second.unroute(nextPath);
    await second.unroute(runtimePath);
  }
- await page.reload();
+ await page.goto(`${stand.url}/?screen=interview&cycle_id=${encodeURIComponent(first.cycle_id)}`);
  await second.reload();
  const pageRuntime=await runtime(page,stand);
  const secondRuntime=await runtime(second,stand);

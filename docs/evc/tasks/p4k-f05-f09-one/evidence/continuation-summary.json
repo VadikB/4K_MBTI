@@ -113,11 +113,30 @@
     "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
     "owned_database_destroyed": true
   },
+  "f07_late_turn_after_as_advance": {
+    "result": "PASS",
+    "first_turn_posts": 1,
+    "first_receipt_held_after_commit": true,
+    "second_tab_advanced_to_new_as": true,
+    "first_tab_kept_new_as_after_old_receipt": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
+    "owned_database_destroyed": true
+  },
   "f08_committed_finish_lost_response": {
     "result": "PASS",
     "ui": "unknown outcome and disabled answer controls; reload recovers",
     "transition_posts": 1,
     "terminal_execution_export": "calculated; two closed situations; pipeline ready",
+    "owned_database_destroyed": true
+  },
+  "f08_late_finish_after_as_advance": {
+    "result": "PASS after an onboarding-only setup timeout in first run",
+    "first_transition_posts": 1,
+    "first_receipt_held_after_commit": true,
+    "second_tab_advanced_to_new_as": true,
+    "first_tab_kept_new_as_after_old_receipt": true,
+    "timer_remaining_did_not_increase": true,
+    "terminal_execution_export": "calculated; two closed situations; pipeline and report ready",
     "owned_database_destroyed": true
   },
   "f08_committed_finish_stalled_headers_and_body": {
@@ -167,6 +186,8 @@
     "first_response_held_after_commit": true,
     "second_response_status": 201,
     "tabs_converged_on_same_as": true,
+    "first_tab_navigated_home_before_late_receipt": true,
+    "late_receipt_did_not_reopen_interview": true,
     "terminal_situations": 2,
     "terminal_execution_export": "calculated; pipeline and report ready",
     "owned_database_destroyed": true
