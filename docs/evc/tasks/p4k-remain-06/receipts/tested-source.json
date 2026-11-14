@@ -1,0 +1,16 @@
+{
+  "r1": {
+    "source_head_sha": "07166475b478c843243102c748d51f8564b7cec0",
+    "dirty": true,
+    "fingerprints_match": true,
+    "run_id": "1b6f35d5e54141a2b068997f99bd065a"
+  },
+  "layout": {
+    "source_head_sha": "07166475b478c843243102c748d51f8564b7cec0",
+    "dirty": true,
+    "fingerprints_match": true,
+    "run_id": "feba4dcb877e471e8a4748a08daf14e4"
+  },
+  "candidate_code_sha": "17291144c6d96a56db4cac30292427f327da69a9",
+  "binding": "Runs observed base HEAD with dirty tree; startup file fingerprints match committed candidate bytes. Api unchanged versus base."
+}

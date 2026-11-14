@@ -1,0 +1,26 @@
+{
+  "run_id": "1b6f35d5e54141a2b068997f99bd065a",
+  "scope": "owned synthetic PostgreSQL readback",
+  "situations": [
+    {
+      "kind": "long",
+      "assessment_situation_id": "34ed41f4-7f1d-469c-b398-2bc6616ba724",
+      "status": "active",
+      "snapshot_checksum_valid": true,
+      "assessee_turns": 1,
+      "duplicate_assessee_request_ids": false,
+      "turn_ids": [
+        "cd0eb4d5-c256-4f5a-8ae4-dae45014e0ef"
+      ]
+    },
+    {
+      "kind": "short",
+      "assessment_situation_id": "a754cd35-fcd6-4802-9f28-ca37c3c62ae2",
+      "status": "active",
+      "snapshot_checksum_valid": true,
+      "assessee_turns": 0,
+      "duplicate_assessee_request_ids": false,
+      "turn_ids": []
+    }
+  ]
+}

@@ -16,9 +16,9 @@ const runtimeSource = section('export const loadProductRuntime =', '\nconst wait
 const returnSource = section('const loadReturnState =', '\nexport const loadProductRuntime =');
 
 const deferred = () => {
-  let resolve;
-  const promise = new Promise((yes) => { resolve = yes; });
-  return { promise, resolve };
+  let resolve, reject;
+  const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
 };
 const snapshot = (assessmentSituationId = 'as-A', returnPolicy = false) => ({
   cycle_id: 'cycle-A',
@@ -47,6 +47,7 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     renderProductRuntime: (value) => { renders.push(value); return value; },
     startProductPresence: () => effects.push('startPresence'),
     stopProductPresence: () => effects.push('stopPresence'),
+    clearUnconfirmedProductTime: () => effects.push('unknownTime'),
     interviewPanel: { classList: { contains: () => true } },
     openProcessing: () => effects.push('openProcessing'),
   });
@@ -59,7 +60,7 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     globalThis.subject = { loadProductRuntime, loadReturnState,
       advanceGeneration: () => { productRuntimePollGeneration += 1; },
       advanceViewGeneration: advanceAssessmentViewGeneration };`, context);
-  return { state, context, requested: requested.promise, resolve: response.resolve,
+  return { state, context, requested: requested.promise, resolve: response.resolve, reject: response.reject,
     renders, cards, effects, subject: context.subject };
 };
 
@@ -85,6 +86,26 @@ test('P3-A+3B loader rejects late runtime for another owner, Cycle, AS or screen
     assert.equal(h.renders.length, 0);
     assert.deepEqual(h.effects, []);
   }
+});
+
+test('REMAIN06 network failure invalidates only the current server time without confirming pause', async () => {
+  for (const actualReturnState of [false, true]) {
+    const h = harness({ actualReturnState });
+    const loading = actualReturnState ? h.subject.loadReturnState() : h.subject.loadProductRuntime();
+    await h.requested;
+    h.reject(new Error('controlled network failure'));
+    await assert.rejects(loading, /controlled network failure/);
+    assert.deepEqual(h.effects, ['unknownTime']);
+    assert.equal(h.cards.length, 0);
+  }
+  const h = harness();
+  const loading = h.subject.loadProductRuntime();
+  await h.requested;
+  h.state.pendingUser = { id: 2 }; h.state.identityEpoch++;
+  h.state.productCycleId = 'cycle-B';
+  h.reject(new Error('late failure for A'));
+  assert.equal(await loading, null);
+  assert.deepEqual(h.effects, []);
 });
 
 test('P3-A+3B default initial/visibility load rejects old AS but accepts server advance', async () => {
