@@ -1,7 +1,8 @@
 # Проверки P4K-W02-01
 
 Base `07166475b478c843243102c748d51f8564b7cec0` /2.1.5; candidate2.1.6.
-Код и fixtures проверены перед фиксацией; точные SHA дополняются в STATE.
+Source/candidate/tested SHA `a52e8909c0a1ce850d08c2d83c3e35dbe7a59919`;
+хеши runtime совпадают с checked-content.json. Handoff после него — только docs.
 
 | AC | Результат | Первичное доказательство / граница |
 | --- | --- | --- |

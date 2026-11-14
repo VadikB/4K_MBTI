@@ -49,3 +49,8 @@ run05 PASS11/11 за12.5s; final frontend305/305, lint/build/release/diff-checkP
 реализации при следующей фиксации, точный immutable SHA добавляется в handoff.
 Первичные evidence сохранены, resource groups absent/ports closed; DB/LLM/letters0.
 Активно: собственный commit/push/один Ready PR и mandatoryCI актуального head.
+
+Candidate/source/tested SHA: `a52e8909c0a1ce850d08c2d83c3e35dbe7a59919`.
+Локальные результаты подтверждены совпадением SHA256 runtime с checked-content.json.
+Handoff commit после него меняет только docs; immutable PR head/CI будут записаны
+в итоговом receipt, сами checks GitHub являются первичным основанием.
