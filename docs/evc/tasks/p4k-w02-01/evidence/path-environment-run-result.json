@@ -1,0 +1,16 @@
+{
+  "exit_code": 1,
+  "reason": null,
+  "elapsed_seconds": 3.25,
+  "ports": [
+    {
+      "port": 55493,
+      "listener_absent": true
+    },
+    {
+      "port": 18859,
+      "listener_absent": true
+    }
+  ],
+  "pg_stopped": true
+}

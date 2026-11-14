@@ -1,0 +1,12 @@
+{
+  "bodyWidth": 390,
+  "panel": "rgb(247, 247, 247)",
+  "assistant": "rgb(255, 255, 255)",
+  "user": "rgb(179, 235, 239)",
+  "focus": "rgb(34, 44, 48)",
+  "buttonHeight": 48,
+  "composer": 844,
+  "labelCenter": 304.796875,
+  "labelRight": 374,
+  "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif"
+}

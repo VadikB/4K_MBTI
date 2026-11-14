@@ -325,14 +325,22 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const metrics = await page.locator('#onboarding-panel').evaluate((panel) => {
         const back = panel.querySelector('#onboarding-step-back').getBoundingClientRect();
         const input = panel.querySelector('textarea').getBoundingClientRect();
-        const actions = panel.querySelector('.onboarding-actions').getBoundingClientRect();
+        const composer = panel.querySelector('.onboarding-composer').getBoundingClientRect();
+        const send = panel.querySelector('#onboarding-next').getBoundingClientRect();
         return { overflow: document.documentElement.scrollWidth > innerWidth + 1,
           font: getComputedStyle(panel).fontFamily, background: getComputedStyle(panel).backgroundColor,
-          back: [back.width, back.height], gap: actions.top - input.bottom };
+          back: [back.width, back.height], stacked: innerWidth <= 600,
+          gap: innerWidth <= 600 ? send.top - input.bottom : send.left - input.right,
+          sendHeight: send.height, sendWidth: send.width, inputWidth: input.width, inputBottom: input.bottom, sendBottom: send.bottom,
+          composerBottom: composer.bottom, viewportHeight: innerHeight };
       });
       expect(metrics.overflow).toBe(false); expect(metrics.font).toContain('Onest');
-      expect(metrics.background).toBe('rgb(246, 249, 249)'); expect(metrics.back).toEqual([44, 44]);
-      expect(metrics.gap).toBeGreaterThanOrEqual(16); expect(metrics.gap).toBeLessThan(80);
+      expect(metrics.background).toBe('rgb(247, 247, 247)');
+      expect(metrics.back).toEqual([0, 0]);
+      expect(metrics.gap).toBeCloseTo(metrics.stacked ? 12 : 16, 0); expect(metrics.sendHeight).toBe(48);
+      if (metrics.stacked) expect(metrics.sendWidth).toBeCloseTo(metrics.inputWidth, 0);
+      else { expect(metrics.sendWidth).toBe(200); expect(metrics.inputBottom).toBeCloseTo(metrics.sendBottom, 0); }
+      expect(metrics.composerBottom).toBeLessThanOrEqual(metrics.viewportHeight + 1);
       geometry.push({ width, ...metrics });
       await page.screenshot({ path: path.join(dir, `question-${width}.png`), fullPage: true });
     }
@@ -356,12 +364,13 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const thirdQuestion = await page.locator('#onboarding-title').innerText();
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText(thirdQuestion);
     await saveAnswer(text[2]);
-    await expect(page.locator('#onboarding-title')).toHaveText('Проверьте ваши ответы');
-    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Проверьте ваши ответы');
+    await expect(page.locator('#onboarding-title')).toHaveText('Всё верно?');
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Всё верно?');
     await expect(page.locator('.onboarding-summary-answer')).toHaveText(text);
-    await page.locator('[data-edit-answer="1"]').click();
-    text[1] = 'Синтетическая адресная правка второго ответа';
-    await saveAnswer(text[1]);
+    await page.getByRole('button', { name: 'Изменить мои ответы', exact: true }).click();
+    text[1] = 'Синтетическая правка второго ответа общей формой';
+    await page.locator('#onboarding-edit-1').fill(text[1]);
+    await page.getByRole('button', { name: 'Сохранить', exact: true }).click();
     await expect(page.locator('.onboarding-summary-answer')).toHaveText(text);
     let lostPreparationReply = false;
     await page.route('**/users/assessment/cycles/prepare', async (route) => {
@@ -369,13 +378,13 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       expect(response.status()).toBe(202); lostPreparationReply = true; await route.abort('failed');
     });
     await next.dblclick();
-    await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+    await expect(page.locator('#onboarding-title')).toHaveText('Что такое 4К');
     await expect.poll(async () => (await snapshot()).operations).toBe(1);
     expect((await snapshot()).started).toBe(0);
     await expect.poll(() => lostPreparationReply).toBe(true);
     await page.unroute('**/users/assessment/cycles/prepare');
     await expect.poll(async () => (await savedAcquaintance()).onboarding.current_step).toBe(6);
-    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Что такое 4К');
     await page.locator('#onboarding-skip').click();
     // Entering readiness re-reads the committed server operation, not another prepare POST.
     await expect(page.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
@@ -842,7 +851,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await page.locator('.user-chip[aria-label="Меню пользователя"]').focus();
     await page.locator('#dashboard-onboarding-button').click();
     await expect(page.locator('#onboarding-panel')).toBeVisible();
-    await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+    await expect(page.locator('#onboarding-title')).toHaveText('Знакомство завершено');
     await expect(page.locator('#onboarding-panel')).not.toContainText('Подготовленный план пока недоступен');
     await next.click();
     await expect(page.locator('#interview-panel')).toBeVisible();

@@ -13,7 +13,7 @@ test('W02 uses server briefing, saves each answer and confirms all three before 
   assert.match(onboarding, /answer_\$\{index \+ 1\}/);
   assert.match(onboarding, /confirm: false/);
   assert.match(onboarding, /confirm: true/);
-  assert.match(onboarding, /Что показывает оценка 4К/);
+  assert.match(onboarding, /Что такое 4К/);
   assert.match(onboarding, /prepareProductCycle/);
   assert.match(productPreparation, /assessment\/cycles\/prepare/);
 });

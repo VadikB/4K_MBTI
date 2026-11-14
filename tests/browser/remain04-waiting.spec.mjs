@@ -111,24 +111,24 @@ test('REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then 
   await expect(page.locator('#auth-complete-title')).toHaveText('Не удалось проверить готовность');
   run.refuse(false); run.assign();
   await check.click();
-  await expect(page.locator('#onboarding-title')).toContainText('Organizer 41');
+  await expect(page.locator('#onboarding-description')).toContainText('Organizer 41');
   await expect(page.locator('#onboarding-panel')).toContainText('Purpose 41');
   await expect(page.locator('#onboarding-panel')).not.toContainText('historical');
   expect(await page.locator('#onboarding-panel input').count()).toBe(0);
   await page.locator('#onboarding-next').click();
   await expect(page.locator('#onboarding-panel')).toContainText('Не указано');
-  await expect(page.locator('#onboarding-panel summary', { hasText: 'Сообщить о неточности' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Сообщить о неточности', exact: true })).toBeVisible();
   await page.locator('#onboarding-next').click();
   for (const answer of ['Synthetic 1','Synthetic 2','Synthetic 3']) {
     await page.locator('#onboarding-panel textarea').fill(answer);
     await page.locator('#onboarding-next').click();
   }
-  await page.locator('[data-edit-answer="0"]').click();
-  await page.locator('#onboarding-panel textarea').fill('Synthetic edited');
-  await page.locator('#onboarding-next').click();
+  await page.getByRole('button', { name: 'Изменить мои ответы', exact: true }).click();
+  await page.locator('#onboarding-edit-0').fill('Synthetic edited');
+  await page.getByRole('button', { name: 'Сохранить', exact: true }).click();
   await expect(page.locator('#onboarding-panel')).toContainText('Synthetic edited');
   await page.locator('#onboarding-next').click();
-  await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+  await expect(page.locator('#onboarding-title')).toHaveText('Что такое 4К');
   expect(run.model.mandatory_complete).toBe(true);
   expect(run.unexpected).toEqual([]);
   expect(run.writes.filter((value) => /assign|prepare|start/.test(value))).toEqual([]);

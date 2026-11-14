@@ -1,3 +1,15 @@
+# STATE — P4K-W02-01 / ADD01, 14.11.2026
+
+Активная карточка: [P4K-W02-01](docs/evc/tasks/p4k-w02-01/TASK.md), дополнениеADD01.
+Исходный head47d11f7, base/mainb0bf7a4; версия2.1.7 сохранена.
+Восемь визуальных правок завершены; контрольный снимок и первичные проверки —
+в task STATE/CHECKS/evidence/add01. Local324frontend,4targetedbrowser,
+повторW02послеCSSfix1PASS, actualPATH29HTTP/ownPG1PASS. Свои ресурсы остановлены.
+Активно: обновлениеPR221/mandatoryCI новогоhead; humanreviewPENDING.
+Ручная приёмка длинного ответа/формы/телефона отложена послеmain/TEST поADD01.
+merge/deploy/artifact_publish=false. Следующая карточка отдельно.
+Ниже история прежних задач; их полномочия сюда не переносятся.
+
 # STATE — F02, локальная передача11.11.2026
 
 Текущая карточка: [F02 — удаление человека](docs/evc/tasks/f02-delete-person/TASK.md).

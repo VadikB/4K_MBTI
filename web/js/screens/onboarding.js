@@ -23,7 +23,9 @@ let preparationError = null;
 let startReadbackAdmitted = false;
 let preparationTask = null;
 let generation = 0;
-let editingFromSummary = false;
+let dialogState = null;
+let dialogReturnFocus = null;
+const issueDrafts = new Map();
 let localOperation = null;
 let progressTail = Promise.resolve();
 const operationKeys = new Set();
@@ -66,16 +68,48 @@ const resizeAnswer = (input) => {
   input.style.overflowY = input.scrollHeight > 120 ? 'auto' : 'hidden';
 };
 const hasDesktopKeyboard = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-const fieldsHtml = () => '<dl class="onboarding-data">' +
-  (model?.readiness?.briefing?.provided_participant_fields || []).map((item) =>
-    '<div><dt>' + escape(item.label) + '</dt><dd>' + escape(item.value || 'Не указано') + '</dd></div>').join('') + '</dl>';
-const summaryHtml = (editable) => questions().map((question, index) => {
-  const key = `answer_${index + 1}`;
-  return '<div class="onboarding-summary-item"><strong>' + escape(question) + '</strong>' +
-    '<div class="onboarding-summary-answer">' + escape(answers[key]) + '</div>' +
-    (editable ? '<button type="button" class="onboarding-edit-answer" data-edit-answer="' + index +
-      '" aria-label="Изменить ответ на вопрос ' + (index + 1) + '">Изменить</button>' : '') + '</div>';
-}).join('');
+// W02 labels apply only to its exact schema; legacy briefing keeps its question labels.
+const answerLabels = () => {
+  const schema = model?.readiness?.briefing?.question_schema;
+  const keys = ['work_situations', 'decision_situations', 'constraints_interactions'];
+  const canonical = schema?.variant === 'corporate' && schema.version === '1.0' && schema.questions?.length === 3 &&
+    schema.questions.every((item, index) => item.key === keys[index] && item.text === questions()[index]);
+  return canonical ? ['Задачи и рабочие ситуации', 'Решения в вашей роли', 'Ограничения и взаимодействия'] : questions();
+};
+const fieldsHtml = () => {
+  const fields = model?.readiness?.briefing?.provided_participant_fields || [];
+  const known = fields.some((item) => item.key === 'full_name');
+  const rows = known ? ['full_name', 'organization', 'position', 'role'].map((key) => key === 'organization'
+    ? { label: 'Организация', value: model?.readiness?.organization_name }
+    : fields.find((item) => item.key === key) || { label: key === 'position' ? 'Должность' : 'Роль в оценке' }) : fields;
+  return '<dl class="onboarding-data">' + rows.map((item) =>
+    '<div><dt>' + escape(item.label) + '</dt><dd>' + escape(item.value || 'Не указано') + '</dd></div>').join('') + '</dl>' +
+    paragraph('Роль назначена в программе оценки. Она описывает тип деятельности и может отличаться от названия должности.') +
+    paragraph('Далее вы расскажете о своей работе. Эти ответы нужны для подготовки ситуаций и сами по себе не определяют уровень компетенций.') +
+    '<div class="onboarding-consent">' + paragraph(model?.readiness?.briefing?.consent_text || 'Текст согласия недоступен.') + '</div>';
+};
+const summaryHtml = () => answerLabels().map((label, index) =>
+  '<div class="onboarding-summary-item"><span class="onboarding-summary-label">' + escape(label) + '</span>' +
+  '<div class="onboarding-summary-answer">' + escape(answers[`answer_${index + 1}`]) + '</div></div>').join('') +
+  '<p class="onboarding-summary-note">' + escape(model?.mandatory_complete ? 'Сведения подтверждены. Здесь сохранены ваши ответы.' :
+    'После подтверждения эти сведения будут использованы для подготовки вашей оценки.') + '</p>';
+
+// Approved W02 presentation copy; this does not change the assigned methodology or assessment rules.
+const competencyCopy = {
+  'коммуникация': ['Понимать и быть понятым', 'Понятно передавать смысл, слушать и прояснять, управлять взаимодействием.'],
+  'командная работа': ['Работать на общий результат', 'Договариваться о ролях и ответственности, согласовывать действия и использовать вклад участников.'],
+  'креативность': ['Находить и развивать решения', 'Замечать возможности, создавать и объединять решения, проверять и развивать их.'],
+  'критическое мышление': ['Обосновывать выводы', 'Проверять информацию и основания, рассматривать альтернативы и учитывать ограничения.'],
+};
+const competenciesHtml = () => {
+  const items = model?.competency_explanation?.items || [];
+  if (!items.length) return paragraph('Описание назначенной модели появится после завершения настройки источников организацией.');
+  return '<div class="onboarding-knowledge">' + items.map((item, index) => {
+    const copy = competencyCopy[String(item.name).toLowerCase()];
+    return '<article><div class="onboarding-competency-label">' + String(index + 1).padStart(2, '0') + ' / ' + escape(item.name) +
+      '</div><h3>' + escape(copy?.[0] || item.name) + '</h3>' + paragraph(copy?.[1] || item.definition) + '</article>';
+  }).join('') + '</div>' + paragraph('Оценка покажет, как эти компетенции проявляются в предложенных ситуациях. Один ответ не определяет общую картину.');
+};
 
 const timing = () => {
   const preparedPlanSnapshot = model?.prepared_plan;
@@ -96,12 +130,14 @@ const processCopy = () => {
   } else if (returnPolicy) {
     returnCopy = '\n\nПорядок возврата определяется сохранёнными правилами этой оценки и будет показан при продолжении.';
   }
-  return 'Вам предстоит разобраться в практических ситуациях. Опишите, как будете действовать, и поясните решения.\n\n' +
-    'В некоторых ситуациях есть собеседник. Если не хватает информации, можно задать ему вопрос.\n\n' +
-    'Между завершёнными ситуациями можно сделать перерыв. Во время такого перерыва время на выполнение не расходуется, но общий срок завершения продолжает идти.\n\n' +
-    (hours > 0 ? `Завершить оценку нужно в течение ${hours} ч. после её начала.` :
-      'Фактические параметры появятся после подготовки плана, до явного старта.') +
-    returnCopy;
+  return 'Прочитайте ситуацию и опишите, как будете действовать. Поясните своё решение.\n\n' +
+    'В некоторых ситуациях есть виртуальный собеседник. Если не хватает информации, можно задать ему вопрос.\n\n' +
+    'После завершения ситуации переходите к следующей. Между завершёнными ситуациями можно сделать перерыв.\n\n' +
+    'После оценки вы получите личный отчёт: результаты, объяснения и ограничения выводов.\n\n' +
+    'Перед началом вы увидите число ситуаций и доступное время на выполнение. Сейчас время оценки ещё не идёт.\n\n' +
+    'Во время перерыва между завершёнными ситуациями время выполнения не расходуется, а общий срок завершения продолжает идти. ' +
+    (returnCopy ? returnCopy.trim() : 'Порядок возврата к незавершённой ситуации определяется правилами назначенной оценки.') +
+    (hours > 0 ? `\n\nЗавершить оценку нужно в течение ${hours} ч. после её начала.` : '');
 };
 const readinessStep = () => {
   const status = preparationView(model, preparationError);
@@ -168,23 +204,22 @@ const readinessStep = () => {
 const steps = () => {
   const briefing = model?.readiness?.briefing || {};
   return [
-    { title: 'Оценку организует ' + (briefing.organizer || model?.readiness?.organization_name || 'ваша организация'),
-      description: briefing.purpose || '', body: '<strong>Как используются результаты</strong>' + paragraph(briefing.results_usage) +
-        '<strong>Кто получит результаты</strong>' + paragraph(briefing.result_recipients), button: 'Начать знакомство' },
-    { title: 'Проверьте предоставленные сведения', description: briefing.consent_text || 'Текст согласия недоступен. Обратитесь к ответственному.',
-      body: fieldsHtml(), action: 'consent', button: model?.state?.consent_accepted_at ? 'Продолжить' : 'Согласен и продолжить' },
-    ...questions().map((question, index) => ({ title: question,
+    { title: 'Рады знакомству!',
+      description: (briefing.organizer || model?.readiness?.organization_name || 'Ваша организация') + ' приглашает вас пройти оценку универсальных компетенций 4К.',
+      body: '<strong>Зачем проводится оценка</strong>' + paragraph(briefing.purpose) +
+        '<strong>Как будут использоваться результаты</strong>' + paragraph(briefing.results_usage) +
+        '<strong>Кто увидит результат</strong>' + paragraph('Вы и администраторы вашей организации.') +
+        paragraph('Сначала проверим сведения о вас, затем расскажем об оценке. Время выполнения ещё не идёт.'), button: 'Начать знакомство' },
+    { title: 'Проверьте ваши сведения', description: 'Эти сведения помогут подготовить подходящие для вас ситуации.',
+      body: fieldsHtml(), action: 'consent', button: 'Подтвердить' },
+    ...questions().map((question, index) => ({ title: question, questionNumber: `ВОПРОС ${index + 1} ИЗ ${questions().length}`,
       description: (index === 0 ? 'Расскажите немного о своей работе. ' : '') + 'Ответьте своими словами. Если точного ответа нет, можно написать «Не знаю».',
-      answerKey: `answer_${index + 1}`, body: '', button: editingFromSummary ? 'Сохранить ответ' : 'Сохранить и продолжить' })),
-    { title: 'Проверьте ваши ответы', description: model?.mandatory_complete
-      ? 'Сведения подтверждены. Здесь сохранены ваши ответы.' : 'До подтверждения можно адресно исправить каждый собственный ответ.',
-      body: summaryHtml(!model?.mandatory_complete && !reviewMode), action: 'confirm', button: model?.mandatory_complete ? 'К объяснению 4К' : 'Подтвердить' },
-    { title: 'Что показывает оценка 4К', description: 'Четыре взаимосвязанные компетенции рассматриваются в практических ситуациях.',
-      body: (model?.competency_explanation?.items || []).length
-        ? '<div class="onboarding-knowledge">' + model.competency_explanation.items.map((item) =>
-          '<article><h3>' + escape(item.name) + '</h3>' + paragraph(item.definition) + '</article>').join('') + '</div>'
-        : paragraph('Описание назначенной модели появится после завершения настройки источников организацией.'), button: 'Как проходит оценка' },
-    { title: 'Как будет проходить оценка', description: processCopy(), body: '', action: 'process', button: 'К готовности оценки' },
+      answerKey: `answer_${index + 1}`, body: '', button: 'Отправить' })),
+    { title: 'Всё верно?', description: 'Проверьте ответы перед подготовкой ситуаций. До подтверждения вы можете их уточнить.',
+      body: summaryHtml(), action: 'confirm', button: model?.mandatory_complete ? 'К объяснению 4К' : 'Подтвердить' },
+    { title: 'Что такое 4К', description: 'Четыре компетенции помогают разбираться в задачах, взаимодействовать с людьми и находить решения.',
+      body: competenciesHtml(), button: 'Как проходит оценка' },
+    { title: 'Как будет проходить оценка', description: processCopy(), body: '', action: 'process', button: 'Завершить знакомство' },
     readinessStep(),
   ];
 };
@@ -256,92 +291,150 @@ const showMessages = () => {
 };
 const captureInput = () => {
   const key = steps()[state.onboardingIndex]?.answerKey;
-  const input = featureList.querySelector('.onboarding-answer');
+  const input = onboardingPanel.querySelector('.onboarding-answer');
   if (key && input) answers[key] = input.value;
 };
 const transcript = (step, userText, user = false) => '<section class="onboarding-message onboarding-message--' +
   (user ? 'user' : 'assistant') + '"><div class="onboarding-author">' + (user ? 'Вы' : '4К Ассистент') +
-  '</div><div class="onboarding-bubble">' + (user ? escape(userText) : '<h3>' + escape(step.title) +
-    '</h3>' + paragraph(step.description) + (step.body || '')) + '</div></section>';
+  '</div><div class="onboarding-bubble">' + (user ? escape(userText) : (step.questionNumber ? '<p class="onboarding-question-number">' + escape(step.questionNumber) + '</p>' : '') + '<h3>' + escape(step.title) +
+    '</h3><p' + (step.answerKey ? ' class="onboarding-question-hint"' : '') + '>' + escape(step.description) + '</p>' + (step.body || '')) + '</div></section>';
 
-const reportIssue = () => {
-  const details = document.createElement('details'); details.className = 'onboarding-data-issue';
-  details.innerHTML = '<summary>Сообщить о неточности</summary><label>Что нужно проверить?<textarea rows="2" maxlength="2000"></textarea></label>' +
-    '<button type="button" class="ghost-button">Передать ответственному</button><p role="status"></p>';
-  const button = details.querySelector('button'), input = details.querySelector('textarea'), result = details.querySelector('[role="status"]');
-  button.addEventListener('click', async () => {
-    if (button.disabled) return;
-    if (!input.value.trim()) { result.textContent = 'Опишите неточность.'; input.focus(); return; }
-    button.disabled = true;
+const closeDialog = () => {
+  const dialog = document.getElementById('onboarding-dialog');
+  dialog.close(); dialogState = null;
+  dialogReturnFocus?.focus({ preventScroll: true }); dialogReturnFocus = null;
+};
+const openDialog = (kind, trigger) => {
+  if (busy || reviewMode || (kind === 'answers' && model?.mandatory_complete)) return;
+  const owner = identity(), epoch = state.identityEpoch, run = generation, scope = scopeKey;
+  const current = () => isCurrent(owner, epoch, run) && scopeKey === scope && state.currentScreen === 'onboarding';
+  const dialog = document.getElementById('onboarding-dialog');
+  dialogReturnFocus = trigger;
+  dialogState = { kind, pending: false };
+  const isAnswers = kind === 'answers';
+  dialog.innerHTML = '<form><button type="button" class="onboarding-dialog-close" aria-label="Закрыть">×</button>' +
+    '<h2 id="onboarding-dialog-title">' + (isAnswers ? 'Ваши ответы' : 'Сообщить о неточности') + '</h2>' +
+    (isAnswers ? answerLabels().map((label, index) => '<label for="onboarding-edit-' + index + '">' + escape(label) +
+      '</label><textarea id="onboarding-edit-' + index + '" name="answer_' + (index + 1) + '" rows="3" maxlength="4000"></textarea>').join('') :
+      '<p>Опишите, что нужно проверить. Сообщение будет сохранено в вашей организации. Роль и сведения автоматически не изменятся.</p>' +
+      '<label for="onboarding-issue-text">Что нужно проверить?</label><textarea id="onboarding-issue-text" rows="4" maxlength="2000"></textarea>') +
+    '<p class="onboarding-error" role="alert" tabindex="-1" hidden></p><p role="status" hidden></p>' +
+    '<div class="onboarding-actions"><button type="submit" class="primary-button">' + (isAnswers ? 'Сохранить' : 'Отправить') +
+    '</button><button type="button" class="ghost-button" data-cancel>Отмена</button></div></form>';
+  const inputs = [...dialog.querySelectorAll('textarea')];
+  for (const input of inputs) {
+    input.value = isAnswers ? answers[input.name] || '' : issueDrafts.get(scope) || '';
+    if (!isAnswers) input.addEventListener('input', () => issueDrafts.set(scope, input.value));
+  }
+  dialog.querySelector('[data-cancel]').addEventListener('click', closeDialog);
+  dialog.querySelector('.onboarding-dialog-close').addEventListener('click', closeDialog);
+  const cancel = (event) => { event.preventDefault(); if (!dialogState?.pending) closeDialog(); };
+  dialog.oncancel = cancel;
+  dialog.querySelector('form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!dialogState || dialogState.pending || !current()) return;
+    const errorNode = dialog.querySelector('[role="alert"]');
+    const empty = inputs.find((input) => !input.value.trim());
+    errorNode.hidden = true;
+    if (empty) { errorNode.textContent = isAnswers ? 'Заполните ответ. Можно написать «Не знаю».' : 'Опишите неточность.'; errorNode.hidden = false; empty.focus(); return; }
+    dialogState.pending = true;
+    dialog.querySelectorAll('button, textarea').forEach((node) => { node.disabled = true; });
     try {
-      await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify({ message: input.value }) });
-      result.textContent = 'Сообщение сохранено и доступно ответственному вашей организации.';
-    } catch (error) { result.textContent = acquaintanceErrorMessage(error); }
-    finally { button.disabled = false; }
+      if (isAnswers) {
+        const updated = Object.fromEntries(inputs.map((input) => [input.name, input.value]));
+        const result = await api('/acquaintance/answers', { method: 'PUT', body: JSON.stringify({ answers: updated, confirm: false }) });
+        if (!current()) return;
+        if (!result?.answers_json || Object.entries(updated).some(([key, value]) => result.answers_json[key] !== value)) {
+          throw new Error('Сохранение ответов не подтверждено. Ваш текст оставлен для повтора.');
+        }
+        model.state = result; savedAnswers = { ...result.answers_json }; answers = { ...savedAnswers }; writeDraft();
+        closeDialog(); renderOnboarding(); document.getElementById('onboarding-edit-answers')?.focus();
+      } else {
+        const receipt = await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify({ message: inputs[0].value }) });
+        if (!current()) return;
+        if (!receipt?.id || !receipt.status) throw new Error('Сохранение сообщения не подтверждено. Ваш текст оставлен для повтора.');
+        issueDrafts.delete(scope);
+        inputs[0].closest('form').querySelectorAll('label, textarea').forEach((node) => { node.hidden = true; });
+        dialog.querySelector('[type="submit"]').hidden = true;
+        const status = dialog.querySelector('[role="status"]'); status.hidden = false;
+        status.textContent = 'Сообщение сохранено в вашей организации. Можно продолжить знакомство. Роль и сведения автоматически не изменились.';
+        dialog.querySelector('[data-cancel]').textContent = 'Продолжить знакомство';
+        dialog.querySelector('[data-cancel]').focus();
+      }
+    } catch (error) {
+      if (current()) { errorNode.textContent = acquaintanceErrorMessage(error); errorNode.hidden = false; errorNode.focus(); }
+    } finally {
+      if (current() && dialogState) { dialogState.pending = false; dialog.querySelectorAll('button, textarea').forEach((node) => { node.disabled = false; }); }
+    }
   });
-  return details;
+  dialog.showModal(); inputs[0]?.focus();
 };
 
 export const renderOnboarding = ({ focus = false } = {}) => {
   const all = steps();
   state.onboardingIndex = Math.max(0, Math.min(state.onboardingIndex || 0, all.length - 1));
   const index = state.onboardingIndex;
-  const step = loading ? { title: 'Загружаем знакомство', description: 'Проверяем сохранённый этап и готовность оценки.', button: 'Подождите…', body: '' }
-    : loadFailed ? { title: 'Не удалось загрузить знакомство', description: 'Сохранённые ответы остаются на сервере.', action: 'reload', button: 'Повторить', body: '' } : all[index];
+  const step = loading ? { title: 'Загружаем знакомство', description: 'Проверяем назначение и сохранённый этап.', button: 'Загрузка…', body: '' }
+    : loadFailed ? { title: 'Не удалось загрузить знакомство', description: 'Сейчас не удалось получить сохранённое состояние. Попробуйте ещё раз.', action: 'reload', button: 'Повторить', body: paragraph('Повторная проверка не стирает ранее сохранённые ответы.') }
+      : reviewMode ? { title: 'Знакомство завершено', description: 'Вы можете прочитать сохранённые сообщения и ответы.', button: 'Вернуться к готовности оценки', body: '' } : all[index];
   onboardingPanel.dataset.step = String(index < 2 ? 1 : index <= summaryIndex() ? 2 : 3);
-  stepBadgeLabel.textContent = index < explanationIndex() ? 'Знакомство' : index === readinessIndex() ? 'Готовность оценки' : 'Оценка 4К';
-  onboardingStepBackButton.hidden = loading || loadFailed || index === 0;
+  stepBadgeLabel.textContent = reviewMode ? 'История знакомства' : index === readinessIndex() ? 'Готовность оценки' : 'Знакомство';
+  onboardingStepBackButton.hidden = loading || loadFailed || reviewMode || index === 0;
   onboardingStepBackButton.disabled = busy;
   onboardingTitle.textContent = step.title;
   onboardingDescription.textContent = step.description;
+  onboardingDescription.classList.toggle('onboarding-question-hint', Boolean(step.answerKey));
+  const number = document.getElementById('onboarding-question-number');
+  number.textContent = step.questionNumber || ''; number.hidden = !step.questionNumber;
   onboardingVisual.replaceChildren();
   featureList.innerHTML = step.body || '';
-  if (step.answerKey) {
-    const input = document.createElement('textarea'); input.className = 'onboarding-answer';
-    input.rows = 1; input.maxLength = 4000; input.value = answers[step.answerKey] || '';
-    input.setAttribute('aria-label', step.title); input.setAttribute('aria-describedby', 'onboarding-error');
-    input.setAttribute('aria-invalid', String(Boolean(errorMessage))); input.disabled = busy || reviewMode || Boolean(model?.mandatory_complete);
-    input.addEventListener('input', () => {
-      answers[step.answerKey] = input.value;
-      writeDraft();
-      errorMessage = ''; notice = ''; input.setAttribute('aria-invalid', 'false'); showMessages();
-      resizeAnswer(input);
-    });
-    input.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' || event.shiftKey || event.isComposing || !hasDesktopKeyboard() || busy) return;
-      event.preventDefault();
-      onboardingNext.click();
-    });
-    featureList.append(input);
-    window.requestAnimationFrame(() => resizeAnswer(input));
+  const input = onboardingPanel.querySelector('.onboarding-answer');
+  input.value = step.answerKey ? answers[step.answerKey] || '' : '';
+  input.disabled = !step.answerKey || busy || reviewMode || Boolean(model?.mandatory_complete);
+  input.placeholder = input.disabled ? 'Сейчас выберите действие под сообщением' : 'Напишите ответ…';
+  input.setAttribute('aria-label', step.answerKey ? step.title : 'Ваш ответ');
+  // A transport failure does not make a correct answer invalid.
+  input.setAttribute('aria-invalid', 'false');
+  const actions = document.getElementById('onboarding-actions');
+  const composer = document.querySelector('.onboarding-composer-inner');
+  (step.answerKey ? composer : actions).prepend(onboardingNext);
+  composer.querySelector('.onboarding-send-placeholder').hidden = Boolean(step.answerKey);
+  if (step.answerKey) onboardingNext.setAttribute('aria-label', step.button);
+  else onboardingNext.removeAttribute('aria-label');
+  onboardingNext.classList.toggle('onboarding-send', Boolean(step.answerKey));
+  if (step.answerKey) composer.append(onboardingNext);
+  window.requestAnimationFrame(() => resizeAnswer(input));
+  actions.querySelectorAll('[data-secondary]').forEach((node) => node.remove());
+  if (!loading && !loadFailed && !reviewMode) {
+    const secondary = (id, label, kind) => {
+      const button = document.createElement('button'); button.type = 'button'; button.id = id;
+      button.className = kind === 'issue' ? 'onboarding-text-action' : 'ghost-button'; button.dataset.secondary = ''; button.textContent = label; button.disabled = busy;
+      button.addEventListener('click', () => openDialog(kind, button)); actions.append(button);
+    };
+    if (step.action === 'confirm' && !model?.mandatory_complete) secondary('onboarding-edit-answers', 'Изменить мои ответы', 'answers');
+    if (step.action === 'consent' || step.action === 'confirm') secondary('onboarding-report-issue', 'Сообщить о неточности', 'issue');
   }
-  if (step.action === 'consent') featureList.append(reportIssue());
-  document.getElementById('onboarding-messages').innerHTML = loading || loadFailed ? '' : all.slice(0, index).map((prior, priorIndex) => {
-    const historical = priorIndex === summaryIndex() ? { ...prior, body: summaryHtml(false) } : prior;
+  document.getElementById('onboarding-messages').innerHTML = loading || loadFailed ? '' : all.slice(0, reviewMode ? readinessIndex() : index).map((prior, priorIndex) => {
+    const historical = priorIndex === summaryIndex() ? { ...prior, body: summaryHtml() } : prior;
     let html = transcript(historical);
     if (prior.answerKey && answers[prior.answerKey]) html += transcript(null, answers[prior.answerKey], true);
     else if (priorIndex === 0) html += transcript(null, 'Начать знакомство', true);
-    else if (prior.action === 'consent' && model?.state?.consent_accepted_at) html += transcript(null, 'Согласен и продолжить', true);
+    else if (prior.action === 'consent' && model?.state?.consent_accepted_at) html += transcript(null, 'Подтвердить', true);
     else if (prior.action === 'confirm' && model?.mandatory_complete) html += transcript(null, 'Подтвердить', true);
     return html;
   }).join('');
-  onboardingNext.textContent = busy ? 'Подождите…' : reviewMode ? 'Вернуться к оценке'
-    : step.answerKey && model?.mandatory_complete ? 'Продолжить' : step.button || 'Далее';
+  onboardingNext.textContent = busy ? 'Подождите…' : reviewMode ? 'Вернуться к готовности оценки'
+    : step.button || 'Далее';
   onboardingNext.disabled = loading || busy || (!loadFailed && step.action === 'consent' && !model?.readiness?.briefing?.consent_text);
   onboardingSkip.hidden = loading || reviewMode || !model?.mandatory_complete || ![explanationIndex(), explanationIndex() + 1].includes(index);
   onboardingSkip.textContent = 'Перейти к готовности'; onboardingSkip.disabled = busy;
   document.getElementById('onboarding-home').disabled = loading || busy;
-  featureList.querySelectorAll('[data-edit-answer]').forEach((button) => button.addEventListener('click', () => {
-    if (busy || model?.mandatory_complete || reviewMode) return;
-    editingFromSummary = true; errorMessage = ''; notice = '';
-    state.onboardingIndex = 2 + Number(button.dataset.editAnswer); renderOnboarding({ focus: true });
-  }));
   showMessages();
   if (focus) window.requestAnimationFrame(() => {
     const current = onboardingPanel.querySelector('.onboarding-copy');
     current.scrollIntoView({ block: 'start' });
     if (errorMessage) document.getElementById('onboarding-error').focus({ preventScroll: true });
-    else if (step.answerKey && !busy) featureList.querySelector('textarea')?.focus({ preventScroll: true });
+    else if (step.answerKey && !busy) onboardingPanel.querySelector('.onboarding-answer')?.focus({ preventScroll: true });
     else { onboardingTitle.tabIndex = -1; onboardingTitle.focus({ preventScroll: true }); }
   });
 };
@@ -410,6 +503,7 @@ const beginPreparation = ({ retry = false } = {}) => {
 };
 
 export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedReview = false } = {}) => {
+  closeDialog();
   generation += 1; preparationTask?.controller.abort(); busy = false; progressTail = Promise.resolve();
   const owner = identity(), epoch = state.identityEpoch, run = generation;
   reviewMode = Boolean(requestedReview); errorMessage = ''; notice = ''; preparationError = null; startReadbackAdmitted = false;
@@ -423,7 +517,7 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
     if (!isCurrent(owner, epoch, run) || state.currentScreen !== 'onboarding') return;
     if (model.readiness.status !== 'ready') { loading = false; openAcquaintanceWaiting(model.readiness); return; }
     reviewMode = reviewMode && Boolean(model.mandatory_complete);
-    state.onboardingIndex = reviewMode ? explanationIndex() : resumeOnboardingIndex(model, model.onboarding);
+    state.onboardingIndex = reviewMode ? readinessIndex() : resumeOnboardingIndex(model, model.onboarding);
     if (!reviewMode && model.onboarding?.status === 'not_started') await saveProgress('in_progress');
   } catch (error) {
     if (!isCurrent(owner, epoch, run)) return;
@@ -438,8 +532,7 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
 export const goBackInOnboarding = () => {
   if (loading || busy || state.onboardingIndex <= 0) return;
   captureInput(); errorMessage = ''; notice = '';
-  state.onboardingIndex = editingFromSummary ? summaryIndex() : state.onboardingIndex - 1;
-  editingFromSummary = false; renderOnboarding({ focus: true });
+  state.onboardingIndex -= 1; renderOnboarding({ focus: true });
 };
 
 const advance = async () => {
@@ -451,9 +544,21 @@ const advance = async () => {
   try {
     if (loadFailed) { await openOnboarding(); return; }
     if (reviewMode) {
-      const { loadInterview } = await import('../screen-loaders.js');
-      const interview = await loadInterview();
-      if (isCurrent(owner, epoch, run)) await interview.handleAssessmentEntryClick();
+      const { loadUserJourneyState } = await import('../session.js');
+      const journey = await loadUserJourneyState({ allowAdmin: true });
+      if (!isCurrent(owner, epoch, run)) return;
+      if (journey?.next_action !== 'show_onboarding') {
+        const { loadInterview } = await import('../screen-loaders.js');
+        const interview = await loadInterview();
+        if (isCurrent(owner, epoch, run)) await interview.handleAssessmentEntryClick();
+        return;
+      }
+      await loadAcquaintance();
+      if (model.readiness.status !== 'ready') { openAcquaintanceWaiting(model.readiness); return; }
+      reviewMode = false;
+      state.onboardingIndex = model.mandatory_complete ? readinessIndex() : resumeOnboardingIndex(model, model.onboarding);
+      persistAssessmentContext();
+      if (model.mandatory_complete) void beginPreparation();
       return;
     }
     if (step.answerKey) {
@@ -462,8 +567,7 @@ const advance = async () => {
       model.state = await api('/acquaintance/answers', { method: 'PUT', body: JSON.stringify({ answers: { [step.answerKey]: answers[step.answerKey] }, confirm: false }) });
       savedAnswers = { ...model.state.answers_json };
       writeDraft();
-      state.onboardingIndex = editingFromSummary ? summaryIndex() : state.onboardingIndex + 1;
-      editingFromSummary = false; persistProgress();
+      state.onboardingIndex += 1; persistProgress();
     } else if (step.action === 'consent') {
       model.state = await api('/acquaintance/consent', { method: 'POST', body: JSON.stringify({ version: model.readiness.briefing.consent_version }) });
       state.onboardingIndex += 1; persistProgress();
@@ -517,6 +621,16 @@ const advance = async () => {
 
 export const initOnboarding = () => {
   onboardingNext.addEventListener('click', () => { void advance(); });
+  const input = onboardingPanel.querySelector('.onboarding-answer');
+  input.addEventListener('input', () => {
+    const key = steps()[state.onboardingIndex]?.answerKey;
+    if (!key || input.disabled) return;
+    answers[key] = input.value; writeDraft(); errorMessage = ''; notice = ''; showMessages(); resizeAnswer(input);
+  });
+  input.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.shiftKey || event.isComposing || !hasDesktopKeyboard() || busy || input.disabled) return;
+    event.preventDefault(); onboardingNext.click();
+  });
   onboardingStepBackButton.addEventListener('click', goBackInOnboarding);
   onboardingSkip.addEventListener('click', async () => {
     if (busy || reviewMode || !model?.mandatory_complete || ![explanationIndex(), explanationIndex() + 1].includes(state.onboardingIndex)) return;
@@ -550,6 +664,7 @@ export const initOnboarding = () => {
     finally { if (isCurrent(owner, epoch, run)) { busy = false; if (state.currentScreen === 'onboarding') renderOnboarding(); } }
   });
   window.addEventListener('agent4k:assessment-context-cleared', () => {
+    closeDialog(); issueDrafts.clear();
     generation += 1; preparationTask?.controller.abort(); preparationTask = null;
     progressTail = Promise.resolve();
     for (const key of operationKeys) { try { window.sessionStorage.removeItem(key); } catch { /* No storage access. */ } }

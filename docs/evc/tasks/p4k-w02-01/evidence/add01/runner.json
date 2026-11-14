@@ -1,0 +1,18 @@
+{
+  "run_id": "w02-add01-html-final",
+  "pid": 42885,
+  "pgid": 42885,
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "w02-acquaintance.spec.mjs",
+    "remain05-first-start.spec.mjs",
+    "--grep",
+    "at 1440px|REMAIN05",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000"
+  ],
+  "db": null,
+  "containers": []
+}

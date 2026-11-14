@@ -93,6 +93,14 @@ test('UI03 prevents local six-digit hex colors outside the owner palette', () =>
       assert.equal([...source.matchAll(authBorder)].length, 1);
       source = source.replace(authBorder, (block) => block.replace('#cbd5e1', ''));
     }
+    if (file === 'web/styles/screens/onboarding.css') {
+      // P4K-W02-01: owner-approved W02 v5 tokens, scoped to acquaintance only.
+      const scoped = source.match(/#onboarding-panel\s*\{([^}]+)\}/)?.[1] || '';
+      const w02 = new Set(['#f7f7f7', '#464554', '#cbd5e1', '#109eab', '#0c8591', '#007d89', '#e5f4f5']);
+      for (const color of w02) assert.ok(scoped.includes(color), `Missing W02 token ${color}`);
+      source = source.replace(/#onboarding-panel\s*\{[^}]+\}/, (block) =>
+        block.replace(/#[0-9a-f]{6}\b/g, (color) => w02.has(color) ? '' : color));
+    }
     const colors = source.match(/#[0-9a-f]{6}\b/g) ?? [];
     for (const color of colors) assert.ok(allowedHex.has(color), `${file}: ${color}`);
   }

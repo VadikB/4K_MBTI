@@ -113,10 +113,10 @@ test('REMAIN05 GET and PUT errors keep the current answer and safe explanation',
   await expect(page.locator('#onboarding-error')).not.toContainText('Failed to fetch');
   await page.locator('#onboarding-next').click();
   await page.getByRole('button', { name: 'Начать знакомство', exact: true }).click();
-  await page.getByRole('button', { name: 'Согласен и продолжить', exact: true }).click();
+  await page.getByRole('button', { name: 'Подтвердить', exact: true }).click();
   const answer = page.locator('.onboarding-answer');
   await answer.fill('Синтетический несохранённый ответ');
-  await page.getByRole('button', { name: 'Сохранить и продолжить', exact: true }).click();
+  await page.getByRole('button', { name: 'Отправить', exact: true }).click();
   await expect(page.locator('#onboarding-error')).toContainText('Не удалось получить подтверждение сервера');
   await expect(answer).toHaveValue('Синтетический несохранённый ответ');
   await expect(page.locator('#onboarding-title')).toHaveText('Q1');
