@@ -181,7 +181,7 @@ async function completeAcquaintance(page,{expectBlocked=false}={}){
  for(let step=0;step<16 && await panel.isVisible();step+=1){
   if(expectBlocked && await page.locator('#onboarding-title').textContent()==='Старт оценки пока заблокирован')return;
   const input=panel.locator('.onboarding-answer');
-  if(await input.isVisible())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
+  if(await input.isEnabled())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
   const next=page.locator('#onboarding-next');
   const marker=`${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`;
   await expect(next).toBeEnabled();

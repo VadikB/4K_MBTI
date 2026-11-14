@@ -1,3 +1,13 @@
+# STATE — P4K-W02-01, 14.11.2026
+
+Активная карточка: [P4K-W02-01](docs/evc/tasks/p4k-w02-01/TASK.md).
+Состояние и первичные проверки — в её STATE.md/CHECKS.md/evidence.
+Ветка codex/p4k-w02-01 от fresh main0716647; PATCH2.1.6.
+UI W02/общая форма/сообщения о неточности/история реализованы; local305frontend
+и11browser PASS, собственные listeners закрыты. Активно: PR/mandatoryCI.
+merge/deploy/artifact_publish=false; human review PENDING. Следующую карточку
+автоматически не запускать. Ниже сохранена история, полномочия не переносятся.
+
 # STATE — F02, локальная передача11.11.2026
 
 Текущая карточка: [F02 — удаление человека](docs/evc/tasks/f02-delete-person/TASK.md).

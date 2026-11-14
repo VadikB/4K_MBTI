@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4K Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.5">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.5">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.6">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.6">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
@@ -55,7 +55,7 @@
   <main class="shell">
     <header class="auth-header" aria-label="4К Ассистент">
       <span class="auth-header-brand">4К Ассистент</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.5</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.6</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -158,18 +158,8 @@
       <div class="onboarding-shell">
         <div class="onboarding-topbar">
           <button id="onboarding-home" type="button" class="brand dashboard-brand">4К Ассистент</button>
-          <span class="onboarding-section-label">ЗНАКОМСТВО</span>
-        </div>
-        <div class="onboarding-toolbar">
-            <button id="onboarding-step-back" type="button" class="step-badge-back" aria-label="Назад" hidden></button>
-          <div class="step-badge" id="step-badge">
-            <span class="step-progress" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-            <span id="step-badge-label">Шаг 01</span>
-          </div>
+          <button id="onboarding-step-back" type="button" class="step-badge-back" aria-label="Назад" hidden></button>
+          <span class="onboarding-section-label" id="step-badge-label">Знакомство</span>
         </div>
         <main id="onboarding-history" class="onboarding-history" aria-label="История знакомства">
         <div class="onboarding-thread">
@@ -177,19 +167,27 @@
         <section class="onboarding-copy onboarding-message onboarding-message--assistant" aria-labelledby="onboarding-title">
           <div class="onboarding-author">4К Ассистент</div>
           <div class="onboarding-bubble">
-          <h2 id="onboarding-title">Познакомьтесь с AI-ассистентом</h2>
+          <p id="onboarding-question-number" class="onboarding-question-number" hidden></p>
+          <h2 id="onboarding-title">Загружаем знакомство</h2>
           <p class="subtitle" id="onboarding-description"></p>
           <div class="feature-list" id="feature-list"></div>
           <p id="onboarding-error" class="onboarding-error" role="alert" tabindex="-1" hidden></p>
           <p id="onboarding-notice" class="onboarding-notice" role="status" hidden></p>
-          <div class="onboarding-actions">
+          </div>
+          <div class="onboarding-actions" id="onboarding-actions">
             <button id="onboarding-next" type="button" class="primary-button">Далее</button>
             <button id="onboarding-skip" type="button" class="ghost-button">Пропустить</button>
-          </div>
           </div>
         </section>
         </div>
         </main>
+        <div class="onboarding-composer">
+          <div class="onboarding-composer-inner">
+            <textarea class="onboarding-answer" rows="1" maxlength="4000" aria-label="Ваш ответ" aria-describedby="onboarding-error" placeholder="Ввод пока недоступен" disabled></textarea>
+            <button class="onboarding-send-placeholder" type="button" aria-label="Отправить" disabled>↑</button>
+          </div>
+        </div>
+        <dialog id="onboarding-dialog" aria-labelledby="onboarding-dialog-title"></dialog>
         <div class="onboarding-visual" id="onboarding-visual" hidden></div>
       </div>
     </section>
@@ -1992,7 +1990,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.1.5</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.1.6</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -2008,6 +2006,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.5"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.6"></script>
 </body>
 </html>

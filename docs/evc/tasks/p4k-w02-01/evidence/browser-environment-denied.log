@@ -1,0 +1,59 @@
+
+Running 8 tests using 1 worker
+
+(node:12154) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/remain04-waiting.spec.mjs:72:1 › REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then exact briefing and own answers (0ms)
+  -  2 tests/browser/remain04-waiting.spec.mjs:138:1 › REMAIN04 late waiting response after logout cannot restore participant
+(node:12155) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 tests/browser/remain05-first-start.spec.mjs:20:1 › REMAIN05 invalid201 reload resolves same first AS without another POST (0ms)
+  -  4 tests/browser/remain05-first-start.spec.mjs:85:1 › REMAIN05 GET and PUT errors keep the current answer and safe explanation
+  -  5 tests/browser/remain05-first-start.spec.mjs:127:1 › REMAIN05 explicit normal start and reload preserve first AS and zero answers
+(node:12162) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  6 tests/browser/w02-acquaintance.spec.mjs:92:3 › W02 path, shared edit, failures, issue receipts and history at 1440px (0ms)
+  -  7 tests/browser/w02-acquaintance.spec.mjs:92:3 › W02 path, shared edit, failures, issue receipts and history at 390px
+  -  8 tests/browser/w02-acquaintance.spec.mjs:92:3 › W02 path, shared edit, failures, issue receipts and history at 320px
+
+
+  1) tests/browser/remain04-waiting.spec.mjs:72:1 › REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then exact briefing and own answers
+
+    Error: listen EPERM: operation not permitted 127.0.0.1:18784
+
+    Error Context: .test-stand/browser-output/remain04-waiting-REMAIN04--437c7-ct-briefing-and-own-answers/error-context.md
+
+    Error Context: .test-stand/browser-output/remain04-waiting-REMAIN04--437c7-ct-briefing-and-own-answers/error-context.md
+
+  2) tests/browser/remain05-first-start.spec.mjs:20:1 › REMAIN05 invalid201 reload resolves same first AS without another POST
+
+    Error: listen EPERM: operation not permitted 127.0.0.1
+
+    Error Context: .test-stand/browser-output/remain05-first-start-REMAI-0d5b7-rst-AS-without-another-POST/error-context.md
+
+    Error Context: .test-stand/browser-output/remain05-first-start-REMAI-0d5b7-rst-AS-without-another-POST/error-context.md
+
+  3) tests/browser/w02-acquaintance.spec.mjs:92:3 › W02 path, shared edit, failures, issue receipts and history at 1440px
+
+    Error: listen EPERM: operation not permitted 127.0.0.1
+
+    TypeError: Cannot read properties of null (reading 'port')
+
+      22 | });
+      23 | test.afterAll(async () => {
+    > 24 |   const port = server.address().port;
+         |                                ^
+      25 |   await new Promise((resolve) => server.close(resolve));
+      26 |   if (process.env.W02_RESOURCE_LOG) await fs.appendFile(process.env.W02_RESOURCE_LOG, JSON.stringify({ event: 'stop', pid: process.pid, port, listening: server.listening }) + '\n');
+      27 | });
+        at /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-w02-01/tests/browser/w02-acquaintance.spec.mjs:24:32
+
+    Error Context: .test-stand/browser-output/w02-acquaintance-W02-path--d931c-eipts-and-history-at-1440px/error-context.md
+
+    Error Context: .test-stand/browser-output/w02-acquaintance-W02-path--d931c-eipts-and-history-at-1440px/error-context.md
+
+  3 failed
+    tests/browser/remain04-waiting.spec.mjs:72:1 › REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then exact briefing and own answers
+    tests/browser/remain05-first-start.spec.mjs:20:1 › REMAIN05 invalid201 reload resolves same first AS without another POST
+    tests/browser/w02-acquaintance.spec.mjs:92:3 › W02 path, shared edit, failures, issue receipts and history at 1440px
+  5 did not run

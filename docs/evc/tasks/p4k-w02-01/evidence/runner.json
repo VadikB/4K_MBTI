@@ -1,0 +1,20 @@
+{
+  "run_id": "w02-local-20261114-05",
+  "pid": 15353,
+  "pgid": 15353,
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "w02-acquaintance.spec.mjs",
+    "remain04-waiting.spec.mjs",
+    "remain05-first-start.spec.mjs",
+    "auth-r03.spec.mjs",
+    "--grep",
+    "W02|UX-AUD29-03|UX-AUD29-05|REMAIN04|REMAIN05",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000"
+  ],
+  "db": null,
+  "containers": []
+}

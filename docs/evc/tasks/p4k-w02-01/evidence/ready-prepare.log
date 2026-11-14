@@ -1,0 +1,50 @@
+
+> ready:prepare
+> python3.12 scripts/prepare_ready_release.py --candidate 2.1.6
+
+From https://github.com/VadikB/4K_MBTI
+ * branch            main       -> FETCH_HEAD
+
+> prebuild:web
+> npm run clean:web
+
+
+> clean:web
+> node scripts/clean_web_dist.mjs
+
+
+> build:web
+> esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --minify
+
+
+  web/dist/chunk-2NSFZOSK.js                   278.1kb
+  web/dist/chunk-YZYHV4LM.js                   152.3kb
+  web/dist/main.js                             101.8kb
+  web/dist/chunk-4ZP3TWFB.js                    68.0kb
+  web/dist/admin-methodology-CWRPFESN.js        67.4kb
+  web/dist/admin-prompt-lab-7FR5CQJ5.js         45.5kb
+  web/dist/chunk-G3PSZCKU.js                    35.0kb
+  web/dist/chunk-4ZDZPQGH.js                    33.4kb
+  web/dist/chunk-SZKEMFQW.js                    24.0kb
+  web/dist/chunk-P3EJ4XAM.js                    20.0kb
+  web/dist/admin-reports-3AMUFSEU.js            12.8kb
+  web/dist/admin-regression-tests-MTNIGQ6R.js   12.8kb
+  web/dist/chunk-7YZWHPLG.js                    11.8kb
+  web/dist/chunk-5XKLRMKF.js                    11.8kb
+  web/dist/chunk-CNJJNP3S.js                     8.7kb
+  web/dist/chunk-DTT4DEVI.js                     7.0kb
+  web/dist/chunk-MZ77PIK3.js                     5.7kb
+  web/dist/chunk-A7VWHBFD.js                     4.0kb
+  web/dist/chunk-C35ILDN5.js                     4.0kb
+  web/dist/chunk-VT7PLF74.js                     3.8kb
+  ...and 26 more output files...
+
+⚡ Done in 30ms
+patch: 2.1.5 → 2.1.6; updated: pyproject.toml, uv.lock, web/js/config.js, web/index.html
+Next step: npm run build:web
+Ready preflight passed: release 2.1.6; product paths: 29
+npm notice
+npm notice New major version of npm available! 10.9.9 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

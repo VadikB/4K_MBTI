@@ -1,0 +1,32 @@
+[
+  {
+    "port": 18764,
+    "listener_absent": true,
+    "output": ""
+  },
+  {
+    "port": 18784,
+    "listener_absent": true,
+    "output": ""
+  },
+  {
+    "port": 57906,
+    "listener_absent": true,
+    "output": ""
+  },
+  {
+    "port": 58027,
+    "listener_absent": true,
+    "output": ""
+  },
+  {
+    "port": 58115,
+    "listener_absent": true,
+    "output": ""
+  },
+  {
+    "port": 58201,
+    "listener_absent": true,
+    "output": ""
+  }
+]

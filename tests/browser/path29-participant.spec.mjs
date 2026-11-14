@@ -356,12 +356,13 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const thirdQuestion = await page.locator('#onboarding-title').innerText();
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText(thirdQuestion);
     await saveAnswer(text[2]);
-    await expect(page.locator('#onboarding-title')).toHaveText('Проверьте ваши ответы');
-    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Проверьте ваши ответы');
+    await expect(page.locator('#onboarding-title')).toHaveText('Всё верно?');
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Всё верно?');
     await expect(page.locator('.onboarding-summary-answer')).toHaveText(text);
-    await page.locator('[data-edit-answer="1"]').click();
-    text[1] = 'Синтетическая адресная правка второго ответа';
-    await saveAnswer(text[1]);
+    await page.getByRole('button', { name: 'Изменить мои ответы', exact: true }).click();
+    text[1] = 'Синтетическая правка второго ответа общей формой';
+    await page.locator('#onboarding-edit-1').fill(text[1]);
+    await page.getByRole('button', { name: 'Сохранить', exact: true }).click();
     await expect(page.locator('.onboarding-summary-answer')).toHaveText(text);
     let lostPreparationReply = false;
     await page.route('**/users/assessment/cycles/prepare', async (route) => {
@@ -369,13 +370,13 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       expect(response.status()).toBe(202); lostPreparationReply = true; await route.abort('failed');
     });
     await next.dblclick();
-    await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+    await expect(page.locator('#onboarding-title')).toHaveText('Что такое 4К');
     await expect.poll(async () => (await snapshot()).operations).toBe(1);
     expect((await snapshot()).started).toBe(0);
     await expect.poll(() => lostPreparationReply).toBe(true);
     await page.unroute('**/users/assessment/cycles/prepare');
     await expect.poll(async () => (await savedAcquaintance()).onboarding.current_step).toBe(6);
-    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Что такое 4К');
     await page.locator('#onboarding-skip').click();
     // Entering readiness re-reads the committed server operation, not another prepare POST.
     await expect(page.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
@@ -842,7 +843,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await page.locator('.user-chip[aria-label="Меню пользователя"]').focus();
     await page.locator('#dashboard-onboarding-button').click();
     await expect(page.locator('#onboarding-panel')).toBeVisible();
-    await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
+    await expect(page.locator('#onboarding-title')).toHaveText('Знакомство завершено');
     await expect(page.locator('#onboarding-panel')).not.toContainText('Подготовленный план пока недоступен');
     await next.click();
     await expect(page.locator('#interview-panel')).toBeVisible();

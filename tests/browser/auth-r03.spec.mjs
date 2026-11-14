@@ -3891,7 +3891,7 @@ test('UX-AUD29-03 grows the answer and submits desktop Enter only once', async (
   });
   await page.goto(base);
   await page.getByRole('button', { name: 'Начать знакомство' }).click();
-  await page.getByRole('button', { name: 'Согласен и продолжить' }).click();
+  await page.getByRole('button', { name: 'Подтвердить' }).click();
   const input = page.locator('.onboarding-answer');
   await input.fill('Строка 1\nСтрока 2\nСтрока 3\nСтрока 4\nСтрока 5\nСтрока 6');
   expect(await input.evaluate((node) => parseFloat(getComputedStyle(node).height))).toBeLessThanOrEqual(120);

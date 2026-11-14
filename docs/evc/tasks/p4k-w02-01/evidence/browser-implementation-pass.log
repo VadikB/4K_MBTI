@@ -1,0 +1,15 @@
+
+Running 8 tests using 1 worker
+
+(node:12475) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/remain04-waiting.spec.mjs:72:1 › REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then exact briefing and own answers (2.3s)
+  ✓  2 tests/browser/remain04-waiting.spec.mjs:138:1 › REMAIN04 late waiting response after logout cannot restore participant (591ms)
+  ✓  3 tests/browser/remain05-first-start.spec.mjs:20:1 › REMAIN05 invalid201 reload resolves same first AS without another POST (577ms)
+  ✓  4 tests/browser/remain05-first-start.spec.mjs:85:1 › REMAIN05 GET and PUT errors keep the current answer and safe explanation (627ms)
+  ✓  5 tests/browser/remain05-first-start.spec.mjs:127:1 › REMAIN05 explicit normal start and reload preserve first AS and zero answers (487ms)
+  ✓  6 tests/browser/w02-acquaintance.spec.mjs:93:3 › W02 path, shared edit, failures, issue receipts and history at 1440px (2.0s)
+  ✓  7 tests/browser/w02-acquaintance.spec.mjs:93:3 › W02 path, shared edit, failures, issue receipts and history at 390px (1.9s)
+  ✓  8 tests/browser/w02-acquaintance.spec.mjs:93:3 › W02 path, shared edit, failures, issue receipts and history at 320px (1.8s)
+
+  8 passed (11.2s)
