@@ -1,0 +1,56 @@
+{
+  "viewport": {
+    "width": 768,
+    "height": 1000
+  },
+  "visualViewport": {
+    "width": 768,
+    "height": 1000,
+    "scale": 1
+  },
+  "document": {
+    "scrollWidth": 768,
+    "scrollHeight": 1201
+  },
+  "input": {
+    "x": 28,
+    "y": 673,
+    "width": 712,
+    "height": 64,
+    "scrollTop": 0,
+    "scrollHeight": 64,
+    "clientHeight": 64,
+    "hit": true
+  },
+  "submit": {
+    "x": 28,
+    "y": 869,
+    "width": 712,
+    "height": 48,
+    "scrollTop": 0,
+    "scrollHeight": 48,
+    "clientHeight": 48,
+    "hit": true
+  },
+  "history": {
+    "x": 16,
+    "y": 125,
+    "width": 736,
+    "height": 520,
+    "scrollTop": 4105,
+    "scrollHeight": 4625,
+    "clientHeight": 520,
+    "hit": true
+  },
+  "actions": {
+    "x": 28,
+    "y": 757,
+    "width": 712,
+    "height": 160,
+    "scrollTop": 0,
+    "scrollHeight": 160,
+    "clientHeight": 160,
+    "hit": true
+  },
+  "overflow_offenders": []
+}

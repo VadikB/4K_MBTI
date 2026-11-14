@@ -3494,7 +3494,8 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   });
   await page.goto(`${base}/?screen=interview`);
   await expect(page.locator('.interview-return-card')).toBeVisible();
-  await expect(page.getByText('Завершено 2 из 4', { exact: false })).toBeVisible();
+  await expect(page.locator('.interview-return-card')).toContainText('Завершено 2 из 4');
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 4\nЗавершено 2 из 4');
   await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
   await expect(page.getByText('Календарный срок:', { exact: false })).toBeHidden();
   await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
@@ -3634,7 +3635,8 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
     if (pathname === '/users/assessment/cycles/cycle-e01/runtime') return fulfillJson(route, {
       cycle_id: 'cycle-e01', status: { collection_status: 'active', remaining_seconds: 2700 },
       return_policy_enabled: false,
-      route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'as-e01' }], progress: { total_positions: 3 } },
+      route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'as-e01' }],
+        progress: { total_positions: 3, completed_positions: 0 } },
       current_situation: { assessment_situation_id: 'as-e01', status: 'active', participant_payload: {
         title: 'Разговор с коллегой', introduction: 'Вводная Sales AS',
         initial_situation: 'Исходная ситуация', trigger: 'Новое событие',
@@ -3648,7 +3650,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   });
 
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 3');
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 3\nЗавершено 0 из 3');
   await expect(page.locator('#interview-section-title')).toHaveText('4К Ассистент');
   await expect(page.locator('.case-sidebar')).toHaveCount(0);
   await expect(page.locator('.interview-message--situation')).toHaveCount(1);

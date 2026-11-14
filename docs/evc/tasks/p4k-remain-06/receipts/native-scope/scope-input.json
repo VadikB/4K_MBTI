@@ -1,0 +1,35 @@
+{
+  "scope": "actual DOM/native Chromium typing and CDP IME; synthetic HTTP/transfer events",
+  "fields": [
+    {
+      "scope": "auth",
+      "native_typing": true,
+      "ime": false,
+      "synthetic_transfer_prevented": [
+        false,
+        false
+      ]
+    },
+    {
+      "scope": "admin",
+      "native_typing": true,
+      "ime": true,
+      "synthetic_transfer_prevented": [
+        false,
+        false
+      ]
+    },
+    {
+      "scope": "questionnaire",
+      "native_typing": true,
+      "ime": true,
+      "synthetic_transfer_prevented": [
+        false,
+        false
+      ]
+    }
+  ],
+  "physical_devices": "NOT_RUN",
+  "os_clipboard": "NOT_READ",
+  "product_posts": []
+}

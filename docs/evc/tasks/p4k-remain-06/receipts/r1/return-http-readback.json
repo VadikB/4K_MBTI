@@ -1,0 +1,45 @@
+{
+  "before": {
+    "cycle_id": "afdb7f08-eae7-4024-aabc-b16c65be7792",
+    "collection_status": "active",
+    "position_no": 1,
+    "current_assessment_situation_id": "34ed41f4-7f1d-469c-b398-2bc6616ba724",
+    "current_assessment_situation_status": "active",
+    "absence_event_id": null,
+    "recognized_absence_seconds": 0,
+    "allowed_action": "continue_current",
+    "remaining_seconds": 3591,
+    "calendar_deadline": "2026-11-17T20:17:21.777942+03:00",
+    "progress": {
+      "total_positions": 2,
+      "completed_positions": 0
+    },
+    "planned_positions": 2,
+    "planned_total": true,
+    "heartbeat_interval_seconds": 10,
+    "presence_lease_seconds": 120,
+    "replacement_threshold_seconds": null,
+    "policy_ref": {
+      "id": "sales-pilot-return-r1",
+      "version": "2.0",
+      "checksum": "1121db8c84b6997ee427264a589b5db088588e134734d8ae0dbc0d2220a36f14"
+    },
+    "replacement_count": null,
+    "replacement_limit": null
+  },
+  "blocked_runtime_status": 409,
+  "continued": {
+    "cycle_id": "afdb7f08-eae7-4024-aabc-b16c65be7792",
+    "position_no": 1,
+    "status": "active",
+    "branch": "continued_current",
+    "assessment_situation_id": "34ed41f4-7f1d-469c-b398-2bc6616ba724",
+    "recognized_absence_seconds": 0,
+    "remaining_seconds": 3592,
+    "calendar_deadline": "2026-11-17T20:17:21.777942+03:00"
+  },
+  "same_assessment_situation": "34ed41f4-7f1d-469c-b398-2bc6616ba724",
+  "persisted_answer_count": 1,
+  "draft_not_a_turn": true,
+  "replacements": 0
+}

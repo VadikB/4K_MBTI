@@ -157,3 +157,41 @@ test('P3-AC10 R1 v2 initial snapshot: explicit Continue keeps AS, saved Turn and
     persisted_answer_count: 1, draft_not_a_turn: true, replacements: 0 }, null, 2) + '\n');
   await page.screenshot({ path: path.join(evidence, 'same-as-draft-and-history-after-continue.png'), fullPage: false });
 });
+
+test('REMAIN06 lost Continue response: same command readback, two tabs and foreign scope', async ({ page, context }) => {
+  const target = state.p3_a_previews.long;
+  await page.goto(`${base}/p3-a/open/continue`);
+  await expect(page.locator('.interview-return-card')).toBeVisible();
+  const second = await context.newPage();
+  try {
+    await second.goto(`${base}/?screen=interview&cycle_id=${target.cycle_id}`);
+    await expect(second.locator('.interview-return-card')).toBeVisible();
+    const command = `/users/assessment/m7/cycles/${target.cycle_id}/return-continue`;
+    let accepted, body, posts = 0;
+    await page.route('**' + command, async (route) => {
+      posts++; body = route.request().postDataJSON();
+      const response = await route.fetch({ timeout: 15000, maxRetries: 0 });
+      expect(response.status()).toBe(200); accepted = await response.json();
+      await route.abort('failed'); // Server commit happened; browser did not receive it.
+    });
+    await page.locator('.interview-return-card').getByRole('button', { name: 'Продолжить', exact: true }).click();
+    await expect(page.locator('.interview-message--situation')).toHaveCount(1);
+    expect(posts).toBe(1);
+    expect(accepted.assessment_situation_id).toBe(target.assessment_situation_id);
+    const replay = await page.request.post(base + command, { data: body, timeout: 15000 });
+    expect(replay.status()).toBe(200); expect(await replay.json()).toEqual(accepted);
+    await second.reload();
+    await expect(second.locator('.interview-message--situation')).toHaveCount(1);
+    const runtime = await (await second.request.get(`${base}/users/assessment/cycles/${target.cycle_id}/runtime`)).json();
+    expect(runtime.current_situation.assessment_situation_id).toBe(target.assessment_situation_id);
+    expect(runtime.route.positions.flatMap((p) => p.history).filter((h) => h.disposition === 'replaced')).toHaveLength(0);
+    const foreign = await page.request.post(`${base}/users/assessment/m7/cycles/${state.p3_a_previews.short.cycle_id}/return-continue`,
+      { data: body, timeout: 15000 });
+    expect(foreign.status()).toBe(403);
+    fs.writeFileSync(path.join(evidence, 'remain06-lost-continue.json'), JSON.stringify({
+      cycle_id: target.cycle_id, assessment_situation_id: target.assessment_situation_id,
+      posted_commands: posts, command_key: body.idempotency_key, readback_same_as: true,
+      replay_same_receipt: true, two_tabs_same_as: true, foreign_status: foreign.status(),
+    }, null, 2) + '\n');
+  } finally { await second.close(); }
+});

@@ -688,6 +688,14 @@ const serverRemainingSeconds = (value) => {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 };
 
+const serverPositionCount = (value) => Number.isInteger(value) && value >= 0 ? value : null;
+
+const clearUnconfirmedProductTime = () => {
+  state.assessmentRemainingSeconds = null;
+  interviewTimerBadge.classList.remove('is-paused');
+  updateInterviewTimer();
+};
+
 const returnContinueIdentity = (value) => [
   state.pendingUser?.id, value.cycle_id, value.position_no,
   value.current_assessment_situation_id, value.current_assessment_situation_status,
@@ -773,9 +781,10 @@ const renderProductRuntime = (snapshot) => {
   state.productClarificationDecisionId = snapshot.clarification?.id || null;
   state.productCycleStatus = snapshot.status?.collection_status || null;
   state.assessmentRemainingSeconds = serverRemainingSeconds(snapshot.status?.remaining_seconds);
-  state.assessmentCaseNumber = Math.max(1, Number(currentPosition?.position_no || completedPositions + 1));
-  state.assessmentTotalCases = Math.max(state.assessmentCaseNumber,
-    Number(snapshot.route?.progress?.total_positions || routePositions.length || 1));
+  state.assessmentCaseNumber = serverPositionCount(currentPosition?.position_no)
+    || (current ? completedPositions + 1 : null);
+  state.assessmentTotalCases = serverPositionCount(snapshot.route?.progress?.total_positions);
+  state.assessmentCompletedCases = serverPositionCount(snapshot.route?.progress?.completed_positions);
   state.assessmentCaseTitle = current?.participant_payload?.title || current?.participant_payload?.case_title || 'Оценочная ситуация';
   state.activeInterviewCaseKey = current?.assessment_situation_id || null;
   persistAssessmentContext();
@@ -1094,10 +1103,8 @@ const renderReturnCard = (value) => {
     renderedProductCycleId = value.cycle_id;
   }
   const progress = value.progress || {};
-  const completedPositions = Number.isInteger(Number(progress.completed_positions))
-    ? Math.max(0, Number(progress.completed_positions)) : 0;
-  const totalPositions = Number.isInteger(Number(progress.total_positions))
-    ? Math.max(0, Number(progress.total_positions)) : 0;
+  const completedPositions = serverPositionCount(progress.completed_positions);
+  const totalPositions = serverPositionCount(progress.total_positions);
   state.assessmentRuntimeKind = 'cycle';
   state.productCycleId = value.cycle_id;
   state.productAssessmentSituationId = value.current_assessment_situation_id;
@@ -1105,6 +1112,7 @@ const renderReturnCard = (value) => {
   state.assessmentCaseNumber = Number.isInteger(Number(value.position_no))
     ? Math.max(1, Number(value.position_no)) : completedPositions + 1;
   state.assessmentTotalCases = totalPositions;
+  state.assessmentCompletedCases = completedPositions;
   state.assessmentCaseTitle = 'Продолжение оценки';
   renderInterviewMeta();
   renderCaseProgress(false);
@@ -1121,7 +1129,9 @@ const renderReturnCard = (value) => {
   const remainingCopy = remainingSeconds === null
     ? 'Остаток времени выполнения уточняется.'
     : `Остаток времени выполнения: ${Math.ceil(remainingSeconds / 60)} мин.`;
-  copy.textContent = `Завершено ${completedPositions} из ${totalPositions}. ${remainingCopy}`;
+  const progressCopy = completedPositions === null || totalPositions === null
+    ? 'Прогресс уточняется.' : `Завершено ${completedPositions} из ${totalPositions}.`;
+  copy.textContent = `${progressCopy} ${remainingCopy}`;
   const reason = document.createElement('p');
   reason.textContent = value.allowed_action === 'replace_current'
     ? 'После продолжения текущая незавершённая ситуация будет обновлена. Частичный диалог не переносится, завершённые ситуации сохраняются.'
@@ -1225,6 +1235,7 @@ const loadReturnState = async ({ generation = productRuntimePollGeneration } = {
     return false;
   } catch (error) {
     if (!current()) return false;
+    clearUnconfirmedProductTime();
     throw error;
   }
 };
@@ -1291,6 +1302,7 @@ export const loadProductRuntime = async ({ generation = productRuntimePollGenera
     return snapshot;
   } catch (error) {
     if (!current()) return null;
+    clearUnconfirmedProductTime();
     throw error;
   }
 };
@@ -1853,14 +1865,23 @@ const disableTextareaAssistFeatures = (element) => {
 };
 
 const renderInterviewMeta = () => {
-  interviewCaseBadge.textContent = 'Ситуация ' + state.assessmentCaseNumber + ' из ' + state.assessmentTotalCases;
+  const cycle = isCycleAssessment();
+  const total = state.assessmentTotalCases;
+  const completed = state.assessmentCompletedCases;
+  const positionCopy = state.assessmentCaseNumber
+    ? `Ситуация ${state.assessmentCaseNumber} из ${total}` : `Всего ситуаций: ${total}`;
+  interviewCaseBadge.textContent = cycle
+    ? total === null || total === undefined || completed === null || completed === undefined
+      ? 'Прогресс уточняется' : `${positionCopy}\nЗавершено ${completed} из ${total}`
+    : 'Ситуация ' + state.assessmentCaseNumber + ' из ' + total;
   interviewCaseTitle.textContent = state.assessmentCaseTitle || 'Оценочная ситуация';
   interviewCaseStatus.textContent = '';
   if (interviewProgressFill) {
     const totalCases = Math.max(1, Number(state.assessmentTotalCases || 0));
     const caseNumber = Math.max(1, Math.min(totalCases, Number(state.assessmentCaseNumber || 1)));
-    const caseProgress = totalCases > 1 ? (caseNumber - 1) / (totalCases - 1) : 1;
-    interviewProgressFill.style.width = Math.round(caseProgress * 50) + '%';
+    const caseProgress = cycle ? Math.min(1, Math.max(0, Number(completed || 0) / totalCases))
+      : (totalCases > 1 ? (caseNumber - 1) / (totalCases - 1) : 1) / 2;
+    interviewProgressFill.style.width = Math.round(caseProgress * 100) + '%';
   }
 };
 
@@ -1966,6 +1987,10 @@ export const pauseAssessmentTimerIfNeeded = async () => {
 };
 
 const getRemainingCaseTimeMs = () => {
+  if (isCycleAssessment()) {
+    const seconds = serverRemainingSeconds(state.assessmentRemainingSeconds);
+    return seconds === null ? null : seconds * 1000;
+  }
   if (typeof state.assessmentRemainingSeconds === 'number') {
     return Math.max(0, state.assessmentRemainingSeconds * 1000);
   }
@@ -2318,6 +2343,12 @@ export const openInterview = () => {
   interviewCompleteActions.classList.add('hidden');
   interviewPanel.classList.remove('hidden');
   if (isCycleAssessment()) {
+    state.assessmentCaseNumber = null;
+    state.assessmentTotalCases = null;
+    state.assessmentCompletedCases = null;
+    renderInterviewMeta();
+    renderCaseProgress(false);
+    clearUnconfirmedProductTime();
     // The visible entry screen has no confirmed actionability until runtime is presented.
     interviewTextarea.disabled = true;
     interviewSubmitButton.disabled = true;

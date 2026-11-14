@@ -396,6 +396,41 @@ def test_controlled_return_179_continues_same_as_without_restoring_budget(db):
         assert c.execute("SELECT count(*) AS n FROM m5_assessment_situations").fetchone()['n']==1
 
 
+@pytest.mark.parametrize('total', [8, 3])
+def test_remain06_frozen_plan_progress_with_one_materialized_as(db, total):
+    # Synthetic plan input is fixed before the first presentation; no new AS,
+    # generation or post-start revision is needed to verify either projection.
+    from Api import m7_planning_repository as repository
+    with db() as c:
+        case = setup(c, admitted=True)
+        admit_case(c, case)
+        plan = create_plan(c, personalized_profile_id=7, selected_skills=['K1','K2','K3','K4'],
+                           created_by=99, key='remain06-plan')
+        stored = repository.read_plan(c, str(plan['cycle_id']))
+        content = deepcopy(stored['content_json'])
+        content['route'] = [deepcopy(content['route'][0]) for _ in range(total)]
+        content['catalog'] = [deepcopy(content['catalog'][0]) for _ in range(9)]
+        repository.save_parameter_revision(c, plan=stored, content=content, reason='synthetic_remain06_plan')
+        saved = read_plan(c, str(plan['cycle_id']))
+        policy = json.loads((OUTPUT/'admission-policy.json').read_text())
+        decision = choose_next(c, cycle_id=str(plan['cycle_id']), expected_plan_revision_id=str(saved['revision_id']),
+                               key='remain06-first', created_by=99, policy=policy)
+        shown = present(c, decision_id=str(decision['id']), expected_revision=1)
+        c.execute('CREATE TABLE m7_clarification_decisions(id UUID,assessment_situation_db_id BIGINT,created_at TIMESTAMPTZ)')
+        cycle_id = str(plan['cycle_id'])
+        as_id = str(shown['decision']['assessment_situation_id'])
+        runtime = read_runtime(c, cycle_id=cycle_id)
+        assert runtime['route']['progress'] == {'total_positions': total, 'completed_positions': 0}
+        assert len(runtime['route']['positions']) == 1
+        record_controlled_absence(c, cycle_id=cycle_id, expected_as_id=as_id,
+                                  source_ref='remain06-synthetic-pause', recognized_at=datetime.now(timezone.utc))
+        returned = read_return_state(c, cycle_id=cycle_id, owner_user_id=99)
+        assert returned['progress'] == runtime['route']['progress']
+        assert returned['current_assessment_situation_id'] == as_id
+        assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n'] == 1
+        assert read_plan(c, cycle_id)['revision_id'] == saved['revision_id']
+
+
 def test_sales_r1_long_break_continues_same_as_without_provider_generation(db):
     with db() as c:
         plan,shown=active_cycle(c);cycle_id=str(plan['cycle_id']);as_id=str(shown['decision']['assessment_situation_id'])

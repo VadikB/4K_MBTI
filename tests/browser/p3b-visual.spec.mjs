@@ -30,12 +30,12 @@ test('P3-B synthetic visual states, progress and Continue are reproducible', asy
       if (['pause', 'return', 'unknown'].includes(mode)) {
         await expect(card).toBeVisible();
         await expect(page.locator('#interview-case-badge')).toHaveText(
-          mode === 'pause' ? 'Ситуация 3 из 8' : 'Ситуация 1 из 8');
+          mode === 'pause' ? 'Ситуация 3 из 8\nЗавершено 2 из 8' : 'Ситуация 1 из 8\nЗавершено 0 из 8');
         await expect(card).toContainText(mode === 'pause' ? 'Завершено 2 из 8' : 'Завершено 0 из 8');
         await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
       } else {
         await expect(page.locator('#interview-case-badge')).toHaveText(
-          mode === 'active-short' ? 'Ситуация 2 из 5' : 'Ситуация 1 из 8');
+          mode === 'active-short' ? 'Ситуация 2 из 5\nЗавершено 1 из 5' : 'Ситуация 1 из 8\nЗавершено 0 из 8');
         await expect(page.locator('.interview-message--situation')).toBeVisible();
       }
       if (mode === 'unknown') {

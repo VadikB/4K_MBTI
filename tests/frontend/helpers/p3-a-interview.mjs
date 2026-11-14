@@ -9,7 +9,7 @@ const section = (start, end) => source.slice(source.indexOf(start), source.index
 // Execute production presenter/delivery/submit functions with a small DOM,
 // deterministic layout callbacks and injected HTTP responses. These fixtures do
 // not prove browser geometry, software keyboards, or real backend/DB behavior.
-export const createInterviewHarness = ({ animationFrame = true, storage = new Map() } = {}) => {
+export const createInterviewHarness = ({ animationFrame = true, storage = new Map(), meta = false } = {}) => {
   const callbacks = new Map();
   const calls = [];
   const listeners = new Map();
@@ -94,6 +94,8 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     interviewMessages: messages, interviewScrollArea: area, interviewMessagesScroll: button,
     interviewTextarea: textarea, interviewCompactQuery: null, caseSidebarToggle: null,
     interviewPanel: new Element(), interviewCompleteActions: new Element(),
+    interviewCaseBadge: new Element(), interviewCaseTitle: new Element(),
+    interviewProgressFill: new Element(), interviewRouteLabel: new Element(), caseProgressList: null,
     interviewTimerBadge: new Element(), interviewSubmitButton: new Element(),
     interviewFinishButton: new Element(), interviewPauseButton: new Element(),
     interviewAdditionalButton: new Element(), interviewCaseStatus: new Element(),
@@ -131,6 +133,10 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     ${section('export const openInterview =', '\nconst startAssessmentInterview =').replace('export const ', 'const ')}
     ${section('const payloadText =', '\nconst renderProductRuntime =')}
     ${section('const renderProductRuntime =', '\nconst heartbeatProductPresence =')}
+    ${section('const renderReturnCard =', '\nconst loadReturnState =')}
+    ${meta ? section('const renderInterviewMeta =', '\nconst renderCaseProgress =') : ''}
+    ${meta ? section('const getRemainingCaseTimeMs =', '\nconst clearAssessmentAutoFinishTimer =') : ''}
+    ${meta ? section('const updateInterviewTimer =', '\n\nconst handleAssessmentResponse =') : ''}
     ${section('const renderInterviewStructuredBlock =', '\nexport const addInterviewMessage =')}
     ${section('export const addInterviewMessage =', '\nconst isInterviewNearBottom =').replaceAll('export const ', 'const ')}
     ${section('const isInterviewNearBottom =', '\nconst getCurrentCaseDropdownLabel =')}
@@ -139,7 +145,9 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
       scheduleInterviewScrollAlignment, scheduleInterviewBottomAlignment, cancelInterviewScrollAlignment,
       productEventText, initInterview, sendProductInterviewAnswer, readProductInterviewAnswer, isCycleAssessment,
       clearInterviewDraft, prepareProductInterviewAnswer, submitAssessmentMessage, openInterview,
-      showInterviewRuntimeError, restoreInterviewActionControls, isCurrentInterviewDraftSaved};
+      showInterviewRuntimeError, restoreInterviewActionControls, isCurrentInterviewDraftSaved,
+      renderInterviewMeta, updateInterviewTimer, renderReturnCard,
+      getRemainingCaseTimeMs: ${meta ? 'getRemainingCaseTimeMs' : 'null'}};
   `, context);
   const flush = () => {
     while (callbacks.size) {
@@ -160,5 +168,6 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     listeners, flush, snapshot, storage, errors, fetchCalls, context,
     setFetch: (value) => { fetchImpl = value; },
     pollingResumes: () => pollingResumes, leave: () => leaveCleanup(),
+    badge: context.interviewCaseBadge, timer: context.interviewTimerBadge,
     controls: { textarea, submit: context.interviewSubmitButton, finish: context.interviewFinishButton } };
 };

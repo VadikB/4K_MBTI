@@ -1,0 +1,13 @@
+{
+  "mode": "synthetic computed text scale200percent; absolute px, no nested compounding",
+  "elements_scaled": 51,
+  "textarea_font_px": 32,
+  "situation_fonts_px": [
+    32
+  ],
+  "essential_text_unchanged": true,
+  "input_reachable": true,
+  "submit_reachable": true,
+  "native_browser_text_zoom": "NOT_RUN",
+  "physical_keyboard": "NOT_RUN"
+}
