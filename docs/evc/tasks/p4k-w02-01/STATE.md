@@ -83,3 +83,6 @@ Main продвинулся во время публикации: PR220/b0bf7a4e
 Run06 финальный:11/11PASS13.1s; frontend324/324PASS; lint/build/release/diff-check
 PASS, own group absent=true/ports closed. Finalbaseb0bf7a4/candidate2.1.7,
 обновлённые runtime SHA256 в checked-content.json. Оба слоя W02 и PR220 сохраняются.
+Final source/candidate/tested SHA `ea78b533b031faabd560d33709e793fb9efc4687`.
+Его runtime content подтверждён checked-content.json. Следующий handoff docs-only
+не меняет проверенный состав; PR221 CI должен относиться к его точному HEAD.

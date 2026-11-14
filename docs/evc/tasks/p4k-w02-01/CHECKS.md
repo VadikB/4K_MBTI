@@ -38,3 +38,6 @@ Final base `b0bf7a4e8e4f0fe70c400525a373b9822229dfdc` /2.1.6; candidate2.1.7.
 
 PR221: https://github.com/VadikB/4K_MBTI/pull/221; обязательный CI нового head PENDING после синхронизацииmain. Human review/merge/deploy/фактический TEST: NOT_RUN,
 этим этапом не разрешены. Откат — revert собственного PR, данные не меняются.
+
+Финальный source/candidate/tested SHA: `ea78b533b031faabd560d33709e793fb9efc4687`.
+Последующий handoff docs-only; актуальные checks и CI receipt привязаны к PR head.
