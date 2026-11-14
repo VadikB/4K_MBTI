@@ -60,3 +60,32 @@ Self-review по EVC: product diff ограничен source/readiness/waiting; 
 
 Точный release HEAD, PR, CI, squash merge, `deploy-test` и readback TEST записываются
 после соответствующих действий; локальные PASS выше их не заменяют.
+
+## PR #218: первый полный CI и исправление fixture
+
+- Ready PR `#218`, head `1d024890bc2647cc513a20f1d668684f4dfec4aa`:
+  `frontend` PASS (25s), `pytest` PASS (1m10s). В full run
+  `43605077961` runtime shards 2/4 и 4/4 PASS, но runtime 1/4 FAIL;
+  merge не выполнялся.
+- Единственный FAIL: `Unapproved LIMITED is blocked by the real server and UI
+  without a component substitution` не находил post-login action. Сценарий
+  намеренно отключал component plan fixture, но тем же переключателем случайно
+  отключал отдельную legacy acquaintance source boundary; REMAIN_04 корректно
+  оставлял участника без managed assignment в waiting.
+- Исправление test launcher разделяет активацию boundary: для этого сценария
+  включается только `browser-legacy-acquaintance-boundary/1`; component plan gate
+  не включается, поэтому отрицательный start admission остаётся настоящим.
+- Guard unit: `pytest tests/unit/test_browser_component_boundary.py
+  tests/unit/test_legacy_acquaintance_fixture.py -q` → **29 PASS**, 0.84s.
+- Точный упавший Playwright test → **1 PASS**, 15.5s. Предварительная sandbox
+  попытка `SIGTRAP MachPortRendezvousServer` не исполняла тест; повтор с системным
+  запуском на owned PostgreSQL выполнен. Отдельная первая DB была ошибочно создана
+  как SQL_ASCII, owner guard увидел bytes; только эта owned DB/cluster удалена и
+  повторена в UTF-8, код fixture ради инфраструктурной ошибки не менялся.
+- Полный CI-equivalent `BROWSER_SUITE=runtime ... --fully-parallel --shard=1/4`
+  на isolated PostgreSQL 15 → **9 PASS**, 5.2m.
+- После прогона nested `product4k_pytest_%` count=0; owned `agent4k_pytest`
+  удалена, PostgreSQL 15 fast-stop PASS, disposable cluster удалён.
+
+Новый commit/push делает первый full run историческим. Перед merge обязателен новый
+зелёный `frontend`, `pytest`, `full-verification` на актуальном PR head.

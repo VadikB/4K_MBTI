@@ -6,7 +6,9 @@ import pytest
 
 from Api.assessment_start_readiness import plan_gate
 from Api.m7_planning_package import methodology_targets
-from tests.browser_component_app import FIXTURE, component_plan_gate, load_policy, validate_activation
+from tests.browser_component_app import (
+    FIXTURE, LEGACY_FIXTURE, component_plan_gate, load_policy, validate_activation,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -34,7 +36,20 @@ def legacy_plan():
 
 
 def test_explicit_disabled_provider_owned_activation_only():
-    validate_activation(*activation())
+    assert validate_activation(*activation()) == "component"
+
+
+def test_legacy_acquaintance_activation_does_not_enable_component_plan_gate():
+    state, env = activation()
+    state.pop("component_plan_fixture")
+    env.pop("AGENT4K_COMPONENT_PLAN_FIXTURE")
+    state["legacy_acquaintance_fixture"] = LEGACY_FIXTURE
+    env["AGENT4K_LEGACY_ACQUAINTANCE_FIXTURE"] = LEGACY_FIXTURE
+    assert validate_activation(state, env) == "legacy_acquaintance"
+
+    env["AGENT4K_COMPONENT_PLAN_FIXTURE"] = FIXTURE
+    with pytest.raises(RuntimeError, match="COMPONENT_PLAN_FIXTURE_REQUIRES"):
+        validate_activation(state, env)
 
 
 def test_changed_component_source_is_rejected(monkeypatch):

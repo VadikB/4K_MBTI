@@ -29,6 +29,13 @@
 адресных повторах. Новый полный зелёный локальный run не заявляется. Обязательные
 GitHub `frontend`, `pytest`, `full-verification` должны пройти на точном PR head.
 
+Первый Ready full run на head `1d024890` выявил один FAIL в старом runtime browser
+launcher: отключение component plan fixture одновременно отключало отдельную legacy
+acquaintance boundary, и проверка настоящего LIMITED start gate не доходила до своей
+области. Boundary разделены: plan/start gate в этом сценарии остаётся настоящим.
+Локально guard unit — 29 PASS, точный test — 1 PASS, весь runtime shard 1/4 —
+9 PASS. Первый FAIL сохранён; новый полный CI требуется на текущем head.
+
 ## Риски и границы
 
 Test-only legacy fixture сохраняет старые component-регрессии и не является новым

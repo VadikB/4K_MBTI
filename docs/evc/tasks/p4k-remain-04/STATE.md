@@ -54,6 +54,18 @@ RUN_ID remain04-matrix-20261114: HTTP suite, полный isolated integration s
   `pytest`, `full-verification` → squash merge без bypass → штатный `deploy-test` →
   read-only проверка версии и доступного SHA/asset-состава на TEST. Pilot/Prod и
   публикация methodology/configuration/prompt artifacts не включены.
+- Ready PR [#218](https://github.com/VadikB/4K_MBTI/pull/218) создан на release
+  head `1d024890`: быстрые `frontend`/`pytest` PASS; первый full run сохранил FAIL
+  runtime shard 1/4. Причина — test launcher связывал отключение plan-component
+  substitution с отключением отдельной legacy acquaintance boundary, поэтому
+  downstream admission test останавливался в новом корректном waiting.
+- Test-only launcher разделён: `Unapproved LIMITED` получает только guarded legacy
+  acquaintance source, а настоящий plan/start gate не подменяется. Guard unit
+  29 PASS; точный test 1 PASS; весь runtime shard 1/4 — 9 PASS за 5.2m. Новый
+  release head и повтор всего CI фиксируются после commit/push.
+- Локальный regression использовал отдельный PostgreSQL 15 на порту 55445:
+  вложенных `product4k_pytest_%` после теста 0, `agent4k_pytest` удалена,
+  сервер остановлен fast-stop, disposable cluster удалён.
 
 ### Описание будущего PR
 

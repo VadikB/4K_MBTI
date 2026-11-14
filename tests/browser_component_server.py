@@ -8,7 +8,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from scripts.test_stand import owned, environment, check_port
-from tests.browser_component_app import FIXTURE, validate_activation
+from tests.browser_component_app import FIXTURE, LEGACY_FIXTURE, validate_activation
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
@@ -16,7 +16,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     state = json.loads(args.state.read_bytes())
     env = environment(state)
-    env["AGENT4K_COMPONENT_PLAN_FIXTURE"] = FIXTURE
+    if state.get("component_plan_fixture") == FIXTURE:
+        env["AGENT4K_COMPONENT_PLAN_FIXTURE"] = FIXTURE
+    elif state.get("legacy_acquaintance_fixture") == LEGACY_FIXTURE:
+        env["AGENT4K_LEGACY_ACQUAINTANCE_FIXTURE"] = LEGACY_FIXTURE
     validate_activation(state, env)
     with owned(state):
         pass
