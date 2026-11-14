@@ -21,6 +21,7 @@ export {
   addAdminOrganizationMember,
   resetAdminOrganizationMemberPassword,
   sendAdminOrganizationMemberInvitation,
+  recoverAdminOrganizationInvitation,
   assignAdminOrganizationAssessment,
   cancelAdminOrganizationAssessment,
   revokeAdminOrganizationMemberInvitation,

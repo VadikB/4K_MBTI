@@ -1883,6 +1883,13 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
       return;
     }
+    if (button.dataset.action === 'recover-member-invitation') {
+      button.disabled = true;
+      withScreen(loadAdminOrganizations, (module) => module.recoverAdminOrganizationInvitation(
+        button.dataset.requestKey,
+      ));
+      return;
+    }
     if (['purge-account', 'recover-purge-account'].includes(button.dataset.action)) {
       const userId = Number(button.dataset.userId);
       const email = String(button.dataset.email || '').trim();

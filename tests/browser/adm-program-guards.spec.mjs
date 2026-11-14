@@ -78,11 +78,14 @@ async function evidence(page, state, info, label) {
 }
 
 async function fixture(page, { superadmin = true, program = 11, saved = [], unknown = false,
-  rolesMode = 'available', questionnaireStatus = 200, memberStage = null } = {}) {
+  rolesMode = 'available', questionnaireStatus = 200, memberStage = null, additionalMembers = [] } = {}) {
   test.info().annotations.push({ type: 'synthetic_http',
     description: 'Actual built UI, scoped-command safety and draft lifecycle; no real DB/provider/PATH/TEST claim.' });
   const state = { program, requests: [], saved, nextRevision: 301, reads: 0, puts: 0,
     losePut: false, failRead: false, putGate: null,
+    invitationPosts: 0, invitationItems: null, invitationPostGate: null,
+    invitationLoseResponse: false, invitationReadStatus: 200, invitationStatuses: [], invitationResponseItems: null,
+    invitationPostStatus: 200,
     collectionReads: 0, collectionStatus: 200, collectionGate: null, importGate: null,
     programReadGate: null, unknown, rolesMode, questionnaireStatus };
   const fixtureConnection = () => {
@@ -104,8 +107,9 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
       members: [{ user_id: 28, email: 'synthetic-member@example.test', full_name: 'Синтетический участник',
         role_description: 'Синтетическая должность', role: 'member',
         assessment_assignments: memberStage ? ['pilot-11'] : [],
-        assessment_stages: memberStage ? { 'pilot-11': memberStage } : {} }],
-      members_count: 1, reports_count: 0, ...(state.unknown ? {} : { assessment_program: fixtureConnection() }) }] });
+        assessment_stages: memberStage ? { 'pilot-11': memberStage } : {} }, ...additionalMembers],
+      members_count: 1 + additionalMembers.length, reports_count: 0,
+      ...(state.unknown ? {} : { assessment_program: fixtureConnection() }) }] });
   await page.route('**/users/**', async (route) => {
     const request = route.request(), pathname = new URL(request.url()).pathname;
     let body;
@@ -114,6 +118,8 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
     if (pathname === '/users/version') return json(route, { version: 'synthetic-adm-program-guards' });
     if (pathname === '/users/session/restore') return json(route, { authenticated: true, exists: true,
       user, is_admin: true, admin_dashboard: dashboard });
+    if (pathname === '/users/18/session-bootstrap') return json(route, {
+      user, is_admin: true, dashboard: {}, admin_dashboard: dashboard });
     if (pathname === '/users/admin/dashboard') return json(route, dashboard);
     if (pathname === '/users/admin/organizations') {
       state.collectionReads += 1;
@@ -126,6 +132,23 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
       const responseListing = listing();
       await state.importGate;
       return json(route, { organizations: responseListing, imported_count: 1, skipped_count: 0 });
+    }
+    if (pathname === '/users/admin/organizations/3/personal-invitations' && request.method() === 'POST') {
+      state.invitationPosts += 1;
+      if (state.invitationPostStatus !== 200) {
+        await state.invitationPostGate;
+        return json(route, { detail: 'Синтетический отказ операции' }, state.invitationPostStatus);
+      }
+      state.invitationItems = body.emails.map((email, index) => ({ email, status: state.invitationStatuses[index] || 'accepted',
+        invitation_id: 100 + index, expires_at: '2026-11-17T12:30:00Z', link_status: 'active' }));
+      await state.invitationPostGate;
+      return state.invitationLoseResponse ? route.abort('connectionreset')
+        : json(route, { items: state.invitationResponseItems || state.invitationItems });
+    }
+    if (pathname.startsWith('/users/admin/organizations/3/personal-invitations/operations/')) {
+      return state.invitationReadStatus === 200 && state.invitationItems
+        ? json(route, { items: state.invitationItems })
+        : json(route, { detail: 'Synthetic readback unavailable' }, state.invitationReadStatus === 200 ? 404 : state.invitationReadStatus);
     }
     if (pathname === '/users/admin/organizations/3' && request.method() === 'PATCH') return json(route, listing());
     if (pathname === '/users/admin/organizations/3/questionnaire') return state.questionnaireStatus === 200
@@ -166,6 +189,107 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
   await expect(card(page).locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
   return state;
 }
+
+test('REMAIN-03 unknown invitation survives reload and reads the same operation', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  state.invitationLoseResponse = true;
+  state.invitationReadStatus = 503;
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect(page.locator('.admin-invitation-recovery')).toBeVisible();
+  expect(state.invitationPosts).toBe(1);
+  const firstPost = state.requests.find((request) => request.path.endsWith('/personal-invitations') && request.method === 'POST');
+  expect(firstPost.body.operation_id).toBeTruthy();
+  await page.reload();
+  await expect(page.locator('.admin-invitation-recovery')).toBeVisible();
+  state.invitationReadStatus = 200;
+  await page.locator('[data-action="recover-member-invitation"]').click();
+  await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
+  expect(state.invitationPosts).toBe(1);
+  expect(state.requests.some((request) => request.path.includes('/personal-invitations/operations/' +
+    firstPost.body.operation_id))).toBe(true);
+  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
+  await expect(page.locator('#admin-organizations-status')).toContainText('17.11.2026');
+});
+
+test('REMAIN-03 late invitation result cannot change a newer view', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  const pending = gate(); state.invitationPostGate = pending.promise;
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect.poll(() => state.invitationPosts).toBe(1);
+  await view(page, 'Данные организации');
+  pending.release();
+  await expect.poll(() => page.locator('#admin-organizations-status').textContent()).not.toContain('письмо принято почтовым сервисом');
+  await view(page, 'Участники оценки');
+  await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
+});
+
+test('REMAIN-03 batch reports each recipient and rejects extra response item', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')], additionalMembers: [
+    { user_id: 29, email: 'second@example.test', full_name: 'Второй синтетический участник',
+      role: 'member', assessment_assignments: [], assessment_stages: {} },
+  ] });
+  state.invitationStatuses = ['error', 'accepted'];
+  state.invitationResponseItems = [
+    { email: 'synthetic-member@example.test', status: 'accepted' },
+    { email: 'second@example.test', status: 'accepted' },
+    { email: 'foreign@example.test', status: 'accepted' },
+  ];
+  await card(page).locator('input[name="select_all_participants"]').check();
+  await card(page).locator('form[data-action="send-member-invitations"] button').click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('приглашение не отправлено');
+  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('foreign@example.test');
+  expect(state.invitationPosts).toBe(1);
+  expect(state.requests.filter((request) => request.path.includes('/personal-invitations/operations/')).length).toBe(1);
+});
+
+test('REMAIN-03 does not send when operation cannot survive reload', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (String(key).startsWith('agent4k.pendingInvitations.')) throw new Error('synthetic storage refusal');
+      return original.call(this, key, value);
+    };
+  });
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Отправка не начата');
+  expect(state.invitationPosts).toBe(0);
+});
+
+for (const invalid of ['partial', 'duplicate', 'extra']) {
+  test(`REMAIN-03 ${invalid} batch response stays unknown without exact readback`, async ({ page }) => {
+    const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+    state.invitationReadStatus = 503;
+    const item = { email: 'synthetic-member@example.test', status: 'accepted' };
+    state.invitationResponseItems = invalid === 'partial' ? [] : invalid === 'duplicate'
+      ? [item, item] : [item, { email: 'foreign@example.test', status: 'accepted' }];
+    await card(page).locator('[data-action="send-member-invitation"]').click();
+    await expect(page.locator('#admin-organizations-status')).toContainText('Исход отправки пока неизвестен');
+    await expect(page.locator('.admin-invitation-recovery')).toBeVisible();
+    expect(state.invitationPosts).toBe(1);
+  });
+}
+
+test('REMAIN-03 deferred refusal cannot update a newer view', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  const pending = gate(); state.invitationPostGate = pending.promise;
+  state.invitationPostStatus = 400;
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect.poll(() => state.invitationPosts).toBe(1);
+  await view(page, 'Данные организации');
+  pending.release();
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('Синтетический отказ операции');
+});
+
+test('REMAIN-03 confirmed result survives organization refresh failure', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  state.collectionStatus = 503;
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Не удалось обновить список');
+  await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
+});
 
 for (const superadmin of [false, true]) {
   test(`ADM-PROGRAM AC01 absent ${superadmin ? 'superadmin' : 'admin'}: both real forms and commands`, async ({ page }, info) => {

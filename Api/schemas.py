@@ -1,10 +1,17 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
+
+
+def _utc_invitation_expiry(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    utc_value = value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value.astimezone(timezone.utc)
+    return utc_value.isoformat().replace('+00:00', 'Z')
 
 
 class UserResponse(BaseModel):
@@ -92,6 +99,10 @@ class OrganizationInvitationPublicResponse(BaseModel):
     recipient_email: str | None = None
     personal: bool = False
     auth_mode: str | None = None
+
+    @field_serializer('expires_at', when_used='json')
+    def serialize_expires_at(self, value: datetime | None) -> str | None:
+        return _utc_invitation_expiry(value)
 
 
 class AuthEmailRequest(BaseModel):
@@ -227,6 +238,12 @@ class PersonalInvitationResultItem(BaseModel):
     invitation_id: int | None = None
     expires_at: datetime | None = None
     error: str | None = None
+    delivery_status: str | None = None
+    link_status: str | None = None
+
+    @field_serializer('expires_at', when_used='json')
+    def serialize_expires_at(self, value: datetime | None) -> str | None:
+        return _utc_invitation_expiry(value)
 
 
 class PersonalInvitationBatchResponse(BaseModel):
@@ -948,6 +965,10 @@ class AdminOrganizationMemberItem(BaseModel):
     assessment_assignments: list[str] = Field(default_factory=list)
     assessment_stages: dict[str, dict] = Field(default_factory=dict)
     assessment_history: list[dict] = Field(default_factory=list)
+
+    @field_serializer('invitation_expires_at', when_used='json')
+    def serialize_invitation_expires_at(self, value: datetime | None) -> str | None:
+        return _utc_invitation_expiry(value)
 
 
 class AdminOrganizationItem(BaseModel):
