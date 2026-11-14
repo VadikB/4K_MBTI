@@ -177,7 +177,7 @@ for (const width of [1440, 390, 320]) {
     expect(geometry.user).toBe('rgb(179, 235, 239)');
     expect(geometry.font).toContain('Onest');
     expect(geometry.composer).toBeLessThanOrEqual(width === 1440 ? 1024 : 844);
-    expect(geometry.buttonHeight).toBeGreaterThanOrEqual(48);
+    expect(geometry.buttonHeight).toBe(48);
     if (width === 1440) expect(geometry.labelCenter).toBeCloseTo(width / 2, 0);
     else expect(geometry.labelRight).toBeCloseTo(width - 16, 0);
     await fs.writeFile(info.outputPath('computed-styles.json'), JSON.stringify(geometry, null, 2));

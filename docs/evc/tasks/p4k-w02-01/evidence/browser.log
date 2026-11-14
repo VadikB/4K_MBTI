@@ -1,18 +1,18 @@
 
 Running 11 tests using 1 worker
 
-(node:18621) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:20134) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓   1 tests/browser/auth-r03.spec.mjs:3713:1 › W02 blocks direct entry on missing participant briefing and supports readiness retry on mobile (656ms)
-  ✓   2 tests/browser/auth-r03.spec.mjs:3821:1 › W02 does not present plan cards before the prepared plan exists (211ms)
+  ✓   1 tests/browser/auth-r03.spec.mjs:3713:1 › W02 blocks direct entry on missing participant briefing and supports readiness retry on mobile (618ms)
+  ✓   2 tests/browser/auth-r03.spec.mjs:3821:1 › W02 does not present plan cards before the prepared plan exists (196ms)
   ✓   3 tests/browser/auth-r03.spec.mjs:3861:1 › UX-AUD29-03 grows the answer and submits desktop Enter only once (525ms)
   ✓   4 tests/browser/remain04-waiting.spec.mjs:72:1 › REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then exact briefing and own answers (1.9s)
-  ✓   5 tests/browser/remain04-waiting.spec.mjs:138:1 › REMAIN04 late waiting response after logout cannot restore participant (570ms)
-  ✓   6 tests/browser/remain05-first-start.spec.mjs:20:1 › REMAIN05 invalid201 reload resolves same first AS without another POST (594ms)
-  ✓   7 tests/browser/remain05-first-start.spec.mjs:85:1 › REMAIN05 GET and PUT errors keep the current answer and safe explanation (559ms)
-  ✓   8 tests/browser/remain05-first-start.spec.mjs:127:1 › REMAIN05 explicit normal start and reload preserve first AS and zero answers (495ms)
-  ✓   9 tests/browser/w02-acquaintance.spec.mjs:93:3 › W02 path, shared edit, failures, issue receipts and history at 1440px (2.2s)
+  ✓   5 tests/browser/remain04-waiting.spec.mjs:138:1 › REMAIN04 late waiting response after logout cannot restore participant (586ms)
+  ✓   6 tests/browser/remain05-first-start.spec.mjs:20:1 › REMAIN05 invalid201 reload resolves same first AS without another POST (607ms)
+  ✓   7 tests/browser/remain05-first-start.spec.mjs:85:1 › REMAIN05 GET and PUT errors keep the current answer and safe explanation (542ms)
+  ✓   8 tests/browser/remain05-first-start.spec.mjs:127:1 › REMAIN05 explicit normal start and reload preserve first AS and zero answers (491ms)
+  ✓   9 tests/browser/w02-acquaintance.spec.mjs:93:3 › W02 path, shared edit, failures, issue receipts and history at 1440px (2.1s)
   ✓  10 tests/browser/w02-acquaintance.spec.mjs:93:3 › W02 path, shared edit, failures, issue receipts and history at 390px (2.0s)
   ✓  11 tests/browser/w02-acquaintance.spec.mjs:93:3 › W02 path, shared edit, failures, issue receipts and history at 320px (1.9s)
 
-  11 passed (13.1s)
+  11 passed (12.6s)

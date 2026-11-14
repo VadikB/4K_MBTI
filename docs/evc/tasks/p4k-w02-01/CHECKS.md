@@ -21,7 +21,7 @@ Final base `b0bf7a4e8e4f0fe70c400525a373b9822229dfdc` /2.1.6; candidate2.1.7.
 - `node --test tests/frontend/*.test.mjs` —324 PASS,0FAIL, включая scopes/late-readback.
 - `python3.12 scripts/check_release_version.py --base-ref origin/main` —2.1.7 PASS.
 - `git diff --check` —exit0.
-- Browser final run06:11 PASS,0FAIL/retries0,13.1s. Команда и PID группы в runner.json,
+- Browser final run07:11 PASS,0FAIL/retries0,12.6s. Команда и PID группы в runner.json,
   итог runner-result.json; полный stdout browser.log. Run01 environment EPERM сохранён
   отдельно, не product FAIL; run02–05 — исправления после осмотра/нового diff.
 - Финальное self-review: API, schema, rights, published definitions, PM contracts и
@@ -40,4 +40,6 @@ PR221: https://github.com/VadikB/4K_MBTI/pull/221; обязательный CI �
 этим этапом не разрешены. Откат — revert собственного PR, данные не меняются.
 
 Финальный source/candidate/tested SHA: `ea78b533b031faabd560d33709e793fb9efc4687`.
-Последующий handoff docs-only; актуальные checks и CI receipt привязаны к PR head.
+После baseline — только mobile CSS padding16px для48px-кнопки на320px;
+run07 проверяет финальныйCSS, frontend324 переиспользован по совпадению JS-хешей.
+Актуальные checks и CI receipt привязаны к PR head.

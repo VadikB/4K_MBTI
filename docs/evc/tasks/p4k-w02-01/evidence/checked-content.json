@@ -7,7 +7,7 @@
   "files": {
     "web/index.html": "f35f617dfc92674b59039352f86d38091a3217a6352bcdfabb60e21b2769b14d",
     "web/js/screens/onboarding.js": "93bca71288d4b7d863c35559e0fc4deca5c2b8d9e946736f37e7a1b733b329b0",
-    "web/styles/screens/onboarding.css": "eaea3b5d096d596799b26104dbc1fa0b6dcacfd5dfda481edbf2d37532e6dd39",
+    "web/styles/screens/onboarding.css": "afe7e14110224e2e373edf85e2239e27d559dd3370737eb46cfc4456b2edafd8",
     "web/js/config.js": "9593ebd235b4d2debce68478691e6edbd6d71e8db23ed73337a10f4582a982de",
     "pyproject.toml": "89b05364e724a1e406129322b59d0260b5a4ac88fdde4213fd5d1b86fc0cae22",
     "uv.lock": "a40c5ee8369c51ea119f7df67346a7b4e5944d7eabc59a4eab4331e384c2f2e3",
@@ -57,5 +57,7 @@
     "web/dist/router-OQY46XOL.js": "c0fcfb31971e0446cfd84a182c82eee8cb953dab2eabad18cceb4d6c7a2c7000",
     "web/dist/screen-loaders-DS6LEBRC.js": "f2df3746ee29197bdb60f15140f117d21c7de37bf2e3820fb17043e6aca39faf",
     "web/dist/session-KZ6QJQPB.js": "af916ba815d31f8635016eb2eccb7f3945b0cb527ba3dcddf8d3fd03c200ac5f"
-  }
+  },
+  "browser_run": "w02-local-20261114-07",
+  "frontend_js_baseline_sha": "ea78b533b031faabd560d33709e793fb9efc4687"
 }

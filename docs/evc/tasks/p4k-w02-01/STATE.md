@@ -86,3 +86,14 @@ PASS, own group absent=true/ports closed. Finalbaseb0bf7a4/candidate2.1.7,
 Final source/candidate/tested SHA `ea78b533b031faabd560d33709e793fb9efc4687`.
 Его runtime content подтверждён checked-content.json. Следующий handoff docs-only
 не меняет проверенный состав; PR221 CI должен относиться к его точному HEAD.
+Финальный визуальный review320: длинный текст history return переносился на2строки.
+Уменьшён только mobile horizontal button padding24→16, чтобы все основные кнопки
+сохранили48px. run07 повторяет тот же11targeted browser по прежнему finite-profile,
+с записью owned PID/ports до использования; исходные чужие ресурсы сохраняются.
+JS/API не менялись; frontend324/lint/build отrun06 применимы по прежним JS-хешам.
+
+Run07 PASS11/11/12.6s;320/390/1440px main buttons48px (320px включён), все owned
+ports закрыты, group absent=true. Финальный CSS-only diff и test expectation
+зафиксированы вместе с updated content hashes. Дальше — CI точного PR head.
+Итоговый immutable head и результатыCI сохраняются также в RELEASE_STATUS.json
+послеCI без дополнительного изменения head; это локальный handoff receipt.
