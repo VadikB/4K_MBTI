@@ -464,6 +464,9 @@ test('ADM-PROGRAM AC02 older import collection cannot authorize stale program A'
   const state = await fixture(page);
   const pending = gate(); state.importGate = pending.promise;
   const form = card(page).locator('form[data-action="import-members"]');
+  // The questionnaire response replaces this form during its final render.
+  await expect(card(page).locator('.admin-questionnaire-load-state')
+    .filter({ hasText: 'Для этой организации ещё нет сохранённых анкет.' }).first()).toBeAttached();
   await form.locator('input[type="file"]').setInputFiles(file('members'));
   await form.getByRole('button', { name: 'Импорт', exact: true }).click();
   await expect.poll(() => state.requests.some((r) => r.path.endsWith('/members/import'))).toBe(true);
