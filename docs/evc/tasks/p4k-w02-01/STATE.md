@@ -163,3 +163,8 @@ frontend324/lint/build/ready:prepare/diff-checkPASS. W02+REMAIN05:4PASS;
 Всё своё остановлено: groupsabsent, fixtureports60075/60111free,
 PG55493/backend18859free/pg_stopped=true. LLM/letters0.
 Активно: свой commit/push того жеPR221 и обязательный CI точного новогоhead.
+
+ADD01 новый source/candidate/tested SHA: `2c620afe506d28e69cd59087c74c27169313434e`.
+Runtime bytes соответствуют evidence/add01/checked-content.json; следующий
+handoff commit меняет только STATE/CHECKS. Обязательный CI проверяет точный
+финальный PR head; итоговые SHA/links/status в RELEASE_STATUS.json после CI.

@@ -102,3 +102,8 @@ HTML и приёмка человеком не объявлены. Сайт вн
 Следующий шаг: push того же PR221 и mandatory frontend/pytest/full-verification
 точного нового head. Human reviewPENDING. Ручные длинные ответы/форма/телефон по
 принятому ADD01 отложены послеmain/TEST; merge/deploy по-прежнему требуют допуска.
+
+ADD01 новый source/candidate/tested SHA: `2c620afe506d28e69cd59087c74c27169313434e`.
+Runtime bytes соответствуют evidence/add01/checked-content.json; следующий
+handoff commit меняет только STATE/CHECKS. Обязательный CI проверяет точный
+финальный PR head; итоговые SHA/links/status в RELEASE_STATUS.json после CI.
