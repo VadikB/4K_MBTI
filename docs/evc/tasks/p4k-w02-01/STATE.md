@@ -62,3 +62,12 @@ PR209/210 уже merged в том же проекте, base0716647 получе�
 evidence/repository-verification.json. На основании новых данных допускается
 только повтор той же reviewed операции своей ветки; при повторном отказе нужен
 прямой ответ владельца на exact destination, без эквивалентного обхода.
+
+Повтор push после read-only подтверждения trusted origin разрешён автоматической
+проверкой и выполнен: origin/codex/p4k-w02-01, SHA6c497f637f5da1a7caf71111323bcbc845d2692d.
+Уточнение владельца: «выгрузку делать с bvv.fructus@gmail.com». Все3коммита уже
+имеют author/committer VadikB <bvv.fructus@gmail.com>; GitHub actor bvvfructus-jpg.
+Изменение auth/scope не требовалось и не делалось. Read-only user/emails HTTP404
+из-за отсутствующего user scope; иных email/секретов не запрашивали.
+Статус требований: локально всеAC PASS TECH, human visual PENDING.
+Осталось: один Ready PR, mandatoryCI точного head и финальный receipt.
