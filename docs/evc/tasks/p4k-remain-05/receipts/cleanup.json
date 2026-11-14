@@ -15,5 +15,15 @@
   "docker_created": false,
   "assessment_answers": 0,
   "external_llm_calls": 0,
-  "external_mail_calls": 0
+  "external_mail_calls": 0,
+  "runner_pgids_checked": [
+    95001,
+    95065,
+    95070,
+    95073,
+    95669,
+    95746
+  ],
+  "remaining_own_processes": 0,
+  "listeners_55445_18764": 0
 }
