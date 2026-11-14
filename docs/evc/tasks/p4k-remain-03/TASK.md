@@ -26,4 +26,4 @@ F15-AC01–03: достоверный результат каждого адре
 
 ## Выпуск
 
-`branch_push=false`, `pr=false`, `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`. Передача архитектору branch/bundle; PR, CI и выпуск требуют действующего внешнего допуска.
+Исходный рабочий шаг: `branch_push=false`, `pr=false`, `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`. Продолжение 14.11.2026: пользователь прямо уточнил, что он архитектор и работает на этой машине, и поручил продолжить. В его контуре выполнены `branch_push=true` и `pr=true`: открыт draft [#217](https://github.com/VadikB/4K_MBTI/pull/217). `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`; следующий этап — CI/review и решение владельца о версии перед Ready.
