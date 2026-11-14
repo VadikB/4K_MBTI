@@ -16,6 +16,7 @@ from Api.organization_invitation_service import hash_invitation_token
 from Api.acquaintance import accept_consent,save_answers
 from Api.questionnaire_sources import PARTICIPANT_QUESTION_SCHEMA
 from Api.user_journey import update_onboarding_state
+from tests.legacy_acquaintance_fixture import legacy_component_scope
 
 ROOT=Path(__file__).resolve().parents[1]
 ACQUAINTANCE_ANSWERS = {
@@ -29,6 +30,7 @@ def read(path):
     return json.loads((ROOT/path).read_text())
 
 
+@legacy_component_scope
 def seed(state):
     qa_mode=state.get('qa_orchestration') is True
     with get_connection() as c:

@@ -258,17 +258,24 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     return dict(saved)
 
 
-def assignment_readiness(connection, *, organization_id: int, assignment_ref: str) -> dict:
+def assignment_readiness(connection, *, organization_id: int, assignment_ref: str,
+                         questionnaire_revision_id: int | None = None) -> dict:
     """Return the confirmed early minimum for one assessment preparation."""
     normalized_ref = str(assignment_ref or "").strip()
     if not normalized_ref:
         return {"status": "draft", "reason": "assignment_ref", "missing": ["assessment"]}
+    # Admin/new assignment callers retain latest confirmed; participants pin the
+    # immutable revision from their active source binding.
+    exact = " AND id=%s" if questionnaire_revision_id is not None else ""
+    params = (organization_id, normalized_ref)
+    if questionnaire_revision_id is not None:
+        params += (questionnaire_revision_id,)
     row = connection.execute(
         """SELECT id,assignment_ref,briefing_json,organization_context_version_id,confirmed_at
            FROM questionnaire_response_revisions
-           WHERE organization_id=%s AND assignment_ref=%s AND status='confirmed'
+           WHERE organization_id=%s AND assignment_ref=%s AND status='confirmed'""" + exact + """
            ORDER BY confirmed_at DESC,id DESC LIMIT 1""",
-        (organization_id, normalized_ref),
+        params,
     ).fetchone()
     if row is None:
         return {"status": "draft", "reason": "confirmed_questionnaire", "missing": ["confirmation"]}

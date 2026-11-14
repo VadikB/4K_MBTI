@@ -67,7 +67,7 @@ const resizeAnswer = (input) => {
 const hasDesktopKeyboard = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 const fieldsHtml = () => '<dl class="onboarding-data">' +
   (model?.readiness?.briefing?.provided_participant_fields || []).map((item) =>
-    '<div><dt>' + escape(item.label) + '</dt><dd>' + escape(item.value || 'Ожидает уточнения организацией') + '</dd></div>').join('') + '</dl>';
+    '<div><dt>' + escape(item.label) + '</dt><dd>' + escape(item.value || 'Не указано') + '</dd></div>').join('') + '</dl>';
 const summaryHtml = (editable) => questions().map((question, index) => {
   const key = `answer_${index + 1}`;
   return '<div class="onboarding-summary-item"><strong>' + escape(question) + '</strong>' +

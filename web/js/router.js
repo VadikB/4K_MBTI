@@ -97,10 +97,14 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
       || 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство';
   }
   if (authCompleteContinueButton) {
-    authCompleteContinueButton.textContent = assignmentMissing ? 'Вернуться в управление' : 'Проверить готовность';
-    authCompleteContinueButton.dataset.action = assignmentMissing ? 'return-to-management' : 'check-acquaintance-readiness';
+    authCompleteContinueButton.textContent = 'Проверить готовность';
+    authCompleteContinueButton.dataset.action = 'check-acquaintance-readiness';
   }
   authCompletePanel?.classList.remove('hidden');
+  if (authCompleteTitle) {
+    authCompleteTitle.tabIndex = -1;
+    authCompleteTitle.focus({ preventScroll: true });
+  }
   window.history.replaceState({ screen: 'auth-complete' }, '', '/?screen=auth-complete');
 };
 

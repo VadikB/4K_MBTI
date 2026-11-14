@@ -11,23 +11,34 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = "browser-component-plan-boundary/1"
+LEGACY_FIXTURE = "browser-legacy-acquaintance-boundary/1"
 
 
 def validate_activation(state, env):
-    if not (
+    component = (
         state.get("component_plan_fixture") == FIXTURE
+        and env.get("AGENT4K_COMPONENT_PLAN_FIXTURE") == FIXTURE
+    )
+    legacy_only = (
+        state.get("legacy_acquaintance_fixture") == LEGACY_FIXTURE
+        and env.get("AGENT4K_LEGACY_ACQUAINTANCE_FIXTURE") == LEGACY_FIXTURE
+        and state.get("component_plan_fixture") is None
+        and env.get("AGENT4K_COMPONENT_PLAN_FIXTURE") is None
+    )
+    if not (
+        (component or legacy_only)
         and state.get("gateway") == 1
         and state.get("provider_mode", "disabled") == "disabled"
         and not state.get("path29_full_path")
         and state.get("path29_program_source") is None
         and env.get("AGENT4K_ISOLATED_STAND") == "1"
-        and env.get("AGENT4K_COMPONENT_PLAN_FIXTURE") == FIXTURE
         and env.get("DB_NAME") == state.get("database")
         and str(state.get("database", "")).startswith("product4k_pytest_")
         and env.get("AGENT4K_STAND_MARKER") == state.get("owner_marker")
         and str(state.get("owner_marker", "")).startswith("stand-10.2:")
     ):
         raise RuntimeError("COMPONENT_PLAN_FIXTURE_REQUIRES_DISABLED_PROVIDER_OWNED_STAND")
+    return "component" if component else "legacy_acquaintance"
 
 
 def load_policy():
@@ -78,15 +89,20 @@ def component_plan_gate(content, cycle, *, real_gate):
 
 
 def install(state):
-    validate_activation(state, os.environ)
+    mode = validate_activation(state, os.environ)
     from scripts.test_stand import owned
     with owned(state):
         pass
     from Api import assessment_start_readiness
-    original = assessment_start_readiness.plan_gate
-    assessment_start_readiness.plan_gate = lambda content, cycle: component_plan_gate(
-        content, cycle, real_gate=original)
-    print("SYNTHETIC_COMPONENT_PLAN_BOUNDARY: NOT_HUMAN_REVIEW NOT_PILOT_ADMISSION NOT_FULL_PATH", flush=True)
+    from Api import acquaintance
+    from tests.legacy_acquaintance_fixture import legacy_readiness
+    acquaintance.early_readiness = legacy_readiness
+    if mode == "component":
+        original = assessment_start_readiness.plan_gate
+        assessment_start_readiness.plan_gate = lambda content, cycle: component_plan_gate(
+            content, cycle, real_gate=original)
+        print("SYNTHETIC_COMPONENT_PLAN_BOUNDARY: NOT_HUMAN_REVIEW NOT_PILOT_ADMISSION NOT_FULL_PATH", flush=True)
+    print("SYNTHETIC_LEGACY_ACQUAINTANCE_BOUNDARY: NOT_REMAIN04_WAITING_OR_ASSIGNMENT_PROOF", flush=True)
 
 
 def create_app():
