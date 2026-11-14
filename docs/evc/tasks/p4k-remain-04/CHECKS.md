@@ -48,7 +48,7 @@ STOP нового сценария: profile readback, 0 AS/Cycle/Report, real LL
 
 Первый полный integration остаётся **FAIL**, не переименован в зелёный полный прогон. Его 399 PASS переиспользованы только для неизменённых областей; все 5 упавших тестов после fixture-исправлений получили PASS в адресных повторах. Дополнительно повторён изменённый M4 owned stand. Новый полный CI на PR head, человеческое review и визуальная приёмка TEST — NOT_RUN. 2 skipped полного run не считаются PASS; controlled scope не требует real-provider.
 
-Self-review по EVC: product diff ограничен source/readiness/waiting; API additive argument совместим; опубликованные артефакты/схема/миграция/права доступа не менялись. Runtime defaults, prompts, timers и start транспорта не менялись. Test-only legacy boundary отделён от product entrypoint, требует owned/disabled-provider/gateway1, при managed bindings вызывает настоящий early_readiness. Все исторические snapshots сохраняются; новые контексты/profile только по явным командам. Передача bundle не является Ready for review/приёмкой продукта.
+Self-review по EVC: product diff ограничен source/readiness/waiting; API additive argument совместим; опубликованные артефакты/схема/миграция/права доступа не менялись. Runtime defaults, prompts, timers и start транспорта не менялись. Test-only legacy boundary отделён от product entrypoint, требует owned/disabled-provider/test gateway 0/1, при managed bindings вызывает настоящий early_readiness. Все исторические snapshots сохраняются; новые контексты/profile только по явным командам. Передача bundle не является Ready for review/приёмкой продукта.
 
 ## Подготовка release-кандидата архитектором
 
@@ -89,3 +89,18 @@ Self-review по EVC: product diff ограничен source/readiness/waiting; 
 
 Новый commit/push делает первый full run историческим. Перед merge обязателен новый
 зелёный `frontend`, `pytest`, `full-verification` на актуальном PR head.
+
+Второй Ready run `43606780469` на `a7c6569a`: `frontend`, `pytest`, integration и
+runtime 1/4–4/4 PASS; целевой runtime 1/4 исправлен. `browser (fast)` — 237 PASS,
+9 setup FAIL, 1 skipped, 1 did not run. Все 9 FAIL имели один код
+`LEGACY_COMPONENT_DISABLED_PROVIDER_OWNED_STAND_REQUIRED`: старые owned stands
+используют `gateway=0`, тогда как общий E10.2 seed boundary ошибочно требовал 1.
+Guard расширен только на test gateway `{0,1}`; disabled provider, isolated DB,
+точный `product4k_pytest_*` и owner marker остаются обязательными. Третий полный CI
+нужен после commit/push.
+
+Локальная проверка второго исправления: guard unit — **29 PASS**, 1.07s; все шесть
+browser-файлов, содержащих девять CI setup FAIL (включая второй параметрический
+ADM-PROGRAM вариант), — **10 PASS**, 2.9m на isolated PostgreSQL 15. После прогона
+nested `product4k_pytest_%` count=0, owned `agent4k_pytest` удалена, server fast-stop
+PASS и disposable cluster удалён.

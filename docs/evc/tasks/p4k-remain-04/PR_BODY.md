@@ -36,6 +36,13 @@ acquaintance boundary, и проверка настоящего LIMITED start ga
 Локально guard unit — 29 PASS, точный test — 1 PASS, весь runtime shard 1/4 —
 9 PASS. Первый FAIL сохранён; новый полный CI требуется на текущем head.
 
+Второй full run подтвердил integration и все runtime shards, но fast lane выявил
+9 одинаковых setup FAIL старых owned stands: общий legacy seed guard допускал только
+test gateway 1, тогда как эти stands используют gateway 0 с отключённым provider.
+Guard допускает 0/1, сохраняя обязательные isolated DB, exact owner marker и
+disabled provider. Локально guard unit — 29 PASS, все шесть affected browser-файлов
+— 10 PASS. Второй FAIL также сохранён; нужен третий полный CI текущего head.
+
 ## Риски и границы
 
 Test-only legacy fixture сохраняет старые component-регрессии и не является новым

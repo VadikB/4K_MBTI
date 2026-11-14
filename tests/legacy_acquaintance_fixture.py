@@ -22,7 +22,7 @@ def legacy_readiness(connection, *, user_id):
     if os.getenv('AGENT4K_ISOLATED_STAND') != '1' or not state_path:
         raise ValueError('LEGACY_COMPONENT_OWNED_STAND_REQUIRED')
     state = json.loads(Path(state_path).read_bytes())
-    if (state.get('provider_mode', 'disabled') != 'disabled' or state.get('gateway') != 1
+    if (state.get('provider_mode', 'disabled') != 'disabled' or state.get('gateway') not in {0, 1}
             or state.get('path29_full_path') or state.get('path29_program_source') is not None
             or not str(state.get('database', '')).startswith('product4k_pytest_')
             or state.get('database') != os.getenv('DB_NAME')

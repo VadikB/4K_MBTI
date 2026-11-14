@@ -22,7 +22,7 @@ RUN_ID remain04-matrix-20261114: HTTP suite, полный isolated integration s
 
 ## Регрессия старого component-контура
 
-Полный integration RUN: 399 PASS, 2 skipped, 5 FAIL за 674.50 с (старый seed ожидает consent без назначения). FAIL сохранён в /private/tmp/p4k-remain04-integration.log. Product guard не ослаблялся. Test-only legacy_acquaintance_fixture применяется только в старом E10.2 seed / M4 component / browser_component_app: disabled provider/gateway1/owned marker/product4k_pytest; actual legacy validator сохраняется, при наличии managed bindings выполняется обычный early_readiness. Это SYNTHETIC upstream source boundary, не доказательство F24/F26. В новом remain04 SQL/HTTP/browser её нет.
+Полный integration RUN: 399 PASS, 2 skipped, 5 FAIL за 674.50 с (старый seed ожидает consent без назначения). FAIL сохранён в /private/tmp/p4k-remain04-integration.log. Product guard не ослаблялся. Test-only legacy_acquaintance_fixture применяется только в старом E10.2 seed / M4 component / browser_component_app: disabled provider, test gateway 0/1, owned marker/product4k_pytest; actual legacy validator сохраняется, при наличии managed bindings выполняется обычный early_readiness. Это SYNTHETIC upstream source boundary, не доказательство F24/F26. В новом remain04 SQL/HTTP/browser её нет.
 
 Адресный follow-up RUN_ID remain04-legacy-regression-20261114: тот же cluster/DB; targeted remain04/review_m4/w02/scope + пять упавших bootstrap/f02/path29/path_admin/profile_access и затронутый profile_to_m4. Общий срок 20 мин, inherited bootstrap test subprocess 240 с (проверенный до запуска existing profile), HTTP15 с, 1 worker, full retries0, llm/mail0. Стоп-команда SIGTERM только pytest PID/PGID данного tool session; grace15 с. Прогресс - окончание test или saved child stages; наблюдение max60 с между отчётами. После результата повторяется только реально затронутый browser runtime component, без длинного оценивания/Report ради 04.
 
@@ -66,6 +66,16 @@ RUN_ID remain04-matrix-20261114: HTTP suite, полный isolated integration s
 - Локальный regression использовал отдельный PostgreSQL 15 на порту 55445:
   вложенных `product4k_pytest_%` после теста 0, `agent4k_pytest` удалена,
   сервер остановлен fast-stop, disposable cluster удалён.
+- Второй Ready full run на `a7c6569a` подтвердил исправление: integration и все
+  четыре runtime shards PASS, включая 1/4. `browser (fast)` дал 9 setup FAIL при
+  237 PASS: все девять имели единственный `LEGACY_COMPONENT_DISABLED_PROVIDER_OWNED_STAND_REQUIRED`.
+  Причина — общий старый seed использует тот же test-only acquaintance boundary,
+  а девять безопасных owned browser stands имеют `gateway=0`; guard ошибочно
+  разрешал только `gateway=1`. Boundary допускает test gateway 0/1, но по-прежнему
+  требует disabled provider, isolated stand, exact DB name и owner marker.
+- Второе исправление локально: guard unit 29 PASS; все шесть browser-файлов с
+  девятью CI setup FAIL — 10 PASS за 2.9m. Nested test DB count=0, owned DB удалена,
+  PostgreSQL fast-stop и удаление disposable cluster выполнены.
 
 ### Описание будущего PR
 
