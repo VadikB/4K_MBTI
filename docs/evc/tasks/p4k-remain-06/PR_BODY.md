@@ -19,7 +19,7 @@ M1v1.4 AS/Dialogue/Cycle, M5v1.1 предъявленный материал, M7
 ## Проверки (команда → результат)
 
 - `npm run ready:prepare -- --candidate 2.1.6` — PASS на fresh main07166475; единственный bump и build/release gate.
-- `node --test tests/frontend/*.test.mjs` — **321PASS** на release bytes.
+- `node --test tests/frontend/*.test.mjs` — **324PASS** на release bytes.
 - `npm run lint:js`, `git diff --check` — PASS.
 - `playwright test tests/browser/remain06-chat.spec.mjs --workers=1 --retries=0 --timeout=90000` — **4PASS** на release bytes: pending/runtime/time/network, clipboard/IME, actual auth/admin/manual анкета scope.
 - Owned PostgreSQL15 selected M7 progress/return/lease/snapshot — **10PASS**; HTTP/unit return/presence — **5PASS**.
@@ -56,3 +56,7 @@ CI актуального head, затем человеческое review и п
 - [x] Секретов/PII нет, старые snapshots/API сохранены.
 - [ ] CI exact PR head и человеческое review завершены — отдельные факты.
 - [x] Baseline не присваивается.
+
+## Browser consumer regression
+
+После исходного head63557e7e адресно воспроизведены2FAIL stale E01/P3B exactbadge assertions; исправлены только tests/fixtures, добавлены3negative completedcount renderer variants. After2browser и324frontendPASS; Api/web/release bytes прежние63557e7e, same-versionpreflight2.1.6PASS. receipts/consumer-fix сохраняетbefore/after. НовыйCIheadобязателен, первоначальнаяCIсериянеобъявляетсяPASS.

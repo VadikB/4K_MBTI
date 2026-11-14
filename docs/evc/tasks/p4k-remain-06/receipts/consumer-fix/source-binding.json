@@ -1,0 +1,10 @@
+{
+  "previous_head": "63557e7ecf41a8b33df4fa253bcf79c64f2e36c1",
+  "release": "2.1.6",
+  "product_diff": "",
+  "before_failed": 2,
+  "after_browser_passed": 2,
+  "frontend_passed": 324,
+  "ready_same_version": "PASS",
+  "previous_ci": "frontend/pytest/runtime1,2,4 PASS; fast/runtime3/integration RUNNING on last snapshot; not overall PASS"
+}

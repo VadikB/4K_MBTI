@@ -10,6 +10,16 @@ test('F18 pending entry discards local placeholder progress and time until serve
   assert.equal(h.timer.textContent, 'Время уточняется');
 });
 
+for (const completed of [undefined, null, '0']) {
+  test(`F18 missing or invalid completed count ${String(completed)} stays unknown`, () => {
+    const h = createInterviewHarness({ meta: true });
+    const saved = h.snapshot();
+    saved.route.progress = { total_positions: 8, completed_positions: completed };
+    h.subject.renderProductRuntime(saved);
+    assert.equal(h.badge.textContent, 'Прогресс уточняется');
+  });
+}
+
 for (const total of [8, 3]) {
   test(`F18 return card and header share frozen plan${total}, completed0 and confirmed pause`, () => {
     const h = createInterviewHarness({ meta: true });
