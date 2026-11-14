@@ -40,6 +40,21 @@ RUN_ID remain04-matrix-20261114: HTTP suite, полный isolated integration s
 - **Следующий шаг:** архитектор импортирует bundle/ветку, сверяет base/candidate/tested SHA и общий helper с main, утверждает продуктовый номер, создаёт PR своим аккаунтом; затем обязательные frontend/pytest/full-verification, human review и отдельная приёмка. PM-03/REMAIN_05 получает immutable profile и exact readiness; start транспорт не менялся. Следующая карточка не запускалась.
 - **Вопросы владельцу:** новых предметных/архитектурных блокеров нет. Выпуск и приёмка остаются отдельными полномочиями.
 
+## Выпуск архитектором
+
+- 14.11.2026 пользователь сообщил, что является архитектором, и разрешил подготовить
+  и задеплоить PR. Независимые флаги изменены на `branch_push=true`, `pr=true`,
+  `merge=true`, `deploy=true`, `version_bump=true`, `artifact_publish=false`.
+- Выбран PATCH `2.1.4`, непосредственный преемник `main@2.1.3`; несовместимого API,
+  миграции данных и нового предметного пакета нет.
+- Fresh `origin/main` перед preflight остался `ae25fd5a`; `npm run ready:prepare --
+  --candidate 2.1.4` и отдельный release check прошли. После release commit нужен
+  идемпотентный повтор preflight на точном HEAD.
+- Последовательность выпуска: commit/push → Ready PR → обязательные `frontend`,
+  `pytest`, `full-verification` → squash merge без bypass → штатный `deploy-test` →
+  read-only проверка версии и доступного SHA/asset-состава на TEST. Pilot/Prod и
+  публикация methodology/configuration/prompt artifacts не включены.
+
 ### Описание будущего PR
 
 Участник без назначения оставался с кнопкой, способной открыть legacy chat, а знакомство могло переключиться на последнюю анкету организации. Теперь ожидание проверяет server journey с защитой owner/epoch, briefing читает подтверждённую revision своего активного binding, а admin readiness сохраняет latest для новых назначений. Отсутствие должности/email не блокирует UserContext; исторические профили и организационные источники неизменны. Подписи кнопок ожидания переносятся при text200.

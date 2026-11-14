@@ -49,3 +49,14 @@ STOP нового сценария: profile readback, 0 AS/Cycle/Report, real LL
 Первый полный integration остаётся **FAIL**, не переименован в зелёный полный прогон. Его 399 PASS переиспользованы только для неизменённых областей; все 5 упавших тестов после fixture-исправлений получили PASS в адресных повторах. Дополнительно повторён изменённый M4 owned stand. Новый полный CI на PR head, человеческое review и визуальная приёмка TEST — NOT_RUN. 2 skipped полного run не считаются PASS; controlled scope не требует real-provider.
 
 Self-review по EVC: product diff ограничен source/readiness/waiting; API additive argument совместим; опубликованные артефакты/схема/миграция/права доступа не менялись. Runtime defaults, prompts, timers и start транспорта не менялись. Test-only legacy boundary отделён от product entrypoint, требует owned/disabled-provider/gateway1, при managed bindings вызывает настоящий early_readiness. Все исторические snapshots сохраняются; новые контексты/profile только по явным командам. Передача bundle не является Ready for review/приёмкой продукта.
+
+## Подготовка release-кандидата архитектором
+
+- `git fetch origin main` → PASS; `origin/main=ae25fd5a5347ecfb3383e4632e1450a06b9f4a60`, база ветки актуальна.
+- `npm run ready:prepare -- --candidate 2.1.4` → PASS, exit0: `2.1.3 → 2.1.4`, обновлены четыре release metadata, `web/dist` пересобран, release gate подтвердил 62 product paths.
+- `python3.12 scripts/check_release_version.py --base-ref origin/main` → PASS: `Release check passed: 2.1.4`.
+- `git diff --check` → PASS после подготовки кандидата.
+- GitHub CLI локально не авторизован; публикация ветки проверяется штатными Git credentials, PR/merge — через доступную авторизованную GitHub-сессию. Это не ослабляет обязательные CI gates.
+
+Точный release HEAD, PR, CI, squash merge, `deploy-test` и readback TEST записываются
+после соответствующих действий; локальные PASS выше их не заменяют.

@@ -28,6 +28,16 @@ docs/adr/002-cycle-as-dialogue-contracts.md SHA-256 4a4e0170bee7faf137301b342fec
 
 branch_push=false; pr=false; merge=false; deploy=false; version_bump=false; artifact_publish=false. Передача локальным bundle/веткой, публикация и продуктовый номер — архитектор.
 
+## Решение архитектора о выпуске
+
+14.11.2026 пользователь подтвердил, что действует как архитектор, и прямо разрешил
+подготовить PR и выполнить его деплой. Для исправления без несовместимого API или
+миграции выбран непосредственный PATCH-кандидат `2.1.4` от `main@2.1.3`.
+Флаги выпуска: `branch_push=true`, `pr=true`, `merge=true`, `deploy=true`,
+`version_bump=true`, `artifact_publish=false`. Merge допустим только после успешных
+`frontend`, `pytest`, `full-verification` точного head/base; деплой — только штатный
+`deploy-test` после squash merge в `main`, без ручной загрузки файлов.
+
 ## Точные выбранные исходники
 
 - ProductArchitecture.Change01 1.0/01 WORKING: docs/architecture/product-4k/1.0/updates/2026-10-01/source.pdf; SHA-256 dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081 (байты сверены).
