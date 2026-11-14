@@ -1,9 +1,9 @@
 import subprocess,os,time,selectors,signal,json
 from pathlib import Path
-root=Path.cwd(); evidence=root/'docs/evc/tasks/p4k-w02-01/evidence'
+root=Path.cwd(); evidence=root/os.environ.get('W02_RUN_EVIDENCE','docs/evc/tasks/p4k-w02-01/evidence')
 evidence.mkdir(parents=True,exist_ok=True)
 env=os.environ.copy();env['W02_RESOURCE_LOG']=str(evidence/'resources.jsonl');env['W02_EVIDENCE_DIR']=str(evidence)
-cmd=['node_modules/.bin/playwright','test','w02-acquaintance.spec.mjs','remain04-waiting.spec.mjs','remain05-first-start.spec.mjs','auth-r03.spec.mjs','--grep','W02|UX-AUD29-03|UX-AUD29-05|REMAIN04|REMAIN05','--workers=1','--retries=0','--global-timeout=600000']
+cmd=['node_modules/.bin/playwright','test',*os.environ.get('W02_RUN_FILES','w02-acquaintance.spec.mjs remain04-waiting.spec.mjs remain05-first-start.spec.mjs auth-r03.spec.mjs').split(),'--grep',os.environ.get('W02_RUN_GREP','W02|UX-AUD29-03|UX-AUD29-05|REMAIN04|REMAIN05'),'--workers=1','--retries=0','--global-timeout=600000']
 p=subprocess.Popen(cmd,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,start_new_session=True)
 (evidence/'runner.json').write_text(json.dumps({'run_id':os.environ.get('W02_RUN_ID','w02-review-replay'),'pid':p.pid,'pgid':p.pid,'command':cmd,'db':None,'containers':[]},indent=2))
 sel=selectors.DefaultSelector();sel.register(p.stdout,selectors.EVENT_READ);start=last=time.monotonic(); reason=None

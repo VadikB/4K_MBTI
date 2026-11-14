@@ -125,3 +125,41 @@ noLLM/noletters; status/stop/ownership команды прежние, новый
 Run path-ci-fix02:1PASS24.3s actualfrontend/HTTP/ownedPG. Обаports55493/18859free,
 pg_stopped=true; CI-old-oracleFAIL локализован и исправлен. Product runtime hashes
 совпадают с4131fea. Следующийкоммит tests/docs-only; запустить mandatoryCI новогоhead.
+
+
+## ADD01 в работе
+
+Исходный HEAD47d11f72a9c54c9a8a302fb96ba474a7a632f708, main/b0bf7a4,
+версия2.1.7. Предыдущий CI относится только к исходному HEAD. После исправлений
+нужен новый CI. Независящие серверные сценарии и API не изменяются.
+Перед стартом run `w02-add01-visual`: owner Codex/P4K-W02-01/ADD01;
+своих активных PID/контейнеров нет. Исходные чужие listeners: PostgreSQL826:55432,
+AirPlay512:5000/7000, rapportd476:55868, logi820:59869, Google870:7679,
+AdGuard78621:55881 — не используются и не останавливаются.
+Собственный статический fixture server — ephemeral127.0.0.1, REMAIN05 ephemeral;
+БД/контейнеры/LLM/письма отсутствуют. PID/ports пишутся в evidence/add01/resources.jsonl
+и runner.json до использования. Старт/replay:
+`W02_RUN_ID=w02-add01-visual W02_RUN_EVIDENCE=docs/evc/tasks/p4k-w02-01/evidence/add01 W02_RUN_FILES='w02-acquaintance.spec.mjs remain05-first-start.spec.mjs' W02_RUN_GREP='at 1440px|REMAIN05' W02_SUMMARY_ONLY=1 python3 docs/evc/tasks/p4k-w02-01/run-browser.py`.
+Existing runner:1worker/retries0, total600s/no-progress90s, штатные step/request
+limits; SIGTERM owned processgroup →5s→SIGKILL на любом исходе, без autorestart.
+Статус: ps по runner PGID, lsof по recorded ports; stop только своей группы.
+Контрольный снимок сохраняется один: summary1440×1024, остальные scenes не снимаются.
+
+Первый ADD01 browser4/4PASS/5.15s, group absent=true, port60075 закрыт.
+Computed styles и снимок подтвердили8пунктов, но выявлен общий размер вторичной
+кнопки50px из-за border+padding; padding-block уменьшен12→11px для48px.
+Нужен один повтор изменённого visual-сценария; причина установлена.
+Перед run `w02-add01-path`: новый owned cluster `.test-stand/w02-pg-add01`,
+PG55493/backend18859, рольstand_owner/test DB product4k_pytest_<UUID> штатного
+runner. ИсходныйPG826:55432 чужой. Старт python3 /tmp/p4k-w02-add01-path.py;
+status pg_ctl -D .test-stand/w02-pg-add01 status, lsof55493/18859;
+stop pg_ctl -D .test-stand/w02-pg-add01 -m fast stop плюс штатный testfinally и
+owned groupSIGTERM→8s→SIGKILL. Тот же600s/90s/1worker/0retries/noLLM/noletters,
+без autorestart. Фактические PID/ports до использования — evidence/add01/path-run.json.
+
+ADD01 локально завершён:8пунктов, один итоговый снимок1440×1024, computed styles;
+frontend324/lint/build/ready:prepare/diff-checkPASS. W02+REMAIN05:4PASS;
+повторW02 после поправки50→48px:1PASS; PATH29 actualHTTP/ownPG:1PASS21.5s.
+Всё своё остановлено: groupsabsent, fixtureports60075/60111free,
+PG55493/backend18859free/pg_stopped=true. LLM/letters0.
+Активно: свой commit/push того жеPR221 и обязательный CI точного новогоhead.

@@ -329,15 +329,17 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         const send = panel.querySelector('#onboarding-next').getBoundingClientRect();
         return { overflow: document.documentElement.scrollWidth > innerWidth + 1,
           font: getComputedStyle(panel).fontFamily, background: getComputedStyle(panel).backgroundColor,
-          back: [back.width, back.height], expectedBackWidth: innerWidth <= 600 ? 32 : 44,
-          gap: send.left - input.right, sendHeight: send.height, inputBottom: input.bottom, sendBottom: send.bottom,
+          back: [back.width, back.height], stacked: innerWidth <= 600,
+          gap: innerWidth <= 600 ? send.top - input.bottom : send.left - input.right,
+          sendHeight: send.height, sendWidth: send.width, inputWidth: input.width, inputBottom: input.bottom, sendBottom: send.bottom,
           composerBottom: composer.bottom, viewportHeight: innerHeight };
       });
       expect(metrics.overflow).toBe(false); expect(metrics.font).toContain('Onest');
       expect(metrics.background).toBe('rgb(247, 247, 247)');
-      expect(metrics.back).toEqual([metrics.expectedBackWidth, 44]);
-      expect(metrics.gap).toBeCloseTo(12, 0); expect(metrics.sendHeight).toBe(48);
-      expect(metrics.inputBottom).toBeCloseTo(metrics.sendBottom, 0);
+      expect(metrics.back).toEqual([0, 0]);
+      expect(metrics.gap).toBeCloseTo(16, 0); expect(metrics.sendHeight).toBe(48);
+      if (metrics.stacked) expect(metrics.sendWidth).toBeCloseTo(metrics.inputWidth, 0);
+      else { expect(metrics.sendWidth).toBe(200); expect(metrics.inputBottom).toBeCloseTo(metrics.sendBottom, 0); }
       expect(metrics.composerBottom).toBeLessThanOrEqual(metrics.viewportHeight + 1);
       geometry.push({ width, ...metrics });
       await page.screenshot({ path: path.join(dir, `question-${width}.png`), fullPage: true });

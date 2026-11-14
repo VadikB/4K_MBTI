@@ -89,10 +89,10 @@ const fieldsHtml = () => {
     '<div class="onboarding-consent">' + paragraph(model?.readiness?.briefing?.consent_text || 'Текст согласия недоступен.') + '</div>';
 };
 const summaryHtml = () => answerLabels().map((label, index) =>
-  '<div class="onboarding-summary-item"><strong>' + escape(label) + '</strong>' +
+  '<div class="onboarding-summary-item"><span class="onboarding-summary-label">' + escape(label) + '</span>' +
   '<div class="onboarding-summary-answer">' + escape(answers[`answer_${index + 1}`]) + '</div></div>').join('') +
-  paragraph(model?.mandatory_complete ? 'Сведения подтверждены. Здесь сохранены ваши ответы.' :
-    'После подтверждения эти сведения будут использованы для подготовки вашей оценки.');
+  '<p class="onboarding-summary-note">' + escape(model?.mandatory_complete ? 'Сведения подтверждены. Здесь сохранены ваши ответы.' :
+    'После подтверждения эти сведения будут использованы для подготовки вашей оценки.') + '</p>';
 
 // Approved W02 presentation copy; this does not change the assigned methodology or assessment rules.
 const competencyCopy = {
@@ -214,7 +214,7 @@ const steps = () => {
       body: fieldsHtml(), action: 'consent', button: 'Подтвердить' },
     ...questions().map((question, index) => ({ title: question, questionNumber: `ВОПРОС ${index + 1} ИЗ ${questions().length}`,
       description: (index === 0 ? 'Расскажите немного о своей работе. ' : '') + 'Ответьте своими словами. Если точного ответа нет, можно написать «Не знаю».',
-      answerKey: `answer_${index + 1}`, body: '', button: 'Сохранить и продолжить' })),
+      answerKey: `answer_${index + 1}`, body: '', button: 'Отправить' })),
     { title: 'Всё верно?', description: 'Проверьте ответы перед подготовкой ситуаций. До подтверждения вы можете их уточнить.',
       body: summaryHtml(), action: 'confirm', button: model?.mandatory_complete ? 'К объяснению 4К' : 'Подтвердить' },
     { title: 'Что такое 4К', description: 'Четыре компетенции помогают разбираться в задачах, взаимодействовать с людьми и находить решения.',
@@ -297,7 +297,7 @@ const captureInput = () => {
 const transcript = (step, userText, user = false) => '<section class="onboarding-message onboarding-message--' +
   (user ? 'user' : 'assistant') + '"><div class="onboarding-author">' + (user ? 'Вы' : '4К Ассистент') +
   '</div><div class="onboarding-bubble">' + (user ? escape(userText) : (step.questionNumber ? '<p class="onboarding-question-number">' + escape(step.questionNumber) + '</p>' : '') + '<h3>' + escape(step.title) +
-    '</h3>' + paragraph(step.description) + (step.body || '')) + '</div></section>';
+    '</h3><p' + (step.answerKey ? ' class="onboarding-question-hint"' : '') + '>' + escape(step.description) + '</p>' + (step.body || '')) + '</div></section>';
 
 const closeDialog = () => {
   const dialog = document.getElementById('onboarding-dialog');
@@ -383,6 +383,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingStepBackButton.disabled = busy;
   onboardingTitle.textContent = step.title;
   onboardingDescription.textContent = step.description;
+  onboardingDescription.classList.toggle('onboarding-question-hint', Boolean(step.answerKey));
   const number = document.getElementById('onboarding-question-number');
   number.textContent = step.questionNumber || ''; number.hidden = !step.questionNumber;
   onboardingVisual.replaceChildren();
@@ -390,7 +391,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   const input = onboardingPanel.querySelector('.onboarding-answer');
   input.value = step.answerKey ? answers[step.answerKey] || '' : '';
   input.disabled = !step.answerKey || busy || reviewMode || Boolean(model?.mandatory_complete);
-  input.placeholder = input.disabled ? 'Ввод пока недоступен' : 'Напишите ответ…';
+  input.placeholder = input.disabled ? 'Сейчас выберите действие под сообщением' : 'Напишите ответ…';
   input.setAttribute('aria-label', step.answerKey ? step.title : 'Ваш ответ');
   // A transport failure does not make a correct answer invalid.
   input.setAttribute('aria-invalid', 'false');
@@ -407,7 +408,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   if (!loading && !loadFailed && !reviewMode) {
     const secondary = (id, label, kind) => {
       const button = document.createElement('button'); button.type = 'button'; button.id = id;
-      button.className = 'ghost-button'; button.dataset.secondary = ''; button.textContent = label; button.disabled = busy;
+      button.className = kind === 'issue' ? 'onboarding-text-action' : 'ghost-button'; button.dataset.secondary = ''; button.textContent = label; button.disabled = busy;
       button.addEventListener('click', () => openDialog(kind, button)); actions.append(button);
     };
     if (step.action === 'confirm' && !model?.mandatory_complete) secondary('onboarding-edit-answers', 'Изменить мои ответы', 'answers');
@@ -423,7 +424,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
     return html;
   }).join('');
   onboardingNext.textContent = busy ? 'Подождите…' : reviewMode ? 'Вернуться к готовности оценки'
-    : step.answerKey ? '↑' : step.button || 'Далее';
+    : step.button || 'Далее';
   onboardingNext.disabled = loading || busy || (!loadFailed && step.action === 'consent' && !model?.readiness?.briefing?.consent_text);
   onboardingSkip.hidden = loading || reviewMode || !model?.mandatory_complete || ![explanationIndex(), explanationIndex() + 1].includes(index);
   onboardingSkip.textContent = 'Перейти к готовности'; onboardingSkip.disabled = busy;

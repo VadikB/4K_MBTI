@@ -92,6 +92,9 @@ async function checkIssue(page, run, fail = false) {
 for (const width of [1440, 390, 320]) {
   test(`W02 path, shared edit, failures, issue receipts and history at ${width}px`, async ({ page }, info) => {
     test.setTimeout(90000);
+    const screenshot = async (name) => {
+      if (!process.env.W02_SUMMARY_ONLY || name === 'summary-1440') await page.screenshot({ path: info.outputPath(`${name}.png`) });
+    };
     await page.setViewportSize({ width, height: width === 1440 ? 1024 : 844 });
     const run = await fixture(page);
     const errors = []; page.on('pageerror', (error) => errors.push(error.message));
@@ -102,7 +105,7 @@ for (const width of [1440, 390, 320]) {
     expect(await page.locator('.onboarding-send-placeholder').evaluate((node) => getComputedStyle(node).opacity)).toBe('1');
     await expect(page.locator('#onboarding-panel .step-progress')).toHaveCount(0);
     await expect(page.locator('#onboarding-panel')).not.toContainText('алгоритмами AI');
-    await page.screenshot({ path: info.outputPath(`welcome-${width}.png`) });
+    await screenshot(`welcome-${width}`);
     await next(page).click();
     await expect(page.locator('#onboarding-panel')).toContainText('Действующий серверный текст согласия, версия 7.');
     await expect(page.locator('#onboarding-panel')).toContainText('Специалист из назначения');
@@ -113,7 +116,7 @@ for (const width of [1440, 390, 320]) {
     for (let index = 0; index < 3; index++) {
       await expect(page.locator('#onboarding-title')).toHaveText(schema.questions[index].text);
       await expect(page.locator('#onboarding-question-number')).toHaveText(`ВОПРОС ${index + 1} ИЗ 3`);
-      if (index === 0) await page.screenshot({ path: info.outputPath(`question-${width}.png`) });
+      if (index === 0) await screenshot(`question-${width}`);
       await page.locator('.onboarding-answer').fill(original[index]);
       await next(page).click();
     }
@@ -122,7 +125,24 @@ for (const width of [1440, 390, 320]) {
     await next(page).focus(); await page.keyboard.press('Tab');
     await expect(page.locator('#onboarding-edit-answers')).toBeFocused();
     expect(await page.locator('#onboarding-edit-answers').evaluate((node) => getComputedStyle(node).outlineColor)).toBe('rgb(0, 125, 137)');
-    await page.screenshot({ path: info.outputPath(`summary-${width}.png`) });
+    await screenshot(`summary-${width}`);
+    if (process.env.W02_SUMMARY_ONLY) {
+      const styles = await page.evaluate(() => {
+        const selectors = ['#onboarding-report-issue', '.onboarding-composer', '.onboarding-composer-inner',
+          '.onboarding-send-placeholder', '.onboarding-answer', '#feature-list .onboarding-summary-label',
+          '#feature-list .onboarding-summary-answer', '.onboarding-question-hint', '#feature-list .onboarding-summary-note',
+          '.onboarding-section-label', '#onboarding-step-back', '#onboarding-next', '#onboarding-edit-answers'];
+        const properties = ['color', 'backgroundColor', 'fontSize', 'lineHeight', 'fontWeight', 'textDecorationLine',
+          'borderTopWidth', 'borderLeftWidth', 'borderLeftColor', 'borderRadius', 'paddingLeft', 'paddingTop', 'gap',
+          'marginTop', 'marginBottom', 'maxWidth', 'display', 'outlineColor'];
+        return Object.fromEntries(selectors.map((selector) => {
+          const node = document.querySelector(selector), css = getComputedStyle(node), rect = node.getBoundingClientRect();
+          return [selector, { ...Object.fromEntries(properties.map((key) => [key, css[key]])),
+            rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, text: node.textContent, placeholder: node.placeholder }];
+        }).concat([['brandDot', { background: getComputedStyle(document.getElementById('onboarding-home'), '::after').backgroundColor }]]));
+      });
+      await fs.writeFile(info.outputPath('add01-computed.json'), JSON.stringify(styles, null, 2));
+    }
     await checkIssue(page, run);
     await page.getByRole('button', { name: 'Изменить мои ответы', exact: true }).click();
     await expect(dialog(page).locator('textarea')).toHaveCount(3);
@@ -139,7 +159,7 @@ for (const width of [1440, 390, 320]) {
     await expect(page.locator('#onboarding-edit-1')).toHaveValue(edited);
     expect(run.model.mandatory_complete).toBe(false);
     await expect(page.locator('#feature-list .onboarding-summary-answer')).toHaveText(original);
-    await page.screenshot({ path: info.outputPath(`edit-error-${width}.png`) });
+    await screenshot(`edit-error-${width}`);
     await dialog(page).getByRole('button', { name: 'Сохранить', exact: true }).click();
     await expect(dialog(page)).not.toBeVisible();
     original[1] = edited;
@@ -181,7 +201,7 @@ for (const width of [1440, 390, 320]) {
     if (width === 1440) expect(geometry.labelCenter).toBeCloseTo(width / 2, 0);
     else expect(geometry.labelRight).toBeCloseTo(width - 16, 0);
     await fs.writeFile(info.outputPath('computed-styles.json'), JSON.stringify(geometry, null, 2));
-    await page.screenshot({ path: info.outputPath(`history-${width}.png`) });
+    await screenshot(`history-${width}`);
     expect(errors).toEqual([]); expect(run.unexpected).toEqual([]);
     expect(run.writes.filter((w) => /prepare|\/start$/.test(w.path))).toEqual([]);
     expect(run.writes.filter((w) => w.body?.confirm === true)).toHaveLength(1);
@@ -190,7 +210,7 @@ for (const width of [1440, 390, 320]) {
     expect(run.writes.filter((w) => /prepare|\/start$/.test(w.path))).toEqual([]);
     if (evidence) {
       await fs.mkdir(evidence, { recursive: true });
-      const selected = new Set(['computed-styles.json', ...(width === 1440 ? ['welcome-1440.png', 'summary-1440.png'] :
+      const selected = new Set(['computed-styles.json', 'add01-computed.json', ...(width === 1440 ? ['welcome-1440.png', 'summary-1440.png'] :
         width === 390 ? ['question-390.png', 'history-390.png'] : ['edit-error-320.png', 'history-320.png'])]);
       for (const file of await fs.readdir(info.outputDir)) if (selected.has(file)) {
         await fs.copyFile(path.join(info.outputDir, file), path.join(evidence, `${width}-${file}`));

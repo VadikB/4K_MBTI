@@ -53,3 +53,52 @@ reload/readonlyhistory/возвраткactiveAS прошли через actual b
 минимальным CIvenv. ОбаownedPGcluster остановлены, ports55493/18859свободны.
 ПервичныйCIлог сохранёнgzip, path-run/result подтверждают finite-profile+stop.
 Новый обязательныйCI текущегоhead ожидается; прежнийFAILне заменён старымPASS.
+
+
+## ADD01 — актуальная проверка визуальной дельты
+
+Исходный SHA `47d11f72a9c54c9a8a302fb96ba474a7a632f708` (прежний CI PASS).
+Base/main `b0bf7a4e8e4f0fe70c400525a373b9822229dfdc`, кандидат **2.1.7** сохранён.
+Новый source SHA фиксируется в STATE после commit; точный PR/CI head — в локальном
+RELEASE_STATUS.json после CI. История проверок выше не является CI нового head.
+
+| Пункт | Результат сверки по ADD01 / W02_REFERENCE |
+| --- | --- |
+| 1 | Текстовое действие на identity/summary:400,14/20,#007D89,underline,transparent,border0; прежний handler/button keyboard/focus сохранены. |
+| 2 | Composer: белый отдельный block1120px, border-box,padding16,radius8,gap16; вокруг#F7F7F7, полноширинная линия/белая полоса отсутствуют. |
+| 3 | «Отправить»200×48px на desktop, поле/отправкаdisabled при действиях, точный placeholder. Вопросы отправляют через прежний handler/API. Mobile — колонка/полная ширина; точный HTML недоступен. |
+| 4 | Labels400,14/20,#464554,margin-bottom6; answers400,16/24,#222C30; иерархия заголовка сохранена. |
+| 5 | Один question-hint400,14/21,#464554 для трёх вопросов и их истории. |
+| 6 | Примечание400,14/21,#464554; border-left3#CBD5E1,padding-left14,margin-top20. |
+| 7 | Стрелка скрыта (display:none, вне keyboard path); бирюзовая точка после названия. Desktop section center720px; мобильное размещение справа сохранено. |
+| 8 | Основная600/вторичная500,16/24; действия под сообщением; фокус сохранён. Обе кнопки48px после поправки padding вторичной11px. |
+
+Контрольный снимок: `evidence/add01/1440-summary-1440.png`,1440×1024.
+Сверка Codex по8пунктам и computed styles: `1440-add01-computed.json`.
+Это техническая сверка по текстовым источникам; пиксельное совпадение с недоступным
+HTML и приёмка человеком не объявлены. Сайт вновь недоступен черезweb.open.
+
+Команды и первичные результаты (каталог evidence/add01):
+
+- `npm run lint:js` —exit0/lint.log.
+- `node --test tests/frontend/*.test.mjs` —324PASS/0FAIL/frontend.log.
+- `npm run build:web` —exit0/build.log, затем штатный ready:prepare idempotent build.
+- `npm run ready:prepare -- --candidate 2.1.7` —exit0/ready-prepare.log, freshmainb0bf7a4.
+- `git diff --check` —exit0; финальная запись в diff-check.log.
+- Existing W02 only1440px +REMAIN05:4PASS/4.7s; initial-browser.log.
+- После установленного50px→48px visualfix повтор onlyW02:1PASS/2.9s;
+  browser.log/runner-result.json, own groupabsent=true. JS и frontend324 прежние.
+- Existing PATH29 actual frontend/HTTP/ownedPG:1PASS/21.5s; path-browser.log,
+  wrapper23.01s/path-run-result.json. Это проверка адаптированных существующих
+  fixtures, новых тестов только дляCSS и полной новой матрицы не вводилось.
+- Все собственные fixture ports60075/60111 закрыты; PG55493/backend18859 закрыты,
+  pg_stopped=true; ports-stopped.json и path-run-result.json. ЧужойPG55432 сохранён.
+- RuntimeSHA256 — checked-content.json; backend/API/БД definitions не менялись.
+
+Профиль:1worker/retries0,total600s/no-progress90s, штатные deadline/teardown,
+реальныеLLM=0/письма=0. Повторы только после выявленной причины; продуктивныйCSSfix1.
+Команда воспроизведения односнимочного preview-сценария — текущий ADD01 блок STATE.
+
+Следующий шаг: push того же PR221 и mandatory frontend/pytest/full-verification
+точного нового head. Human reviewPENDING. Ручные длинные ответы/форма/телефон по
+принятому ADD01 отложены послеmain/TEST; merge/deploy по-прежнему требуют допуска.

@@ -1,12 +1,14 @@
-# STATE — P4K-W02-01, 14.11.2026
+# STATE — P4K-W02-01 / ADD01, 14.11.2026
 
-Активная карточка: [P4K-W02-01](docs/evc/tasks/p4k-w02-01/TASK.md).
-Состояние и первичные проверки — в её STATE.md/CHECKS.md/evidence.
-Ветка codex/p4k-w02-01: initial0716647, final mainb0bf7a4; PATCH2.1.7.
-UI W02/общая форма/сообщения о неточности/история реализованы; local324frontend
-и11browser PASS, собственные listeners закрыты. Активно: PR/mandatoryCI.
-merge/deploy/artifact_publish=false; human review PENDING. Следующую карточку
-автоматически не запускать. Ниже сохранена история, полномочия не переносятся.
+Активная карточка: [P4K-W02-01](docs/evc/tasks/p4k-w02-01/TASK.md), дополнениеADD01.
+Исходный head47d11f7, base/mainb0bf7a4; версия2.1.7 сохранена.
+Восемь визуальных правок завершены; контрольный снимок и первичные проверки —
+в task STATE/CHECKS/evidence/add01. Local324frontend,4targetedbrowser,
+повторW02послеCSSfix1PASS, actualPATH29HTTP/ownPG1PASS. Свои ресурсы остановлены.
+Активно: обновлениеPR221/mandatoryCI новогоhead; humanreviewPENDING.
+Ручная приёмка длинного ответа/формы/телефона отложена послеmain/TEST поADD01.
+merge/deploy/artifact_publish=false. Следующая карточка отдельно.
+Ниже история прежних задач; их полномочия сюда не переносятся.
 
 # STATE — F02, локальная передача11.11.2026
 
