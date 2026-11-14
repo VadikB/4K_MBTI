@@ -60,3 +60,12 @@ Cleanup: test schemas0/connections0; dropdb exit0, pg_ctl fast stop exit0, statu
 ## Кандидат архитектора2.1.5
 
 14.11.2026 fresh origin/main=a1cdfedf, без новых коммитов/конфликтов. `npm run ready:prepare -- --candidate 2.1.5` exit0: version sync/build/release gate PASS. `npm run lint:js`, `python3.12 scripts/check_release_version.py --base-ref origin/main`, `git diff --check` PASS. После смены release/assets frontend303 PASS/3.01с; browser8 PASS/13.0с, bounded processes child_exited=true (PGID96270/96346). Primary receipts architect-ready/architect-frontend/architect-browser. Product handlers, Api и tests/integration byte-identical369ad32f: прежние protocol65/PG23 сохраняют применимость; новая БД/LLM/mail не запускались. Смена версии не меняет frozen snapshots/definitions. Remote CI ещё NOT_RUN до создания PR; GitHub CLI требует авторизацию, CUA Yandex не получил допуска.
+
+
+## Сопровождение первого CI219
+
+Head5bf7aca5: frontend/pytest и все5 browser lanes PASS; integration1FAIL/410PASS/2SKIP за500.09с, full-verification FAIL. Primary CI link и summary — receipts/ci219-snapshot.json. Единственный FAIL test_http_resume_reports_and_persists_first_deadline[None-60-None] получил409 M7_TIME_LIMIT_REACHED вместо200. Product Api и исходный test byte-identical basea1cdfedf, REMAIN05 frontend при этой проверке не исполняется.
+
+Детерминированный before: старая positive fixture оставляет7200-(3599.8+3600.1)=0.1с; controlled .2с delay после resume воспроизводит тот же409 (1FAIL/3.36с), `receipts/ci-positive-before.txt.gz`. Test-only after: budget_offset=None оставляет60.1с, задержка.2с остаётся регрессией; exact expired fractional cases и guard не меняются. `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 TEST_DATABASE_URL=<owned agent4k_pytest:55445> .venv/bin/python -m pytest -q --run-integration tests/integration/test_exec_fix05_first_deadline_db.py -k 'first_deadline_persisted_once or test_http_resume_reports_and_persists_first_deadline'` —18PASS/16.72с; unit test_exec_fix05_first_deadline.py —10PASS/.55с. Bounded runner180с/no-progress60с, child_exited=true. Не случайный rerun доPASS: контролируемое воспроизведение предположения fixture, затем адресная правка.
+
+Это регрессия обязательного CI, не изменение M7/product timers/оценивания и не новый путь Блок2/3/Report. Новый head требует обязательного CI. Проверенные frontend303/browser8/65protocol/23PG сохраняют применимость по прежним product/затронутым тестовым байтам; integration suite на прошломhead не объявляется PASS.

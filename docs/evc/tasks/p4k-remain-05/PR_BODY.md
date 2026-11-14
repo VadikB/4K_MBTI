@@ -57,3 +57,8 @@ CI ждёт этого PR; remote full-verification обязателен. Пол
 - [x] Регрессии и реальные HTTP/SQL границы проверены.
 - [ ] Актуальный CI успешен и человеческое review завершено.
 - [x] Baseline не присваивался.
+
+
+## Сопровождение CI
+
+Первый head5bf7aca5: frontend/pytest и все5 browser lanes PASS, integration1FAIL/410PASS/2SKIP. Причина — прежняя positive fixture EXEC-FIX05 с остатком0.1с после resume. Задержка0.2с воспроизвела тот жеM7_TIME_LIMIT_REACHED; после увеличения только synthetic positive запаса до60.1с и сохранения delay regression18HTTP/SQL+10unit PASS. Product timers/Api и exact negative boundaries не менялись. Before/after и primary CI link — CHECKS/receipts. Новый head проверяется обязательным CI, предыдущий FAIL не скрыт.

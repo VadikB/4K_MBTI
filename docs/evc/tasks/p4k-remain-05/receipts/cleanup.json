@@ -25,5 +25,17 @@
     95746
   ],
   "remaining_own_processes": 0,
-  "listeners_55445_18764": 0
+  "listeners_55445_18764": 0,
+  "ci_fixture_followup": {
+    "postgres_pid": 96930,
+    "port": 55445,
+    "fixture_schemas": 0,
+    "other_connections": 0,
+    "dropdb_exit": 0,
+    "pg_ctl_stop_exit": 0,
+    "pg_ctl_status_exit": 3,
+    "status": "no server running",
+    "cluster_removed": true,
+    "restart_supervisor": false
+  }
 }
