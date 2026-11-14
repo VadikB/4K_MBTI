@@ -10,7 +10,7 @@ const styles = fs.readFileSync('web/styles/screens/interview.css', 'utf8');
 
 test('E01 names assessment positions as situations and separates sending from completion', () => {
   assert.match(html, /4К Ассистент/);
-  assert.match(html, /Ситуация 1 из 5/);
+  assert.match(html, /Прогресс уточняется/);
   assert.match(html, /После отправки ответ нельзя изменить/);
   assert.match(html, />Завершить ситуацию</);
   assert.match(html, /id="interview-submit-label">Отправить</);
