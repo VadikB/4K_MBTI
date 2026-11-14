@@ -231,6 +231,24 @@ test('REMAIN-03 precommit loss retries the same identity after reload', async ({
   expect(state.invitationItems).toHaveLength(1);
 });
 
+test('REMAIN-03 a new invitation does not discard older unresolved identities', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  await page.evaluate(() => {
+    const operations = Array.from({ length: 20 }, (_, index) => {
+      const email = `old-${index}@example.test`;
+      return { requestKey: `18:3:pilot-11:${email}`, operationId: `old-operation-${index}`,
+        organizationId: 3, assignmentRef: 'pilot-11', emails: [email] };
+    });
+    localStorage.setItem('agent4k.pendingInvitations.18', JSON.stringify(operations));
+  });
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect.poll(() => state.invitationPosts).toBe(1);
+  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('agent4k.pendingInvitations.18')));
+  expect(saved).toHaveLength(20);
+  expect(saved[0].operationId).toBe('old-operation-0');
+});
+
 test('REMAIN-03 late invitation result cannot change a newer view', async ({ page }) => {
   const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
   const pending = gate(); state.invitationPostGate = pending.promise;
