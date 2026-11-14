@@ -1,7 +1,8 @@
 # Проверки P4K-W02-01
 
-Base `07166475b478c843243102c748d51f8564b7cec0` /2.1.5; candidate2.1.6.
-Source/candidate/tested SHA `a52e8909c0a1ce850d08c2d83c3e35dbe7a59919`;
+Initial base `07166475b478c843243102c748d51f8564b7cec0` /2.1.5.
+Final base `b0bf7a4e8e4f0fe70c400525a373b9822229dfdc` /2.1.6; candidate2.1.7.
+Первоначальный source/tested SHA `a52e8909c0a1ce850d08c2d83c3e35dbe7a59919`;
 хеши runtime совпадают с checked-content.json. Handoff после него — только docs.
 
 | AC | Результат | Первичное доказательство / граница |
@@ -14,13 +15,13 @@ Source/candidate/tested SHA `a52e8909c0a1ce850d08c2d83c3e35dbe7a59919`;
 
 Команды/результаты (logs в evidence):
 
-- `npm run ready:prepare -- --candidate 2.1.6` — exit0; fresh main0716647.
+- `npm run ready:prepare -- --candidate 2.1.7` — exit0; fresh mainb0bf7a4.
 - `npm run lint:js` — exit0.
 - `npm run build:web` — exit0; dist пересобран штатно.
-- `node --test tests/frontend/*.test.mjs` —305 PASS,0FAIL, включая scopes/late-readback.
-- `python3.12 scripts/check_release_version.py --base-ref origin/main` —2.1.6 PASS.
+- `node --test tests/frontend/*.test.mjs` —324 PASS,0FAIL, включая scopes/late-readback.
+- `python3.12 scripts/check_release_version.py --base-ref origin/main` —2.1.7 PASS.
 - `git diff --check` —exit0.
-- Browser run05:11 PASS,0FAIL/retries0,12.5s. Команда и PID группы в runner.json,
+- Browser final run06:11 PASS,0FAIL/retries0,13.1s. Команда и PID группы в runner.json,
   итог runner-result.json; полный stdout browser.log. Run01 environment EPERM сохранён
   отдельно, не product FAIL; run02–05 — исправления после осмотра/нового diff.
 - Финальное self-review: API, schema, rights, published definitions, PM contracts и
@@ -35,5 +36,5 @@ Source/candidate/tested SHA `a52e8909c0a1ce850d08c2d83c3e35dbe7a59919`;
 фиксируются в resources.jsonl, штатный afterAll подтверждает stop. `ports-stopped.json`
 и runner-result подтверждают остановку своего, исходный PostgreSQL55432 не использован.
 
-PR/CI: PENDING до публикации. Human review/merge/deploy/фактический TEST: NOT_RUN,
+PR221: https://github.com/VadikB/4K_MBTI/pull/221; обязательный CI нового head PENDING после синхронизацииmain. Human review/merge/deploy/фактический TEST: NOT_RUN,
 этим этапом не разрешены. Откат — revert собственного PR, данные не меняются.

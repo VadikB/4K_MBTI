@@ -71,3 +71,15 @@ evidence/repository-verification.json. На основании новых дан
 из-за отсутствующего user scope; иных email/секретов не запрашивали.
 Статус требований: локально всеAC PASS TECH, human visual PENDING.
 Осталось: один Ready PR, mandatoryCI точного head и финальный receipt.
+
+Main продвинулся во время публикации: PR220/b0bf7a4e8e4f0fe70c400525a373b9822229dfdc,
+версия2.1.6. Собственная ветка синхронизирована merge88c5c95; исходники W02
+не конфликтовали, конфликты только generated dist разрешены штатной пересборкой.
+Новый кандидат2.1.7 — непосредственный PATCH свежей базы;2.1.6 этой ветки не был
+выпущен. PR221 используется тот же. Финальный run06 на интегрированном составе:
+те же owned fixture servers18764/18784/ephemeral, W02_RESOURCE_LOG+W02_EVIDENCE_DIR,
+600s/90s/noLLM/noletters, штатный teardown/processgroup stop. Исходные чужие ресурсы
+прежние, рабочаяБД не используется. PID/ports — runner.json/resources.jsonl.
+Run06 финальный:11/11PASS13.1s; frontend324/324PASS; lint/build/release/diff-check
+PASS, own group absent=true/ports closed. Finalbaseb0bf7a4/candidate2.1.7,
+обновлённые runtime SHA256 в checked-content.json. Оба слоя W02 и PR220 сохраняются.

@@ -1,7 +1,7 @@
 {
-  "run_id": "w02-local-20261114-05",
-  "pid": 15353,
-  "pgid": 15353,
+  "run_id": "w02-local-20261114-06",
+  "pid": 18615,
+  "pgid": 18615,
   "command": [
     "node_modules/.bin/playwright",
     "test",

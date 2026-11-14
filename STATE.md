@@ -2,8 +2,8 @@
 
 Активная карточка: [P4K-W02-01](docs/evc/tasks/p4k-w02-01/TASK.md).
 Состояние и первичные проверки — в её STATE.md/CHECKS.md/evidence.
-Ветка codex/p4k-w02-01 от fresh main0716647; PATCH2.1.6.
-UI W02/общая форма/сообщения о неточности/история реализованы; local305frontend
+Ветка codex/p4k-w02-01: initial0716647, final mainb0bf7a4; PATCH2.1.7.
+UI W02/общая форма/сообщения о неточности/история реализованы; local324frontend
 и11browser PASS, собственные listeners закрыты. Активно: PR/mandatoryCI.
 merge/deploy/artifact_publish=false; human review PENDING. Следующую карточку
 автоматически не запускать. Ниже сохранена история, полномочия не переносятся.
