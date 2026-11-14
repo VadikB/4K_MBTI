@@ -1,0 +1,19 @@
+{
+  "run_id": "remain05-controlled-20261114",
+  "postgres_pid": 94029,
+  "port": 55445,
+  "test_database": "agent4k_pytest",
+  "fixture_schemas_remaining": 0,
+  "other_test_connections": 0,
+  "dropdb_exit": 0,
+  "pg_ctl_stop_exit": 0,
+  "pg_ctl_status_exit": 3,
+  "pg_ctl_status": "no server running",
+  "postmaster_pid_present": false,
+  "cluster_directory_removed": true,
+  "restart_supervisor": false,
+  "docker_created": false,
+  "assessment_answers": 0,
+  "external_llm_calls": 0,
+  "external_mail_calls": 0
+}

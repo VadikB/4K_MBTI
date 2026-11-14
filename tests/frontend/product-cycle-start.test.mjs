@@ -121,7 +121,7 @@ test('a 503 POST response also requires readback before reporting failure', asyn
   assert.equal(calls.length, 2);
 });
 
-for (const variant of ['abort', 'deadline', 'empty', 'invalid', 'incomplete', 'foreign', 'body-abort']) {
+for (const variant of ['abort', 'deadline', 'empty', 'invalid', 'incomplete', 'foreign', 'body-abort', 'empty-payload', 'scalar-payload', 'array-payload']) {
   test(`uncertain first start ${variant} keeps identity and recovers committed runtime`, async () => {
     const values = new Map();
     window.sessionStorage = { getItem: (key) => values.get(key) ?? null,
@@ -136,6 +136,8 @@ for (const variant of ['abort', 'deadline', 'empty', 'invalid', 'incomplete', 'f
         name: variant === 'abort' ? 'AbortError' : 'RequestDeadlineError' });
       if (variant === 'body-abort') return { ok: true, text: async () => { throw Object.assign(new Error('body'), { name: 'AbortError' }); } };
       if (variant === 'empty' || variant === 'invalid') return new Response(variant === 'empty' ? '' : '{', { status: 201 });
+      if (variant.endsWith('-payload')) return jsonResponse({ plan: { cycle_id: 'cycle-1' }, runtime: { ...runtime,
+        current_situation: { status: 'active', participant_payload: variant === 'empty-payload' ? {} : variant === 'array-payload' ? [] : 'incomplete' } } }, 201);
       return jsonResponse(variant === 'foreign' ? { plan: { cycle_id: 'other' }, runtime: { ...runtime, cycle_id: 'other' } } : {}, 201);
     };
     try {
@@ -198,4 +200,16 @@ test('known cancelled/admission 409 clears its pending command and never opens r
       assert.equal(values.size, 0);
     } finally { delete window.sessionStorage; }
   }
+});
+
+test('known cancellation on readback stays visible while the lost POST outcome remains unknown', async () => {
+  const { acquaintanceErrorMessage } = await import('../../web/js/acquaintance-errors.js');
+  await assert.rejects(startPreparedProductCycle('cycle-1', { operationId: 'lost-then-cancelled', fetchImpl: async (url) => {
+    if (url.endsWith('/start')) throw new TypeError('Failed to fetch');
+    return jsonResponse({ detail: 'ASSIGNMENT_CANCELLED' }, 409);
+  } }), (error) => {
+    assert.equal(error.name, 'AssessmentStartUnknown');
+    assert.match(acquaintanceErrorMessage(error), /отменено.*не подтверждено/);
+    return true;
+  });
 });

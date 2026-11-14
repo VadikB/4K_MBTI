@@ -7,7 +7,10 @@ const uncertainPost = (error) => transportFailure(error) || Number(error?.status
 
 const committedRuntime = (runtime, cycleId) => runtime?.cycle_id === cycleId &&
   runtime?.current_situation?.status === 'active' &&
-  Boolean(runtime?.current_situation?.participant_payload);
+  runtime.current_situation.participant_payload !== null &&
+  typeof runtime.current_situation.participant_payload === 'object' &&
+  !Array.isArray(runtime.current_situation.participant_payload) &&
+  Object.keys(runtime.current_situation.participant_payload).length > 0;
 
 const pendingKey = (cycleId) => `assessment-start-pending:${cycleId}`;
 const pendingStorage = () => {
@@ -92,13 +95,17 @@ export const startPreparedProductCycle = async (cycleId, {
       throw error;
     }
     writePendingOperation(cycleId, startOperationId);
+    let readbackFailure;
     try {
       const runtime = await readStartedRuntime(cycleId, fetchImpl);
       if (committedRuntime(runtime, cycleId)) {
         clearPendingOperation(cycleId);
         return { plan: { cycle_id: cycleId }, runtime, recovered_after_transport_failure: true };
       }
-    } catch { /* A failed readback cannot determine whether the POST committed. */ }
-    throw unknownStart(startOperationId, error);
+    } catch (readbackError) {
+      // A refusal cannot confirm the POST outcome, but its safe reason matters.
+      readbackFailure = readbackError;
+    }
+    throw unknownStart(startOperationId, readbackFailure || error);
   }
 };

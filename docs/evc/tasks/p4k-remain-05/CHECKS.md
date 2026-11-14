@@ -6,14 +6,14 @@ RUN_ID `remain05-controlled-20261114`; base `a1cdfedfb8b71d150b078eb0380ea013f0b
 
 | Команда | Фактический результат |
 | --- | --- |
-| `node --test tests/frontend/product-cycle-start.test.mjs tests/frontend/http-deadline.test.mjs tests/frontend/remain05-errors.test.mjs` | Первичный адресный run 31 PASS; последующие две регрессии известного refusal/opaque проверены полным frontend |
-| `node --test tests/frontend/*.test.mjs` | 299 PASS, exit0; `receipts/frontend.txt.gz` |
+| `node --test tests/frontend/product-cycle-start.test.mjs tests/frontend/http-deadline.test.mjs tests/frontend/remain05-errors.test.mjs` | Первичный адресный run 31 PASS; последующие регрессии известного refusal/opaque проверены полным frontend |
+| `node --test tests/frontend/*.test.mjs` | 303 PASS, exit0; `receipts/frontend.txt.gz` |
 | `npm run lint:js` | PASS, exit0; `receipts/lint.txt.gz` |
 | `npm run build:web` | PASS, exit0; `receipts/build.txt.gz`, dist включён |
 | `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 .venv/bin/python -m pytest -q tests/unit/test_m5_functional_generation_service.py tests/unit/test_functional_personalization_matrix.py tests/unit/test_product_cycle_preparation_fencing.py tests/unit/test_product_cycle_preparation_projection.py` | 65 PASS, exit0; `receipts/protocol.txt.gz` |
 | PG/HTTP exact selection ниже | 16 PASS, exit0, 21 deselected; `receipts/pg-http.txt.gz` |
 | `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 TEST_DATABASE_URL=<owned localhost:55445/agent4k_pytest> .venv/bin/python -m pytest -q --run-integration tests/integration/test_remain05_first_preparation_db.py` | 7 PASS, exit0; `receipts/functional-pg.txt.gz` |
-| `npx playwright test tests/browser/remain05-first-start.spec.mjs tests/browser/exec-fix02-preparation.spec.mjs tests/browser/auth-r03.spec.mjs --grep 'REMAIN05\|first preparation\|committed first start\|reload resolves unknown first start\|reload reads a preparation' --workers=1 --retries=0 --timeout=90000` | 8 PASS, exit0 за13.3с; `receipts/browser-regression.txt.gz`; новые3 отдельно также PASS |
+| `npx playwright test tests/browser/remain05-first-start.spec.mjs tests/browser/exec-fix02-preparation.spec.mjs tests/browser/auth-r03.spec.mjs --grep 'REMAIN05\|first preparation\|committed first start\|reload resolves unknown first start\|reload reads a preparation' --workers=1 --retries=0 --timeout=90000` | 8 PASS, exit0 за12.9с; `receipts/browser-regression.txt.gz`; новые3 отдельно также PASS |
 | `git diff --check` | PASS, exit0 |
 
 PG16 command: тот же `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 TEST_DATABASE_URL=<owned localhost:55445/agent4k_pytest> .venv/bin/python -m pytest -q --run-integration` с файлами `tests/integration/test_pilot_start_admission_db.py tests/integration/test_path_start_assignment_lineage_db.py tests/integration/test_m10_product_path_db.py` и точным `-k`:
@@ -26,7 +26,7 @@ reassignment_http_start_presents_new_as_once_with_zero_answers or exact_limited_
 
 | AC | Статус и проверяемый факт | Первичный результат / границы |
 | --- | --- | --- |
-| F04-AC01 | PASS TECH. Actual advance handler: answer PUT, consent POST, progress PUT × TypeError/AbortError/deadline/opaque409; текст/шаг остаются. Actual GET/PUT browser smoke. Safe renderer сохраняет известные W02/M4/admission/cancellation причины, код отдельно. | frontend299 + browser8; safe-error-answer.png. Первичный raw Failed to fetch удалён из отображения; подтверждение сохранения на сервере не выдумывается. |
+| F04-AC01 | PASS TECH. Actual advance handler: answer PUT, consent POST, progress PUT × TypeError/AbortError/deadline/opaque409; текст/шаг остаются. Actual GET/PUT browser smoke. Safe renderer сохраняет известные W02/M4/admission/cancellation причины, код отдельно. | frontend303 + browser8; safe-error-answer.png. Первичный raw Failed to fetch удалён из отображения; подтверждение сохранения на сервере не выдумывается. |
 | F04-AC02 | PASS TECH. Abort/deadline/empty/invalid/incomplete/foreign201/body-abort → same-cycle readback; pending записан до POST. Stall headers/body ограничен actual default transport. Reload не меняет key; один persisted старт/AS/бюджет. | product-cycle-start tests + invalid201 browser + actual HTTP/PG lost receipt, concurrent starts. |
 | F04-AC03 | PASS TECH. Отмена/admission409 остаются отказами, readback AS не открывается; foreign/missing runtime/GET503 остаются unknown. Точный assignment/owner проверяет сервер. | frontend safe reasons/refusal/foreign; SQL revocation/scope/publication, HTTP foreign readback; lineage5. |
 | F04-AC04 | PASS TECH. Явный normal201→runtime→reload, та же первая AS. Actual SQL first start/readback сохраняет AS, время и0assessee turns. | browser normal-start + pilot HTTP/PG. Browser использует синтетические HTTP-проекции, SQL/HTTP — настоящую owned PostgreSQL. Это сочетание границ, не единая живая auth→организация→AS сессия и не новый paid PATH. |
@@ -46,3 +46,12 @@ M1.4–5 / M4.4/6 / M5 AS admission / Change01 И-2/3 → C23/24/34 fixed profil
 - Недоступность sessionStorage остаётся существующим ограничением восстановления после reload; серверные guards/идемпотентность сохраняются. Нет утверждения о сохранении текста/результата без server подтверждения.
 
 Визуально просмотрен safe-error-answer.png: ответ/кнопка/причина видимы, текст не теряется. Новая первая AS — same-first-as.png. Cleanup и точные SHA — STATE.
+
+
+## Итог exact-code и review
+
+На code SHA `d1326a3e7ee4cee8a1741d1580f6f83b5ce8caef` повторены под проверенным bounded wrapper: protocol65 PASS/3.36с; PG23 PASS/49.87с; frontend299 PASS и browser8 PASS. Receipts exact-protocol/exact-pg, все child_exited=true. После code review изменились только product-cycle-start.js, его frontend tests и пересобранный dist: readback refusal cause сохраняется при unknown, пустой/scalar/array participant_payload не считается подтверждённой AS. Итоговые frontend303, browser8, lint/build PASS; серверные65/23 reused с d1326a3e, byte-identical `Api/` и `tests/integration/` подтверждены `git diff --name-only d1326a3e -- Api tests/integration` (пусто). Новый код не меняет gateway/queue/admission/frozen refs.
+
+Первый browser fixture90с превысил профиль no-progress60с, внешний ограничитель тогда отсутствовал: это отдельный harness-limit FAIL, не PASS профиля. Перед последним run wrapper в receipts/bounded-runner.py проверен positive/deadline/no-progress одноошибочными controls (runner-controls.json). Финальные тесты выполнялись с hard180с/no-progress60с/log10MiB и адресным TERM/grace15/KILL собственного PGID; все завершены раньше лимитов, без автоматических full retries. Никакого постоянно работающего monitor/service в продукт не добавлено.
+
+Cleanup: test schemas0/connections0; dropdb exit0, pg_ctl fast stop exit0, status exit3/no server running; postmaster.pid отсутствует, owned cluster directory удалён. Primary cleanup.json; финальная проверка портов/процессов и symlinks — STATE.
