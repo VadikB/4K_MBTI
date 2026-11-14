@@ -1,0 +1,21 @@
+{
+  "owned_cluster": "/private/tmp/p4k-remain06-pg",
+  "port": 55446,
+  "pg_pid": 1140,
+  "running": false,
+  "restart": "no",
+  "owned_database": "agent4k_pytest",
+  "database_dropped": true,
+  "schemas_before_drop": 0,
+  "connections_before_drop": 0,
+  "preview_databases_absent": true,
+  "owned_processes_exited": true,
+  "ports_released": [
+    55446,
+    18935,
+    18933
+  ],
+  "containers": [],
+  "run_seconds": 704,
+  "cluster_directory_removed": true
+}

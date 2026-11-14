@@ -1,0 +1,13 @@
+{
+  "blocked": [
+    false,
+    false
+  ],
+  "selectionText": "",
+  "protectedActions": [
+    true,
+    true
+  ],
+  "ownAllowed": true,
+  "error": "Реальная ошибка"
+}

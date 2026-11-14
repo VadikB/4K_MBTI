@@ -1,0 +1,47 @@
+[
+  {
+    "pathname": "/users/assessment/m7/cycles/afdb7f08-eae7-4024-aabc-b16c65be7792/return-state",
+    "method": "GET",
+    "status": 200,
+    "allowed_action": "continue_current"
+  },
+  {
+    "pathname": "/users/assessment/m7/cycles/afdb7f08-eae7-4024-aabc-b16c65be7792/return-state",
+    "method": "GET",
+    "status": 200,
+    "allowed_action": "dependency_unavailable"
+  },
+  {
+    "pathname": "/users/assessment/m7/cycles/afdb7f08-eae7-4024-aabc-b16c65be7792/return-state",
+    "method": "GET",
+    "status": 200,
+    "allowed_action": "dependency_unavailable"
+  },
+  {
+    "pathname": "/users/assessment/cycles/afdb7f08-eae7-4024-aabc-b16c65be7792/runtime",
+    "method": "GET",
+    "status": 200,
+    "collection_status": "active",
+    "assessment_situation_id": "34ed41f4-7f1d-469c-b398-2bc6616ba724",
+    "situation_status": "active"
+  },
+  {
+    "pathname": "/users/assessment/m7/cycles/afdb7f08-eae7-4024-aabc-b16c65be7792/presence",
+    "method": "POST",
+    "status": 200
+  },
+  {
+    "pathname": "/users/assessment/m7/cycles/afdb7f08-eae7-4024-aabc-b16c65be7792/return-state",
+    "method": "GET",
+    "status": 200,
+    "allowed_action": "connected"
+  },
+  {
+    "pathname": "/users/assessment/cycles/afdb7f08-eae7-4024-aabc-b16c65be7792/runtime",
+    "method": "GET",
+    "status": 200,
+    "collection_status": "active",
+    "assessment_situation_id": "34ed41f4-7f1d-469c-b398-2bc6616ba724",
+    "situation_status": "active"
+  }
+]

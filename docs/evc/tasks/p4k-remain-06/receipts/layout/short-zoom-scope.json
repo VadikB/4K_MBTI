@@ -1,0 +1,4 @@
+{
+  "mode": "Chromium CDP pageScaleFactor=2",
+  "limitation": "Emulated page scale; NOT physical device, OS magnification or browser text-zoom acceptance."
+}

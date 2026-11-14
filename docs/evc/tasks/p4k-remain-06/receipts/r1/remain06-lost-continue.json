@@ -1,0 +1,10 @@
+{
+  "cycle_id": "afdb7f08-eae7-4024-aabc-b16c65be7792",
+  "assessment_situation_id": "34ed41f4-7f1d-469c-b398-2bc6616ba724",
+  "posted_commands": 1,
+  "command_key": "f6065dff-7079-4fd6-8410-c4bc0c7810c6",
+  "readback_same_as": true,
+  "replay_same_receipt": true,
+  "two_tabs_same_as": true,
+  "foreign_status": 403
+}
