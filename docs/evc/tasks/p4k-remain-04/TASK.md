@@ -35,3 +35,9 @@ branch_push=false; pr=false; merge=false; deploy=false; version_bump=false; arti
 - M3.RoleProfile 1.0 FROZEN: docs/methodology/source-sets/2026-10-01/originals/M3.RoleProfile-v1.0.docx; SHA-256 a3c085e4182fe8bc5a82204a8d4679a09b85650ea79e2df24fb1ed8ab6604e06 (байты сверены).
 - M3.BaseRoles 1.0 FROZEN: docs/methodology/source-sets/2026-10-01/originals/M3.BaseRoles-v1.0.docx; SHA-256 ab04e175bb1bf4ad55c320554068041baf3cb4c1cc2316c16966451b91c465bc (байты сверены).
 - M4.Context 1.0 FROZEN: docs/methodology/source-sets/2026-10-01/originals/M4.Context-v1.0.docx; SHA-256 07875e93ae422668b1b30cd60bc1c6140cae91db12b0b80ba4abca441cfe9291 (байты сверены).
+
+## Итог
+
+Все три шага реализации/локальной проверки завершены; code candidate `57f56f863ad9535045b758ae6f2b1d451d9ff177`. Результаты, границы повторного использования и первичные квитанции — CHECKS.md, полная передача/откат/следующие зависимости — STATE.md. Изменений источников, методологических норм, ACL, миграций, M5–M8/EXEC и paid calls нет. Единственный значимый compatibility-стык старых component fixtures явно отделён от современного runtime.
+
+Приложенная карточка `/Users/vadim_bogachev/Downloads/P4K_REMAIN_04_v1_6.txt`: SHA-256 `6bebc5d5713947aee8435b281574c8a8a86a9cb7bd4bb4b8b3421b2f716052ba`; общий порядок 1.0 SHA-256 `ece5f67dde34f7771e0084789f40617131e99d767ad5d8a57cac320320796c31`. Полные тексты не дублируются. M1.4 и применимые абзацы M3.RoleProfile прочитаны адресно; их роли/полномочия не превращались в admin authority.
