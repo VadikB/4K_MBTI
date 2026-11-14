@@ -41,7 +41,9 @@ def _limits(c, state, budget_offset, calendar_offset):
         ('collecting', first_start, first_end),
         ('authorized_pause', first_end, first_end + timedelta(seconds=5)),
         ('blocking_system_wait', first_end + timedelta(seconds=5), second_start),
-        ('collecting', second_start, second_start + timedelta(seconds=3600.3 if budget_at else 3600.1)),
+        # None means the budget has NOT expired. Leave 60.1s for the HTTP path;
+        # 0.1s made legitimate expiry depend on CI scheduling after resume.
+        ('collecting', second_start, second_start + timedelta(seconds=3600.3 if budget_at else 3540.1)),
     ]
     for kind, start, end in intervals:
         c.execute('''INSERT INTO m5_cycle_time_intervals
@@ -111,13 +113,25 @@ def test_first_deadline_persisted_once(current, budget_offset, calendar_offset, 
 
 
 @pytest.mark.parametrize('budget_offset,calendar_offset,reason', CASES)
-def test_http_resume_reports_and_persists_first_deadline(current, http, budget_offset, calendar_offset, reason):
+def test_http_resume_reports_and_persists_first_deadline(current, http, monkeypatch, budget_offset, calendar_offset, reason):
     with current['factory']() as c:
         m7_completion.control(c, cycle_id=current['cycle_id'], key='pause', action='pause',
                               reason='authorized', initiated_by=99)
         budget_at, calendar_at = _limits(c, current, budget_offset, calendar_offset)
         c.commit()
         before = _effects(c)
+    if reason is None:
+        # The positive HTTP case must tolerate work after opening collecting.
+        from Api import m5_cycle_runtime
+        transition_session = m5_cycle_runtime.transition_session
+
+        def delayed_resume(connection, **kwargs):
+            result = transition_session(connection, **kwargs)
+            if kwargs['action'] == 'resume':
+                sleep(.2)
+            return result
+
+        monkeypatch.setattr(m5_cycle_runtime, 'transition_session', delayed_resume)
     response = http.post('/users/assessment/m7/cycles/' + current['cycle_id'] + '/control',
                          json={'action': 'resume', 'reason': 'continue', 'idempotency_key': 'resume'})
     assert response.status_code == 200, response.text

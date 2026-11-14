@@ -1,0 +1,41 @@
+{
+  "run_id": "remain05-controlled-20261114",
+  "postgres_pid": 94029,
+  "port": 55445,
+  "test_database": "agent4k_pytest",
+  "fixture_schemas_remaining": 0,
+  "other_test_connections": 0,
+  "dropdb_exit": 0,
+  "pg_ctl_stop_exit": 0,
+  "pg_ctl_status_exit": 3,
+  "pg_ctl_status": "no server running",
+  "postmaster_pid_present": false,
+  "cluster_directory_removed": true,
+  "restart_supervisor": false,
+  "docker_created": false,
+  "assessment_answers": 0,
+  "external_llm_calls": 0,
+  "external_mail_calls": 0,
+  "runner_pgids_checked": [
+    95001,
+    95065,
+    95070,
+    95073,
+    95669,
+    95746
+  ],
+  "remaining_own_processes": 0,
+  "listeners_55445_18764": 0,
+  "ci_fixture_followup": {
+    "postgres_pid": 96930,
+    "port": 55445,
+    "fixture_schemas": 0,
+    "other_connections": 0,
+    "dropdb_exit": 0,
+    "pg_ctl_stop_exit": 0,
+    "pg_ctl_status_exit": 3,
+    "status": "no server running",
+    "cluster_removed": true,
+    "restart_supervisor": false
+  }
+}

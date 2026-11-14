@@ -1,12 +1,16 @@
-import { createOperationId, readApiResponse } from './api.js';
+import { createOperationId, readApiResponse, fetchWithDeadline } from './api.js';
 
 const transportFailure = (error) => error instanceof TypeError ||
   /failed to fetch|networkerror|load failed/i.test(String(error?.message || ''));
-const uncertainPost = (error) => transportFailure(error) || Number(error?.status) >= 500;
+const uncertainPost = (error) => transportFailure(error) || Number(error?.status) >= 500 ||
+  ['AbortError', 'RequestDeadlineError', 'StartReceiptInvalid'].includes(error?.name);
 
 const committedRuntime = (runtime, cycleId) => runtime?.cycle_id === cycleId &&
   runtime?.current_situation?.status === 'active' &&
-  Boolean(runtime?.current_situation?.participant_payload);
+  runtime.current_situation.participant_payload !== null &&
+  typeof runtime.current_situation.participant_payload === 'object' &&
+  !Array.isArray(runtime.current_situation.participant_payload) &&
+  Object.keys(runtime.current_situation.participant_payload).length > 0;
 
 const pendingKey = (cycleId) => `assessment-start-pending:${cycleId}`;
 const pendingStorage = () => {
@@ -23,7 +27,7 @@ const clearPendingOperation = (cycleId) => {
 };
 export const hasPendingPreparedStart = (cycleId) => Boolean(readPendingOperation(cycleId));
 const unknownStart = (operationId, cause) => Object.assign(new Error(
-  'Ответ на команду старта не получен. Состояние не подтверждено; данные сохранены. Проверьте состояние ещё раз.',
+  'Состояние не подтверждено. Результат команды старта пока неизвестен. Проверьте состояние ещё раз перед повтором старта.',
 ), { name: 'AssessmentStartUnknown', operationId, cause });
 
 const readStartedRuntime = async (cycleId, fetchImpl) => {
@@ -36,18 +40,21 @@ const readStartedRuntime = async (cycleId, fetchImpl) => {
 };
 
 export const readPendingPreparedStart = async (cycleId, {
-  fetchImpl = window.fetch.bind(window),
+  fetchImpl = fetchWithDeadline,
 } = {}) => {
   const operationId = readPendingOperation(cycleId);
   if (!operationId) return null;
   try {
     const runtime = await readStartedRuntime(cycleId, fetchImpl);
+    if (!committedRuntime(runtime, cycleId) && runtime?.current_situation?.status !== 'admitted') {
+      throw unknownStart(operationId);
+    }
     return { started: committedRuntime(runtime, cycleId), operationId };
   } catch (error) { throw unknownStart(operationId, error); }
 };
 
 export const startPreparedProductCycle = async (cycleId, {
-  fetchImpl = window.fetch.bind(window), operationId = createOperationId(),
+  fetchImpl = fetchWithDeadline, operationId = createOperationId(),
 } = {}) => {
   const pendingOperationId = readPendingOperation(cycleId);
   if (pendingOperationId) {
@@ -63,12 +70,23 @@ export const startPreparedProductCycle = async (cycleId, {
     }
   }
   const startOperationId = pendingOperationId || operationId;
+  // Keep the command identity even if the page reloads while POST is in flight.
+  writePendingOperation(cycleId, startOperationId);
   try {
     const response = await fetchImpl('/users/assessment/cycles/start', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cycle_id: cycleId, idempotency_key: startOperationId }),
     });
-    const started = await readApiResponse(response, 'Не удалось запустить Cycle runtime.');
+    let started;
+    try {
+      started = await readApiResponse(response, 'Не удалось подтвердить ответ на команду старта.');
+    } catch (error) {
+      if (!response.ok) throw error;
+      throw Object.assign(new Error('Неполный ответ на команду старта.'), { name: 'StartReceiptInvalid', cause: error });
+    }
+    if (started?.plan?.cycle_id !== cycleId || !committedRuntime(started?.runtime, cycleId)) {
+      throw Object.assign(new Error('Неполный ответ на команду старта.'), { name: 'StartReceiptInvalid' });
+    }
     clearPendingOperation(cycleId);
     return started;
   } catch (error) {
@@ -77,13 +95,17 @@ export const startPreparedProductCycle = async (cycleId, {
       throw error;
     }
     writePendingOperation(cycleId, startOperationId);
+    let readbackFailure;
     try {
       const runtime = await readStartedRuntime(cycleId, fetchImpl);
       if (committedRuntime(runtime, cycleId)) {
         clearPendingOperation(cycleId);
         return { plan: { cycle_id: cycleId }, runtime, recovered_after_transport_failure: true };
       }
-    } catch { /* A failed readback cannot determine whether the POST committed. */ }
-    throw unknownStart(startOperationId, error);
+    } catch (readbackError) {
+      // A refusal cannot confirm the POST outcome, but its safe reason matters.
+      readbackFailure = readbackError;
+    }
+    throw unknownStart(startOperationId, readbackFailure || error);
   }
 };

@@ -1,0 +1,26 @@
+{
+  "pr": "https://github.com/VadikB/4K_MBTI/pull/219",
+  "head": "5bf7aca54fe9952abd699c05d3d54727fb5f06b2",
+  "base": "a1cdfedfb8b71d150b078eb0380ea013f0b08965",
+  "source": "GitHub rendered PR checks via user-authorized built-in browser",
+  "ci_run": 43614718896,
+  "full_run": 43614718927,
+  "reads": 8,
+  "frontend": "PASS",
+  "pytest": "PASS",
+  "integration": "FAIL",
+  "browser_fast": "PASS",
+  "browser_runtime_lanes": "PASS_4_OF_4",
+  "full-verification": "FAIL",
+  "deploy-test": "SKIPPED_ON_PR",
+  "merge": false,
+  "deploy": false,
+  "failure": {
+    "node": "tests/integration/test_exec_fix05_first_deadline_db.py::test_http_resume_reports_and_persists_first_deadline[None-60-None]",
+    "expected_http": 200,
+    "actual_http": 409,
+    "detail": "M7_TIME_LIMIT_REACHED",
+    "integration_summary": "1 failed, 410 passed, 2 skipped, 1250 deselected in 500.09s",
+    "job_url": "https://github.com/VadikB/4K_MBTI/actions/runs/43614718927/job/132507152702?pr=219"
+  }
+}

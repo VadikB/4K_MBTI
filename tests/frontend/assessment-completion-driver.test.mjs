@@ -8,6 +8,7 @@ import { completeStartedAssessment } from '../browser/fixtures/assessment-comple
 function adapter(mode, dir) {
   const base = 'http://fixture.invalid', cycle = 'cycle-1', as = 'as-1';
   let phase = 'active', question = 0, closed = false, finishAllowed = false, input = '';
+  let deliveryPending = false;
   const turns = [], events = [], waiters = [];
   const response = (url, payload) => ({ url: () => url, ok: () => true,
     request: () => ({ method: () => 'POST' }), json: async () => structuredClone(payload) });
@@ -15,7 +16,7 @@ function adapter(mode, dir) {
     assessment_situation_id: as, status: phase, participant_payload: { introduction: 'fixture' } },
   trace: { turns: structuredClone(turns) },
   status: { collection_status: closed ? 'calculated' : 'active' }, between_situations: false,
-  clarification: question ? { id: `q${question}`, status: 'ASK', question_turn_id: `q${question}`,
+  clarification: question ? { id: `q${question}`, status: 'ASK', question_turn_id: deliveryPending ? null : `q${question}`,
     response_outcome: null } : null, finish_availability: { allowed: finishAllowed } });
   const exported = () => ({ run_id: 'run-1', cycle_id: cycle, owner_user_id: 501,
     collection_status: closed ? 'calculated' : 'active', close_reason: closed ? 'route_completed' : null,
@@ -41,6 +42,7 @@ function adapter(mode, dir) {
   };
   const click = async (selector) => {
     if (selector === '#interview-submit-button') {
+      if (question && deliveryPending) throw new Error('UNDELIVERED_ASK_ANSWER');
       turns.push({ speaker_type: 'assessee', content_text: input });
       if (phase === 'active') {
         emit(`/users/assessment/m5/situations/${as}/turns`);
@@ -53,7 +55,10 @@ function adapter(mode, dir) {
     } else if (selector === '#interview-finish-button' && phase === 'active') {
       phase = 'scenario_ended'; emit(`/users/assessment/m5/situations/${as}/transitions`);
       if (mode === 'calendar_close') closed = true;
-      else question = 1;
+      else {
+        question = 1;
+        deliveryPending = ['delayed_ask', 'undelivered_ask'].includes(mode);
+      }
     } else if (selector === '#interview-finish-button') {
       closed = true; emit(`/users/assessment/m7/cycles/${cycle}/finish-situation`);
     }
@@ -67,7 +72,10 @@ function adapter(mode, dir) {
           results_revision_id: 'results-1', revision_no: 1 }) },
   locator, getByRole: () => locator('report-open'), evaluate: async () => 501, goto: async () => {},
   on: () => {},
-  waitForTimeout: async () => {}, screenshot: async ({ path: file }) => fs.writeFileSync(file, 'fixture image'),
+  waitForTimeout: async () => {
+    if (mode === 'undelivered_ask' && deliveryPending) throw new Error('CONTROLLED_DELIVERY_DEADLINE');
+    if (deliveryPending) { deliveryPending = false; events.push('ask_delivered'); }
+  }, screenshot: async ({ path: file }) => fs.writeFileSync(file, 'fixture image'),
   waitForResponse: (predicate) => new Promise((resolve, reject) => {
     const waiter = { predicate, resolve, timer: setTimeout(() => reject(Error('UNEXPECTED_POST_WAIT')), 300) };
     waiters.push(waiter);
@@ -75,7 +83,7 @@ function adapter(mode, dir) {
   return { page, events, waiters };
 }
 
-for (const mode of ['one_ask', 'second_ask', 'other_client_ended', 'calendar_close']) {
+for (const mode of ['one_ask', 'second_ask', 'other_client_ended', 'calendar_close', 'delayed_ask']) {
   test(`driver accepts ${mode} and does not send a stale command`, async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'p4k-exec-driver-'));
     const { page, events, waiters } = adapter(mode, dir);
@@ -87,9 +95,28 @@ for (const mode of ['one_ask', 'second_ask', 'other_client_ended', 'calendar_clo
       if (mode === 'second_ask') assert.equal(events.filter((value) => value.includes('/answers')).length, 2);
       if (mode === 'other_client_ended') assert.equal(events.filter((value) => value.includes('/transitions')).length, 0);
       if (mode === 'calendar_close') assert.equal(events.filter((value) => value.includes('/finish-situation')).length, 0);
+      if (mode === 'delayed_ask') {
+        assert.equal(events.filter((value) => value.includes('/answers')).length, 1);
+        assert.ok(events.indexOf('ask_delivered') < events.findIndex((value) => value.includes('/answers')));
+      }
     } finally {
       for (const waiter of waiters) clearTimeout(waiter.timer);
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 }
+
+test('driver never answers an ASK that remains undelivered', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'p4k-exec-driver-'));
+  const { page, events, waiters } = adapter('undelivered_ask', dir);
+  try {
+    await assert.rejects(completeStartedAssessment({ page, base: 'http://fixture.invalid',
+      cycleId: 'cycle-1', runId: 'run-1', evidenceDir: dir, initialSituationId: 'as-1', maxSituations: 2 }),
+    /CONTROLLED_DELIVERY_DEADLINE/);
+    assert.equal(events.filter((value) => value.includes('/answers')).length, 0);
+    assert.equal(events.filter((value) => value.includes('/finish-situation')).length, 0);
+  } finally {
+    for (const waiter of waiters) clearTimeout(waiter.timer);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
