@@ -11,6 +11,7 @@ let model = null;
 let answers = {};
 let savedAnswers = {};
 let scopeKey = '';
+let acquaintanceRequest = 0;
 let reviewMode = false;
 let busy = false;
 let loadFailed = false;
@@ -201,8 +202,11 @@ const api = async (suffix, options = {}) => {
 
 const loadAcquaintance = async () => {
   const owner = identity(), epoch = state.identityEpoch, run = generation;
+  const requestNo = ++acquaintanceRequest;
   const next = await api('/acquaintance');
-  if (!isCurrent(owner, epoch, run)) throw Object.assign(new Error('Сессия изменилась.'), { name: 'PreparationWaitStopped' });
+  if (!isCurrent(owner, epoch, run) || requestNo !== acquaintanceRequest) {
+    throw Object.assign(new Error('Состояние знакомства изменилось.'), { name: 'PreparationWaitStopped' });
+  }
   const nextScope = onboardingScopeKey(owner, next);
   const dirty = nextScope === scopeKey && !next.mandatory_complete
     ? Object.fromEntries(Object.entries(answers).filter(([key, value]) => value !== savedAnswers[key])) : {};
@@ -344,7 +348,8 @@ export const renderOnboarding = ({ focus = false } = {}) => {
 
 const beginPreparation = ({ retry = false } = {}) => {
   if (preparationTask?.generation === generation) return preparationTask.promise;
-  const owner = identity(), epoch = state.identityEpoch, run = generation, scope = scopeKey;
+  const owner = identity(), epoch = state.identityEpoch, run = generation;
+  let scope = scopeKey;
   const current = () => isCurrent(owner, epoch, run) && scopeKey === scope && state.currentScreen === 'onboarding';
   const controller = new AbortController();
   const task = { generation: run, controller, promise: null };
@@ -353,6 +358,12 @@ const beginPreparation = ({ retry = false } = {}) => {
     try {
       const resolved = await api('/acquaintance/resolve-profile', { method: 'POST' });
       if (!current()) return;
+      const resolvedScope = onboardingScopeKey(owner, resolved);
+      if (resolvedScope !== scope) {
+        scopeKey = resolvedScope;
+        scope = resolvedScope;
+        localOperation = null;
+      }
       model = resolved;
       try { localOperation = JSON.parse(window.sessionStorage.getItem(operationKey()) || 'null'); }
       catch { localOperation = null; }

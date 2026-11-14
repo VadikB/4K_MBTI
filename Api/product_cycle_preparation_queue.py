@@ -39,7 +39,8 @@ def _command_request(request: dict) -> dict:
 
 
 def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignment_ref: str,
-                           questionnaire_revision_id: int | None) -> dict | None:
+                           questionnaire_revision_id: int | None,
+                           assignment_id: int | None = None) -> dict | None:
     table = connection.execute("SELECT to_regclass(current_schema()||'.product_cycle_preparation_operations') AS relation").fetchone()
     if not table or not table.get('relation'):
         return None
@@ -47,9 +48,11 @@ def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignm
         WHERE user_id=%s AND request_json->>'personalized_profile_id'=%s
           AND request_json->>'assignment_ref'=%s
           AND request_json->>'questionnaire_revision_id' IS NOT DISTINCT FROM %s
+          AND request_json->>'assignment_id' IS NOT DISTINCT FROM %s
         ORDER BY created_at DESC,id DESC LIMIT 1''',
         (user_id, str(profile_id), assignment_ref,
-         str(questionnaire_revision_id) if questionnaire_revision_id is not None else None)).fetchone()
+         str(questionnaire_revision_id) if questionnaire_revision_id is not None else None,
+         str(assignment_id) if assignment_id is not None else None)).fetchone()
     if not row:
         return None
     operation = dict(row)
@@ -234,9 +237,24 @@ class ProductCyclePreparationQueue:
             self._guard_request(connection, request, user_id=user_id)
             request_text = _canonical(request)
             request_checksum = hashlib.sha256(request_text.encode()).hexdigest()
-            if connection.execute("""SELECT 1 FROM product_cycle_preparation_operations
-                WHERE user_id=%s AND status IN ('queued','running') LIMIT 1""", (user_id,)).fetchone():
-                raise ValueError('PRODUCT_CYCLE_PREPARATION_SCOPE_BUSY')
+            active = connection.execute("""SELECT id,request_json,created_at
+                FROM product_cycle_preparation_operations
+                WHERE user_id=%s AND status IN ('queued','running')
+                FOR UPDATE""", (user_id,)).fetchall()
+            for pending in active:
+                try:
+                    self._guard_request(connection, pending['request_json'], user_id=user_id,
+                                        created_at=pending['created_at'], lock=False)
+                except ValueError:
+                    # The persisted one-active-user index is retained. A revoked
+                    # generation's queued/running command cannot block its successor.
+                    connection.execute("""UPDATE product_cycle_preparation_operations
+                        SET status='failed',error_code='ValueError',
+                            error_message='PRODUCT_CYCLE_PREPARATION_ASSIGNMENT_SCOPE_CHANGED',
+                            completed_at=NOW(),updated_at=NOW(),locked_at=NULL,attempt_token=NULL
+                        WHERE id=%s AND status IN ('queued','running')""", (pending['id'],))
+                else:
+                    raise ValueError('PRODUCT_CYCLE_PREPARATION_SCOPE_BUSY')
             row = connection.execute(
                 """INSERT INTO product_cycle_preparation_operations
                    (operation_id,user_id,request_json,request_checksum)
@@ -289,6 +307,14 @@ class ProductCyclePreparationQueue:
             if request.get("next_preparation_scope") and current != request["next_preparation_scope"]:
                 raise ValueError("PRODUCT_CYCLE_PREPARATION_POSITION_CHANGED")
         else:
+            if request.get('assignment_ref'):
+                from Api import acquaintance
+                current_scope = acquaintance.preparation_scope(connection, user_id=user_id,
+                    profile_id=request.get('personalized_profile_id'))
+                if current_scope is None or any(request.get(name) != current_scope.get(name)
+                        for name in ('organization_id', 'assignment_ref', 'questionnaire_revision_id',
+                                     'personalized_profile_id', 'profile_checksum', 'assignment_id')):
+                    raise ValueError('PRODUCT_CYCLE_PREPARATION_ASSIGNMENT_SCOPE_CHANGED')
             # Stable domain key also finds a terminal first Cycle, which must not
             # be replaced by a new Cycle when a technical failure is retried.
             key = request.get("preparation_key", request["idempotency_key"])

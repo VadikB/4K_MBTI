@@ -131,12 +131,18 @@ def read(connection, *, cycle_id: str, user_id: int) -> dict:
                 FROM product_cycle_preparation_operations
                 WHERE user_id=%s AND request_json->>'personalized_profile_id'=%s
                   AND request_json->>'assignment_ref'=%s
+                  AND (request_json->>'assignment_id'=%s
+                       OR (NOT request_json ? 'assignment_id' AND status='completed'
+                           AND result_json->'plan'->>'cycle_id'=%s))
                 ORDER BY created_at DESC,id DESC LIMIT 1""",
-                (user_id, str(profile["id"]), scope["assignment_ref"])).fetchall()
+                (user_id, str(profile["id"]), scope["assignment_ref"],
+                 str(cycle["assignment_id"]), str(cycle_id))).fetchall()
             _require(len(operations) == 1, "PREPARATION_OPERATION_MISSING")
             op = operations[0]
+            legacy = 'assignment_id' not in op['request_json']
             _require(op["status"] == "completed"
-                     and all(op["request_json"].get(key) == value for key, value in scope.items())
+                     and all(op["request_json"].get(key) == value for key, value in scope.items()
+                             if not (legacy and key == 'assignment_id'))
                      and str((op.get("result_json") or {}).get("plan", {}).get("cycle_id")) == str(cycle_id),
                      "PREPARATION_SCOPE_MISMATCH")
             result["preparation_operation_id"] = str(op["operation_id"])

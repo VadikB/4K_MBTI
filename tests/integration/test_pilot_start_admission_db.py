@@ -20,6 +20,7 @@ from Api.m5_storage import import_package, prepare_assessment_situation
 from Api.m7_cycle_planner import read_plan
 from Api.m7_planning_repository import attach_prepared_as
 from Api.m10_product_flow import prepare, start_prepared
+from Api.product_cycle_preparation_queue import ProductCyclePreparationQueue
 from Api.pilot_plan_admission import ROOT, validate_snapshot
 from Api.schemas import PersonalizedProfileSelection
 from scripts.build_m5_sales_package import build_execution_rules
@@ -145,7 +146,8 @@ def pilot_db(product_db, monkeypatch):
         c.commit()
         row = dict(c.execute("SELECT * FROM assessment_personalized_profiles WHERE id=%s", (profile_id,)).fetchone())
         scope = {"personalized_profile_id": profile_id, "profile_checksum": row["checksum"],
-                 "organization_id": 10, "assignment_ref": "ctx01-synthetic", "questionnaire_revision_id": 21}
+                 "organization_id": 10, "assignment_ref": "ctx01-synthetic", "questionnaire_revision_id": 21,
+                 "assignment_id": 41}
         monkeypatch.setattr("Api.acquaintance.preparation_scope", lambda *a, **kw: dict(scope))
         prepared = prepare(c, user_id=99, key="synthetic-prepare", profile_id=profile_id, exact_profile=True, defer_as=True)
         cid = str(prepared["plan"]["cycle_id"])
@@ -183,6 +185,228 @@ def test_unapproved_legacy_limited_cannot_bypass_start_via_compatibility(product
         with pytest.raises(ValueError, match="M7_START_NOT_ADMITTED:PILOT_PLAN_"):
             start_prepared(c, user_id=99, cycle_id=cid, key="no-legacy-bypass")
         assert read_cycle(c, cid)["started_at"] is None
+
+
+def test_reassignment_with_same_profile_prepares_own_cycle_without_changing_history(pilot_db):
+    factory, old_cycle_id, profile_id, _ = pilot_db
+    with factory() as c:
+        old_cycle = dict(c.execute("SELECT * FROM m5_cycles WHERE cycle_id=%s", (old_cycle_id,)).fetchone())
+        old_as = [dict(row) for row in c.execute(
+            "SELECT id,status,snapshot_checksum FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id",
+            (old_cycle['id'],)).fetchall()]
+        assert old_cycle['assignment_id'] == 41 and old_as
+        c.execute("UPDATE organization_assessment_assignments SET status='revoked',revoked_at=NOW() WHERE id=41")
+        c.execute("INSERT INTO organization_assessment_assignments VALUES(42,10,99,'ctx01-synthetic','active',NULL,99)")
+        c.execute("""INSERT INTO organization_assessment_source_bindings
+            SELECT 32,42,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
+                   assigned_by_user_id FROM organization_assessment_source_bindings WHERE id=31""")
+        prepared = prepare(c, user_id=99, key='synthetic-reassigned-B', profile_id=profile_id,
+                           exact_profile=True, defer_as=True)
+        new_cycle_id = str(prepared['plan']['cycle_id'])
+        assert new_cycle_id != old_cycle_id
+        assert prepared['resumed'] is False
+        assert c.execute("SELECT assignment_id FROM m5_cycles WHERE cycle_id=%s",
+                         (new_cycle_id,)).fetchone()['assignment_id'] == 42
+        assert dict(c.execute("SELECT * FROM m5_cycles WHERE cycle_id=%s", (old_cycle_id,)).fetchone()) == old_cycle
+        assert [dict(row) for row in c.execute(
+            "SELECT id,status,snapshot_checksum FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id",
+            (old_cycle['id'],)).fetchall()] == old_as
+        repeated = prepare(c, user_id=99, key='synthetic-reassigned-B-retry', profile_id=profile_id,
+                           exact_profile=True, defer_as=True)
+        assert repeated['resumed'] is True
+        assert str(repeated['plan']['cycle_id']) == new_cycle_id
+        c.rollback()
+
+
+def test_reassignment_supersedes_stale_queued_preparation_without_new_index(pilot_db, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+    factory, _, profile_id, _ = pilot_db
+    with factory() as c:
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN request_checksum TEXT")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN attempts INTEGER DEFAULT 0")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN error_code TEXT")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN error_message TEXT")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN updated_at TIMESTAMP DEFAULT NOW()")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN completed_at TIMESTAMP")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN locked_at TIMESTAMP")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ADD COLUMN attempt_token UUID")
+        c.execute("ALTER TABLE product_cycle_preparation_operations ALTER COLUMN status SET DEFAULT 'queued'")
+        c.execute("""CREATE UNIQUE INDEX uq_product_cycle_preparation_active_user
+            ON product_cycle_preparation_operations(user_id) WHERE status IN ('queued','running')""")
+        c.execute("UPDATE organization_assessment_assignments SET status='revoked',revoked_at=NOW() WHERE id=41")
+        c.execute("INSERT INTO organization_assessment_assignments VALUES(42,10,99,'ctx01-synthetic','active',NULL,99)")
+        c.execute("""INSERT INTO organization_assessment_source_bindings
+            SELECT 32,42,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
+                   assigned_by_user_id FROM organization_assessment_source_bindings WHERE id=31""")
+        profile_checksum = c.execute("SELECT checksum FROM assessment_personalized_profiles WHERE id=%s",
+                                     (profile_id,)).fetchone()['checksum']
+        stale = {'personalized_profile_id': profile_id, 'profile_checksum': profile_checksum,
+                 'organization_id': 10, 'assignment_ref': 'ctx01-synthetic',
+                 'questionnaire_revision_id': 21, 'assignment_id': 41,
+                 'idempotency_key': 'stale-A', 'selected_skills': ['K1', 'K2', 'K3', 'K4']}
+        c.execute("""INSERT INTO product_cycle_preparation_operations
+            (operation_id,user_id,status,request_json,request_checksum)
+            VALUES('stale-A',99,'queued',%s::jsonb,'stale')""", (json.dumps(stale),))
+        c.commit()
+    current = {**stale, 'assignment_id': 42, 'idempotency_key': 'new-B'}
+    monkeypatch.setattr('Api.acquaintance.preparation_scope', lambda *a, **kw: {
+        key: value for key, value in current.items() if key not in ('idempotency_key', 'selected_skills')})
+    monkeypatch.setattr('Api.product_cycle_preparation_queue.get_connection', factory)
+    queue = ProductCyclePreparationQueue()
+    queued = queue.enqueue(operation_id='new-B', user_id=99, request=current)
+    assert queued['status'] == 'queued'
+    assert queue.enqueue(operation_id='new-B', user_id=99, request=current)['operation_id'] == 'new-B'
+    with factory() as c:
+        assert c.execute("SELECT status FROM product_cycle_preparation_operations WHERE operation_id='stale-A'").fetchone()['status'] == 'failed'
+        assert c.execute("SELECT count(*) AS n FROM product_cycle_preparation_operations WHERE operation_id='new-B'").fetchone()['n'] == 1
+    monkeypatch.setattr(routes, 'get_connection', factory)
+    monkeypatch.setattr(routes.acquaintance, 'early_readiness', lambda *a, **kw: {
+        'organization_id': 10, 'assignment_ref': 'ctx01-synthetic', 'questionnaire_revision_id': 21})
+    monkeypatch.setattr(routes.web_session_service, 'get_user_by_token',
+                        lambda token: SimpleNamespace(id=99) if token == 'synthetic-owner' else None)
+    app = FastAPI()
+    app.include_router(routes.router)
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, 'synthetic-owner')
+        assert client.get('/users/assessment/cycles/preparation/stale-A').status_code == 409
+        current_readback = client.get('/users/assessment/cycles/preparation/new-B')
+        assert current_readback.status_code == 200, current_readback.text
+        assert current_readback.json()['status'] == 'queued'
+
+
+def test_legacy_completed_operation_keeps_exact_cycle_readback_until_reassignment(pilot_db, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+    factory, cycle_id, _, _ = pilot_db
+    with factory() as c:
+        for column in ('attempts INTEGER DEFAULT 0', 'error_code TEXT', 'error_message TEXT',
+                       'updated_at TIMESTAMP DEFAULT NOW()', 'completed_at TIMESTAMP'):
+            c.execute('ALTER TABLE product_cycle_preparation_operations ADD COLUMN ' + column)
+        c.execute("UPDATE product_cycle_preparation_operations SET request_json=request_json-'assignment_id' WHERE operation_id='synthetic'")
+        c.commit()
+        assert start_readiness(c, cycle_id=cycle_id, user_id=99)['can_start'] is True
+    monkeypatch.setattr('Api.product_cycle_preparation_queue.get_connection', factory)
+    monkeypatch.setattr(routes, 'get_connection', factory)
+    monkeypatch.setattr(routes.acquaintance, 'early_readiness', lambda *a, **kw: {
+        'organization_id': 10, 'assignment_ref': 'ctx01-synthetic', 'questionnaire_revision_id': 21})
+    monkeypatch.setattr(routes.web_session_service, 'get_user_by_token',
+                        lambda token: SimpleNamespace(id=99) if token == 'synthetic-owner' else None)
+    app = FastAPI()
+    app.include_router(routes.router)
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, 'synthetic-owner')
+        assert client.get('/users/assessment/cycles/preparation/synthetic').status_code == 200
+        with factory() as c:
+            c.execute("UPDATE organization_assessment_assignments SET status='revoked',revoked_at=NOW() WHERE id=41")
+            c.execute("INSERT INTO organization_assessment_assignments VALUES(42,10,99,'ctx01-synthetic','active',NULL,99)")
+            c.execute("""INSERT INTO organization_assessment_source_bindings
+                SELECT 32,42,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
+                       assigned_by_user_id FROM organization_assessment_source_bindings WHERE id=31""")
+            c.commit()
+        assert client.get('/users/assessment/cycles/preparation/synthetic').status_code == 409
+
+
+def test_legacy_completed_operation_starts_only_its_exact_cycle(pilot_db):
+    factory, cycle_id, _, _ = pilot_db
+    with factory() as c:
+        c.execute("UPDATE product_cycle_preparation_operations SET request_json=request_json-'assignment_id' WHERE operation_id='synthetic'")
+        assert start_readiness(c, cycle_id=cycle_id, user_id=99)['can_start'] is True
+        started = start_prepared(c, user_id=99, cycle_id=cycle_id, key='legacy-exact-start')
+        assert started['presentation']['status'] == 'active'
+        assert read_cycle(c, cycle_id)['assignment_id'] == 41
+        assert c.execute("""SELECT count(*) AS n FROM m5_dialogue_turns t
+            JOIN m5_assessment_situations s ON s.id=t.assessment_situation_db_id
+            JOIN m5_cycles cycle ON cycle.id=s.cycle_db_id
+            WHERE cycle.cycle_id=%s AND t.speaker_type='assessee'""", (cycle_id,)).fetchone()['n'] == 0
+
+
+def test_reassignment_http_start_presents_new_as_once_with_zero_answers(pilot_db, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+    from Api.m5_functional_generation_service import checksum as candidate_checksum
+    from uuid import uuid4
+
+    factory, old_cycle_id, profile_id, _ = pilot_db
+    with factory() as c:
+        old_cycle = dict(c.execute("SELECT * FROM m5_cycles WHERE cycle_id=%s", (old_cycle_id,)).fetchone())
+        old_as = [dict(row) for row in c.execute(
+            "SELECT id,status,snapshot_checksum FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id",
+            (old_cycle['id'],)).fetchall()]
+        c.execute("UPDATE organization_assessment_assignments SET status='revoked',revoked_at=NOW() WHERE id=41")
+        c.execute("INSERT INTO organization_assessment_assignments VALUES(42,10,99,'ctx01-synthetic','active',NULL,99)")
+        c.execute("""INSERT INTO organization_assessment_source_bindings
+            SELECT 32,42,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
+                   assigned_by_user_id FROM organization_assessment_source_bindings WHERE id=31""")
+        prepared = prepare(c, user_id=99, key='synthetic-B', profile_id=profile_id,
+                           exact_profile=True, defer_as=True)
+        new_cycle_id = str(prepared['plan']['cycle_id'])
+        decision = prepared['decision']
+        case = c.execute("SELECT * FROM m5_case_versions WHERE case_id=%s AND case_version=%s",
+                         (decision['selected_case_id'], decision['selected_case_version'])).fetchone()
+        source = json.loads((ROOT / "tests/browser/fixtures/path-start-release.json").read_bytes())
+        package, runtime, _ = build_admitted_materials(source['catalog']['decision_basis'])
+        profile_checksum = c.execute("SELECT checksum FROM assessment_personalized_profiles WHERE id=%s",
+                                     (profile_id,)).fetchone()['checksum']
+        trace = json.loads(json.dumps(functional_trace(warning=True)).replace('synthetic:', 'synthetic-B:'))
+        trace['accepted_as'] = {'CaseID': case['case_id'], 'CaseVersion': case['case_version']}
+        trace.update(schema_version=2, candidate_checksum=candidate_checksum(trace['accepted_as']),
+                     compiled_case_checksum=case['content_checksum'], source_snapshot={
+                         'profile_checksum': profile_checksum,
+                         'refs': {'case': {'case_version_checksum': case['content_checksum']}}})
+        as_value = prepare_assessment_situation(c, assessment_situation_id=str(uuid4()),
+            case_id=case['case_id'], case_version=case['case_version'], personalized_profile_id=profile_id,
+            cycle_db_id=decision['cycle_db_id'], session_db_id=decision['session_db_id'], substitutions=[],
+            policy=json.loads((ROOT / 'assessment_definitions/cases/competencies_4k/1.1/admission-policy.json').read_bytes()),
+            usage_scope='assessment', case_value_override=case['content_json'],
+            runtime_rules_override=build_execution_rules(package['cases'], runtime['bindings']),
+            generation_trace=trace)
+        attach_prepared_as(c, decision['id'], as_value['id'])
+        scope = {'personalized_profile_id': profile_id, 'profile_checksum': profile_checksum,
+                 'organization_id': 10, 'assignment_ref': 'ctx01-synthetic',
+                 'questionnaire_revision_id': 21, 'assignment_id': 42}
+        c.execute("""INSERT INTO product_cycle_preparation_operations(operation_id,user_id,status,request_json,result_json)
+            VALUES('synthetic-B',99,'completed',%s::jsonb,%s::jsonb)""",
+            (json.dumps(scope), json.dumps({'plan': {'cycle_id': new_cycle_id}})))
+        c.commit()
+
+    monkeypatch.setattr('Api.acquaintance.preparation_scope', lambda *a, **kw: dict(scope))
+    monkeypatch.setattr(routes, 'get_connection', factory)
+    monkeypatch.setattr(routes.web_session_service, 'get_user_by_token',
+                        lambda token: SimpleNamespace(id=99) if token == 'synthetic-owner' else None)
+    app = FastAPI()
+    app.include_router(routes.router)
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, 'synthetic-owner')
+        refused = client.post('/users/assessment/cycles/start', json={
+            'cycle_id': old_cycle_id, 'idempotency_key': 'synthetic-old-start'})
+        assert refused.status_code == 409
+        request = {'cycle_id': new_cycle_id, 'idempotency_key': 'synthetic-new-start'}
+        started = client.post('/users/assessment/cycles/start', json=request)
+        assert started.status_code == 201, started.text
+        assert started.json()['runtime']['current_situation']['assessment_situation_id'] == str(
+            as_value['assessment_situation_id'])
+        assert client.post('/users/assessment/cycles/start', json=request).status_code == 201
+        for _ in range(2):
+            readback = client.get(f'/users/assessment/cycles/{new_cycle_id}/runtime')
+            assert readback.status_code == 200
+            assert readback.json()['current_situation']['assessment_situation_id'] == str(
+                as_value['assessment_situation_id'])
+    with factory() as c:
+        new_cycle = dict(c.execute('SELECT * FROM m5_cycles WHERE cycle_id=%s', (new_cycle_id,)).fetchone())
+        assert new_cycle['assignment_id'] == 42 and new_cycle['started_at'] is not None
+        assert c.execute("""SELECT count(*) AS n FROM m5_cycle_time_intervals
+            WHERE cycle_db_id=%s AND interval_type='collecting'""", (new_cycle['id'],)).fetchone()['n'] == 1
+        assert c.execute("""SELECT count(*) AS n FROM m5_dialogue_turns turn
+            JOIN m5_assessment_situations s ON s.id=turn.assessment_situation_db_id
+            WHERE s.cycle_db_id=%s AND turn.speaker_type='assessee'""", (new_cycle['id'],)).fetchone()['n'] == 0
+        assert dict(c.execute('SELECT * FROM m5_cycles WHERE cycle_id=%s', (old_cycle_id,)).fetchone()) == old_cycle
+        assert [dict(row) for row in c.execute(
+            'SELECT id,status,snapshot_checksum FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id',
+            (old_cycle['id'],)).fetchall()] == old_as
 
 
 def test_exact_limited_plan_reaches_explicit_start_same_as_and_zero_answers(pilot_db, tmp_path):

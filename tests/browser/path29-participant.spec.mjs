@@ -373,6 +373,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect.poll(async () => (await snapshot()).operations).toBe(1);
     expect((await snapshot()).started).toBe(0);
     await expect.poll(() => lostPreparationReply).toBe(true);
+    await page.unroute('**/users/assessment/cycles/prepare');
     await expect.poll(async () => (await savedAcquaintance()).onboarding.current_step).toBe(6);
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Что показывает оценка 4К');
     await page.locator('#onboarding-skip').click();
@@ -437,6 +438,81 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       { name: 'readiness-explanation', locator: page.locator('#onboarding-title') },
       { name: 'explicit-start', locator: next },
     ]);
+    if (process.env.P4K_REMAIN01_REASSIGN === '1') {
+      step = 'reassign_prepared_cycle_before_first_start';
+      const oldCycleId = (await savedAcquaintance()).prepared_plan?.cycle_id;
+      expect(oldCycleId).toBeTruthy();
+      const organizationId = state.path29.organization_id;
+      const assessmentRef = state.path29.assignment_ref || 'PATH29 browser';
+      const organization = (await (await admin.request.get(base + '/users/admin/organizations')).json())
+        .items.find((item) => item.id === organizationId);
+      const member = organization.members.find((item) => item.user_id === participantId);
+      const oldAssignmentId = member.assessment_stages[assessmentRef].assignment_id;
+      expect(oldAssignmentId).toBeTruthy();
+      const cancelled = await admin.request.post(base + `/users/admin/organizations/${organizationId}` +
+        `/assessment-assignments/${oldAssignmentId}/cancel`, { data: { operation_id: 'remain01-cancel-' + runId } });
+      expect(cancelled.status()).toBe(200);
+      const reassigned = await admin.request.post(base + `/users/admin/organizations/${organizationId}/assessment-assignments`, {
+        data: { user_ids: [participantId], assignment_ref: assessmentRef, operation_id: 'remain01-reassign-' + runId },
+      });
+      expect(reassigned.status()).toBe(200);
+      const newAssignment = (await reassigned.json()).items[0];
+      expect(newAssignment.status).toBe('assigned');
+      expect(newAssignment.assignment_id).not.toBe(oldAssignmentId);
+      let lostBReply = false;
+      await page.route('**/users/assessment/cycles/prepare', async (route) => {
+        const response = await route.fetch();
+        expect(response.status()).toBe(202);
+        lostBReply = true;
+        await route.abort('failed');
+      });
+      await page.reload();
+      await expect.poll(() => lostBReply).toBe(true);
+      await page.unroute('**/users/assessment/cycles/prepare');
+      await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить подготовку');
+      await page.reload();
+      await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке', { timeout: 45000 });
+      const newCycleId = (await savedAcquaintance()).prepared_plan?.cycle_id;
+      expect(newCycleId).toBeTruthy();
+      expect(newCycleId).not.toBe(oldCycleId);
+      await second.reload();
+      await expect(second.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+      await fresh.reload();
+      await expect(fresh.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+      const bStart = page.waitForResponse((response) => response.request().method() === 'POST'
+        && response.url().endsWith('/users/assessment/cycles/start'));
+      await next.dblclick();
+      expect((await bStart).status()).toBe(201);
+      await expect(page.locator('.interview-message--situation').first()).toBeVisible();
+      expect(await snapshot()).toEqual({ profiles: 1, cycles: 2, started: 1, operations: 2 });
+      const history = (await (await admin.request.get(base + '/users/admin/organizations')).json())
+        .items.find((item) => item.id === organizationId).members.find((item) => item.user_id === participantId)
+        .assessment_history;
+      expect(history.some((item) => item.assignment_id === oldAssignmentId && item.cycle_id === oldCycleId)).toBe(true);
+      expect(history.some((item) => item.assignment_id === newAssignment.assignment_id && item.cycle_id === newCycleId)).toBe(true);
+      await admin.reload();
+      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
+      await card.locator('[data-action="open-member-card"]').filter({ hasText: fullName }).click();
+      const memberDialog = admin.locator('dialog.admin-member-card-dialog');
+      await expect(memberDialog).toBeVisible();
+      await expect(memberDialog.locator('[data-card-assignment-history]')).toContainText(oldCycleId);
+      await expect(memberDialog.locator('[data-card-assignment-history]')).toContainText(newCycleId);
+      await admin.keyboard.press('Escape');
+      await expect(memberDialog).toBeHidden();
+      const receipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
+      expect(receipt.cycle.cycle_id).toBe(newCycleId);
+      expect(receipt.cycle.assignment_id).toBe(newAssignment.assignment_id);
+      expect(receipt.assessment_situation.status).toBe('active');
+      expect(receipt.assessment_situation.started_at).toBeTruthy();
+      expect(receipt.assessment_answers).toBe(0);
+      expect(receipt.sessions).toHaveLength(1);
+      save('remain01-reassignment', { old_assignment_id: oldAssignmentId, new_assignment_id: newAssignment.assignment_id,
+        old_cycle_id: oldCycleId, new_cycle_id: newCycleId, counts: await snapshot(),
+        browser: browser.version(), provider_mode: 'disabled', answers: receipt.assessment_answers,
+        assessment_situation_id: receipt.assessment_situation.assessment_situation_id });
+      scenarioCompleted = true;
+      return;
+    }
     step = 'explicit_start_and_first_as';
     const startResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith('/users/assessment/cycles/start'));
