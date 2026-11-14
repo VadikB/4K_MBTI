@@ -18,7 +18,7 @@ export const resumeOnboardingIndex = (model, onboarding = {}) => {
 
 export const onboardingScopeKey = (userId, model) => [
   userId, model?.readiness?.organization_id, model?.readiness?.assignment_ref,
-  model?.readiness?.questionnaire_revision_id,
+  model?.readiness?.questionnaire_revision_id, model?.assignment_id,
 ].map((value) => encodeURIComponent(String(value ?? ''))).join(':');
 
 export const preparationView = (model, localError = null) => {

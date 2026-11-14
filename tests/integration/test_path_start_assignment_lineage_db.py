@@ -11,6 +11,7 @@ from psycopg.rows import dict_row
 import pytest
 
 from Api.routes import _build_admin_organizations
+from Api.acquaintance import _prepared_plan_snapshot
 
 pytestmark = pytest.mark.integration
 
@@ -34,7 +35,7 @@ def lineage_db(test_database_url):
             'assessment_personalized_profiles': 'id bigint,user_id bigint,organization_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint,organization_context_version_id bigint,status text,frozen_at timestamp',
             'participant_acquaintance_confirmations': 'id bigint,user_id bigint,organization_id bigint,assignment_ref text,questionnaire_revision_id bigint,personalized_profile_id bigint,confirmed_at timestamp',
             'assessment_preparation_jobs': 'id bigint,operation_id text,status text,user_id bigint,personalized_profile_id bigint,created_at timestamp',
-            'product_cycle_preparation_operations': 'id bigint,operation_id text,status text,user_id bigint,request_json jsonb,created_at timestamp',
+            'product_cycle_preparation_operations': 'id bigint,operation_id text,status text,user_id bigint,request_json jsonb,created_at timestamp,result_json jsonb',
             'm5_cycles': 'id bigint,cycle_id text,status text,owner_user_id bigint,organization_id bigint,assignment_id bigint,usage_scope text,personalized_profile_id bigint,created_at timestamp',
             'm8_results': 'id bigint,cycle_db_id bigint',
             'm8_result_revisions': 'id bigint,results_id bigint,revision_no int,payload_json jsonb',
@@ -73,12 +74,30 @@ def test_two_assignments_same_configuration_keep_their_exact_profile_job(lineage
 
 
 def test_exact_product_operation_overrides_legacy_job_not_foreign_scope(lineage_db):
-    lineage_db.execute('''INSERT INTO product_cycle_preparation_operations VALUES
-        (1,'product-B','queued',1,'{"personalized_profile_id":102,"organization_id":10,"assignment_ref":"B","questionnaire_revision_id":22}',NOW()),
-        (2,'foreign-product','failed',1,'{"personalized_profile_id":102,"organization_id":99,"assignment_ref":"A","questionnaire_revision_id":21}',NOW()+INTERVAL '1 minute')''')
+    lineage_db.execute('''INSERT INTO product_cycle_preparation_operations
+        (id,operation_id,status,user_id,request_json,created_at) VALUES
+        (1,'product-B','queued',1,'{"personalized_profile_id":102,"organization_id":10,"assignment_ref":"B","questionnaire_revision_id":22,"assignment_id":42}',NOW()),
+        (2,'foreign-product','failed',1,'{"personalized_profile_id":102,"organization_id":99,"assignment_ref":"A","questionnaire_revision_id":21,"assignment_id":41}',NOW()+INTERVAL '1 minute')''')
     rows = project(lineage_db)
     assert rows['A']['preparation_operation_id'] == 'job-A'
     assert (rows['B']['preparation_operation_id'], rows['B']['preparation_status']) == ('product-B', 'queued')
+
+
+def test_old_completed_operation_requires_exact_cycle_pointer_without_assignment_id(lineage_db):
+    lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
+    lineage_db.execute('''INSERT INTO product_cycle_preparation_operations
+        (id,operation_id,status,user_id,request_json,created_at,result_json) VALUES
+        (1,'old-A','completed',1,'{"personalized_profile_id":101,"organization_id":10,"assignment_ref":"A","questionnaire_revision_id":21}',NOW(),'{"plan":{"cycle_id":"cycle-A"}}'),
+        (2,'new-B','queued',1,'{"personalized_profile_id":102,"organization_id":10,"assignment_ref":"B","questionnaire_revision_id":22,"assignment_id":42}',NOW(),NULL)''')
+    rows = project(lineage_db)
+    assert rows['A']['preparation_operation_id'] == 'old-A'
+    assert rows['B']['preparation_operation_id'] == 'new-B'
+
+
+def test_new_generation_never_projects_old_prepared_cycle(lineage_db):
+    lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
+    lineage_db.execute("INSERT INTO m5_assessment_situations VALUES(1,1,'admitted')")
+    assert _prepared_plan_snapshot(lineage_db, personalized_profile_id=101, assignment_id=42) is None
 
 
 def test_unproven_legacy_profile_is_unknown_but_exact_cycle_pointer_is_valid(lineage_db):

@@ -1335,6 +1335,9 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                   AND job.request_json->>'organization_id'=assignment.organization_id::text
                   AND job.request_json->>'assignment_ref'=assignment.assignment_ref
                   AND job.request_json->>'questionnaire_revision_id'=binding.questionnaire_revision_id::text
+                  AND (job.request_json->>'assignment_id'=assignment.id::text
+                       OR (NOT job.request_json ? 'assignment_id' AND job.status='completed'
+                           AND job.result_json->'plan'->>'cycle_id'=cycle.cycle_id::text))
                 ORDER BY job.created_at DESC,job.id DESC
                 LIMIT 1
             ) product_preparation ON TRUE
@@ -7348,6 +7351,20 @@ def read_owned_assessment_cycle_preparation(operation_id: str, request: Request)
             readiness = acquaintance.early_readiness(connection, user_id=int(user.id))
             if any(readiness.get(key) != saved_scope.get(key) for key in
                    ('organization_id', 'assignment_ref', 'questionnaire_revision_id')):
+                raise HTTPException(409, detail='W02_PREPARATION_ASSIGNMENT_SCOPE_MISMATCH')
+            from Api import assessment_assignment_sources
+            binding = assessment_assignment_sources.current_binding(connection, user_id=int(user.id),
+                organization_id=readiness.get('organization_id'),
+                assignment_ref=readiness.get('assignment_ref'),
+                questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+            assignment_id = int(binding['assignment_id']) if binding else None
+            legacy_cycle = ((operation.get('result_json') or {}).get('plan') or {}).get('cycle_id')
+            legacy_match = False
+            if assignment_id is not None and 'assignment_id' not in saved_scope and operation['status'] == 'completed' and legacy_cycle:
+                legacy_match = connection.execute('''SELECT 1 FROM m5_cycles
+                    WHERE cycle_id=%s AND owner_user_id=%s AND assignment_id=%s''',
+                    (str(legacy_cycle), int(user.id), assignment_id)).fetchone() is not None
+            if saved_scope.get('assignment_id') != assignment_id and not legacy_match:
                 raise HTTPException(409, detail='W02_PREPARATION_ASSIGNMENT_SCOPE_MISMATCH')
     return public_operation(operation)
 

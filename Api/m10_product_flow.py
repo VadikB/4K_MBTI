@@ -27,16 +27,19 @@ def _owned_profile(connection, user_id: int, profile_id=None) -> int:
 
 
 def _current_cycle(connection, user_id: int, organization_id: int, configuration_id=None,
-                   usage_scope: str = "assessment", profile_id: int | None = None) -> dict | None:
+                   usage_scope: str = "assessment", profile_id: int | None = None,
+                   assignment_id: int | None = None) -> dict | None:
     rows = connection.execute(
         """SELECT c.cycle_id FROM m5_cycles c
            JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
            WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.usage_scope=%s
              AND (%s::bigint IS NULL OR p.assessment_configuration_id=%s)
              AND (%s::bigint IS NULL OR c.personalized_profile_id=%s)
+             AND (%s::bigint IS NULL OR c.assignment_id=%s)
              AND c.status IN('prepared','active','paused','interrupted','collection_closed','calculation_pending')
            ORDER BY c.created_at DESC""",
-        (user_id, organization_id, usage_scope, configuration_id, configuration_id, profile_id, profile_id),
+        (user_id, organization_id, usage_scope, configuration_id, configuration_id, profile_id, profile_id,
+         assignment_id, assignment_id),
     ).fetchall()
     if len(rows) > 1:
         raise ValueError('M4_PROFILE_SELECTION_REQUIRED: Выберите конфигурацию оценки в профиле.')
@@ -98,13 +101,20 @@ def prepare(connection, *, user_id: int, key: str,
     organization_id = participant_profile.active_organization(connection, user_id)
     profile_id = _owned_profile(connection, user_id, profile_id)
     profile = connection.execute(
-        "SELECT assessment_configuration_id FROM assessment_personalized_profiles WHERE id=%s",
+        "SELECT assessment_configuration_id,role_profile_version_id FROM assessment_personalized_profiles WHERE id=%s",
         (profile_id,),
     ).fetchone()
     usage_scope = qa_orchestration.usage_scope()
+    assignment_id = None
+    if usage_scope == "assessment" and exact_profile:
+        from Api.m5_cycle_runtime import _assignment_for_profile
+        assignment_id = _assignment_for_profile(connection, {
+            **dict(profile), "user_id": user_id, "organization_id": organization_id,
+        }, profile_id)
     current = _current_cycle(
         connection, user_id, organization_id, profile["assessment_configuration_id"], usage_scope,
         profile_id=profile_id if exact_profile else None,
+        assignment_id=assignment_id,
     )
     if current:
         situation = connection.execute(
@@ -189,15 +199,22 @@ def start_or_resume(connection, *, user_id: int, key: str,
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
     organization_id = participant_profile.active_organization(connection, user_id)
     configuration_id = None
+    assignment_id = None
     if profile_id is not None:
         # An existing Cycle keeps its frozen snapshot even after a new confirmation.
-        scope = connection.execute("""SELECT assessment_configuration_id FROM assessment_personalized_profiles
+        scope = connection.execute("""SELECT assessment_configuration_id,role_profile_version_id FROM assessment_personalized_profiles
             WHERE id=%s AND user_id=%s AND organization_id=%s""", (profile_id, user_id, organization_id)).fetchone()
         if not scope:
             raise ValueError('M4_PROFILE_SCOPE_MISMATCH: Подтвердите профиль для текущей организации.')
         configuration_id = scope['assessment_configuration_id']
     usage_scope = qa_orchestration.usage_scope()
-    current = _current_cycle(connection, user_id, organization_id, configuration_id, usage_scope)
+    if profile_id is not None and usage_scope == "assessment":
+        from Api.m5_cycle_runtime import _assignment_for_profile
+        assignment_id = _assignment_for_profile(connection, {
+            **dict(scope), "user_id": user_id, "organization_id": organization_id,
+        }, profile_id)
+    current = _current_cycle(connection, user_id, organization_id, configuration_id, usage_scope,
+                             assignment_id=assignment_id)
     if current:
         current_assignment = connection.execute(
             "SELECT assignment_id FROM m5_cycles WHERE cycle_id=%s FOR UPDATE", (current["cycle_id"],),

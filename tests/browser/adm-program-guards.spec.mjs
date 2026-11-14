@@ -78,7 +78,7 @@ async function evidence(page, state, info, label) {
 }
 
 async function fixture(page, { superadmin = true, program = 11, saved = [], unknown = false,
-  rolesMode = 'available', questionnaireStatus = 200 } = {}) {
+  rolesMode = 'available', questionnaireStatus = 200, memberStage = null } = {}) {
   test.info().annotations.push({ type: 'synthetic_http',
     description: 'Actual built UI, scoped-command safety and draft lifecycle; no real DB/provider/PATH/TEST claim.' });
   const state = { program, requests: [], saved, nextRevision: 301, reads: 0, puts: 0,
@@ -102,7 +102,9 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
     items: [{ id: 3, code: 'synthetic-owned', name: 'Синтетическая организация', is_active: true,
       domains: [], admins: [{ user_id: 18, email: user.email, full_name: user.full_name }],
       members: [{ user_id: 28, email: 'synthetic-member@example.test', full_name: 'Синтетический участник',
-        role_description: 'Синтетическая должность', role: 'member', assessment_assignments: [] }],
+        role_description: 'Синтетическая должность', role: 'member',
+        assessment_assignments: memberStage ? ['pilot-11'] : [],
+        assessment_stages: memberStage ? { 'pilot-11': memberStage } : {} }],
       members_count: 1, reports_count: 0, ...(state.unknown ? {} : { assessment_program: fixtureConnection() }) }] });
   await page.route('**/users/**', async (route) => {
     const request = route.request(), pathname = new URL(request.url()).pathname;
@@ -462,6 +464,9 @@ test('ADM-PROGRAM AC02 older import collection cannot authorize stale program A'
   const state = await fixture(page);
   const pending = gate(); state.importGate = pending.promise;
   const form = card(page).locator('form[data-action="import-members"]');
+  // The questionnaire response replaces this form during its final render.
+  await expect(card(page).locator('.admin-questionnaire-load-state')
+    .filter({ hasText: 'Для этой организации ещё нет сохранённых анкет.' }).first()).toBeAttached();
   await form.locator('input[type="file"]').setInputFiles(file('members'));
   await form.getByRole('button', { name: 'Импорт', exact: true }).click();
   await expect.poll(() => state.requests.some((r) => r.path.endsWith('/members/import'))).toBe(true);
@@ -570,4 +575,28 @@ test('ADM-PROGRAM readiness cached confirmation plus failed read stays unknown',
   await expect(card(page).locator('form[data-action="assign-member-assessment"] button')).toBeDisabled();
   expect(scopedPosts(state)).toEqual([]);
   await evidence(page, state, info, 'cached-confirmation-read-unknown');
+});
+
+test('F16 processing dialog is read only across Escape and program switch', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, memberStage: {
+    code: 'processing', action: 'open_processing', assignment_id: 41,
+    cycle_id: '11111111-1111-4111-8111-111111111111',
+    label: 'Готовится отчёт', description: 'Синтетическая обработка результата',
+  } });
+  await view(page, 'Участники оценки');
+  await card(page).locator('[data-action="open-member-processing"]').click();
+  const dialog = page.locator('dialog.admin-member-card-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Синтетическая обработка результата');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  expect(state.requests.filter((request) => ['POST', 'PATCH'].includes(request.method))).toEqual([]);
+  state.program = 12;
+  await view(page, 'Данные организации');
+  const profile = card(page).locator('form[data-action="update-profile"]');
+  await profile.getByRole('button', { name: 'Сохранить карточку', exact: true }).click();
+  await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
+  await view(page, 'Участники оценки');
+  await expect(card(page).locator('[data-action="open-member-processing"]')).toHaveCount(0);
+  expect(state.requests.filter((request) => request.method === 'POST')).toEqual([]);
 });

@@ -27,13 +27,14 @@ test('resume uses actual consent and saved answers rather than legacy skipped/cu
   assert.equal(resumeOnboardingIndex(all, { status: 'completed' }), 8);
 });
 
-test('local operation key separates account, tenant, assignment and questionnaire revision', () => {
+test('local operation key separates account, tenant, assignment generation and questionnaire revision', () => {
   const original = model();
   const first = onboardingScopeKey(1, original);
   assert.notEqual(first, onboardingScopeKey(2, original));
   for (const [key, value] of [['organization_id', 20], ['assignment_ref', 'synthetic:b'], ['questionnaire_revision_id', 2]]) {
     assert.notEqual(first, onboardingScopeKey(1, { ...original, readiness: { ...original.readiness, [key]: value } }));
   }
+  assert.notEqual(first, onboardingScopeKey(1, { ...original, assignment_id: 42 }));
 });
 
 test('prepared plan survives reload even when a stale briefing projection disagrees on consent', () => {

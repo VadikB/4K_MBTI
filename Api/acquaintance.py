@@ -250,16 +250,23 @@ def read_state(connection, *, user_id: int) -> dict:
         late = {'status': 'waiting_for_assessment_data', 'reason': 'W02_MANDATORY_STEPS_REQUIRED',
                 'personalized_profile_id': None}
     profile_id = late.get("personalized_profile_id")
+    binding = assignment_sources.current_binding(connection, user_id=user_id,
+        organization_id=readiness.get('organization_id'), assignment_ref=readiness.get('assignment_ref'),
+        questionnaire_revision_id=readiness.get('questionnaire_revision_id')) if profile_id is not None else None
+    assignment_id = int(binding['assignment_id']) if binding else None
     from Api.product_cycle_preparation_queue import latest_scope_operation
     return {
         "readiness": readiness,
+        "assignment_id": assignment_id,
         "state": state,
         "mandatory_complete": mandatory_complete(readiness, state),
         "late_readiness": late,
         "assigned_timing": resolve_display_timing(connection, personalized_profile_id=profile_id),
-        "prepared_plan": _prepared_plan_snapshot(connection, personalized_profile_id=profile_id),
+        "prepared_plan": _prepared_plan_snapshot(connection, personalized_profile_id=profile_id,
+            assignment_id=assignment_id),
         "preparation_operation": latest_scope_operation(connection, user_id=user_id, profile_id=profile_id,
-            assignment_ref=readiness['assignment_ref'], questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+            assignment_ref=readiness['assignment_ref'], questionnaire_revision_id=readiness.get('questionnaire_revision_id'),
+            assignment_id=assignment_id)
             if profile_id is not None else None,
         "competency_explanation": _competency_explanation(connection, user_id=user_id, readiness=readiness,
             profile_id=profile_id),
@@ -320,17 +327,19 @@ def resolve_display_timing(connection, *, personalized_profile_id: int | None) -
     }
 
 
-def _prepared_plan_snapshot(connection, *, personalized_profile_id: int | None) -> dict | None:
+def _prepared_plan_snapshot(connection, *, personalized_profile_id: int | None,
+                            assignment_id: int | None = None) -> dict | None:
     if personalized_profile_id is None:
         return None
     from Api.qa_orchestration import usage_scope
     row = connection.execute(
         """SELECT cycle_id FROM m5_cycles
            WHERE personalized_profile_id=%s AND usage_scope=%s AND status='prepared'
+             AND assignment_id IS NOT DISTINCT FROM %s
              AND EXISTS (SELECT 1 FROM m5_assessment_situations s
                          WHERE s.cycle_db_id=m5_cycles.id AND s.status='admitted')
            ORDER BY created_at DESC,id DESC LIMIT 1""",
-        (int(personalized_profile_id), usage_scope()),
+        (int(personalized_profile_id), usage_scope(), assignment_id),
     ).fetchone()
     if row is None:
         return None
@@ -532,9 +541,15 @@ def preparation_scope(connection, *, user_id: int, profile_id: int | None = None
     if profile_id is not None and profile_id != effective_id:
         raise ValueError('W02_PROFILE_ASSIGNMENT_SCOPE_MISMATCH')
     profile = participant_profile.profile_for_start(connection, user_id=user_id, profile_id=effective_id)
+    binding = assignment_sources.current_binding(connection, user_id=user_id,
+        organization_id=readiness['organization_id'], assignment_ref=readiness['assignment_ref'],
+        questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+    if managed and binding is None:
+        raise ValueError('W02_ASSIGNMENT_SOURCES_REQUIRED')
     return {'personalized_profile_id': effective_id, 'profile_checksum': profile['checksum'],
             'organization_id': readiness['organization_id'], 'assignment_ref': readiness['assignment_ref'],
-            'questionnaire_revision_id': readiness['questionnaire_revision_id']}
+            'questionnaire_revision_id': readiness['questionnaire_revision_id'],
+            **({'assignment_id': int(binding['assignment_id'])} if binding else {})}
 
 
 def accept_consent(connection, *, user_id: int, version: int) -> dict:
