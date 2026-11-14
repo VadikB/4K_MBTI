@@ -32,3 +32,9 @@
 - Проверки на рабочем diff: `git diff --check` PASS; backend unit 1090 PASS; HTTP 153 PASS; frontend 272 PASS; lint/build PASS; полный integration на owned PostgreSQL 393 PASS/9 SKIP; адресный DB/HTTP 3 PASS; actor owned HTTP/PG PASS; browser guards 30 PASS, auth 17 PASS, visual 1 PASS, keyboard/widths 1 PASS. Данные о точном candidate SHA и bundle занести в передачу после коммита.
 - Ресурсы: PostgreSQL PID 28939, порт 55432, `restart=no`; owned `agent4k_pytest` существует для финального запуска, marker-owned actor DB удалена тестом. Browser/HTTP preview servers остановлены Playwright teardown; постоянных worker/poller нет. После финальной проверки остановить PostgreSQL по указанной выше команде и проверить `running=false`/порт свободен.
 - Текущий шаг: commit кандидата и проверки на его точном SHA; следующий шаг: cleanup ресурсов, передача bundle и ограничений архитектору. CI/PR/merge/deploy/Prod и человеческая приёмка остаются за внешним процессом.
+
+## Финальный preflight после коммита кода
+
+- Кодовый commit: `95edcfa8` (`git rev-parse HEAD` перед документальным checkpoint). RUN_ID `remain02-final-20261114-95edcfa8`, исходный код и `web/dist` соответствуют этому SHA. Следующий commit меняет только STATE/CHECKS; финальные тесты запускаются после него на его точном HEAD.
+- Финальные команды: `npm run test:backend -- --quiet`, `npm run test:backend:http -- --quiet`, `TEST_DATABASE_URL=<owned agent4k_pytest 127.0.0.1:55432> npm run test:backend:integration -- --quiet`, `npm run lint:js`, `node --test tests/frontend/*.test.mjs`, `npm run build:web` с проверкой отсутствия diff. Профиль 20 мин/90 с/test/1 worker/0 retry и teardown указан выше; реальные LLM/mail 0.
+- Свой ресурс перед стартом: PostgreSQL PID 28939, порт 55432, БД `agent4k_pytest`, restart supervisor отсутствует; marker DB actor-test удалена. Команды статуса/остановки выше. Внешние и неизвестные ресурсы не трогать.
