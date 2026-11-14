@@ -85,7 +85,7 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
     losePut: false, failRead: false, putGate: null,
     invitationPosts: 0, invitationItems: null, invitationPostGate: null,
     invitationLoseResponse: false, invitationReadStatus: 200, invitationStatuses: [], invitationResponseItems: null,
-    invitationPostStatus: 200,
+    invitationPostStatus: 200, invitationLoseBeforeCommit: false,
     collectionReads: 0, collectionStatus: 200, collectionGate: null, importGate: null,
     programReadGate: null, unknown, rolesMode, questionnaireStatus };
   const fixtureConnection = () => {
@@ -120,6 +120,7 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
       user, is_admin: true, admin_dashboard: dashboard });
     if (pathname === '/users/18/session-bootstrap') return json(route, {
       user, is_admin: true, dashboard: {}, admin_dashboard: dashboard });
+    if (pathname === '/users/session/logout') return json(route, { ok: true });
     if (pathname === '/users/admin/dashboard') return json(route, dashboard);
     if (pathname === '/users/admin/organizations') {
       state.collectionReads += 1;
@@ -135,6 +136,7 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
     }
     if (pathname === '/users/admin/organizations/3/personal-invitations' && request.method() === 'POST') {
       state.invitationPosts += 1;
+      if (state.invitationLoseBeforeCommit) return route.abort('connectionreset');
       if (state.invitationPostStatus !== 200) {
         await state.invitationPostGate;
         return json(route, { detail: 'Синтетический отказ операции' }, state.invitationPostStatus);
@@ -211,6 +213,24 @@ test('REMAIN-03 unknown invitation survives reload and reads the same operation'
   await expect(page.locator('#admin-organizations-status')).toContainText('17.11.2026');
 });
 
+test('REMAIN-03 precommit loss retries the same identity after reload', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  state.invitationLoseBeforeCommit = true;
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect(page.locator('.admin-invitation-recovery')).toBeVisible();
+  const first = state.requests.find((request) => request.path.endsWith('/personal-invitations') && request.method === 'POST');
+  expect(state.invitationItems).toBeNull();
+  await page.reload();
+  await expect(page.locator('.admin-invitation-recovery')).toBeVisible();
+  state.invitationLoseBeforeCommit = false;
+  await page.locator('[data-action="recover-member-invitation"]').click();
+  await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
+  const posts = state.requests.filter((request) => request.path.endsWith('/personal-invitations') && request.method === 'POST');
+  expect(posts).toHaveLength(2);
+  expect(posts[1].body.operation_id).toBe(first.body.operation_id);
+  expect(state.invitationItems).toHaveLength(1);
+});
+
 test('REMAIN-03 late invitation result cannot change a newer view', async ({ page }) => {
   const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
   const pending = gate(); state.invitationPostGate = pending.promise;
@@ -221,6 +241,18 @@ test('REMAIN-03 late invitation result cannot change a newer view', async ({ pag
   await expect.poll(() => page.locator('#admin-organizations-status').textContent()).not.toContain('письмо принято почтовым сервисом');
   await view(page, 'Участники оценки');
   await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
+});
+
+test('REMAIN-03 late invitation result cannot change a logged-out actor', async ({ page }) => {
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
+  const pending = gate(); state.invitationPostGate = pending.promise;
+  await card(page).locator('[data-action="send-member-invitation"]').click();
+  await expect.poll(() => state.invitationPosts).toBe(1);
+  await page.locator('#admin-organizations-logout-button').click();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  pending.release();
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('письмо принято почтовым сервисом');
+  await expect(page.locator('#admin-organizations-panel')).toBeHidden();
 });
 
 test('REMAIN-03 batch reports each recipient and rejects extra response item', async ({ page }) => {

@@ -65,7 +65,7 @@ const pendingInvitationOperations = (identityKey = currentIdentityKey()) => {
 const savePendingInvitationOperation = (operation, identityKey = currentIdentityKey()) => {
   const others = pendingInvitationOperations(identityKey).filter((item) => item.requestKey !== operation.requestKey);
   const key = invitationStorageKey(identityKey);
-  const serialized = JSON.stringify([...others, operation].slice(-20));
+  const serialized = JSON.stringify([...others, operation]);
   safeStorage.setItem(key, serialized);
   try {
     return window.localStorage.getItem(key) === serialized;
