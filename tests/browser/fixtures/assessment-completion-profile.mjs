@@ -152,7 +152,16 @@ export async function completeStartedAssessment({
       }
       const ask = snapshot.clarification;
       if (ask?.status === 'ASK' && !ask.response_outcome) {
-        if (!ask.id || !ask.question_turn_id) throw new Error('COMPOSITE_ASK_NOT_DELIVERED');
+        if (!ask.id) throw new Error('COMPOSITE_ASK_NOT_DELIVERED');
+        if (!ask.question_turn_id) {
+          // ASK and its delivery commit separately. Keep the existing bounded
+          // readback; never submit an answer before delivery is authoritative.
+          snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+            || value.between_situations || value.finish_availability?.allowed === true
+            || value.clarification?.status !== 'ASK' || value.clarification?.response_outcome
+            || Boolean(value.clarification?.question_turn_id));
+          continue;
+        }
         await submit(page, clarificationFor(position, snapshot));
         clarified = true;
         await advanceWorkers();

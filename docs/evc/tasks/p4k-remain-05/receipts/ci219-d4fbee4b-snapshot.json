@@ -1,0 +1,26 @@
+{
+  "pr": "https://github.com/VadikB/4K_MBTI/pull/219",
+  "head": "d4fbee4b72a78ea6ea7fc821d6a62aa0cb7d6d2d",
+  "base": "a1cdfedfb8b71d150b078eb0380ea013f0b08965",
+  "source": "rendered GitHub PR checks via user-authorized built-in browser",
+  "ci_run": 43616236425,
+  "full_run": 43616236416,
+  "integration_job": 132511793334,
+  "reads": 7,
+  "frontend": "PASS",
+  "pytest": "PASS",
+  "browser_fast": "PASS",
+  "browser_runtime_lanes": "3_PASS_1_FAIL",
+  "integration": "PASS",
+  "full-verification": "RUNNING_AT_STOP",
+  "deploy-test": "SKIPPED_ON_PR",
+  "merge": false,
+  "deploy": false,
+  "failure": {
+    "job_url": "https://github.com/VadikB/4K_MBTI/actions/runs/43616236416/job/132511793340?pr=219",
+    "test": "EXEC-CONTOUR repeated ASK remains in one AS before Report",
+    "location": "tests/browser/fixtures/assessment-completion-profile.mjs:155",
+    "error": "COMPOSITE_ASK_NOT_DELIVERED",
+    "summary": "1 failed, 7 passed in runtime shard3/4"
+  }
+}

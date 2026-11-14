@@ -19,7 +19,7 @@ M1v1.4 FROZEN/CURRENT=NO, M4v1.0, M5v1.1, M7v1.3; Change01 WORKING И-2/3/6, C23
 ## Проверки (команда → результат)
 
 - `npm run ready:prepare -- --candidate 2.1.5`, lint/build/release gate/diff — PASS.
-- `node --test tests/frontend/*.test.mjs` — **303 PASS** на кандидате2.1.5.
+- `node --test tests/frontend/*.test.mjs` — **305 PASS** на кандидате2.1.5.
 - Адресный Playwright F04/F27 — **8 PASS** на2.1.5; hard180с/no-progress60с, retries0.
 - Protocol units — **65 PASS**; actual PostgreSQL/HTTP — **23 PASS**, reused сd1326a3e по byte-identical Api/integration области. Новая БД при bump не нужна.
 - Первичные safe gzip logs, исходные harness FAIL и ограничения — `docs/evc/tasks/p4k-remain-05/CHECKS.md`, ресурсы/cleanup — STATE.
@@ -62,3 +62,8 @@ CI ждёт этого PR; remote full-verification обязателен. Пол
 ## Сопровождение CI
 
 Первый head5bf7aca5: frontend/pytest и все5 browser lanes PASS, integration1FAIL/410PASS/2SKIP. Причина — прежняя positive fixture EXEC-FIX05 с остатком0.1с после resume. Задержка0.2с воспроизвела тот жеM7_TIME_LIMIT_REACHED; после увеличения только synthetic positive запаса до60.1с и сохранения delay regression18HTTP/SQL+10unit PASS. Product timers/Api и exact negative boundaries не менялись. Before/after и primary CI link — CHECKS/receipts. Новый head проверяется обязательным CI, предыдущий FAIL не скрыт.
+
+
+## Ожидание фактической доставки ASK в test driver
+
+На d4fbee4b integration прошёл; runtime3/4 выявил прежний race `COMPOSITE_ASK_NOT_DELIVERED` (на первомhead тажеlanePASS). ASK и доставка фиксируются раздельно. Driver теперь boundedожиданием ждёт question_turn_id доотправкиответа; sameCycle/sameAS/id и негатив never-delivered сохраняются. Controlledbefore1FAIL, after6driver+305frontendPASS. Продуктовыйruntime/admission/M6/M8 не менялись. ПредыдущиеCIисходыиprimarylinks вCHECKS; дляновогоhead выполняетсяобязательныйCI.
