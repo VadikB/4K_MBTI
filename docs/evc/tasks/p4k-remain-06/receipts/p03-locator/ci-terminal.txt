@@ -1,0 +1,25 @@
+    - heading "Some checks were not successful" [level=3]
+    - paragraph: 2 failing, 1 skipped, 7 successful checks
+      - heading "failing checks" [level=3]
+        - listitem "Full verification / browser (fast) (pull_request) failing after 6m":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958290/job/132532578059?pr=220
+        - listitem "Full verification / full-verification (pull_request) failing after 3s":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958290/job/132534849097?pr=220
+      - heading "skipped checks" [level=3]
+        - listitem "CI / deploy-test (pull_request) skipped":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958322/job/132532469618?pr=220
+      - heading "successful checks" [level=3]
+        - listitem "CI / frontend (pull_request) successful in 23s":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958322/job/132532468287?pr=220
+        - listitem "CI / pytest (pull_request) successful in 1m":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958322/job/132532468545?pr=220
+        - listitem "Full verification / browser (runtime-1-of-4, 1/4) (pull_request) successful in 4m":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958290/job/132532578002?pr=220
+        - listitem "Full verification / browser (runtime-2-of-4, 2/4) (pull_request) successful in 4m":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958290/job/132532578154?pr=220
+        - listitem "Full verification / browser (runtime-3-of-4, 3/4) (pull_request) successful in 6m":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958290/job/132532578050?pr=220
+        - listitem "Full verification / browser (runtime-4-of-4, 4/4) (pull_request) successful in 3m":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958290/job/132532578070?pr=220
+        - listitem "Full verification / integration (pull_request) successful in 8m":
+              - /url: /VadikB/4K_MBTI/actions/runs/43622958290/job/132532577886?pr=220

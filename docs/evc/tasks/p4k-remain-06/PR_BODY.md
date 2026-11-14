@@ -60,3 +60,7 @@ CI актуального head, затем человеческое review и п
 ## Browser consumer regression
 
 После исходного head63557e7e адресно воспроизведены2FAIL stale E01/P3B exactbadge assertions; исправлены только tests/fixtures, добавлены3negative completedcount renderer variants. After2browser и324frontendPASS; Api/web/release bytes прежние63557e7e, same-versionpreflight2.1.6PASS. receipts/consumer-fix сохраняетbefore/after. НовыйCIheadобязателен, первоначальнаяCIсериянеобъявляетсяPASS.
+
+## CI26ae357d: P03 scoped locator
+
+Frontend/pytest/integration и4runtimebrowserlanesPASS; fast253PASS/1FAIL/1SKIP, parentfullFAIL. Причина — globalcompletedtextlocatorP03 теперь находитheader+returncard. Before1FAIL/after1PASS; locator разделён наcardиheader безослабленияreturnguards. Product/release2.1.6bytesunchanged. Primary receipts/p03-locator. НовыйheadпроверяетсяCI, прежнийFAILсохранён.
