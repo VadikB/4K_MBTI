@@ -4276,7 +4276,7 @@ for (const [failure, expected] of [
     const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic' };
     const acquaintance = {
       readiness: { status: 'ready', organization_id: 10, assignment_ref: 'synthetic', questionnaire_revision_id: 1,
-        responsible_contact: 'owner@example.test', briefing: { organizer: 'Synthetic', purpose: 'Synthetic',
+        briefing: { organizer: 'Synthetic', purpose: 'Synthetic',
           results_usage: 'Synthetic', result_recipients: 'Synthetic', questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } },
       state: { answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' },
         consent_accepted_at: 'synthetic', consent_version: 1, answers_confirmed_at: 'synthetic' },
@@ -4307,7 +4307,7 @@ for (const [failure, expected] of [
     await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
     await expect(page.locator('#onboarding-next')).toBeEnabled();
     expect(prepares).toBe(failure === 'organization' ? 0 : 1);
-    if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('owner@example.test');
+    if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('Обратитесь к администратору вашей организации.');
     if (failure === 'failed') await expect(page.locator('#feature-list')).toContainText('synthetic-failed-operation');
   });
 }
