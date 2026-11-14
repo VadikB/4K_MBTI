@@ -54,3 +54,11 @@ Candidate/source/tested SHA: `a52e8909c0a1ce850d08c2d83c3e35dbe7a59919`.
 Локальные результаты подтверждены совпадением SHA256 runtime с checked-content.json.
 Handoff commit после него меняет только docs; immutable PR head/CI будут записаны
 в итоговом receipt, сами checks GitHub являются первичным основанием.
+
+Первый push отклонён автоматической проверкой до исполнения: не установлено
+trusted destination/exact push authority. Обход не выполнялся. Read-only API:
+origin — публичный VadikB/4K_MBTI, actor bvvfructus-jpg имеет push=true; его
+PR209/210 уже merged в том же проекте, base0716647 получен оттуда. Реквизиты —
+evidence/repository-verification.json. На основании новых данных допускается
+только повтор той же reviewed операции своей ветки; при повторном отказе нужен
+прямой ответ владельца на exact destination, без эквивалентного обхода.

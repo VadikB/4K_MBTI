@@ -1,0 +1,14 @@
+{
+  "repository": "VadikB/4K_MBTI",
+  "visibility": "public",
+  "configured_fetch_and_push_origin": "https://github.com/VadikB/4K_MBTI.git",
+  "authenticated_actor": "bvvfructus-jpg",
+  "permissions": {"pull": true, "push": true, "triage": true, "admin": false},
+  "same_actor_previously_merged_project_prs": [210, 209],
+  "base_sha_already_in_destination": "07166475b478c843243102c748d51f8564b7cec0",
+  "scope": "own codex/p4k-w02-01 branch and one PR only; no main/merge/deploy",
+  "requirements": "P4K_W02_01_Acquaintance_v1.0_2026-11-14.txt",
+  "human_execution_authority": "Дмитрий, 2026-11-14: задание на исполнение. Запускай",
+  "first_push_auto_review_rejection": "Transcript did not establish a trusted user/organization-owned destination or explicit exact external push authorization",
+  "new_evidence": "Read-only GitHub API confirms configured public project remote, existing actor write permission and same actor merged PRs; no production data or secrets in new artifacts"
+}
