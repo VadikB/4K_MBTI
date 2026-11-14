@@ -9,7 +9,7 @@ Final base `b0bf7a4e8e4f0fe70c400525a373b9822229dfdc` /2.1.6; candidate2.1.7.
 | --- | --- | --- |
 | AC01 | PASS TECH, human visual PENDING | W02 browser1440×1024/390×844/320×844; computed styles, keyboard focus007D89, Onest, цвета, отсутствие полосы/подписи, длинный ответ и форма. 6 характерных PNG в evidence. HTML прототипа недоступен: без sandbox DNS denied, с доступом HTTP401; сверка по достаточному текстовому эталону. |
 | AC02 | PASS TECH | Реальный bundled frontend, controlled contract responses с реальной schema object из definition.json; server consent text/version7, три question text/order и answer1–3, сводка и3 действия. Динамические ФИО/организация/назначенная роль, пустая должность «Не указано». |
-| AC03 | PASS TECH | Общая форма3textarea, изменение второго ответа, отмена,503save failure сохраняет draft, повтор сохраняет, reload читает обновлённую сводку; confirmation единственный, история read-only. PATH29 fixture адаптирован к общей форме, его HTTP/PG граница — mandatory CI. |
+| AC03 | PASS TECH | Общая форма3textarea, изменение второго ответа, отмена,503save failure сохраняет draft, повтор сохраняет, reload читает обновлённую сводку; confirmation единственный, история read-only. PATH29 fixture адаптирован к общей форме; адресный actual backend/HTTP/ownedPG run PASS24.3s. |
 | AC04 | PASS TECH (UI contract) | POST существующего issues с обоих шагов,201receipt обязателен; controlled network failure + безопасный повтор, сообщение сохраняется, роль/шаг/consent/answers не меняются. Backend handler не менялся. Tenant/authorization регрессии сохраняются в test_w02_acquaintance_db.py и mandatory CI; не выдаётся за локальный новый DB run. |
 | AC05 | PASS TECH | Browser reload подтверждения/ответов и возврат dashboard→history; scoped-draft/late-readback frontend регрессии PASS. REMAIN04 late waiting response после logout PASS. Подготовка/старт не переработаны;11адресных browser включают существующие REMAIN05 normal/unknown first start. |
 
@@ -43,3 +43,13 @@ PR221: https://github.com/VadikB/4K_MBTI/pull/221; обязательный CI �
 После baseline — только mobile CSS padding16px для48px-кнопки на320px;
 run07 проверяет финальныйCSS, frontend324 переиспользован по совпадению JS-хешей.
 Актуальные checks и CI receipt привязаны к PR head.
+
+CI head4131fea: frontend/pytest/integration и4runtime groupsPASS; fast256PASS,1SKIP,
+1FAIL — PATH29 ещё ожидал старыйцветF6F9F9 и прежнюю вертикальную геометрию.
+Oracle приведён к W02F7F7F7 и composer; продуктовые файлы не менялись.
+Адресный PATH29 на ownedPG55493:1PASS24.3s, role/consent/answers/редактирование/
+reload/readonlyhistory/возвраткactiveAS прошли через actual backend/HTTP/БД.
+Первый localattempt остановился доapp из-за brokenvenv, причина устранена своим
+минимальным CIvenv. ОбаownedPGcluster остановлены, ports55493/18859свободны.
+ПервичныйCIлог сохранёнgzip, path-run/result подтверждают finite-profile+stop.
+Новый обязательныйCI текущегоhead ожидается; прежнийFAILне заменён старымPASS.

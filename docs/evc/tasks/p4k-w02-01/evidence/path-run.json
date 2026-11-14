@@ -1,0 +1,19 @@
+{
+  "run_id": "w02-path-ci-fix-02",
+  "owner": "P4K-W02-01",
+  "cluster": "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/\u041c\u043e\u0438\u0306 \u0434\u0438\u0441\u043a/HC Ai/P4K Codex \u0420\u0435\u0430\u043b\u0438\u0437\u0430\u0446\u0438\u044f \u0432 \u043a\u043e\u0434\u0435/p4k-w02-01/.test-stand/w02-pg-ci-fix2",
+  "pg_port": 55493,
+  "backend_port": 18859,
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "path29-participant.spec.mjs",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000"
+  ],
+  "external_llm": 0,
+  "letters": 0,
+  "pg_pid": 25549,
+  "browser_pgid": 25562
+}

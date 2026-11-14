@@ -325,14 +325,20 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const metrics = await page.locator('#onboarding-panel').evaluate((panel) => {
         const back = panel.querySelector('#onboarding-step-back').getBoundingClientRect();
         const input = panel.querySelector('textarea').getBoundingClientRect();
-        const actions = panel.querySelector('.onboarding-actions').getBoundingClientRect();
+        const composer = panel.querySelector('.onboarding-composer').getBoundingClientRect();
+        const send = panel.querySelector('#onboarding-next').getBoundingClientRect();
         return { overflow: document.documentElement.scrollWidth > innerWidth + 1,
           font: getComputedStyle(panel).fontFamily, background: getComputedStyle(panel).backgroundColor,
-          back: [back.width, back.height], gap: actions.top - input.bottom };
+          back: [back.width, back.height], expectedBackWidth: innerWidth <= 600 ? 32 : 44,
+          gap: send.left - input.right, sendHeight: send.height, inputBottom: input.bottom, sendBottom: send.bottom,
+          composerBottom: composer.bottom, viewportHeight: innerHeight };
       });
       expect(metrics.overflow).toBe(false); expect(metrics.font).toContain('Onest');
-      expect(metrics.background).toBe('rgb(246, 249, 249)'); expect(metrics.back).toEqual([44, 44]);
-      expect(metrics.gap).toBeGreaterThanOrEqual(16); expect(metrics.gap).toBeLessThan(80);
+      expect(metrics.background).toBe('rgb(247, 247, 247)');
+      expect(metrics.back).toEqual([metrics.expectedBackWidth, 44]);
+      expect(metrics.gap).toBeCloseTo(12, 0); expect(metrics.sendHeight).toBe(48);
+      expect(metrics.inputBottom).toBeCloseTo(metrics.sendBottom, 0);
+      expect(metrics.composerBottom).toBeLessThanOrEqual(metrics.viewportHeight + 1);
       geometry.push({ width, ...metrics });
       await page.screenshot({ path: path.join(dir, `question-${width}.png`), fullPage: true });
     }

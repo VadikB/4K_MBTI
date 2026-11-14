@@ -97,3 +97,31 @@ ports закрыты, group absent=true. Финальный CSS-only diff и tes
 зафиксированы вместе с updated content hashes. Дальше — CI точного PR head.
 Итоговый immutable head и результатыCI сохраняются также в RELEASE_STATUS.json
 послеCI без дополнительного изменения head; это локальный handoff receipt.
+
+CI4131fea: frontend/pytest/integration и4runtime shardsPASS; fast256PASS/1SKIP/1FAIL.
+Причина — недоадаптированный PATH29 geometry oracle: прежний фонF6F9F9 и вертикальный
+input→actions gap, тогда как W02F7F7F7/composer. Исправлены ожидания на новыйцвет,
+12px input→send gap,48pxsend и нахождение composer в viewport; back32/44 по media.
+Продуктовые исходники не меняются. Это первый продуктивный цикл исправленияFAIL.
+
+До запуска `w02-path-ci-fix-01`: ownerCodex/P4K-W02-01; исходный PostgreSQL826:55432
+чужой/не используется. Собственный новый initdb cluster `.test-stand/w02-pg-ci-fix`,
+PGport55493/role stand_owner, trust только127.0.0.1, restart/autorestart отсутствует.
+Backend18859 и created product4k_pytest_<UUID> принадлежат штатному test_stand.py;
+state/PID/database marker остаются только в ignored `.test-stand/w02-path-ci-fix`.
+Старт: `python3 /tmp/p4k-w02-path-run.py`; status: pg_ctl -D owned-dir status,
+ps по ownedPGID, lsof55493/18859. Стоп: штатный testfinally destroy, SIGTERM/SIGKILL
+только owned group, pg_ctl -D owned-dir -m fast stop. RUN budget600s/no-progress90s
+(прогресс по stdout/mtime собственных app/receipt файлов); workers1/retries0.
+Реальные LLM/письма=0. На любом исходе остановить все свои ресурсы и подтвердить
+ports free; не трогать исходныйPG55432. ПолныйCI не заменяется этим адреснымrun.
+Path-ci-fix01 остановлен до application: исходная .venv цепочка symlinks была broken
+(удалённыйtmp). PG55493 остановлен,18859 не открывался; receipts сохранены как
+path-environment-*. Создан собственный venv с ровно минимальными dependency names
+из CI; чужая исходная ссылка не менялась (заменена только наша ссылка).
+Run `w02-path-ci-fix-02`: новый owned cluster `.test-stand/w02-pg-ci-fix2`, evidence
+`.test-stand/w02-path-ci-fix2`, те же55493/18859 и прежние600s/90s/1worker/0retries,
+noLLM/noletters; status/stop/ownership команды прежние, новыйPID записывается доrun.
+Run path-ci-fix02:1PASS24.3s actualfrontend/HTTP/ownedPG. Обаports55493/18859free,
+pg_stopped=true; CI-old-oracleFAIL локализован и исправлен. Product runtime hashes
+совпадают с4131fea. Следующийкоммит tests/docs-only; запустить mandatoryCI новогоhead.
