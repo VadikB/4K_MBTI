@@ -30,7 +30,7 @@ F15-AC01–03: API и UI показывают исход каждого адре
 - `npx playwright test tests/browser/adm-program-guards.spec.mjs --workers=1 --retries=0` — 35 PASS, из них 12 REMAIN_03.
 - `TEST_DATABASE_URL=<owned isolated pytest DB> STAND_ADMIN_URL=<owned isolated admin DB> npm run test:backend:integration -- --quiet` — 402 PASS, 2 SKIP (real-provider), 1250 deselected.
 - Адресная PostgreSQL-регрессия — 18 PASS. Детали и локализованные ошибки первоначального профиля — в `CHECKS.md`.
-- После согласованного bump `2.1.3` release guard, lint, frontend 272, backend 1093, HTTP 153 и browser 35 повторно PASS на рабочем дереве; полный локальный integration переиспользован только для неизменённого backend-кода. CI Ready выполнит его на точном head.
+- После согласованного bump `2.1.3` release guard, lint, frontend 272, backend 1093, HTTP 153 и browser 35 повторно PASS; полный локальный integration переиспользован только для неизменённого backend-кода. Первый Ready CI: integration и четыре runtime browser shards PASS, `browser (fast)` FAIL (241 PASS, 1 SKIP, 3 FAIL), required `full-verification` FAIL. Причины исправлены в invitation UI и browser-тесте; новый CI нужен на следующем head.
 
 Ручная проверка после импорта: открыть организацию с подтверждёнными сведениями; выбрать двух синтетических адресатов; при контролируемом mail sink проверить отдельный статус каждого, неизвестный результат и восстановление той же операции после reload, затем локальный срок ссылки. Реальные письма не отправлять. Ожидание — без общего ложного успеха, дубля отправки и применения позднего ответа к другому экрану/пользователю.
 
@@ -44,16 +44,16 @@ F15-AC01–03: API и UI показывают исход каждого адре
 
 ## Следующий минимальный шаг
 
-Проверить быстрый CI draft [#217](https://github.com/VadikB/4K_MBTI/pull/217) на новом head `2.1.3`, затем перевести PR в `Ready for review` и дождаться полного CI. Человеческое review и решение о merge отдельны.
+Завершить browser-регрессию, опубликовать адресное исправление в Ready [#217](https://github.com/VadikB/4K_MBTI/pull/217) и дождаться полного CI на новом head. Человеческое review и решение о merge отдельны.
 
 ## Открытые вопросы (блокеры)
 
-Для локальной реализации — нет. Для merge: решение владельца о версии/приёмке и успешный обязательный CI.
+Для локальной реализации — нет. Для merge: успешный обязательный CI и решение владельца о приёмке.
 
 ## Действия выпуска
 
 - [x] `branch_push` — ветка опубликована архитектором.
-- [x] `pr` — draft #217 создан архитектором.
+- [x] `pr` — #217 создан архитектором и переведён в Ready после быстрого CI.
 - [ ] `merge` — после CI и человеческого review.
 - [ ] `deploy` — отдельный этап.
 - [x] `version_bump` — patch `2.1.3` согласован и подготовлен.

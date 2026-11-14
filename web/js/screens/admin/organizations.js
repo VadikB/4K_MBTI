@@ -1044,7 +1044,8 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     await showItems(items);
   } catch (error) {
     const unknown = error?.name === 'RequestDeadlineError' || error instanceof TypeError ||
-      error?.status >= 500 || ['Failed to fetch', 'INVITATION_RESPONSE_INCOMPLETE',
+      (error?.status >= 500 && error?.code !== 'EMAIL_PROVIDER_NOT_CONFIGURED') ||
+      ['Failed to fetch', 'INVITATION_RESPONSE_INCOMPLETE',
         'INVITATION_READBACK_INCOMPLETE'].includes(error?.message);
     if (unknown) {
       try {
@@ -1054,7 +1055,9 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
       } catch (_readbackError) {
         if (isCurrent()) {
           renderAdminOrganizations();
-          setStatus('Исход отправки пока неизвестен. Проверьте ту же операцию перед новой отправкой.', 'error');
+          setStatus(error?.message === 'INVITATION_RESPONSE_INCOMPLETE'
+            ? 'Сервер вернул неполный или противоречивый результат приглашения. Исход отправки пока неизвестен. Проверьте состояние операции перед повтором.'
+            : 'Исход отправки пока неизвестен. Проверьте ту же операцию перед новой отправкой.', 'error');
         }
       }
     } else {
