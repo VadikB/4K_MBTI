@@ -337,7 +337,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       expect(metrics.overflow).toBe(false); expect(metrics.font).toContain('Onest');
       expect(metrics.background).toBe('rgb(247, 247, 247)');
       expect(metrics.back).toEqual([0, 0]);
-      expect(metrics.gap).toBeCloseTo(16, 0); expect(metrics.sendHeight).toBe(48);
+      expect(metrics.gap).toBeCloseTo(metrics.stacked ? 12 : 16, 0); expect(metrics.sendHeight).toBe(48);
       if (metrics.stacked) expect(metrics.sendWidth).toBeCloseTo(metrics.inputWidth, 0);
       else { expect(metrics.sendWidth).toBe(200); expect(metrics.inputBottom).toBeCloseTo(metrics.sendBottom, 0); }
       expect(metrics.composerBottom).toBeLessThanOrEqual(metrics.viewportHeight + 1);

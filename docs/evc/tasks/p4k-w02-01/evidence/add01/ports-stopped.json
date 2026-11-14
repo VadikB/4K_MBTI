@@ -6,5 +6,9 @@
   {
     "port": 60111,
     "listener_absent": true
+  },
+  {
+    "port": 60723,
+    "listener_absent": true
   }
 ]

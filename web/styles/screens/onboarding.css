@@ -27,7 +27,7 @@
     background: var(--w02-white); border-bottom: 1px solid var(--w02-border);
 }
 #onboarding-panel #onboarding-home { border: 0; background: transparent; color: inherit; padding: 8px 0; font: 700 20px/28px var(--font-body); min-height: 44px; text-align: left; }
-#onboarding-panel #onboarding-home::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 4px; border-radius: 50%; background: var(--w02-primary); }
+#onboarding-panel #onboarding-home::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: var(--w02-primary); }
 #onboarding-panel .onboarding-section-label { position: absolute; left: 50%; transform: translateX(-50%); font-size: 14px; line-height: 20px; color: var(--w02-muted); text-transform: uppercase; letter-spacing: .04em; }
 #onboarding-panel .step-badge-back { display: none; }
 #onboarding-panel .onboarding-history { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 32px 0; }
@@ -53,7 +53,7 @@
 #onboarding-panel .onboarding-data dt { font-size: 14px; color: var(--w02-muted); margin-bottom: 5px; }
 #onboarding-panel .onboarding-data dd { margin: 0; }
 #onboarding-panel .onboarding-consent { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--w02-border); font-size: 14px; line-height: 21px; }
-#onboarding-panel textarea { display: block; box-sizing: border-box; width: 100%; min-height: 48px; margin: 0; border: 1px solid var(--w02-border); border-radius: 8px; background: var(--w02-white); padding: 12px; font: 400 16px/24px var(--font-body); color: inherit; }
+#onboarding-panel textarea { display: block; box-sizing: border-box; width: 100%; min-height: 48px; margin: 0; border: 1px solid var(--w02-border); border-radius: 8px; background: var(--w02-white); padding: 11px 12px; font: 400 16px/24px var(--font-body); color: inherit; }
 #onboarding-panel textarea::placeholder { color: rgb(70 69 84 / 60%); opacity: 1; }
 #onboarding-panel textarea:disabled { background: var(--w02-secondary); color: var(--w02-disabled-text); }
 #onboarding-panel .onboarding-answer { max-height: 120px; resize: none; }
@@ -64,7 +64,7 @@
 #onboarding-panel .primary-button:active:not(:disabled) { background: var(--w02-active); }
 #onboarding-panel .ghost-button { background: var(--w02-white); border: 1px solid var(--w02-border); color: inherit; padding-block: 11px; font-weight: 500; }
 #onboarding-panel .ghost-button:hover:not(:disabled) { background: var(--w02-list-hover); }
-#onboarding-panel .onboarding-text-action { align-self: center; min-height: 48px; padding: 12px 0; border: 0; background: transparent; color: var(--w02-focus); font: 400 14px/20px var(--font-body); text-decoration: underline; cursor: pointer; }
+#onboarding-panel .onboarding-text-action { align-self: center; min-height: 44px; padding: 10px 0; border: 0; background: transparent; color: var(--w02-focus); font: 400 14px/20px var(--font-body); text-decoration: underline; cursor: pointer; }
 #onboarding-panel button:disabled { background: var(--w02-disabled); color: var(--w02-disabled-text); cursor: default; opacity: 1; }
 #onboarding-panel .onboarding-text-action:disabled { background: transparent; }
 #onboarding-panel #onboarding-home:disabled { background: transparent; }
@@ -75,7 +75,7 @@
 #onboarding-panel .onboarding-notice { margin: 12px 0 0; color: var(--w02-muted); font-size: 14px; line-height: 21px; }
 #onboarding-panel .onboarding-warning { padding: 16px; background: var(--w02-secondary); border: 1px solid var(--w02-border); border-radius: 8px; }
 #onboarding-panel .onboarding-summary-item { margin-bottom: 20px; }
-#onboarding-panel .onboarding-summary-label { display: block; margin-bottom: 6px; font: 400 14px/20px var(--font-body); color: var(--w02-muted); }
+#onboarding-panel .onboarding-summary-label { display: block; margin-bottom: 6px; font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
 #onboarding-panel .onboarding-summary-answer { white-space: pre-wrap; font: 400 16px/24px var(--font-body); color: var(--w02-text); }
 #onboarding-panel .onboarding-bubble .onboarding-summary-note { margin: 20px 0 0; border-left: 3px solid var(--w02-border); padding-left: 14px; font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
 #onboarding-panel .onboarding-knowledge { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
@@ -105,17 +105,19 @@
 @media (max-width: 600px) {
     #onboarding-panel .onboarding-topbar { flex-basis: 64px; padding-inline: 16px; gap: 8px; }
     #onboarding-panel #onboarding-home { font-size: 18px; line-height: 24px; white-space: nowrap; }
-    #onboarding-panel .onboarding-section-label { position: static; transform: none; margin-left: auto; font-size: 11px; text-align: right; }
+    #onboarding-panel #onboarding-home::after { width: 5px; height: 5px; }
+    #onboarding-panel .onboarding-section-label { position: static; transform: none; margin-left: auto; font-size: 12px; line-height: 16px; text-align: right; }
     #onboarding-panel .onboarding-thread, #onboarding-panel .onboarding-composer-inner { width: calc(100% - 32px); }
     #onboarding-panel .onboarding-message--assistant { width: 100%; }
     #onboarding-panel .onboarding-message--user { max-width: 90%; }
     #onboarding-panel .onboarding-bubble { padding: 18px 16px; }
     #onboarding-panel .onboarding-data { grid-template-columns: 1fr; gap: 16px; }
-    #onboarding-panel .onboarding-actions { flex-direction: column; gap: 10px; }
+    #onboarding-panel .onboarding-actions { flex-direction: column; gap: 12px; }
+    #onboarding-panel .onboarding-text-action { align-self: stretch; }
     #onboarding-panel .onboarding-actions .primary-button, #onboarding-panel .onboarding-actions .ghost-button { min-width: 0; width: 100%; padding-inline: 16px; }
     #onboarding-panel .onboarding-history { padding-block: 24px 16px; }
     #onboarding-panel .onboarding-composer { padding-top: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
-    #onboarding-panel .onboarding-composer-inner { flex-direction: column; align-items: stretch; }
+    #onboarding-panel .onboarding-composer-inner { flex-direction: column; align-items: stretch; padding: 12px; gap: 12px; }
     #onboarding-panel .onboarding-composer-inner .onboarding-answer, #onboarding-panel .onboarding-send, #onboarding-panel .onboarding-send-placeholder { flex: none; min-width: 0; width: 100%; }
     #onboarding-panel #onboarding-dialog { padding: 20px; }
 }

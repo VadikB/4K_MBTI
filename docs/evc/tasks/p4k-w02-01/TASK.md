@@ -89,3 +89,27 @@ PATH29 имеет новые ожидания composer/отсутствия ст
 Приёмка: по принятому дополнению ручная проверка длинного ответа, формы и телефона
 отложена до main/TEST; человеческое review и самостоятельный допуск merge сохраняются.
 Откат — revert собственных ADD01-коммитов/PR штатным процессом.
+
+
+### Уточнение после доступа к HTML W02 v5
+
+Владелец прямо разрешил повторный вход в ChatGPT и затем Google sign-in.
+IAB открыл эталон; прежний пробел доступа закрыт. Sitesread подтверждаетversion5,
+DOM/computed styles сводки просмотрены адресно1440/390 (не новая матрица).
+Первичное чтение — evidence/add01/reference-dom-styles.json. Встроенные шрифты,
+секреты и учётные данные не копировались. СкачиваниеHTML превысилоtimeout;
+дальше использован уже доступный DOM, повтор скачивания не выполнялся.
+Дельта относительно43d16e2:mobilecomposer padding/gap12, label14/21,
+textarea padding11/12, textaction44px/padding10, dot7desktop/5mobile,
+mobile section12/16/actionsgap12. Это уточнение тех же8пунктов, без API/JSfix.
+Кнопки48px сохранены по явному текстовому REFERENCE; HTML secondary50px включает
+border, его механическое копирование нарушило бы явную высоту48px.
+Перед controlledrun `w02-add01-html-final` — своих PID/containers/DB нет;
+исходные foreignlisteners прежние. Тот же finiteprofile600s/90s/1worker/0retries,
+noLLM/noletters и прежний runner/commands; W02only1440px +REMAIN05.
+Перед адреснымPATH29 — новыйcluster `.test-stand/w02-pg-add01-html`,
+PG55493/backend18859, рольstand_owner, синтетическая product4k_pytest DB.
+Старт python3 /tmp/p4k-w02-add01-html-path.py; status/stop с новымclusterpath
+штатные, ownedgroups иPID до использования фиксируются в evidence/add01/path-run.json.
+Повтор обусловлен полученным новым исходным HTML и конкретной CSSдельтой.
+Текущий CI43d16e2 относится к прежнемуCSS; послеpush новыйhead проходит весьCI.

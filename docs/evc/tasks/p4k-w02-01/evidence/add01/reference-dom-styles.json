@@ -1,0 +1,57 @@
+{
+  "source": "https://p4k-welcome-w02-review.bvv-fructus.chatgpt.site/",
+  "version": 5,
+  "access": "authenticated IAB after direct human ChatGPT/Google sign-in authorization",
+  "method": "read-only computed styles of visible DOM inside #prototype iframe; no base64 fonts or authentication data captured",
+  "desktop_1440": {
+    "composer": {
+      "direction": "row",
+      "width": 1120,
+      "padding": 16,
+      "gap": 16,
+      "radius": 8
+    },
+    "send": {
+      "width": 200,
+      "font": "600 16/24"
+    },
+    "label": {
+      "font": "400 14/21",
+      "color": "#464554"
+    },
+    "answer": {
+      "font": "400 16/24",
+      "color": "#222C30"
+    },
+    "title": {
+      "font": "700 16/24"
+    },
+    "note": {
+      "font": "400 14/21",
+      "paddingLeft": 14,
+      "marginTop": 20
+    },
+    "text_action": {
+      "font": "400 14/20",
+      "height": 44,
+      "padding": "10px 0",
+      "underline": true,
+      "transparent": true
+    },
+    "brand_dot": 7
+  },
+  "mobile_390": {
+    "composer": {
+      "direction": "column",
+      "width": 358,
+      "padding": 12,
+      "gap": 12
+    },
+    "field_and_send_width": 334,
+    "textarea_padding": "11px 12px",
+    "brand_dot": 5,
+    "section": "400 12/16",
+    "actions_gap": 12
+  },
+  "precedence": "primary/secondary buttons retained48px per explicit text REFERENCE; HTML secondary computed50px includes border, ADD01 calls for fonts600/500"
+}

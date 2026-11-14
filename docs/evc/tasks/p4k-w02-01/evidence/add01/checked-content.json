@@ -9,7 +9,7 @@
   "files": {
     "web/index.html": "8bf552409f48ed0eb51ad302c7a8a8a80416828eefe4fdf98fe579fd658841c1",
     "web/js/screens/onboarding.js": "ef8e92da09f6f739156c62bcafda2242d2152fdeb1d61a06053122250de6fd4b",
-    "web/styles/screens/onboarding.css": "92f3ed0842ef777a80863d38c7ab912beeda64fd9587fb7f9013097af2cfc274",
+    "web/styles/screens/onboarding.css": "8468dfe16b22c992882a5ce5d1accbb47c74e5c0938b49ff6b4626452d60f827",
     "web/js/config.js": "9593ebd235b4d2debce68478691e6edbd6d71e8db23ed73337a10f4582a982de",
     "pyproject.toml": "89b05364e724a1e406129322b59d0260b5a4ac88fdde4213fd5d1b86fc0cae22",
     "uv.lock": "a40c5ee8369c51ea119f7df67346a7b4e5944d7eabc59a4eab4331e384c2f2e3",
@@ -59,5 +59,8 @@
     "web/dist/router-OQY46XOL.js": "c0fcfb31971e0446cfd84a182c82eee8cb953dab2eabad18cceb4d6c7a2c7000",
     "web/dist/screen-loaders-VIKLHT4Q.js": "76aac04c854f81dfba6a2731694a2dfb5807e44bee338caff7dfbdef36081649",
     "web/dist/session-Q4TFANNZ.js": "d5d1a2a3afe59dfd5c81476582c1ac6f157917314d1dd362e004f9653a0d8adc"
-  }
+  },
+  "before_html_sha": "43d16e20bfa04ecf34fb6db0f1c73a62c024314f",
+  "html_reference_version": 5,
+  "final_w02_after_html": 4
 }
