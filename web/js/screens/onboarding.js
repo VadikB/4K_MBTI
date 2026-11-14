@@ -5,6 +5,7 @@ import { hideAllPanels, syncUrlState, openAcquaintanceWaiting } from '../router.
 import { readApiResponse, createOperationId, fetchWithDeadline as fetch } from '../api.js';
 import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
 import { hasPendingPreparedStart, readPendingPreparedStart } from '../product-cycle-start.js';
+import { acquaintanceErrorMessage } from '../acquaintance-errors.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../onboarding-flow.js';
 
 let model = null;
@@ -275,7 +276,7 @@ const reportIssue = () => {
     try {
       await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify({ message: input.value }) });
       result.textContent = 'Сообщение сохранено и доступно ответственному вашей организации.';
-    } catch (error) { result.textContent = error.message; }
+    } catch (error) { result.textContent = acquaintanceErrorMessage(error); }
     finally { button.disabled = false; }
   });
   return details;
@@ -426,7 +427,7 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
     if (!reviewMode && model.onboarding?.status === 'not_started') await saveProgress('in_progress');
   } catch (error) {
     if (!isCurrent(owner, epoch, run)) return;
-    loadFailed = true; errorMessage = error.message;
+    loadFailed = true; errorMessage = acquaintanceErrorMessage(error);
   }
   if (!isCurrent(owner, epoch, run) || state.currentScreen !== 'onboarding') return;
   loading = false;
@@ -508,7 +509,7 @@ const advance = async () => {
     }
     persistAssessmentContext();
   } catch (error) {
-    if (isCurrent(owner, epoch, run)) errorMessage = error.message || 'Не удалось сохранить действие. Повторите попытку.';
+    if (isCurrent(owner, epoch, run)) errorMessage = acquaintanceErrorMessage(error);
   } finally {
     if (isCurrent(owner, epoch, run)) { busy = false; if (state.currentScreen === 'onboarding') renderOnboarding({ focus: true }); }
   }
@@ -522,7 +523,7 @@ export const initOnboarding = () => {
     busy = true; renderOnboarding();
     const owner = identity(), epoch = state.identityEpoch, run = generation;
     try { await saveProgress('completed', readinessIndex()); state.onboardingIndex = readinessIndex(); void beginPreparation(); }
-    catch (error) { if (isCurrent(owner, epoch, run)) errorMessage = error.message; }
+    catch (error) { if (isCurrent(owner, epoch, run)) errorMessage = acquaintanceErrorMessage(error); }
     finally { if (isCurrent(owner, epoch, run)) { busy = false; renderOnboarding({ focus: true }); } }
   });
   document.getElementById('onboarding-home').addEventListener('click', async () => {
@@ -545,7 +546,7 @@ export const initOnboarding = () => {
         if (isCurrent(owner, epoch, run)) dashboard.openDashboard();
       } else if (journey?.next_action === 'wait_for_acquaintance_data') openAcquaintanceWaiting(journey.acquaintance.readiness);
       else { notice = 'Сейчас доступно продолжение знакомства. Уже сохранённые ответы остаются на месте.'; showMessages(); }
-    } catch (error) { if (isCurrent(owner, epoch, run)) { errorMessage = error.message; showMessages(); } }
+    } catch (error) { if (isCurrent(owner, epoch, run)) { errorMessage = acquaintanceErrorMessage(error); showMessages(); } }
     finally { if (isCurrent(owner, epoch, run)) { busy = false; if (state.currentScreen === 'onboarding') renderOnboarding(); } }
   });
   window.addEventListener('agent4k:assessment-context-cleared', () => {

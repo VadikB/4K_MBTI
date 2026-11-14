@@ -455,7 +455,7 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
 )
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
         product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase,
-        tester_outcome):
+        tester_outcome, *, first_case_only=False):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -789,15 +789,16 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     assert replay["result_json"]["decision"]["assessment_situation_id"] == first_as
     assert FunctionalGateway.call_count == generation_calls
 
-    waiting_operation = "functional-cycle-waiting"
-    queue.enqueue(operation_id=waiting_operation, user_id=99, request={
-        "kind": "next", "cycle_id": cycle_id, "idempotency_key": waiting_operation,
-    })
-    queue._process(queue._claim())
-    waiting = queue.get_status(waiting_operation)
-    assert waiting["status"] == "completed", waiting
-    assert waiting["result_json"]["decision"]["status"] == "WAITING_CURRENT_AS"
-    assert FunctionalGateway.call_count == generation_calls
+    if not first_case_only:
+        waiting_operation = "functional-cycle-waiting"
+        queue.enqueue(operation_id=waiting_operation, user_id=99, request={
+            "kind": "next", "cycle_id": cycle_id, "idempotency_key": waiting_operation,
+        })
+        queue._process(queue._claim())
+        waiting = queue.get_status(waiting_operation)
+        assert waiting["status"] == "completed", waiting
+        assert waiting["result_json"]["decision"]["status"] == "WAITING_CURRENT_AS"
+        assert FunctionalGateway.call_count == generation_calls
 
     with product_db() as connection:
         start_prepared(connection, user_id=99, cycle_id=cycle_id, key="functional-cycle-start")
@@ -840,6 +841,9 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                 'http_status': response.status_code, 'assessment_answers_at_readback': 0,
                 'snapshot_checksum_verified': True, 'execution_checksum_verified': True,
             }, ensure_ascii=False, indent=2) + '\n', encoding='utf8')
+        if first_case_only:
+            assert FunctionalGateway.call_count == generation_calls
+            return  # REMAIN_05: first AS, zero assessment answers, no Next/Report.
         submit_turn(connection, assessment_situation_id=first_as,
                     request_id="functional-cycle-turn", turn_id=str(uuid4()),
                     content="Контролируемый ответ для перехода ко второй ситуации.",

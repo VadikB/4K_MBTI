@@ -1,0 +1,31 @@
+# STATE REMAIN_05 v1.6
+
+Исполнитель: Codex пользователя, Vadim/macOS; сессия P4K-REMAIN-05-v1.6, один писатель.
+Ветка codex/p4k-remain-05; worktree worktrees/p4k-remain-05. Base a1cdfedfb8b71d150b078eb0380ea013f0b08965 (доступный origin/main, REMAIN_01–04 включены). Корневой dirty diff не затрагивается.
+
+Завершено: адресная разведка. Активно: F04 клиентские ошибки и неизвестный старт. Далее проверки F04/F27, review, commit и локальный bundle. Исторический fd…/PREP-DIAG UNKNOWN: точной operation/status/version нет, платный повтор запрещён.
+
+Общие функции до правки: product-cycle-start.startPreparedProductCycle/readPendingPreparedStart — 05, exact cycle runtime и прежний ключ; screens/onboarding.api/advance/error presentation — 05, owner/generation guard 01 и profile/readiness 04 сохраняются. api.fetchWithDeadline и assessment-errors общие helpers не меняются. Новый узкий renderer ошибок знакомства не меняет API. F27 очередь/admission/generator — проверка без продуктовых правок.
+
+## Профиль до запуска
+
+RUN_ID remain05-controlled-20261114; tested base + diff, SHA после commit. Общий deadline 20 мин на controlled run, preflight120 с, отдельный test90 с, HTTP15 с, no-progress60 с, один worker, full retries0, SDK retries0, real LLM/mail0. Browser ≤100 действий/сценарий, HTTP≤40, readback≤12/operation, deliveries≤4 только idempotency; teardown60 с/grace15 с, лог≤10 MiB/process, artifacts≤100 MiB. Дорогого/реального запуска нет. Стоп первой AS, 0 оценочных ответов, без Report/Блок2/3/GC.
+
+Команды: node --test tests/frontend/product-cycle-start.test.mjs tests/frontend/http-deadline.test.mjs tests/frontend/remain05-errors.test.mjs; node --test tests/frontend/*.test.mjs; npm run lint:js; npm run build:web; адресный Playwright auth-r03 first-start + exec-fix02 first preparation; pytest isolated tests/integration/test_pilot_start_admission_db.py и test_m10_product_path_db.py (адресные prepare/queue), protocol units. Точный список после чтения тестов в CHECKS до запуска. Профиль backend и frontend suite: отдельные быстрые тесты, лимит процесса180 с, один worker; backend не обязателен для JS, но targeted protocol исполняется.
+
+Ресурсы до старта: собственных PID/container/портов/БД нет. Dependencies — symlink на существующие библиотеки; .env не читается. План один PostgreSQL15 cluster /private/tmp/p4k-remain05-pg, port55445, user remain05, DB agent4k_pytest, restart=no (без supervisor). initdb/pg_ctl; status pg_ctl status/pg_isready; stop pg_ctl -D /private/tmp/p4k-remain05-pg -m fast stop. При отказе/timeout TERM только собственному PID/PGID tool session, grace15 с, затем адресно KILL. Browser static server fixture beforeAll/afterAll, dynamic localhost port; остановка afterAll, не оставлять preview. Docker не нужен. Реальные secrets/PII не читать, незнакомые ресурсы не трогать.
+
+branch_push=false; pr=false; merge=false; deploy=false; version_bump=false; artifact_publish=false. Прямое основание — «Делаем REMAIN_05», вложения задают требования, внешних полномочий сами не дают. Откат: revert собственных code commits/dist, без изменений Cycle/AS/snapshots.
+
+Перед запуском browser: свои fixtures ephemeral localhost, Playwright --timeout=90000 --workers=1 --retries=0; tools exec session хранит PID, stop адресно session/PGID. Адресный новый browser remain05-first-start (invalid201→503→reload→GET→та же AS; GET/PUT error), существующий auth-r03 --grep 'committed first start|reload resolves unknown first start|reload reads a preparation', exec-fix02 --grep 'first preparation'. Оценочные POST/Report отсутствуют. Существующий auth-r03 статический порт18764, другие fixtures dynamic; afterAll закрывает server. Backend bounded protocol units test_m5_functional_generation_service, test_product_cycle_preparation_fencing/projection; PG выбор ниже в CHECKS до старта.
+
+Первый PG run: 1 PASS/4 FAIL/11 setup ERROR из-за SQL_ASCII default initdb --no-locale (строки возвращаются bytes). Это owned harness config, product код не меняется; первичный результат pg-http-initial-encoding-fail.txt.gz сохранён. После закрытия pytest только owned agent4k_pytest пересоздаётся template0 UTF8; cluster/PID/port прежние. Перед повтором проверяется encoding. Browser первая AS PASS, error smoke fixture забыл consent_text и guard корректно disabled; fixture дополняется. Лимиты не повышаются.
+Browser дополнение до запуска: третий сценарий той же fixture explicit normal start201→runtime→reload, один start, zero assessee Turns; неожиданный mutation/Report fail. Лимиты прежние, первые два теста не расширяются длинным хвостом.
+
+F27 gap перед дополнительным PG: текущие65 protocol/16 PG PASS, но нет нового actual functional gateway→queue→saved candidate доказательства positive/FAIL/INCOMPLETE. Чтобы не выполнять существующий длинный test до второй AS/ответа, его штатный harness получает optional first_case_only (default false), REMAIN05 wrapper выполняет конечные7 вариантов normal/closed/crash before+after provider+after attach/FAIL/INCOMPLETE, STOP first AS0answers. Не новый generator/queue, product Python не меняется. Тот же owned cluster, process limit180 с для suite7 (test90), run20мин, SDK auto retries0, имитации crash и reclaim разрешены конечным набором, не повторы full run.
+
+## Проверенный результат до фиксации
+
+Реализация завершена: F04 frontend deadline/receipt validation/pending/readback/safe errors. F27 проверен без изменения runtime. Адресные23 PG/HTTP (16+7), protocol65, frontend299, browser8, lint/build/diff PASS. Все7 AC PASS TECH в пределах CHECKS; primary failed harness runs сохранены. Непроверенные CI/release/full suites и границы synthetic component отдельно в CHECKS. Активно: self-review/commit/exact-SHA receipts/cleanup/локальный bundle.
+
+Review: shared api/error helper04 не менялся; producers/consumers response fields прежние; immutable definitions/snapshots/схема не тронуты. Optional first_case_only — только existing test harness, default false сохраняет прежние assertions; REMAIN wrapper не выполняет Next/ответ/Report. Новое предметное содержание/prompts/defaults отсутствует. Откат revert own code/dist, сохранённые Cycle/AS не менять. Полный backend не требуется для frontend-only product diff по matrix; targeted functional tests проверяют затронутый test harness. Действия выпуска все false.

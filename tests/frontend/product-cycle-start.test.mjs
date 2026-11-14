@@ -88,7 +88,7 @@ test('an explicit retry after unstarted readback reuses the original idempotency
   const retryFetch = async (url, options) => {
     calls.push([url, options]);
     if (url.endsWith('/runtime')) return jsonResponse({ cycle_id: 'cycle-1', current_situation: { status: 'admitted' } });
-    return jsonResponse({ plan: { cycle_id: 'cycle-1' }, runtime: { cycle_id: 'cycle-1' } }, 201);
+    return jsonResponse({ plan: { cycle_id: 'cycle-1' }, runtime: { cycle_id: 'cycle-1', current_situation: { status: 'active', participant_payload: { title: 'Synthetic AS' } } } }, 201);
   };
   await startPreparedProductCycle('cycle-1', { fetchImpl: retryFetch, operationId: 'start-7' });
   assert.equal(calls.length, 2);
@@ -119,4 +119,83 @@ test('a 503 POST response also requires readback before reporting failure', asyn
   const result = await startPreparedProductCycle('cycle-1', { fetchImpl, operationId: 'start-9' });
   assert.equal(result.recovered_after_transport_failure, true);
   assert.equal(calls.length, 2);
+});
+
+for (const variant of ['abort', 'deadline', 'empty', 'invalid', 'incomplete', 'foreign', 'body-abort']) {
+  test(`uncertain first start ${variant} keeps identity and recovers committed runtime`, async () => {
+    const values = new Map();
+    window.sessionStorage = { getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) };
+    const runtime = { cycle_id: 'cycle-1', current_situation: { status: 'active', participant_payload: { title: 'Same AS' } } };
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push([url, options]);
+      if (calls.length > 1) return jsonResponse(runtime);
+      assert.equal(values.get('assessment-start-pending:cycle-1'), 'same-command');
+      if (variant === 'abort' || variant === 'deadline') throw Object.assign(new Error('synthetic'), {
+        name: variant === 'abort' ? 'AbortError' : 'RequestDeadlineError' });
+      if (variant === 'body-abort') return { ok: true, text: async () => { throw Object.assign(new Error('body'), { name: 'AbortError' }); } };
+      if (variant === 'empty' || variant === 'invalid') return new Response(variant === 'empty' ? '' : '{', { status: 201 });
+      return jsonResponse(variant === 'foreign' ? { plan: { cycle_id: 'other' }, runtime: { ...runtime, cycle_id: 'other' } } : {}, 201);
+    };
+    try {
+      const result = await startPreparedProductCycle('cycle-1', { fetchImpl, operationId: 'same-command' });
+      assert.equal(result.runtime.current_situation.participant_payload.title, 'Same AS');
+      assert.equal(calls.length, 2);
+      assert.equal(values.size, 0);
+    } finally { delete window.sessionStorage; }
+  });
+}
+
+test('invalid success plus unavailable readback remains pending; foreign readback cannot allow retry', async () => {
+  const values = new Map();
+  window.sessionStorage = { getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) };
+  try {
+    await assert.rejects(startPreparedProductCycle('cycle-1', { operationId: 'pending-invalid', fetchImpl: async (url) =>
+      url.endsWith('/start') ? new Response('', { status: 201 }) : jsonResponse({}, 503) }), { name: 'AssessmentStartUnknown' });
+    assert.equal(values.get('assessment-start-pending:cycle-1'), 'pending-invalid');
+    const { readPendingPreparedStart } = await import('../../web/js/product-cycle-start.js');
+    for (const runtime of [{ cycle_id: 'other', current_situation: { status: 'active', participant_payload: {} } },
+      { cycle_id: 'cycle-1', current_situation: null }]) {
+      await assert.rejects(readPendingPreparedStart('cycle-1', { fetchImpl: async () => jsonResponse(runtime) }), { name: 'AssessmentStartUnknown' });
+      assert.equal(values.size, 1);
+    }
+  } finally { delete window.sessionStorage; }
+});
+
+test('default first-start transport bounds stalled headers and body, then performs readback', async () => {
+  const originalFetch = globalThis.fetch, originalTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn) => originalTimeout(fn, 10);
+  try {
+    for (const phase of ['headers', 'body']) {
+      const calls = [];
+      globalThis.fetch = async (url, options) => {
+        calls.push([url, options]);
+        if (calls.length === 1) return phase === 'headers' ? new Promise(() => {}) : { text: () => new Promise(() => {}) };
+        return jsonResponse({ cycle_id: 'cycle-1', current_situation: { status: 'active', participant_payload: { title: 'Same AS' } } });
+      };
+      const result = await startPreparedProductCycle('cycle-1', { operationId: 'deadline-command' });
+      assert.equal(result.recovered_after_transport_failure, true);
+      assert.equal(calls[0][1].signal.aborted, true);
+      assert.equal(calls.length, 2);
+    }
+  } finally { globalThis.fetch = originalFetch; globalThis.setTimeout = originalTimeout; }
+});
+
+test('known cancelled/admission 409 clears its pending command and never opens readback AS', async () => {
+  for (const detail of ['ASSIGNMENT_CANCELLED', 'M7_START_NOT_ADMITTED:AS_NOT_ADMITTED']) {
+    const values = new Map(), calls = [];
+    window.sessionStorage = { getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value), removeItem: (key) => values.delete(key) };
+    try {
+      await assert.rejects(startPreparedProductCycle('cycle-1', { operationId: 'refused', fetchImpl: async (url) => {
+        calls.push(url);
+        assert.equal(values.get('assessment-start-pending:cycle-1'), 'refused');
+        return jsonResponse({ detail }, 409);
+      } }), (error) => error.status === 409 && error.name !== 'AssessmentStartUnknown');
+      assert.equal(calls.length, 1);
+      assert.equal(values.size, 0);
+    } finally { delete window.sessionStorage; }
+  }
 });
