@@ -75,3 +75,7 @@ Owned preview БД удалены после PG readback; agent4k_pytest име�
 Саморевью: scope теста ограничен F21, реальный ввод отличён от synthetic transfer events, без clipboard read/PII/реальных внешних сообщений. Новых product-дефектов при ревью diff не выявлено; это саморевью агента, не человеческая приёмка. Зарегистрированные PGID завершены, localhost18937 свободен, DB/container0.
 
 Штатный python3.12 release-preflight exit2: нужен согласованный PATCH2.1.6; версия2.1.5 не изменялась. Вывод — receipts/native-scope/release-preflight.txt. Допуск version_bump/branch_push/pr/merge/deploy в TASK остаётся false. Следующий конкретный шаг: утвердить подготовку2.1.6 и независимые push/PR флаги; merge/deploy требуют последующей приёмки exact head/CI.
+
+## Кандидат2.1.6 и разрешение PR
+
+Прямое сообщение владельца14.11 разрешило режим архитектора, PATCH2.1.6, push своейветки и PR. merge/deploy/artifact_publish=false. Штатный ready:prepare2.1.6 PASS на fresh main07166475; номер назначен один раз. На release bytes frontend321,4component browser, lint/build/release gate/diff PASS. Первичные логи receipts/release216/*.txt.gz, source-binding.json подтверждает прежние Api/interview/wiring/CSS, поэтому PG10/HTTP5/R1browser2/layout3 переиспользованы без нового Turn/Cycle. Physical/OS/nativezoom PARTIAL остаётся явным ограничением приёмки. CI точного PRhead и humanreview следуют отдельно.

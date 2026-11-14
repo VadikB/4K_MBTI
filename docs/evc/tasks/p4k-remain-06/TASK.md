@@ -26,3 +26,7 @@ PM-04 LU04.2/3/5/6, UI-проекция C24/34/45. Сервер владеет r
 - M7 1.3: `docs/methodology/source-sets/2026-10-01/originals/M7_Assessment_Cycle_v1.3_FROZEN_2026-09-30.docx` SHA256 `50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10` MATCH.
 - `/Users/vadim_bogachev/Downloads/P4K_REMAIN_06_v1_6.txt` SHA256 `48ffc23f4a0177727daae29bbb1794a13b7ded2b5c0a6e9e114a4e573fcb25d0`.
 - `/Users/vadim_bogachev/Downloads/P4K_REMAIN_Execution_Rules_v1_0.txt` SHA256 `ece5f67dde34f7771e0084789f40617131e99d767ad5d8a57cac320320796c31`.
+
+## Допуск архитектора14.11.2026
+
+Прямое сообщение владельца: «Да, продолжаем как архитектор: подготовь PATCH 2.1.6, отправь ветку и создай PR. Merge и deploy пока не выполнять.» Ранее false для этих действий заменены в этой области: version_bump=true(PATCH2.1.6), branch_push=true(собственная codex/p4k-remain-06), pr=true(создать PR и сопровождать точный head/CI). merge=false, deploy=false, artifact_publish=false. Тот же исполнитель/worktree продолжает как архитектор; bundle повторно импортировать и реализовывать исправленное не требуется. Наблюдение CI в конечном профиле ниже; человеческое review и физические ограничения не присваиваются агентом.

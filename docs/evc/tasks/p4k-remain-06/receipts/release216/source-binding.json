@@ -1,0 +1,26 @@
+{
+  "base_sha": "07166475b478c843243102c748d51f8564b7cec0",
+  "previous_tested_head": "8feb5dfa48783b66190eea6abd889888f308d697",
+  "release": "2.1.6",
+  "product_sources_unchanged": {
+    "web/js/screens/interview.js": "a8635337132e199920e272e1f7ca1aa855681305ac3c6e1d61df1d60ec121883",
+    "web/js/wiring.js": "f182351cfc0fab290d02f5dd50c4fdf2d11202ed8ce11a175426cce30a8e72fb",
+    "web/styles/screens/interview.css": "8a1c64e6a9cc1379ca41b51147e02354f11a2222dc6dd2cf11941bcf2e57539f",
+    "tests/browser/remain06-chat.spec.mjs": "845403155f878a910a6ea386435806394a97da4f797e8884772ca759fd5650d8"
+  },
+  "api_diff": "",
+  "reuse": [
+    "PG10",
+    "HTTP5",
+    "R1browser2",
+    "layout3"
+  ],
+  "release_validation": [
+    "frontend321",
+    "browser4",
+    "lint",
+    "build",
+    "release_gate",
+    "diff"
+  ]
+}
