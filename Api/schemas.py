@@ -1066,7 +1066,7 @@ class AdminOrganizationImportResult(BaseModel):
 class QuestionnairePreviewRequest(BaseModel):
     assignment_ref: str = Field(min_length=1, max_length=200)
     template_variant: Literal["corporate"] = "corporate"
-    template_version: str = "0.1"
+    template_version: str = "0.2"
     channel: Literal["csv", "product_form", "external_form"] = "csv"
     csv_text: str | None = None
     answers: dict = Field(default_factory=dict)
@@ -1075,7 +1075,7 @@ class QuestionnairePreviewRequest(BaseModel):
 
 
 class QuestionnaireConfirmRequest(BaseModel):
-    recipients: list[Literal["participant", "organization_admin"]] = Field(min_length=1)
+    recipients: list[Literal["participant", "organization_admin"]] = Field(default_factory=list)
     recipient_user_ids: list[int] = Field(default_factory=list)
 
 

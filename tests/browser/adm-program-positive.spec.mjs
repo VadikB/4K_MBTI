@@ -19,7 +19,7 @@ const port = Number(process.env.P4K_ADM_POSITIVE_PORT || '18943');
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Invalid P4K_ADM_POSITIVE_PORT');
 const base = `http://127.0.0.1:${port}`;
 const fixtureRelative = 'tests/browser/fixtures/questionnaire-it-synthetic-v1.json';
-const csvRelative = 'assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv';
+const csvRelative = 'assessment_definitions/questionnaires/corporate/0.2/example.synthetic.csv';
 const fixture = JSON.parse(fs.readFileSync(path.join(root, fixtureRelative), 'utf8'));
 const csvText = fs.readFileSync(path.join(root, csvRelative), 'utf8');
 const unchangedCounts = ['assignments', 'profiles', 'preparation_operations', 'cycles',

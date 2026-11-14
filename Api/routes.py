@@ -5802,7 +5802,7 @@ def download_admin_organization_questionnaire_template(organization_id: int, req
     return Response(
         content="\ufeff" + questionnaire_sources.template_csv(),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="p4k-corporate-questionnaire-0.1.csv"'},
+        headers={"Content-Disposition": 'attachment; filename="p4k-corporate-questionnaire-0.2.csv"'},
     )
 
 
@@ -5938,8 +5938,7 @@ def confirm_admin_organization_questionnaire(
             )
             result = questionnaire_sources.confirm(
                 connection, revision_id=revision_id, organization_id=organization_id,
-                confirmed_by=int(user.id), recipients=list(payload.recipients),
-                recipient_user_ids=list(payload.recipient_user_ids),
+                confirmed_by=int(user.id),
             )
             connection.commit()
             confirmed = questionnaire_sources.public_revision(result)

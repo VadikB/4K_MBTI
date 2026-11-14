@@ -5,7 +5,7 @@ from copy import deepcopy
 from uuid import UUID
 
 
-ACCESS_CONTRACT_VERSION = "m8-report-access/1.0.0"
+ACCESS_CONTRACT_VERSION = "m8-report-access/1.1.0"
 
 
 def ensure_schema(connection) -> None:
@@ -56,16 +56,8 @@ def ensure_schema(connection) -> None:
 
 
 def create_revision(connection, *, questionnaire_revision_id: int, organization_id: int,
-                    assignment_ref: str, recipient_user_ids: list[int], source_author: str,
+                    assignment_ref: str, source_author: str,
                     confirmed_by: int) -> dict:
-    recipients = sorted(set(int(value) for value in recipient_user_ids))
-    if recipients:
-        rows = connection.execute("""SELECT om.user_id FROM organization_memberships om
-            JOIN organizations o ON o.id=om.organization_id
-            WHERE om.organization_id=%s AND om.role='admin' AND o.is_active=TRUE
-              AND om.user_id=ANY(%s)""", (organization_id, recipients)).fetchall()
-        if {int(row["user_id"]) for row in rows} != set(recipients):
-            raise ValueError("REPORT_RECIPIENT_SCOPE_CONFLICT")
     revision_no = connection.execute("""SELECT COALESCE(MAX(revision_no),0)+1 AS value
         FROM m8_report_access_revisions WHERE organization_id=%s AND assignment_ref=%s""",
         (organization_id, assignment_ref)).fetchone()["value"]
@@ -73,12 +65,9 @@ def create_revision(connection, *, questionnaire_revision_id: int, organization_
         organization_id,assignment_ref,questionnaire_revision_id,revision_no,customer_enabled,
         source_author,confirmed_by_user_id,contract_version)
         VALUES(%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
-        (organization_id, assignment_ref, questionnaire_revision_id, revision_no, bool(recipients),
+        (organization_id, assignment_ref, questionnaire_revision_id, revision_no, True,
          source_author, confirmed_by, ACCESS_CONTRACT_VERSION)).fetchone()
-    for user_id in recipients:
-        connection.execute("INSERT INTO m8_report_access_recipients(access_revision_id,user_id) VALUES(%s,%s)",
-                           (row["id"], user_id))
-    return {**dict(row), "recipient_user_ids": recipients}
+    return dict(row)
 
 
 def freeze_for_cycle(connection, *, cycle_db_id: int, personalized_profile_id: int,
@@ -109,12 +98,7 @@ def freeze_for_cycle(connection, *, cycle_db_id: int, personalized_profile_id: i
         VALUES(%s,%s,%s,%s,%s,%s) RETURNING *""",
         (cycle_db_id, access["id"] if access else None, participant_user_id, organization_id,
          confirmation["assignment_ref"] if confirmation else None, ACCESS_CONTRACT_VERSION)).fetchone()
-    if access and access["customer_enabled"]:
-        recipients = connection.execute("SELECT user_id FROM m8_report_access_recipients WHERE access_revision_id=%s",
-                                        (access["id"],)).fetchall()
-        for recipient in recipients:
-            connection.execute("INSERT INTO m8_cycle_report_recipients(cycle_db_id,user_id) VALUES(%s,%s)",
-                               (cycle_db_id, recipient["user_id"]))
+    # Historical recipient snapshots remain immutable but no longer grant access.
     return dict(row)
 
 
@@ -122,13 +106,12 @@ def customer_can_read_report(connection, *, report_id: str, user_id: int) -> boo
     row = connection.execute("""SELECT 1 FROM m8_reports p
         JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
         JOIN m8_results r ON r.id=rr.results_id
-        JOIN m8_cycle_report_access access ON access.cycle_db_id=r.cycle_db_id
-        JOIN m8_cycle_report_recipients recipient ON recipient.cycle_db_id=r.cycle_db_id
-        JOIN organization_memberships membership ON membership.organization_id=access.organization_id
-            AND membership.user_id=recipient.user_id AND membership.role='admin'
-        JOIN organizations organization ON organization.id=access.organization_id AND organization.is_active=TRUE
-        WHERE p.id=%s AND p.audience='assessee' AND recipient.user_id=%s""",
-        (UUID(str(report_id)), user_id)).fetchone()
+        JOIN m5_cycles cycle ON cycle.id=r.cycle_db_id
+        JOIN organization_memberships membership ON membership.organization_id=cycle.organization_id
+            AND membership.user_id=%s AND membership.role='admin'
+        JOIN organizations organization ON organization.id=cycle.organization_id AND organization.is_active=TRUE
+        WHERE p.id=%s AND p.audience='assessee'""",
+        (user_id, UUID(str(report_id)))).fetchone()
     return bool(row)
 
 
@@ -143,17 +126,14 @@ def list_customer_reports(connection, *, user_id: int) -> list[dict]:
     rows = connection.execute("""SELECT DISTINCT ON (r.cycle_db_id)
         p.id AS report_id,p.revision_no,p.created_at,c.cycle_id,c.owner_user_id,
         u.full_name,u.email,rr.revision_no AS results_revision_no
-        FROM m8_cycle_report_recipients recipient
-        JOIN m8_cycle_report_access access ON access.cycle_db_id=recipient.cycle_db_id
-        JOIN organization_memberships membership ON membership.organization_id=access.organization_id
-            AND membership.user_id=recipient.user_id AND membership.role='admin'
-        JOIN organizations organization ON organization.id=access.organization_id AND organization.is_active=TRUE
-        JOIN m5_cycles c ON c.id=access.cycle_db_id
+        FROM m5_cycles c
+        JOIN organization_memberships membership ON membership.organization_id=c.organization_id
+            AND membership.user_id=%s AND membership.role='admin'
+        JOIN organizations organization ON organization.id=c.organization_id AND organization.is_active=TRUE
         JOIN users u ON u.id=c.owner_user_id
         JOIN m8_results r ON r.cycle_db_id=c.id
         JOIN m8_result_revisions rr ON rr.results_id=r.id
         JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
-        WHERE recipient.user_id=%s
         ORDER BY r.cycle_db_id,rr.revision_no DESC,p.revision_no DESC""", (user_id,)).fetchall()
     return [{key: (str(value) if key in {"report_id", "cycle_id"} else value)
              for key, value in dict(row).items()} for row in rows]

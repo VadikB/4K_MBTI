@@ -48,11 +48,11 @@ def main(base):
 
     login(a, 'participant@example.test')
     login(b, 'other@example.test')
-    csv_text = (ROOT / 'assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv').read_text()
+    csv_text = (ROOT / 'assessment_definitions/questionnaires/corporate/0.2/example.synthetic.csv').read_text()
     answers = {}
     for row in csv.DictReader(io.StringIO(csv_text)):
         answers.setdefault(row['question_id'], {})[row['field']] = row['value']
-    recipients = {'recipients': ['participant', 'organization_admin'], 'recipient_user_ids': [actor_b]}
+    legacy_recipients = {'recipients': ['participant', 'organization_admin'], 'recipient_user_ids': [actor_b]}
     with get_connection() as connection:
         expected_names = {row['id']: row['full_name'] for row in connection.execute(
             'SELECT id,full_name FROM users WHERE id=ANY(%s)', ([actor_a, actor_b],)).fetchall()}
@@ -66,10 +66,11 @@ def main(base):
             assert revision['uploaded_by_email'] == expected_emails[uploader]
         if confirmed:
             assert revision['status'] == 'confirmed'
-            assert revision['recipient_mapping'] == ['organization_admin', 'participant']
-            assert revision['recipient_user_ids'] == [actor_b]
-        assert revision['answers_json']['C04'] == answers['C04']
-        assert revision['participant_preview']['responsible_contact'] == answers['C21']['responsible_contact']
+            assert revision['recipient_mapping'] == ['participant', 'organization_admin']
+            assert revision['recipient_user_ids'] == []
+        assert 'C04' not in revision['answers_json']
+        assert 'responsible_contact' not in revision['answers_json']['C21']
+        assert 'responsible_contact' not in revision['participant_preview']
 
     for channel in ['product_form', 'csv']:
         ref = 'remarks-actor-' + channel
@@ -82,8 +83,8 @@ def main(base):
                 'idempotency_key': ref + '-' + str(index),
                 'source_author': 'Spoofed legacy author must not be trusted'}
             if channel == 'csv':
-                payload['csv_text'] = csv_text.replace('Техническая проверка изолированного тестового контура',
-                    'Synthetic actor revision ' + str(index))
+                payload['csv_text'] = (csv_text + '\nC04,answer,"Только участник"\nC21,responsible_contact,"old@example.test"\n').replace(
+                    'Техническая проверка изолированного тестового контура', 'Synthetic actor revision ' + str(index))
             else:
                 payload['answers'] = {**answers, 'C01': {**answers['C01'],
                     'activity_description': 'Synthetic actor revision ' + str(index)}}
@@ -91,14 +92,18 @@ def main(base):
             revision_id = preview['id']
             revision_ids.append(revision_id)
             assert_actor(preview, uploader_id, revision_id=revision_id)
-            confirmed = confirmer.request('POST', org_path + f'/questionnaire/{revision_id}/confirm', payload=recipients)
+            confirmed = confirmer.request('POST', org_path + f'/questionnaire/{revision_id}/confirm', payload=legacy_recipients)
             # Confirmation returns the authoritative uploader ID even before the joined read.
             assert_actor(confirmed, uploader_id, revision_id=revision_id, confirmed=True, joined=False)
+            replay = confirmer.request('POST', org_path + f'/questionnaire/{revision_id}/confirm', payload={})
+            assert replay['id'] == confirmed['id'] and replay['status'] == 'confirmed'
             with get_connection() as connection:
                 stored = connection.execute('''SELECT uploaded_by_user_id,confirmed_by_user_id,source_author,status
                     FROM questionnaire_response_revisions WHERE id=%s''', (revision_id,)).fetchone()
                 assert stored == {'uploaded_by_user_id': uploader_id, 'confirmed_by_user_id': confirmer_id,
                     'source_author': '', 'status': 'confirmed'}
+                assert connection.execute('''SELECT COUNT(*) AS n FROM assessment_organization_context_versions
+                    WHERE source_manifest_json->>'questionnaire_revision_id'=%s''', (str(revision_id),)).fetchone()['n'] == 1
             immutable = revision_snapshot(revision_id)
             if index == 0:
                 first_history = immutable
@@ -125,7 +130,7 @@ def main(base):
                 'uploader_user_id': uploader_id, 'confirmer_user_id': confirmer_id,
                 'before': immutable, 'after': revision_snapshot(revision_id), 'unchanged': True,
                 'historical_revision_unchanged': True, 'foreign_scope_denied': True,
-                'contact_and_c04_preserved': True, 'legacy_manual_author_ignored': True})
+                'removed_fields_not_active': True, 'legacy_manual_author_ignored': True})
     with get_connection() as connection:
         assert connection.execute('SELECT COUNT(*) AS n FROM m5_cycles').fetchone()['n'] == 0
         assert connection.execute('SELECT COUNT(*) AS n FROM m5_assessment_situations').fetchone()['n'] == 0

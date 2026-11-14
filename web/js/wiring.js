@@ -1740,7 +1740,7 @@ if (adminOrganizationsList) {
           assignment_ref: value('assignment_ref'),
           channel: 'product_form',
           template_variant: 'corporate',
-          template_version: '0.1',
+          template_version: '0.2',
           csv_text: null,
           answers: {
             C01: {
@@ -1751,15 +1751,11 @@ if (adminOrganizationsList) {
             },
             C02a: { participant_text: value('purpose') },
             C03: { participant_text: value('results_usage') },
-            C04: { answer: value('result_recipients') },
             C17: {
               case_reality_level: value('case_reality_level'),
               organization_name_usage_rules: value('organization_name_usage_rules'),
             },
-            C21: {
-              organizer: value('organizer'),
-              responsible_contact: value('responsible_contact'),
-            },
+            C21: { organizer: value('organizer') },
           },
           idempotency_key: createOperationId(),
         }),
@@ -1788,7 +1784,7 @@ if (adminOrganizationsList) {
         withScreen(loadAdminOrganizations, async (module) => {
           await module.previewAdminOrganizationQuestionnaire(organizationId, {
             assignment_ref: String(formData.get('assignment_ref') || '').trim(),
-            channel: 'csv', template_variant: 'corporate', template_version: '0.1',
+            channel: 'csv', template_variant: 'corporate', template_version: '0.2',
             csv_text: csvText, answers: {}, idempotency_key: createOperationId(),
           });
         });
@@ -1853,11 +1849,6 @@ if (adminOrganizationsList) {
       field.closest('form')?.querySelector('[data-csv-reselect]')?.remove();
     }
     if (!field.closest('[data-action="preview-early-data"], [data-action="preview-questionnaire"], .admin-questionnaire-preview')) return;
-    const preview = field.closest('.admin-questionnaire-preview');
-    if (preview && ['questionnaire_recipient', 'questionnaire_recipient_user'].includes(field.getAttribute('name'))) {
-      withScreen(loadAdminOrganizations, (module) => module.updateAdminOrganizationQuestionnaireRecipients(organizationId, preview));
-      return;
-    }
     const assessmentRef = field.closest('.admin-questionnaire-preview')?.getAttribute('data-assessment-ref') ||
       card?.querySelector('[data-admin-view]:not(.hidden) [name="assignment_ref"]')?.value || '';
     withScreen(loadAdminOrganizations, (module) =>
@@ -2009,19 +2000,8 @@ if (adminOrganizationsList) {
     }
     if (button.dataset.action === 'confirm-questionnaire') {
       if (button.disabled) return;
-      const preview = button.closest('.admin-questionnaire-preview');
-      const includeAdmins = Boolean(preview?.querySelector(
-        'input[name="questionnaire_recipient"][value="organization_admin"]:checked',
-      ));
-      const recipients = [...(card?.querySelectorAll('input[name="questionnaire_recipient"]:checked') || [])]
-        .map((input) => input.value);
-      const recipientUserIds = includeAdmins ? [...(preview?.querySelectorAll('input[name="questionnaire_recipient_user"]:checked') || [])]
-        .map((input) => Number(input.value)).filter((value) => Number.isFinite(value) && value > 0)
-        : [];
-      if (includeAdmins && !recipientUserIds.length) return;
-      if (recipientUserIds.length && !recipients.includes('organization_admin')) recipients.push('organization_admin');
       withScreen(loadAdminOrganizations, (module) =>
-        module.confirmAdminOrganizationQuestionnaire(organizationId, Number(value), recipients, recipientUserIds));
+        module.confirmAdminOrganizationQuestionnaire(organizationId, Number(value)));
       return;
     }
     if (button.dataset.action === 'check-questionnaire-confirmation') {

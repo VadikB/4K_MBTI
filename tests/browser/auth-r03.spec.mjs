@@ -344,22 +344,15 @@ test('ADM28 lost POST response checks exact revision and recipients without repu
   expect(posts).toBe(1);
 });
 
-test('ADM28 recipients stay checked and editable after navigation, and errors stay beside confirm', async ({ page }) => {
+test('REMAIN-02 removes recipient controls and keeps confirmation available after navigation', async ({ page }) => {
   const { card, preview } = await adm28Preview(page);
-  const toggle = preview.locator('[name="questionnaire_recipient"][value="organization_admin"]');
-  const recipient = preview.locator('[name="questionnaire_recipient_user"]');
-  await toggle.check();
-  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
+  await expect(preview.locator('[name="questionnaire_recipient_user"]')).toHaveCount(0);
+  await expect(preview.locator('[name="questionnaire_recipient"]')).toHaveCount(0);
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).hover();
-  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toHaveCSS('background-color', 'rgb(214, 226, 229)');
-  await recipient.check();
-  await preview.getByRole('button', { name: 'Подтвердить сведения' }).hover();
-  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toHaveCSS('background-color', 'rgb(104, 119, 124)');
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
   await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
-  await expect(toggle).toBeChecked();
-  await expect(recipient).toBeChecked();
-  await expect(recipient).toBeEnabled();
+  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
   await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) =>
     fulfillJson(route, { detail: 'QUESTIONNAIRE_REVISION_CONFLICT' }, 409));
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
@@ -1920,8 +1913,8 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
   const valuesA = {
     assignment_ref: 'Поток A', source_author: 'Автор A', organization_name: 'Организация A',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание A', purpose: 'Секрет A',
-    results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
-    responsible_contact: 'a@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Развитие', organizer: 'HR',
+    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
   for (const [name, value] of Object.entries(valuesA).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) {
     await formA.locator(`[name="${name}"]`).fill(value);
@@ -1986,8 +1979,8 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
   const values = {
     assignment_ref: 'Поток late', source_author: 'Автор', organization_name: 'Организация',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Старая цель',
-    results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
-    responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Развитие', organizer: 'HR',
+    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
@@ -2115,8 +2108,7 @@ test('ADM19-01 saves early organization data through the versioned product form 
     assignment_ref: 'Поток октябрь 2026', source_author: 'Анна Петрова',
     organization_name: 'R03 Organization', organization_type: 'Компания', industry: 'ИТ',
     activity_description: 'Разрабатывает корпоративные продукты', purpose: 'Оценить управленческие навыки',
-    results_usage: 'Для индивидуального развития', result_recipients: 'Участник и HR',
-    organizer: 'HR-команда', responsible_contact: 'hr@example.test',
+    results_usage: 'Для индивидуального развития', organizer: 'HR-команда',
     case_reality_level: 'Реалистичные рабочие ситуации', organization_name_usage_rules: 'Можно использовать название',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
@@ -2132,13 +2124,12 @@ test('ADM19-01 saves early organization data through the versioned product form 
     name: values.organization_name, organization_type: values.organization_type,
     industry: values.industry, activity_description: values.activity_description,
   });
-  expect(submittedPayload.answers.C21).toEqual({
-    organizer: values.organizer, responsible_contact: values.responsible_contact,
-  });
+  expect(submittedPayload.answers.C21).toEqual({ organizer: values.organizer });
+  expect(submittedPayload.answers.C04).toBeUndefined();
   expect(submittedPayload.idempotency_key).toBeTruthy();
 });
 
-test('UX-ADM28-01 changes recipients without invalidating content preview and applies confirmation immediately', async ({ page }) => {
+test('REMAIN-02 confirms fixed access rule without invalidating content preview', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [{ status: 'queued' }] }), {
     ...withConnectedAssessment('Поток B'),
     admins: [{ user_id: 18, email: 'admin@example.test', full_name: 'Admin' }],
@@ -2154,16 +2145,11 @@ test('UX-ADM28-01 changes recipients without invalidating content preview and ap
         organization_name: payload.answers.C01.name,
         purpose: payload.answers.C02a.participant_text,
         results_usage: payload.answers.C03.participant_text,
-        result_recipients: payload.answers.C04.answer,
+        result_recipients: 'Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы.',
         organizer: payload.answers.C21.organizer,
-        responsible_contact: payload.answers.C21.responsible_contact,
       },
       changes: [{ field: 'purpose', before: 'Старая цель', after: payload.answers.C02a.participant_text }],
-      is_first_publication: false, recipient_options: ['participant', 'organization_admin'],
-      recipient_projections: {
-        participant: 'Результаты доступны только участнику.',
-        organization_admin: 'Результаты доступны участнику и выбранным представителям заказчика.',
-      },
+      is_first_publication: false,
     });
   });
   await page.route('**/users/admin/organizations/3/questionnaire/*/confirm', async (route) => {
@@ -2182,8 +2168,8 @@ test('UX-ADM28-01 changes recipients without invalidating content preview and ap
   const values = {
     assignment_ref: 'Поток B', source_author: 'Заказчик', organization_name: 'Организация B',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Новая цель участника',
-    results_usage: 'Для развития', result_recipients: 'Участник', organizer: 'HR',
-    responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Для развития', organizer: 'HR',
+    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
@@ -2193,17 +2179,9 @@ test('UX-ADM28-01 changes recipients without invalidating content preview and ap
   await expect(preview).toContainText('Что увидит участник');
   await expect(preview).toContainText('Новая цель участника');
   await expect(preview).toContainText('Старая цель');
-  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
-    .toHaveText('Результаты доступны только участнику.');
-  await preview.locator('[name="questionnaire_recipient"][value="organization_admin"]').check();
-  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
-    .toHaveText('Результаты доступны только участнику.');
+  await expect(preview).toContainText('Готовые отчёты организации видят её действующие администраторы.');
+  await expect(preview.locator('[name="questionnaire_recipient"]')).toHaveCount(0);
   await expect(preview).not.toContainText('Обновите предпросмотр перед подтверждением');
-  await expect(preview).toContainText('Выберите хотя бы одного представителя заказчика');
-  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
-  await preview.locator('[name="questionnaire_recipient_user"]').first().check();
-  await expect(preview.locator('[data-questionnaire-recipient-projection]'))
-    .toHaveText('Результаты доступны участнику и выбранным представителям заказчика.');
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await expect(preview).toHaveCount(0);
@@ -2251,8 +2229,8 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
   const values = {
     assignment_ref: 'Поток order', source_author: 'Заказчик', organization_name: 'Организация',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Older confirmed 12',
-    results_usage: 'Развитие', result_recipients: 'Участник', organizer: 'HR',
-    responsible_contact: 'hr@example.test', case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Развитие', organizer: 'HR',
+    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);

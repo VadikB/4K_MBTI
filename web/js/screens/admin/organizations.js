@@ -181,8 +181,6 @@ const questionnaireErrorMessage = (error, fallback) => {
   const message = String(error?.message || '');
   if (message.includes('QUESTIONNAIRE_REVISION_CONFLICT')) return 'Эта редакция устарела: уже подтверждена более новая. Обновите предпросмотр.';
   if (message.includes('QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION')) return 'Анкета ещё не готова к подтверждению. Исправьте обязательные поля.';
-  if (message.includes('QUESTIONNAIRE_RECIPIENTS_CONFLICT')) return 'Проверьте выбранных получателей результатов.';
-  if (message.includes('REPORT_RECIPIENT_SCOPE_CONFLICT')) return 'Один из выбранных получателей больше не имеет доступа к организации.';
   if (message.includes('QUESTIONNAIRE_TEMPLATE_MISMATCH')) return 'Файл создан по другой версии шаблона. Скачайте актуальный шаблон и повторите загрузку.';
   if (message.includes('QUESTIONNAIRE_FILE_TOO_LARGE')) return 'Файл анкеты слишком большой.';
   if (message.includes('IDEMPOTENCY_CONFLICT')) return 'Данные операции изменились. Повторите предпросмотр.';
@@ -315,9 +313,7 @@ const restoreConfirmedRevisionForm = (form, revision) => {
     activity_description: answers.C01?.activity_description,
     purpose: answers.C02a?.participant_text,
     results_usage: answers.C03?.participant_text,
-    result_recipients: answers.C04?.answer,
     organizer: answers.C21?.organizer,
-    responsible_contact: answers.C21?.responsible_contact,
     case_reality_level: answers.C17?.case_reality_level,
     organization_name_usage_rules: answers.C17?.organization_name_usage_rules,
   };
@@ -805,28 +801,11 @@ export const markAdminOrganizationQuestionnairePreviewStale = (organizationId, a
 
 export const updateAdminOrganizationQuestionnaireRecipients = (organizationId, preview) => {
   if (!preview) return;
-  const participant = preview.querySelector('input[name="questionnaire_recipient"][value="participant"]');
-  if (participant) { participant.checked = true; participant.disabled = true; }
-  const adminToggle = preview.querySelector('input[name="questionnaire_recipient"][value="organization_admin"]');
-  const userFields = [...preview.querySelectorAll('input[name="questionnaire_recipient_user"]')];
   const busy = questionnaireConfirmRequestsInFlight.has(assessmentKey(organizationId, preview.dataset.assessmentRef));
   const outcome = questionnaireConfirmOutcomes.get(assessmentKey(organizationId, preview.dataset.assessmentRef));
   const uncertain = outcome?.status === 'unknown' && Number(outcome.revisionId) === Number(preview.dataset.questionnaireRevisionId);
-  if (adminToggle) adminToggle.disabled = busy || uncertain;
-  if (!adminToggle?.checked) userFields.forEach((field) => { field.checked = false; field.disabled = true; });
-  else userFields.forEach((field) => { field.disabled = busy || uncertain; });
-  const selectedUsers = userFields.filter((field) => field.checked).length;
-  const valid = !adminToggle?.checked || selectedUsers > 0;
-  const error = preview.querySelector('[data-questionnaire-recipient-error]');
-  if (error) {
-    error.textContent = valid ? '' : 'Выберите хотя бы одного представителя заказчика.';
-    error.classList.toggle('hidden', valid);
-  }
-  const projection = preview.querySelector('[data-questionnaire-recipient-projection]');
-  if (projection) projection.textContent = adminToggle?.checked && selectedUsers
-    ? projection.dataset.adminProjection : projection.dataset.participantProjection;
   const confirmButton = preview.querySelector('[data-action="confirm-questionnaire"]');
-  if (confirmButton) confirmButton.disabled = !valid || uncertain ||
+  if (confirmButton) confirmButton.disabled = busy || uncertain ||
     organizationProgramState(organizationId).status !== 'confirmed' ||
     organizationProgramState(organizationId).assessmentRef !== String(preview.dataset.assessmentRef || '').trim() ||
     staleQuestionnairePreviews.has(assessmentKey(organizationId, preview.dataset.assessmentRef)) ||
@@ -1484,7 +1463,7 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
   }
 };
 
-export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, recipients, recipientUserIds = []) => {
+export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const card = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"]');
@@ -1516,7 +1495,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId + '/confirm', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipients, recipient_user_ids: recipientUserIds }),
+      body: JSON.stringify({}),
     });
     const confirmed = await readApiResponse(response, 'Не удалось подтвердить анкету.');
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
@@ -1564,7 +1543,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
         managementDrafts.delete(organizationKey(organizationId) + ':' + action + ':' + confirmedRef);
       }
     }
-    const outcome = { status: 'confirmed', revisionId, assignmentRef: submittedRef, recipients, recipientUserIds };
+    const outcome = { status: 'confirmed', revisionId, assignmentRef: submittedRef };
     questionnaireConfirmOutcomes.set(requestKey, outcome);
     questionnaireConfirmRequestsInFlight.delete(requestKey);
     renderAdminOrganizations();
@@ -1577,7 +1556,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     if (questionnaireConfirmRequestGenerations.get(requestKey) !== requestGeneration) return;
     if (!error?.status || error.status >= 500) {
       questionnaireConfirmOutcomes.set(requestKey, {
-        status: 'unknown', revisionId, assignmentRef: submittedRef, recipients, recipientUserIds,
+        status: 'unknown', revisionId, assignmentRef: submittedRef,
       });
       captureAdminOrganizationsDraft();
       renderAdminOrganizations();
@@ -1652,7 +1631,7 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
   const identityKey = currentIdentityKey();
   const requestGeneration = questionnaireConfirmRequestGenerations.get(requestKey);
   questionnaireConfirmRequestsInFlight.add(requestKey);
-  setStatus('Проверяем сохранённую редакцию и получателей…', 'loading');
+  setStatus('Проверяем сохранённую редакцию…', 'loading');
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId, { credentials: 'same-origin' });
     const saved = await readApiResponse(response, 'Не удалось проверить подтверждение.');
@@ -1663,11 +1642,9 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
     if (saved.status !== 'confirmed') {
       questionnaireConfirmOutcomes.delete(requestKey);
       renderAdminOrganizations();
-      setStatus('Редакция пока не подтверждена. Можно проверить ещё раз или явно повторить подтверждение с теми же получателями.', 'muted');
+      setStatus('Редакция пока не подтверждена. Можно проверить ещё раз или явно повторить подтверждение.', 'muted');
       return;
     }
-    const sameSet = (left, right) => JSON.stringify([...new Set(left || [])].sort()) === JSON.stringify([...new Set(right || [])].sort());
-    const recipientsMatch = sameSet(saved.recipient_mapping, outcome.recipients) && sameSet(saved.recipient_user_ids, outcome.recipientUserIds);
     const revisionsKey = organizationKey(organizationId);
     const revisions = questionnaireRevisions.get(revisionsKey) || [];
     const latest = revisions.find((item) => item.assignment_ref === saved.assignment_ref);
@@ -1677,8 +1654,7 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
     if (Number(preview?.id) === Number(revisionId)) questionnairePreviews.delete(requestKey);
     outcome.status = 'confirmed';
     renderAdminOrganizations();
-    setStatus(recipientsMatch ? 'Сведения подтверждены. Сохранённые получатели проверены.'
-      : 'Сведения подтверждены с другим набором получателей. Показаны фактически сохранённые права; для изменения нужна новая редакция.', recipientsMatch ? 'success' : 'error');
+    setStatus('Сведения подтверждены. Сохранённая редакция проверена.', 'success');
     void refreshConfirmedReadiness(organizationId, outcome, { identityEpoch, identityKey, requestKey, requestGeneration });
   } catch (error) {
     if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) {
@@ -2321,8 +2297,8 @@ export const renderAdminOrganizations = () => {
             ? 'Итог подтверждения неизвестен' : 'Сведения подтверждены') + '</strong>' +
           (publishedRevision ? revisionAttribution(publishedRevision) : '') +
           (!programConfirmed ? '<p>Доступность для текущей программы будет определена после проверки подключения.</p>' : '') +
-          (publishedRevision ? '<p>Получатели: участник' + (publishedRevision.recipient_user_ids?.length
-            ? ' и выбранные представители (' + publishedRevision.recipient_user_ids.length + ')' : '') + '.</p>' : '') +
+          (publishedRevision?.participant_preview?.result_recipients
+            ? '<p>' + escapeHtml(publishedRevision.participant_preview.result_recipients) + '</p>' : '') +
           (confirmationOutcome ? '<p>' + (confirmationOutcome.status === 'unknown'
             ? 'Проверьте сохранение этой редакции перед повторной отправкой.'
             : confirmationOutcome.status === 'refresh_failed' ? 'Не удалось обновить готовность.' : 'Готовность обновляется…') +
@@ -2334,18 +2310,12 @@ export const renderAdminOrganizations = () => {
       const participant = questionnairePreview?.participant_preview || {};
       const fieldLabels = { organization_name: 'Организация', organization_type: 'Тип организации',
         industry: 'Сфера деятельности', activity_description: 'Описание деятельности', purpose: 'Цель оценки',
-        results_usage: 'Использование результатов', result_recipients: 'Кто увидит результаты',
-        organizer: 'Организатор', responsible_contact: 'Контакт ответственного' };
+        results_usage: 'Использование результатов', result_recipients: 'Доступ к готовым отчётам',
+        organizer: 'Организатор' };
       const validationLabels = { C01: 'сведения об организации', C02a: 'цель оценки', C03: 'использование результатов',
-        C04: 'получатели результатов', C17: 'правила кейсов', C21: 'организатор и контакт' };
-      const recipientProjections = questionnairePreview?.recipient_projections || {};
+        C17: 'правила кейсов', C21: 'организатор' };
       const participantRows = Object.entries(fieldLabels).filter(([key]) => participant[key]).map(([key, label]) =>
-        '<dt>' + escapeHtml(label) + '</dt><dd' + (key === 'result_recipients'
-          ? ' data-questionnaire-recipient-projection data-participant-projection="' +
-            escapeHtml(recipientProjections.participant || participant[key]) + '" data-admin-projection="' +
-            escapeHtml(recipientProjections.organization_admin || participant[key]) + '"'
-          : '') + '>' + escapeHtml(key === 'result_recipients'
-          ? recipientProjections.participant || participant[key] : participant[key]) + '</dd>').join('');
+        '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(participant[key]) + '</dd>').join('');
       const changes = Array.isArray(questionnairePreview?.changes) ? questionnairePreview.changes : [];
       const changesMarkup = questionnairePreview?.is_first_publication
         ? '<p><strong>Пока нет подтверждённых сведений.</strong> Эта редакция станет текущей после подтверждения.</p>'
@@ -2370,14 +2340,7 @@ export const renderAdminOrganizations = () => {
         '<section><h5>Что увидит участник</h5><dl>' + participantRows + '</dl></section>' +
         '<section><h5>Изменения относительно текущей редакции</h5>' + changesMarkup + '</section>' +
         (questionnairePreview.status === 'ready_for_confirmation' ?
-          '<fieldset><legend>Получатели результатов по действующим правам</legend>' +
-          '<label><input type="checkbox" name="questionnaire_recipient" value="participant" checked disabled> Участник — обязательный получатель</label>' +
-          '<label><input type="checkbox" name="questionnaire_recipient" value="organization_admin"> Разрешить выбранным представителям заказчика</label>' +
-          '<div class="admin-questionnaire-recipients">' + (org.admins || []).map((admin) =>
-            '<label><input type="checkbox" name="questionnaire_recipient_user" value="' + Number(admin.user_id) + '" disabled> ' +
-            escapeHtml(admin.full_name || admin.email) + ' · ' + escapeHtml(admin.email) + '</label>').join('') + '</div>' +
-          '<p class="form-status error hidden" data-questionnaire-recipient-error></p>' +
-          '</fieldset><button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
+          '<button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
           Number(questionnairePreview.id) + '"' + (previewIsStale ? ' disabled' : '') + '>Подтвердить сведения</button>' : '') + '</div>' : '';
       return (
         '<article class="card card--inset admin-organization-card" data-organization-id="' +
@@ -2491,9 +2454,8 @@ export const renderAdminOrganizations = () => {
         '<fieldset class="admin-questionnaire-field-group"><legend>Условия оценки</legend>' +
         '<label class="admin-organization-profile-wide"><span>Цель оценки</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
         '<label class="admin-organization-profile-wide"><span>Использование результатов</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label>' +
-        '<label><span>Кто увидит результаты</span><input name="result_recipients" value="' + answer('C04', 'answer') + '"></label>' +
         '<label><span>Организатор</span><input name="organizer" value="' + answer('C21', 'organizer') + '"></label>' +
-        '<label><span>Контакт ответственного</span><input name="responsible_contact" value="' + answer('C21', 'responsible_contact') + '"></label></fieldset>' +
+        '</fieldset>' +
         '<button class="primary-button compact-primary" type="submit"' + (programConfirmed ? '' : ' disabled') + '>Сохранить черновик и предпросмотр</button></form>' +
         (activeView === 'organization-data' ? confirmationMarkup + previewMarkup : '') + '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + currentReadinessMarkup + '<h4>Корпоративная анкета</h4>' +

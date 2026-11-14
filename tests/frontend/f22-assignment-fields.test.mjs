@@ -10,5 +10,6 @@ test('F22-06 prefers a scoped draft and otherwise restores the confirmed revisio
   assert.match(organizations, /const restoredDraft = restoreFormDraft/);
   assert.match(organizations, /if \(!restoredDraft\) restoreConfirmedRevisionForm/);
   assert.match(organizations, /purpose: answers\.C02a\?\.participant_text/);
-  assert.match(organizations, /responsible_contact: answers\.C21\?\.responsible_contact/);
+  assert.match(organizations, /organizer: answers\.C21\?\.organizer/);
+  assert.doesNotMatch(organizations, /responsible_contact: answers\.C21/);
 });

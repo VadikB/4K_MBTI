@@ -7,13 +7,13 @@ from psycopg.rows import dict_row
 
 from Api.database import ensure_questionnaire_source_schema
 from Api.questionnaire_sources import (
-    admin_assignment_readiness, assignment_readiness, confirm, public_revision, save_preview,
+    admin_assignment_readiness, assignment_readiness, confirm, parse_csv, public_revision, save_preview,
 )
 from Api.m8_report_access import ensure_schema as ensure_report_access_schema
 
 
 pytestmark = pytest.mark.integration
-EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv")
+EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.2/example.synthetic.csv")
 
 
 def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_database_url):
@@ -61,7 +61,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
 
         kwargs = dict(
             organization_id=10, assignment_ref="synthetic-assignment", channel="csv",
-            template_variant="corporate", template_version="0.1", answers={},
+            template_variant="corporate", template_version="0.2", answers={},
             raw_text=EXAMPLE.read_text(), uploaded_by=1,
             source_author="Синтетический заказчик", idempotency_key="preview-1",
         )
@@ -78,7 +78,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
 
         confirmed = confirm(
             connection, revision_id=preview["id"], organization_id=10,
-            confirmed_by=2, recipients=["participant", "organization_admin"], recipient_user_ids=[2],
+            confirmed_by=2, recipients=[], recipient_user_ids=[],
         )
         assert confirmed["status"] == "confirmed"
         version = connection.execute(
@@ -89,18 +89,19 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert "participant_briefing" not in version["definition_json"]
         assert confirmed["briefing_json"]["purpose"]
         assert confirmed["briefing_json"]["result_recipients"] == (
-            "Результаты доступны участнику и выбранным представителям заказчика."
+            "Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы."
         )
-        assert confirmed["briefing_json"]["recipient_mapping"] == ["organization_admin", "participant"]
-        assert confirmed["briefing_json"]["authorized_recipients"] == [{
-            "user_id": 2, "name": "Администратор", "email": "admin@example.test",
-        }]
+        assert confirmed["briefing_json"]["recipient_mapping"] == ["participant", "organization_admin"]
+        assert "authorized_recipients" not in confirmed["briefing_json"]
+        assert "responsible_contact" not in confirmed["briefing_json"]
         assert confirmed["briefing_json"]["assignment_ref"] == "synthetic-assignment"
         assert version["source_manifest_json"]["questionnaire_revision_id"] == preview["id"]
         assert confirm(
             connection, revision_id=preview["id"], organization_id=10,
             confirmed_by=2, recipients=["participant", "organization_admin"], recipient_user_ids=[2],
         )["organization_context_version_id"] == confirmed["organization_context_version_id"]
+        assert connection.execute("SELECT COUNT(*) AS n FROM questionnaire_response_revisions WHERE id=%s AND status='confirmed'",
+                                  (preview["id"],)).fetchone()["n"] == 1
         incomplete = save_preview(connection, **{
             **kwargs, "channel": "product_form", "raw_text": None,
             "answers": {"C01": {"name": "Новый неполный черновик"}},
@@ -112,9 +113,8 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
                                           assignment_ref="synthetic-assignment")["early"]["status"] == "ready"
         assert admin_assignment_readiness(connection, organization_id=10,
                                           assignment_ref="missing-assignment")["early"]["status"] == "data_missing"
-        with pytest.raises(ValueError, match="QUESTIONNAIRE_RECIPIENTS_CONFLICT"):
-            confirm(connection, revision_id=preview["id"], organization_id=10,
-                    confirmed_by=2, recipients=["participant"])
+        assert confirm(connection, revision_id=preview["id"], organization_id=10,
+                       confirmed_by=2, recipients=["participant"])["id"] == preview["id"]
 
         stale = save_preview(connection, **{
             **kwargs, "idempotency_key": "preview-stale",
@@ -134,7 +134,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert projection["participant_preview"]["purpose"] == "Новая опубликованная цель"
         assert projection["is_first_publication"] is False
         assert {item["field"] for item in projection["changes"]} == {
-            "purpose", "result_recipients",
+            "purpose",
         }
         assert "questionnaire_revision_id" not in projection["participant_preview"]
         confirm(connection, revision_id=fresh["id"], organization_id=10,
@@ -145,14 +145,36 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
 
         second_kwargs = {
             **kwargs, "assignment_ref": "second-assignment", "idempotency_key": "preview-2",
-            "raw_text": EXAMPLE.read_text().replace(
+            "template_version": "0.1",
+            "raw_text": Path("assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv").read_text().replace(
                 "Познакомиться с форматом оценки и получить развивающую обратную связь",
                 "Отдельная цель второй оценки",
             ),
         }
         second = save_preview(connection, **second_kwargs)
+        assert second["answers_json"] == parse_csv(EXAMPLE.read_text().replace(
+            "Познакомиться с форматом оценки и получить развивающую обратную связь",
+            "Отдельная цель второй оценки",
+        ))["answers"]
+        connection.execute("""UPDATE questionnaire_response_revisions
+            SET status='draft',validation_json='{"errors":[],"missing":["C04.answer","C21.responsible_contact"]}'::jsonb
+            WHERE id=%s""", (second["id"],))
+        saved_old_draft = connection.execute("SELECT * FROM questionnaire_response_revisions WHERE id=%s",
+                                             (second["id"],)).fetchone()
+        assert public_revision(saved_old_draft)["status"] == "ready_for_confirmation"
         confirm(connection, revision_id=second["id"], organization_id=10,
                 confirmed_by=2, recipients=["participant"])
+        manual = save_preview(connection, **{
+            **kwargs, "assignment_ref": "manual-assignment", "channel": "product_form",
+            "raw_text": None, "answers": parse_csv(EXAMPLE.read_text())["answers"],
+            "idempotency_key": "preview-manual",
+        })
+        assert manual["status"] == "ready_for_confirmation"
+        manual_confirmed = confirm(connection, revision_id=manual["id"], organization_id=10,
+                                   confirmed_by=2, recipients=[], recipient_user_ids=[999])
+        assert manual_confirmed["status"] == "confirmed"
+        assert assignment_readiness(connection, organization_id=10,
+                                    assignment_ref="manual-assignment")["status"] == "ready"
         first_ready = assignment_readiness(
             connection, organization_id=10, assignment_ref="synthetic-assignment",
         )

@@ -79,13 +79,13 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     };
     await assertValues();
     await capturePathViewports(page, directory, 'it-questionnaire', [
-      { name: 'responsible-contact', locator: form.locator('[name="responsible_contact"]') },
+      { name: 'organizer', locator: form.locator('[name="organizer"]') },
       { name: 'organization-name', locator: form.locator('[name="organization_name"]') },
       { name: 'organization-type', locator: form.locator('[name="organization_type"]') },
       { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }) },
     ]);
     await assertValues();
-    save('filled-fields', { values, all_12_fields_retained: true, viewport_widths: [1440, 320, 390, 768] });
+    save('filled-fields', { values, all_10_fields_retained: true, viewport_widths: [1440, 320, 390, 768] });
     const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
@@ -140,7 +140,7 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     if (process.env.P4K_F05_INCOMPLETE_LATE_SAVE === '1') {
       const incompleteName = values.organization_name + ' — неполный черновик';
       await form.locator('[name="organization_name"]').fill(incompleteName);
-      await form.locator('[name="responsible_contact"]').fill('');
+      await form.locator('[name="organizer"]').fill('');
       let releaseResponse, committedResponse;
       const releaseGate = new Promise((resolve) => { releaseResponse = resolve; });
       const committedGate = new Promise((resolve) => { committedResponse = resolve; });

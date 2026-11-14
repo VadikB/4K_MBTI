@@ -31,7 +31,7 @@ const json = (route, value, status = 200) => route.fulfill({ status, contentType
 const card = (page, id = 3) => page.locator(`[data-organization-id="${id}"]`);
 const form = (page, id = 3) => card(page, id).locator('[data-action="preview-early-data"]');
 const fields = (label) => ({ organization_name: `Синтетическая ИТ-компания ${label}`,
-  organization_type: `ИТ-разработка ${label}`, responsible_contact: `contact-${label || 'empty'}@example.test` });
+  organization_type: `ИТ-разработка ${label}`, organizer: `contact-${label || 'empty'}@example.test` });
 async function fill(page, values, id = 3) {
   for (const [name, value] of Object.entries(values)) await form(page, id).locator(`[name="${name}"]`).fill(value);
 }
@@ -43,7 +43,7 @@ const confirmed = { id: 201, status: 'confirmed', channel: 'product_form', assig
   source_author: 'Исторический автор',
   answers_json: {
     C01: { name: fields('сервер').organization_name, organization_type: fields('сервер').organization_type },
-    C21: { responsible_contact: fields('сервер').responsible_contact },
+    C21: { organizer: fields('сервер').organizer },
   } };
 
 async function fixture(page, { status = 200, items = [] } = {}) {
