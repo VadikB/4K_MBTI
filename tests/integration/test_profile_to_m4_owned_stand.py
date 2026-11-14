@@ -6,6 +6,7 @@ import subprocess
 import sys
 from uuid import uuid4
 import pytest
+from tests.legacy_acquaintance_fixture import legacy_component_scope
 
 pytestmark = pytest.mark.integration
 
@@ -39,6 +40,7 @@ def test_profile_to_m4_on_owned_stand(tmp_path, monkeypatch):
         cli('destroy')
 
 
+@legacy_component_scope
 def internal(destination):
     from scripts.test_stand import owned
     with owned(json.loads(Path(os.environ['STAND_STATE']).read_text())):

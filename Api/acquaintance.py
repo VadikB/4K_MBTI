@@ -76,8 +76,9 @@ def early_readiness(connection, *, user_id: int) -> dict:
            ) assignments ORDER BY assignment_ref""",
         (user_id, organization["id"], user_id, organization["id"]),
     ).fetchall()
+    managed = assignment_sources.schema_available(connection)
     if not assignment_rows:
-        if str(organization.get("role") or "") == "admin":
+        if managed or str(organization.get("role") or "") == "admin":
             return _waiting_assignment(organization)
         assignment_rows = connection.execute(
             """SELECT DISTINCT assignment_ref FROM questionnaire_response_revisions
@@ -87,16 +88,23 @@ def early_readiness(connection, *, user_id: int) -> dict:
         if assignment_rows and assignment_sources.schema_available(connection):
             return _waiting_assignment(organization)
     if len(assignment_rows) == 1:
+        assignment_ref = str(assignment_rows[0]["assignment_ref"])
+        binding = assignment_sources.participant_binding(connection, user_id=user_id,
+            organization_id=int(organization['id']), assignment_ref=assignment_ref) if managed else None
+        if managed and binding is None:
+            waiting = _waiting('assignment_sources', university=False, organization=organization)
+            waiting['assignment_ref'] = assignment_ref
+            return waiting
         assignment = assignment_readiness(
-            connection, organization_id=int(organization["id"]),
-            assignment_ref=str(assignment_rows[0]["assignment_ref"]),
+            connection, organization_id=int(organization["id"]), assignment_ref=assignment_ref,
+            **({'questionnaire_revision_id': int(binding['questionnaire_revision_id'])} if binding else {}),
         )
         if assignment["status"] == "ready":
             briefing = assignment["briefing"]
             provided = _participant_fields(connection, user_id=user_id,
                 organization_id=int(organization['id']), assignment_ref=assignment['assignment_ref'],
                 questionnaire_revision_id=assignment.get('questionnaire_revision_id'))
-            missing = [item['key'] for item in provided if item['key'] in {'full_name', 'email', 'position'} and not item['value']]
+            missing = [item['key'] for item in provided if item['key'] == 'full_name' and not item['value']]
             if briefing.get('participant_question_schema') == PARTICIPANT_QUESTION_SCHEMA and missing:
                 waiting = _waiting('participant_fields:' + ','.join(missing), university=False, organization=organization)
                 return waiting
@@ -608,6 +616,16 @@ def late_readiness(connection, *, user_id: int, readiness: dict | None = None) -
         profile = participant_profile.profile_for_start(
             connection, user_id=user_id, profile_id=int(confirmation["personalized_profile_id"]),
         )
+        binding = assignment_sources.current_binding(connection, user_id=user_id,
+            organization_id=readiness['organization_id'], assignment_ref=readiness['assignment_ref'],
+            questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+        if assignment_sources.schema_available(connection) and readiness.get('questionnaire_revision_id') is not None:
+            if binding is None or any(profile[key] != value for key, value in {
+                'assessment_configuration_id': binding['assessment_configuration_id'],
+                'role_profile_version_id': binding['role_profile_version_id'],
+                'organization_context_version_id': readiness['organization_context_version_id'],
+            }.items()):
+                raise ValueError('W02_PROFILE_ASSIGNMENT_SCOPE_MISMATCH')
         return {"status": "ready_to_prepare", "reason": None, "personalized_profile_id": int(profile["id"])}
     except ValueError as exc:
         return {"status": "waiting_for_assessment_data", "reason": str(exc), "personalized_profile_id": None}

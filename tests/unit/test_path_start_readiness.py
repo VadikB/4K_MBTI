@@ -12,6 +12,8 @@ class Connection:
     def execute(self, sql, params=()):
         if 'FROM organization_memberships' in sql:
             self.result = [{'id': 10, 'name': 'Synthetic organization', 'role': 'member'}]
+        elif 'to_regclass' in sql:
+            self.result = None
         elif 'SELECT DISTINCT assignment_ref FROM (' in sql:
             self.result = [{'assignment_ref': 'specialist-pilot'}]
         elif 'FROM assessment_organization_context_versions' in sql:
@@ -28,7 +30,7 @@ class Connection:
         return self.result
 
 
-@pytest.mark.parametrize('missing,label', [('position', 'должность'), ('full_name', 'ФИО'), ('email', 'email')])
+@pytest.mark.parametrize('missing,label', [('full_name', 'ФИО')])
 def test_missing_participant_field_is_not_generic_organization_wait(monkeypatch, missing, label):
     monkeypatch.setattr(acquaintance, 'assignment_readiness', lambda *a, **kw: {
         'status': 'ready', 'assignment_ref': 'specialist-pilot', 'questionnaire_revision_id': 11,

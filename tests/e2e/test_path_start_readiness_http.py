@@ -12,7 +12,7 @@ from tests.unit.test_path_start_readiness import Connection
 pytestmark = pytest.mark.e2e
 
 
-@pytest.mark.parametrize('missing', ['position', 'questionnaire'])
+@pytest.mark.parametrize('missing', ['full_name', 'questionnaire'])
 def test_owned_acquaintance_keeps_exact_reason_over_http(monkeypatch, missing):
     @contextmanager
     def factory():
@@ -26,7 +26,7 @@ def test_owned_acquaintance_keeps_exact_reason_over_http(monkeypatch, missing):
             'status': 'ready', 'assignment_ref': 'specialist-pilot', 'questionnaire_revision_id': 11,
             'briefing': {'participant_question_schema': acquaintance.PARTICIPANT_QUESTION_SCHEMA}})
     monkeypatch.setattr(acquaintance, '_participant_fields', lambda *a, **kw: [
-        {'key': key, 'value': None if key == 'position' else 'Synthetic'} for key in ('full_name', 'email', 'position')])
+        {'key': key, 'value': None if key == 'full_name' else 'Synthetic'} for key in ('full_name', 'email', 'position')])
     monkeypatch.setattr(acquaintance, '_onboarding_progress', lambda *a, **kw: {})
     monkeypatch.setattr(acquaintance, '_competency_explanation', lambda *a, **kw: {})
     app = FastAPI()
@@ -38,7 +38,7 @@ def test_owned_acquaintance_keeps_exact_reason_over_http(monkeypatch, missing):
         response = client.get('/users/1/acquaintance')
         assert response.status_code == 200
         result = response.json()
-        expected = 'participant_fields:position' if missing == 'position' else 'confirmed_questionnaire'
+        expected = 'participant_fields:full_name' if missing == 'full_name' else 'confirmed_questionnaire'
         assert result['readiness']['reason'] == result['late_readiness']['reason'] == expected
         assert 'ещё готовит данные' not in result['readiness']['message']
         assert result['readiness']['title']

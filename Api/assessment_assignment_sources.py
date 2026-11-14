@@ -147,17 +147,28 @@ def resolve_pilot_binding(connection, *, organization_id: int, assignment_ref: s
     return result
 
 
-def current_binding(connection, *, user_id: int, organization_id: int,
-                    assignment_ref: str, questionnaire_revision_id: int | None) -> dict | None:
-    if questionnaire_revision_id is None or not schema_available(connection):
+def participant_binding(connection, *, user_id: int, organization_id: int,
+                        assignment_ref: str) -> dict | None:
+    """Latest source revision of the active assignment, independently of org latest."""
+    if not schema_available(connection):
         return None
     row = connection.execute("""SELECT b.* FROM organization_assessment_source_bindings b
         JOIN organization_assessment_assignments a ON a.id=b.assignment_id
         WHERE a.recipient_user_id=%s AND a.organization_id=%s AND a.assignment_ref=%s
-          AND a.status='active' AND a.revoked_at IS NULL AND b.questionnaire_revision_id=%s
-        ORDER BY b.id DESC LIMIT 1""",
-        (user_id, organization_id, assignment_ref, questionnaire_revision_id)).fetchone()
+          AND a.status='active' AND a.revoked_at IS NULL
+        ORDER BY b.id DESC LIMIT 1""", (user_id, organization_id, assignment_ref)).fetchone()
     return dict(row) if row else None
+
+
+def current_binding(connection, *, user_id: int, organization_id: int,
+                    assignment_ref: str, questionnaire_revision_id: int | None) -> dict | None:
+    if questionnaire_revision_id is None:
+        return None
+    binding = participant_binding(connection, user_id=user_id, organization_id=organization_id,
+                                  assignment_ref=assignment_ref)
+    if binding and binding['questionnaire_revision_id'] == questionnaire_revision_id:
+        return binding
+    return None
 
 
 def bind(connection, *, assignment_id: int, organization_id: int, configuration_id: int,

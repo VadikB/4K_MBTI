@@ -421,6 +421,8 @@
 
 .auth-complete-actions .primary-button,
 .auth-complete-actions .ghost-button {
+    white-space: normal;
+    overflow-wrap: anywhere;
     width: 100%;
     min-height: 52px;
 }

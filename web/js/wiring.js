@@ -1383,16 +1383,26 @@ if (authCompleteContinueButton) {
       return;
     }
     if (authCompleteContinueButton.dataset.action === 'check-acquaintance-readiness') {
+      const owner = state.pendingUser?.id, epoch = state.identityEpoch;
+      const current = () => state.pendingUser?.id === owner && state.identityEpoch === epoch
+        && state.currentScreen === 'auth-complete';
       authCompleteContinueButton.disabled = true;
       try {
         const { loadUserJourneyState } = await import('./session.js');
         const journey = await loadUserJourneyState();
+        if (!current()) return;
         if (journey?.next_action === 'wait_for_acquaintance_data') {
           const { openAcquaintanceWaiting } = await import('./router.js');
-          openAcquaintanceWaiting(journey.acquaintance?.readiness);
+          if (current()) openAcquaintanceWaiting(journey.acquaintance?.readiness);
           return;
         }
         window.location.reload();
+      } catch (_error) {
+        if (current()) {
+          const { openAcquaintanceWaiting } = await import('./router.js');
+          if (current()) openAcquaintanceWaiting({ title: 'Не удалось проверить готовность',
+            message: 'Состояние сервера не получено. Повторите проверку готовности.' });
+        }
       } finally {
         authCompleteContinueButton.disabled = false;
       }

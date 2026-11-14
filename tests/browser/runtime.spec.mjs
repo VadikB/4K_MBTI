@@ -31,6 +31,7 @@ const test=base.extend({context:async({browser},use)=>{
     if(!info.title.includes('Unapproved LIMITED')){
       const inputs=JSON.parse(fs.readFileSync(statePath));inputs.component_plan_fixture='browser-component-plan-boundary/1';fs.writeFileSync(statePath,JSON.stringify(inputs));
       info.annotations.push({type:'synthetic_upstream',description:'Static component plan-policy fixture only; NOT pilot/human admission. Real AS/start/time checks remain.'});
+      info.annotations.push({type:'synthetic_upstream',description:'Legacy acquaintance source fixture without managed assignments; NOT REMAIN04 waiting/assignment proof.'});
     }else{
       // Exercise assessment first-start admission, not the pre-existing QA-only
       // component continuation path (which is not a product admission claim).

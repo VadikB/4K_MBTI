@@ -83,10 +83,14 @@ def install(state):
     with owned(state):
         pass
     from Api import assessment_start_readiness
+    from Api import acquaintance
+    from tests.legacy_acquaintance_fixture import legacy_readiness
+    acquaintance.early_readiness = legacy_readiness
     original = assessment_start_readiness.plan_gate
     assessment_start_readiness.plan_gate = lambda content, cycle: component_plan_gate(
         content, cycle, real_gate=original)
     print("SYNTHETIC_COMPONENT_PLAN_BOUNDARY: NOT_HUMAN_REVIEW NOT_PILOT_ADMISSION NOT_FULL_PATH", flush=True)
+    print("SYNTHETIC_LEGACY_ACQUAINTANCE_BOUNDARY: NOT_REMAIN04_WAITING_OR_ASSIGNMENT_PROOF", flush=True)
 
 
 def create_app():
