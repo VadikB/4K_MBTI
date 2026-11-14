@@ -24,4 +24,21 @@
 
 Первый полный integration на DB `remain03_pytest`: FAIL (362 passed, 9 skipped, 8 failed, 25 errors) из-за штатного ограничения имени БД и отсутствия `STAND_ADMIN_URL`. После переименования собственной DB в `agent4k_pytest` полный набор на предшествующем коде: PASS (402 passed, 2 skipped — real provider, 1250 deselected); повтор на точном коде указан выше. Пробный адресный запуск из обычной песочницы: 18 ERROR из-за запрещённого локального TCP; тот же тест с разрешённым доступом к собственному порту: 18 PASS. Эти неуспешные запуски не засчитаны как проверка продукта. Собственный PostgreSQL после повторного полного прогона остановлен: `pg_ctl status` exit 3 (`no server running`), `pg_isready` exit 2 (`no response`).
 
-Draft [PR #217](https://github.com/VadikB/4K_MBTI/pull/217) открыт после прямого уточнения пользователя-архитектора. Быстрые CI `frontend`/`pytest`: PENDING для обновляемого документального head; `full-verification`: SKIPPED по условию draft до Ready. Общий TEST/Prod/реальная доставка: NOT_RUN. Локальный PASS не заменяет обязательные CI и человеческую приёмку перед слиянием.
+Draft [PR #217](https://github.com/VadikB/4K_MBTI/pull/217) открыт после прямого уточнения пользователя-архитектора. На документальном head `8006089b` быстрые CI [`frontend`](https://github.com/VadikB/4K_MBTI/actions/runs/43596327443/job/132451501906?pr=217) и [`pytest`](https://github.com/VadikB/4K_MBTI/actions/runs/43596327443/job/132451501721?pr=217) — PASS, `full-verification` — SKIPPED по условию draft. Пользователь явно согласовал patch `2.1.3`; `npm run ready:prepare -- --candidate 2.1.3` и `python3.12 scripts/check_release_version.py --base-ref origin/main` — PASS. После commit версии быстрый CI предыдущего head перестанет быть актуальным. Общий TEST/Prod/реальная доставка: NOT_RUN.
+
+## Проверка кандидата версии 2.1.3 до commit
+
+Содержимое runtime invitation после `785ed19c` не менялось; кандидат повышает только номер приложения и пересобирает `web/dist`. Согласование patch — прямой ответ пользователя-архитектора 14.11.2026. На рабочем дереве с `2.1.3`:
+
+| Команда | Результат |
+| --- | --- |
+| `npm run ready:prepare -- --candidate 2.1.3` | PASS, exit 0; свежий `origin/main=7871a0c6`, preflight, bump и build |
+| `python3.12 scripts/check_release_version.py --base-ref origin/main` | PASS, exit 0: `Release check passed: 2.1.3` |
+| `git diff --check` | PASS, exit 0 |
+| `npm run lint:js` | PASS, exit 0 |
+| `node --test tests/frontend/*.test.mjs` | PASS, exit 0: 272 passed |
+| `npm run test:backend -- --quiet` | PASS, exit 0: 1093 passed, 561 deselected |
+| `npm run test:backend:http -- --quiet` | PASS, exit 0: 153 passed, 15 deselected |
+| `npx playwright test tests/browser/adm-program-guards.spec.mjs --workers=1 --retries=0` | PASS, exit 0: 35 passed |
+
+Полный локальный integration 402 PASS на неизменённом backend-коде `785ed19c` переиспользован по области; на новом head после Ready обязательный CI выполнит integration и browser заново. Повтор `ready:prepare` на committed head и CI записать после commit/push. Ни один локальный тест не отправлял реальную почту или LLM-вызов.
