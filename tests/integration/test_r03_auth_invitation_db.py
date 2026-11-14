@@ -206,6 +206,47 @@ def test_unknown_outcome_is_not_sent_twice(invitation_database, monkeypatch):
     assert len(sent) == 0
 
 
+def test_owned_batch_readback_keeps_partial_unknown_and_rejects_foreign_org(invitation_database, monkeypatch):
+    database_url, schema, organization_id, app = invitation_database
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+        second_user = connection.execute("INSERT INTO users(email) VALUES('second@example.test') RETURNING id").fetchone()["id"]
+        connection.execute("INSERT INTO organization_memberships VALUES(%s,%s,'member','admin_add')",
+            (organization_id, second_user))
+        foreign_org = connection.execute("INSERT INTO organizations(code,name) VALUES('foreign','Foreign') RETURNING id").fetchone()["id"]
+        connection.commit()
+    sent = []
+    monkeypatch.setattr(routes, "send_auth_action_email", lambda **payload: sent.append(payload))
+    operation = "r03-owned-partial-batch"
+    with TestClient(app) as client:
+        response = client.post(f"/users/admin/organizations/{organization_id}/personal-invitations",
+            json={"emails": ["person@example.test", "second@example.test", "foreign@example.test"],
+                  "operation_id": operation})
+        assert response.status_code == 200
+        assert {item["email"]: item["status"] for item in response.json()["items"]} == {
+            "person@example.test": "accepted", "second@example.test": "accepted", "foreign@example.test": "error"}
+        assert len(sent) == 2
+        replay = client.post(f"/users/admin/organizations/{organization_id}/personal-invitations",
+            json={"emails": ["person@example.test", "second@example.test", "foreign@example.test"],
+                  "operation_id": operation})
+        assert replay.status_code == 200
+        assert len(sent) == 2
+        path = f"/users/admin/organizations/{organization_id}/personal-invitations/operations/{operation}"
+        readback = client.get(path, params={"assignment_ref": "competencies_4k",
+            "email": ["person@example.test", "second@example.test", "foreign@example.test"]})
+        assert readback.status_code == 200
+        assert {item["email"]: item["status"] for item in readback.json()["items"]} == {
+            "person@example.test": "accepted", "second@example.test": "accepted", "foreign@example.test": "uncertain"}
+        assert client.get(path.replace(f"organizations/{organization_id}", f"organizations/{foreign_org}"),
+            params={"assignment_ref": "competencies_4k"}).status_code in {403, 404}
+        foreign_send = client.post(f"/users/admin/organizations/{foreign_org}/personal-invitations",
+            json={"emails": ["person@example.test"], "operation_id": "foreign-send-operation"})
+        assert foreign_send.status_code in {403, 404}
+    with psycopg.connect(database_url, row_factory=dict_row) as connection:
+        connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+        assert connection.execute("SELECT count(*) AS n FROM organization_invitations").fetchone()["n"] == 2
+
+
 def test_selected_organization_survives_session_restore_and_access_recheck(invitation_database, monkeypatch):
     database_url, schema, organization_id, _app = invitation_database
     with psycopg.connect(database_url, row_factory=dict_row) as connection:

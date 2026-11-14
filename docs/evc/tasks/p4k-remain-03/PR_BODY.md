@@ -1,0 +1,69 @@
+# REMAIN_03: исходы приглашений и срок ссылки
+
+## Основание изменения
+
+- Локальная задача: `docs/evc/tasks/p4k-remain-03/TASK.md`; факты проверок: `docs/evc/tasks/p4k-remain-03/CHECKS.md`; полный отчёт: `docs/evc/tasks/p4k-remain-03/REPORT.md`.
+- Base при разработке: `7871a0c6952ca13047355fd17d1b3b8a7c1e9c96` (`main`); после импорта сверить фактические base/head и повторить утратившие применимость проверки при изменении base. Параллельные карточки REMAIN_01/02 не входят в этот PR.
+
+## Результат
+
+F15-AC01–03: API и UI показывают исход каждого адресата, отличают принятие письма почтовым сервисом от состояния ссылки и регистрации; unknown/reload восстанавливает ту же identity команды. Поздний ответ не меняет другой actor/org/view. Срок API и письма передаётся с UTC, UI рассчитывает локальное время из серверного момента. Повтор команды не создаёт второго эффекта.
+
+## Изменённые файлы
+
+- `Api/routes.py`, `Api/schemas.py`, `Api/email_service.py`: readback, owner-scope, delivery/link lifecycle и UTC.
+- `web/js/screens/admin/organizations.js`, `web/js/entries/admin-organizations.js`, `web/js/wiring.js`, `web/dist/*`: восстановление команды и отдельные исходы в собранном UI.
+- `tests/e2e/test_r03_invitation_http.py`, `tests/integration/test_r03_auth_invitation_db.py`, `tests/unit/test_invitation_expiry_format.py`, `tests/browser/adm-program-guards.spec.mjs`: регрессия.
+- `docs/evc/tasks/p4k-remain-03/*`: источник, трасса, результаты и состояние.
+
+## Источники и решения
+
+В `TASK.md` зафиксированы Change 01, ADR-002, карта реализации, SourceSet и хеши M3/M4. M3/M4 не повышены до CURRENT; TTL, provider, регистрация, назначение и старт оценки не менялись. Пользователь-архитектор согласовал patch `2.1.3`; `ready:prepare` выполнил штатный bump и сборку по `CONTRIBUTING.md`.
+
+## Проверки (команда → результат)
+
+- `git diff --check` — PASS.
+- `npm run lint:js`, `npm run build:web` — PASS; повторная сборка воспроизводима.
+- `node --test tests/frontend/*.test.mjs` — 272 PASS.
+- `npm run test:backend -- --quiet` — 1093 PASS.
+- `npm run test:backend:http -- --quiet` — 153 PASS.
+- `npx playwright test tests/browser/adm-program-guards.spec.mjs --workers=1 --retries=0` — 35 PASS, из них 12 REMAIN_03.
+- `TEST_DATABASE_URL=<owned isolated pytest DB> STAND_ADMIN_URL=<owned isolated admin DB> npm run test:backend:integration -- --quiet` — 402 PASS, 2 SKIP (real-provider), 1250 deselected.
+- Адресная PostgreSQL-регрессия — 18 PASS. Детали и локализованные ошибки первоначального профиля — в `CHECKS.md`.
+- После согласованного bump `2.1.3` release guard, lint, frontend 272, backend 1093, HTTP 153 и browser 35 повторно PASS; полный локальный integration переиспользован только для неизменённого backend-кода. Первый Ready CI: integration и четыре runtime browser shards PASS, `browser (fast)` FAIL (241 PASS, 1 SKIP, 3 FAIL), required `full-verification` FAIL. Причины исправлены в invitation UI и browser-тесте; новый CI нужен на следующем head.
+
+Ручная проверка после импорта: открыть организацию с подтверждёнными сведениями; выбрать двух синтетических адресатов; при контролируемом mail sink проверить отдельный статус каждого, неизвестный результат и восстановление той же операции после reload, затем локальный срок ссылки. Реальные письма не отправлять. Ожидание — без общего ложного успеха, дубля отправки и применения позднего ответа к другому экрану/пользователю.
+
+## Непроверенное
+
+Внешняя доставка письма и общий TEST/Prod не проверялись по границе карточки. Локальный mail sink подтверждает вызов, но не inbox. Обязательные CI jobs `frontend`, `pytest`, `full-verification` и человеческое review нужны на актуальном PR head до merge.
+
+## Риски: конфиг / схема / деплой / безопасность / откат
+
+Предметный конфиг, TTL и схема БД не менялись; версия приложения повышена `2.1.2 → 2.1.3` по прямому решению пользователя. `expires_at` сохраняет тот же ISO-8601 момент, но строка теперь явно содержит UTC `Z`; потребителям прежнего формата нужна проверка совместимости. Новые поля ответа добавлены без удаления прежних. Readback ограничен отправителем, организацией, оценкой и operation. Откат до выпуска — revert commits REMAIN_03 и пересборка `web/dist`; созданные записи приглашений не удалять. Деплой требует отдельного решения и release-процедуры.
+
+## Следующий минимальный шаг
+
+Завершить browser-регрессию, опубликовать адресное исправление в Ready [#217](https://github.com/VadikB/4K_MBTI/pull/217) и дождаться полного CI на новом head. Человеческое review и решение о merge отдельны.
+
+## Открытые вопросы (блокеры)
+
+Для локальной реализации — нет. Для merge: успешный обязательный CI и решение владельца о приёмке.
+
+## Действия выпуска
+
+- [x] `branch_push` — ветка опубликована архитектором.
+- [x] `pr` — #217 создан архитектором и переведён в Ready после быстрого CI.
+- [ ] `merge` — после CI и человеческого review.
+- [ ] `deploy` — отдельный этап.
+- [x] `version_bump` — patch `2.1.3` согласован и подготовлен.
+- [ ] `artifact_publish` — не применимо, предметные артефакты не менялись.
+
+## Готовность
+
+- [x] Один независимо принимаемый результат, без несвязанного рефакторинга.
+- [x] Локальный минимум выполнен, отчёт заполнен, `git diff --check` проходит.
+- [x] Секретов и персональных данных нет; старые данные/snapshots совместимы.
+- [x] Исправления имеют регрессию; критические пути проверены по матрице.
+- [ ] Перед слиянием: актуальный обязательный CI успешен и человеческое review завершено.
+- [x] Baseline-статус не присвоен.

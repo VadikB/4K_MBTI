@@ -4435,7 +4435,7 @@ def send_personal_organization_invitations(
                     row = connection.execute(
                         """
                         SELECT id, expires_at, delivery_status, token_hash, used_at, revoked_at,
-                               recipient_email, organization_id, assignment_ref
+                               recipient_email, organization_id, assignment_ref, created_by_user_id
                         FROM organization_invitations
                         WHERE organization_id = %s
                           AND LOWER(recipient_email) = %s
@@ -4447,6 +4447,8 @@ def send_personal_organization_invitations(
                     ).fetchone()
                     if row is None:
                         raise RuntimeError("Не удалось восстановить результат операции отправки.")
+                    if int(row["created_by_user_id"] or -1) != int(current_user.id):
+                        raise ValueError("operation_id уже принадлежит другой операции.")
                     stored_assignment = str(row.get("assignment_ref") or "competencies_4k")
                     if stored_assignment != assignment_ref:
                         raise ValueError("operation_id уже использован для другой оценки.")
@@ -4628,6 +4630,16 @@ def read_personal_organization_invitation_operation(
 ) -> PersonalInvitationBatchResponse:
     """Read only invitations saved by one exact idempotent command."""
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    requested_emails: list[str] = []
+    for raw_email in request.query_params.getlist("email"):
+        try:
+            email = normalize_email(raw_email)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="INVALID_INVITATION_RECIPIENT") from exc
+        if email not in requested_emails:
+            requested_emails.append(email)
+    if len(requested_emails) > 500:
+        raise HTTPException(status_code=400, detail="TOO_MANY_INVITATION_RECIPIENTS")
     with get_connection() as connection:
         _require_organization_admin(connection, current_user, organization_id)
         rows = connection.execute(
@@ -4649,13 +4661,29 @@ def read_personal_organization_invitation_operation(
         status = "accepted" if delivery == "accepted" else (
             "queued" if delivery == "queued" else "uncertain" if delivery == "sending" else "error"
         )
+        if row["used_at"] is not None:
+            status = "already_registered"
+            link_status = "used"
+        elif row["revoked_at"] is not None:
+            link_status = "revoked"
+        elif row["expires_at"] <= datetime.now(timezone.utc).replace(tzinfo=None):
+            link_status = "expired"
+        else:
+            link_status = "active"
         items.append(PersonalInvitationResultItem(
             email=email,
             status=status,
             invitation_id=int(row["id"]),
             expires_at=row["expires_at"],
             error=str(row["delivery_error"] or "") or None,
+            delivery_status=delivery,
+            link_status=link_status,
         ))
+    for email in requested_emails:
+        if email not in latest:
+            # No saved row can mean a pre-commit loss or a per-recipient refusal.
+            # Neither outcome may be invented by readback.
+            items.append(PersonalInvitationResultItem(email=email, status="uncertain"))
     return PersonalInvitationBatchResponse(items=items)
 
 

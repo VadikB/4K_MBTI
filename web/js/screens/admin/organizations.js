@@ -18,7 +18,6 @@ import { questionnaireAssignmentState } from './questionnaire-assignment-state.j
 
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
-const invitationOperationIds = new Map();
 const assignmentSourceRequests = new Map();
 const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
@@ -52,6 +51,31 @@ const currentIdentityKey = () => String(state.pendingUser?.id || '');
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
 const assessmentKey = (organizationId, assessmentRef = '') =>
   organizationKey(organizationId) + ':' + String(assessmentRef || '').trim();
+const invitationStorageKey = (identityKey = currentIdentityKey()) => 'agent4k.pendingInvitations.' + identityKey;
+const pendingInvitationOperations = (identityKey = currentIdentityKey()) => {
+  if (!identityKey) return [];
+  try {
+    const saved = JSON.parse(safeStorage.getItem(invitationStorageKey(identityKey)) || '[]');
+    return Array.isArray(saved) ? saved.filter((operation) =>
+      operation && typeof operation.requestKey === 'string' && typeof operation.operationId === 'string' &&
+      Number.isInteger(operation.organizationId) && typeof operation.assignmentRef === 'string' &&
+      Array.isArray(operation.emails) && operation.emails.every((email) => typeof email === 'string')) : [];
+  } catch { return []; }
+};
+const savePendingInvitationOperation = (operation, identityKey = currentIdentityKey()) => {
+  const others = pendingInvitationOperations(identityKey).filter((item) => item.requestKey !== operation.requestKey);
+  const key = invitationStorageKey(identityKey);
+  const serialized = JSON.stringify([...others, operation]);
+  safeStorage.setItem(key, serialized);
+  try {
+    return window.localStorage.getItem(key) === serialized;
+  } catch { return false; }
+};
+const clearPendingInvitationOperation = (requestKey, identityKey = currentIdentityKey()) => {
+  const remaining = pendingInvitationOperations(identityKey).filter((item) => item.requestKey !== requestKey);
+  if (remaining.length) safeStorage.setItem(invitationStorageKey(identityKey), JSON.stringify(remaining));
+  else safeStorage.removeItem(invitationStorageKey(identityKey));
+};
 const organizationById = (organizationId) => (state.adminOrganizations?.items || [])
   .find((item) => Number(item.id) === Number(organizationId));
 const participantLabel = (organizationId, { user_id: userId, email } = {}) => {
@@ -62,7 +86,7 @@ const participantLabel = (organizationId, { user_id: userId, email } = {}) => {
 const invitationOutcomeText = (organizationId, items) => items.map((item) => {
   const label = participantLabel(organizationId, item);
   const outcomes = {
-    accepted: 'приглашение отправлено',
+    accepted: 'письмо принято почтовым сервисом',
     queued: 'приглашение поставлено в очередь',
     uncertain: 'исход отправки пока неизвестен',
     error: 'приглашение не отправлено',
@@ -71,7 +95,12 @@ const invitationOutcomeText = (organizationId, items) => items.map((item) => {
   const safeReason = item.status === 'error'
     ? ' — проверьте адрес и настройку почты, затем повторите'
     : '';
-  return label + ': ' + (outcomes[item.status] || 'исход неизвестен') + safeReason;
+  const link = item.link_status === 'used' ? '; ссылка использована' :
+    item.link_status === 'revoked' ? '; ссылка отозвана' :
+      item.link_status === 'expired' ? '; ссылка истекла' :
+        item.expires_at && (!item.link_status || item.link_status === 'active')
+          ? '; ссылка действует до ' + localDateTime(item.expires_at) : '';
+  return label + ': ' + (outcomes[item.status] || 'исход неизвестен') + link + safeReason;
 }).join('. ') + '.';
 const localDateTime = (value) => {
   if (!value) return '';
@@ -347,7 +376,6 @@ const clearAdminOrganizationsSessionState = () => {
   assignmentViewGeneration += 1;
   selectedOrganizationId = null;
   invitationRequestsInFlight.clear();
-  invitationOperationIds.clear();
   assignmentSourceRequests.clear();
   assignmentOperationIds.clear();
   cancellationOperationIds.clear();
@@ -940,66 +968,111 @@ export const resetAdminOrganizationMemberPassword = async (organizationId, email
 };
 
 export const sendAdminOrganizationMemberInvitation = async (organizationId, emailOrEmails, assignmentRef) => {
-  const emails = (Array.isArray(emailOrEmails) ? emailOrEmails : [emailOrEmails])
+  const emails = [...new Set((Array.isArray(emailOrEmails) ? emailOrEmails : [emailOrEmails])
     .map((email) => String(email || '').trim().toLowerCase())
-    .filter(Boolean);
+    .filter(Boolean))].sort();
   const assessment = String(assignmentRef || '').trim();
   if (!assessment) {
     setStatus('Сначала укажите оценку в разделе «Данные организации».', 'error');
     return;
   }
-  const requestKey = organizationId + ':' + assessment + ':' + [...new Set(emails)].sort().join(',');
-  if (!emails.length || invitationRequestsInFlight.has(requestKey)) return;
-  const operationId = invitationOperationIds.get(requestKey) || createOperationId();
-  invitationOperationIds.set(requestKey, operationId);
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
+  const viewGeneration = assignmentViewGeneration;
+  const currentScreen = state.currentScreen;
+  const requestKey = identityKey + ':' + Number(organizationId) + ':' + assessment + ':' + emails.join(',');
+  const inFlightKey = identityEpoch + ':' + requestKey;
+  if (!identityKey || !emails.length || invitationRequestsInFlight.has(inFlightKey)) return;
+  const isCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
+    Number(selectedOrganizationId) === Number(organizationId) && assignmentViewGeneration === viewGeneration &&
+    state.currentScreen === currentScreen;
+  const existing = pendingInvitationOperations(identityKey).find((item) => item.requestKey === requestKey);
+  const operationId = existing?.operationId || createOperationId();
+  if (!existing && !savePendingInvitationOperation({ requestKey, operationId, organizationId: Number(organizationId),
+    assignmentRef: assessment, emails }, identityKey)) {
+    clearPendingInvitationOperation(requestKey, identityKey);
+    if (isCurrent()) setStatus('Не удалось сохранить операцию для проверки после перезагрузки. Отправка не начата.', 'error');
+    return;
+  }
+  const readback = async () => {
+    const query = new URLSearchParams({ assignment_ref: assessment });
+    emails.forEach((email) => query.append('email', email));
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/operations/' +
+      encodeURIComponent(operationId) + '?' + query.toString(), { credentials: 'same-origin' });
+    return readApiResponse(response, 'Исход отправки пока неизвестен.');
+  };
+  const exactItems = (result) => {
+    const items = Array.isArray(result?.items) ? result.items : [];
+    return exactBatch(items, emails, (item) => String(item?.email ?? item).trim().toLowerCase(),
+      ['accepted', 'queued', 'uncertain', 'error', 'already_registered']) ? items : null;
+  };
+  const showItems = async (items) => {
+    const unresolved = items.some((item) => item.status === 'uncertain');
+    if (!unresolved) clearPendingInvitationOperation(requestKey, identityKey);
+    if (!isCurrent()) return;
+    const outcome = invitationOutcomeText(organizationId, items);
+    try {
+      await loadAdminOrganizations({ isCurrent });
+      if (isCurrent()) setStatus(outcome, unresolved || items.some((item) => item.status === 'error')
+        ? 'error' : items.some((item) => item.status === 'queued') ? 'muted' : 'success');
+    } catch (_refreshError) {
+      if (isCurrent()) setStatus(outcome + ' Не удалось обновить список; показанные данные могут быть устаревшими.',
+        unresolved ? 'error' : 'muted');
+    }
+  };
   try {
-    invitationRequestsInFlight.add(requestKey);
+    invitationRequestsInFlight.add(inFlightKey);
+    if (existing) {
+      try {
+        const items = exactItems(await readback());
+        if (!items) throw new Error('INVITATION_READBACK_INCOMPLETE');
+        await showItems(items);
+        return;
+      } catch (error) {
+        if (error?.status !== 404) throw error;
+        // The previous POST may have been lost before commit. Reuse its identity.
+      }
+    }
+    if (!isCurrent()) return;
     const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations', {
-      method: 'POST',
-      credentials: 'same-origin',
+      method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Idempotency-Key': operationId },
       body: JSON.stringify({ emails, assignment_ref: assessment, operation_id: operationId }),
     });
-    const result = await readApiResponse(response, 'Не удалось отправить приглашение.');
-    const items = Array.isArray(result.items) ? result.items : [];
-    const responseMatchesRequest = exactBatch(items, emails,
-      (item) => String(item?.email ?? item).trim().toLowerCase(),
-      ['accepted', 'queued', 'uncertain', 'error', 'already_registered']);
-    if (!responseMatchesRequest) {
-      setStatus('Сервер вернул неполный или противоречивый результат приглашения. Проверьте состояние операции перед повтором.', 'error');
-      return;
-    }
-    const unresolved = items.some((item) => ['uncertain', 'error'].includes(item.status));
-    if (!unresolved) invitationOperationIds.delete(requestKey);
-    const outcome = invitationOutcomeText(organizationId, items);
-    try {
-      await loadAdminOrganizations();
-      setStatus(outcome, unresolved ? 'error' : (items.some((item) => item.status === 'queued') ? 'muted' : 'success'));
-    } catch (_refreshError) {
-      setStatus(outcome + ' Не удалось обновить список; показанные данные могут быть устаревшими. Используйте «Обновить».',
-        unresolved ? 'error' : 'success');
-    }
+    const items = exactItems(await readApiResponse(response, 'Не удалось отправить приглашение.'));
+    if (!items) throw new Error('INVITATION_RESPONSE_INCOMPLETE');
+    await showItems(items);
   } catch (error) {
-    const isUnknown = error?.name === 'RequestDeadlineError' || error instanceof TypeError || error?.message === 'Failed to fetch';
-    if (isUnknown) {
+    const unknown = error?.name === 'RequestDeadlineError' || error instanceof TypeError ||
+      (error?.status >= 500 && error?.code !== 'EMAIL_PROVIDER_NOT_CONFIGURED') ||
+      ['Failed to fetch', 'INVITATION_RESPONSE_INCOMPLETE',
+        'INVITATION_READBACK_INCOMPLETE'].includes(error?.message);
+    if (unknown) {
       try {
-        const query = new URLSearchParams({ assignment_ref: assessment });
-        const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/operations/' +
-          encodeURIComponent(operationId) + '?' + query.toString(), { credentials: 'same-origin' });
-        const result = await readApiResponse(response, 'Исход отправки пока неизвестен.');
-        const items = Array.isArray(result.items) ? result.items : [];
-        if (!exactBatch(items, emails, (item) => String(item?.email ?? item).trim().toLowerCase(),
-          ['accepted', 'queued', 'uncertain', 'error', 'already_registered'])) throw new Error('INVITATION_READBACK_INCOMPLETE');
-        const unresolved = items.some((item) => ['uncertain', 'error'].includes(item.status));
-        if (!unresolved) invitationOperationIds.delete(requestKey);
-        setStatus(invitationOutcomeText(organizationId, items), unresolved ? 'error' : 'success');
+        const items = exactItems(await readback());
+        if (!items) throw new Error('INVITATION_READBACK_INCOMPLETE');
+        await showItems(items);
       } catch (_readbackError) {
-        setStatus('Исход отправки пока неизвестен. Нажмите «Обновить» и повторите проверку; новая отправка не создаётся.', 'error');
+        if (isCurrent()) {
+          renderAdminOrganizations();
+          setStatus(error?.message === 'INVITATION_RESPONSE_INCOMPLETE'
+            ? 'Сервер вернул неполный или противоречивый результат приглашения. Исход отправки пока неизвестен. Проверьте состояние операции перед повтором.'
+            : 'Исход отправки пока неизвестен. Проверьте ту же операцию перед новой отправкой.', 'error');
+        }
       }
-    } else setStatus(error.message || 'Не удалось отправить приглашение.', 'error');
+    } else {
+      clearPendingInvitationOperation(requestKey, identityKey);
+      if (isCurrent()) setStatus(error.message || 'Не удалось отправить приглашение.', 'error');
+    }
   } finally {
-    invitationRequestsInFlight.delete(requestKey);
+    invitationRequestsInFlight.delete(inFlightKey);
   }
+};
+
+export const recoverAdminOrganizationInvitation = async (requestKey) => {
+  const operation = pendingInvitationOperations().find((item) => item.requestKey === requestKey);
+  if (!operation || Number(selectedOrganizationId) !== operation.organizationId) return;
+  await sendAdminOrganizationMemberInvitation(operation.organizationId, operation.emails, operation.assignmentRef);
 };
 
 export const assignAdminOrganizationAssessment = async (organizationId, userIds, assignmentRef, roleProfileVersionId = null) => {
@@ -2135,6 +2208,15 @@ export const renderAdminOrganizations = () => {
   if (!organizations.some((org) => Number(org.id) === Number(selectedOrganizationId))) {
     selectedOrganizationId = Number(organizations.find((org) => org.is_active !== false)?.id || organizations[0].id);
   }
+  const pendingInvitations = pendingInvitationOperations().filter((operation) =>
+    operation.organizationId === Number(selectedOrganizationId));
+  const invitationRecoveryMarkup = pendingInvitations.length
+    ? '<section class="card card--inset admin-invitation-recovery" role="status"><h3>Проверка приглашений</h3>' +
+      '<p>Исход предыдущей отправки ещё не подтверждён. Проверьте ту же операцию.</p>' +
+      pendingInvitations.map((operation) => '<div class="admin-account-row"><span>' +
+        escapeHtml(operation.emails.map((email) => participantLabel(operation.organizationId, { email })).join(', ')) +
+        '</span><button class="ghost-button compact-ghost" type="button" data-action="recover-member-invitation" data-request-key="' +
+        escapeHtml(operation.requestKey) + '">Проверить исход</button></div>').join('') + '</section>' : '';
   if (adminOrganizationSelect) {
     adminOrganizationSelect.innerHTML = organizations
       .map(
@@ -2146,7 +2228,7 @@ export const renderAdminOrganizations = () => {
       )
       .join('');
   }
-  adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + organizations
+  adminOrganizationsList.innerHTML = purgeRecoveryMarkup + invitationRecoveryMarkup + staleMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
       const orgId = Number(org.id);

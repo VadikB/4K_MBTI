@@ -2397,6 +2397,14 @@ test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting ze
   await expect(page.locator('#admin-organizations-status')).not.toContainText('принял приглашения: 0');
 });
 
+test('R03 reports an unconfigured invitation provider as a known failure', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { detail: 'EMAIL_PROVIDER_NOT_CONFIGURED' }, 503));
+  await page.locator('input[name="invitation_email"]').check();
+  await page.getByRole('button', { name: 'Отправить приглашения' }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Сервис приглашений не настроен');
+  await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
+});
+
 test('AC18-ADM-1C confirms a lost assignment response only by exact operation receipt', async ({ page }) => {
   const member = { ...adminOrganization.members[0], user_id: 8, email: 'person@example.test',
     full_name: 'Участник чтения', assessment_assignments: [] };
@@ -3308,14 +3316,14 @@ test('R03 network retry reuses invitation operation id', async ({ page }) => {
   const keys = [];
   await openAdminOrganizations(page, (route) => {
     if (route.request().method() === 'POST') keys.push(route.request().headers()['idempotency-key']);
-    return route.abort('failed');
+    return route.request().method() === 'POST' ? route.abort('failed') : fulfillJson(route, {}, 404);
   });
   const row = page.locator('.admin-organization-member').first();
   await row.locator('.admin-organization-member-menu summary').click();
   const button = row.locator('[data-action="send-member-invitation"]');
   await button.click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Исход отправки пока неизвестен');
-  await button.click();
+  await page.locator('[data-action="recover-member-invitation"]').click();
   await expect.poll(() => keys.length).toBe(2);
   expect(keys[0]).toBe(keys[1]);
 });

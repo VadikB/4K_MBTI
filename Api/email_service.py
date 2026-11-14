@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib import request as urlrequest
 from urllib.error import HTTPError, URLError
 
@@ -10,6 +10,11 @@ from Api.config import settings
 
 
 logger = logging.getLogger("agent4k.email")
+
+
+def _utc_expiry_label(expires_at: datetime) -> str:
+    utc_value = expires_at.replace(tzinfo=timezone.utc) if expires_at.tzinfo is None else expires_at.astimezone(timezone.utc)
+    return utc_value.strftime("%d.%m.%Y %H:%M UTC")
 
 
 class EmailDeliveryError(RuntimeError):
@@ -21,7 +26,7 @@ class EmailDeliveryUncertainError(EmailDeliveryError):
 
 
 def _build_magic_link_email_payload(email: str, login_url: str, expires_at: datetime) -> dict[str, object]:
-    expires_label = expires_at.strftime("%d.%m.%Y %H:%M UTC")
+    expires_label = _utc_expiry_label(expires_at)
     subject = settings.auth_magic_link_subject
     text_body = (
         "Здравствуйте!\n\n"
@@ -152,7 +157,7 @@ def send_auth_action_email(*, email: str, action_url: str, expires_at: datetime,
         intro = "Вас пригласили пройти оценку. Чтобы продолжить, перейдите по персональной ссылке:"
     else:
         raise EmailDeliveryError("Неизвестный тип письма авторизации.")
-    expires_label = expires_at.strftime("%d.%m.%Y %H:%M UTC")
+    expires_label = _utc_expiry_label(expires_at)
     payload = {
         "From": settings.auth_magic_link_from_email,
         "To": email,

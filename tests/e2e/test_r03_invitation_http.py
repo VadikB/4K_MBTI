@@ -63,6 +63,7 @@ class _InvitationConnection:
                 "expires_at": params[2],
                 "recipient_email": params[4],
                 "request_id": request_id,
+                "created_by_user_id": params[3],
                 "assignment_ref": params[6],
                 "delivery_status": "queued",
                 "delivery_error": None,
@@ -85,6 +86,11 @@ class _InvitationConnection:
                 and row["request_id"] == request_id
             )
             return _Result(one=row)
+        if "created_by_user_id=%s" in query and "FROM organization_invitations" in query:
+            organization_id, actor_id, request_id, assignment_ref = params
+            return _Result(many=[row for row in reversed(self.rows)
+                if row["organization_id"] == organization_id and actor_id == 18
+                and row["request_id"] == request_id and row["assignment_ref"] == assignment_ref])
         if "WHERE id = %s FOR UPDATE" in query:
             return _Result(one=next(row for row in self.rows if row["id"] == params[0]))
         if "SET delivery_status = 'accepted'" in query:
@@ -169,7 +175,58 @@ def test_personal_invitation_repeated_operation_has_one_effect(monkeypatch) -> N
     assert len(connection.rows) == 1
     assert len(sent) == 1
     expires_at = datetime.fromisoformat(first.json()["items"][0]["expires_at"])
-    assert timedelta(hours=71, minutes=59) < expires_at - _utcnow() <= timedelta(hours=72)
+    assert expires_at.tzinfo == timezone.utc
+    assert timedelta(hours=71, minutes=59) < expires_at - datetime.now(timezone.utc) <= timedelta(hours=72)
+
+
+def test_invitation_readback_separates_delivery_link_and_registration(monkeypatch) -> None:
+    connection = _InvitationConnection()
+    sent = []
+    client = _client(monkeypatch, connection, sent)
+    operation = "readback-lifecycle-operation"
+    created = client.post("/users/admin/organizations/3/personal-invitations",
+        json={"emails": ["person@example.test"], "operation_id": operation})
+    assert created.status_code == 200
+    path = f"/users/admin/organizations/3/personal-invitations/operations/{operation}?assignment_ref=competencies_4k"
+    active = client.get(path)
+    assert active.status_code == 200
+    assert active.json()["items"][0]["delivery_status"] == "accepted"
+    assert active.json()["items"][0]["link_status"] == "active"
+    assert active.json()["items"][0]["expires_at"].endswith("Z")
+    connection.rows[0]["used_at"] = _utcnow()
+    used = client.get(path).json()["items"][0]
+    assert (used["status"], used["delivery_status"], used["link_status"]) == (
+        "already_registered", "accepted", "used")
+    connection.rows[0]["used_at"] = None
+    connection.rows[0]["revoked_at"] = _utcnow()
+    revoked = client.get(path).json()["items"][0]
+    assert (revoked["status"], revoked["delivery_status"], revoked["link_status"]) == (
+        "accepted", "accepted", "revoked")
+    connection.rows[0]["revoked_at"] = None
+    connection.rows[0]["expires_at"] = _utcnow() - timedelta(seconds=1)
+    expired = client.get(path).json()["items"][0]
+    assert (expired["status"], expired["delivery_status"], expired["link_status"]) == (
+        "accepted", "accepted", "expired")
+    assert client.get(path.replace("competencies_4k", "foreign-ref")).status_code == 404
+    assert client.get(path.replace("organizations/3", "organizations/4")).status_code in {403, 404}
+    missing = client.get(path + "&email=person@example.test&email=missing@example.test").json()["items"]
+    assert [(item["email"], item["status"]) for item in missing] == [
+        ("person@example.test", "accepted"), ("missing@example.test", "uncertain")]
+
+
+def test_replayed_invitation_cannot_claim_another_actor_operation(monkeypatch) -> None:
+    connection = _InvitationConnection()
+    sent = []
+    client = _client(monkeypatch, connection, sent)
+    payload = {"emails": ["person@example.test"], "operation_id": "owner-bound-operation"}
+    assert client.post("/users/admin/organizations/3/personal-invitations", json=payload).json()["items"][0]["status"] == "accepted"
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+        lambda _token: SimpleNamespace(id=19, email="other-admin@example.test"))
+    replay = client.post("/users/admin/organizations/3/personal-invitations", json=payload)
+    assert replay.status_code == 200
+    assert replay.json()["items"][0]["status"] == "error"
+    assert len(sent) == 1
+    assert len(connection.rows) == 1
 
 
 def test_personal_invitation_retry_rechecks_newly_protected_email(monkeypatch) -> None:
@@ -327,6 +384,7 @@ def test_personal_invitation_does_not_recover_inactive_accepted_operation(
         "id": 1, "organization_id": 3, "token_hash": _operation_token_hash(operation),
         "expires_at": expires_at, "recipient_email": "person@example.test",
         "request_id": operation, "delivery_status": "accepted", "delivery_error": None,
+        "created_by_user_id": 18,
         "used_at": used_at, "revoked_at": revoked_at, "name": "Organization A",
         "invitation_intro": "Welcome", "is_active": True, "purpose": "personal_registration",
     })
@@ -351,6 +409,7 @@ def test_personal_invitation_rejects_legacy_operation_without_reconstructable_to
         "id": 1, "organization_id": 3, "token_hash": "legacy-random-token-hash",
         "expires_at": _utcnow() + timedelta(hours=70), "recipient_email": "person@example.test",
         "request_id": operation, "delivery_status": "queued", "delivery_error": None,
+        "created_by_user_id": 18,
         "used_at": None, "revoked_at": None, "name": "Organization A",
         "invitation_intro": "Welcome", "is_active": True, "purpose": "personal_registration",
     })
