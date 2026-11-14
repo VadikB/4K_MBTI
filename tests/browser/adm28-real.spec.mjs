@@ -67,7 +67,7 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     const values = { source_author: 'Синтетический заказчик',
       organization_name: 'Синтетическая организация ADM28', organization_type: 'Компания', industry: 'ИТ',
       activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель', results_usage: 'Для развития',
-      result_recipients: 'Участник', organizer: 'Синтетический HR', responsible_contact: 'admin@example.test',
+      organizer: 'Синтетический HR',
       case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' };
     for (const [name, value] of Object.entries(values)) {
       if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
@@ -76,29 +76,24 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     const preview = card.locator('.admin-questionnaire-preview');
     await expect(preview).toContainText('Готово к подтверждению');
     const revisionId = await preview.getAttribute('data-questionnaire-revision-id');
-    const toggle = preview.locator('[name="questionnaire_recipient"][value="organization_admin"]');
-    await toggle.check();
-    await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
-    await preview.locator('[name="questionnaire_recipient_user"]').check();
     await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
-    await expect(toggle).toBeChecked();
-    await expect(preview.locator('[name="questionnaire_recipient_user"]')).toBeEnabled();
+    await expect(preview.locator('[name="questionnaire_recipient_user"]')).toHaveCount(0);
     await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
     await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
     const savedResponse = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}`);
     expect(savedResponse.status()).toBe(200);
     const saved = await savedResponse.json();
     expect(saved.status).toBe('confirmed');
-    expect(saved.recipient_user_ids).toHaveLength(1);
-    expect(saved.recipient_mapping.sort()).toEqual(['organization_admin', 'participant']);
-    // Same content is idempotent; changed recipients are an explicit conflict.
+    expect(saved.recipient_user_ids).toHaveLength(0);
+    expect(saved.recipient_mapping).toEqual(['participant', 'organization_admin']);
+    // Legacy payload is accepted but cannot change the current membership rule.
     expect((await page.request.post(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}/confirm`, {
       data: { recipients: saved.recipient_mapping, recipient_user_ids: saved.recipient_user_ids },
     })).status()).toBe(200);
     expect((await page.request.post(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}/confirm`, {
       data: { recipients: ['participant'], recipient_user_ids: [] },
-    })).status()).toBe(409);
+    })).status()).toBe(200);
     await page.reload();
     await expect(form.locator('[name="source_author"]')).toHaveCount(0);
     await expect(form.locator('[name="purpose"]')).toHaveValue(values.purpose);

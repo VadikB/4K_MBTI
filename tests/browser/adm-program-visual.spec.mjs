@@ -25,7 +25,7 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
         : card.locator(`form[data-action="${view === 'questionnaire' ? 'preview-questionnaire' : 'preview-early-data'}"]`);
       await expect(form).toBeVisible();
       const author = view === 'people' ? card.locator('input[name="invitation_email"]')
-        : view === 'questionnaire' ? form.locator('input[type="file"]') : form.locator('[name="responsible_contact"]');
+        : view === 'questionnaire' ? form.locator('input[type="file"]') : form.locator('[name="organizer"]');
       if (view === 'people') await author.check();
       else if (view === 'organization-data') await author.fill('synthetic-contact@example.test');
       if (view === 'questionnaire') await form.locator('input[type="file"]').setInputFiles({
@@ -55,7 +55,7 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
         const isReadiness = node.classList.contains('admin-assignment-readiness');
         const scope = isReadiness ? node.closest('[data-organization-id]') : node;
         const source = scope.querySelector(isReadiness ? 'input[name="invitation_email"]'
-          : node.dataset.action === 'preview-questionnaire' ? 'input[type="file"]' : '[name="responsible_contact"]');
+          : node.dataset.action === 'preview-questionnaire' ? 'input[type="file"]' : '[name="organizer"]');
         const submit = scope.querySelector(isReadiness ? 'form[data-action="assign-member-assessment"] button[type="submit"]' : 'button[type="submit"]');
         return { viewport: innerWidth,
         document: document.documentElement.scrollWidth, form: node.getBoundingClientRect().toJSON(),

@@ -50,10 +50,9 @@ for (const name of cases) {
     organization_name: answers.C01.name, organization_type: answers.C01.organization_type,
     industry: answers.C01.industry, activity_description: answers.C01.activity_description,
     purpose: answers.C02a.participant_text, results_usage: answers.C03.participant_text,
-    result_recipients: answers.C04.answer, organizer: answers.C21.organizer,
-    responsible_contact: answers.C21.responsible_contact, case_reality_level: answers.C17.case_reality_level,
+    organizer: answers.C21.organizer, case_reality_level: answers.C17.case_reality_level,
     organization_name_usage_rules: answers.C17.organization_name_usage_rules }, fixture.fields);
-  assert.deepEqual(db.revision.recipient_mapping_json, ['participant']);
+  assert.deepEqual(db.revision.recipient_mapping_json, ['participant', 'organization_admin']);
   assert.equal(db.counts.questionnaire_revisions, baseline.counts.questionnaire_revisions + 1);
   for (const counter of ['assignments', 'profiles', 'preparation_operations', 'cycles', 'assessment_situations', 'assessment_answers']) {
     assert.equal(db.counts[counter], baseline.counts[counter]);

@@ -12,9 +12,10 @@ from Api import acquaintance_state_store as state_store
 from Api.m7_parameter_resolution import resolve as resolve_parameters
 from Api.questionnaire_sources import assignment_readiness
 from Api.questionnaire_sources import PARTICIPANT_QUESTION_SCHEMA
+from Api.questionnaire_sources import recipient_access_projection
 
 
-REQUIRED_BRIEFING_FIELDS = ("purpose", "organizer", "results_usage", "result_recipients")
+REQUIRED_BRIEFING_FIELDS = ("purpose", "organizer", "results_usage")
 
 
 def _participant_fields(connection, *, user_id: int, organization_id: int,
@@ -98,9 +99,9 @@ def early_readiness(connection, *, user_id: int) -> dict:
             missing = [item['key'] for item in provided if item['key'] in {'full_name', 'email', 'position'} and not item['value']]
             if briefing.get('participant_question_schema') == PARTICIPANT_QUESTION_SCHEMA and missing:
                 waiting = _waiting('participant_fields:' + ','.join(missing), university=False, organization=organization)
-                waiting['responsible_contact'] = str(briefing.get('responsible_contact') or '').strip() or None
                 return waiting
             safe_briefing = {key: briefing[key] for key in REQUIRED_BRIEFING_FIELDS}
+            safe_briefing['result_recipients'] = recipient_access_projection()['result_recipients']
             safe_briefing.update({
                 "provided_participant_fields": provided,
                 "questions": briefing["participant_questions"],
@@ -116,7 +117,7 @@ def early_readiness(connection, *, user_id: int) -> dict:
                 "assignment_ref": assignment["assignment_ref"],
                 "questionnaire_revision_id": assignment.get("questionnaire_revision_id"),
                 "organization_kind": "organization",
-                "responsible_contact": str(briefing.get("responsible_contact") or "").strip() or None,
+                "responsible_contact": None,
                 "briefing": safe_briefing, "briefing_checksum": _checksum(safe_briefing),
             }
         # An exact assignment's known blocker must not be replaced by an
@@ -154,7 +155,6 @@ def early_readiness(connection, *, user_id: int) -> dict:
             university=university,
             organization=organization,
         )
-    contact = str(briefing.get("responsible_contact") or "").strip() or None
     if any(not isinstance(item, dict) for item in provided):
         provided = _participant_fields(connection, user_id=user_id, organization_id=organization['id'],
             assignment_ref=f"legacy-organization-context:{int(row['id'])}", questionnaire_revision_id=None)
@@ -162,6 +162,7 @@ def early_readiness(connection, *, user_id: int) -> dict:
         key: briefing[key]
         for key in REQUIRED_BRIEFING_FIELDS
     }
+    safe_briefing['result_recipients'] = recipient_access_projection()['result_recipients']
     safe_briefing.update({
         "provided_participant_fields": provided,
         "questions": [str(q).strip() for q in questions],
@@ -179,7 +180,7 @@ def early_readiness(connection, *, user_id: int) -> dict:
         "assignment_ref": f"legacy-organization-context:{int(row['id'])}",
         "questionnaire_revision_id": None,
         "organization_kind": "university" if university else "organization",
-        "responsible_contact": contact,
+        "responsible_contact": None,
         "briefing": safe_briefing,
         "briefing_checksum": _checksum(safe_briefing),
     }

@@ -115,8 +115,7 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     const form = userCard.locator('form[data-action="preview-early-data"]');
     const fields = { organization_name: 'Синтетическая организация', organization_type: 'Компания',
       industry: 'ИТ', activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель',
-      results_usage: 'Для развития', result_recipients: 'Участник', organizer: 'Синтетический HR',
-      responsible_contact: 'participant@example.test', case_reality_level: 'Реальные',
+      results_usage: 'Для развития', organizer: 'Синтетический HR', case_reality_level: 'Реальные',
       organization_name_usage_rules: 'Разрешено' };
     for (const [name, value] of Object.entries(fields)) await form.locator(`[name="${name}"]`).fill(value);
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();

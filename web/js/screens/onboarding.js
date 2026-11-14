@@ -126,8 +126,7 @@ const readinessStep = () => {
     body: reference, action: 'refresh', button: 'Проверить состояние' };
   if (status === 'organization') return { title: 'Для оценки ещё нужны сведения организации',
     description: 'Ваши ответы сохранены. Ответственный должен завершить настройку роли и источников оценки. Повторно отвечать на вопросы не нужно.',
-    body: '<div class="onboarding-warning">' + escape(model?.readiness?.responsible_contact
-      ? 'Контакт ответственного: ' + model.readiness.responsible_contact : 'Обратитесь к ответственному за оценку в вашей организации.') + '</div>',
+    body: '<div class="onboarding-warning">Обратитесь к администратору вашей организации.</div>',
     action: 'refresh', button: 'Проверить готовность' };
   if (status === 'failed') {
     const canRetry = model?.preparation_operation?.retry_allowed === true;

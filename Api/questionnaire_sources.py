@@ -11,16 +11,16 @@ from pathlib import Path
 from Api.assessment_contexts import create_organization_context_draft, publish_organization_context
 
 TEMPLATE_VARIANT = "corporate"
-TEMPLATE_VERSION = "0.1"
+TEMPLATE_VERSION = "0.2"
+COMPATIBLE_TEMPLATE_VERSIONS = {"0.1", TEMPLATE_VERSION}
 HEADER = ("question_id", "field", "value")
 FIELDS = {
     "C01": {"name", "organization_type", "industry", "activity_description"},
     "C02a": {"answer", "participant_text"},
     "C02b": {"answer"},
     "C03": {"answer", "participant_text"},
-    "C04": {"answer"},
     "C17": {"case_reality_level", "organization_name_usage_rules", "restrictions"},
-    "C21": {"organizer", "responsible_contact"},
+    "C21": {"organizer"},
     # C22 is retained as source material only. It never replaces the separate,
     # authenticated confirmation event performed by an organization admin.
     "C22": {"answer"},
@@ -32,12 +32,12 @@ FIELDS = {
 EARLY_REQUIRED = {
     ("C01", "name"), ("C01", "organization_type"), ("C01", "industry"),
     ("C01", "activity_description"), ("C02a", "participant_text"),
-    ("C03", "participant_text"), ("C04", "answer"),
+    ("C03", "participant_text"),
     ("C17", "case_reality_level"), ("C17", "organization_name_usage_rules"),
-    ("C21", "organizer"), ("C21", "responsible_contact"),
+    ("C21", "organizer"),
 }
 ALLOWED_CHANNELS = {"csv", "product_form", "external_form"}
-ALLOWED_RECIPIENTS = {"participant", "organization_admin"}
+LEGACY_FIELDS = {("C04", "answer"), ("C21", "responsible_contact")}
 MAX_SOURCE_BYTES = 1_048_576
 
 
@@ -89,6 +89,8 @@ def parse_csv(text: str) -> dict:
             question_id = str(raw.get("question_id") or "").strip()
             field = str(raw.get("field") or "").strip()
             value = str(raw.get("value") or "").strip()
+            if (question_id, field) in LEGACY_FIELDS:
+                continue
             if question_id not in FIELDS or field not in FIELDS.get(question_id, set()):
                 errors.append({"line": line, "code": "UNKNOWN_FIELD", "question_id": question_id, "field": field})
                 continue
@@ -118,11 +120,25 @@ def normalize_answers(*, answers: dict, channel: str) -> dict:
     return parse_csv(csv_text)
 
 
+def _current_revision_validation(row: dict) -> dict:
+    """Revalidate old drafts under the current fields without hiding other errors."""
+    if row.get("channel") == "csv" and row.get("raw_source_text"):
+        return parse_csv(row["raw_source_text"])
+    normalized = normalize_answers(answers=dict(row.get("answers_json") or {}), channel=str(row["channel"]))
+    old_errors = (row.get("validation_json") or {}).get("errors") or []
+    for error in old_errors:
+        if (error.get("question_id"), error.get("field")) not in LEGACY_FIELDS and error not in normalized["errors"]:
+            normalized["errors"].append(error)
+    if normalized["errors"]:
+        normalized["status"] = "invalid"
+    return normalized
+
+
 def save_preview(connection, *, organization_id: int, assignment_ref: str, channel: str,
                  template_variant: str, template_version: str, answers: dict,
                  raw_text: str | None, uploaded_by: int, source_author: str,
                  idempotency_key: str) -> dict:
-    if template_variant != TEMPLATE_VARIANT or template_version != TEMPLATE_VERSION:
+    if template_variant != TEMPLATE_VARIANT or template_version not in COMPATIBLE_TEMPLATE_VERSIONS:
         raise ValueError("QUESTIONNAIRE_TEMPLATE_MISMATCH")
     if channel not in ALLOWED_CHANNELS:
         raise ValueError("QUESTIONNAIRE_CHANNEL_UNSUPPORTED")
@@ -157,7 +173,8 @@ def save_preview(connection, *, organization_id: int, assignment_ref: str, chann
 
 
 def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by: int,
-            recipients: list[str], recipient_user_ids: list[int] | None = None) -> dict:
+            recipients: list[str] | None = None, recipient_user_ids: list[int] | None = None) -> dict:
+    # Legacy callers may still send recipient choices; current access ignores them.
     candidate = connection.execute(
         "SELECT assignment_ref FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s",
         (revision_id, organization_id),
@@ -174,17 +191,7 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     ).fetchone()
     if row is None:
         raise ValueError("QUESTIONNAIRE_REVISION_NOT_FOUND")
-    mapped = sorted(set(recipients))
-    selected_users = sorted(set(int(value) for value in (recipient_user_ids or [])))
-    if "participant" not in mapped or any(item not in ALLOWED_RECIPIENTS for item in mapped):
-        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
-    if ("organization_admin" in mapped) != bool(selected_users):
-        raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
     if row["status"] == "confirmed":
-        saved_users = sorted(int(item["user_id"]) for item in
-                             (row.get("briefing_json") or {}).get("authorized_recipients", []))
-        if mapped != sorted(row.get("recipient_mapping_json") or ["participant"]) or selected_users != saved_users:
-            raise ValueError("QUESTIONNAIRE_RECIPIENTS_CONFLICT")
         return dict(row)
     newer_confirmed = connection.execute(
         """SELECT id FROM questionnaire_response_revisions
@@ -194,10 +201,10 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     ).fetchone()
     if newer_confirmed is not None:
         raise ValueError("QUESTIONNAIRE_REVISION_CONFLICT")
-    validation = dict(row["validation_json"] or {})
-    if validation.get("errors") or validation.get("missing"):
+    normalized = _current_revision_validation(row)
+    if normalized["errors"] or normalized["missing"]:
         raise ValueError("QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION")
-    answers = dict(row["answers_json"] or {})
+    answers = normalized["answers"]
     current = connection.execute(
         """SELECT v.definition_json FROM assessment_organization_context_versions v
            JOIN assessment_organization_contexts c ON c.id=v.organization_context_id
@@ -208,25 +215,11 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     definition.update(answers["C01"])
     definition.update({key: value for key, value in answers["C17"].items()
                        if key in {"case_reality_level", "organization_name_usage_rules", "restrictions"}})
-    authorized_recipients = []
-    if selected_users:
-        recipient_rows = connection.execute("""SELECT u.id,u.full_name,u.email
-            FROM organization_memberships om JOIN users u ON u.id=om.user_id
-            JOIN organizations o ON o.id=om.organization_id
-            WHERE om.organization_id=%s AND om.role='admin' AND o.is_active=TRUE AND u.id=ANY(%s)
-            ORDER BY LOWER(u.email)""", (organization_id, selected_users)).fetchall()
-        if {int(item["id"]) for item in recipient_rows} != set(selected_users):
-            raise ValueError("REPORT_RECIPIENT_SCOPE_CONFLICT")
-        authorized_recipients = [
-            {"user_id": int(item["id"]), "name": item["full_name"], "email": item["email"]}
-            for item in recipient_rows
-        ]
-    access_projection = recipient_access_projection(mapped)
+    access_projection = recipient_access_projection()
     participant_briefing = {
         "purpose": answers["C02a"]["participant_text"],
         "customer_question": answers.get("C02b", {}).get("answer", ""),
         "organizer": answers["C21"]["organizer"],
-        "responsible_contact": answers["C21"]["responsible_contact"],
         "results_usage": answers["C03"]["participant_text"],
         "result_recipients": access_projection["result_recipients"],
         "recipient_mapping": access_projection["recipient_mapping"],
@@ -239,8 +232,6 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
         "questionnaire_revision_id": int(row["id"]),
         "assignment_ref": str(row["assignment_ref"]),
     }
-    if authorized_recipients:
-        participant_briefing["authorized_recipients"] = authorized_recipients
     definition.pop("participant_briefing", None)
     version_id = create_organization_context_draft(
         connection, organization_id=organization_id, definition=definition,
@@ -252,16 +243,17 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     from Api import m8_report_access
     m8_report_access.create_revision(
         connection, questionnaire_revision_id=int(row["id"]), organization_id=organization_id,
-        assignment_ref=str(row["assignment_ref"]), recipient_user_ids=selected_users,
+        assignment_ref=str(row["assignment_ref"]),
         source_author=str(row["source_author"]), confirmed_by=confirmed_by,
     )
     saved = connection.execute(
         """UPDATE questionnaire_response_revisions SET status='confirmed',confirmed_by_user_id=%s,
            confirmed_at=NOW(),organization_context_version_id=%s,briefing_json=%s::jsonb,
-           recipient_mapping_json=%s::jsonb
+           answers_json=%s::jsonb,validation_json=%s::jsonb,recipient_mapping_json=%s::jsonb
            WHERE id=%s RETURNING *""",
         (confirmed_by, version_id, json.dumps(participant_briefing, ensure_ascii=False),
-         json.dumps(mapped), row["id"]),
+         json.dumps(answers, ensure_ascii=False), json.dumps({"errors": [], "missing": []}),
+         json.dumps(access_projection["recipient_mapping"]), row["id"]),
     ).fetchone()
     return dict(saved)
 
@@ -285,7 +277,7 @@ def assignment_readiness(connection, *, organization_id: int, assignment_ref: st
         "университет", "вуз", "university",
     }:
         return {"status": "draft", "reason": "university_admission_not_supported", "missing": ["admission"]}
-    required = ("purpose", "organizer", "responsible_contact", "results_usage", "result_recipients")
+    required = ("purpose", "organizer", "results_usage")
     missing = [key for key in required if not str(briefing.get(key) or "").strip()]
     if missing:
         return {"status": "draft", "reason": "early_minimum", "missing": missing}
@@ -441,15 +433,10 @@ def template_csv() -> str:
 
 
 def recipient_access_projection(recipient_mapping: list[str] | None = None) -> dict:
-    """Participant-safe explanation derived only from the effective access mapping."""
-    mapped = sorted(set(recipient_mapping or ["participant"]))
+    """Participant-safe explanation of the current membership-based access rule."""
     return {
-        "recipient_mapping": mapped,
-        "result_recipients": (
-            "Результаты доступны участнику и выбранным представителям заказчика."
-            if "organization_admin" in mapped else
-            "Результаты доступны только участнику."
-        ),
+        "recipient_mapping": ["participant", "organization_admin"],
+        "result_recipients": "Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы.",
     }
 
 
@@ -465,7 +452,6 @@ def _participant_projection(answers: dict, *, recipient_mapping: list[str] | Non
         "results_usage": str(answers.get("C03", {}).get("participant_text") or ""),
         "result_recipients": access["result_recipients"],
         "organizer": str(answers.get("C21", {}).get("organizer") or ""),
-        "responsible_contact": str(answers.get("C21", {}).get("responsible_contact") or ""),
     }
 
 
@@ -480,36 +466,29 @@ def _projection_changes(current: dict, proposed: dict) -> list[dict]:
 def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     """Admin-safe projection without raw source, checksums or internal request metadata."""
     item = dict(row)
-    answers = dict(item.get("answers_json") or {})
-    recipient_mapping = list(item.get("recipient_mapping_json") or ["participant"])
-    current_mapping = list((confirmed_row or {}).get("recipient_mapping_json") or ["participant"])
-    participant_preview = _participant_projection(answers, recipient_mapping=recipient_mapping)
+    normalized = _current_revision_validation(item)
+    answers = normalized["answers"]
+    access_projection = recipient_access_projection()
+    participant_preview = _participant_projection(answers)
     current_projection = _participant_projection(
-        dict((confirmed_row or {}).get("answers_json") or {}), recipient_mapping=current_mapping,
+        dict((confirmed_row or {}).get("answers_json") or {}),
     )
     effective = item if item["status"] == "confirmed" else confirmed_row
     return {
         "id": int(item["id"]), "assignment_ref": str(item["assignment_ref"]),
-        "status": str(item["status"]), "channel": str(item["channel"]),
+        "status": str(item["status"]) if item["status"] == "confirmed" else normalized["status"],
+        "channel": str(item["channel"]),
         "source_author": str(item.get("source_author") or ""),
         "uploaded_by_user_id": int(item["uploaded_by_user_id"]) if item.get("uploaded_by_user_id") is not None else None,
         "uploaded_by_email": item.get("uploaded_by_email"),
         "uploaded_by_name": item.get("uploaded_by_name"),
-        "validation_json": dict(item.get("validation_json") or {}),
+        "validation_json": {"errors": normalized["errors"], "missing": normalized["missing"]},
         "answers_json": answers,
         "participant_preview": participant_preview,
         "changes": _projection_changes(current_projection, participant_preview),
         "is_first_publication": confirmed_row is None,
-        "recipient_options": ["participant", "organization_admin"],
-        "recipient_mapping": recipient_mapping,
-        "recipient_user_ids": [int(recipient["user_id"]) for recipient in
-                               (item.get("briefing_json") or {}).get("authorized_recipients", [])],
-        "recipient_projections": {
-            "participant": recipient_access_projection(["participant"])["result_recipients"],
-            "organization_admin": recipient_access_projection(
-                ["participant", "organization_admin"],
-            )["result_recipients"],
-        },
+        "recipient_mapping": access_projection["recipient_mapping"],
+        "recipient_user_ids": [],
         "confirmed_at": item.get("confirmed_at"),
         "effective_confirmed": {
             "id": int(effective["id"]),

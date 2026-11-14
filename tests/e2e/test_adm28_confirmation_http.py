@@ -43,23 +43,21 @@ def confirmation_client(monkeypatch):
 
 def test_commit_survives_supplementary_readiness_failure(confirmation_client):
     client, connection = confirmation_client
-    response = client.post('/users/admin/organizations/3/questionnaire/71/confirm', json={
-        'recipients': ['participant', 'organization_admin'], 'recipient_user_ids': [18],
-    })
+    response = client.post('/users/admin/organizations/3/questionnaire/71/confirm', json={})
     assert response.status_code == 200
     assert connection.committed
     assert response.json()['status'] == 'confirmed'
     assert response.json()['readiness_refresh_required'] is True
-    assert response.json()['recipient_user_ids'] == [18]
+    assert response.json()['recipient_user_ids'] == []
 
 
-def test_exact_revision_check_reads_effective_recipients_and_checks_scope(confirmation_client):
+def test_exact_revision_check_reads_current_access_rule_and_checks_scope(confirmation_client):
     client, _ = confirmation_client
     saved = client.get('/users/admin/organizations/3/questionnaire/71')
     assert saved.status_code == 200
     assert saved.json()['id'] == 71
     assert saved.json()['recipient_mapping'] == ['participant', 'organization_admin']
-    assert saved.json()['recipient_user_ids'] == [18]
+    assert saved.json()['recipient_user_ids'] == []
     assert client.get('/users/admin/organizations/4/questionnaire/71').status_code == 403
 
 

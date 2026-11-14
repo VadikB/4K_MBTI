@@ -4,11 +4,11 @@ import pytest
 
 from Api.questionnaire_sources import (
     PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, admin_assignment_readiness,
-    normalize_answers, parse_csv, public_revision, recipient_access_projection,
+    normalize_answers, parse_csv, public_revision, recipient_access_projection, template_csv,
 )
 
 
-EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv")
+EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.2/example.synthetic.csv")
 
 
 def test_csv_example_is_ready_and_preserves_non_w02_answers():
@@ -16,12 +16,29 @@ def test_csv_example_is_ready_and_preserves_non_w02_answers():
     assert result["status"] == "ready_for_confirmation"
     assert result["answers"]["C01"]["name"] == "Синтетическая организация"
     assert result["answers"]["C05"]["answer"].startswith("Синтетический")
+    assert "C04" not in result["answers"]
+    assert "responsible_contact" not in result["answers"]["C21"]
 
 
 def test_c22_is_preserved_but_not_used_as_server_confirmation():
     result = parse_csv(EXAMPLE.read_text() + '\nC22,answer,"да"\n')
     assert result["status"] == "ready_for_confirmation"
     assert result["answers"]["C22"]["answer"] == "да"
+
+
+def test_old_csv_and_draft_ignore_removed_fields_without_loosening_other_validation():
+    old_csv = Path("assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv").read_text()
+    parsed = parse_csv(old_csv)
+    assert parsed["status"] == "ready_for_confirmation"
+    assert parsed["answers"] == parse_csv(EXAMPLE.read_text())["answers"]
+    assert "C04,answer" not in template_csv()
+    assert "C21,responsible_contact" not in template_csv()
+    old_draft = {"id": 5, "assignment_ref": "assessment-a", "status": "draft", "channel": "csv",
+                 "answers_json": parsed["answers"], "raw_source_text": old_csv,
+                 "validation_json": {"missing": ["C04.answer", "C21.responsible_contact"], "errors": []}}
+    assert public_revision(old_draft)["status"] == "ready_for_confirmation"
+    bad = {**old_draft, "raw_source_text": old_csv + 'C99,answer,"unknown"\n'}
+    assert public_revision(bad)["status"] == "invalid"
 
 
 def test_bom_semicolon_quotes_and_line_breaks_are_supported():
@@ -85,16 +102,19 @@ def test_public_preview_has_participant_projection_and_safe_diff():
 
 def test_recipient_projection_ignores_contradictory_free_text():
     answers = parse_csv(EXAMPLE.read_text())["answers"]
-    answers["C04"]["answer"] = "Результаты увидит только участник"
+    answers["C04"] = {"answer": "Результаты увидит только участник"}
+    answers["C21"]["responsible_contact"] = "old@example.test"
     row = {"id": 3, "assignment_ref": "assessment-a", "status": "ready_for_confirmation",
            "channel": "csv", "validation_json": {}, "answers_json": answers, "confirmed_at": None,
            "recipient_mapping_json": ["participant", "organization_admin"]}
     result = public_revision(row)
     assert result["participant_preview"]["result_recipients"] == (
-        "Результаты доступны участнику и выбранным представителям заказчика."
+        "Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы."
     )
+    assert "C04" not in result["answers_json"]
+    assert "responsible_contact" not in result["answers_json"]["C21"]
     assert recipient_access_projection(["participant"])["result_recipients"] == (
-        "Результаты доступны только участнику."
+        result["participant_preview"]["result_recipients"]
     )
 
 
