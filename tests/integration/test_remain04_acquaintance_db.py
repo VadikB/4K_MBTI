@@ -86,7 +86,7 @@ def stand(test_database_url, monkeypatch):
                 answers_json JSONB,answers_confirmed_at TIMESTAMP,briefing_checksum TEXT,consent_version INTEGER,
                 consent_accepted_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW(),updated_at TIMESTAMP DEFAULT NOW())''')
         monkeypatch.setattr(routes, 'get_connection', factory)
-        monkeypatch.setattr(routes.web_session_service, 'get_user_by_token', lambda token: SimpleNamespace(id=1) if token=='synthetic-owner' else None)
+        monkeypatch.setattr(routes.web_session_service, 'get_user_by_token', lambda token: SimpleNamespace(id=1,email='p@example.test') if token=='synthetic-owner' else None)
         monkeypatch.setattr(org_access, 'is_platform_protected_account', lambda *a, **k: False)
         monkeypatch.setattr(org_access, 'assign_user_organization_from_email', lambda *a, **k: None)
         # Unrelated read-only display consumers need runtime tables outside this boundary.

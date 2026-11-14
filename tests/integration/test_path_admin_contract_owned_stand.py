@@ -22,7 +22,7 @@ def test_path_admin_contract_on_owned_postgresql(tmp_path):
 
     def cli(action):
         result = subprocess.run([sys.executable, 'scripts/test_stand.py', action,
-            '--state', str(state)], env=env, capture_output=True, text=True, timeout=180)
+            '--state', str(state), '--gateway', '1'], env=env, capture_output=True, text=True, timeout=180)
         print(result.stdout)
         assert result.returncode == 0, result.stderr
 
