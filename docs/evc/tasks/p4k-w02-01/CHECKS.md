@@ -138,3 +138,6 @@ PATH29 actualHTTP/ownedPG 1PASS/20.6s, PG55493/backend18859free/pg_stopped=true.
 по неизменнымJS/bundleхешам, CSS проверен снимком/computedstyles/PATH29.
 Все8пунктов ADD01 закрыты технически, доступHTML теперьPASS, humanreviewPENDING.
 CI43d16e2 завершился9PASS; он исторический, после CSSуточнений нуженCI новогоhead.
+
+Итоговый ADD01 source/candidate/tested SHA после сверкиHTML: `2cdb07ceba30561234acc673e6b7d630b9b5891f`.
+Новый PR head/CI — в финальном RELEASE_STATUS.json; последующий commit docs-only.
