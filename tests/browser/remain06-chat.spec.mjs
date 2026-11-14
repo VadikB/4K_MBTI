@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { startAdminProgramPreview } from '../../scripts/adm-program-ui-preview.mjs';
 
 // Component evidence: actual built app/native Chromium, synthetic HTTP inputs.
 // Real HTTP/PostgreSQL/Continue are independently covered by p3-a-r1-return.
@@ -32,12 +33,15 @@ async function fixture(page, total) {
       assessee_task: 'Опишите следующий шаг.', initial_materials: [{ material_id: 'M1', title: 'Материал', text: 'Разрешённые сведения' }],
     } }, trace: { turns: [], events: [] } };
   let release;
-  let held = true, failed = false, reads = 0;
+  let held = true, failed = false, reads = 0, authenticated = true;
   const gate = new Promise((resolve) => { release = resolve; });
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   await page.route('**/users/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname;
-    if (pathname === '/users/session/restore') return json(route, { authenticated: true, user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/session/restore') return json(route, { authenticated, user, is_admin: false, dashboard: {} });
+    if (['/users/auth/logout', '/users/logout'].includes(pathname)) {
+      authenticated = false; return json(route, {});
+    }
     if (pathname === '/users/8/session-bootstrap') return json(route, { user, is_admin: false, dashboard: {} });
     if (pathname === '/users/8/journey-state') return json(route, { next_action: 'resume_assessment',
       assessment: { runtime_kind: 'cycle', cycle_id: model.cycle_id, assessment_situation_id: 'remain06-as', status: 'active' },
@@ -80,6 +84,66 @@ for (const total of [8, 3]) test(`F18/F19 pending, plan${total}, network recover
     expect(f.reads()).toBeLessThanOrEqual(12);
     await page.screenshot({ path: info.outputPath('recovered.png') });
   } finally { f.release(); }
+});
+
+test('F21 scope after assessment: native auth/admin/questionnaire input and IME remain available', async ({ page }, info) => {
+  const run = await fixture(page, 8); run.release();
+  await page.goto(`${base}/?screen=interview`);
+  await expect(page.locator('#interview-textarea')).toBeEnabled();
+  await page.locator('#interview-exit-button').click();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  const receipts = [];
+  const checkField = async (field, scope, { ime = false } = {}) => {
+    await expect(field).toBeVisible();
+    await field.fill('');
+    const text = scope === 'auth' ? 'synthetic@example.test' : 'Синтетический текст';
+    await field.pressSequentially(text);
+    await expect(field).toHaveValue(text);
+    const transfers = await field.evaluate((element) => {
+      // No native paste or clipboard read: the OS clipboard may contain user data.
+      const events = [new ClipboardEvent('paste', { bubbles: true, cancelable: true }),
+        new InputEvent('beforeinput', { inputType: 'insertFromPaste', data: 'synthetic', bubbles: true, cancelable: true })];
+      return events.map((event) => { element.dispatchEvent(event); return event.defaultPrevented; });
+    });
+    expect(transfers).toEqual([false, false]);
+    if (ime) {
+      const cdp = await page.context().newCDPSession(page);
+      try {
+        await cdp.send('Input.imeSetComposition', { text: 'あ', selectionStart: 1, selectionEnd: 1 });
+        await cdp.send('Input.insertText', { text: 'あ' });
+        await expect(field).toHaveValue(/あ/);
+      } finally { await cdp.detach(); }
+    }
+    receipts.push({ scope, native_typing: true, ime, synthetic_transfer_prevented: transfers });
+  };
+  await checkField(page.locator('#email-input'), 'auth');
+  await page.screenshot({ path: info.outputPath('auth-after-assessment.png') });
+  const preview = await startAdminProgramPreview({ port: 18937 });
+  try {
+    // Actual application DOM and wiring; the gallery supplies synthetic admin HTTP.
+    await page.unroute('**/users/**');
+    await page.goto(`${preview.base}/demo/superadmin/confirmed/`);
+    await expect.poll(async () => await page.locator('#admin-open-organizations-button').isVisible()
+      || await page.locator('#admin-organizations-panel').isVisible()).toBe(true);
+    if (await page.locator('#admin-open-organizations-button').isVisible()) await page.locator('#admin-open-organizations-button').click();
+    const card = page.locator('[data-organization-id="3"]');
+    await expect(card).toBeVisible();
+    await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();
+    await checkField(card.locator('form[data-action="update-profile"] [name="name"]'), 'admin', { ime: true });
+    await page.screenshot({ path: info.outputPath('admin-input.png') });
+    await checkField(card.locator('form[data-action="preview-early-data"] textarea').first(), 'questionnaire', { ime: true });
+    await card.locator('[data-action="show-admin-view"][data-view="questionnaire"]').click();
+    const csvInput = card.locator('form[data-action="preview-questionnaire"] input[type="file"]');
+    await expect(csvInput).toBeVisible(); await expect(csvInput).toBeEnabled();
+    await csvInput.focus(); await expect(csvInput).toBeFocused();
+    await page.screenshot({ path: info.outputPath('questionnaire-input.png') });
+    await fs.writeFile(info.outputPath('scope-input.json'), JSON.stringify({
+      scope: 'actual DOM/native Chromium typing and CDP IME; synthetic HTTP/transfer events',
+      fields: receipts, physical_devices: 'NOT_RUN', os_clipboard: 'NOT_READ',
+      product_posts: preview.requests.filter((request) => request.method !== 'GET'),
+    }, null, 2));
+    expect(preview.requests.filter((request) => request.method !== 'GET')).toEqual([]);
+  } finally { await preview.close(); }
 });
 
 test('F21 native shortcuts, own text/IME, protected copy and synthetic beforeinput/paste/drop', async ({ page }, info) => {

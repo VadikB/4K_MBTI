@@ -1,0 +1,24 @@
+{
+  "run_id": "remain06-native-scope-20261114",
+  "base_sha": "1cd90203dde347e5d0ff4015e0a2f7c26eb82c0b",
+  "product_code_sha": "17291144c6d96a56db4cac30292427f327da69a9",
+  "run_window_seconds": 146.51,
+  "whole_limit_seconds": 180,
+  "workers": 1,
+  "retries": 0,
+  "actual_llm_calls": 0,
+  "actual_mail": 0,
+  "databases": 0,
+  "containers": 0,
+  "product_posts": 0,
+  "final_browser_tests_passed": 4,
+  "process_groups": [
+    2675,
+    2728,
+    2759
+  ],
+  "running": false,
+  "restart": "no",
+  "port18937_released": true,
+  "test_file_sha256": "845403155f878a910a6ea386435806394a97da4f797e8884772ca759fd5650d8"
+}

@@ -50,7 +50,7 @@ PASS в таблице относится к обозначенному техн
 | F20-AC03 | PASS R1v2 sameAS/no policy fail-closed/oldQA snapshot pinned; OPS01 отдельно NOT_RUN без допуска | pg-after.txt.gz snapshot parameterized, r1/source-identity.json |
 | F21-AC01 | PARTIAL: native Ctrl/Cmd+V/Shift+Insert + synthetic paste/beforeinput/drop PASS, no clipboard read/clear, draft/cursor сохранены; OS context paste NOT_RUN | browser-final.txt.gz, component/*protected-selection.json, frontend-final2.txt.gz |
 | F21-AC02 | PASS Chromium CSS исключает protected selection (selectionText empty), fallback actual handlerscopy/cut блокируют; contextmenu/drag synthetic blocked; owncopyallowed, realerror не стирается. Физические OS clipboard операции отдельно не заявлены | component/*protected-selection.json, browser-final.txt.gz, remain06-clipboard VM |
-| F21-AC03 | PARTIAL: обычный ввод/native Chromium CDP IME/navigation и owner/AS guards PASS; actual handler matrix outside assessment auth/admin/onboarding PASS. Полный native путь этих форм после assessment и физические устройства NOT_RUN | frontend-final2.txt.gz, browser-final.txt.gz |
+| F21-AC03 | PARTIAL: обычный ввод/native Chromium CDP IME/navigation и owner/AS guards PASS; actual handler matrix outside assessment auth/admin/onboarding PASS. Browser scope auth/admin/manual анкета дополнительно проверен в продолжении ниже; физические устройства NOT_RUN | frontend-final2.txt.gz, browser-final.txt.gz |
 
 ## Сохранённые неуспешные попытки
 
@@ -65,3 +65,13 @@ PASS в таблице относится к обозначенному техн
 Owned preview БД удалены после PG readback; agent4k_pytest имела0schemas/0connections, удалена; PostgreSQLPID1140 остановлен, cluster directory удалён, restart=no. Зарегистрированные workers/browser/server PIDs завершены, ports55446/18933/18935 свободны. Containers0. `receipts/cleanup.json`, r1/layout cleanup — первичные подтверждения. STOP соблюдён:1Turn/currentASactive, Continue сохраняетAS, noFinish/Report/GC/paid/общийTEST.
 
 Передача локальным bundle/веткой архитектору. Следующий этап: человеческое review, закрытие оговорённых native границ приёмки и подготовка release-кандидата/обязательный CI на exact PR head после отдельного допуска. Все внешние флаги остаются false, PR пользователем не создавался. PARTIAL пункты не выданы за полный product PASS.
+
+## Продолжение14.11 — native scope и release-preflight
+
+По прямой команде «продолжаем» fresh origin/main повторно прочитан через git fetch:07166475 прежний. Product code17291144, API/policies/build/version неизменны. Дополнен только tests/browser/remain06-chat.spec.mjs: actual assessment→logout→auth в том же browser page; actual admin/manual questionnaire typing и CDP IME, synthetic transfer-events не блокируются; CSV control native focus доступен. Системный clipboard не читался/не вставлялся, product writes0, DB/Turn/Cycle не создавались. Native browser boundary F21-AC03 теперь доказана; PARTIAL сохраняется только для физических устройств. F17-AC02/F21-AC01 physical/OS/native-zoom ограничения прежние.
+
+Новый конечный профиль/ресурсы до run — STATE; actual run window и limits — receipts/native-scope/run.json. Первая попытка FAIL из-за выбора CSV-tab перед textarea manual формы; исправлен только тест. Адресный test1PASS, затем все4consumers общей authenticated/logout fixture PASS. Это регрессия изменённого test harness, не повтор PG/R1/Report. receipts/native-scope/{before,targeted,consumers}.txt.gz и scope-input.json сохраняют факты. Старые frontend321/PG10/HTTP5/layout3/R1browser2 применимы к прежним byte-identical product files.
+
+Саморевью: scope теста ограничен F21, реальный ввод отличён от synthetic transfer events, без clipboard read/PII/реальных внешних сообщений. Новых product-дефектов при ревью diff не выявлено; это саморевью агента, не человеческая приёмка. Зарегистрированные PGID завершены, localhost18937 свободен, DB/container0.
+
+Штатный python3.12 release-preflight exit2: нужен согласованный PATCH2.1.6; версия2.1.5 не изменялась. Вывод — receipts/native-scope/release-preflight.txt. Допуск version_bump/branch_push/pr/merge/deploy в TASK остаётся false. Следующий конкретный шаг: утвердить подготовку2.1.6 и независимые push/PR флаги; merge/deploy требуют последующей приёмки exact head/CI.

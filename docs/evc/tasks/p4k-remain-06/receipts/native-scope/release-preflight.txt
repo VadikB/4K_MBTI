@@ -1,0 +1,6 @@
+Command: python3.12 scripts/prepare_ready_release.py --base-ref origin/main
+Fresh base:07166475b478c843243102c748d51f8564b7cec0
+Exit:2
+Ready preflight requires an approved patch candidate:2.1.5 -> 2.1.6.
+No --candidate supplied; product version unchanged.
+Initial system python3 failed before preflight: ModuleNotFoundError tomllib; project python3.12 used afterward.
