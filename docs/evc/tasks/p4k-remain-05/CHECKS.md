@@ -55,3 +55,8 @@ M1.4–5 / M4.4/6 / M5 AS admission / Change01 И-2/3 → C23/24/34 fixed profil
 Первый browser fixture90с превысил профиль no-progress60с, внешний ограничитель тогда отсутствовал: это отдельный harness-limit FAIL, не PASS профиля. Перед последним run wrapper в receipts/bounded-runner.py проверен positive/deadline/no-progress одноошибочными controls (runner-controls.json). Финальные тесты выполнялись с hard180с/no-progress60с/log10MiB и адресным TERM/grace15/KILL собственного PGID; все завершены раньше лимитов, без автоматических full retries. Никакого постоянно работающего monitor/service в продукт не добавлено.
 
 Cleanup: test schemas0/connections0; dropdb exit0, pg_ctl fast stop exit0, status exit3/no server running; postmaster.pid отсутствует, owned cluster directory удалён. Primary cleanup.json; финальная проверка портов/процессов и symlinks — STATE.
+
+
+## Кандидат архитектора2.1.5
+
+14.11.2026 fresh origin/main=a1cdfedf, без новых коммитов/конфликтов. `npm run ready:prepare -- --candidate 2.1.5` exit0: version sync/build/release gate PASS. `npm run lint:js`, `python3.12 scripts/check_release_version.py --base-ref origin/main`, `git diff --check` PASS. После смены release/assets frontend303 PASS/3.01с; browser8 PASS/13.0с, bounded processes child_exited=true (PGID96270/96346). Primary receipts architect-ready/architect-frontend/architect-browser. Product handlers, Api и tests/integration byte-identical369ad32f: прежние protocol65/PG23 сохраняют применимость; новая БД/LLM/mail не запускались. Смена версии не меняет frozen snapshots/definitions. Remote CI ещё NOT_RUN до создания PR; GitHub CLI требует авторизацию, CUA Yandex не получил допуска.

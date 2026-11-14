@@ -21,3 +21,8 @@
 - M7 1.3 FROZEN: `docs/methodology/source-sets/2026-10-01/originals/M7_Assessment_Cycle_v1.3_FROZEN_2026-09-30.docx` SHA-256 `50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10` — MATCH.
 - Постановка `/Users/vadim_bogachev/Downloads/P4K_REMAIN_05_v1_6.txt` SHA-256 `055e7dfc0fc14ef520a5ead0881eaf3763a4a5a4503625dd44adb535ea86c399`.
 - Постановка `/Users/vadim_bogachev/Downloads/P4K_REMAIN_Execution_Rules_v1_0.txt` SHA-256 `ece5f67dde34f7771e0084789f40617131e99d767ad5d8a57cac320320796c31`.
+
+
+## Продолжение архитектора
+
+Прямое уточнение владельца14.11.2026: «я архитектор и это машина архитектора. продолжаем». Продолжение описанного этапа подготовки кандидата/PR: branch_push/pr/version_bump=true, PATCH2.1.5 от fresh main2.1.4; merge/deploy/artifact_publish=false до отдельного допуска готового результата. Тот же worktree/ветка, повторная разработка не выполняется. Новые факты — STATE/CHECKS.

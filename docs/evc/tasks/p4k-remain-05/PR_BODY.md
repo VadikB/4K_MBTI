@@ -1,9 +1,59 @@
-# REMAIN_05: понятные ошибки знакомства и восстановление первого старта
+## Основание изменения
 
-После AbortError, deadline или пустого/повреждённого201 клиент терял pending первого старта и мог показать непроверенное состояние. Теперь ключ сохраняется до POST, ответ проверяется, неопределённый исход восстанавливается только через owned runtime того же Cycle. Заголовки и тело ограничены существующим deadline helper. Известные причины отказа сохраняются; технические ошибки/UUID получают понятное объяснение и отдельный код обращения, введённые ответы и шаг остаются на странице.
+Задача: `docs/evc/tasks/p4k-remain-05/TASK.md`, REMAIN_05 v1.6. Base `a1cdfedfb8b71d150b078eb0380ea013f0b08965` включает REMAIN_01–04 (#215–218). Кандидат PATCH **2.1.5**.
 
-F27 проверен через existing controlled tester/challenger/queue и настоящую изолированную PostgreSQL/HTTP; runtime admission, prompts, snapshots и политика retry не меняются. Test harness получил optional остановку на первой AS, чтобы проверки не создавали оценочных ответов/Next/Report.
+## Результат
 
-Локально PASS: frontend303, protocol65, PostgreSQL/HTTP23, browser8, lint/build/diff. Base a1cdfedfb8b71d150b078eb0380ea013f0b08965; code candidate1b1c18f74474e011278b9b8d1644a0e3d94de0cb. Серверные65/23 reused сd1326a3e по byte-identical области. Первичные результаты, сохранённые harness FAIL и границы synthetic доказательств — CHECKS.md; sources/полномочия/rollback/resources — TASK.md и STATE.md.
+После AbortError, deadline или пустого/повреждённого201 клиент терял pending первого старта. Теперь ключ записывается до POST; заголовки/тело ограничены существующим deadline, квитанция проверяется, неопределённый исход восстанавливается через owned runtime того же Cycle. Известные отказы сохраняют причину, включая отказ при readback; unknown не открывает непроверенную AS. Ошибки GET/PUT/POST знакомства имеют понятное объяснение и отдельный код обращения; введённый текст и шаг остаются.
 
-Без миграции/конфига/предметных артефактов; откат собственных code commits с dist, данные не менять. CI, человеческое review, TEST/deploy, real LLM/mail NOT_RUN. Исторический fd…/PREP-DIAG UNKNOWN. Версия приложения и PR этим локальным handoff не назначаются; публикация архитектором после сверки main и допуска.
+F27 проверен через controlled tester/challenger/queue и настоящую isolated PostgreSQL/HTTP. Admission, prompts, retry policy и frozen snapshots сохранены. Все7 AC PASS TECH в области CHECKS; остановка на первой AS,0оценочных ответов.
+
+## Изменённые файлы
+
+`web/js/product-cycle-start.js`, новый `acquaintance-errors.js`, error presentation `screens/onboarding.js` и собранный dist. Frontend/browser регрессии; optional `first_case_only` в существующем integration harness (default false) и узкий reuse wrapper до первой AS. Штатная синхронизация версии в pyproject/uv.lock/config/index.
+
+## Источники и решения
+
+M1v1.4 FROZEN/CURRENT=NO, M4v1.0, M5v1.1, M7v1.3; Change01 WORKING И-2/3/6, C23/24/34, PM03→PM04. Пути/хеши и rule→data→code→test — TASK/CHECKS. Новых методологических решений нет. Владелец подтвердил работу и продолжение на машине архитектора; публикационный этап PR отделён от merge/deploy.
+
+## Проверки (команда → результат)
+
+- `npm run ready:prepare -- --candidate 2.1.5`, lint/build/release gate/diff — PASS.
+- `node --test tests/frontend/*.test.mjs` — **303 PASS** на кандидате2.1.5.
+- Адресный Playwright F04/F27 — **8 PASS** на2.1.5; hard180с/no-progress60с, retries0.
+- Protocol units — **65 PASS**; actual PostgreSQL/HTTP — **23 PASS**, reused сd1326a3e по byte-identical Api/integration области. Новая БД при bump не нужна.
+- Первичные safe gzip logs, исходные harness FAIL и ограничения — `docs/evc/tasks/p4k-remain-05/CHECKS.md`, ресурсы/cleanup — STATE.
+
+## Непроверенное (что и почему)
+
+CI ждёт этого PR; remote full-verification обязателен. Полный локальный backend/integration/browser не повторялись: продуктовый Python/схема не менялись, JS minimum и адресные реальные границы проверены. Browser — synthetic HTTP projections, SQL/HTTP — настоящая owned PostgreSQL; это сочетание границ, не единая полная auth→AS сессия. Human review/TEST acceptance/physical device/real LLM/mail NOT_RUN. Исторические fd…/PREP-DIAG остаются UNKNOWN.
+
+## Риски: конфиг / схема / деплой / безопасность / откат
+
+Конфиг/схема/API/опубликованные определения не меняются. Runtime использует сохранённые snapshots; явный start/admission guards прежние. Секретов/PII нет, .env не читался. Существующее ограничение sessionStorage отмечено в CHECKS. Откат — revert этого PR с dist/версией, без изменений сохранённых Cycle/AS/profiles. Временные БД/servers/process groups остановлены.
+
+## Следующий минимальный шаг
+
+Обязательные frontend/pytest/full-verification точного head/base, затем человеческое review и отдельный допуск merge; штатный deploy-test только после разрешённого merge.
+
+## Открытые вопросы (блокеры)
+
+Предметных блокеров нет. CI и человеческое review обязательны перед принятием.
+
+## Действия выпуска
+
+- [x] branch_push
+- [x] pr
+- [ ] merge
+- [ ] deploy
+- [x] version_bump:2.1.5
+- [ ] artifact_publish
+
+## Готовность
+
+- [x] Один независимо принимаемый результат, без несвязанного рефакторинга.
+- [x] Локальный минимум выполнен; evidence и ограничения сохранены.
+- [x] Старые данные/snapshots совместимы; миграция не нужна.
+- [x] Регрессии и реальные HTTP/SQL границы проверены.
+- [ ] Актуальный CI успешен и человеческое review завершено.
+- [x] Baseline не присваивался.
