@@ -1,0 +1,15 @@
+{
+  "head": "94dfaad09def3e0a41f46272cc0fe3419a49f174",
+  "job_url": "https://github.com/VadikB/4K_MBTI/actions/runs/43724922781/job/132844769666",
+  "test": "F08 Finish without ASK closes the AS and waits for explicit Next",
+  "failure": "completeAcquaintance waits on hidden disabled onboarding-next after successful start",
+  "evidence": [
+    "server POST cycles/start returned201",
+    "AX contains first AS and enabled interview textarea",
+    "subsequent runtimeGET returned200"
+  ],
+  "change": "test helper awaits enabled next OR panel exit; start() retains real interview assertion",
+  "product_runtime_changed": false,
+  "timeout_changed": false,
+  "scope": "W02 DOM consumer fixture, no paid or real stand run"
+}

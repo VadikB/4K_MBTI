@@ -180,11 +180,14 @@ async function completeAcquaintance(page,{expectBlocked=false}={}){
  let answerIndex=0;
  for(let step=0;step<16 && await panel.isVisible();step+=1){
   if(expectBlocked && await page.locator('#onboarding-title').textContent()==='Старт оценки пока недоступен')return;
+  const next=page.locator('#onboarding-next');
+  // Preparation/start can finish between loop iterations. A hidden acquaintance
+  // panel has no next action; start() still verifies the actual interview below.
+  await expect.poll(async()=>!await panel.isVisible() || await next.isEnabled()).toBe(true);
+  if(!await panel.isVisible())break;
   const input=panel.locator('.onboarding-answer');
   if(await input.isEnabled())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
-  const next=page.locator('#onboarding-next');
   const marker=`${await panel.getAttribute('data-step')}|${await page.locator('#onboarding-title').textContent()}`;
-  await expect(next).toBeEnabled();
   const startsAssessment=(await next.textContent())==='Приступить к оценке';
   const committedStart=startsAssessment?page.waitForResponse(response=>
    response.request().method()==='POST' && new URL(response.url()).pathname==='/users/assessment/cycles/start',

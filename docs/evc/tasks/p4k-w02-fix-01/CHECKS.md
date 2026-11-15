@@ -70,3 +70,8 @@ DB/контейнеры/LLM/письма=0. Временная IAB вкладк�
 опубликованные definitions/snapshots не меняются; diff ограничен W02 UI/consumers/tests,
 PATCH и evidence. Секреты не читались/не включены; fixtures синтетические.
 Риски — UI/fixtures и ожидающее человеческое review; откат revert своего PR без данных.
+
+CI уточнение: runtime2 на94dfaad выявил гонку helper после успешного server start201.
+Диагностика: evidence/ci-runtime2-failure/diagnosis.json. Исправлен только DOM-consumer
+runtime.spec.mjs, node --check PASS; реальная проверка interview сохранена.
+Runtime SHA256 прежний, повтор полного CI относится к следующему head.

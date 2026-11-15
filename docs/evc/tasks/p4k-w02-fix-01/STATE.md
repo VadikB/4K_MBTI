@@ -43,3 +43,10 @@ https://github.com/VadikB/4K_MBTI/pull/224, basee8773ca, release2.1.10.
 точного PR head. После завершения неизменяемый receipt со SHA/checks сохраняется
 локально в RELEASE_STATUS.json, чтобы запись самого SHA не запускала CI заново.
 Человеческие review/TEST и merge/deploy остаются PENDING/false.
+
+CI head94dfaad: frontend/pytest PASS. Runtime2 FAIL — гонка consumer helper:
+POST /cycles/start201 и первая AS уже показана, helper ждёт disabled кнопку
+скрытого знакомства. Уточнён только tests/browser/runtime.spec.mjs: wait on
+enabled next OR panel exit, после выхода start() проверяет настоящий interview.
+Таймауты/серверный допуск/runtime не меняются. Диагностика в evidence/ci-runtime2-failure.
+Следующее: push test-only исправления и полный штатный CI нового head.
