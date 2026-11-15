@@ -34,7 +34,8 @@ Runtime проверен до commit; точные SHA256 всех затрон�
   не стартовал из sandbox (ps EPERM), owner cleanup сработал. Причины/итоги в run dirs.
 - tests/browser/path29-participant.spec.mjs fixture обновлён: две явные кнопки вместо
   удалённого skip. Полный PATH локально не запускался по границе задания; CI штатный.
-- Обязательные CI frontend/pytest/full-verification: PENDING до создания Ready PR.
+- Обязательные CI frontend/pytest/full-verification: RUNNING, [Ready PR #224](https://github.com/VadikB/4K_MBTI/pull/224).
+  Итог точного head — локальный RELEASE_STATUS.json и первичные checks GitHub.
   Release gate, все integration/browser CI сохраняются без сокращения профиля.
 
 ## Визуальная сверка HTML v5

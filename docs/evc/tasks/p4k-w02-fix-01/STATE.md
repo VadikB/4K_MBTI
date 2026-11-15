@@ -35,3 +35,11 @@ Push не выполнялся: автоматическая проверка о
 Ready PR с кодом2.1.10, текстом задания/HTML и synthetic evidence.
 Предыдущий блокер push снят этим прямым подтверждением. Разрешены push/PR
 и сопровождение CI, merge/deploy=false. Runtime SHA256 повторно совпал.
+
+Публикация выполнена: origin/codex/p4k-w02-fix-01, Ready PR #224
+https://github.com/VadikB/4K_MBTI/pull/224, basee8773ca, release2.1.10.
+Начальный опубликованный head6aeaa3baac4ad72cac1213726267b5ef3ec125a1.
+Этот status-sync меняет только docs; mandatory CI должен завершиться для нового
+точного PR head. После завершения неизменяемый receipt со SHA/checks сохраняется
+локально в RELEASE_STATUS.json, чтобы запись самого SHA не запускала CI заново.
+Человеческие review/TEST и merge/deploy остаются PENDING/false.
