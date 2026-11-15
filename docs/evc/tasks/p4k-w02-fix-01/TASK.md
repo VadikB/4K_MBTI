@@ -88,3 +88,29 @@ dist пересобран. PATH guard изменения сохранены. Н�
 Reference противоречит заявленному происхождению; это блокирует visual PASS,
 не независимые разрешённые UI-правки. Локально1worker/retries0/600s/no-progress90s,
 owned registry/status-stop до запуска, cleanup после каждого исхода; DB/LLM/mail0.
+
+## ADD02 — 15.11.2026
+
+Основание исполнения: пользователь «проверил, вот задание на дополнительные
+исправления», требования ADD02 rev1.0. Продолжение ранее разрешённого PR224/push/CI,
+без merge/deploy/TEST/Prod/FIX02. Начальный head1ef5fcd, mainf505340, PR OPEN;
+кандидат2.1.11 сохраняется. TASK/STATE/AGENTS и релевантный server/frontend путь
+прочитаны; прежние неизменённые архитектурные/EVC источники переиспользованы.
+ADD02 заменяет требование повторять политику возврата в ready, но сохраняет process/M7.
+Скрин раннего ожидания из галереи ADD01 имеет fixture приглашения/password:
+readiness=waiting_for_organization/assignment_sources, onboarding=not_started,
+profile=incomplete, assessment=not_started. Это технически раннее состояние.
+План: удалить конкретный ready consumer returnPolicyCopy; проверить отдельное
+позднее organization/историю по scoped server model, reload/return и неизвестный
+GET; сохранить раннее ожидание/контроль другого назначения; 4новых PNG ready/org
+1440/390, frontend/browser/lint/build/diff-check, тот же PR+mandatory exact-head CI.
+Read_state читает текущее scoped acquaintance через state_store.read и вычисляет
+mandatory_complete из текущих consent/3answers/confirmation. Journey содержит
+полную projection; при early ready + late waiting выбирает show_onboarding.
+Произвольный localStorage/global onboarding completed не заменяет этот допуск.
+Backend-контракт менять для существующего позднего маршрута не требуется.
+Нашлось лишнее command resolve-profile при автоматическом входе/выходе из истории
+на late waiting: ограничить автоподготовку на read-entry готовым late admission.
+Подтверждение/явные команды/серверные правила сохраняются. Локально controlled API,
+1worker/retries0/600s/no-progress90, owned registry/stop до запуска и cleanup после.
+DB/LLM/mail/реальная генерация0. Откат: revert собственного PR, данных не касается.

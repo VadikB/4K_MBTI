@@ -1,5 +1,9 @@
 # CHECKS — P4K-W02-FIX-01
 
+**Текущий результат ADD02 — [ADD02_CHECKS.md](ADD02_CHECKS.md).
+Ready больше не повторяет return policy; позднее organization проверено отдельно.
+Ниже — история предыдущих проверок.**
+
 **ADD01: прежний PASS LOCAL VISUAL и утверждение о происхождении reference
 недостаточны и отозваны. Ниже сохранена история. Актуальная перепроверка —
 [ADD01_CHECKS.md](ADD01_CHECKS.md), evidence/add01-verified и gallery.**

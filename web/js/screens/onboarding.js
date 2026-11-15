@@ -164,7 +164,6 @@ const readinessStep = () => {
       (Number(plan?.calendar_window_seconds) > 0 ? '<p class="onboarding-deadline">Завершить оценку нужно в течение ' +
         Number(plan.calendar_window_seconds) / 3600 + ' ч. после её начала.</p>' : '') +
       '<p class="onboarding-summary-note">Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.</p>' +
-      paragraph(returnPolicyCopy(plan?.return_policy_snapshot)) +
       (plan?.participant_notice ? paragraph(plan.participant_notice) : '');
   } else {
     if (status === 'preparing') body += '<p class="onboarding-live" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
@@ -174,12 +173,6 @@ const readinessStep = () => {
       '<details class="onboarding-diagnostics"><summary>Сведения об ошибке</summary>' + paragraph('Код операции: ' + operationId) + '</details>';
   }
   return { ...step, body, status };
-};
-const returnPolicyCopy = (policy) => {
-  const pause = 'Между завершёнными ситуациями можно сделать перерыв. Время выполнения не расходуется, а общий срок завершения продолжает идти.';
-  if (policy?.resume_mode === 'same_assessment_situation') return pause + ' После возврата вы продолжите ту же незавершённую ситуацию.';
-  if (policy?.resume_mode === 'replace_assessment_situation') return pause + ' После возврата незавершённая ситуация будет заменена по правилам этой оценки.';
-  return pause + ' Порядок возврата к незавершённой ситуации определяется правилами назначенной оценки.';
 };
 
 const steps = () => {
@@ -565,7 +558,7 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
   if (!isCurrent(owner, epoch, run) || state.currentScreen !== 'onboarding') return;
   loading = false;
   persistAssessmentContext(); syncUrlState('onboarding'); renderOnboarding({ focus: true });
-  if (!loadFailed && model?.mandatory_complete && !reviewMode) void beginPreparation();
+  if (!loadFailed && model?.mandatory_complete && !reviewMode && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
 };
 
 export const goBackInOnboarding = () => {
@@ -597,7 +590,7 @@ const advance = async (override = null) => {
       reviewMode = false;
       state.onboardingIndex = model.mandatory_complete ? readinessIndex() : resumeOnboardingIndex(model, model.onboarding);
       persistAssessmentContext();
-      if (model.mandatory_complete) void beginPreparation();
+      if (model.mandatory_complete && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
       return;
     }
     if (step.answerKey) {

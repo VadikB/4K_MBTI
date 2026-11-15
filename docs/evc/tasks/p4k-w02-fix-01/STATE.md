@@ -77,3 +77,23 @@ y отличается−16 из-за реальной версии footer+32. R
 Verified browser41/41, auth2/2, frontend334/334, lint/build/diff-check PASS.
 Все5 owned groups absent и портыclosed; DB/LLM/mail0. Следующее: commit/push
 того же PR224 и mandatory CI точного head; human TEST отдельно, merge/deploy=false.
+
+ADD01 закрыт CI PASS на1ef5fcd, обе workflow attempt1, release receipt локально.
+ADD02 начат: PR224 открыт, remote/local1ef5fcd, mainf505340 неизменен.
+Проверены Api/routes.py journey/get_acquaintance; acquaintance.read_state/
+mandatory_complete/late_readiness и state_store.same_scope/read. Позднее
+organization поддержано сервером без нового контракта. Следующее — ready consumer
+и read-entry guard, адресные проверки и4PNG; candidate2.1.11.
+
+ADD02 local complete. Удалён конкретный ready returnPolicyCopy consumer/helper;
+process и participant_notice сохранены. Late organization server route уже есть;
+read-entry/history-return при late waiting больше не отправляют resolve-profile.
+Прямой переход подтверждения/допуск/таймеры/3questions/consent/backend неизменны.
+Browser01 32/32PASS, уточнён только fixture late waiting shape; verified6/6PASS
+и4финальных PNG. Frontend334/334,lint/build/diff-checkPASS. Точные source/dist
+hashes и server/geometry receipts — evidence/add02. Readonly история A/B/C,
+reload/return, account entry, scope switch+old draft и failed GET проверены.
+Скрин раннего ожидания из выданной ADD01 gallery — invitation/password fixture
+с onboarding not_started, не реальный TEST. Поздний вариант снят отдельно.
+Обе owned groups absent, портыclosed, DB/LLM/mail0. Дальше: commit/push PR224
+и mandatory CI точного head; version2.1.11, merge/deploy=false.

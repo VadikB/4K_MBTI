@@ -3804,7 +3804,7 @@ test('PARTICIPANT-LAYOUT-01 keeps early W02 waiting text and actions readable', 
     if (width === 1440) expect(geometry.buttons[0].width).toBeLessThan(300);
     const target = process.env.W02_EVIDENCE_DIR ? path.join(process.env.W02_EVIDENCE_DIR, `early-waiting-${width}.png`) : testInfo.outputPath(`early-waiting-${width}.png`);
     await page.evaluate(() => document.fonts.ready);
-    await page.screenshot({ path: target, fullPage: false });
+    if (!process.env.W02_ADD02_EVIDENCE) await page.screenshot({ path: target, fullPage: false });
     await fs.writeFile(target.replace('.png', '.json'), JSON.stringify(geometry, null, 2));
     const before = checks; await panel.getByRole('button', { name: 'Проверить готовность' }).click();
     await expect.poll(() => checks).toBeGreaterThan(before);
