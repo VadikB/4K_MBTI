@@ -1,4 +1,4 @@
-import { waitingPresentation } from './readiness-presentation.js';
+import { waitingPresentation, readinessIcon } from './readiness-presentation.js';
 import { state, persistAssessmentContext, clearAssessmentContext } from './state.js';
 import {
   authPanel,
@@ -95,8 +95,16 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
   persistAssessmentContext();
   const presentation = waitingPresentation(readiness);
   authCompletePanel?.classList.add('w02-waiting');
+  authCompletePanel.dataset.readinessReason = String(readiness.reason || '');
+  authCompletePanel.querySelector('.auth-waiting-icon').innerHTML = readinessIcon(readiness.status);
+  let note = authCompletePanel.querySelector('.auth-waiting-note');
+  if (!note) {
+    note = document.createElement('p'); note.className = 'auth-waiting-note';
+    authCompletePanel.querySelector('.auth-complete-copy').append(note);
+  }
+  note.textContent = presentation.detail;
   if (authCompleteTitle) authCompleteTitle.textContent = presentation.title;
-  if (authCompleteDescription) authCompleteDescription.textContent = presentation.description + '\n\n' + presentation.detail;
+  if (authCompleteDescription) authCompleteDescription.textContent = presentation.description;
   if (authCompleteContinueButton) {
     authCompleteContinueButton.textContent = presentation.button;
     authCompleteContinueButton.dataset.action = 'check-acquaintance-readiness';

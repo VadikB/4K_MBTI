@@ -1,0 +1,89 @@
+{
+  "resources": [
+    {
+      "run": "browser06",
+      "pid": 72014,
+      "pgid": 72014,
+      "members_remaining": {},
+      "registry_remaining": false,
+      "ports_closed": {
+        "59442": true,
+        "18764": true,
+        "59470": true,
+        "59463": true
+      }
+    },
+    {
+      "run": "browser07",
+      "pid": 72643,
+      "pgid": 72643,
+      "members_remaining": {},
+      "registry_remaining": false,
+      "ports_closed": {
+        "59703": true
+      }
+    },
+    {
+      "run": "auth05",
+      "pid": 71657,
+      "pgid": 71657,
+      "members_remaining": {},
+      "registry_remaining": false,
+      "ports_closed": {
+        "18764": true
+      }
+    },
+    {
+      "run": "browser02",
+      "pid": 69286,
+      "pgid": 69286,
+      "members_remaining": {},
+      "registry_remaining": false,
+      "ports_closed": {
+        "58529": true,
+        "58558": true
+      }
+    },
+    {
+      "run": "browser03",
+      "pid": 69994,
+      "pgid": 69994,
+      "members_remaining": {},
+      "registry_remaining": false,
+      "ports_closed": {
+        "58797": true,
+        "58822": true
+      }
+    },
+    {
+      "run": "browser04",
+      "pid": 71030,
+      "pgid": 71030,
+      "members_remaining": {},
+      "registry_remaining": false,
+      "ports_closed": {
+        "59098": true,
+        "59123": true,
+        "18764": true
+      }
+    },
+    {
+      "run": "css08",
+      "pid": 81880,
+      "pgid": 81880,
+      "members_remaining": {},
+      "registry_remaining": false,
+      "ports_closed": {
+        "18764": true,
+        "18766": true,
+        "18784": true
+      }
+    }
+  ],
+  "db": null,
+  "containers": [],
+  "llm_calls": 0,
+  "mail": 0,
+  "cleanup": "PASS",
+  "foreign_resources": "unchanged"
+}

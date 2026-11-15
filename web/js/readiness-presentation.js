@@ -9,6 +9,7 @@ export const waitingPresentation = (readiness = {}) => {
       detail: 'Когда сведения будут дополнены, вы сможете продолжить здесь.', button: 'Проверить готовность' };
   }
   const organizationReasons = {
+    active_membership: ['Нужно уточнить доступ к организации', 'Сейчас нельзя однозначно подтвердить ваше активное участие в организации.'],
     confirmed_questionnaire: ['Анкета назначения пока не подтверждена', 'Для назначенной оценки пока нет подтверждённой анкеты.'],
     early_minimum: ['Нужно дополнить анкету назначения', 'В анкете назначенной оценки отсутствуют обязательные сведения.'],
     assessment_assignment: ['Нужно уточнить назначение оценки', 'Найдено несколько назначений. Сейчас нельзя однозначно определить вашу оценку.'],
@@ -71,4 +72,18 @@ export const readinessPresentation = (status, { retryAllowed = false, pendingSta
       action: 'start', button: 'Приступить к оценке' };
   }
   return { ...base, ...(copy[status] || copy.preparing) };
+};
+
+// Fixed decorative W02 icons; no server text is interpolated into SVG.
+export const readinessIcon = (status) => {
+  const icons = {
+    ready: '<path d="m5 12 4 4L19 6"/>',
+    clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+    info: '<circle cx="12" cy="12" r="8"/><path d="M12 11v5m0-9v.1"/>',
+    error: '<path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5m0 3v.1"/>',
+    lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  };
+  const kind = status === 'ready' ? 'ready' : ['preparing', 'loading', 'plan_missing', 'expired', 'access_expired'].includes(status) ? 'clock'
+    : ['failed', 'network', 'service', 'load-error'].includes(status) ? 'error' : ['access', 'plan_blocked'].includes(status) ? 'lock' : 'info';
+  return '<svg viewBox="0 0 24 24">' + icons[kind] + '</svg>';
 };

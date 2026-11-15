@@ -41,11 +41,13 @@ test.beforeAll(async () => {
     }
   });
   await new Promise((resolve) => server.listen(port, '127.0.0.1', resolve));
+  if (process.env.W02_RESOURCE_LOG) await fs.appendFile(process.env.W02_RESOURCE_LOG, JSON.stringify({ event: 'start', pid: process.pid, port, owner: 'P4K-W02-FIX-01', db: null }) + '\n');
 });
 
 test.afterAll(async () => {
   if (!server) return;
   await new Promise((resolve) => server.close(resolve));
+  if (process.env.W02_RESOURCE_LOG) await fs.appendFile(process.env.W02_RESOURCE_LOG, JSON.stringify({ event: 'stop', pid: process.pid, port, listening: server.listening }) + '\n');
 });
 
 async function blockUnmockedWrites(context) {
@@ -3743,79 +3745,72 @@ test('W02 blocks direct entry on missing participant briefing and supports readi
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
-test('PARTICIPANT-LAYOUT-01 keeps W02 standalone waiting states responsive', async ({ page }, testInfo) => {
+test('PARTICIPANT-LAYOUT-01 keeps early W02 waiting text and actions readable', async ({ page }, testInfo) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  let checks = 0, authenticated = false;
+  const readiness = { status: 'waiting_for_organization', reason: 'assignment_sources' };
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
-    if (pathname === '/users/session/restore') return fulfillJson(route, {
-      authenticated: true, user, is_admin: false, dashboard: {},
-    });
-    if (pathname === '/users/8/journey-state') return fulfillJson(route, {
-      next_action: 'wait_for_acquaintance_data', profile: { status: 'incomplete' },
-      onboarding: { status: 'not_started' }, assessment: { status: 'not_started' },
-      acquaintance: { readiness: {
-        status: 'waiting_for_organization',
-        message: 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство',
-      } },
-    });
-    if (pathname === '/users/version') return fulfillJson(route, { version: '2.0.44' });
+    if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated, ...(authenticated ? { user, is_admin: false, dashboard: {} } : {}) });
+    if (pathname === '/users/organization-invitations/w02-fix-owned') return fulfillJson(route, { organization_id: 10, organization_name: 'Synthetic', recipient_email: user.email, personal: true, auth_mode: 'password_registration' });
+    if (pathname === '/users/auth/email/password-register') { authenticated = true; return fulfillJson(route, { user, is_admin: false, dashboard: {} }); }
+    if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
+    if (pathname === '/users/8/journey-state') {
+      checks++;
+      return fulfillJson(route, {
+        next_action: 'wait_for_acquaintance_data', profile: { status: 'incomplete' },
+        onboarding: { status: 'not_started' }, assessment: { status: 'not_started' },
+        acquaintance: { readiness },
+      });
+    }
+    if (pathname === '/users/version') return fulfillJson(route, { version: 'controlled' });
     return fulfillJson(route, {}, 404);
   });
-
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`${base}/?screen=onboarding`);
-  const panel = page.locator('#auth-complete-panel');
-  const title = page.locator('#auth-complete-title');
-  const description = page.locator('#auth-complete-description');
-  await expect(title).toHaveText('Нужны сведения организации');
-  await page.screenshot({ path: testInfo.outputPath('participant-layout-desktop.png'), fullPage: true });
-
-  for (const state of [
-    ['Данные для оценки готовятся', 'Организация ещё готовит данные для вашей оценки.'],
-    ['Оценка пока не назначена', 'Обратитесь к уполномоченному назначающему.'],
-    ['Следующий этап готовится', 'Доступ к организации подтверждён.'],
-  ]) {
-    await title.evaluate((node, value) => { node.textContent = value; }, state[0]);
-    await description.evaluate((node, value) => { node.textContent = value; }, state[1]);
-    await expect(panel).toBeVisible();
-    expect(await panel.evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThan(0);
-  }
-
-  for (const viewport of [
-    { width: 1440, height: 900 },
-    { width: 1366, height: 768 },
-    { width: 768, height: 1024 },
-    { width: 390, height: 844 },
-    { width: 720, height: 450 },
-  ]) {
-    await page.setViewportSize(viewport);
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1024 : 844 });
+    if (width === 1440) {
+      await page.goto(`${base}/?invite=w02-fix-owned`);
+      await waitForPasswordCreationForm(page, user.email);
+      await page.locator('#magic-token-input').fill('Synthetic-safe-27!');
+      await page.locator('#verify-magic-link-button').click();
+      await page.locator('#magic-token-input').fill('Synthetic-safe-27!');
+      await page.locator('#verify-magic-link-button').click();
+    } else await page.goto(`${base}/?screen=onboarding`);
+    const panel = page.locator('#auth-complete-panel');
+    await expect(page.locator('#auth-complete-title')).toHaveText('Нужны сведения организации');
+    await expect(page.locator('#auth-complete-description')).toHaveText('Организация ещё завершает настройку вашей оценки. Когда сведения будут готовы, здесь появится следующий шаг.');
+    await expect(panel.locator('.auth-waiting-note')).toHaveText('Время выполнения ещё не идёт.');
+    await expect(panel).not.toContainText(/assignment_sources|Причина ожидания|источники назначения/);
+    await expect(panel).toHaveAttribute('data-readiness-reason', 'assignment_sources');
+    await expect(panel).not.toContainText('ответы сохранены');
+    await expect(panel.getByRole('button', { name: 'Посмотреть знакомство' })).toHaveCount(0);
     const geometry = await panel.evaluate((node) => {
-      const rect = node.getBoundingClientRect();
-      const footer = document.querySelector('.app-footer')?.getBoundingClientRect();
-      return {
-        left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
-        width: rect.width, height: rect.height,
-        scrollWidth: document.documentElement.scrollWidth,
-        clientWidth: document.documentElement.clientWidth,
-        footerTop: footer?.top ?? null,
-      };
+      const copy = node.querySelector('.auth-complete-copy'), description = node.querySelector('#auth-complete-description');
+      const card = node.querySelector('.auth-complete-card'), actions = node.querySelector('.auth-complete-actions');
+      const rect = (n) => { const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height, bottom: r.bottom }; };
+      return { card: rect(card), main: rect(node), header: rect(document.querySelector('.auth-header')), footer: rect(document.querySelector('.app-footer')),
+        copyWidth: copy.getBoundingClientRect().width, textWidth: description.getBoundingClientRect().width,
+        cardWidth: card.getBoundingClientRect().width, scrollWidth: document.documentElement.scrollWidth,
+        buttons: [...actions.querySelectorAll('button')].map((b) => ({ height: b.getBoundingClientRect().height, width: b.getBoundingClientRect().width })),
+        direction: getComputedStyle(actions).flexDirection };
     });
-    expect(geometry.scrollWidth).toBe(geometry.clientWidth);
-    expect(geometry.left).toBeGreaterThanOrEqual(0);
-    expect(geometry.right).toBeLessThanOrEqual(viewport.width);
-    if (viewport.width >= 768) expect(geometry.width).toBeGreaterThanOrEqual(700);
-    if (geometry.footerTop !== null && geometry.bottom <= viewport.height) {
-      expect(geometry.bottom).toBeLessThanOrEqual(geometry.footerTop);
-    }
-    await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Выйти' })).toBeVisible();
-    if (viewport.width === 390) {
-      await title.evaluate((node) => { node.textContent = 'Данные для оценки готовятся'; });
-      await description.evaluate((node) => {
-        node.textContent = 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство';
-      });
-      await page.screenshot({ path: testInfo.outputPath('participant-layout-mobile.png'), fullPage: true });
-    }
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(width);
+    expect(geometry.textWidth).toBeGreaterThan(width === 1440 ? 600 : 250);
+    await expect(page.locator('.auth-header')).toBeVisible();
+    expect(geometry.copyWidth).toBe(geometry.textWidth);
+    expect(geometry.cardWidth).toBe(width === 1440 ? 760 : 358);
+    for (const button of geometry.buttons) expect(button.height).toBe(48);
+    expect(geometry.direction).toBe(width === 390 ? 'column' : 'row');
+    if (width === 1440) expect(geometry.buttons[0].width).toBeLessThan(300);
+    const target = process.env.W02_EVIDENCE_DIR ? path.join(process.env.W02_EVIDENCE_DIR, `early-waiting-${width}.png`) : testInfo.outputPath(`early-waiting-${width}.png`);
+    await page.evaluate(() => document.fonts.ready);
+    if (!process.env.W02_ADD02_EVIDENCE) await page.screenshot({ path: target, fullPage: false });
+    await fs.writeFile(target.replace('.png', '.json'), JSON.stringify(geometry, null, 2));
+    const before = checks; await panel.getByRole('button', { name: 'Проверить готовность' }).click();
+    await expect.poll(() => checks).toBeGreaterThan(before);
+    await expect(panel.getByRole('button', { name: 'Выйти' })).toBeVisible();
+    await page.locator('#auth-complete-description').evaluate((node) => { node.textContent = 'ОченьДлинноеСообщение'.repeat(40); });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   }
 });
 
@@ -4319,6 +4314,6 @@ for (const [failure, expected] of [
     await expect(page.locator('#onboarding-next')).toBeEnabled();
     expect(prepares).toBe(failure === 'organization' ? 0 : 1);
     if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('Когда сведения будут готовы, здесь появится следующий шаг.');
-    if (failure === 'failed') await expect(page.locator('#feature-list')).toContainText('synthetic-failed-operation');
+    if (failure === 'failed') await expect(page.locator('#onboarding-panel .onboarding-diagnostics')).toContainText('synthetic-failed-operation');
   });
 }

@@ -1,0 +1,185 @@
+{
+  "runs": [
+    {
+      "run": "add01-auth",
+      "pid": 4275,
+      "pgid": 4275,
+      "process_group": "absent",
+      "owner_registry_remaining": false,
+      "ports": {
+        "18764": "closed",
+        "18766": "closed"
+      },
+      "events": []
+    },
+    {
+      "run": "add01-capture01",
+      "pid": 1599,
+      "pgid": 1599,
+      "process_group": "absent",
+      "owner_registry_remaining": false,
+      "ports": {
+        "18764": "closed",
+        "18766": "closed",
+        "62951": "closed"
+      },
+      "events": [
+        {
+          "event": "start",
+          "pid": 1606,
+          "port": 18764,
+          "owner": "P4K-W02-FIX-01",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "pid": 1606,
+          "port": 18764,
+          "listening": false
+        },
+        {
+          "event": "start",
+          "port": 62951,
+          "pid": 1606,
+          "owner": "P4K-W02-02",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "port": 62951,
+          "pid": 1606,
+          "owner": "P4K-W02-02",
+          "db": null
+        }
+      ]
+    },
+    {
+      "run": "add01-capture02",
+      "pid": 2337,
+      "pgid": 2337,
+      "process_group": "absent",
+      "owner_registry_remaining": false,
+      "ports": {
+        "18764": "closed",
+        "18766": "closed",
+        "63044": "closed"
+      },
+      "events": [
+        {
+          "event": "start",
+          "pid": 2344,
+          "port": 18764,
+          "owner": "P4K-W02-FIX-01",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "pid": 2344,
+          "port": 18764,
+          "listening": false
+        },
+        {
+          "event": "start",
+          "port": 63044,
+          "pid": 2344,
+          "owner": "P4K-W02-02",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "port": 63044,
+          "pid": 2344,
+          "owner": "P4K-W02-02",
+          "db": null
+        }
+      ]
+    },
+    {
+      "run": "add01-final",
+      "pid": 2823,
+      "pgid": 2823,
+      "process_group": "absent",
+      "owner_registry_remaining": false,
+      "ports": {
+        "18764": "closed",
+        "18766": "closed",
+        "63100": "closed"
+      },
+      "events": [
+        {
+          "event": "start",
+          "pid": 2837,
+          "port": 18764,
+          "owner": "P4K-W02-FIX-01",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "pid": 2837,
+          "port": 18764,
+          "listening": false
+        },
+        {
+          "event": "start",
+          "port": 63100,
+          "pid": 2837,
+          "owner": "P4K-W02-02",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "port": 63100,
+          "pid": 2837,
+          "owner": "P4K-W02-02",
+          "db": null
+        }
+      ]
+    },
+    {
+      "run": "add01-verified",
+      "pid": 3584,
+      "pgid": 3584,
+      "process_group": "absent",
+      "owner_registry_remaining": false,
+      "ports": {
+        "18764": "closed",
+        "18766": "closed",
+        "63369": "closed"
+      },
+      "events": [
+        {
+          "event": "start",
+          "pid": 3601,
+          "port": 18764,
+          "owner": "P4K-W02-FIX-01",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "pid": 3601,
+          "port": 18764,
+          "listening": false
+        },
+        {
+          "event": "start",
+          "port": 63369,
+          "pid": 3601,
+          "owner": "P4K-W02-02",
+          "db": null
+        },
+        {
+          "event": "stop",
+          "port": 63369,
+          "pid": 3601,
+          "owner": "P4K-W02-02",
+          "db": null
+        }
+      ]
+    }
+  ],
+  "db": 0,
+  "containers": 0,
+  "llm": 0,
+  "mail": 0,
+  "preview_running": false
+}

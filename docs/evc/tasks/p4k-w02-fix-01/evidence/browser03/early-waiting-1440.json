@@ -1,0 +1,17 @@
+{
+  "copyWidth": 696,
+  "textWidth": 696,
+  "cardWidth": 760,
+  "scrollWidth": 1440,
+  "buttons": [
+    {
+      "height": 48,
+      "width": 696
+    },
+    {
+      "height": 48,
+      "width": 696
+    }
+  ],
+  "direction": "row"
+}

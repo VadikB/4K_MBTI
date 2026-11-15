@@ -1,0 +1,45 @@
+{
+  "card": {
+    "x": 16,
+    "y": 181.5,
+    "width": 358,
+    "height": 389,
+    "bottom": 570.5
+  },
+  "main": {
+    "x": 0,
+    "y": 64,
+    "width": 390,
+    "height": 624,
+    "bottom": 688
+  },
+  "header": {
+    "x": 0,
+    "y": 0,
+    "width": 390,
+    "height": 64,
+    "bottom": 64
+  },
+  "footer": {
+    "x": 0,
+    "y": 688,
+    "width": 390,
+    "height": 156,
+    "bottom": 844
+  },
+  "copyWidth": 310,
+  "textWidth": 310,
+  "cardWidth": 358,
+  "scrollWidth": 390,
+  "buttons": [
+    {
+      "height": 48,
+      "width": 310
+    },
+    {
+      "height": 48,
+      "width": 310
+    }
+  ],
+  "direction": "column"
+}

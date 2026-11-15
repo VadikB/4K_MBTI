@@ -4,7 +4,8 @@ export const resumeOnboardingIndex = (model, onboarding = {}) => {
   const questions = model?.readiness?.briefing?.questions || [];
   // A committed prepared plan is stronger evidence than a stale questionnaire/consent
   // projection returned during reload. Never send a prepared participant back to step 1.
-  if (model?.mandatory_complete && preparationView(model) === 'ready') return 5 + questions.length;
+  if (model?.mandatory_complete && preparationView(model) === 'ready' &&
+      !(['in_progress', 'not_started'].includes(onboarding.status) && [3 + questions.length, 4 + questions.length].includes(Number(onboarding.current_step)))) return 5 + questions.length;
   if (!saved.consent_accepted_at || saved.consent_version !== model?.readiness?.briefing?.consent_version) {
     return Number(onboarding.current_step || saved.current_step || 0) > 0 ? 1 : 0;
   }

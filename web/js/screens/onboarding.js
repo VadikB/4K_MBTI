@@ -5,7 +5,7 @@ import { hideAllPanels, syncUrlState, openAcquaintanceWaiting } from '../router.
 import { readApiResponse, createOperationId, fetchWithDeadline as fetch } from '../api.js';
 import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
 import { hasPendingPreparedStart, readPendingPreparedStart } from '../product-cycle-start.js';
-import { readinessPresentation } from '../readiness-presentation.js';
+import { readinessPresentation, readinessIcon } from '../readiness-presentation.js';
 import { acquaintanceErrorMessage } from '../acquaintance-errors.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../onboarding-flow.js';
 
@@ -119,7 +119,7 @@ const timing = () => {
   const assignedTiming = model?.assigned_timing?.status === 'resolved' ? model.assigned_timing : null;
   return preparedPlan || assignedTiming;
 };
-const processCopy = () => {
+const processHtml = () => {
   const effective = timing();
   const hours = Number(effective?.calendar_window_seconds || 0) / 3600;
   const returnPolicy = model?.prepared_plan?.plan?.return_policy_snapshot ||
@@ -132,14 +132,17 @@ const processCopy = () => {
   } else if (returnPolicy) {
     returnCopy = '\n\nПорядок возврата определяется сохранёнными правилами этой оценки и будет показан при продолжении.';
   }
-  return 'Прочитайте ситуацию и опишите, как будете действовать. Поясните своё решение.\n\n' +
-    'В некоторых ситуациях есть виртуальный собеседник. Если не хватает информации, можно задать ему вопрос.\n\n' +
-    'После завершения ситуации переходите к следующей. Между завершёнными ситуациями можно сделать перерыв.\n\n' +
-    'После оценки вы получите личный отчёт: результаты, объяснения и ограничения выводов.\n\n' +
-    'Перед началом вы увидите число ситуаций и доступное время на выполнение. Сейчас время оценки ещё не идёт.\n\n' +
-    'Во время перерыва между завершёнными ситуациями время выполнения не расходуется, а общий срок завершения продолжает идти. ' +
-    (returnCopy ? returnCopy.trim() : 'Порядок возврата к незавершённой ситуации определяется правилами назначенной оценки.') +
-    (hours > 0 ? `\n\nЗавершить оценку нужно в течение ${hours} ч. после её начала.` : '');
+  const actions = [
+    'Прочитайте ситуацию и опишите, как будете действовать. Поясните своё решение.',
+    'В некоторых ситуациях есть виртуальный собеседник. Если не хватает информации, можно задать ему вопрос.',
+    'После завершения ситуации переходите к следующей. Между завершёнными ситуациями можно сделать перерыв.',
+    'После оценки вы получите личный отчёт: результаты, объяснения и ограничения выводов.',
+  ];
+  return '<ol class="onboarding-process">' + actions.map((text) => '<li>' + escape(text) + '</li>').join('') + '</ol>' +
+    '<p class="onboarding-summary-note">Перед началом вы увидите число ситуаций и доступное время на выполнение. Сейчас время оценки ещё не идёт.</p>' +
+    paragraph('Во время перерыва между завершёнными ситуациями время выполнения не расходуется, а общий срок завершения продолжает идти. ' +
+      (returnCopy ? returnCopy.trim() : 'Порядок возврата к незавершённой ситуации определяется правилами назначенной оценки.')) +
+    (hours > 0 ? paragraph(`Завершить оценку нужно в течение ${hours} ч. после её начала.`) : '');
 };
 const readinessStep = () => {
   const status = preparationView(model, preparationError);
@@ -155,28 +158,21 @@ const readinessStep = () => {
     if (model?.assessment_name) step.description = model.assessment_name;
     body = (model?.assessment_name ? paragraph(preparationCopy) : '') +
       '<div class="onboarding-metrics"><div><strong>' +
-      Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong>ситуаций в плане</div><div><strong>' +
-      Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин</strong>на выполнение оценки</div></div>' +
+      Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong><span>ситуаций в плане</span></div><div><strong>' +
+      Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин</strong><span>на выполнение оценки</span></div></div>' +
       paragraph('Читайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.') +
-      (Number(plan?.calendar_window_seconds) > 0 ? paragraph('Завершить оценку нужно в течение ' +
-        Number(plan.calendar_window_seconds) / 3600 + ' ч. после её начала.') : '') +
-      paragraph('Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.') +
-      paragraph(returnPolicyCopy(plan?.return_policy_snapshot)) +
+      (Number(plan?.calendar_window_seconds) > 0 ? '<p class="onboarding-deadline">Завершить оценку нужно в течение ' +
+        Number(plan.calendar_window_seconds) / 3600 + ' ч. после её начала.</p>' : '') +
+      '<p class="onboarding-summary-note">Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.</p>' +
       (plan?.participant_notice ? paragraph(plan.participant_notice) : '');
   } else {
-    if (status === 'preparing') body += '<p class="onboarding-warning" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
-      (model?.preparation_operation?.status === 'queued' ? 'Операция в очереди' : 'Подготовка выполняется') + '</p>';
+    if (status === 'preparing') body += '<p class="onboarding-live" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
+      'Подготовка выполняется</p>';
     if (step.timeNotice) body += '<p class="onboarding-time-notice">Время выполнения ещё не идёт.</p>';
     if (operationId && ['service', 'failed', 'conflict', 'plan_missing'].includes(status)) body +=
       '<details class="onboarding-diagnostics"><summary>Сведения об ошибке</summary>' + paragraph('Код операции: ' + operationId) + '</details>';
   }
   return { ...step, body, status };
-};
-const returnPolicyCopy = (policy) => {
-  const pause = 'Между завершёнными ситуациями можно сделать перерыв. Время выполнения не расходуется, а общий срок завершения продолжает идти.';
-  if (policy?.resume_mode === 'same_assessment_situation') return pause + ' После возврата вы продолжите ту же незавершённую ситуацию.';
-  if (policy?.resume_mode === 'replace_assessment_situation') return pause + ' После возврата незавершённая ситуация будет заменена по правилам этой оценки.';
-  return pause + ' Порядок возврата к незавершённой ситуации определяется правилами назначенной оценки.';
 };
 
 const steps = () => {
@@ -197,7 +193,7 @@ const steps = () => {
       body: summaryHtml(), action: 'confirm', button: model?.mandatory_complete ? 'К объяснению 4К' : 'Подтвердить' },
     { title: 'Что такое 4К', description: 'Четыре компетенции помогают разбираться в задачах, взаимодействовать с людьми и находить решения.',
       body: competenciesHtml(), button: 'Как проходит оценка' },
-    { title: 'Как будет проходить оценка', description: processCopy(), body: '', action: 'process', button: 'Завершить знакомство' },
+    { title: 'Как будет проходить оценка', description: '', body: processHtml(), action: 'process', button: 'Завершить знакомство' },
     readinessStep(),
   ];
 };
@@ -294,15 +290,32 @@ const openDialog = (kind, trigger) => {
     '<h2 id="onboarding-dialog-title">' + (isAnswers ? 'Ваши ответы' : 'Сообщить о неточности') + '</h2>' +
     (isAnswers ? answerLabels().map((label, index) => '<label for="onboarding-edit-' + index + '">' + escape(label) +
       '</label><textarea id="onboarding-edit-' + index + '" name="answer_' + (index + 1) + '" rows="3" maxlength="4000"></textarea>').join('') :
-      '<p>Опишите, что нужно проверить. Сообщение будет сохранено в вашей организации. Роль и сведения автоматически не изменятся.</p>' +
-      '<label for="onboarding-issue-text">Что нужно проверить?</label><textarea id="onboarding-issue-text" rows="4" maxlength="2000"></textarea>') +
+      '<p>Укажите, какие сведения нужно проверить. Сообщение не изменяет ваши данные и назначенную роль.</p>' +
+      '<label for="onboarding-issue-field">Какие сведения нужно проверить?</label><select id="onboarding-issue-field">' +
+      ['ФИО', 'Организация', 'Должность', 'Роль'].map((field) => '<option>' + field + '</option>').join('') + '</select>' +
+      '<label for="onboarding-issue-text">Что нужно уточнить?</label><textarea id="onboarding-issue-text" rows="4" placeholder="Опишите неточность и, если знаете, укажите верные сведения."></textarea>') +
     '<p class="onboarding-error" role="alert" tabindex="-1" hidden></p><p role="status" hidden></p>' +
     '<div class="onboarding-actions"><button type="submit" class="primary-button">' + (isAnswers ? 'Сохранить' : 'Отправить') +
     '</button><button type="button" class="ghost-button" data-cancel>Отмена</button></div></form>';
+  dialog.classList.toggle('onboarding-issue-dialog', !isAnswers);
   const inputs = [...dialog.querySelectorAll('textarea')];
+  const field = dialog.querySelector('select');
+  const issueKey = 'agent4k.onboardingIssueDraft:' + scope;
+  draftKeys.add(issueKey);
+  let issueDraft = issueDrafts.get(scope);
+  if (!issueDraft) {
+    try { issueDraft = JSON.parse(window.sessionStorage.getItem(issueKey) || 'null'); } catch { /* Memory fallback. */ }
+  }
+  if (field) field.value = ['ФИО', 'Организация', 'Должность', 'Роль'].includes(issueDraft?.field) ? issueDraft.field : 'ФИО';
+  const saveIssueDraft = () => {
+    const draft = { field: field.value, text: inputs[0].value };
+    issueDrafts.set(scope, draft);
+    try { window.sessionStorage.setItem(issueKey, JSON.stringify(draft)); } catch { /* Memory fallback. */ }
+  };
+  field?.addEventListener('change', saveIssueDraft);
   for (const input of inputs) {
-    input.value = isAnswers ? answers[input.name] || '' : issueDrafts.get(scope) || '';
-    if (!isAnswers) input.addEventListener('input', () => issueDrafts.set(scope, input.value));
+    input.value = isAnswers ? answers[input.name] || '' : issueDraft?.text || '';
+    if (!isAnswers) input.addEventListener('input', saveIssueDraft);
   }
   dialog.querySelector('[data-cancel]').addEventListener('click', closeDialog);
   dialog.querySelector('.onboarding-dialog-close').addEventListener('click', closeDialog);
@@ -315,8 +328,13 @@ const openDialog = (kind, trigger) => {
     const empty = inputs.find((input) => !input.value.trim());
     errorNode.hidden = true;
     if (empty) { errorNode.textContent = isAnswers ? 'Заполните ответ. Можно написать «Не знаю».' : 'Опишите неточность.'; errorNode.hidden = false; empty.focus(); return; }
+    const message = isAnswers ? '' : 'Поле: ' + field.value + '\n' + inputs[0].value;
+    if (!isAnswers && [...message].length > 2000) {
+      errorNode.textContent = 'Сообщение вместе с выбранным полем должно содержать не более 2000 символов. Сейчас: ' + [...message].length + '. Сократите текст — он не был обрезан.';
+      errorNode.hidden = false; errorNode.focus(); return;
+    }
     dialogState.pending = true;
-    dialog.querySelectorAll('button, textarea').forEach((node) => { node.disabled = true; });
+    dialog.querySelectorAll('button, textarea, select').forEach((node) => { node.disabled = true; });
     try {
       if (isAnswers) {
         const updated = Object.fromEntries(inputs.map((input) => [input.name, input.value]));
@@ -328,11 +346,12 @@ const openDialog = (kind, trigger) => {
         model.state = result; savedAnswers = { ...result.answers_json }; answers = { ...savedAnswers }; writeDraft();
         closeDialog(); renderOnboarding(); document.getElementById('onboarding-edit-answers')?.focus();
       } else {
-        const receipt = await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify({ message: inputs[0].value }) });
+        const receipt = await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify({ message }) });
         if (!current()) return;
         if (!receipt?.id || !receipt.status) throw new Error('Сохранение сообщения не подтверждено. Ваш текст оставлен для повтора.');
         issueDrafts.delete(scope);
-        inputs[0].closest('form').querySelectorAll('label, textarea').forEach((node) => { node.hidden = true; });
+        try { window.sessionStorage.removeItem(issueKey); } catch { /* Memory cleared. */ }
+        inputs[0].closest('form').querySelectorAll('label, textarea, select').forEach((node) => { node.hidden = true; });
         dialog.querySelector('[type="submit"]').hidden = true;
         const status = dialog.querySelector('[role="status"]'); status.hidden = false;
         status.textContent = 'Сообщение сохранено в вашей организации. Можно продолжить знакомство. Роль и сведения автоматически не изменились.';
@@ -342,10 +361,10 @@ const openDialog = (kind, trigger) => {
     } catch (error) {
       if (current()) { errorNode.textContent = acquaintanceErrorMessage(error); errorNode.hidden = false; errorNode.focus(); }
     } finally {
-      if (current() && dialogState) { dialogState.pending = false; dialog.querySelectorAll('button, textarea').forEach((node) => { node.disabled = false; }); }
+      if (current() && dialogState) { dialogState.pending = false; dialog.querySelectorAll('button, textarea, select').forEach((node) => { node.disabled = false; }); }
     }
   });
-  dialog.showModal(); inputs[0]?.focus();
+  dialog.showModal(); (field || inputs[0])?.focus();
 };
 
 export const renderOnboarding = ({ focus = false } = {}) => {
@@ -359,16 +378,26 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingPanel.classList.toggle('onboarding-standalone', standalone);
   onboardingPanel.dataset.readiness = standalone ? step.status || (loading ? 'loading' : 'load-error') : '';
   onboardingPanel.dataset.step = String(index < 2 ? 1 : index <= summaryIndex() ? 2 : 3);
-  stepBadgeLabel.textContent = reviewMode ? 'История знакомства' : index === readinessIndex() ? 'Готовность оценки' : 'Знакомство';
+  stepBadgeLabel.textContent = standalone ? 'Оценка' : reviewMode ? 'История знакомства' : 'Знакомство';
   onboardingStepBackButton.hidden = loading || loadFailed || reviewMode || index === 0;
   onboardingStepBackButton.disabled = busy;
   onboardingTitle.textContent = step.title;
   onboardingDescription.textContent = step.description;
+  onboardingDescription.hidden = !step.description;
+  onboardingDescription.classList.toggle('onboarding-assessment-name', standalone && step.status === 'ready' && step.description === model?.assessment_name);
+  const statusIcon = document.getElementById('onboarding-status-icon');
+  statusIcon.hidden = !standalone;
+  statusIcon.innerHTML = standalone ? readinessIcon(step.status || (loading ? 'loading' : 'load-error')) : '';
+  statusIcon.classList.toggle('is-error', ['failed', 'service', 'network', 'load-error'].includes(step.status || (loadFailed ? 'load-error' : '')));
   onboardingDescription.classList.toggle('onboarding-question-hint', Boolean(step.answerKey));
   const number = document.getElementById('onboarding-question-number');
   number.textContent = step.questionNumber || ''; number.hidden = !step.questionNumber;
   onboardingVisual.replaceChildren();
+  const bubble = onboardingPanel.querySelector('.onboarding-copy > .onboarding-bubble');
+  bubble.querySelector(':scope > .onboarding-diagnostics')?.remove();
   featureList.innerHTML = step.body || '';
+  const diagnostics = featureList.querySelector('.onboarding-diagnostics');
+  diagnostics?.remove();
   const input = onboardingPanel.querySelector('.onboarding-answer');
   input.value = step.answerKey ? answers[step.answerKey] || '' : '';
   input.disabled = !step.answerKey || busy || reviewMode || Boolean(model?.mandatory_complete);
@@ -385,22 +414,29 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingNext.classList.toggle('onboarding-send', Boolean(step.answerKey));
   if (step.answerKey) composer.append(onboardingNext);
   window.requestAnimationFrame(() => resizeAnswer(input));
+  const copy = onboardingPanel.querySelector('.onboarding-copy');
+  (standalone ? bubble : copy).append(actions);
+  if (standalone && diagnostics) bubble.append(diagnostics);
+  const tail = document.getElementById('onboarding-status-tail');
+  tail.replaceChildren(); tail.hidden = true;
   actions.querySelectorAll('[data-secondary]').forEach((node) => node.remove());
   if (!loading && !loadFailed && !reviewMode) {
     const secondary = (id, label, kind) => {
       const button = document.createElement('button'); button.type = 'button'; button.id = id;
-      button.className = kind === 'issue' ? 'onboarding-text-action' : 'ghost-button'; button.dataset.secondary = ''; button.textContent = label; button.disabled = busy;
+      button.className = ['issue', 'history'].includes(kind) ? 'onboarding-text-action' : 'ghost-button'; button.dataset.secondary = ''; button.textContent = label; button.disabled = busy;
       button.addEventListener('click', async () => {
         if (kind === 'refresh') { await advance({ action: 'refresh' }); return; }
         if (kind === 'history') { await openOnboarding({ reviewMode: true }); return; }
         if (kind === 'logout') { const { logoutAndReturnToStart } = await import('../session.js'); await logoutAndReturnToStart(button); return; }
         openDialog(kind, button);
-      }); actions.append(button);
+      });
+      (kind === 'history' ? tail : actions).append(button);
+      if (kind === 'history') tail.hidden = false;
     };
     if (standalone) {
       if (step.action === 'retry') secondary('onboarding-check-state', 'Проверить состояние', 'refresh');
       if (model?.mandatory_complete) secondary('onboarding-view-history', 'Посмотреть знакомство', 'history');
-      secondary('onboarding-logout', 'Выйти', 'logout');
+      if (step.status === 'access') secondary('onboarding-logout', 'Выйти', 'logout');
     }
     if (step.action === 'confirm' && !model?.mandatory_complete) secondary('onboarding-edit-answers', 'Изменить мои ответы', 'answers');
     if (step.action === 'consent' || step.action === 'confirm') secondary('onboarding-report-issue', 'Сообщить о неточности', 'issue');
@@ -417,8 +453,10 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingNext.textContent = busy ? 'Подождите…' : reviewMode ? 'Вернуться к готовности оценки'
     : step.button || 'Далее';
   onboardingNext.disabled = loading || busy || (!loadFailed && step.action === 'consent' && !model?.readiness?.briefing?.consent_text);
-  onboardingSkip.hidden = loading || reviewMode || !model?.mandatory_complete || ![explanationIndex(), explanationIndex() + 1].includes(index);
-  onboardingSkip.textContent = 'Перейти к готовности'; onboardingSkip.disabled = busy;
+  onboardingSkip.hidden = true;
+  onboardingNext.classList.toggle('primary-button', !standalone || ['start', 'retry'].includes(step.action));
+  onboardingNext.classList.toggle('ghost-button', standalone && !['start', 'retry'].includes(step.action));
+  onboardingSkip.disabled = true;
   document.getElementById('onboarding-home').disabled = loading || busy;
   showMessages();
   if (focus) window.requestAnimationFrame(() => {
@@ -520,7 +558,7 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
   if (!isCurrent(owner, epoch, run) || state.currentScreen !== 'onboarding') return;
   loading = false;
   persistAssessmentContext(); syncUrlState('onboarding'); renderOnboarding({ focus: true });
-  if (!loadFailed && model?.mandatory_complete && !reviewMode) void beginPreparation();
+  if (!loadFailed && model?.mandatory_complete && !reviewMode && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
 };
 
 export const goBackInOnboarding = () => {
@@ -552,7 +590,7 @@ const advance = async (override = null) => {
       reviewMode = false;
       state.onboardingIndex = model.mandatory_complete ? readinessIndex() : resumeOnboardingIndex(model, model.onboarding);
       persistAssessmentContext();
-      if (model.mandatory_complete) void beginPreparation();
+      if (model.mandatory_complete && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
       return;
     }
     if (step.answerKey) {
@@ -650,14 +688,6 @@ export const initOnboarding = () => {
     event.preventDefault(); onboardingNext.click();
   });
   onboardingStepBackButton.addEventListener('click', goBackInOnboarding);
-  onboardingSkip.addEventListener('click', async () => {
-    if (busy || reviewMode || !model?.mandatory_complete || ![explanationIndex(), explanationIndex() + 1].includes(state.onboardingIndex)) return;
-    busy = true; renderOnboarding();
-    const owner = identity(), epoch = state.identityEpoch, run = generation;
-    try { await saveProgress('completed', readinessIndex()); state.onboardingIndex = readinessIndex(); void beginPreparation(); }
-    catch (error) { if (isCurrent(owner, epoch, run)) errorMessage = acquaintanceErrorMessage(error); }
-    finally { if (isCurrent(owner, epoch, run)) { busy = false; renderOnboarding({ focus: true }); } }
-  });
   document.getElementById('onboarding-home').addEventListener('click', async () => {
     if (busy) return;
     captureInput();

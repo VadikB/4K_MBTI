@@ -1,0 +1,7 @@
+{
+  "base": "e8773ca80b9e3089a0faec16e9722680d126d8bb",
+  "reference_version": 5,
+  "html_sha256": "2ae50fbe1ef73b4eb9fa6c808fec16d31475fb5cf79bb3d69ff275d41447170c",
+  "task_gzip_source_sha256": "93a1beaba236eb814cbbfc3cd4329eb9e26efbecaa491cc25ca669fd8c2920c2",
+  "candidate": "2.1.10"
+}

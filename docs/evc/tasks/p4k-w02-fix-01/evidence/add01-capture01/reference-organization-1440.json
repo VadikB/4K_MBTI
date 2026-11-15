@@ -1,0 +1,230 @@
+{
+  "input": "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/Архитектура/1.0 Доработка Полная/обработка замечаний/знакомство/LIDUM-W02.html",
+  "input_sha256": "2ae50fbe1ef73b4eb9fa6c808fec16d31475fb5cf79bb3d69ff275d41447170c",
+  "input_bytes": 204878,
+  "scene": "organization",
+  "capture": {
+    "fullPage": false,
+    "deviceScaleFactor": 1,
+    "viewport": {
+      "width": 1440,
+      "height": 1024
+    },
+    "waits": [
+      "document.fonts.ready",
+      "actual standalone title",
+      "visible footer"
+    ],
+    "clean_context": true,
+    "DOM_or_style_injection": false
+  },
+  "requests": [
+    "file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/%D0%90%D1%80%D1%85%D0%B8%D1%82%D0%B5%D0%BA%D1%82%D1%83%D1%80%D0%B0/1.0%20%D0%94%D0%BE%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0%20%D0%9F%D0%BE%D0%BB%D0%BD%D0%B0%D1%8F/%D0%BE%D0%B1%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0%20%D0%B7%D0%B0%D0%BC%D0%B5%D1%87%D0%B0%D0%BD%D0%B8%D0%B8%CC%86/%D0%B7%D0%BD%D0%B0%D0%BA%D0%BE%D0%BC%D1%81%D1%82%D0%B2%D0%BE/LIDUM-W02.html"
+  ],
+  "runtime": {
+    "scripts": [
+      ""
+    ],
+    "css": [],
+    "stage": null
+  },
+  "layout": {
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 72,
+      "bottom": 72,
+      "text": "4К Ассистент\nОЦЕНКА",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "0px 32px",
+      "minHeight": "72px",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgb(255, 255, 255)"
+    },
+    "main": {
+      "x": 0,
+      "y": 72,
+      "width": 1440,
+      "height": 856,
+      "bottom": 928,
+      "text": "Нужны сведения организации\n\nОрганизация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.\n\nКогда сведения будут готовы, здесь появится следующий шаг.\n\nВремя выполнения ещё не идёт.\n\nПроверить готовность\nПосмотреть знакомство",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "32px 16px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "group": {
+      "x": 340,
+      "y": 308.5,
+      "width": 760,
+      "height": 383,
+      "bottom": 691.5,
+      "text": "Нужны сведения организации\n\nОрганизация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.\n\nКогда сведения будут готовы, здесь появится следующий шаг.\n\nВремя выполнения ещё не идёт.\n\nПроверить готовность\nПосмотреть знакомство",
+      "display": "block",
+      "margin": "204.5px 324px",
+      "padding": "0px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "card": {
+      "x": 340,
+      "y": 308.5,
+      "width": 760,
+      "height": 323,
+      "bottom": 631.5,
+      "text": "Нужны сведения организации\n\nОрганизация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.\n\nКогда сведения будут готовы, здесь появится следующий шаг.\n\nВремя выполнения ещё не идёт.\n\nПроверить готовность",
+      "display": "block",
+      "margin": "0px",
+      "padding": "32px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgb(255, 255, 255)"
+    },
+    "title": {
+      "x": 372,
+      "y": 340.5,
+      "width": 696,
+      "height": 40,
+      "bottom": 380.5,
+      "text": "Нужны сведения организации",
+      "display": "flex",
+      "margin": "0px 0px 16px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "section": {
+      "x": 689.6796875,
+      "y": 25.5,
+      "width": 60.640625,
+      "height": 20,
+      "bottom": 45.5,
+      "text": "ОЦЕНКА",
+      "display": "block",
+      "margin": "0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "14px / 20px Onest, Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "actions": {
+      "x": 372,
+      "y": 549.5,
+      "width": 696,
+      "height": 50,
+      "bottom": 599.5,
+      "text": "Проверить готовность",
+      "display": "flex",
+      "margin": "24px 0px 0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "diagnostics": null,
+    "tail": {
+      "x": 340,
+      "y": 647.5,
+      "width": 760,
+      "height": 44,
+      "bottom": 691.5,
+      "text": "Посмотреть знакомство",
+      "display": "block",
+      "margin": "16px 0px 0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "footer": {
+      "x": 0,
+      "y": 928,
+      "width": 1440,
+      "height": 96,
+      "bottom": 1024,
+      "text": "Политика конфиденциальности\nСогласие на обработку персональных данных\n\n© 2026 LIDUM",
+      "display": "block",
+      "margin": "0px",
+      "padding": "24px 16px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "paragraphs": [
+      {
+        "x": 372,
+        "y": 396.5,
+        "width": 696,
+        "height": 48,
+        "bottom": 444.5,
+        "text": "Организация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.",
+        "display": "block",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 460.5,
+        "width": 696,
+        "height": 24,
+        "bottom": 484.5,
+        "text": "Когда сведения будут готовы, здесь появится следующий шаг.",
+        "display": "block",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 504.5,
+        "width": 696,
+        "height": 21,
+        "bottom": 525.5,
+        "text": "Время выполнения ещё не идёт.",
+        "display": "block",
+        "margin": "20px 0px 16px",
+        "padding": "0px 0px 0px 14px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "buttons": [
+      {
+        "x": 372,
+        "y": 549.5,
+        "width": 225.140625,
+        "height": 50,
+        "bottom": 599.5,
+        "text": "Проверить готовность",
+        "display": "flex",
+        "margin": "0px",
+        "padding": "12px 24px",
+        "minHeight": "48px",
+        "font": "500 16px / 24px Onest, Arial, sans-serif",
+        "background": "rgb(255, 255, 255)"
+      }
+    ],
+    "viewport": {
+      "width": 1440,
+      "height": 1024,
+      "scrollWidth": 1440,
+      "scrollHeight": 1024,
+      "dpr": 1
+    },
+    "url": "file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/%D0%90%D1%80%D1%85%D0%B8%D1%82%D0%B5%D0%BA%D1%82%D1%83%D1%80%D0%B0/1.0%20%D0%94%D0%BE%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0%20%D0%9F%D0%BE%D0%BB%D0%BD%D0%B0%D1%8F/%D0%BE%D0%B1%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%BA%D0%B0%20%D0%B7%D0%B0%D0%BC%D0%B5%D1%87%D0%B0%D0%BD%D0%B8%D0%B8%CC%86/%D0%B7%D0%BD%D0%B0%D0%BA%D0%BE%D0%BC%D1%81%D1%82%D0%B2%D0%BE/LIDUM-W02.html#stage=organization&show=1",
+    "fonts": "loaded"
+  },
+  "png_sha256": "e6103851d42fa320c4b94e6eae648a6acfb30da877070646dedc3d0b71016afd"
+}

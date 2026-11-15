@@ -1,0 +1,391 @@
+{
+  "layout": {
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 72,
+      "bottom": 72,
+      "text": "4К Ассистент\nОЦЕНКА",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "0px 32px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgb(255, 255, 255)"
+    },
+    "main": {
+      "x": 0,
+      "y": 72,
+      "width": 1440,
+      "height": 824,
+      "bottom": 896,
+      "text": "Можно приступать к оценке\n\nНазначенная оценка — синтетический профиль\n\nПлан и первая ситуация подготовлены. Следующие ситуации будут готовиться по ходу оценки.\n\n5\nситуаций в плане\n75 мин\nна выполнение оценки\n\nЧитайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.\n\nЗавершить оценку нужно в течение 48 ч. после её начала.\n\nВремя начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.\n\nПриступить к оценке\nПосмотреть знакомство",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "32px 16px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "group": {
+      "x": 340,
+      "y": 172.5,
+      "width": 760,
+      "height": 623,
+      "bottom": 795.5,
+      "text": "Можно приступать к оценке\n\nНазначенная оценка — синтетический профиль\n\nПлан и первая ситуация подготовлены. Следующие ситуации будут готовиться по ходу оценки.\n\n5\nситуаций в плане\n75 мин\nна выполнение оценки\n\nЧитайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.\n\nЗавершить оценку нужно в течение 48 ч. после её начала.\n\nВремя начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.\n\nПриступить к оценке\nПосмотреть знакомство",
+      "display": "block",
+      "margin": "68.5px 324px",
+      "padding": "0px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "card": {
+      "x": 340,
+      "y": 172.5,
+      "width": 760,
+      "height": 563,
+      "bottom": 735.5,
+      "text": "Можно приступать к оценке\n\nНазначенная оценка — синтетический профиль\n\nПлан и первая ситуация подготовлены. Следующие ситуации будут готовиться по ходу оценки.\n\n5\nситуаций в плане\n75 мин\nна выполнение оценки\n\nЧитайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.\n\nЗавершить оценку нужно в течение 48 ч. после её начала.\n\nВремя начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.\n\nПриступить к оценке",
+      "display": "block",
+      "margin": "0px",
+      "padding": "32px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgb(255, 255, 255)"
+    },
+    "title": {
+      "x": 372,
+      "y": 204.5,
+      "width": 696,
+      "height": 40,
+      "bottom": 244.5,
+      "text": "Можно приступать к оценке",
+      "display": "flex",
+      "margin": "0px 0px 16px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "section": {
+      "x": 689.5,
+      "y": 25.5,
+      "width": 61,
+      "height": 20,
+      "bottom": 45.5,
+      "text": "ОЦЕНКА",
+      "display": "block",
+      "margin": "0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "14px / 20px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "actions": {
+      "x": 372,
+      "y": 655.5,
+      "width": 696,
+      "height": 48,
+      "bottom": 703.5,
+      "text": "Приступить к оценке",
+      "display": "flex",
+      "margin": "24px 0px 0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "diagnostics": null,
+    "tail": {
+      "x": 340,
+      "y": 751.5,
+      "width": 760,
+      "height": 44,
+      "bottom": 795.5,
+      "text": "Посмотреть знакомство",
+      "display": "block",
+      "margin": "16px 0px 0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "footer": {
+      "x": 0,
+      "y": 896,
+      "width": 1440,
+      "height": 128,
+      "bottom": 1024,
+      "text": "Политика конфиденциальности\nСогласие на обработку персональных данных\nВерсия 2.1.11\n© 2026 LIDUM",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "24px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, sans-serif",
+      "background": "rgb(247, 247, 247)"
+    },
+    "paragraphs": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "",
+        "display": "none",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "12px / 18px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 260.5,
+        "width": 696,
+        "height": 24,
+        "bottom": 284.5,
+        "text": "Назначенная оценка — синтетический профиль",
+        "display": "block",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 300.5,
+        "width": 696,
+        "height": 48,
+        "bottom": 348.5,
+        "text": "План и первая ситуация подготовлены. Следующие ситуации будут готовиться по ходу оценки.",
+        "display": "block",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 484.5,
+        "width": 696,
+        "height": 48,
+        "bottom": 532.5,
+        "text": "Читайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.",
+        "display": "block",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 548.5,
+        "width": 696,
+        "height": 21,
+        "bottom": 569.5,
+        "text": "Завершить оценку нужно в течение 48 ч. после её начала.",
+        "display": "block",
+        "margin": "16px 0px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 589.5,
+        "width": 696,
+        "height": 42,
+        "bottom": 631.5,
+        "text": "Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.",
+        "display": "block",
+        "margin": "20px 0px 0px",
+        "padding": "0px 0px 0px 14px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "",
+        "display": "none",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "",
+        "display": "none",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "buttons": [
+      {
+        "x": 372,
+        "y": 655.5,
+        "width": 214.140625,
+        "height": 48,
+        "bottom": 703.5,
+        "text": "Приступить к оценке",
+        "display": "flex",
+        "margin": "0px",
+        "padding": "12px 24px",
+        "minHeight": "48px",
+        "font": "600 16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgb(24, 184, 198)"
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "Пропустить",
+        "display": "none",
+        "margin": "0px",
+        "padding": "12px 24px",
+        "minHeight": "48px",
+        "font": "500 16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgb(214, 226, 229)"
+      }
+    ],
+    "viewport": {
+      "width": 1440,
+      "height": 1024,
+      "scrollWidth": 1440,
+      "scrollHeight": 1024,
+      "dpr": 1
+    },
+    "shellChildren": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 896,
+        "bottom": 896,
+        "text": "4К Ассистент\nОЦЕНКА\nМожно приступать к оценке\n\nНазначенная оценка — синтетический профиль\n\nПлан и первая ситуация подготовлены. Следующие ситуации будут готовиться по ходу оценки.\n\n5\nситуаций в плане\n75 мин\nна выполнение оценки\n\nЧитайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.\n\nЗавершить оценку нужно в течение 48 ч. после её начала.\n\nВремя начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.\n\nПриступить к оценке\nПосмотреть знакомство",
+        "display": "flex",
+        "margin": "0px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgb(247, 247, 247)"
+      },
+      {
+        "x": 0,
+        "y": 896,
+        "width": 1440,
+        "height": 128,
+        "bottom": 1024,
+        "text": "Политика конфиденциальности\nСогласие на обработку персональных данных\nВерсия 2.1.11\n© 2026 LIDUM",
+        "display": "flex",
+        "margin": "0px",
+        "padding": "24px",
+        "minHeight": "auto",
+        "font": "16px / 24px Onest, sans-serif",
+        "background": "rgb(247, 247, 247)"
+      }
+    ],
+    "url": "http://127.0.0.1:64943/?screen=onboarding&ui=1794760154627",
+    "fonts": "loaded"
+  },
+  "projection": {
+    "assessment_name": "Назначенная оценка — синтетический профиль",
+    "assignment_id": 91,
+    "readiness": {
+      "status": "ready",
+      "organization_id": 10,
+      "assignment_ref": "w02-assignment",
+      "questionnaire_revision_id": 41,
+      "briefing": {
+        "organizer": "Synthetic",
+        "purpose": "Synthetic",
+        "results_usage": "Synthetic",
+        "questions": [
+          "Q1",
+          "Q2",
+          "Q3"
+        ],
+        "consent_version": 1,
+        "consent_text": "Synthetic consent"
+      }
+    },
+    "state": {
+      "answers_json": {
+        "answer_1": "A",
+        "answer_2": "B",
+        "answer_3": "C"
+      },
+      "consent_accepted_at": "synthetic",
+      "answers_confirmed_at": "synthetic",
+      "consent_version": 1
+    },
+    "mandatory_complete": true,
+    "onboarding": {
+      "status": "completed",
+      "current_step": 8
+    },
+    "late_readiness": {
+      "status": "ready_to_prepare",
+      "personalized_profile_id": 4
+    },
+    "prepared_plan": {
+      "cycle_id": "w02-cycle",
+      "revision_id": "w02-plan",
+      "revision_no": 1,
+      "start_readiness": {
+        "contract": "m7_start_readiness/1",
+        "cycle_id": "w02-cycle",
+        "plan_revision_id": "w02-plan",
+        "can_start": true,
+        "reasons": []
+      },
+      "plan": {
+        "route": [
+          {
+            "case_id": "synthetic-case"
+          },
+          {
+            "case_id": "synthetic-case"
+          },
+          {
+            "case_id": "synthetic-case"
+          },
+          {
+            "case_id": "synthetic-case"
+          },
+          {
+            "case_id": "synthetic-case"
+          }
+        ],
+        "time_budget_seconds": 4500,
+        "calendar_window_seconds": 172800,
+        "return_policy_snapshot": {
+          "resume_mode": "replace_assessment_situation"
+        }
+      }
+    }
+  }
+}

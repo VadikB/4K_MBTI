@@ -1,0 +1,17 @@
+{
+  "copyWidth": 310,
+  "textWidth": 310,
+  "cardWidth": 358,
+  "scrollWidth": 390,
+  "buttons": [
+    {
+      "height": 48,
+      "width": 310
+    },
+    {
+      "height": 48,
+      "width": 310
+    }
+  ],
+  "direction": "column"
+}

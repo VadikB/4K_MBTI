@@ -1,0 +1,1 @@
+При добавлении invitation/password не передан email в waitForPasswordCreationForm; исправлен в auth05 (1 PASS).

@@ -1,0 +1,329 @@
+{
+  "layout": {
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 72,
+      "bottom": 72,
+      "text": "4К Ассистент\nОЦЕНКА",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "0px 32px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgb(255, 255, 255)"
+    },
+    "main": {
+      "x": 0,
+      "y": 72,
+      "width": 1440,
+      "height": 824,
+      "bottom": 896,
+      "text": "Нужны сведения организации\n\nОрганизация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.\n\nКогда сведения будут готовы, здесь появится следующий шаг.\n\nВремя выполнения ещё не идёт.\n\nПроверить готовность\nПосмотреть знакомство",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "32px 16px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "group": {
+      "x": 340,
+      "y": 292.5,
+      "width": 760,
+      "height": 383,
+      "bottom": 675.5,
+      "text": "Нужны сведения организации\n\nОрганизация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.\n\nКогда сведения будут готовы, здесь появится следующий шаг.\n\nВремя выполнения ещё не идёт.\n\nПроверить готовность\nПосмотреть знакомство",
+      "display": "block",
+      "margin": "188.5px 324px",
+      "padding": "0px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "card": {
+      "x": 340,
+      "y": 292.5,
+      "width": 760,
+      "height": 323,
+      "bottom": 615.5,
+      "text": "Нужны сведения организации\n\nОрганизация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.\n\nКогда сведения будут готовы, здесь появится следующий шаг.\n\nВремя выполнения ещё не идёт.\n\nПроверить готовность",
+      "display": "block",
+      "margin": "0px",
+      "padding": "32px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgb(255, 255, 255)"
+    },
+    "title": {
+      "x": 372,
+      "y": 324.5,
+      "width": 696,
+      "height": 40,
+      "bottom": 364.5,
+      "text": "Нужны сведения организации",
+      "display": "flex",
+      "margin": "0px 0px 16px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "section": {
+      "x": 689.5,
+      "y": 25.5,
+      "width": 61,
+      "height": 20,
+      "bottom": 45.5,
+      "text": "ОЦЕНКА",
+      "display": "block",
+      "margin": "0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "14px / 20px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "actions": {
+      "x": 372,
+      "y": 533.5,
+      "width": 696,
+      "height": 50,
+      "bottom": 583.5,
+      "text": "Проверить готовность",
+      "display": "flex",
+      "margin": "24px 0px 0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "diagnostics": null,
+    "tail": {
+      "x": 340,
+      "y": 631.5,
+      "width": 760,
+      "height": 44,
+      "bottom": 675.5,
+      "text": "Посмотреть знакомство",
+      "display": "block",
+      "margin": "16px 0px 0px",
+      "padding": "0px",
+      "minHeight": "0px",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "background": "rgba(0, 0, 0, 0)"
+    },
+    "footer": {
+      "x": 0,
+      "y": 896,
+      "width": 1440,
+      "height": 128,
+      "bottom": 1024,
+      "text": "Политика конфиденциальности\nСогласие на обработку персональных данных\nВерсия 2.1.11\n© 2026 LIDUM",
+      "display": "flex",
+      "margin": "0px",
+      "padding": "24px",
+      "minHeight": "auto",
+      "font": "16px / 24px Onest, sans-serif",
+      "background": "rgb(247, 247, 247)"
+    },
+    "paragraphs": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "",
+        "display": "none",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "12px / 18px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 380.5,
+        "width": 696,
+        "height": 48,
+        "bottom": 428.5,
+        "text": "Организация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.",
+        "display": "block",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 444.5,
+        "width": 696,
+        "height": 24,
+        "bottom": 468.5,
+        "text": "Когда сведения будут готовы, здесь появится следующий шаг.",
+        "display": "block",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 372,
+        "y": 488.5,
+        "width": 696,
+        "height": 21,
+        "bottom": 509.5,
+        "text": "Время выполнения ещё не идёт.",
+        "display": "block",
+        "margin": "20px 0px 0px",
+        "padding": "0px 0px 0px 14px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "",
+        "display": "none",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "",
+        "display": "none",
+        "margin": "0px 0px 16px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "14px / 21px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgba(0, 0, 0, 0)"
+      }
+    ],
+    "buttons": [
+      {
+        "x": 372,
+        "y": 533.5,
+        "width": 225.140625,
+        "height": 50,
+        "bottom": 583.5,
+        "text": "Проверить готовность",
+        "display": "flex",
+        "margin": "0px",
+        "padding": "12px 24px",
+        "minHeight": "48px",
+        "font": "500 16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgb(255, 255, 255)"
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0,
+        "text": "Пропустить",
+        "display": "none",
+        "margin": "0px",
+        "padding": "12px 24px",
+        "minHeight": "48px",
+        "font": "500 16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgb(214, 226, 229)"
+      }
+    ],
+    "viewport": {
+      "width": 1440,
+      "height": 1024,
+      "scrollWidth": 1440,
+      "scrollHeight": 1024,
+      "dpr": 1
+    },
+    "shellChildren": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 896,
+        "bottom": 896,
+        "text": "4К Ассистент\nОЦЕНКА\nНужны сведения организации\n\nОрганизация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.\n\nКогда сведения будут готовы, здесь появится следующий шаг.\n\nВремя выполнения ещё не идёт.\n\nПроверить готовность\nПосмотреть знакомство",
+        "display": "flex",
+        "margin": "0px",
+        "padding": "0px",
+        "minHeight": "0px",
+        "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+        "background": "rgb(247, 247, 247)"
+      },
+      {
+        "x": 0,
+        "y": 896,
+        "width": 1440,
+        "height": 128,
+        "bottom": 1024,
+        "text": "Политика конфиденциальности\nСогласие на обработку персональных данных\nВерсия 2.1.11\n© 2026 LIDUM",
+        "display": "flex",
+        "margin": "0px",
+        "padding": "24px",
+        "minHeight": "auto",
+        "font": "16px / 24px Onest, sans-serif",
+        "background": "rgb(247, 247, 247)"
+      }
+    ],
+    "url": "http://127.0.0.1:64943/?screen=onboarding&ui=1794760155638",
+    "fonts": "loaded"
+  },
+  "projection": {
+    "assessment_name": null,
+    "assignment_id": null,
+    "readiness": {
+      "status": "ready",
+      "organization_id": 10,
+      "assignment_ref": "w02-assignment",
+      "questionnaire_revision_id": 41,
+      "briefing": {
+        "organizer": "Synthetic",
+        "purpose": "Synthetic",
+        "results_usage": "Synthetic",
+        "questions": [
+          "Q1",
+          "Q2",
+          "Q3"
+        ],
+        "consent_version": 1,
+        "consent_text": "Synthetic consent"
+      }
+    },
+    "state": {
+      "answers_json": {
+        "answer_1": "A",
+        "answer_2": "B",
+        "answer_3": "C"
+      },
+      "consent_accepted_at": "synthetic",
+      "answers_confirmed_at": "synthetic",
+      "consent_version": 1
+    },
+    "mandatory_complete": true,
+    "onboarding": {
+      "status": "completed",
+      "current_step": 8
+    },
+    "late_readiness": {
+      "status": "waiting_for_assessment_data",
+      "reason": "W02_ANSWERS_NOT_BOUND",
+      "personalized_profile_id": null
+    },
+    "prepared_plan": null
+  }
+}

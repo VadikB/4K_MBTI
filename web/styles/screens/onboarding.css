@@ -81,8 +81,8 @@
 #onboarding-panel .onboarding-summary-label { display: block; margin-bottom: 6px; font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
 #onboarding-panel .onboarding-summary-answer { white-space: pre-wrap; font: 400 16px/24px var(--font-body); color: var(--w02-text); }
 #onboarding-panel .onboarding-bubble .onboarding-summary-note { margin: 20px 0 0; border-left: 3px solid var(--w02-border); padding-left: 14px; font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
-#onboarding-panel .onboarding-knowledge { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-#onboarding-panel .onboarding-knowledge article { padding: 16px; border-radius: 8px; background: var(--w02-secondary); }
+#onboarding-panel .onboarding-knowledge { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+#onboarding-panel .onboarding-knowledge article { padding: 16px; border-top: 3px solid var(--w02-hover); border-radius: 8px; background: var(--w02-secondary); }
 #onboarding-panel .onboarding-knowledge article p { margin-top: 8px; }
 #onboarding-panel .onboarding-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 #onboarding-panel .onboarding-metrics div { background: var(--w02-highlight); border-radius: 8px; padding: 16px; }
@@ -127,42 +127,108 @@
 @media (prefers-reduced-motion: reduce) { #onboarding-panel .onboarding-spinner { animation: none; } }
 
 /* Standalone readiness states share W02-01 tokens; the transcript stays in history. */
-#onboarding-panel.onboarding-standalone { height: auto; min-height: calc(100dvh - 164px); overflow: visible; }
-#onboarding-panel.onboarding-standalone .onboarding-shell { height: auto; min-height: inherit; }
-#onboarding-panel.onboarding-standalone .onboarding-history { flex: 1; overflow: visible; padding: 48px 0 32px; }
-#onboarding-panel.onboarding-standalone .onboarding-thread { max-width: 720px; }
+#onboarding-panel.onboarding-standalone { height: auto; min-height: 0; overflow: visible; }
+#onboarding-panel.onboarding-standalone:not(.hidden) { display: flex; }
+#onboarding-panel.onboarding-standalone .onboarding-shell { flex: 1; height: auto; min-height: 0; }
+#onboarding-panel.onboarding-standalone .onboarding-history { flex: 1; display: flex; overflow: visible; padding: 32px 16px; }
+#onboarding-panel.onboarding-standalone .onboarding-thread { width: 100%; max-width: 760px; margin: auto; }
 #onboarding-panel.onboarding-standalone .onboarding-copy { width: 100%; margin: 0; }
 #onboarding-panel.onboarding-standalone .onboarding-copy > .onboarding-author,
 #onboarding-panel.onboarding-standalone .onboarding-composer { display: none; }
-#onboarding-panel.onboarding-standalone .onboarding-bubble { background: transparent; padding: 0; }
-#onboarding-panel.onboarding-standalone h2 { font: 700 28px/36px var(--font-body); }
-#onboarding-panel.onboarding-standalone #feature-list { margin-top: 20px; }
-#onboarding-panel .onboarding-assessment-name { font-weight: 600; }
+#onboarding-panel.onboarding-standalone .onboarding-bubble { background: var(--w02-white); padding: 32px; }
+#onboarding-panel.onboarding-standalone h2 { font: 600 22px/30px var(--font-body); }
+#onboarding-panel.onboarding-standalone #onboarding-description { margin: 0 0 16px; }
+#onboarding-panel.onboarding-standalone #feature-list { margin: 0; }
+#onboarding-panel.onboarding-standalone .onboarding-time-notice { margin: 20px 0 0; }
+#onboarding-panel.onboarding-standalone .onboarding-diagnostics { margin-top: 20px; }
+#onboarding-panel.onboarding-standalone #onboarding-description.onboarding-assessment-name { color: var(--w02-muted); }
 #onboarding-panel .onboarding-metrics { margin: 24px 0; }
 #onboarding-panel .onboarding-time-notice { font-size: 14px; color: var(--w02-muted); }
 #onboarding-panel .onboarding-diagnostics { margin-top: 16px; font-size: 14px; overflow-wrap: anywhere; color: var(--w02-muted); }
 #onboarding-panel .onboarding-diagnostics summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--w02-focus); }
 .shell:has(> #onboarding-panel.onboarding-standalone:not(.hidden)) > .app-footer,
 .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) > .app-footer { background: var(--w02-canvas); color: rgb(100 116 139 / 60%); }
-#auth-complete-panel.w02-waiting { flex: 1; width: 100%; max-width: none; margin: 0; padding: 64px max(24px, calc((100% - 720px) / 2)); border: 0; border-radius: 0; box-shadow: none; background: var(--w02-canvas); color: var(--w02-text); font: 400 16px/24px var(--font-body); }
-#auth-complete-panel.w02-waiting .auth-complete-copy { max-width: none; }
+/* The default auth grid still sees its original children through these wrappers. */
+#auth-complete-panel .auth-complete-card, #auth-complete-panel .auth-complete-status-title { display: contents; }
+#auth-complete-panel .auth-waiting-icon, #auth-complete-panel:not(.w02-waiting) .auth-waiting-note { display: none; }
+#onboarding-panel .onboarding-status-title { display: contents; }
+#onboarding-panel.onboarding-standalone .onboarding-status-title,
+#auth-complete-panel.w02-waiting .auth-complete-status-title { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+#onboarding-panel .onboarding-status-icon,
+#auth-complete-panel.w02-waiting .auth-waiting-icon { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; background: var(--w02-highlight); }
+#onboarding-panel .onboarding-status-icon.is-error { background: var(--w02-secondary); color: var(--w02-error); }
+#onboarding-panel .onboarding-status-icon svg, #auth-complete-panel.w02-waiting .auth-waiting-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#onboarding-panel.onboarding-standalone .onboarding-actions { margin-top: 24px; }
+#onboarding-panel.onboarding-standalone .onboarding-actions .ghost-button { padding-block: 12px; }
+#onboarding-panel.onboarding-standalone .onboarding-metrics div { background: var(--w02-secondary); }
+#onboarding-panel.onboarding-standalone .onboarding-metrics span { font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
+#onboarding-panel.onboarding-standalone .onboarding-bubble .onboarding-deadline { margin-top: 16px; font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
+#onboarding-panel .onboarding-status-tail { margin-top: 16px; }
+#onboarding-panel .onboarding-process { padding-left: 24px; margin: 16px 0 0; }
+#onboarding-panel .onboarding-process li { padding-left: 4px; margin-bottom: 12px; }
+#onboarding-panel .onboarding-bubble .onboarding-summary-note { margin-bottom: 16px; }
+#onboarding-panel .onboarding-time-notice { border-left: 3px solid var(--w02-border); padding-left: 14px; font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog { width: calc(100% - 32px); max-width: 560px; padding: 28px; border-radius: 8px; }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog h2 { font: 700 20px/28px var(--font-body); margin-bottom: 12px; }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog label { font: 400 14px/20px var(--font-body); margin: 20px 0 8px; color: var(--w02-muted); }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog textarea,
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog select { display: block; width: 100%; box-sizing: border-box; min-height: 48px; padding: 12px 14px; border: 1px solid var(--w02-border); border-radius: 8px; background: var(--w02-secondary); font: 400 16px/24px var(--font-body); }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog textarea { min-height: 96px; }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog .onboarding-actions { margin-top: 24px; }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog .onboarding-actions button { flex: 1; min-width: 140px; }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog .onboarding-dialog-close { width: 40px; height: 40px; background: var(--w02-secondary); font-size: 24px; }
+#auth-complete-panel.w02-waiting:not(.hidden) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; flex: 1; width: 100%; max-width: none; margin: 0; padding: 32px 16px; border: 0; border-radius: 0; box-shadow: none; background: var(--w02-canvas); color: var(--w02-text); font: 400 16px/24px var(--font-body); }
+#auth-complete-panel.w02-waiting .auth-complete-card { display: block; box-sizing: border-box; width: 100%; max-width: 760px; padding: 32px; border-radius: 8px; background: var(--w02-white); overflow-wrap: anywhere; }
+#auth-complete-panel.w02-waiting .auth-complete-copy { display: block; min-width: 0; max-width: none; }
 #auth-complete-panel.w02-waiting .auth-complete-mark,
 #auth-complete-panel.w02-waiting .auth-complete-eyebrow { display: none; }
-#auth-complete-panel.w02-waiting h1 { font: 700 28px/36px var(--font-body); color: var(--w02-text); }
-#auth-complete-panel.w02-waiting #auth-complete-description { color: var(--w02-text); white-space: pre-line; overflow-wrap: anywhere; }
-#auth-complete-panel.w02-waiting .auth-complete-actions { margin-top: 16px; flex-wrap: wrap; }
-#auth-complete-panel.w02-waiting button { box-sizing: border-box; min-height: 48px; min-width: 0; border-radius: 8px; padding: 12px 24px; font: 600 16px/24px var(--font-body); box-shadow: none; white-space: normal; }
-#auth-complete-panel.w02-waiting .primary-button { border: 0; background: var(--w02-primary); color: var(--w02-text); }
-#auth-complete-panel.w02-waiting .primary-button:hover:not(:disabled) { background: var(--w02-hover); }
-#auth-complete-panel.w02-waiting .primary-button:active:not(:disabled) { background: var(--w02-active); }
-#auth-complete-panel.w02-waiting .ghost-button { background: var(--w02-white); border: 1px solid var(--w02-border); padding-block: 11px; color: var(--w02-text); }
-#auth-complete-panel.w02-waiting .ghost-button:hover { background: var(--w02-list-hover); }
+#auth-complete-panel.w02-waiting h1 { min-width: 0; font: 600 22px/30px var(--font-body); color: var(--w02-text); }
+#auth-complete-panel.w02-waiting #auth-complete-description { color: var(--w02-text); font: inherit; white-space: pre-line; overflow-wrap: anywhere; }
+#auth-complete-panel.w02-waiting .auth-waiting-note { margin: 20px 0 0; border-left: 3px solid var(--w02-border); padding-left: 14px; color: var(--w02-muted); font: 400 14px/21px var(--font-body); }
+#auth-complete-panel.w02-waiting .auth-complete-actions { display: flex; align-items: center; margin-top: 24px; gap: 12px 16px; flex-wrap: wrap; }
+#auth-complete-panel.w02-waiting button { box-sizing: border-box; flex: 0 0 auto; height: auto; min-height: 48px; min-width: 200px; max-width: 100%; border-radius: 8px; padding: 12px 24px; font: 600 16px/24px var(--font-body); box-shadow: none; white-space: normal; overflow-wrap: anywhere; }
+#auth-complete-panel.w02-waiting #auth-complete-continue-button,
+#auth-complete-panel.w02-waiting .ghost-button { background: var(--w02-white); border: 1px solid var(--w02-border); padding-block: 11px; color: var(--w02-text); font-weight: 500; }
+#auth-complete-panel.w02-waiting button:hover:not(:disabled) { background: var(--w02-list-hover); }
 #auth-complete-panel.w02-waiting button:disabled { background: var(--w02-disabled); color: var(--w02-disabled-text); opacity: 1; }
 #auth-complete-panel.w02-waiting :focus-visible { outline: 3px solid var(--w02-focus); outline-offset: 3px; }
-@media (max-width: 600px) {
-    #onboarding-panel.onboarding-standalone .onboarding-history { padding-block: 32px 24px; }
-    #onboarding-panel.onboarding-standalone h2, #auth-complete-panel.w02-waiting h1 { font-size: 24px; line-height: 32px; }
-    #auth-complete-panel.w02-waiting { padding: 32px 16px; }
+@media (max-width: 767px) {
+    #onboarding-panel.onboarding-standalone .onboarding-history { padding: 24px 16px; }
+    #onboarding-panel.onboarding-standalone .onboarding-metrics { gap: 8px; }
+    #onboarding-panel.onboarding-standalone .onboarding-metrics div { padding: 14px 12px; }
+    #onboarding-panel.onboarding-standalone .onboarding-bubble,
+    #auth-complete-panel.w02-waiting .auth-complete-card { padding: 24px; }
+    #onboarding-panel.onboarding-standalone h2, #auth-complete-panel.w02-waiting h1 { font-size: 20px; line-height: 28px; }
+    #auth-complete-panel.w02-waiting { padding: 24px 16px; }
     #auth-complete-panel.w02-waiting .auth-complete-actions { flex-direction: column; align-items: stretch; }
+    #auth-complete-panel.w02-waiting .auth-complete-actions button { min-width: 0; width: 100%; }
+}
+@media (max-width: 600px) {
+    #onboarding-panel #onboarding-dialog.onboarding-issue-dialog .onboarding-actions button { flex: auto; width: 100%; min-width: 0; }
+}
+@media (max-width: 350px) {
+    #onboarding-panel.onboarding-standalone .onboarding-bubble,
+    #auth-complete-panel.w02-waiting .auth-complete-card { padding: 20px; }
+}
+
+#onboarding-panel .onboarding-live { color: var(--w02-muted); }
+#onboarding-panel #onboarding-title:focus, #auth-complete-panel.w02-waiting #auth-complete-title:focus { outline: none; }
+
+/* Waiting reuses the shared product header while ordinary auth keeps its layout. */
+.auth-waiting-section { display: none; }
+.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) > .auth-header { position: relative; display: flex; flex: 0 0 72px; min-height: 72px; margin: 0; padding: 0 32px; border-bottom: 1px solid var(--w02-border); }
+.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-header-brand { font: 700 20px/28px var(--font-body); }
+.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-header-brand::after { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 4px; background: var(--w02-primary); }
+.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-waiting-section { display: block; position: absolute; left: 50%; transform: translateX(-50%); color: var(--w02-muted); font: 400 14px/20px var(--font-body); text-transform: uppercase; }
+.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-release-badge { display: none; }
+#auth-complete-panel.w02-waiting .auth-complete-actions button { width: auto; }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog .onboarding-actions { gap: 12px; }
+#onboarding-panel #onboarding-dialog.onboarding-issue-dialog .onboarding-actions button { margin-top: 20px; }
+#onboarding-panel .onboarding-competency-label { line-height: 16px; }
+#onboarding-panel .onboarding-diagnostics summary { display: list-item; padding-block: 10px; color: var(--w02-muted); }
+@media (max-width: 767px) {
+    .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) > .auth-header { flex-basis: 64px; min-height: 64px; padding: 0 16px; }
+    .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-header-brand { font-size: 18px; line-height: 24px; }
+    .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-waiting-section { position: static; transform: none; margin-left: auto; font-size: 12px; line-height: 16px; }
     #auth-complete-panel.w02-waiting .auth-complete-actions button { width: 100%; }
 }
