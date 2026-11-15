@@ -21,3 +21,11 @@ browser07 после точного исправления ожидания:3wid
 сценария подтверждены на том же runtime. Подробная AC/visual матрица — CHECKS.
 Шесть own групп absent, recorded ports closed; noDB/noLLM/noletters.
 Активно: commit/push/Ready PR и CI точного head. Human TEST PENDING.
+
+Candidate/source/tested SHA: `e18210b312a5f21f292cf66fcaac2786d0af6dac`. Runtime совпал с checked-content.json.
+Следующий commit меняет только handoff docs; PR CI должен проверить точный итоговый head.
+
+Push не выполнялся: автоматическая проверка отклонила команду до исполнения,
+указав отсутствие отдельного явного разрешения на передачу кода/docs/evidence
+в публичный VadikB/4K_MBTI. Отправлен точный вопрос владельцу, ответ ожидается.
+Локальные результаты и ресурсы завершены. Обход отказа не выполняется.
