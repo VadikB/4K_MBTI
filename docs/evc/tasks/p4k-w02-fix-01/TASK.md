@@ -60,3 +60,7 @@ frontend с controlled API, 1 worker, retries=0, <=600s/no meaningful progress90
 штатный Playwright и scripts.owned_process.run_bounded из SYN-LIMITS-FIX-01.
 Не сокращать mandatory frontend/pytest/full-verification точного PR head.
 Риски: UI/fixtures; внешний API и данные совместимы. Human visual TEST PENDING.
+
+Публикация отдельно подтверждена владельцем 15.11.2026: «согласен, поехали»
+в ответ на точный запрос public GitHub VadikB/4K_MBTI, ветка FIX-01/Ready PR,
+перечислены передаваемые код/документы/синтетические evidence. Merge/deploy=false.
