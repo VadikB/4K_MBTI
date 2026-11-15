@@ -75,3 +75,15 @@ CI уточнение: runtime2 на94dfaad выявил гонку helper по�
 Диагностика: evidence/ci-runtime2-failure/diagnosis.json. Исправлен только DOM-consumer
 runtime.spec.mjs, node --check PASS; реальная проверка interview сохранена.
 Runtime SHA256 прежний, повтор полного CI относится к следующему head.
+
+CI уточнение2: head6bb2924 — frontend/pytest/integration/все4runtime PASS;
+fast281PASS/3FAIL. В новом CSS display:flex перебивал .hidden, что подтверждено
+двумя auth regressions. Селектор ограничен :not(.hidden); третий FAIL — прежний
+DOM selector diagnostics, обновлён на перенесённый diagnostics после actions.
+Css08:11/11 PASS за7.4s (invitation/password waiting,6readiness failures,
+AUTH-RESUME valid/relogin/late401, REMAIN04 waiting/logout). Build/diff-check PASS.
+При сравнении runtime hashes изменилась только onboarding.css; JS/dist прежние,
+геометрия видимой панели прежняя. Два early снимка обновлены из css08.
+Логи: evidence/css08.log.gz и ci-fast-failure.log.gz. Семь owned групп absent,
+все порты18764/18766/18784 закрыты, DB/LLM/mail0. Следующий полный CI проверяет
+исправленный кандидат, версия2.1.10 остаётся прежней (до merge не выпущена).

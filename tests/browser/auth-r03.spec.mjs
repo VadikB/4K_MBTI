@@ -4308,6 +4308,6 @@ for (const [failure, expected] of [
     await expect(page.locator('#onboarding-next')).toBeEnabled();
     expect(prepares).toBe(failure === 'organization' ? 0 : 1);
     if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('Когда сведения будут готовы, здесь появится следующий шаг.');
-    if (failure === 'failed') await expect(page.locator('#feature-list')).toContainText('synthetic-failed-operation');
+    if (failure === 'failed') await expect(page.locator('#onboarding-panel .onboarding-diagnostics')).toContainText('synthetic-failed-operation');
   });
 }

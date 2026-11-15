@@ -50,3 +50,14 @@ POST /cycles/start201 и первая AS уже показана, helper ждё�
 enabled next OR panel exit, после выхода start() проверяет настоящий interview.
 Таймауты/серверный допуск/runtime не меняются. Диагностика в evidence/ci-runtime2-failure.
 Следующее: push test-only исправления и полный штатный CI нового head.
+
+CI head6bb2924: frontend/pytest/integration и все4runtime PASS, fast281PASS/3FAIL.
+Установлено: CSS display:flex нового waiting имел специфичность выше .hidden,
+из-за чего hidden панель ошибочно оставалась видимой после logout/re-login.
+Исправление: display:flex применяется только :not(.hidden). Два auth FAIL
+покрывают регрессию. Третий FAIL — старый DOM selector diagnostics в PATH29;
+обновлён на реальный diagnostics после actions по HTML. Перед css08 записаны
+owned registry/PID/порты18764,18766,18784/командыstatus-stop; DB/LLM/mail0.
+
+Css08 PASS11/11, cleanup PASS; только CSS hash обновлён, visible geometry прежняя.
+Разрешено продолжение того же PR224, новый полный CI обязателен; повторного bump нет.
