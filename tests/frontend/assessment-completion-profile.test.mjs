@@ -50,3 +50,28 @@ test('terminal export is persisted and checked before cleanup admission', async 
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+for (const fault of ['write', 'readback']) {
+  test(`export ${fault} retains actual file state and diagnostic error`, async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'p4k-retain-'));
+    const file = path.join(dir, 'state.json');
+    const state = { run_id: 'run-1', database: 'product4k_pytest_file_fixture', collection_status: 'active' };
+    fs.writeFileSync(file, JSON.stringify(state));
+    const commands = [];
+    let scenarioOutcome = 'controlled_target_completed';
+    try {
+      const page = { request: { get: async () => ({ ok: () => true, json: async () => terminal }) } };
+      await assert.rejects(readExecutionExport(page, 'http://fixture.invalid', 'cycle-1', 'run-1', dir, fault),
+        /EXECUTION_EXPORT/);
+      assert.throws(() => destroyOwnedStandIfAdmitted({ executionStarted: true,
+        terminalExecutionExportSaved: false, preparationReceiptRequired: true,
+        terminalPreparationReceiptSaved: true, statePath: file, runId: 'run-1',
+        save: (name, value) => fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify(value)),
+        cli: action => commands.push(action) }), /Cleanup deferred/);
+      assert.deepEqual(commands, []);
+      assert.deepEqual(JSON.parse(fs.readFileSync(file, 'utf8')), state);
+      if (fault === 'readback') assert.match(fs.readFileSync(path.join(dir, 'terminal-execution-export.json'), 'utf8'), /corrupted readback/);
+      assert.equal(scenarioOutcome, 'controlled_target_completed');
+    } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  });
+}

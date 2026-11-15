@@ -8,12 +8,17 @@ import sys
 import time
 import urllib.request
 
+
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from scripts.owned_process import OwnedProcess
 CLI=ROOT/'scripts/test_stand.py'
 
 
 def check(directory,port,keep=False):
     directory.mkdir(parents=True,exist_ok=True);state=directory/'state.json'
+    owner=OwnedProcess(directory/'process-owner.json')
+    owner.recover()
     def run(action):
         with (directory/(action+'.log')).open('a') as log:
             subprocess.run([sys.executable,str(CLI),action,'--state',str(state),'--port',str(port),'--gateway','1'],
@@ -26,7 +31,7 @@ def check(directory,port,keep=False):
         run('seed')
         for iteration in range(2):
             log=(directory/'app.log').open('a')
-            process=subprocess.Popen([sys.executable,str(CLI),'serve','--state',str(state)],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
+            process=owner.start([sys.executable,str(CLI),'serve','--state',str(state)],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
             deadline=time.monotonic()+45
             while True:
                 if process.poll() is not None:raise RuntimeError('main:app exited; inspect app.log')
@@ -37,12 +42,12 @@ def check(directory,port,keep=False):
                     if time.monotonic()>deadline:raise RuntimeError('startup deadline')
                     time.sleep(.25)
             run('smoke')
-            process.terminate();process.wait(timeout=20);process=None;log.close();log=None
+            owner.stop();process=None;log.close();log=None
             run('bootstrap');run('seed')
         print('PASS clean bootstrap, owner Report/PDF, repeat bootstrap/seed/restart:',directory)
     finally:
         if process is not None:
-            process.terminate();process.wait(timeout=20)
+            owner.stop()
         if log:log.close()
         if not keep:run('destroy')
 

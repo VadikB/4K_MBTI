@@ -57,7 +57,7 @@ def preflight(port:int,python_path:str|None=None,*,verify_machine:bool=False,
 def code_identity():
     def git(*args):
         return subprocess.check_output(['git', *args], cwd=ROOT, text=True).strip()
-    paths = ['scripts/test_stand.py', 'scripts/assessment_first_case.py',
+    paths = ['scripts/test_stand.py', 'scripts/assessment_first_case.py', 'scripts/owned_process.py',
         'Api/config.py', 'Api/llm/deepseek_gateway.py', 'Api/llm/provider_contract.py',
         'assessment_definitions/providers/deepseek/v1/manifest.json',
         'tests/path29_browser_inputs.py', 'tests/path29_browser_app.py',
@@ -275,6 +275,8 @@ def main()->int:
     p.add_argument('--program-version', help='Expected program version in the selected published receipt; never latest')
     p.add_argument('--profile', choices=('first-case', 'ac18-to-report'), default='first-case',
         help='Keep standalone AC18, or continue its owned DB/Cycle through explicit Report opening')
+    p.add_argument('--run-deadline-seconds', type=float, default=1200)
+    p.add_argument('--no-progress-seconds', type=float, default=900)
     p.add_argument('--summarize-only', action='store_true', help='Rebuild normalized summary from existing evidence; no credentials or LLM')
     a=p.parse_args()
     if a.summarize_only:
@@ -329,10 +331,15 @@ def main()->int:
     if a.profile == 'ac18-to-report':
         env['P4K_COMPLETION_PROFILE'] = '1'
     previous = set(a.directory.glob('*/run.json'))
-    completed = subprocess.run(['npx','playwright','test','tests/browser/path29-participant.spec.mjs',
-        '--workers=1','--reporter=line'],cwd=ROOT,env=env)
-    record_process_result(a.directory, previous, completed.returncode)
-    summary = summarize_runs(a.directory, completed.returncode)
+    from scripts.owned_process import run_bounded
+    outcome = run_bounded(['npx','playwright','test','tests/browser/path29-participant.spec.mjs',
+        '--workers=1','--reporter=line'], registry=a.directory/'process-owner.json',
+        deadline_seconds=a.run_deadline_seconds, no_progress_seconds=a.no_progress_seconds,
+        progress_file=a.directory, cwd=ROOT, env=env)
+    (a.directory/'runner-stop.json').write_text(json.dumps(outcome) + '\n')
+    record_process_result(a.directory, previous, outcome['returncode'])
+    summary = summarize_runs(a.directory, outcome['returncode'])
+    summary['runner_outcome'] = outcome
     (a.directory / 'runner-result.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return summary['exit_code']

@@ -17,6 +17,7 @@ if os.getenv('AGENT4K_COMPONENT_PLAN_FIXTURE'):
     install(stand_state)
 
 if stand_state.get('path29_controlled_provider') is True:
+    os.environ['AGENT4K_SYNTHETIC_ONLY'] = '1'
     if (stand_state.get('path29_full_path') is not True
             or stand_state.get('path29_program_source') != 'published-pilot'
             or stand_state.get('provider_mode') != 'disabled'

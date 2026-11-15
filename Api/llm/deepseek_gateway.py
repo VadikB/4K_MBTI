@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+import os
 import threading
 import time
 import zlib
@@ -16,6 +18,31 @@ from Api.llm.provider_contract import GATEWAY_VERSION, load_provider_contract
 logger = logging.getLogger("agent4k.deepseek.gateway")
 
 
+class OperationBudget:
+    """Reserve a transport attempt before dispatch, including unknown outcomes."""
+    def __init__(self, attempts, seconds):
+        if not isinstance(attempts, int) or attempts < 1 or not math.isfinite(seconds) or seconds <= 0:
+            raise ValueError("OPERATION_LIMITS_INVALID")
+        self.limit = attempts
+        self.used = 0
+        self.deadline = time.monotonic() + seconds
+        self.lock = threading.Lock()
+
+    def remaining_seconds(self):
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError("OPERATION_DEADLINE_EXCEEDED")
+        return remaining
+
+    def reserve(self):
+        with self.lock:
+            remaining = self.remaining_seconds()
+            if self.used >= self.limit:
+                raise ValueError("OPERATION_ATTEMPT_LIMIT")
+            self.used += 1
+            return remaining
+
+
 class DeepSeekGateway:
     def __init__(
         self,
@@ -23,12 +50,27 @@ class DeepSeekGateway:
         api_keys: list[str] | None = None,
         base_url: str | None = None,
         model: str | None = None,
+        operation_max_attempts: int | None = None,
+        operation_timeout_seconds: float = 600,
     ) -> None:
         self.api_keys = list(settings.deepseek_api_keys if api_keys is None else api_keys)
         self.base_url = str(base_url or settings.deepseek_base_url).rstrip("/")
         self.model = str(model or settings.deepseek_model)
         self.model_source = "explicit_operation" if model else "provider_contract"
+        self.operation_max_attempts = operation_max_attempts if operation_max_attempts is not None else max(1, 2 * len(self.api_keys))
+        self.operation_timeout_seconds = operation_timeout_seconds
+        self._operation_budgets = {}
+        self._operation_lock = threading.Lock()
         self.request_slots = threading.BoundedSemaphore(max(1, settings.deepseek_max_concurrency))
+
+    def operation_budget(self, operation_id):
+        # This gateway is the existing operation/run context. Never renew an
+        # exhausted entry; a new gateway/run owns an independent registry.
+        with self._operation_lock:
+            if operation_id not in self._operation_budgets:
+                self._operation_budgets[operation_id] = OperationBudget(
+                    self.operation_max_attempts, self.operation_timeout_seconds)
+            return self._operation_budgets[operation_id]
 
     @property
     def enabled(self) -> bool:
@@ -77,7 +119,10 @@ class DeepSeekGateway:
         routing_key: str | None = None,
         thinking: dict[str, str] | None = None,
         response_format: dict[str, str] | None = None,
+        operation_budget: OperationBudget | None = None,
     ) -> LlmResponse:
+        if os.getenv("AGENT4K_SYNTHETIC_ONLY") == "1":
+            raise RuntimeError("SYNTHETIC_PROFILE_EXTERNAL_PROVIDER_FORBIDDEN")
         if not self.enabled:
             raise RuntimeError("DeepSeek API key is not configured")
 
@@ -91,7 +136,10 @@ class DeepSeekGateway:
 
         paused_connection_count = pause_thread_connections_for_external_io()
         queue_started_at = time.perf_counter()
-        slot_acquired = self.request_slots.acquire(timeout=max(0.1, settings.deepseek_queue_timeout_seconds))
+        queue_timeout = max(0.1, settings.deepseek_queue_timeout_seconds)
+        if operation_budget is not None:
+            queue_timeout = min(queue_timeout, operation_budget.remaining_seconds())
+        slot_acquired = self.request_slots.acquire(timeout=queue_timeout)
         queue_wait_ms = round((time.perf_counter() - queue_started_at) * 1000, 2)
         if not slot_acquired:
             logger.warning(
@@ -141,7 +189,10 @@ class DeepSeekGateway:
                     method="POST",
                 )
                 try:
-                    with request.urlopen(req, timeout=timeout_seconds) as response:
+                    effective_timeout = timeout_seconds
+                    if operation_budget is not None:
+                        effective_timeout = min(timeout_seconds, operation_budget.reserve())
+                    with request.urlopen(req, timeout=effective_timeout) as response:
                         body = json.loads(response.read().decode("utf-8"))
                     logger.info(
                         "DeepSeek request completed duration_ms=%.2f queue_wait_ms=%.2f paused_db_connections=%s routing_key=%s",

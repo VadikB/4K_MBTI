@@ -393,11 +393,13 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
     """Retry one malformed provider envelope; never salvage or merge partial JSON."""
     failures: list[dict[str, Any]] = []
     current = list(messages)
+    budget = ({"operation_budget": gateway.operation_budget(operation_id)}
+              if hasattr(gateway, "operation_budget") else {})
     for attempt in (1, 2):
         response = gateway.chat_with_trace(
             current, temperature=temperature, timeout_seconds=300, max_tokens=max_tokens,
             routing_key=operation_id if attempt == 1 else f"{operation_id}:json-retry",
-            response_format={"type": "json_object"},
+            response_format={"type": "json_object"}, **budget,
         )
         try:
             return json.loads(response.content), response, failures

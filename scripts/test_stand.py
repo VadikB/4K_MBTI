@@ -56,6 +56,7 @@ def environment(state):
             env['AGENT4K_BROWSER_NO_ASK']='1'
         if state.get('browser_silent_turn') is True:
             env['AGENT4K_BROWSER_SILENT_TURN']='1'
+    env['AGENT4K_SYNTHETIC_ONLY'] = '0' if state.get('provider_mode') == 'real' else '1'
     if state.get('provider_mode') == 'real':
         # Explicit opt-in only. Values stay in the process environment and are
         # never copied to state.json, logs or evidence.
