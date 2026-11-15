@@ -1,6 +1,7 @@
 # Состояние P4K-SYN-LIMITS-FIX-01
 
-Ветка: codex/p4k-syn-limits-fix-01. Base: 68a52a7c21bfe7759d2522a644ad194f7d111f4e.
+Ветка: codex/p4k-syn-limits-fix-01. Исходная база: 68a52a7c21bfe7759d2522a644ad194f7d111f4e.
+Актуальная база после PR #222: 293f569d; PR #223.
 Worktree: /private/tmp/p4k-syn-limits-fix-01; основной checkout не изменён.
 run_id: P4K-SYN-LIMITS-FIX-01-20261115; владелец: текущий исполнитель.
 
@@ -8,7 +9,7 @@ run_id: P4K-SYN-LIMITS-FIX-01-20261115; владелец: текущий исп�
 адресные L01–L06, controlled app-install (включая missing adapter), actual SIGINT,
 осиротевший потомок, recovery после os._exit, файловый export/readback + summary.
 Локальный код зафиксирован: 926f16337186381c4497a4e466be5c1178405ecf.
-Локальные проверки завершены. Активно: передача владельцу; push/PR заблокированы.
+Локальные проверки завершены. Активно: CI и человеческое review PR #223.
 
 Ресурсы: DB/container/browser/собственные порты/volumes не создавались.
 restart policy N/A (собственные subprocess без restart).
@@ -34,12 +35,20 @@ Runtime/framework/environment не устанавливались: сущест�
 
 PATCH-кандидат 2.1.8 и push в `https://github.com/VadikB/4K_MBTI.git` с одним PR
 подтверждены владельцем ответом в текущем чате. `ready:prepare` PASS; версия и
-frontend bundle подготовлены. Следующий шаг — проверки и commit точного кандидата.
+frontend bundle подготовлены; исходный кандидат отправлен в PR #223.
 После bump: backend1112 PASS (вне sandbox для `ps`), frontend331 PASS, lint и
 release gate PASS. Первая sandbox-проверка backend FAIL только из-за запрета `ps`;
-оба вывода сохранены. Следующий шаг — commit, push и один PR.
-branch_push/pr запрошены поручением, но push отклонён auto-review до исполнения;
-нужен явный допуск payload/destination. GitHub CLI не авторизован, plugin не подключён.
+оба вывода сохранены. Первоначальный push отклонил auto-review до исполнения;
+после явного допуска владельца ветка отправлена и PR #223 создан через GitHub UI.
+GitHub CLI не авторизован, plugin не подключён.
+
+Параллельный PR #222 вошёл в main с версией 2.1.8; первый CI PR #223 отклонил
+совпадающий номер. Ветка объединена с актуальным main; конфликты были только в
+web/dist и разрешены штатной пересборкой. Merge commit bedfa03d.
+После объединения: backend 1112 PASS, 574 deselected; frontend 332 PASS, lint/build
+PASS; независимый guard сообщил 0 внешних сетевых/.env попыток. Владелец отдельно
+подтвердил PATCH 2.1.9; ready:prepare PASS. Следующий шаг — commit/push нового
+кандидата и обязательный CI точного SHA.
 merge/deploy/artifact_publish=false.
 Audit worktree detached сохранён. Все нужные audit evidence доступны в Git-пакете,
 единственных нужных материалов в старом worktree нет. Чат не используется как evidence.

@@ -83,6 +83,8 @@ Review checklist: границы и потребители просмотрен�
 
 ## Передача / открытые зависимости
 
+Первоначальная запись до явного допуска владельца и открытия PR:
+
 GitHub CLI: `gh repo view` exit4, авторизация отсутствует. GitHub plugin найден,
 но не установлен/не подключён; подключение не выдумано. `git push` отклонён
 автоматической проверкой разрешений до исполнения: она требует явного подтверждения
@@ -104,5 +106,20 @@ sandbox — FAIL в процессных тестах из-за запрета `
 Merge/deploy/artifact publication=false. Main/test не изменены; baseline не объявлен.
 Локальная реализация и технические AC подтверждены; вся передача задания не закрыта.
 
-Следующий минимальный шаг: один PR и обязательные checks точного head,
-без автоматического merge/deploy или новых оценочных запусков.
+PR #223 создан после явного допуска владельца на push и PR. Параллельный PR #222
+вошёл в main с версией 2.1.8; первый CI PR #223 отклонил совпадающий номер:
+`CI / frontend` → `Product changed but release version remains 2.1.8`.
+Ветка объединена с main 293f569d; конфликты только в web/dist разрешены
+`npm run build:web`, merge commit bedfa03d. Владелец отдельно подтвердил PATCH
+2.1.9. `npm run ready:prepare -- --candidate 2.1.9` → PASS;
+`python3.12 scripts/check_release_version.py --base-ref origin/main` → PASS.
+После объединения: `node --test tests/frontend/*.test.mjs` → 332 PASS;
+`npm run lint:js` → PASS; `npm run build:web` → PASS;
+`npm run test:backend` через независимый guard → 1112 PASS, 574 deselected,
+0 заблокированных сетевых/.env попыток (backend-merged.json/.log/-guard.json).
+После bump frontend повторён через guard: 332 PASS, 0 FAIL
+(frontend-merged-release.json/.log/-guard.json).
+`git diff --check origin/main...HEAD` → PASS. Выполнение `npm test` → FAIL:
+такой script отсутствует в package.json; применимая команда выше прошла.
+Merge/deploy/artifact publication=false. Следующий шаг: push нового SHA,
+обязательные checks и человеческое review PR #223.
