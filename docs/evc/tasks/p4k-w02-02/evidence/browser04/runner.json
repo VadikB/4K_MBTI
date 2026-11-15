@@ -1,0 +1,22 @@
+{
+  "run_id": "w02-02-browser04",
+  "pid": 19279,
+  "pgid": 19279,
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "w02-readiness.spec.mjs",
+    "w02-acquaintance.spec.mjs",
+    "remain05-first-start.spec.mjs",
+    "exec-fix02-preparation.spec.mjs",
+    "remain04-waiting.spec.mjs",
+    "auth-r03.spec.mjs",
+    "--grep",
+    "W02-02|at 1440px|REMAIN05|first preparation|REMAIN04|W02 blocks direct|W02 does not present|PARTICIPANT-LAYOUT-01|AC18-FIX-02.*(reload resolves|reload reads|visual readiness)|PATH29 readiness",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000"
+  ],
+  "db": null,
+  "containers": []
+}

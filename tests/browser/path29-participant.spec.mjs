@@ -478,7 +478,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await page.reload();
       await expect.poll(() => lostBReply).toBe(true);
       await page.unroute('**/users/assessment/cycles/prepare');
-      await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить подготовку');
+      await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить готовность');
       await page.reload();
       await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке', { timeout: 45000 });
       const newCycleId = (await savedAcquaintance()).prepared_plan?.cycle_id;

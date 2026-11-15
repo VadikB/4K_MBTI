@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import { acquaintanceErrorMessage } from '../../web/js/acquaintance-errors.js';
 
 const source = fs.readFileSync('web/js/screens/onboarding.js', 'utf8');
-const advance = source.slice(source.indexOf('const advance = async () => {'), source.indexOf('\nexport const initOnboarding'));
+const advance = source.slice(source.indexOf('const advance = async ('), source.indexOf('\nexport const initOnboarding'));
 for (const action of ['answer', 'consent', 'progress']) {
   for (const name of ['TypeError', 'AbortError', 'RequestDeadlineError', 'opaque409']) {
     test(`actual acquaintance handler retains answer/step after ${action} ${name}`, async () => {

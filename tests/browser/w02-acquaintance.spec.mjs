@@ -206,7 +206,7 @@ for (const width of [1440, 390, 320]) {
     expect(run.writes.filter((w) => /prepare|\/start$/.test(w.path))).toEqual([]);
     expect(run.writes.filter((w) => w.body?.confirm === true)).toHaveLength(1);
     await next(page).click();
-    await expect(page.locator('#onboarding-title')).toHaveText('Для оценки ещё нужны сведения организации');
+    await expect(page.locator('#onboarding-title')).toHaveText('Нужны сведения организации');
     expect(run.writes.filter((w) => /prepare|\/start$/.test(w.path))).toEqual([]);
     if (evidence) {
       await fs.mkdir(evidence, { recursive: true });

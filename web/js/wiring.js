@@ -1400,8 +1400,7 @@ if (authCompleteContinueButton) {
       } catch (_error) {
         if (current()) {
           const { openAcquaintanceWaiting } = await import('./router.js');
-          if (current()) openAcquaintanceWaiting({ title: 'Не удалось проверить готовность',
-            message: 'Состояние сервера не получено. Повторите проверку готовности.' });
+          if (current()) openAcquaintanceWaiting({ status: 'network' });
         }
       } finally {
         authCompleteContinueButton.disabled = false;
