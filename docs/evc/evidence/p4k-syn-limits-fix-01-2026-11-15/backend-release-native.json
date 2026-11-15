@@ -1,0 +1,9 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:backend"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 87.255048583
+}

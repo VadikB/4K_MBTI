@@ -41,7 +41,7 @@ M7.9 → первичные evidence и пределы вывода AC01–AC06.
 
 ## Выпуск и откат
 branch_push=true, pr=true — поручено сдать один PR. merge=false, deploy=false,
-artifact_publish=false. version_bump=false до отдельного решения о номере по CONTRIBUTING.
+artifact_publish=false. version_bump=true: PATCH 2.1.8 подтверждён владельцем в ответе на вопрос текущего чата; `npm run ready:prepare -- --candidate 2.1.8` PASS.
 Откат: revert собственных коммитов; сохранённые diagnostic state не удалять.
 Исходный аудит [REPORT](../../evidence/p4k-syn-limits-01-2026-11-15/REPORT.md)
 скопирован побайтово и проверен audit-copy.json. Audit worktree detached сохранён;

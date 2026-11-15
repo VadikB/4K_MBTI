@@ -32,8 +32,12 @@ HTTP153 PASS переиспользован в неизменённой обла
 Runtime/framework/environment не устанавливались: существующие .venv/node_modules
 подключены локальными symlink, в Git не включаются.
 
-Открыто: PATCH-кандидат2.1.8 запрошен у владельца по CONTRIBUTING, ответ ожидается.
-До ответа version_bump=false; Ready/full CI/release gate зависимы от номера.
+PATCH-кандидат 2.1.8 и push в `https://github.com/VadikB/4K_MBTI.git` с одним PR
+подтверждены владельцем ответом в текущем чате. `ready:prepare` PASS; версия и
+frontend bundle подготовлены. Следующий шаг — проверки и commit точного кандидата.
+После bump: backend1112 PASS (вне sandbox для `ps`), frontend331 PASS, lint и
+release gate PASS. Первая sandbox-проверка backend FAIL только из-за запрета `ps`;
+оба вывода сохранены. Следующий шаг — commit, push и один PR.
 branch_push/pr запрошены поручением, но push отклонён auto-review до исполнения;
 нужен явный допуск payload/destination. GitHub CLI не авторизован, plugin не подключён.
 merge/deploy/artifact_publish=false.

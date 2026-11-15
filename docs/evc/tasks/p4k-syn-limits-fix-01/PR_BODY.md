@@ -21,6 +21,6 @@
 AC06 readback относится к настоящему файлу test state и destroy spy, не PostgreSQL.
 Нормы участника/Cycle, admission, расчёты и public HTTP API не менялись.
 
-Версия пока2.1.7; PATCH2.1.8 требует решения владельца. До Ready — штатный
-ready:prepare и обязательный CI точного head. Merge/deploy не разрешены.
+Версия 2.1.8 подтверждена владельцем; штатный ready:prepare прошёл. Обязательный
+CI точного head и человеческое review ожидаются. Merge/deploy не разрешены.
 Откат — revert926f1633 с сохранением diagnostic evidence.

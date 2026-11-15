@@ -89,12 +89,20 @@ GitHub CLI: `gh repo view` exit4, авторизация отсутствует.
 передачи конкретного payload в `https://github.com/VadikB/4K_MBTI.git`.
 Никакого обхода через другой интерфейс не выполнялось; remote не изменён.
 
-Номер PATCH2.1.8 запрошен отдельно по CONTRIBUTING, решения пока нет.
-`npm run ready:prepare` / version bump / Ready / PR / обязательный CI — NOT_RUN
-до необходимых разрешения и авторизации. Человеческое review ожидается.
+Владелец подтвердил PATCH2.1.8 и передачу этой ветки в указанный origin для одного
+PR. `npm run ready:prepare -- --candidate 2.1.8` — PASS, version bump и frontend
+bundle выполнены. Проверки точного кандидата и передача PR продолжаются;
+GitHub CLI пока не авторизован. Человеческое review ожидается.
+
+Проверки после версии: `python3.12 scripts/check_release_version.py --base-ref
+origin/main` PASS, frontend331 PASS, lint PASS. Первый запуск полного backend через
+sandbox — FAIL в процессных тестах из-за запрета `ps` (`PermissionError`), причина
+локализована. Тот же набор повторён вне ограничения sandbox с сохранённым сетевым
+и `.env` guard; результат в `backend-release-native.json/.log`.
+Повтор: **1112 passed**,572 deselected; release guard зафиксировал 0 внешних
+попыток (`release-guard-summary.json`). Это полный локальный набор после bump.
 Merge/deploy/artifact publication=false. Main/test не изменены; baseline не объявлен.
 Локальная реализация и технические AC подтверждены; вся передача задания не закрыта.
 
-Следующий минимальный шаг владельца: подтвердить payload/destination push и номер
-кандидата, авторизовать GitHub. Затем один PR и обязательные checks точного head,
+Следующий минимальный шаг: один PR и обязательные checks точного head,
 без автоматического merge/deploy или новых оценочных запусков.
