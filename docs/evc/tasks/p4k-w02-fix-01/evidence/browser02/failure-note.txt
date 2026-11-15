@@ -1,0 +1,1 @@
+Неполный controlled session-bootstrap mock при второй навигации; исправлен в browser03 (41 PASS).

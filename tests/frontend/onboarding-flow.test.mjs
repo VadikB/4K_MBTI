@@ -91,3 +91,14 @@ test('server admission cannot enable a missing route or time budget', () => {
     assert.equal(preparationView(current), 'plan_missing');
   }
 });
+
+
+test('W02 FIX a prepared plan preserves the current explanation on reload', () => {
+  const current = model({ answer_1: 'A', answer_2: 'B', answer_3: 'C' }, {
+    mandatory_complete: true, late_readiness: { status: 'ready_to_prepare' }, prepared_plan: serverReady(),
+  });
+  for (const current_step of [6, 7]) {
+    assert.equal(resumeOnboardingIndex(current, { status: 'in_progress', current_step }), current_step);
+  }
+  assert.equal(resumeOnboardingIndex(current, { status: 'completed', current_step: 8 }), 8);
+});

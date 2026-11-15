@@ -385,7 +385,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await page.unroute('**/users/assessment/cycles/prepare');
     await expect.poll(async () => (await savedAcquaintance()).onboarding.current_step).toBe(6);
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Что такое 4К');
-    await page.locator('#onboarding-skip').click();
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-next').click();
     // Entering readiness re-reads the committed server operation, not another prepare POST.
     await expect(page.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
     const code = (await savedAcquaintance()).preparation_operation.operation_id;

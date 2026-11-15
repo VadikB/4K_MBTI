@@ -1,0 +1,1 @@
+Гонка теста: Tab до requestAnimationFrame заголовка. Ожидание focus добавлено; browser07 три ширины PASS. Runtime не менялся.

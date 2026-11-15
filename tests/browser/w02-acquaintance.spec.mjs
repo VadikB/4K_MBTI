@@ -35,6 +35,7 @@ async function fixture(page) {
         question_schema: { variant: schema.variant, version: schema.version, questions: schema.questions }, questions: schema.questions.map((q) => q.text),
         provided_participant_fields: [{ key: 'full_name', label: 'ФИО', value: user.full_name }, { key: 'position', label: 'Должность', value: null }, { key: 'role', label: 'Роль в оценке', value: 'Специалист из назначения' }],
         consent_text: 'Действующий серверный текст согласия, версия 7.', consent_version: 7 } },
+    assigned_timing: { status: 'resolved', calendar_window_seconds: 172800, return_policy_snapshot: { resume_mode: 'replace_assessment_situation' } },
     assignment_id: 91, state: { answers_json: {} }, mandatory_complete: false,
     onboarding: { status: 'not_started', current_step: 0 }, late_readiness: { status: 'waiting_for_assessment_data' },
     competency_explanation: { status: 'ready', items: ['Коммуникация', 'Командная работа', 'Креативность', 'Критическое мышление'].map((name) => ({ name, definition: 'Синтетическое назначенное определение' })) },
@@ -72,18 +73,22 @@ async function fixture(page) {
 }
 const next = (page) => page.locator('#onboarding-next');
 const dialog = (page) => page.locator('#onboarding-dialog');
-async function checkIssue(page, run, fail = false) {
+async function checkIssue(page, run, fail = false, screenshot = null) {
   const before = JSON.stringify(run.model);
   await page.getByRole('button', { name: 'Сообщить о неточности', exact: true }).click();
-  await dialog(page).getByLabel('Что нужно проверить?').fill('Синтетическая неточность сведений');
+  await expect(dialog(page).getByLabel('Какие сведения нужно проверить?').locator('option')).toHaveText(['ФИО', 'Организация', 'Должность', 'Роль']);
+  await dialog(page).getByLabel('Какие сведения нужно проверить?').selectOption('Роль');
+  await dialog(page).getByLabel('Что нужно уточнить?').fill('Синтетическая неточность сведений');
+  if (screenshot) await screenshot();
   if (fail) run.failIssue();
   await dialog(page).getByRole('button', { name: 'Отправить', exact: true }).click();
   if (fail) {
     await expect(dialog(page).getByRole('alert')).toBeVisible();
-    await expect(dialog(page).getByLabel('Что нужно проверить?')).toHaveValue('Синтетическая неточность сведений');
+    await expect(dialog(page).getByLabel('Что нужно уточнить?')).toHaveValue('Синтетическая неточность сведений');
     await expect(dialog(page).getByRole('status')).toBeHidden();
     await dialog(page).getByRole('button', { name: 'Отправить', exact: true }).click();
   }
+  expect(run.writes.filter((w) => w.path.endsWith('/issues')).every((w) => w.body.message === 'Поле: Роль\nСинтетическая неточность сведений')).toBe(true);
   await expect(dialog(page).getByRole('status')).toContainText('Сообщение сохранено в вашей организации');
   await dialog(page).getByRole('button', { name: 'Продолжить знакомство', exact: true }).click();
   await expect(page.locator('#onboarding-report-issue')).toBeFocused();
@@ -93,7 +98,7 @@ for (const width of [1440, 390, 320]) {
   test(`W02 path, shared edit, failures, issue receipts and history at ${width}px`, async ({ page }, info) => {
     test.setTimeout(90000);
     const screenshot = async (name) => {
-      if (!process.env.W02_SUMMARY_ONLY || name === 'summary-1440') await page.screenshot({ path: info.outputPath(`${name}.png`) });
+      if (process.env.W02_FIX_EVIDENCE ? ['form-1440', 'form-390', 'competencies-1440', 'process-1440'].includes(name) : (!process.env.W02_SUMMARY_ONLY || name === 'summary-1440')) await page.screenshot({ path: info.outputPath(`${name}.png`) });
     };
     await page.setViewportSize({ width, height: width === 1440 ? 1024 : 844 });
     const run = await fixture(page);
@@ -110,7 +115,7 @@ for (const width of [1440, 390, 320]) {
     await expect(page.locator('#onboarding-panel')).toContainText('Действующий серверный текст согласия, версия 7.');
     await expect(page.locator('#onboarding-panel')).toContainText('Специалист из назначения');
     await expect(page.locator('#onboarding-panel')).toContainText('Не указано');
-    await checkIssue(page, run, width === 1440);
+    await checkIssue(page, run, width === 1440, () => screenshot(`form-${width}`));
     await next(page).click();
     const original = ['Синтетические рабочие задачи.', 'Синтетические решения.', 'Ограничение и взаимодействие.'];
     for (let index = 0; index < 3; index++) {
@@ -122,6 +127,7 @@ for (const width of [1440, 390, 320]) {
     }
     await expect(page.locator('#onboarding-title')).toHaveText('Всё верно?');
     await expect(page.locator('#feature-list .onboarding-summary-answer')).toHaveText(original);
+    await expect(page.locator('#onboarding-title')).toBeFocused();
     await next(page).focus(); await page.keyboard.press('Tab');
     await expect(page.locator('#onboarding-edit-answers')).toBeFocused();
     expect(await page.locator('#onboarding-edit-answers').evaluate((node) => getComputedStyle(node).outlineColor)).toBe('rgb(0, 125, 137)');
@@ -171,6 +177,21 @@ for (const width of [1440, 390, 320]) {
     await expect(page.locator('#feature-list')).toContainText('Один ответ не определяет общую картину');
     await page.reload();
     await expect(page.locator('#onboarding-title')).toHaveText('Что такое 4К');
+    await expect(page.locator('#onboarding-actions button:visible')).toHaveText(['Как проходит оценка']);
+    await screenshot(`competencies-${width}`);
+    await next(page).click();
+    await expect(page.locator('#onboarding-title')).toHaveText('Как будет проходить оценка');
+    await expect(page.locator('#feature-list ol li')).toHaveCount(4);
+    await expect(page.locator('#feature-list')).toContainText('48 ч.');
+    await expect(page.locator('#feature-list')).toContainText('будет заменена');
+    await expect(page.locator('#feature-list .onboarding-summary-note')).toContainText('Перед началом');
+    await expect(page.locator('#onboarding-actions button:visible')).toHaveText(['Завершить знакомство']);
+    await page.reload();
+    await expect(page.locator('#onboarding-title')).toHaveText('Как будет проходить оценка');
+    await screenshot(`process-${width}`);
+    await next(page).click();
+    await expect(page.locator('#onboarding-title')).toHaveText('Нужны сведения организации');
+    await expect(page.locator('#onboarding-status-tail #onboarding-view-history')).toBeVisible();
     // Return through the product dashboard and its existing read-only history entry.
     await page.locator('#onboarding-home').click();
     await expect(page.locator('#dashboard-panel')).toBeVisible();
@@ -210,11 +231,64 @@ for (const width of [1440, 390, 320]) {
     expect(run.writes.filter((w) => /prepare|\/start$/.test(w.path))).toEqual([]);
     if (evidence) {
       await fs.mkdir(evidence, { recursive: true });
-      const selected = new Set(['computed-styles.json', 'add01-computed.json', ...(width === 1440 ? ['welcome-1440.png', 'summary-1440.png'] :
+      const selected = new Set(process.env.W02_FIX_EVIDENCE ? ['form-1440.png', 'form-390.png', 'competencies-1440.png', 'process-1440.png'] : ['computed-styles.json', 'add01-computed.json', ...(width === 1440 ? ['welcome-1440.png', 'summary-1440.png'] :
         width === 390 ? ['question-390.png', 'history-390.png'] : ['edit-error-320.png', 'history-320.png'])]);
       for (const file of await fs.readdir(info.outputDir)) if (selected.has(file)) {
         await fs.copyFile(path.join(info.outputDir, file), path.join(evidence, `${width}-${file}`));
       }
     }
   });
+}
+
+
+test('W02 FIX issue total length, retry draft reload, assignment isolation and double submit', async ({ page }) => {
+  const run = await fixture(page); await page.goto(base); await next(page).click();
+  const open = () => page.locator('#onboarding-report-issue').click();
+  const field = () => dialog(page).getByLabel('Какие сведения нужно проверить?');
+  const input = () => dialog(page).getByLabel('Что нужно уточнить?');
+  const send = () => dialog(page).getByRole('button', { name: 'Отправить', exact: true });
+  await open(); await field().selectOption('Организация');
+  const prefix = 'Поле: Организация\n';
+  const text = 'я'.repeat(2001 - prefix.length);
+  await input().fill(text); await send().click();
+  await expect(dialog(page).getByRole('alert')).toContainText('не более 2000');
+  await expect(input()).toHaveValue(text);
+  expect(run.writes.filter((w) => w.path.endsWith('/issues'))).toHaveLength(0);
+  await input().fill('я'.repeat(2000 - prefix.length)); run.failIssue(); await send().click();
+  await expect(dialog(page).getByRole('alert')).toBeVisible();
+  await page.reload(); await open();
+  await expect(field()).toHaveValue('Организация');
+  await expect(input()).toHaveValue('я'.repeat(2000 - prefix.length));
+  // Context switch cannot expose the old assignment draft.
+  await dialog(page).getByRole('button', { name: 'Отмена', exact: true }).click();
+  run.model.assignment_id = 92; await page.reload(); await open();
+  await expect(field()).toHaveValue('ФИО'); await expect(input()).toHaveValue('');
+  await dialog(page).getByRole('button', { name: 'Отмена', exact: true }).click();
+  run.model.assignment_id = 91; await page.reload(); await open();
+  await expect(field()).toHaveValue('Организация');
+  // Delay the receipt: the pending guard must prevent duplicate submissions.
+  let release; const held = new Promise((resolve) => { release = resolve; }); let posts = 0, message;
+  await page.route('**/users/8/acquaintance/issues', async (route) => {
+    posts++; message = route.request().postDataJSON().message;
+    await held; return json(route, { id: 99, status: 'new' }, 201);
+  });
+  await send().click(); await expect(send()).toBeDisabled(); await expect(field()).toBeDisabled();
+  await dialog(page).locator('form').evaluate((form) => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  expect(posts).toBe(1); expect([...message]).toHaveLength(2000);
+  expect(message.startsWith(prefix)).toBe(true); expect(message.match(/Поле:/g)).toHaveLength(1);
+  release(); await expect(dialog(page).getByRole('status')).toBeVisible();
+  await dialog(page).getByRole('button', { name: 'Продолжить знакомство', exact: true }).click();
+  await open(); await expect(input()).toHaveValue('');
+  await page.keyboard.press('Escape'); await expect(page.locator('#onboarding-report-issue')).toBeFocused();
+});
+
+if (process.env.W02_REFERENCE_HTML && evidence) {
+  for (const [scene, width] of [['organization', 1440], ['identity', 1440], ['competencies', 1440], ['process', 1440], ['preparing', 1440], ['failed-locked', 1440], ['organization', 390], ['identity', 390]]) {
+    test(`W02 FIX reference ${scene} ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: width === 1440 ? 1024 : 844 });
+      await page.goto('file://' + process.env.W02_REFERENCE_HTML + '#stage=' + scene + '&show=1');
+      if (scene === 'identity') await page.getByRole('button', { name: 'Сообщить о неточности', exact: true }).click();
+      await page.screenshot({ path: path.join(evidence, `reference-${scene}-${width}.png`), fullPage: true });
+    });
+  }
 }

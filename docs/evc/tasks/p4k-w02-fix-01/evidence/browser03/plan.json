@@ -1,0 +1,29 @@
+{
+  "run_id": "browser03",
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "w02-acquaintance.spec.mjs",
+    "w02-readiness.spec.mjs",
+    "auth-r03.spec.mjs",
+    "--grep",
+    "W02|PARTICIPANT-LAYOUT-01",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000",
+    "--reporter=list,/private/tmp/p4k-w02-fix-reporter.cjs"
+  ],
+  "ports": [
+    "ephemeral W02 fixtures",
+    "18764 auth fixture"
+  ],
+  "db": null,
+  "containers": [],
+  "restart_policy": "no",
+  "llm": 0,
+  "mail": 0,
+  "status": "read owner.json and resources.jsonl; ps -p PID; lsof -nP -iTCP:PORT -sTCP:LISTEN",
+  "stop": "python3 -c \"from scripts.owned_process import OwnedProcess; OwnedProcess(REGISTRY).recover()\"",
+  "deadline_seconds": 600,
+  "no_progress_seconds": 90
+}

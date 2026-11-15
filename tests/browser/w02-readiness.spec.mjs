@@ -108,6 +108,19 @@ for (const [scene, title] of Object.entries(titles)) {
     const panel = ['unassigned', 'expired'].includes(scene) ? page.locator('#auth-complete-panel') : page.locator('#onboarding-panel');
     await expect(panel.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(panel).not.toContainText(/Обратитесь|ответственному|организатору|управление/i);
+    if (!['unassigned', 'expired'].includes(scene)) {
+      await expect(panel.locator('#onboarding-status-icon')).toBeVisible();
+      if (scene !== 'load-error') await expect(panel.locator('#onboarding-status-tail #onboarding-view-history')).toBeVisible();
+      else await expect(panel.locator('#onboarding-view-history')).toHaveCount(0);
+      await expect(panel.locator('#onboarding-logout')).toHaveCount(scene === 'access' ? 1 : 0);
+      if (['preparing', 'organization', 'failed-locked'].includes(scene)) {
+        expect(await panel.locator('#onboarding-next').evaluate((n) => getComputedStyle(n).backgroundColor)).toBe('rgb(255, 255, 255)');
+      }
+    }
+    if (process.env.W02_FIX_EVIDENCE && ['preparing', 'failed-locked'].includes(scene)) {
+      await page.setViewportSize({ width: 1440, height: 1024 });
+      await page.screenshot({ path: path.join(process.env.W02_EVIDENCE_DIR, `${scene}-1440.png`), fullPage: true });
+    }
     if (scene !== 'ready') await expect(panel.getByRole('button', { name: 'Приступить к оценке', exact: true })).toHaveCount(0);
     if (scene === 'failed') {
       await expect(panel.getByRole('button', { name: 'Повторить подготовку', exact: true })).toBeVisible();
