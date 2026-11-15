@@ -57,6 +57,47 @@ def test_cli_bad_source_is_rejected_before_env_file_and_machine_checks(monkeypat
     assert stopped.value.code == 2
 
 
+def test_controlled_budget_is_rejected_before_env_or_database(monkeypatch):
+    import sys
+    import pytest
+    import dotenv
+    from scripts import assessment_first_case as runner
+    monkeypatch.setattr(sys, 'argv', ['assessment_first_case.py', '--controlled-provider',
+        '--program-source', 'published-pilot', '--path-action-limit', '0',
+        '--path-visual-limit', '40', '--env-file', '/must-not-be-read.env'])
+    monkeypatch.setattr(dotenv, 'dotenv_values', lambda *a, **kw: pytest.fail('must not read credentials'))
+    monkeypatch.setattr(runner, 'preflight', lambda *a, **kw: pytest.fail('must not probe machine'))
+    with pytest.raises(SystemExit) as stopped:
+        runner.main()
+    assert stopped.value.code == 2
+
+
+def test_controlled_runner_passes_explicit_budget_and_clears_early_stop(tmp_path, monkeypatch):
+    import sys
+    from scripts import assessment_first_case as runner
+    from scripts import owned_process
+    monkeypatch.setattr(sys, 'argv', ['assessment_first_case.py', '--controlled-provider',
+        '--program-source', 'published-pilot', '--path-action-limit', '120',
+        '--path-visual-limit', '40', '--directory', str(tmp_path)])
+    monkeypatch.setenv('P4K_STOP_AFTER_FIRST_AS', '1')
+    monkeypatch.setenv('P4K_COMPLETION_PROFILE', '1')
+    monkeypatch.setattr(runner, 'preflight', lambda *a, **kw: {'status': 'READY'})
+    monkeypatch.setattr(runner, 'code_identity', lambda: {'scope': 'synthetic-unit'})
+    seen = []
+    monkeypatch.setattr(owned_process, 'run_bounded', lambda *a, **kw: seen.append(kw['env']) or {'returncode': 0})
+    monkeypatch.setattr(runner, 'summarize_runs', lambda *a, **kw: {'exit_code': 0, 'result': 'PASS TECH'})
+    assert runner.main() == 0
+    env = seen[0]
+    assert {key: env[key] for key in ('P4K_FULL_PATH', 'P4K_CONTROLLED_PROVIDER',
+        'P4K_PROGRAM_SOURCE', 'P4K_PATH_BOUNDED', 'P4K_PATH_ACTION_LIMIT',
+        'P4K_PATH_VISUAL_LIMIT', 'P4K_REAL_PROVIDER')} == {
+        'P4K_FULL_PATH': '1', 'P4K_CONTROLLED_PROVIDER': '1',
+        'P4K_PROGRAM_SOURCE': 'published-pilot', 'P4K_PATH_BOUNDED': '1',
+        'P4K_PATH_ACTION_LIMIT': '120', 'P4K_PATH_VISUAL_LIMIT': '40', 'P4K_REAL_PROVIDER': '0'}
+    assert 'P4K_STOP_AFTER_FIRST_AS' not in env
+    assert 'P4K_COMPLETION_PROFILE' not in env
+
+
 def test_cli_passes_selected_ref_not_ambient_override_to_bootstrap(tmp_path, monkeypatch):
     import json
     import sys
@@ -70,7 +111,7 @@ def test_cli_passes_selected_ref_not_ambient_override_to_bootstrap(tmp_path, mon
     monkeypatch.setattr(runner, 'preflight', lambda *a, **kw: {'status': 'READY'})
     monkeypatch.setattr(runner, 'code_identity', lambda: {'scope': 'synthetic_unit_fixture'})
     monkeypatch.setattr(runner, 'check_bootstrap', lambda d, p, py, env: seen.append(env))
-    monkeypatch.setattr(runner, 'summarize_runs', lambda *a: {'exit_code': 0})
+    monkeypatch.setattr(runner, 'summarize_runs', lambda *a, **kw: {'exit_code': 0})
     assert runner.main() == 0
     assert json.loads(seen[0]['P4K_PUBLISHED_RELEASE_REF']) == expected
 

@@ -6,6 +6,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { persistReceipt, isTerminalPreparationReceipt } from './fixtures/receipt-file.mjs';
 import { verifyPreparation, verifyFirstCase, verifyPublishedProgram } from './fixtures/preparation-receipt.mjs';
 import { capturePathViewports } from './fixtures/path-viewports.mjs';
+import { preparePathBrowser } from './fixtures/path-action-budget.mjs';
 import { waitForPasswordCreationForm } from './fixtures/auth-password-form.mjs';
 import { captureFailurePage } from './fixtures/failure-page.mjs';
 import { completeStartedAssessment, readExecutionExport, terminalExecutionKnown, destroyOwnedStandIfAdmitted } from './fixtures/assessment-completion-profile.mjs';
@@ -33,22 +34,31 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   const realProvider = process.env.P4K_REAL_PROVIDER === '1';
   const controlledProvider = process.env.P4K_CONTROLLED_PROVIDER === '1';
   const compositeProfile = process.env.P4K_COMPLETION_PROFILE === '1';
+  const guardedBrowser = preparePathBrowser(browser, process.env);
+  const boundedPath = guardedBrowser.bounded;
+  const pathBudget = guardedBrowser.budget;
+  const pathBrowser = guardedBrowser.browser;
+  const viewportOptions = boundedPath ? { widths: [1440] } : undefined;
   const requestedRelease = process.env.P4K_PUBLISHED_RELEASE_REF
     ? JSON.parse(process.env.P4K_PUBLISHED_RELEASE_REF) : undefined;
   if (fullPath && !realProvider && !controlledProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_PROVIDER');
+  if (boundedPath && !fullPath) throw new Error('BOUNDED_PATH_REQUIRES_FULL_PATH');
+  if (boundedPath && compositeProfile) throw new Error('BOUNDED_FIRST_CASE_EXCLUDES_COMPLETION_PROFILE');
+  if (controlledProvider && !boundedPath) throw new Error('CONTROLLED_PROVIDER_REQUIRES_BOUNDED_PATH');
   if (controlledProvider && (!fullPath || realProvider || process.env.P4K_PROGRAM_SOURCE !== 'published-pilot')) {
     throw new Error('CONTROLLED_PROVIDER_REQUIRES_PUBLISHED_OWNED_PATH');
   }
   if (realProvider) test.info().annotations.push({ type: 'llm', description: 'Explicit real DeepSeek synthetic diagnostic' });
   if (controlledProvider) test.info().annotations.push({ type: 'synthetic_provider',
     description: 'Scripted PM-03 transport; published source and product admission unchanged; no external LLM' });
-  const run = (script, args) => {
-    const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 180000 });
+  const run = (script, args, timeout = 180000) => {
+    const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout });
     if (result.status !== 0) throw new Error(script + ': ' + result.stderr + result.stdout);
   };
   const cli = (action) => run('scripts/test_stand.py', [action, '--state', statePath, '--port', port,
-    '--gateway', realProvider ? '0' : '1', '--provider', realProvider ? 'real' : 'disabled']);
-  const superContext = await browser.newContext(), adminContext = await browser.newContext(), participantContext = await browser.newContext();
+    '--gateway', realProvider ? '0' : '1', '--provider', realProvider ? 'real' : 'disabled'],
+    action === 'destroy' ? 30000 : 180000);
+  const superContext = await pathBrowser.newContext(), adminContext = await pathBrowser.newContext(), participantContext = await pathBrowser.newContext();
   const extraContexts = [];
   const superPage = await superContext.newPage(), admin = await adminContext.newPage(), page = await participantContext.newPage();
   let activePage = superPage;
@@ -63,15 +73,17 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
   let terminalPreparationReceiptSaved = false;
   let executionStarted = false;
   let executionCycleId;
+  let scenarioError;
   const save = (name, value) => persistReceipt(path.join(dir, name + '.json'), value);
-  cli('create');
   try {
+    cli('create');
     const initialState = JSON.parse(fs.readFileSync(statePath, 'utf8'));
     runId = initialState.run_id;
     save('run', { run_id: initialState.run_id, database: initialState.database, port,
       provider_mode: initialState.provider_mode,
       provider_transport: controlledProvider ? 'controlled_fixture' : realProvider ? 'deepseek' : 'disabled',
       profile: compositeProfile ? 'assessment-execution-contour/2' : 'assessment-first-case/1.1',
+      bounded_path: boundedPath,
       program_source: fullPath ? process.env.P4K_PROGRAM_SOURCE : undefined,
       published_release_ref: fullPath ? requestedRelease : undefined,
       code: process.env.P4K_CODE_IDENTITY ? JSON.parse(process.env.P4K_CODE_IDENTITY) : null });
@@ -127,10 +139,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const superCard = superPage.locator(`[data-organization-id="${target.id}"]`);
       await expect(superCard).toBeVisible();
       await superCard.locator('select[name="program_definition_id"]').selectOption(String(state.path29.program_id));
-      await capturePathViewports(superPage, dir, 'superadmin-program', [
+      if (!boundedPath) await capturePathViewports(superPage, dir, 'superadmin-program', [
         { name: 'program', locator: superCard.locator('select[name="program_definition_id"]') },
         { name: 'connect', locator: superCard.locator('form[data-action="connect-assessment-program"]').getByRole('button', { name: 'Подключить' }) },
-      ]);
+      ], viewportOptions);
       await superCard.locator('form[data-action="connect-assessment-program"]').getByRole('button', { name: 'Подключить' }).click();
       await expect(superCard.locator('form[data-action="connect-assessment-program"]')).toContainText('Подключено:');
       const addAdmin = superCard.locator('form[data-action="add-admin"]');
@@ -177,11 +189,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     for (const [name, value] of Object.entries(values)) {
       if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
     }
-    await capturePathViewports(admin, dir, 'admin-questionnaire', [
+    if (!boundedPath) await capturePathViewports(admin, dir, 'admin-questionnaire', [
       { name: 'organizer', locator: form.locator('[name="organizer"]') },
       { name: 'purpose', locator: form.locator('[name="purpose"]') },
       { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }) },
-    ]);
+    ], viewportOptions);
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
     await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
@@ -206,7 +218,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
       await expect(card.locator('.admin-assignment-readiness')).toContainText(
         `действует подтверждённая редакция #${confirmedRevision.id}; новый черновик ещё не подтверждён`);
-      const freshAdminContext = await browser.newContext();
+      const freshAdminContext = await pathBrowser.newContext();
       extraContexts.push(freshAdminContext);
       const freshAdmin = await freshAdminContext.newPage();
       await freshAdmin.goto(base);
@@ -262,7 +274,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(add.locator('[data-operation-status]')).toContainText('Участник привязан');
     const checkbox = card.locator(`input[name="invitation_email"][value="${state.path29.participant_email}"]`);
     await checkbox.check();
-    await capturePathViewports(admin, dir, 'admin-assignment', [
+    if (!boundedPath) await capturePathViewports(admin, dir, 'admin-assignment', [
       { name: 'long-participant-selection', locator: checkbox },
       { name: 'assign', locator: card.getByRole('button', { name: 'Назначить оценку', exact: true }) },
     ]);
@@ -319,8 +331,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(answer).toHaveValue(text[0]);
     await answer.fill(text[0]); // The persisted dirty draft remains editable after the management return.
     const geometry = [];
-    for (const width of [1440, 1280, 768, 390, 360, 320]) {
+    for (const width of boundedPath ? [1440] : [1440, 1280, 768, 390, 360, 320]) {
       await page.setViewportSize({ width, height: 936 });
+      pathBudget?.reserve('visuals', 'scrollIntoView');
       await page.locator('.onboarding-copy').evaluate((element) => element.scrollIntoView({ block: 'start' }));
       const metrics = await page.locator('#onboarding-panel').evaluate((panel) => {
         const back = panel.querySelector('#onboarding-step-back').getBoundingClientRect();
@@ -344,11 +357,13 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       geometry.push({ width, ...metrics });
       await page.screenshot({ path: path.join(dir, `question-${width}.png`), fullPage: true });
     }
-    await page.setViewportSize({ width: 640, height: 360 });
-    await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
-    await next.scrollIntoViewIfNeeded(); await expect(next).toBeInViewport();
-    await page.screenshot({ path: path.join(dir, 'question-short-zoom200.png'), fullPage: true });
-    await page.evaluate(() => { document.documentElement.style.zoom = ''; });
+    if (!boundedPath) {
+      await page.setViewportSize({ width: 640, height: 360 });
+      await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
+      await next.scrollIntoViewIfNeeded(); await expect(next).toBeInViewport();
+      await page.screenshot({ path: path.join(dir, 'question-short-zoom200.png'), fullPage: true });
+      await page.evaluate(() => { document.documentElement.style.zoom = ''; });
+    }
     await page.setViewportSize({ width: 1440, height: 1000 });
     let interrupted = false;
     await page.route('**/acquaintance/answers', async (route) => {
@@ -420,7 +435,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     }
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
-    const freshContext = await browser.newContext(); extraContexts.push(freshContext);
+    const freshContext = await pathBrowser.newContext(); extraContexts.push(freshContext);
     const fresh = await freshContext.newPage(); await fresh.goto(base);
     await fresh.locator('#email-input').fill(state.path29.participant_email);
     await fresh.locator('#request-magic-link-button').click();
@@ -448,7 +463,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'ready.png'), fullPage: true });
-    await capturePathViewports(page, dir, 'participant-ready', [
+    if (!boundedPath) await capturePathViewports(page, dir, 'participant-ready', [
       { name: 'readiness-explanation', locator: page.locator('#onboarding-title') },
       { name: 'explicit-start', locator: next },
     ]);
@@ -538,7 +553,10 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('.interview-message--situation').first()).toBeVisible();
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'first-case.png'), fullPage: true });
-    await capturePathViewports(page, dir, 'first-as', [
+    if (boundedPath) await capturePathViewports(page, dir, 'first-as', [
+      { name: 'answer-input', locator: page.locator('#interview-textarea') },
+    ], viewportOptions);
+    if (!boundedPath) await capturePathViewports(page, dir, 'first-as', [
       { name: 'home', locator: page.locator('#interview-profile-button') },
       { name: 'answer-input', locator: page.locator('#interview-textarea') },
       { name: 'pause', locator: page.locator('#interview-pause-button') },
@@ -624,7 +642,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     if (!fullPath && process.env.P4K_F06_A_B_A === '1') {
       const secondOrgId = state.path29.second_organization_id;
       expect(secondOrgId).toBeGreaterThan(0);
-      const switchContext = await browser.newContext();
+      const switchContext = await pathBrowser.newContext();
       extraContexts.push(switchContext);
       const switchAdmin = await switchContext.newPage();
       await switchAdmin.goto(base);
@@ -859,6 +877,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
           save('controlled-terminal-cleanup', await cleanup.json());
         }
       }
+      pathBudget?.finish();
       scenarioCompleted = true;
       return;
     }
@@ -882,10 +901,12 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await test.info().attach('path29-browser-and-geometry', { body: JSON.stringify({ browser: browser.version(), geometry }), contentType: 'application/json' });
     for (const name of ['question-1440', 'question-1280', 'question-768', 'question-390', 'question-360',
       'question-320', 'question-short-zoom200', 'ready', 'first-case']) {
+      if (boundedPath && !['question-1440', 'ready', 'first-case'].includes(name)) continue;
       await test.info().attach(`path29-${name}`, { path: path.join(dir, `${name}.png`), contentType: 'image/png' });
     }
     console.log('PATH29 owned screenshots and server log:', dir);
   } catch (error) {
+    scenarioError = error;
     let failureReceipt;
     try {
       if (server && server.exitCode === null) {
@@ -895,7 +916,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       }
     } catch { /* Startup failures may have no HTTP endpoint. */ }
     try {
-      await captureFailurePage(activePage, dir, { step, actor: activeActor });
+      await captureFailurePage(pathBudget?.unwrap(activePage) || activePage, dir, { step, actor: activeActor });
     } catch { /* Closed or unavailable active tabs must not discard server evidence. */ }
     const preparationError = failureReceipt?.preparation_operation?.error_message;
     save('failure', { step,
@@ -904,6 +925,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       classification: preparationError ? 'product_preparation_blocker' : 'diagnostic_assertion_or_environment_failure' });
     throw error;
   } finally {
+    if (pathBudget) save('path-action-budget', { run_id: runId, ...pathBudget.receipt() });
     let terminalExecutionExportSaved = false;
     if (executionStarted) {
       try {
@@ -926,13 +948,27 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       }
     } finally {
       try {
-        destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutionExportSaved,
+        if (fs.existsSync(statePath)) destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutionExportSaved,
           preparationReceiptRequired, terminalPreparationReceiptSaved,
           statePath, runId, save, cli });
+      } catch (cleanupError) {
+        if (!scenarioError) throw cleanupError;
+        save('cleanup-error', { run_id: runId, reason: 'CLEANUP_FAILED',
+          error_code: cleanupError.code || 'UNKNOWN' });
       }
-      finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
-      if (fullPath) save('completion', { run_id: runId, status: scenarioCompleted ? 'completed' : 'failed',
-        exit_code: scenarioCompleted ? 0 : 1, receipt_file: terminalReceiptFile,
+      finally {
+        const closeAll = Promise.allSettled([superContext.close(), adminContext.close(),
+          participantContext.close(), ...extraContexts.map((context) => context.close())]);
+        let timer;
+        try {
+          const closed = await Promise.race([closeAll.then((results) => results.every((result) => result.status === 'fulfilled')),
+            new Promise((resolve) => { timer = setTimeout(() => resolve(false), 30000); })]);
+          if (!closed) save('cleanup-error', { run_id: runId, reason: 'BROWSER_CLOSE_TIMEOUT' });
+        }
+        finally { clearTimeout(timer); }
+      }
+      if (fullPath) save('completion', { run_id: runId, status: scenarioCompleted && (!pathBudget || pathBudget.receipt().status === 'completed') ? 'completed' : 'failed',
+        exit_code: scenarioCompleted && (!pathBudget || pathBudget.receipt().status === 'completed') ? 0 : 1, receipt_file: terminalReceiptFile,
         receipt_sha256: scenarioCompleted
           ? createHash('sha256').update(fs.readFileSync(path.join(dir, terminalReceiptFile))).digest('hex') : null });
     }

@@ -38,15 +38,16 @@ export function assertViewportGeometry(geometry, label) {
     .toBeLessThanOrEqual(geometry.viewport.width + 1);
 }
 
-export async function capturePathViewports(page, directory, phase, controls) {
+export async function capturePathViewports(page, directory, phase, controls, { widths = [1440, 320, 390, 768] } = {}) {
   const original = page.viewportSize();
   const records = [];
   const receipt = path.join(directory, `${phase}-viewports.json`);
+  let failed = false;
   try {
     // PATH has other tabs/contexts. Observe layout on the user's active page;
     // background-tab IntersectionObserver delivery may be throttled by Chromium.
     await page.bringToFront();
-    for (const width of [1440, 320, 390, 768]) {
+    for (const width of widths) {
       await page.setViewportSize({ width, height: 1000 });
       const record = { width, height: 1000, controls: [] };
       records.push(record);
@@ -87,15 +88,20 @@ export async function capturePathViewports(page, directory, phase, controls) {
       expect(record.document.visibility).toBe('visible');
     }
   } catch (error) {
+    failed = true;
     const failed = records.at(-1);
     if (failed) {
       failed.error = 'VIEWPORT_ASSERTION_FAILED';
       fs.writeFileSync(receipt, JSON.stringify(records, null, 2) + '\n');
-      await page.screenshot({ path: path.join(directory, `${phase}-failed-${failed.width}.png`), fullPage: true });
+      try { await page.screenshot({ path: path.join(directory, `${phase}-failed-${failed.width}.png`), fullPage: true }); }
+      catch { /* Preserve the assertion or budget failure. */ }
     }
     throw error;
   } finally {
-    if (original) await page.setViewportSize(original);
+    if (original) {
+      try { await page.setViewportSize(original); }
+      catch (restoreError) { if (!failed) throw restoreError; }
+    }
   }
   return records;
 }
