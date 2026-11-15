@@ -3777,14 +3777,19 @@ test('PARTICIPANT-LAYOUT-01 keeps early W02 waiting text and actions readable', 
       await page.locator('#verify-magic-link-button').click();
     } else await page.goto(`${base}/?screen=onboarding`);
     const panel = page.locator('#auth-complete-panel');
-    await expect(page.locator('#auth-complete-title')).toHaveText('Нужно уточнить источники назначения');
-    await expect(panel).toContainText('Причина ожидания: assignment_sources');
+    await expect(page.locator('#auth-complete-title')).toHaveText('Нужны сведения организации');
+    await expect(page.locator('#auth-complete-description')).toHaveText('Организация ещё завершает настройку вашей оценки. Когда сведения будут готовы, здесь появится следующий шаг.');
+    await expect(panel.locator('.auth-waiting-note')).toHaveText('Время выполнения ещё не идёт.');
+    await expect(panel).not.toContainText(/assignment_sources|Причина ожидания|источники назначения/);
+    await expect(panel).toHaveAttribute('data-readiness-reason', 'assignment_sources');
     await expect(panel).not.toContainText('ответы сохранены');
     await expect(panel.getByRole('button', { name: 'Посмотреть знакомство' })).toHaveCount(0);
     const geometry = await panel.evaluate((node) => {
       const copy = node.querySelector('.auth-complete-copy'), description = node.querySelector('#auth-complete-description');
       const card = node.querySelector('.auth-complete-card'), actions = node.querySelector('.auth-complete-actions');
-      return { copyWidth: copy.getBoundingClientRect().width, textWidth: description.getBoundingClientRect().width,
+      const rect = (n) => { const r = n.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height, bottom: r.bottom }; };
+      return { card: rect(card), main: rect(node), header: rect(document.querySelector('.auth-header')), footer: rect(document.querySelector('.app-footer')),
+        copyWidth: copy.getBoundingClientRect().width, textWidth: description.getBoundingClientRect().width,
         cardWidth: card.getBoundingClientRect().width, scrollWidth: document.documentElement.scrollWidth,
         buttons: [...actions.querySelectorAll('button')].map((b) => ({ height: b.getBoundingClientRect().height, width: b.getBoundingClientRect().width })),
         direction: getComputedStyle(actions).flexDirection };
@@ -3798,7 +3803,8 @@ test('PARTICIPANT-LAYOUT-01 keeps early W02 waiting text and actions readable', 
     expect(geometry.direction).toBe(width === 390 ? 'column' : 'row');
     if (width === 1440) expect(geometry.buttons[0].width).toBeLessThan(300);
     const target = process.env.W02_EVIDENCE_DIR ? path.join(process.env.W02_EVIDENCE_DIR, `early-waiting-${width}.png`) : testInfo.outputPath(`early-waiting-${width}.png`);
-    await page.screenshot({ path: target, fullPage: true });
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({ path: target, fullPage: false });
     await fs.writeFile(target.replace('.png', '.json'), JSON.stringify(geometry, null, 2));
     const before = checks; await panel.getByRole('button', { name: 'Проверить готовность' }).click();
     await expect.poll(() => checks).toBeGreaterThan(before);

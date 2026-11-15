@@ -127,8 +127,9 @@
 @media (prefers-reduced-motion: reduce) { #onboarding-panel .onboarding-spinner { animation: none; } }
 
 /* Standalone readiness states share W02-01 tokens; the transcript stays in history. */
-#onboarding-panel.onboarding-standalone { height: auto; min-height: calc(100dvh - 164px); overflow: visible; }
-#onboarding-panel.onboarding-standalone .onboarding-shell { height: auto; min-height: inherit; }
+#onboarding-panel.onboarding-standalone { height: auto; min-height: 0; overflow: visible; }
+#onboarding-panel.onboarding-standalone:not(.hidden) { display: flex; }
+#onboarding-panel.onboarding-standalone .onboarding-shell { flex: 1; height: auto; min-height: 0; }
 #onboarding-panel.onboarding-standalone .onboarding-history { flex: 1; display: flex; overflow: visible; padding: 32px 16px; }
 #onboarding-panel.onboarding-standalone .onboarding-thread { width: 100%; max-width: 760px; margin: auto; }
 #onboarding-panel.onboarding-standalone .onboarding-copy { width: 100%; margin: 0; }
@@ -136,8 +137,11 @@
 #onboarding-panel.onboarding-standalone .onboarding-composer { display: none; }
 #onboarding-panel.onboarding-standalone .onboarding-bubble { background: var(--w02-white); padding: 32px; }
 #onboarding-panel.onboarding-standalone h2 { font: 600 22px/30px var(--font-body); }
-#onboarding-panel.onboarding-standalone #feature-list { margin-top: 16px; }
-#onboarding-panel .onboarding-assessment-name { font-weight: 600; }
+#onboarding-panel.onboarding-standalone #onboarding-description { margin: 0 0 16px; }
+#onboarding-panel.onboarding-standalone #feature-list { margin: 0; }
+#onboarding-panel.onboarding-standalone .onboarding-time-notice { margin: 20px 0 0; }
+#onboarding-panel.onboarding-standalone .onboarding-diagnostics { margin-top: 20px; }
+#onboarding-panel.onboarding-standalone #onboarding-description.onboarding-assessment-name { color: var(--w02-muted); }
 #onboarding-panel .onboarding-metrics { margin: 24px 0; }
 #onboarding-panel .onboarding-time-notice { font-size: 14px; color: var(--w02-muted); }
 #onboarding-panel .onboarding-diagnostics { margin-top: 16px; font-size: 14px; overflow-wrap: anywhere; color: var(--w02-muted); }
@@ -146,7 +150,7 @@
 .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) > .app-footer { background: var(--w02-canvas); color: rgb(100 116 139 / 60%); }
 /* The default auth grid still sees its original children through these wrappers. */
 #auth-complete-panel .auth-complete-card, #auth-complete-panel .auth-complete-status-title { display: contents; }
-#auth-complete-panel .auth-waiting-icon, #auth-complete-panel:not(.w02-waiting) .auth-waiting-reason { display: none; }
+#auth-complete-panel .auth-waiting-icon, #auth-complete-panel:not(.w02-waiting) .auth-waiting-note { display: none; }
 #onboarding-panel .onboarding-status-title { display: contents; }
 #onboarding-panel.onboarding-standalone .onboarding-status-title,
 #auth-complete-panel.w02-waiting .auth-complete-status-title { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
@@ -155,6 +159,10 @@
 #onboarding-panel .onboarding-status-icon.is-error { background: var(--w02-secondary); color: var(--w02-error); }
 #onboarding-panel .onboarding-status-icon svg, #auth-complete-panel.w02-waiting .auth-waiting-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 #onboarding-panel.onboarding-standalone .onboarding-actions { margin-top: 24px; }
+#onboarding-panel.onboarding-standalone .onboarding-actions .ghost-button { padding-block: 12px; }
+#onboarding-panel.onboarding-standalone .onboarding-metrics div { background: var(--w02-secondary); }
+#onboarding-panel.onboarding-standalone .onboarding-metrics span { font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
+#onboarding-panel.onboarding-standalone .onboarding-bubble .onboarding-deadline { margin-top: 16px; font: 400 14px/21px var(--font-body); color: var(--w02-muted); }
 #onboarding-panel .onboarding-status-tail { margin-top: 16px; }
 #onboarding-panel .onboarding-process { padding-left: 24px; margin: 16px 0 0; }
 #onboarding-panel .onboarding-process li { padding-left: 4px; margin-bottom: 12px; }
@@ -175,8 +183,8 @@
 #auth-complete-panel.w02-waiting .auth-complete-mark,
 #auth-complete-panel.w02-waiting .auth-complete-eyebrow { display: none; }
 #auth-complete-panel.w02-waiting h1 { min-width: 0; font: 600 22px/30px var(--font-body); color: var(--w02-text); }
-#auth-complete-panel.w02-waiting #auth-complete-description { color: var(--w02-text); white-space: pre-line; overflow-wrap: anywhere; }
-#auth-complete-panel.w02-waiting .auth-waiting-reason { margin-top: 16px; color: var(--w02-muted); font-size: 14px; line-height: 21px; }
+#auth-complete-panel.w02-waiting #auth-complete-description { color: var(--w02-text); font: inherit; white-space: pre-line; overflow-wrap: anywhere; }
+#auth-complete-panel.w02-waiting .auth-waiting-note { margin: 20px 0 0; border-left: 3px solid var(--w02-border); padding-left: 14px; color: var(--w02-muted); font: 400 14px/21px var(--font-body); }
 #auth-complete-panel.w02-waiting .auth-complete-actions { display: flex; align-items: center; margin-top: 24px; gap: 12px 16px; flex-wrap: wrap; }
 #auth-complete-panel.w02-waiting button { box-sizing: border-box; flex: 0 0 auto; height: auto; min-height: 48px; min-width: 200px; max-width: 100%; border-radius: 8px; padding: 12px 24px; font: 600 16px/24px var(--font-body); box-shadow: none; white-space: normal; overflow-wrap: anywhere; }
 #auth-complete-panel.w02-waiting #auth-complete-continue-button,
@@ -186,6 +194,8 @@
 #auth-complete-panel.w02-waiting :focus-visible { outline: 3px solid var(--w02-focus); outline-offset: 3px; }
 @media (max-width: 767px) {
     #onboarding-panel.onboarding-standalone .onboarding-history { padding: 24px 16px; }
+    #onboarding-panel.onboarding-standalone .onboarding-metrics { gap: 8px; }
+    #onboarding-panel.onboarding-standalone .onboarding-metrics div { padding: 14px 12px; }
     #onboarding-panel.onboarding-standalone .onboarding-bubble,
     #auth-complete-panel.w02-waiting .auth-complete-card { padding: 24px; }
     #onboarding-panel.onboarding-standalone h2, #auth-complete-panel.w02-waiting h1 { font-size: 20px; line-height: 28px; }

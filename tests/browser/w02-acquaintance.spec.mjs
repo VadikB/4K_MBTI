@@ -281,14 +281,3 @@ test('W02 FIX issue total length, retry draft reload, assignment isolation and d
   await open(); await expect(input()).toHaveValue('');
   await page.keyboard.press('Escape'); await expect(page.locator('#onboarding-report-issue')).toBeFocused();
 });
-
-if (process.env.W02_REFERENCE_HTML && evidence) {
-  for (const [scene, width] of [['organization', 1440], ['identity', 1440], ['competencies', 1440], ['process', 1440], ['preparing', 1440], ['failed-locked', 1440], ['organization', 390], ['identity', 390]]) {
-    test(`W02 FIX reference ${scene} ${width}`, async ({ page }) => {
-      await page.setViewportSize({ width, height: width === 1440 ? 1024 : 844 });
-      await page.goto('file://' + process.env.W02_REFERENCE_HTML + '#stage=' + scene + '&show=1');
-      if (scene === 'identity') await page.getByRole('button', { name: 'Сообщить о неточности', exact: true }).click();
-      await page.screenshot({ path: path.join(evidence, `reference-${scene}-${width}.png`), fullPage: true });
-    });
-  }
-}

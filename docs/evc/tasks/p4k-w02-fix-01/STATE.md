@@ -61,3 +61,19 @@ owned registry/PID/порты18764,18766,18784/командыstatus-stop; DB/LLM
 
 Css08 PASS11/11, cleanup PASS; только CSS hash обновлён, visible geometry прежняя.
 Разрешено продолжение того же PR224, новый полный CI обязателен; повторного bump нет.
+
+ADD01 принят. Local/remotehead ea93a15 совпали; свежий main f505340/2.1.10.
+Merge8935b31 сохранил main/PATH guard; source конфликт только waiting header,
+сохранён, generated dist regenerated. Candidate пересчитывается в2.1.11.
+Старое visual доказательство считается недостоверным до прямого рендера.
+
+ADD01 local complete: PATCH2.1.11. Источник HTML204878bytes/SHA прежний.
+Прежнее происхождение reference/версия из описания ADD01 UNKNOWN; visual PASS
+отозван, история сохранена. Новый независимый reference8/8 и product8кадров
+на1440/390, SHA/runtime/requests/scene receipts, измерения в ADD01_CHECKS.
+Scoped flex устранил неверный min-height; preparing/failed card heights совпали,
+y отличается−16 из-за реальной версии footer+32. Ready выше по server content,
+без подмены demo. Раннее ожидание точное по ADD01, reason только diagnostic.
+Verified browser41/41, auth2/2, frontend334/334, lint/build/diff-check PASS.
+Все5 owned groups absent и портыclosed; DB/LLM/mail0. Следующее: commit/push
+того же PR224 и mandatory CI точного head; human TEST отдельно, merge/deploy=false.

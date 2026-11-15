@@ -1,5 +1,9 @@
 # CHECKS — P4K-W02-FIX-01
 
+**ADD01: прежний PASS LOCAL VISUAL и утверждение о происхождении reference
+недостаточны и отозваны. Ниже сохранена история. Актуальная перепроверка —
+[ADD01_CHECKS.md](ADD01_CHECKS.md), evidence/add01-verified и gallery.**
+
 Base: `e8773ca80b9e3089a0faec16e9722680d126d8bb` / 2.1.9.
 Candidate: 2.1.10, штатный `npm run ready:prepare -- --candidate 2.1.10` PASS.
 Runtime проверен до commit; точные SHA256 всех затронутых sources/dist —

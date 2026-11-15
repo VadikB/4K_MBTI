@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
+import { w02Layout } from './fixtures/w02-layout.mjs';
 let server, base;
 const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 const resource = async (event, port) => {
@@ -110,16 +111,20 @@ for (const [scene, title] of Object.entries(titles)) {
     await expect(panel).not.toContainText(/Обратитесь|ответственному|организатору|управление/i);
     if (!['unassigned', 'expired'].includes(scene)) {
       await expect(panel.locator('#onboarding-status-icon')).toBeVisible();
+      await expect(panel.locator('.onboarding-section-label')).toHaveText('Оценка');
+      if (scene === 'preparing') {
+        await expect(panel.locator('.onboarding-live')).toHaveText('Подготовка выполняется');
+        expect(run.m.preparation_operation.status).toBe('queued');
+        run.m.preparation_operation.status = 'running';
+        await page.reload();
+        await expect(panel.locator('.onboarding-live')).toHaveText('Подготовка выполняется');
+      }
       if (scene !== 'load-error') await expect(panel.locator('#onboarding-status-tail #onboarding-view-history')).toBeVisible();
       else await expect(panel.locator('#onboarding-view-history')).toHaveCount(0);
       await expect(panel.locator('#onboarding-logout')).toHaveCount(scene === 'access' ? 1 : 0);
       if (['preparing', 'organization', 'failed-locked'].includes(scene)) {
         expect(await panel.locator('#onboarding-next').evaluate((n) => getComputedStyle(n).backgroundColor)).toBe('rgb(255, 255, 255)');
       }
-    }
-    if (process.env.W02_FIX_EVIDENCE && ['preparing', 'failed-locked'].includes(scene)) {
-      await page.setViewportSize({ width: 1440, height: 1024 });
-      await page.screenshot({ path: path.join(process.env.W02_EVIDENCE_DIR, `${scene}-1440.png`), fullPage: true });
     }
     if (scene !== 'ready') await expect(panel.getByRole('button', { name: 'Приступить к оценке', exact: true })).toHaveCount(0);
     if (scene === 'failed') {
@@ -233,3 +238,40 @@ test('W02-02 an incomplete preparation keeps explicit start closed', async ({ pa
   await expect(page.locator('#onboarding-next')).toBeEnabled();
   expect(forbiddenCommands(run.calls)).toHaveLength(0);
 });
+
+if (process.env.W02_ADD01_EVIDENCE) for (const width of [1440, 390]) for (const scene of ['preparing', 'failed-locked', 'ready']) {
+  test(`W02 ADD01 product ${scene} ${width}`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width, height: width === 1440 ? 1024 : 844 }, deviceScaleFactor: 1 });
+    try {
+      const page = await context.newPage(), run = await fixture(page, scene);
+      await page.goto(base);
+      await expect(page.locator('#onboarding-title')).toHaveText(titles[scene]);
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page.locator('.onboarding-section-label')).toHaveText('Оценка');
+      if (scene === 'preparing') {
+        await expect(page.locator('.onboarding-live')).toHaveText('Подготовка выполняется');
+        await expect(page.locator('#onboarding-panel')).not.toContainText('Операция в очереди');
+        expect(run.m.preparation_operation.status).toBe('queued');
+      }
+      if (scene === 'failed-locked') {
+        await expect(page.locator('.onboarding-diagnostics')).not.toHaveAttribute('open', '');
+        await expect(page.getByText('Код операции: w02-op')).toBeHidden();
+      }
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const layout = await w02Layout(page);
+      expect(layout.viewport.scrollWidth).toBeLessThanOrEqual(width);
+      expect(layout.main.bottom).toBeLessThanOrEqual(layout.footer.y + 1);
+      // Center the entire card + history group in the space left by the real footer.
+      if (layout.group.height + 2 * (width === 1440 ? 32 : 24) < layout.main.height) {
+        expect(Math.abs((layout.group.y + layout.group.height / 2) - (layout.main.y + layout.main.height / 2))).toBeLessThan(1);
+      }
+      const target = path.join(process.env.W02_EVIDENCE_DIR, `${scene}-${width}.png`);
+      await page.screenshot({ path: target, fullPage: false });
+      await fs.writeFile(target.replace('.png', '.json'), JSON.stringify({ layout: await w02Layout(page), server_operation: run.m.preparation_operation, commands: forbiddenCommands(run.calls) }, null, 2));
+      const refresh = page.getByRole('button', { name: scene === 'preparing' ? 'Проверить готовность' : 'Проверить состояние', exact: true });
+      if (scene !== 'ready') await refresh.click();
+      expect(forbiddenCommands(run.calls)).toHaveLength(0);
+    } finally { await context.close(); }
+  });
+}

@@ -1,0 +1,41 @@
+{
+  "old_head": "ea93a15a35e644d067906b5068a1f3366c617523",
+  "declared_env_in_retained_runner": "/private/tmp/p4k-w02-fix-browser.py",
+  "declared_reference_path": "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/Архитектура/1.0 Доработка Полная/обработка замечаний/знакомство/LIDUM-W02.html",
+  "actual_input_at_old_render": "UNKNOWN: prior plan has no resolved env/input hash/browser document receipt",
+  "product_version_in_old_png_origin": "UNKNOWN: no retained copy/overwrite audit establishes why product footer appears",
+  "old_images": [
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-competencies-1440.png",
+      "sha256": "5313c2101c2343653fa5eaa7eb1a856946ffbecae255300a15a00d5f116d5b96"
+    },
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-organization-390.png",
+      "sha256": "1d702157791164b8559085641cde145027bce54607d86b2513f167e081611cf1"
+    },
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-identity-1440.png",
+      "sha256": "7d2bbf591192abd3a263b15c202efa8838f9ac7463639529edfac7246d0ee4da"
+    },
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-preparing-1440.png",
+      "sha256": "a334649e199577c1bfa2676850d5102caab3d2e51c278a72c368ae00baaed820"
+    },
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-failed-locked-1440.png",
+      "sha256": "63e10c836d79a4de6da07cabf61133047462d795a6f3faaad5c714fed6c7e6bd"
+    },
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-process-1440.png",
+      "sha256": "7151283a98bcb8885f7080399d71122e12d760f32090c2d7335141d71f5e779f"
+    },
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-identity-390.png",
+      "sha256": "31f0d733b8077684a9f042b0af198395a933cf88f476dba3087b0ec31a0c7e13"
+    },
+    {
+      "path": "docs/evc/tasks/p4k-w02-fix-01/evidence/screenshots/reference-organization-1440.png",
+      "sha256": "e6103851d42fa320c4b94e6eae648a6acfb30da877070646dedc3d0b71016afd"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { waitingPresentation } from '../../web/js/readiness-presentation.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../../web/js/onboarding-flow.js';
 
 const model = (answers = {}, extra = {}) => ({
@@ -101,4 +102,16 @@ test('W02 FIX a prepared plan preserves the current explanation on reload', () =
     assert.equal(resumeOnboardingIndex(current, { status: 'in_progress', current_step }), current_step);
   }
   assert.equal(resumeOnboardingIndex(current, { status: 'completed', current_step: 8 }), 8);
+});
+
+test('ADD01 early assignment sources uses participant copy without changing server distinctions', () => {
+  const readiness = { status: 'waiting_for_organization', reason: 'assignment_sources' };
+  const copy = waitingPresentation(readiness);
+  assert.equal(copy.title, 'Нужны сведения организации');
+  assert.equal(copy.description, 'Организация ещё завершает настройку вашей оценки. Когда сведения будут готовы, здесь появится следующий шаг.');
+  assert.equal(copy.detail, 'Время выполнения ещё не идёт.');
+  assert.equal(readiness.reason, 'assignment_sources');
+  for (const [status, title] of [['waiting_for_assignment', 'Оценка пока не назначена'], ['access_expired', 'Срок доступа к оценке закончился'], ['network', 'Не удалось проверить готовность']]) {
+    assert.equal(waitingPresentation({ ...readiness, status }).title, title);
+  }
 });

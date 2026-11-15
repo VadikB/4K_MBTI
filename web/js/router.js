@@ -97,15 +97,14 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
   authCompletePanel?.classList.add('w02-waiting');
   authCompletePanel.dataset.readinessReason = String(readiness.reason || '');
   authCompletePanel.querySelector('.auth-waiting-icon').innerHTML = readinessIcon(readiness.status);
-  let reasonNode = authCompletePanel.querySelector('.auth-waiting-reason');
-  if (!reasonNode) {
-    reasonNode = document.createElement('p'); reasonNode.className = 'auth-waiting-reason';
-    authCompletePanel.querySelector('.auth-complete-copy').append(reasonNode);
+  let note = authCompletePanel.querySelector('.auth-waiting-note');
+  if (!note) {
+    note = document.createElement('p'); note.className = 'auth-waiting-note';
+    authCompletePanel.querySelector('.auth-complete-copy').append(note);
   }
-  reasonNode.textContent = readiness.reason ? 'Причина ожидания: ' + readiness.reason : '';
-  reasonNode.hidden = !readiness.reason;
+  note.textContent = presentation.detail;
   if (authCompleteTitle) authCompleteTitle.textContent = presentation.title;
-  if (authCompleteDescription) authCompleteDescription.textContent = presentation.description + '\n\n' + presentation.detail;
+  if (authCompleteDescription) authCompleteDescription.textContent = presentation.description;
   if (authCompleteContinueButton) {
     authCompleteContinueButton.textContent = presentation.button;
     authCompleteContinueButton.dataset.action = 'check-acquaintance-readiness';

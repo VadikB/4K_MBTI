@@ -158,17 +158,17 @@ const readinessStep = () => {
     if (model?.assessment_name) step.description = model.assessment_name;
     body = (model?.assessment_name ? paragraph(preparationCopy) : '') +
       '<div class="onboarding-metrics"><div><strong>' +
-      Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong>ситуаций в плане</div><div><strong>' +
-      Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин</strong>на выполнение оценки</div></div>' +
+      Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong><span>ситуаций в плане</span></div><div><strong>' +
+      Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин</strong><span>на выполнение оценки</span></div></div>' +
       paragraph('Читайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.') +
-      (Number(plan?.calendar_window_seconds) > 0 ? paragraph('Завершить оценку нужно в течение ' +
-        Number(plan.calendar_window_seconds) / 3600 + ' ч. после её начала.') : '') +
+      (Number(plan?.calendar_window_seconds) > 0 ? '<p class="onboarding-deadline">Завершить оценку нужно в течение ' +
+        Number(plan.calendar_window_seconds) / 3600 + ' ч. после её начала.</p>' : '') +
       '<p class="onboarding-summary-note">Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.</p>' +
       paragraph(returnPolicyCopy(plan?.return_policy_snapshot)) +
       (plan?.participant_notice ? paragraph(plan.participant_notice) : '');
   } else {
     if (status === 'preparing') body += '<p class="onboarding-live" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
-      (model?.preparation_operation?.status === 'queued' ? 'Операция в очереди' : 'Подготовка выполняется') + '</p>';
+      'Подготовка выполняется</p>';
     if (step.timeNotice) body += '<p class="onboarding-time-notice">Время выполнения ещё не идёт.</p>';
     if (operationId && ['service', 'failed', 'conflict', 'plan_missing'].includes(status)) body +=
       '<details class="onboarding-diagnostics"><summary>Сведения об ошибке</summary>' + paragraph('Код операции: ' + operationId) + '</details>';
@@ -385,12 +385,13 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingPanel.classList.toggle('onboarding-standalone', standalone);
   onboardingPanel.dataset.readiness = standalone ? step.status || (loading ? 'loading' : 'load-error') : '';
   onboardingPanel.dataset.step = String(index < 2 ? 1 : index <= summaryIndex() ? 2 : 3);
-  stepBadgeLabel.textContent = reviewMode ? 'История знакомства' : index === readinessIndex() ? 'Готовность оценки' : 'Знакомство';
+  stepBadgeLabel.textContent = standalone ? 'Оценка' : reviewMode ? 'История знакомства' : 'Знакомство';
   onboardingStepBackButton.hidden = loading || loadFailed || reviewMode || index === 0;
   onboardingStepBackButton.disabled = busy;
   onboardingTitle.textContent = step.title;
   onboardingDescription.textContent = step.description;
   onboardingDescription.hidden = !step.description;
+  onboardingDescription.classList.toggle('onboarding-assessment-name', standalone && step.status === 'ready' && step.description === model?.assessment_name);
   const statusIcon = document.getElementById('onboarding-status-icon');
   statusIcon.hidden = !standalone;
   statusIcon.innerHTML = standalone ? readinessIcon(step.status || (loading ? 'loading' : 'load-error')) : '';

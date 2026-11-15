@@ -67,3 +67,24 @@ frontend с controlled API, 1 worker, retries=0, <=600s/no meaningful progress90
 
 Ready PR: https://github.com/VadikB/4K_MBTI/pull/224. Обязательный CI запущен;
 финальный SHA/result фиксируется локальным RELEASE_STATUS.json после завершения.
+
+## ADD01 — 15.11.2026
+
+Владелец передал ADD01 сообщением «вот задание на доделывание» в том же чате.
+Продолжается текущая задача/ветка/PR224 в ранее разрешённых пределах push и CI;
+merge/deploy/TEST/Prod/FIX02 не разрешены. Вложение — требования, полномочие —
+прямой запрос пользователя и ранее подтверждённое сопровождение текущего PR.
+ADD01 заменяет требование видимого reason и достаточность старого visual PASS.
+План: проверить происхождение PNG/bytes HTML; исправить ранний waiting, section/live
+и подтверждённую scoped геометрию; прямой чистый reference; 8 продуктовых кадров
+(preparing/failed-locked/ready + early, desktop/mobile), адресные browser, frontend,
+lint/build/diff-check; обновить тот же PR и mandatory CI точного head.
+HTML SHA прежний, применимые неизменённые источники из TASK переиспользованы;
+AGENTS/workflow/matrix/decision-register и TASK/STATE/CHECKS перечитаны адресно.
+Main изменился: f505340 (PATH GUARD #225), версия2.1.10. Интегрирован merge8935b31
+без сброса ветки; source-конфликт index — сохранён auth waiting header, generated
+dist пересобран. PATH guard изменения сохранены. Нужен штатный PATCH2.1.11.
+Архитектурные инварианты/API/данные прежние. Rollback — revert своего PR.
+Reference противоречит заявленному происхождению; это блокирует visual PASS,
+не независимые разрешённые UI-правки. Локально1worker/retries0/600s/no-progress90s,
+owned registry/status-stop до запуска, cleanup после каждого исхода; DB/LLM/mail0.
