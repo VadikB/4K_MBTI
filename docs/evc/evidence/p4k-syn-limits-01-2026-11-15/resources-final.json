@@ -1,0 +1,63 @@
+{
+  "checked_at": "2026-11-15T07:05:29.602593+00:00",
+  "pids": [
+    7387,
+    7471,
+    7473,
+    7500,
+    7502,
+    7503,
+    7506,
+    7655
+  ],
+  "groups": [
+    {
+      "probe": "L02",
+      "pgid": 7387,
+      "group_present": false
+    },
+    {
+      "probe": "L03",
+      "pgid": 7471,
+      "group_present": false
+    },
+    {
+      "probe": "L04",
+      "pgid": 7473,
+      "group_present": false
+    },
+    {
+      "probe": "L05",
+      "pgid": 7500,
+      "group_present": false
+    },
+    {
+      "probe": "L06",
+      "pgid": 7506,
+      "group_present": false
+    },
+    {
+      "probe": "L06-verify",
+      "pgid": 7655,
+      "group_present": false
+    }
+  ],
+  "ps_exit_code": 1,
+  "ps_stdout": "",
+  "compute_stopped": true,
+  "database_created": false,
+  "container_created": false,
+  "browser_started": false,
+  "server_started": false,
+  "ports_bound": [],
+  "retained": [
+    "diagnostic evidence folder",
+    "detached worktree /private/tmp/p4k-syn-limits-01-20261115"
+  ],
+  "l05_native_descendant_marker": {
+    "parent_pid": 7502,
+    "child_pid": 7503,
+    "pgid": 7500
+  },
+  "cleanup_scope": "only registered own PGIDs; no shared data/resources touched"
+}

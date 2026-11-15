@@ -1,0 +1,722 @@
+
+scripts/assessment_first_case.py sha256=df82fbd80038d42f42dd7183c0fac8b105504d15a9e8b439a0619a421baee65b
+90: def check_bootstrap(directory, port, python, env):
+91:     """Repeat ownership/source lifecycle without paying for another generation."""
+92:     from uuid import uuid4
+93:     run_directory = directory / uuid4().hex
+94:     run_directory.mkdir(mode=0o700)
+95:     state_path = run_directory / 'state.json'
+96:     def cli(action):
+97:         subprocess.run([python, str(ROOT / 'scripts/test_stand.py'), action,
+98:             '--state', str(state_path), '--port', str(port), '--gateway', '0', '--provider', 'real'],
+99:             cwd=ROOT, env=env, check=True, timeout=180)
+100:     cli('create')
+101:     try:
+102:         state = json.loads(state_path.read_text())
+103:         (run_directory / 'run.json').write_text(json.dumps({
+104:             'run_id': state['run_id'], 'database': state['database'], 'scope': 'bootstrap_repeat',
+105:             'program_source': env.get('P4K_PROGRAM_SOURCE'),
+106:             'published_release_ref': json.loads(env['P4K_PUBLISHED_RELEASE_REF'])
+107:                 if env.get('P4K_PUBLISHED_RELEASE_REF') else None,
+108:             'llm_calls': 0}, indent=2) + '\n')
+109:         cli('bootstrap')
+110:         subprocess.run([python, str(ROOT / 'tests/path29_browser_inputs.py'), '--state', str(state_path)],
+111:             cwd=ROOT, env={**env, 'P4K_FULL_PATH': '1'}, check=True, timeout=180)
+112:     finally:
+113:         cli('destroy')
+114:     receipt = run_directory / 'source-provenance.json'
+115:     (run_directory / 'completion.json').write_text(json.dumps({
+116:         'run_id': state['run_id'], 'status': 'completed', 'exit_code': 0,
+120:
+121: def summarize_runs(directory, exit_code):
+122:     runs = []
+123:     for run_path in sorted(directory.glob('*/run.json')):
+124:         run_directory = run_path.parent
+125:         errors = []
+126:         def read(name):
+127:             file = run_directory / (name + '.json')
+128:             try:
+129:                 value = json.loads(file.read_text())
+130:                 if not isinstance(value, dict):
+131:                     raise ValueError('JSON_OBJECT_REQUIRED')
+132:                 return value
+133:             except (OSError, ValueError):
+134:                 errors.append('MISSING_OR_INVALID:' + name)
+135:                 return {}
+136:         run, cleanup = read('run'), read('cleanup')
+137:         completion = read('completion')
+138:         process_file = run_directory / 'process-result.json'
+139:         process = read('process-result') if process_file.exists() else None
+140:         process_exit = process.get('exit_code') if process is not None else exit_code
+141:         if type(process_exit) is not int or process_exit != 0:
+142:             errors.append('PROCESS_EXIT_NOT_ZERO')
+143:         if process is not None and process.get('run_id') != run.get('run_id'):
+144:             errors.append('PROCESS_RUN_MISMATCH')
+145:         if (completion.get('status') != 'completed' or type(completion.get('exit_code')) is not int
+146:                 or completion.get('exit_code') != 0 or not run.get('run_id')
+147:                 or completion.get('run_id') != run.get('run_id')):
+148:             errors.append('RUN_NOT_COMPLETED')
+149:         if (not all(cleanup.get(key) is True for key in ('owner_verified', 'database_absent', 'state_absent'))
+150:                 or not run.get('database') or cleanup.get('run_id') != run.get('run_id')
+151:                 or cleanup.get('database') != run.get('database')):
+152:             errors.append('CLEANUP_NOT_VERIFIED')
+153:         for name in ('failure', 'failure-receipt', 'cleanup-deferred', 'cleanup-error'):
+154:             if (run_directory / (name + '.json')).exists():
+155:                 errors.append('FAILURE_ARTIFACT:' + name)
+156:         bootstrap = run.get('scope') == 'bootstrap_repeat'
+157:         composite = run.get('profile') in ('assessment-execution-contour/1', 'assessment-execution-contour/2')
+158:         if composite and process is None:
+159:             errors.append('PROCESS_RESULT_MISSING')
+160:         receipt_name = 'source-provenance' if bootstrap else 'first-case-receipt'
+161:         receipt_path = run_directory / (receipt_name + '.json')
+162:         receipt = read(receipt_name)
+163:         terminal_receipt_path = (run_directory / 'execution-contour-receipt.json'
+250:                else 'assessment-execution-contour/1' if 'assessment-execution-contour/1' in profiles
+251:                else 'assessment-first-case/1.1')
+252:     return {'profile': profile, 'scope': 'synthetic_diagnostic',
+253:         'process_exit_code': exit_code, 'exit_code': exit_code if exit_code else (0 if success else 1),
+254:         'result': 'PASS' if success else 'FAIL', 'runs': runs}
+255:
+256:
+257: def record_process_result(directory, previous, exit_code):
+258:     """Bind the actual child exit only to runs created by this invocation."""
+259:     for file in set(directory.glob('*/run.json')) - previous:
+260:         try:
+261:             run = json.loads(file.read_text())
+262:             (file.parent / 'process-result.json').write_text(json.dumps({
+263:                 'run_id': run['run_id'], 'exit_code': exit_code}) + '\n')
+333:         '--workers=1','--reporter=line'],cwd=ROOT,env=env)
+334:     record_process_result(a.directory, previous, completed.returncode)
+335:     summary = summarize_runs(a.directory, completed.returncode)
+336:     (a.directory / 'runner-result.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
+337:     print(json.dumps(summary, ensure_ascii=False, indent=2))
+338:     return summary['exit_code']
+339:
+340: if __name__=='__main__':raise SystemExit(main())
+
+tests/browser/fixtures/assessment-completion-profile.mjs sha256=40092cc1e342d4d75c93914301b1237c4c2cec10d2272e5a41a561f03c75aefc
+40:     && Boolean(value.close_reason) && Boolean(value.collection_closed_at)
+41:     && Array.isArray(value.situations)
+42:     && value.situations.some((item) => ['closed', 'terminated'].includes(item.status))
+43:     && !value.situations.some((item) => ['active', 'paused', 'scenario_ended'].includes(item.status))
+44:     && ['ready', 'failed'].includes(value.pipeline?.status);
+45: }
+46:
+47: export function destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutionExportSaved,
+48:   preparationReceiptRequired, terminalPreparationReceiptSaved, statePath, runId, save, cli }) {
+49:   if (executionStarted && !terminalExecutionExportSaved) {
+50:     throw new Error('Cleanup deferred: terminal execution export or readback unavailable');
+51:   }
+52:   if (preparationReceiptRequired && !terminalPreparationReceiptSaved) {
+53:     save('cleanup-deferred', { reason: 'TERMINAL_PREPARATION_RECEIPT_NOT_PERSISTED',
+54:       state_path: statePath, database_preserved: true });
+55:     throw new Error('Cleanup deferred: preserve owned DB until diagnostic receipt is saved');
+56:   }
+57:   try { cli('destroy'); }
+58:   catch (cleanupError) {
+59:     save('cleanup-error', { run_id: runId, reason: 'OWNED_DESTROY_FAILED',
+60:       detail: cleanupError.message });
+61:     throw cleanupError;
+62:   }
+63: }
+64:
+65: async function waitRuntime(page, base, cycleId, predicate, timeout = 120000) {
+66:   const started = Date.now();
+67:   let last;
+68:   while (Date.now() - started < timeout) {
+69:     last = await runtime(page, base, cycleId);
+70:     if (last.pipeline?.status === 'failed') {
+71:       throw new Error('COMPOSITE_PIPELINE_FAILED: ' + (last.pipeline.error_code || 'UNKNOWN'));
+72:     }
+73:     if (predicate(last)) return last;
+74:     await page.waitForTimeout(500);
+75:   }
+76:   throw new Error(`COMPOSITE_TECHNICAL_TIMEOUT: ${JSON.stringify({
+77:     cycle: cycleId,
+78:     status: last?.status?.collection_status,
+79:     situation: last?.current_situation?.assessment_situation_id,
+80:     clarification: last?.clarification?.status,
+81:     pipeline: last?.pipeline?.status,
+82:   })}`);
+83: }
+84:
+85: async function submit(page, text) {
+86:   await page.locator('#interview-textarea').fill(text);
+87:   const response = page.waitForResponse((item) => item.request().method() === 'POST'
+88:     && /^\/users\/assessment\/(m5\/situations\/[^/]+\/turns|m7\/clarifications\/[^/]+\/answers)$/.test(new URL(item.url()).pathname),
+89:     { timeout: 30000 });
+90:   await page.locator('#interview-submit-button').click({ timeout: 15000 });
+91:   const accepted = await response;
+111:     page.on('dialog', (dialog) => dialog.accept());
+112:     page.acceptanceDialogHandler = true;
+113:   }
+114:   const stages = [];
+115:   const before = await runtime(page, base, cycleId);
+116:   if (before.cycle_id !== cycleId || before.current_situation?.assessment_situation_id !== initialSituationId) {
+117:     throw new Error('COMPOSITE_INITIAL_CONTEXT_MISMATCH');
+118:   }
+119:   stages.push({ stage: 'first_case_started', cycle_id: cycleId,
+120:     assessment_situation_id: initialSituationId, status: 'milestone' });
+121:
+122:   const seen = new Set();
+123:   for (let position = 1; position <= maxSituations; position += 1) {
+124:     let snapshot = await runtime(page, base, cycleId);
+125:     if (collectionClosed(snapshot)) break;
+126:     if (!snapshot.current_situation) throw new Error('COMPOSITE_CURRENT_AS_UNKNOWN');
+127:     const situationId = snapshot.current_situation.assessment_situation_id;
+128:     if (seen.has(situationId)) throw new Error('COMPOSITE_SITUATION_REPEATED');
+129:     seen.add(situationId);
+130:     const initialTurnCount = (snapshot.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length;
+131:     if (snapshot.current_situation.status === 'active') {
+132:       if (!presented(snapshot)) throw new Error('COMPOSITE_AS_NOT_PRESENTED');
+133:       await submit(page, answerFor(position, snapshot));
+134:       await advanceWorkers();
+135:       snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+136:         || value.current_situation?.status === 'scenario_ended'
+137:         || (value.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length > initialTurnCount);
+138:     }
+139:     if (!collectionClosed(snapshot) && snapshot.current_situation?.status === 'active') {
+140:       const transition = page.waitForResponse((item) => item.request().method() === 'POST'
+141:         && new URL(item.url()).pathname.endsWith('/transitions'), { timeout: 30000 });
+142:       await page.locator('#interview-finish-button').click({ timeout: 15000 });
+143:       if (!(await transition).ok()) throw new Error('SCENARIO_END_REJECTED');
+144:       await advanceWorkers();
+145:     }
+146:     snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+147:       || value.between_situations || value.current_situation?.status === 'scenario_ended');
+148:     let clarified = false;
+149:     while (!collectionClosed(snapshot) && !snapshot.between_situations) {
+150:       if (snapshot.current_situation?.assessment_situation_id !== situationId) {
+151:         throw new Error('COMPOSITE_AS_CHANGED_DURING_CLARIFICATION');
+152:       }
+153:       const ask = snapshot.clarification;
+154:       if (ask?.status === 'ASK' && !ask.response_outcome) {
+155:         if (!ask.id) throw new Error('COMPOSITE_ASK_NOT_DELIVERED');
+156:         if (!ask.question_turn_id) {
+157:           // ASK and its delivery commit separately. Keep the existing bounded
+158:           // readback; never submit an answer before delivery is authoritative.
+159:           snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+160:             || value.between_situations || value.finish_availability?.allowed === true
+170:           || (value.clarification?.id !== ask.id && value.clarification?.status === 'ASK'));
+171:         continue;
+172:       }
+173:       if (snapshot.finish_availability?.allowed === true) break;
+174:       await advanceWorkers();
+175:       snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+176:         || value.between_situations || value.finish_availability?.allowed === true
+177:         || (value.clarification?.status === 'ASK' && !value.clarification?.response_outcome));
+178:     }
+179:     if (!collectionClosed(snapshot) && !snapshot.between_situations) {
+180:       snapshot = await runtime(page, base, cycleId);
+181:       if (!collectionClosed(snapshot)) {
+182:         if (snapshot.current_situation?.assessment_situation_id !== situationId
+183:             || snapshot.finish_availability?.allowed !== true) throw new Error('COMPOSITE_FINISH_NOT_ADMITTED');
+184:         const closed = page.waitForResponse((item) => item.request().method() === 'POST'
+185:           && new URL(item.url()).pathname.endsWith('/finish-situation'), { timeout: 30000 });
+186:         let clickError;
+187:         try { await page.locator('#interview-finish-button').click({ timeout: 15000 }); }
+188:         catch (error) { clickError = error; }
+189:         let closeResponse;
+190:         try { closeResponse = await closed; }
+191:         catch (error) { throw clickError || error; }
+192:         if (!closeResponse.ok()) throw new Error('SITUATION_CLOSE_REJECTED');
+193:         if (clickError) {
+194:           const committed = await runtime(page, base, cycleId);
+195:           if (!committed.between_situations && !collectionClosed(committed)) throw clickError;
+196:         }
+197:         await advanceWorkers();
+198:         snapshot = await waitRuntime(page, base, cycleId, (value) => value.between_situations === true
+199:           || collectionClosed(value));
+200:       }
+201:     }
+202:     const closedExport = await json(await page.request.get(`${base}/__pytest__/execution-export/${cycleId}`), 'AS close readback');
+203:     const closedAs = closedExport.situations?.find((item) => item.assessment_situation_id === situationId);
+285:   await page.getByRole('button', { name: 'Посмотреть результат' }).click();
+286:   await page.locator('#report-panel').waitFor({ state: 'visible' });
+287:   const report = await json(await page.request.get(
+288:     `${base}/users/assessment/m8/cycles/${cycleId}/reports/latest`), 'report');
+289:   if (report.cycle_id !== cycleId || report.owner_user_id !== userId
+290:       || report.status !== 'ready' || report.audience !== 'assessee') throw new Error('REPORT_CONTEXT_MISMATCH');
+291:   const finalExport = await readExecutionExport(page, base, cycleId, runId, evidenceDir);
+292:   if (finalExport.value.pipeline?.status !== 'ready'
+293:       || finalExport.value.report?.id !== report.id
+294:       || finalExport.value.results?.id !== report.results_revision_id
+295:       || finalExport.value.report?.created_by !== userId
+296:       || finalExport.value.pipeline?.latest_report_id !== report.id) {
+297:     throw new Error('REPORT_PIPELINE_READBACK_MISMATCH');
+298:   }
+299:   const screenshot = path.join(evidenceDir, 'available-report.png');
+300:   await page.screenshot({ path: screenshot, fullPage: true });
+301:   stages.push({ stage: 'report_opened', status: 'completed', cycle_id: cycleId,
+302:     report_id: report.id, results_revision_id: report.results_revision_id,
+303:     report_revision_no: report.revision_no, owner_user_id: userId,
+304:     screenshot: path.basename(screenshot), screenshot_sha256: sha256(screenshot) });
+305:   return { contract: 'assessment-execution-contour/2', run_id: runId,
+306:     scope: 'synthetic_technical', cycle_id: cycleId, initial_assessment_situation_id: initialSituationId,
+307:     situation_count: seen.size, report_id: report.id, results_revision_id: report.results_revision_id,
+308:     terminal_export: { file: finalExport.file, sha256: finalExport.sha256 },
+
+tests/browser/path29-participant.spec.mjs sha256=145bf18bd7865f8c56994990399245e6c46fd1c72c742fe586fd626845d07bde
+22: test('PATH29 owned backend: invitation → scoped chat → durable preparation → explicit first case', async ({ browser }) => {
+23:   test.setTimeout(process.env.P4K_REAL_PROVIDER === '1' || process.env.P4K_CONTROLLED_PROVIDER === '1'
+24:     ? 900000 : 240000);
+25:   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit isolated STAND_ADMIN_URL required');
+26:   const root = process.cwd(), python = process.env.BROWSER_PYTHON || path.join(root, '.venv/bin/python');
+27:   const evidenceRoot = process.env.P4K_EVIDENCE_DIRECTORY || path.join(root, '.test-stand/path29');
+28:   const dir = path.join(evidenceRoot, randomUUID());
+29:   fs.mkdirSync(dir, { recursive: true });
+30:   const port = process.env.P4K_PORT || '18859';
+31:   const statePath = path.join(dir, 'state.json'), base = 'http://127.0.0.1:' + port;
+32:   const fullPath = process.env.P4K_FULL_PATH === '1';
+33:   const realProvider = process.env.P4K_REAL_PROVIDER === '1';
+34:   const controlledProvider = process.env.P4K_CONTROLLED_PROVIDER === '1';
+35:   const compositeProfile = process.env.P4K_COMPLETION_PROFILE === '1';
+36:   const requestedRelease = process.env.P4K_PUBLISHED_RELEASE_REF
+37:     ? JSON.parse(process.env.P4K_PUBLISHED_RELEASE_REF) : undefined;
+38:   if (fullPath && !realProvider && !controlledProvider) throw new Error('FULL_PATH_REQUIRES_EXPLICIT_PROVIDER');
+39:   if (controlledProvider && (!fullPath || realProvider || process.env.P4K_PROGRAM_SOURCE !== 'published-pilot')) {
+40:     throw new Error('CONTROLLED_PROVIDER_REQUIRES_PUBLISHED_OWNED_PATH');
+41:   }
+42:   if (realProvider) test.info().annotations.push({ type: 'llm', description: 'Explicit real DeepSeek synthetic diagnostic' });
+43:   if (controlledProvider) test.info().annotations.push({ type: 'synthetic_provider',
+44:     description: 'Scripted PM-03 transport; published source and product admission unchanged; no external LLM' });
+45:   const run = (script, args) => {
+46:     const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 180000 });
+47:     if (result.status !== 0) throw new Error(script + ': ' + result.stderr + result.stdout);
+48:   };
+49:   const cli = (action) => run('scripts/test_stand.py', [action, '--state', statePath, '--port', port,
+50:     '--gateway', realProvider ? '0' : '1', '--provider', realProvider ? 'real' : 'disabled']);
+51:   const superContext = await browser.newContext(), adminContext = await browser.newContext(), participantContext = await browser.newContext();
+882:       classification: preparationError ? 'product_preparation_blocker' : 'diagnostic_assertion_or_environment_failure' });
+883:     throw error;
+884:   } finally {
+885:     let terminalExecutionExportSaved = false;
+886:     if (executionStarted) {
+887:       try {
+888:         if (!server || server.exitCode !== null) throw new Error('EXECUTION_SERVER_UNAVAILABLE');
+889:         const exported = await readExecutionExport(page, base, executionCycleId, runId, dir);
+890:         if (!terminalExecutionKnown(exported.value)) throw new Error('EXECUTION_OUTCOME_UNKNOWN');
+891:         terminalExecutionExportSaved = true;
+892:       } catch (exportError) {
+893:         try {
+894:           save('cleanup-deferred', { run_id: runId, reason: 'TERMINAL_EXECUTION_EXPORT_UNVERIFIED',
+895:             detail: exportError.message, database_preserved: true });
+896:         } catch { /* Preserve the DB even when diagnostic storage is unavailable. */ }
+897:       }
+898:     }
+899:     try {
+900:       if (server && server.exitCode === null) {
+901:         const exited = new Promise((resolve) => server.once('exit', resolve)); server.kill('SIGTERM');
+902:         await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 5000))]);
+903:         if (server.exitCode === null) { server.kill('SIGKILL'); await exited; }
+904:       }
+905:     } finally {
+906:       try {
+907:         destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutionExportSaved,
+908:           preparationReceiptRequired, terminalPreparationReceiptSaved,
+909:           statePath, runId, save, cli });
+910:       }
+911:       finally { await Promise.allSettled([superContext.close(), adminContext.close(), participantContext.close(), ...extraContexts.map((context) => context.close())]); }
+912:       if (fullPath) save('completion', { run_id: runId, status: scenarioCompleted ? 'completed' : 'failed',
+913:         exit_code: scenarioCompleted ? 0 : 1, receipt_file: terminalReceiptFile,
+914:         receipt_sha256: scenarioCompleted
+915:           ? createHash('sha256').update(fs.readFileSync(path.join(dir, terminalReceiptFile))).digest('hex') : null });
+916:     }
+917:   }
+918: });
+
+scripts/test_stand_check.py sha256=9d7d931db5b491513009bd2971631947353fdc705a9d3f1533ba91b807e44cc8
+14:
+15: def check(directory,port,keep=False):
+16:     directory.mkdir(parents=True,exist_ok=True);state=directory/'state.json'
+17:     def run(action):
+18:         with (directory/(action+'.log')).open('a') as log:
+19:             subprocess.run([sys.executable,str(CLI),action,'--state',str(state),'--port',str(port),'--gateway','1'],
+20:                 cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=150)
+21:     run('create')
+22:     process=None;log=None
+23:     try:
+24:         run('bootstrap')
+25:         value=json.loads(state.read_text());value.update(qa_orchestration=True,browser_scenario='acceptance-v1');state.write_text(json.dumps(value))
+26:         run('seed')
+27:         for iteration in range(2):
+28:             log=(directory/'app.log').open('a')
+29:             process=subprocess.Popen([sys.executable,str(CLI),'serve','--state',str(state)],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
+30:             deadline=time.monotonic()+45
+31:             while True:
+32:                 if process.poll() is not None:raise RuntimeError('main:app exited; inspect app.log')
+33:                 try:
+34:                     with urllib.request.urlopen(f'http://127.0.0.1:{port}/health/ready',timeout=2) as response:
+35:                         assert json.load(response)['status']=='ready';break
+36:                 except OSError:
+37:                     if time.monotonic()>deadline:raise RuntimeError('startup deadline')
+38:                     time.sleep(.25)
+39:             run('smoke')
+40:             process.terminate();process.wait(timeout=20);process=None;log.close();log=None
+41:             run('bootstrap');run('seed')
+42:         print('PASS clean bootstrap, owner Report/PDF, repeat bootstrap/seed/restart:',directory)
+43:     finally:
+44:         if process is not None:
+45:             process.terminate();process.wait(timeout=20)
+46:         if log:log.close()
+47:         if not keep:run('destroy')
+48:
+49:
+
+scripts/test_stand.py sha256=7f24582dbc08a3fcb903789e82928bb9263729c302466c56b4c06d45e9a78e31
+37:
+38: def environment(state):
+39:     p=state['connection']
+40:     env={k:os.environ[k] for k in ('PATH','HOME','TMPDIR','SYSTEMROOT') if k in os.environ}
+41:     env.update(AGENT4K_ISOLATED_STAND='1',DB_HOST=p['host'],DB_PORT=str(p.get('port',5432)),
+42:         DB_NAME=state['database'],DB_USER=p['user'],DB_PASSWORD=p.get('password',''),DB_POOL_MIN_SIZE='0',
+43:         DB_POOL_TIMEOUT_SECONDS='3',AGENT4K_BROWSER_TEST_GATEWAY=str(state['gateway']),
+44:         APP_BASE_URL=f"http://127.0.0.1:{state['port']}",AUTH_MAGIC_LINK_DEV_MODE='false',
+45:         AUTH_SESSION_SECURE_COOKIE='false',LOG_TO_STDOUT='true',LOG_TO_FILE='false',
+46:         M7_COMPLETION_SWEEP_SECONDS='2',
+47:         SUPERADMIN_EMAILS='superadmin@example.test',
+48:         PYTHONPATH=str(ROOT),STAND_STATE=str(state['state_path']),
+49:         AGENT4K_STAND_MARKER=state['owner_marker'],STAND_ADMIN_URL=os.environ['STAND_ADMIN_URL'])
+50:     if state.get('qa_orchestration') is True and state.get('browser_scenario') == 'acceptance-v1':
+51:         env['AGENT4K_BROWSER_SCENARIO']='acceptance-v1'
+52:         env['AGENT4K_QA_ORCHESTRATION']='1'
+53:         if state.get('browser_repeat_ask') is True:
+54:             env['AGENT4K_BROWSER_REPEAT_ASK']='1'
+55:         if state.get('browser_no_ask') is True:
+56:             env['AGENT4K_BROWSER_NO_ASK']='1'
+57:         if state.get('browser_silent_turn') is True:
+58:             env['AGENT4K_BROWSER_SILENT_TURN']='1'
+59:     if state.get('provider_mode') == 'real':
+60:         # Explicit opt-in only. Values stay in the process environment and are
+61:         # never copied to state.json, logs or evidence.
+62:         for key in ('DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_API_KEY_2',
+63:                     'DEEPSEEK_API_KEY_3','DEEPSEEK_BASE_URL',
+64:                     'DEEPSEEK_MAX_CONCURRENCY'):
+65:             if key in os.environ:
+155:         with psycopg.connect(**p,autocommit=True) as c:
+156:             c.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)))
+157:             c.execute(sql.SQL('COMMENT ON DATABASE {} IS {}').format(sql.Identifier(name),sql.Literal(marker)))
+158:         fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+159:         with os.fdopen(fd,'w') as f:json.dump(state,f)
+160:         with psycopg.connect(**{**p,'dbname':name}) as empty:
+161:             count=empty.execute("SELECT count(*) FROM pg_tables WHERE schemaname='public'").fetchone()[0]
+162:             if count:raise ValueError('CREATED_DATABASE_NOT_EMPTY')
+163:         print('Created empty owned stand:',name,'application_tables=0')
+164:         return
+165:     state=json.loads(path.read_text())
+166:     with owned(state) as c:
+167:         if args.action=='destroy':
+168:             from psycopg import sql
+169:             # No FORCE: active app connections must be stopped first.
+170:             c.execute(sql.SQL('DROP DATABASE {}').format(sql.Identifier(state['database'])))
+171:             absent = c.execute('SELECT 1 FROM pg_database WHERE datname=%s', (state['database'],)).fetchone() is None
+172:             if not absent:
+173:                 raise RuntimeError('OWNED_DATABASE_STILL_PRESENT')
+174:             path.unlink()
+175:             (path.parent / 'cleanup.json').write_text(json.dumps({
+176:                 'run_id': state['run_id'], 'database': state['database'],
+
+Api/llm/deepseek_gateway.py sha256=e3ab6bfea6f8b19a57ebba163912aca9351a2234ace4d3f905b4e3bcf90e39a6
+70:     def chat_with_trace(
+71:         self,
+72:         messages: list[LlmMessage],
+73:         *,
+74:         temperature: float = 0.3,
+75:         timeout_seconds: int = 120,
+76:         max_tokens: int | None = None,
+77:         routing_key: str | None = None,
+78:         thinking: dict[str, str] | None = None,
+79:         response_format: dict[str, str] | None = None,
+80:     ) -> LlmResponse:
+81:         if not self.enabled:
+82:             raise RuntimeError("DeepSeek API key is not configured")
+83:
+84:         contract = load_provider_contract()
+85:         thinking = dict(thinking or contract["thinking"])
+86:         response_format = dict(response_format or {"type": "text"})
+87:         if thinking.get("type") not in {"enabled", "disabled"}:
+88:             raise ValueError("DEEPSEEK_THINKING_MODE_UNSUPPORTED")
+89:         if response_format.get("type") not in contract["supported_response_formats"]:
+90:             raise ValueError("DEEPSEEK_RESPONSE_FORMAT_UNSUPPORTED")
+91:
+92:         paused_connection_count = pause_thread_connections_for_external_io()
+93:         queue_started_at = time.perf_counter()
+94:         slot_acquired = self.request_slots.acquire(timeout=max(0.1, settings.deepseek_queue_timeout_seconds))
+95:         queue_wait_ms = round((time.perf_counter() - queue_started_at) * 1000, 2)
+96:         if not slot_acquired:
+97:             logger.warning(
+98:                 "DeepSeek concurrency queue timed out after %.2f ms (limit=%s)",
+99:                 queue_wait_ms,
+100:                 settings.deepseek_max_concurrency,
+101:             )
+102:             raise LlmCapacityError(
+103:                 "Сервис обработки ответов сейчас перегружен. Подождите немного и повторите отправку.",
+104:                 sent={}, provider={"transport_attempts": [], "queue_wait_ms": queue_wait_ms},
+105:             )
+106:
+129:         transport_attempts: list[dict[str, object]] = []
+130:         request_started_at = time.perf_counter()
+131:         try:
+132:             for api_key in self.get_key_chain(routing_key, messages):
+133:                 attempt_started_at = time.perf_counter()
+134:                 req = request.Request(
+135:                     url=f"{self.base_url}/chat/completions",
+136:                     data=payload,
+137:                     headers={
+138:                         "Content-Type": "application/json",
+139:                         "Authorization": f"Bearer {api_key}",
+140:                     },
+141:                     method="POST",
+142:                 )
+143:                 try:
+144:                     with request.urlopen(req, timeout=timeout_seconds) as response:
+145:                         body = json.loads(response.read().decode("utf-8"))
+146:                     logger.info(
+180:                     )
+181:                 except TimeoutError:
+182:                     last_error = RuntimeError("DeepSeek request timed out")
+183:                     transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "timeout",
+184:                                                "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
+185:                 except error.HTTPError as exc:
+186:                     last_error = RuntimeError(f"DeepSeek request failed with HTTP {exc.code}")
+187:                     transport_attempts.append({"attempt": len(transport_attempts) + 1,
+188:                                                "outcome": "http_error", "status": exc.code,
+189:                                                "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
+190:                 except error.URLError as exc:
+191:                     last_error = RuntimeError(f"DeepSeek request failed: {exc}")
+192:                     transport_attempts.append({"attempt": len(transport_attempts) + 1, "outcome": "network_error",
+193:                                                "duration_ms": round((time.perf_counter() - attempt_started_at) * 1000, 2)})
+194:
+195:             if last_error is not None:
+196:                 raise LlmGatewayError(str(last_error), sent=sent,
+197:                                       provider={"transport_attempts": transport_attempts}) from last_error
+198:             raise LlmGatewayError("DeepSeek request failed: no available API keys", sent=sent,
+199:                                   provider={"transport_attempts": transport_attempts})
+200:         finally:
+201:             self.request_slots.release()
+
+Api/m5_functional_generation_service.py sha256=64225376e556555fed6ed5daab6753ee81f5f57cf63e0406e1a2bd7f7589bd25
+390: def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation_id: str,
+391:                       max_tokens: int, temperature: float,
+392:                       retry_instruction: str) -> tuple[Any, Any, list[dict[str, Any]]]:
+393:     """Retry one malformed provider envelope; never salvage or merge partial JSON."""
+394:     failures: list[dict[str, Any]] = []
+395:     current = list(messages)
+396:     for attempt in (1, 2):
+397:         response = gateway.chat_with_trace(
+398:             current, temperature=temperature, timeout_seconds=300, max_tokens=max_tokens,
+399:             routing_key=operation_id if attempt == 1 else f"{operation_id}:json-retry",
+400:             response_format={"type": "json_object"},
+401:         )
+402:         try:
+403:             return json.loads(response.content), response, failures
+404:         except json.JSONDecodeError as exc:
+405:             failures.append({"attempt": attempt, "code": "PROVIDER_JSON_INVALID",
+406:                              "position": exc.pos, "response_characters": len(response.content),
+407:                              "finish_reason": response.provider.get("finish_reason")})
+408:             if attempt == 2:
+409:                 raise ValueError("M5_FUNCTIONAL_PROVIDER_JSON_INVALID") from exc
+410:             current = [*messages, {"role": "system", "content": retry_instruction}]
+411:     raise AssertionError("unreachable")
+412:
+413:
+414: def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
+704:             runtime_package: Path = RUNTIME_PACKAGE) -> dict[str, Any]:
+705:     provider = (snapshot.get("refs") or {}).get("provider_contract")
+706:     if provider and hasattr(gateway, "model") and hasattr(gateway, "base_url"):
+707:         actual_endpoint = f"{str(getattr(gateway, 'base_url', '')).rstrip('/')}/chat/completions"
+708:         if str(getattr(gateway, "model", "")) != provider["model"] or actual_endpoint != provider["endpoint"]:
+709:             raise ValueError("M5_FUNCTIONAL_PROVIDER_IDENTITY_MISMATCH")
+710:     generation = generate(snapshot, gateway)
+711:     tested = test_candidate(snapshot, generation, gateway)
+712:     repair = None
+713:     if (not tested["aggregation"]["admitted_for_participant"]
+714:             and (tested["aggregation"]["blocking_failures"]
+715:                  or tested["aggregation"]["deterministic_failures"])):
+716:         repaired = repair_candidate(snapshot, generation, tested, gateway)
+717:         retested = test_candidate(snapshot, repaired, gateway)
+718:         repair = {
+719:             "original_candidate_checksum": generation["candidate_checksum"],
+720:             "original_author_content_binding": generation["author_content_binding"],
+721:             "original_deterministic_validation": generation["deterministic_validation"],
+722:             "original_generation_operation": generation["provider_operation"],
+723:             "original_tester": tested,
+724:             "repair_generation_operation": repaired["provider_operation"],
+725:         }
+726:         generation, tested = repaired, retested
+727:     compiled_case = None
+728:     execution_rules = None
+729:     if tested["aggregation"]["admitted_for_participant"]:
+730:         compiler_profile = ((((snapshot.get("refs") or {}).get("package") or {}).get("compiler") or {})
+731:                             .get("source_schema_profile") or "functional-personalization-indicator-v1")
+
+Api/product_cycle_preparation_queue.py sha256=3ebab91aedff5545d3215be7252e5be072c5d90241daa57e3ec1f3a853fd6a95
+375:
+376:     def _claim(self) -> dict | None:
+377:         with get_connection() as connection:
+378:             connection.execute(
+379:                 """UPDATE product_cycle_preparation_operations
+380:                    SET status='queued',worker_id=NULL,attempt_token=NULL,locked_at=NULL,updated_at=NOW()
+381:                    WHERE status='running' AND locked_at < NOW() - INTERVAL '10 minutes'"""
+382:             )
+383:             row = connection.execute(
+384:                 """SELECT id,operation_id,user_id,request_json,request_checksum
+385:                    FROM product_cycle_preparation_operations WHERE status='queued'
+386:                    ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1"""
+387:             ).fetchone()
+388:             if not row:
+389:                 return None
+390:             attempt_token = uuid4()
+391:             claimed = connection.execute(
+392:                 """UPDATE product_cycle_preparation_operations
+393:                    SET status='running',attempts=attempts+1,worker_id=%s,attempt_token=%s,
+394:                        locked_at=NOW(),updated_at=NOW()
+395:                    WHERE id=%s
+396:                    RETURNING id,operation_id,user_id,request_json,request_checksum,attempt_token,created_at""",
+397:                 (self._worker_id, attempt_token, row["id"]),
+398:             ).fetchone()
+399:         return dict(claimed)
+400:
+401:     @staticmethod
+402:     def _assert_current_attempt(connection, job: dict, *, lock: bool = False) -> None:
+403:         suffix = " FOR UPDATE" if lock else ""
+404:         row = connection.execute(
+405:             "SELECT status,attempt_token FROM product_cycle_preparation_operations "
+406:             f"WHERE id=%s{suffix}",
+407:             (job["id"],),
+408:         ).fetchone()
+409:         if not row or row["status"] != "running" or row["attempt_token"] != job["attempt_token"]:
+410:             raise RuntimeError("PRODUCT_CYCLE_PREPARATION_ATTEMPT_STALE")
+411:
+412:     @contextmanager
+413:     def _lease_heartbeat(self, job: dict):
+414:         stop = threading.Event()
+415:
+416:         def heartbeat() -> None:
+417:             while not stop.wait(HEARTBEAT_INTERVAL_SECONDS):
+418:                 try:
+419:                     with get_connection() as connection:
+420:                         connection.execute(
+421:                             """UPDATE product_cycle_preparation_operations
+422:                                SET locked_at=NOW(),updated_at=NOW()
+423:                                WHERE id=%s AND status='running' AND attempt_token=%s""",
+424:                             (job["id"], job["attempt_token"]),
+425:                         )
+426:                 except Exception:
+427:                     logger.exception(
+428:                         "Product Cycle preparation heartbeat failed operation_id=%s",
+429:                         job["operation_id"],
+430:                     )
+431:
+432:         thread = threading.Thread(
+433:             target=heartbeat,
+434:             name=f"product-cycle-preparation-heartbeat-{job['id']}",
+435:             daemon=True,
+436:         )
+437:         thread.start()
+438:         try:
+439:             yield
+440:         finally:
+
+Api/config.py sha256=496d174c74ec21ce5a6c760e7682b383df283b3619735047028ecf0945f59f7b
+90:     deepseek_max_concurrency: int = int(os.getenv("DEEPSEEK_MAX_CONCURRENCY", "10"))
+91:     deepseek_queue_timeout_seconds: float = float(os.getenv("DEEPSEEK_QUEUE_TIMEOUT_SECONDS", "30"))
+92:     assessment_preparation_max_concurrency: int = int(os.getenv("ASSESSMENT_PREPARATION_MAX_CONCURRENCY", "2"))
+93:     assessment_preparation_queue_timeout_seconds: float = float(
+94:         os.getenv("ASSESSMENT_PREPARATION_QUEUE_TIMEOUT_SECONDS", "10")
+95:     )
+96:     assessment_queue_worker_threads: int = int(os.getenv("ASSESSMENT_QUEUE_WORKER_THREADS", "1"))
+97:     assessment_queue_poll_interval_seconds: float = float(
+98:         os.getenv("ASSESSMENT_QUEUE_POLL_INTERVAL_SECONDS", "1")
+99:     )
+100:     assessment_queue_lease_timeout_seconds: int = int(
+101:         os.getenv("ASSESSMENT_QUEUE_LEASE_TIMEOUT_SECONDS", "900")
+102:     )
+103:     assessment_queue_max_attempts: int = int(os.getenv("ASSESSMENT_QUEUE_MAX_ATTEMPTS", "3"))
+104:     assessment_equivalent_generation_lease_seconds: int = int(
+105:         os.getenv("ASSESSMENT_EQUIVALENT_GENERATION_LEASE_SECONDS", "120")
+106:     )
+107:     assessment_equivalent_generation_max_attempts: int = int(
+108:         os.getenv("ASSESSMENT_EQUIVALENT_GENERATION_MAX_ATTEMPTS", "3")
+109:     )
+110:     assessment_queue_retention_hours: int = int(os.getenv("ASSESSMENT_QUEUE_RETENTION_HOURS", "168"))
+111:     assessment_analysis_worker_threads: int = int(os.getenv("ASSESSMENT_ANALYSIS_WORKER_THREADS", "1"))
+112:     assessment_universal_llm_enabled: bool = (
+
+playwright.config.mjs sha256=cddaf358e7c32055a5814c5cbe9ca6fcde27fb130383bd4c8fbd70a42de43398
+1: import { defineConfig } from '@playwright/test';
+2: export default defineConfig({testDir:'tests/browser',testMatch:'*.spec.mjs',timeout:150000,workers:1,retries:0,
+3:   outputDir:'.test-stand/browser-output',reporter:[['list'],['json',{outputFile:'.test-stand/browser-results.json'}]],
+4:   use:{browserName:'chromium',viewport:{width:1440,height:1000},locale:'ru-RU',trace:'off',screenshot:'only-on-failure',acceptDownloads:true}});
+
+.github/workflows/full-verification.yml sha256=cd110ac1c9d7e0983a816bcf4b88aed5ea11bac0df466735b39cce9869089aae
+1: name: Full verification
+2:
+3: run-name: Full verification — ${{ github.ref_name }}
+4:
+5: on:
+6:   pull_request:
+7:     types: [opened, reopened, synchronize, ready_for_review]
+8:
+9: concurrency:
+10:   group: full-verification-${{ github.event.pull_request.number }}
+11:   cancel-in-progress: true
+12:
+13: jobs:
+14:   integration:
+15:     if: github.event.pull_request.draft == false
+16:     runs-on: ubuntu-latest
+17:     timeout-minutes: 15
+18:
+19:     services:
+20:       postgres:
+21:         image: postgres:16
+76:             exit "$status"
+77:           fi
+78:
+79:   browser:
+80:     if: github.event.pull_request.draft == false
+81:     runs-on: ubuntu-latest
+82:     timeout-minutes: 15
+83:     strategy:
+84:       fail-fast: false
+85:       matrix:
+86:         include:
+87:           - lane: fast
+190:   full-verification:
+191:     if: always() && github.event.pull_request.draft == false
+192:     needs: [integration, browser]
+193:     runs-on: ubuntu-latest
+194:     timeout-minutes: 2
+195:     steps:
+196:       - name: Require every full verification lane
+197:         env:
+198:           INTEGRATION_RESULT: ${{ needs.integration.result }}
+199:           BROWSER_RESULT: ${{ needs.browser.result }}
+
+.github/workflows/backend-tests.yml sha256=5f110329a1badc92ff4cc22f9d0f367bbfbcb3ec8b880e041ea958fb2eaee28b
+10: jobs:
+11:   frontend:
+12:     if: github.event_name == 'pull_request'
+13:     runs-on: ubuntu-latest
+14:     timeout-minutes: 10
+15:
+16:     steps:
+17:       - uses: actions/checkout@v4
+65:   pytest:
+66:     if: github.event_name == 'pull_request'
+67:     runs-on: ubuntu-latest
+68:     timeout-minutes: 25
+69:
+70:     services:
+71:       postgres:
+72:         image: postgres:16
+120:   deploy-test:
+121:     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+122:     runs-on: ubuntu-latest
+123:     timeout-minutes: 20
+124:     environment:
+125:       name: test
+126:       url: https://test.4k-assistant.ru
+127:     concurrency:
+128:       group: deploy-test

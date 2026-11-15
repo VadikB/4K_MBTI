@@ -1,0 +1,9 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "build:web"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.8052168639999999
+}

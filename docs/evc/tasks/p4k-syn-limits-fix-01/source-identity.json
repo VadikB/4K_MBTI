@@ -1,0 +1,43 @@
+[
+  {
+    "source": {
+      "id": "ProductArchitecture.Change01",
+      "version": "1.0/01",
+      "selected_status": "WORKING",
+      "path": "docs/architecture/product-4k/1.0/updates/2026-10-01/source.pdf",
+      "sha256": "dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    "actual_sha256": "dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081",
+    "matches": true
+  },
+  {
+    "source": {
+      "id": "M1",
+      "version": "1.4",
+      "selected_status": "FROZEN",
+      "path": "docs/architecture/product-4k/m1/v1.4/source.docx",
+      "sha256": "5fa5ab5735dfe57fac6ef3c93aca50d149fbd7abd365edf80d362c10e2d7a975",
+      "verification": "file_identity_verified; methodological consistency not re-audited"
+    },
+    "actual_sha256": "5fa5ab5735dfe57fac6ef3c93aca50d149fbd7abd365edf80d362c10e2d7a975",
+    "matches": true
+  },
+  {
+    "source": {
+      "id": "M7",
+      "version": "1.3",
+      "selected_status": "FROZEN",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M7_Assessment_Cycle_v1.3_FROZEN_2026-09-30.docx",
+      "sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10",
+      "verification": "file_identity_verified; selected sections reviewed; runtime not verified",
+      "derived_text": {
+        "path": "docs/methodology/source-sets/2026-10-01/derived/M7-v1.3.md",
+        "sha256": "9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8",
+        "limitations": "paragraphs and tables; embedded diagrams not reproduced"
+      }
+    },
+    "actual_sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10",
+    "matches": true
+  }
+]

@@ -1,0 +1,18 @@
+{
+  "base": "68a52a7c21bfe7759d2522a644ad194f7d111f4e",
+  "code_candidate": "926f16337186381c4497a4e466be5c1178405ecf",
+  "files": {
+    "Api/llm/deepseek_gateway.py": "86182b53f8af785c11269de92f396694dc33c20c11c6add3e8794fba451ab85e",
+    "Api/m5_functional_generation_service.py": "67a8e0921a66b66b61c9f60cb56e8e818aec39964ed99fd75a49bc8c2c10cf99",
+    "scripts/assessment_first_case.py": "c376fa3f8dd32fa0019ca96c49fb311d8d3577e232505f8f65d4e2aeaca188ad",
+    "scripts/owned_process.py": "33db16ddfe46f3d53ace4b36b2a0d4d0778189b6596220b7f3b0e760357a6c46",
+    "scripts/test_stand.py": "4be199d92ce6db29b4c839fa256f290ad94ad7906ce94c087955ede1b0ed9ee4",
+    "scripts/test_stand_check.py": "65b99cfe875cf81f0833a2eff3392eda4a43009de400a144f54d2a814682d240",
+    "tests/browser/fixtures/assessment-completion-profile.mjs": "bb4ec8c35d152ac58d8da164e19b8acf7d67ad882b1c7c71f612159921639ee4",
+    "tests/frontend/assessment-completion-driver.test.mjs": "9d8c3005e68197acb93eebc1cd2b3e220899b9182b0299cd06f2c900e8e32e19",
+    "tests/frontend/assessment-completion-profile.test.mjs": "cc9463ab77f53990d08a9f9f80711fbe58785b8d265684ca7dc12ffcb95b10c8",
+    "tests/path29_browser_app.py": "22af820042377e9d50f3e7705b3f25e0b6fa5d4c59864b8cf6ed913420a0dd15",
+    "tests/unit/test_assessment_first_case.py": "5389c397b6dc227dfbdf825b92fee2d9690cca568714774761c3c76fd039caf1",
+    "tests/unit/test_synthetic_limits.py": "8a05fff5dbd54f9225c704451eaaaa6f6e096d4e8561ed3b6fb4f868de646b39"
+  }
+}

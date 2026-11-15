@@ -1,0 +1,149 @@
+{
+  "checked_at": "2026-11-15T07:10:44.747724+00:00",
+  "tested_sha": "68a52a7c21bfe7759d2522a644ad194f7d111f4e",
+  "checks": [
+    {
+      "check": "python_ast:run.py",
+      "result": "PASS",
+      "details": "parse only; no probe rerun"
+    },
+    {
+      "check": "python_ast:sitecustomize.py",
+      "result": "PASS",
+      "details": "parse only; no probe rerun"
+    },
+    {
+      "check": "python_ast:probes.py",
+      "result": "PASS",
+      "details": "parse only; no probe rerun"
+    },
+    {
+      "check": "node_syntax:netguard.mjs",
+      "result": "PASS",
+      "details": {
+        "exit_code": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "check": "node_syntax:probes.mjs",
+      "result": "PASS",
+      "details": {
+        "exit_code": 0,
+        "stderr": ""
+      }
+    },
+    {
+      "check": "json_structure",
+      "result": "PASS",
+      "details": {
+        "valid_files": 24,
+        "expected_corrupted_readback": "L06-run/terminal-execution-export.json",
+        "invalid": [
+          "L06-run/terminal-execution-export.json"
+        ]
+      }
+    },
+    {
+      "check": "jsonl_structure",
+      "result": "PASS",
+      "details": "resource registry parse PASS"
+    },
+    {
+      "check": "report_links",
+      "result": "PASS",
+      "details": {
+        "links": 19,
+        "missing": []
+      }
+    },
+    {
+      "check": "tested_sources_unchanged",
+      "result": "PASS",
+      "details": {
+        "changed": []
+      }
+    },
+    {
+      "check": "tested_checkout_clean",
+      "result": "PASS",
+      "details": ""
+    },
+    {
+      "check": "git_diff_check_tested",
+      "result": "PASS",
+      "details": {
+        "exit_code": 0,
+        "stdout": ""
+      }
+    },
+    {
+      "check": "own_file_diff_check",
+      "result": "PASS",
+      "details": {
+        "command": "git diff --no-index --check /dev/null <file>",
+        "exit_1_means_new_file_diff": true,
+        "files": [
+          {
+            "path": "REPORT.md",
+            "exit_code": 1,
+            "output": ""
+          },
+          {
+            "path": "diagnostics/run.py",
+            "exit_code": 1,
+            "output": ""
+          },
+          {
+            "path": "diagnostics/netguard.mjs",
+            "exit_code": 1,
+            "output": ""
+          },
+          {
+            "path": "diagnostics/probes.mjs",
+            "exit_code": 1,
+            "output": ""
+          },
+          {
+            "path": "diagnostics/sitecustomize.py",
+            "exit_code": 1,
+            "output": ""
+          },
+          {
+            "path": "diagnostics/probes.py",
+            "exit_code": 1,
+            "output": ""
+          }
+        ],
+        "errors": []
+      }
+    },
+    {
+      "check": "main_workspace_status_preserved",
+      "result": "PASS",
+      "details": {
+        "added": [],
+        "removed": [],
+        "own_evidence_excluded_from_both": true
+      }
+    },
+    {
+      "check": "own_resources_stopped",
+      "result": "PASS",
+      "details": {
+        "readback": "resources-final.json"
+      }
+    },
+    {
+      "check": "M7_derived_manifest_checksum",
+      "result": "PASS",
+      "details": "docs/methodology/source-sets/2026-10-01/derived/M7-v1.3.md"
+    }
+  ],
+  "result": "PASS",
+  "note": "PASS относится к целостности evidence; L02/L04/L05 FAIL не отменяются",
+  "corrections": [
+    "First verification misclassified git --no-index exit1 with empty diagnostics as failure; corrected exit semantics, no product change.",
+    "Initial workspace snapshot already included own evidence folder; compare excludes it from both sets."
+  ]
+}

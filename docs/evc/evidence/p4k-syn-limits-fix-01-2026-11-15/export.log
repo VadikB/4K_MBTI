@@ -1,0 +1,13 @@
+✔ cleanup requires a known terminal execution outcome after preparation (2.195824ms)
+✔ coordinator preserves owned DB when execution export is missing (2.414929ms)
+✔ terminal export is persisted and checked before cleanup admission (86.250795ms)
+✔ export write retains actual file state and diagnostic error (1.424787ms)
+✔ export readback retains actual file state and diagnostic error (41.735818ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 477.510027

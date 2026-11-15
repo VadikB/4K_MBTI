@@ -1,0 +1,36 @@
+ M .env.example
+ M .env.local.example
+ M Api/acquaintance.py
+ M Api/config.py
+ M Api/database.py
+ M Api/educational_contexts.py
+ M Api/integration_routes.py
+ M Api/m5_scenario_runtime.py
+ M README.md
+ M tests/e2e/test_integration_identity_http.py
+ M tests/integration/test_educational_contexts_db.py
+ M tests/integration/test_m10_product_path_db.py
+ M tests/integration/test_m5_runtime_db.py
+ M tests/integration/test_path29_scope_states_db.py
+ M tests/unit/test_m6_evidence.py
+ M tests/unit/test_m6_indicator_assessment.py
+ M tests/unit/test_path_start_readiness.py
+?? ARCH_WORKTREES/
+?? P4K_Codex_Architect_Setup_2026-11-08/
+?? P4K_P3B_Architect_2026-11-09/
+?? USER_WORKTREES/
+?? docs/architecture/product-4k/telegram-student-channel-v1.md
+?? docs/evc/decisions/
+?? docs/evc/evidence/p4k-syn-limits-01-2026-11-15/
+?? docs/evc/evidence/program01-test-recovery-2026-11-04.json
+?? docs/evc/integration/
+?? docs/evc/reports/ux-ui02-branch-status-2026-11-04.md
+?? docs/evc/tasks/codex-token-monitor.md
+?? docs/evc/tasks/m6-v1-provider-identity-repair.md
+?? docs/evc/tasks/program01-test-recovery-2026-11-04.md
+?? docs/evc/tasks/tg-student-channel-api-implementation.md
+?? docs/evc/tasks/tg-student-channel-contract.md
+?? tests/integration/test_telegram_student_channel_acquaintance_db.py
+?? tests/integration/test_telegram_student_channel_cross_repo.py
+?? tests/unit/test_educational_channel_state.py
+?? tools/

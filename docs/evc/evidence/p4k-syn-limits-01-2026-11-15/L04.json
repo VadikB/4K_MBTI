@@ -1,0 +1,127 @@
+{
+  "status": "FAIL",
+  "operation_id": "audit-same-operation",
+  "fake_calls": [
+    {
+      "attempt": 1,
+      "timeout_parameter": 300
+    },
+    {
+      "attempt": 2,
+      "timeout_parameter": 300
+    },
+    {
+      "attempt": 3,
+      "timeout_parameter": 300
+    },
+    {
+      "attempt": 4,
+      "timeout_parameter": 300
+    },
+    {
+      "attempt": 5,
+      "timeout_parameter": 300
+    },
+    {
+      "attempt": 6,
+      "timeout_parameter": 300
+    },
+    {
+      "attempt": 7,
+      "timeout_parameter": 300
+    },
+    {
+      "attempt": 8,
+      "timeout_parameter": 300
+    }
+  ],
+  "traces": [
+    {
+      "routing_key": "audit-same-operation",
+      "transport_attempts": [
+        {
+          "attempt": 1,
+          "outcome": "timeout",
+          "duration_ms": 0.29
+        },
+        {
+          "attempt": 2,
+          "outcome": "completed",
+          "duration_ms": 0.08
+        }
+      ],
+      "usage": {
+        "total_tokens": 9
+      }
+    },
+    {
+      "routing_key": "audit-same-operation:json-retry",
+      "transport_attempts": [
+        {
+          "attempt": 1,
+          "outcome": "timeout",
+          "duration_ms": 0.03
+        },
+        {
+          "attempt": 2,
+          "outcome": "completed",
+          "duration_ms": 0.04
+        }
+      ],
+      "usage": {
+        "total_tokens": 9
+      }
+    },
+    {
+      "routing_key": "audit-same-operation",
+      "transport_attempts": [
+        {
+          "attempt": 1,
+          "outcome": "timeout",
+          "duration_ms": 0.03
+        },
+        {
+          "attempt": 2,
+          "outcome": "completed",
+          "duration_ms": 0.05
+        }
+      ],
+      "usage": {
+        "total_tokens": 9
+      }
+    },
+    {
+      "routing_key": "audit-same-operation:json-retry",
+      "transport_attempts": [
+        {
+          "attempt": 1,
+          "outcome": "timeout",
+          "duration_ms": 0.03
+        },
+        {
+          "attempt": 2,
+          "outcome": "completed",
+          "duration_ms": 0.04
+        }
+      ],
+      "usage": {
+        "total_tokens": 9
+      }
+    }
+  ],
+  "entries": [
+    {
+      "entry": 1,
+      "reason": "M5_FUNCTIONAL_PROVIDER_JSON_INVALID",
+      "cumulative_fake_calls": 4
+    },
+    {
+      "entry": 2,
+      "reason": "M5_FUNCTIONAL_PROVIDER_JSON_INVALID",
+      "cumulative_fake_calls": 8
+    }
+  ],
+  "external_calls": 0,
+  "shared_operation_budget": "absent in exercised function",
+  "scope": "actual strict JSON retry + actual key rotation; repair and durable queue not executed"
+}
