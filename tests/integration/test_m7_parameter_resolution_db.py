@@ -198,3 +198,30 @@ def test_w02_keeps_saved_plan_but_does_not_report_ready_without_admitted_as(db):
     assert snapshot['revision_no']==1
     assert snapshot['revision_id']
     assert snapshot['plan']['planned_max_seconds']==720
+
+
+def test_w02_timing_readback_is_read_only_while_preparation_resolves(db, test_database_url):
+    """W02 GET timing and plan worker must not recreate the same SQL trigger."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    schema = db.execute('SELECT current_schema() AS name').fetchone()['name']
+    db.commit()
+    barrier = Barrier(2)
+
+    def read(display):
+        with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+            connection.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
+            connection.commit()
+            connection.execute('SET TRANSACTION READ ONLY')
+            connection.execute("SET LOCAL statement_timeout='5s'")
+            barrier.wait(timeout=5)
+            if display:
+                return resolve_display_timing(connection, personalized_profile_id=1)
+            return resolve(connection, personalized_profile_id=1, usage_scope='assessment')
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        display, preparation = list(executor.map(read, [True, False]))
+    assert display['status'] == 'resolved'
+    assert {key: display[key] for key in preparation['values']} == preparation['values']
+    assert display['resolved_checksum'] == preparation['resolved_checksum']

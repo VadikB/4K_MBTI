@@ -71,7 +71,8 @@ for (const retryAllowed of [true, false]) {
     });
     await page.goto(base);
     await expect(page.locator('#onboarding-title')).toHaveText('Не удалось подготовить оценку');
-    await expect(page.locator('#onboarding-panel')).toContainText((retryAllowed ? technical : admission).message);
+    await expect(page.locator('#onboarding-panel')).toContainText('Подготовка завершилась с ошибкой. Ваши ответы сохранены.');
+    await expect(page.locator('#onboarding-panel')).not.toContainText('обратитесь к ответственному');
     await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
     await page.reload();
     await expect(page.locator('#onboarding-title')).toHaveText('Не удалось подготовить оценку');

@@ -31,6 +31,9 @@ export const preparationView = (model, localError = null) => {
   if (['queued', 'running', 'unknown'].includes(model?.preparation_operation?.status)) return 'preparing';
   const snapshot = model?.prepared_plan;
   const admission = snapshot?.start_readiness;
+  const plan = snapshot?.plan;
+  if (snapshot?.cycle_id && (!Array.isArray(plan?.route) || !plan.route.length ||
+      !(Number(plan.time_budget_seconds) > 0) || !(Number(plan.calendar_window_seconds) > 0))) return 'plan_missing';
   if (snapshot?.cycle_id && admission?.contract === 'm7_start_readiness/1'
       && admission.cycle_id === snapshot.cycle_id && admission.can_start === true
       && admission.plan_revision_id === snapshot.revision_id

@@ -83,3 +83,11 @@ test('nonempty READY or LIMITED route never substitutes for server admission', (
     assert.equal(preparationView(current), 'plan_blocked');
   }
 });
+
+test('server admission cannot enable a missing route or time budget', () => {
+  for (const mutate of [(p) => { p.route = []; }, (p) => { delete p.time_budget_seconds; }, (p) => { p.calendar_window_seconds = 0; }]) {
+    const current = model({}, { late_readiness: { status: 'ready_to_prepare' }, prepared_plan: serverReady() });
+    mutate(current.prepared_plan.plan);
+    assert.equal(preparationView(current), 'plan_missing');
+  }
+});

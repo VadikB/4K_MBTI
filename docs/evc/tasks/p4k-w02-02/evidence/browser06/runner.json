@@ -1,0 +1,17 @@
+{
+  "run_id": "w02-02-browser06",
+  "pid": 20724,
+  "pgid": 20724,
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "w02-readiness.spec.mjs",
+    "--grep",
+    "incomplete preparation",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000"
+  ],
+  "db": null,
+  "containers": []
+}

@@ -77,7 +77,7 @@ test('REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then 
   await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('Synthetic-password');
   await page.locator('#verify-magic-link-button').click();
-  const check = page.getByRole('button', { name: 'Проверить готовность', exact: true });
+  const check = page.locator('#auth-complete-continue-button');
   await expect(check).toBeVisible();
   const permittedAuth = [...run.writes];
   await page.goto(base + '/?screen=chat');
@@ -139,7 +139,7 @@ test('REMAIN04 late waiting response after logout cannot restore participant', a
   test.setTimeout(90000);
   const run = await fixture(page);
   await page.goto(base);
-  const check = page.getByRole('button', { name: 'Проверить готовность', exact: true });
+  const check = page.locator('#auth-complete-continue-button');
   await expect(check).toBeVisible();
   const release = run.hold();
   const request = page.waitForRequest('**/users/8/journey-state');

@@ -1,5 +1,6 @@
 /* W02 v5. These tokens and rules belong only to the acquaintance screen. */
-#onboarding-panel {
+.shell:has(> #onboarding-panel:not(.hidden)),
+.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) {
     --w02-canvas: #f7f7f7;
     --w02-white: #ffffff;
     --w02-secondary: #f6f9f9;
@@ -16,6 +17,8 @@
     --w02-highlight: rgb(24 184 198 / 20%);
     --w02-error: #b42318;
     --w02-list-hover: #e5f4f5;
+}
+#onboarding-panel {
     height: 100dvh; min-height: 0; padding: 0; overflow: hidden;
     background: var(--w02-canvas); color: var(--w02-text);
     font: 400 16px/24px var(--font-body);
@@ -122,3 +125,44 @@
     #onboarding-panel #onboarding-dialog { padding: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { #onboarding-panel .onboarding-spinner { animation: none; } }
+
+/* Standalone readiness states share W02-01 tokens; the transcript stays in history. */
+#onboarding-panel.onboarding-standalone { height: auto; min-height: calc(100dvh - 164px); overflow: visible; }
+#onboarding-panel.onboarding-standalone .onboarding-shell { height: auto; min-height: inherit; }
+#onboarding-panel.onboarding-standalone .onboarding-history { flex: 1; overflow: visible; padding: 48px 0 32px; }
+#onboarding-panel.onboarding-standalone .onboarding-thread { max-width: 720px; }
+#onboarding-panel.onboarding-standalone .onboarding-copy { width: 100%; margin: 0; }
+#onboarding-panel.onboarding-standalone .onboarding-copy > .onboarding-author,
+#onboarding-panel.onboarding-standalone .onboarding-composer { display: none; }
+#onboarding-panel.onboarding-standalone .onboarding-bubble { background: transparent; padding: 0; }
+#onboarding-panel.onboarding-standalone h2 { font: 700 28px/36px var(--font-body); }
+#onboarding-panel.onboarding-standalone #feature-list { margin-top: 20px; }
+#onboarding-panel .onboarding-assessment-name { font-weight: 600; }
+#onboarding-panel .onboarding-metrics { margin: 24px 0; }
+#onboarding-panel .onboarding-time-notice { font-size: 14px; color: var(--w02-muted); }
+#onboarding-panel .onboarding-diagnostics { margin-top: 16px; font-size: 14px; overflow-wrap: anywhere; color: var(--w02-muted); }
+#onboarding-panel .onboarding-diagnostics summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--w02-focus); }
+.shell:has(> #onboarding-panel.onboarding-standalone:not(.hidden)) > .app-footer,
+.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) > .app-footer { background: var(--w02-canvas); color: rgb(100 116 139 / 60%); }
+#auth-complete-panel.w02-waiting { flex: 1; width: 100%; max-width: none; margin: 0; padding: 64px max(24px, calc((100% - 720px) / 2)); border: 0; border-radius: 0; box-shadow: none; background: var(--w02-canvas); color: var(--w02-text); font: 400 16px/24px var(--font-body); }
+#auth-complete-panel.w02-waiting .auth-complete-copy { max-width: none; }
+#auth-complete-panel.w02-waiting .auth-complete-mark,
+#auth-complete-panel.w02-waiting .auth-complete-eyebrow { display: none; }
+#auth-complete-panel.w02-waiting h1 { font: 700 28px/36px var(--font-body); color: var(--w02-text); }
+#auth-complete-panel.w02-waiting #auth-complete-description { color: var(--w02-text); white-space: pre-line; overflow-wrap: anywhere; }
+#auth-complete-panel.w02-waiting .auth-complete-actions { margin-top: 16px; flex-wrap: wrap; }
+#auth-complete-panel.w02-waiting button { box-sizing: border-box; min-height: 48px; min-width: 0; border-radius: 8px; padding: 12px 24px; font: 600 16px/24px var(--font-body); box-shadow: none; white-space: normal; }
+#auth-complete-panel.w02-waiting .primary-button { border: 0; background: var(--w02-primary); color: var(--w02-text); }
+#auth-complete-panel.w02-waiting .primary-button:hover:not(:disabled) { background: var(--w02-hover); }
+#auth-complete-panel.w02-waiting .primary-button:active:not(:disabled) { background: var(--w02-active); }
+#auth-complete-panel.w02-waiting .ghost-button { background: var(--w02-white); border: 1px solid var(--w02-border); padding-block: 11px; color: var(--w02-text); }
+#auth-complete-panel.w02-waiting .ghost-button:hover { background: var(--w02-list-hover); }
+#auth-complete-panel.w02-waiting button:disabled { background: var(--w02-disabled); color: var(--w02-disabled-text); opacity: 1; }
+#auth-complete-panel.w02-waiting :focus-visible { outline: 3px solid var(--w02-focus); outline-offset: 3px; }
+@media (max-width: 600px) {
+    #onboarding-panel.onboarding-standalone .onboarding-history { padding-block: 32px 24px; }
+    #onboarding-panel.onboarding-standalone h2, #auth-complete-panel.w02-waiting h1 { font-size: 24px; line-height: 32px; }
+    #auth-complete-panel.w02-waiting { padding: 32px 16px; }
+    #auth-complete-panel.w02-waiting .auth-complete-actions { flex-direction: column; align-items: stretch; }
+    #auth-complete-panel.w02-waiting .auth-complete-actions button { width: 100%; }
+}

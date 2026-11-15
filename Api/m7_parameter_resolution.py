@@ -114,7 +114,8 @@ def _published(connection, *, scope: str, organization_id: int,
 
 def resolve(connection, *, personalized_profile_id: int, usage_scope: str,
             qa_overrides: dict | None = None) -> dict:
-    ensure_schema(connection)
+    # Runtime readers and preparation workers share the bootstrapped schema.
+    # Recreating its trigger here can deadlock concurrent W02 readback/planning.
     profile_row = connection.execute("""SELECT to_jsonb(profile) AS value
         FROM assessment_personalized_profiles profile WHERE id=%s AND status='ready'""",
         (personalized_profile_id,)).fetchone()

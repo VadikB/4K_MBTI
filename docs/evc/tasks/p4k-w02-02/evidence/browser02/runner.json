@@ -1,0 +1,20 @@
+{
+  "run_id": "w02-02-browser02",
+  "pid": 15820,
+  "pgid": 15820,
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "w02-readiness.spec.mjs",
+    "remain05-first-start.spec.mjs",
+    "exec-fix02-preparation.spec.mjs",
+    "remain04-waiting.spec.mjs",
+    "--grep",
+    "W02-02|REMAIN05|first preparation|REMAIN04",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000"
+  ],
+  "db": null,
+  "containers": []
+}

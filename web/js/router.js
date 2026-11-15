@@ -1,3 +1,4 @@
+import { waitingPresentation } from './readiness-presentation.js';
 import { state, persistAssessmentContext, clearAssessmentContext } from './state.js';
 import {
   authPanel,
@@ -70,6 +71,7 @@ export const openAuthComplete = () => {
   hideAllPanels();
   state.currentScreen = 'auth-complete';
   persistAssessmentContext();
+  authCompletePanel?.classList.remove('w02-waiting');
   authCompletePanel?.classList.remove('hidden');
   window.history.replaceState({ screen: 'auth-complete' }, '', '/?screen=auth-complete');
 };
@@ -91,13 +93,12 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
   }
   state.currentScreen = 'auth-complete';
   persistAssessmentContext();
-  if (authCompleteTitle) authCompleteTitle.textContent = readiness.title || (assignmentMissing ? 'Оценка пока не назначена' : 'Данные для оценки готовятся');
-  if (authCompleteDescription) {
-    authCompleteDescription.textContent = readiness.message
-      || 'Организация ещё готовит данные для вашей оценки. Когда подготовка будет завершена, здесь можно будет начать знакомство';
-  }
+  const presentation = waitingPresentation(readiness);
+  authCompletePanel?.classList.add('w02-waiting');
+  if (authCompleteTitle) authCompleteTitle.textContent = presentation.title;
+  if (authCompleteDescription) authCompleteDescription.textContent = presentation.description + '\n\n' + presentation.detail;
   if (authCompleteContinueButton) {
-    authCompleteContinueButton.textContent = 'Проверить готовность';
+    authCompleteContinueButton.textContent = presentation.button;
     authCompleteContinueButton.dataset.action = 'check-acquaintance-readiness';
   }
   authCompletePanel?.classList.remove('hidden');

@@ -263,10 +263,13 @@ def read_state(connection, *, user_id: int) -> dict:
         organization_id=readiness.get('organization_id'), assignment_ref=readiness.get('assignment_ref'),
         questionnaire_revision_id=readiness.get('questionnaire_revision_id')) if profile_id is not None else None
     assignment_id = int(binding['assignment_id']) if binding else None
+    assessment = connection.execute('SELECT name FROM assessment_configurations WHERE id=%s',
+        (binding['assessment_configuration_id'],)).fetchone() if binding else None
     from Api.product_cycle_preparation_queue import latest_scope_operation
     return {
         "readiness": readiness,
         "assignment_id": assignment_id,
+        "assessment_name": assessment["name"] if assessment else None,
         "state": state,
         "mandatory_complete": mandatory_complete(readiness, state),
         "late_readiness": late,

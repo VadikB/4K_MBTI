@@ -1,0 +1,19 @@
+{
+  "run_id": "w02-02-pg09",
+  "owner": "Codex/P4K-W02-02",
+  "test_pid": 33954,
+  "test_pgid": 33954,
+  "postmaster_pid": 33943,
+  "port": 55503,
+  "db": "agent4k_pytest",
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "--run-integration",
+    "tests/integration/test_m7_parameter_resolution_db.py",
+    "-k",
+    "w02_timing_readback"
+  ]
+}

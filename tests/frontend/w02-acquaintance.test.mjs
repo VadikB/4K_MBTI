@@ -22,7 +22,7 @@ test('W02 keeps preparation separate from explicit assessment start', () => {
   assert.match(interview, /if \(!state\.productCycleId\)/);
   assert.match(interview, /startPreparedProductCycle/);
   assert.match(productStart, /assessment\/cycles\/start/);
-  assert.match(router, /Проверить готовность/);
+  assert.match(router, /waitingPresentation\(readiness\)/);
   assert.doesNotMatch(router, /invitation_intro/);
   const entry = interview.slice(interview.indexOf('export const handleAssessmentEntryClick'));
   assert.match(entry, /loadUserJourneyState/);
@@ -32,8 +32,8 @@ test('W02 keeps preparation separate from explicit assessment start', () => {
 
 test('W02 displays server-resolved assignment timing and restores the prepared snapshot', () => {
   assert.match(onboarding, /assigned_timing\?\.status === 'resolved'/);
-  assert.match(onboarding, /Время на выполнение/);
-  assert.match(onboarding, /Ситуации/);
+  assert.match(onboarding, /на выполнение оценки/);
+  assert.match(onboarding, /ситуаций в плане/);
   assert.match(onboarding, /Завершить оценку нужно в течение/);
   assert.match(onboarding, /Приступить к оценке/);
   assert.match(onboarding, /preparedPlanSnapshot\?\.plan/);

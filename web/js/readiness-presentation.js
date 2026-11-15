@@ -1,0 +1,74 @@
+// W02 v5 participant copy. Status and permitted actions still come from server contracts.
+export const waitingPresentation = (readiness = {}) => {
+  const reason = String(readiness.reason || '');
+  if (reason.startsWith('participant_fields:')) {
+    const labels = { position: 'должность', full_name: 'ФИО', email: 'email' };
+    const missing = reason.slice('participant_fields:'.length).split(',').map((key) => labels[key]).filter(Boolean);
+    return { title: 'Нужно уточнить сведения участника',
+      description: missing.length ? 'В карточке участника не заполнены: ' + missing.join(', ') + '.' : 'В карточке участника не заполнены обязательные сведения.',
+      detail: 'Когда сведения будут дополнены, вы сможете продолжить здесь.', button: 'Проверить готовность' };
+  }
+  const organizationReasons = {
+    confirmed_questionnaire: ['Анкета назначения пока не подтверждена', 'Для назначенной оценки пока нет подтверждённой анкеты.'],
+    early_minimum: ['Нужно дополнить анкету назначения', 'В анкете назначенной оценки отсутствуют обязательные сведения.'],
+    assessment_assignment: ['Нужно уточнить назначение оценки', 'Найдено несколько назначений. Сейчас нельзя однозначно определить вашу оценку.'],
+  };
+  if (readiness.status === 'waiting_for_organization' && organizationReasons[reason]) return {
+    title: organizationReasons[reason][0], description: organizationReasons[reason][1],
+    detail: 'Когда настройка будет завершена, здесь появится следующий шаг.', button: 'Проверить готовность',
+  };
+  if (readiness.status === 'waiting_for_assignment') return {
+    title: 'Оценка пока не назначена', description: 'Сейчас для вашего аккаунта нет назначенной оценки.',
+    detail: 'Проверьте назначение позже. Когда оно появится, вы сможете продолжить здесь.', button: 'Проверить назначение',
+  };
+  if (['expired', 'access_expired'].includes(readiness.status)) return {
+    title: 'Срок доступа к оценке закончился', description: 'Сейчас начать эту оценку нельзя. Если появится новое назначение или изменится доступ, состояние обновится здесь.',
+    detail: 'Время выполнения ещё не идёт.', button: 'Проверить состояние',
+  };
+  if (readiness.status === 'network') return {
+    title: 'Не удалось проверить готовность', description: 'Нет связи с сервером. Пока неизвестно, завершилась ли подготовка.',
+    detail: 'Повторите проверку. Это не запускает подготовку заново.', button: 'Повторить проверку',
+  };
+  return { title: 'Нужны сведения организации',
+    description: 'Организация ещё завершает настройку вашей оценки. Когда сведения будут готовы, здесь появится следующий шаг.',
+    detail: 'Время выполнения ещё не идёт.', button: 'Проверить готовность' };
+};
+
+export const readinessPresentation = (status, { retryAllowed = false, pendingStart = false, readbackAdmitted = false } = {}) => {
+  const action = 'refresh';
+  const base = { action, button: 'Проверить состояние', timeNotice: true };
+  const copy = {
+    conflict: { title: 'Состояние оценки изменилось', description: 'Во время действия изменились сведения или назначение оценки.',
+      detail: 'Обновите состояние, чтобы продолжить с актуальными данными. Сохранённые ответы останутся на месте.', button: 'Обновить состояние' },
+    service: { title: 'Подготовка временно недоступна', description: 'Сервис сейчас не отвечает. Ваши ответы сохранены.',
+      detail: 'Проверьте состояние позже. Повторная проверка не создаёт новую подготовку.' },
+    access: { title: 'Доступ к оценке изменился', description: 'Сейчас нет подтверждённого доступа к этой оценке.',
+      detail: 'Обновите состояние. Ваши ранее сохранённые ответы не удаляются.', button: 'Обновить состояние' },
+    plan_blocked: { title: 'Старт оценки пока недоступен', description: 'План подготовлен, но готовность к началу ещё не подтверждена.',
+      detail: 'Обновите состояние. До подтверждения начать оценку нельзя.' },
+    plan_missing: { title: 'Подготовленный план пока недоступен', description: 'Подготовка завершилась, но план оценки ещё не получен.',
+      detail: 'Повторите проверку. Знакомство заново проходить не нужно.' },
+    network: { ...waitingPresentation({ status: 'network' }) },
+    organization: { title: 'Нужны сведения организации',
+      description: 'Организация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.',
+      detail: 'Когда сведения будут готовы, здесь появится следующий шаг.', button: 'Проверить готовность' },
+    failed: { title: 'Не удалось подготовить оценку', description: 'Подготовка завершилась с ошибкой. Ваши ответы сохранены.',
+      detail: retryAllowed ? 'Вы можете повторить подготовку. Повторно проходить знакомство не нужно.' :
+        'Повторная подготовка пока недоступна. Вы можете проверить, изменилось ли состояние.',
+      action: retryAllowed ? 'retry' : action, button: retryAllowed ? 'Повторить подготовку' : base.button },
+    preparing: { title: 'Готовим вашу оценку', description: 'Знакомство завершено, ваши ответы сохранены. Готовим план и первую ситуацию с учётом ваших сведений.',
+      detail: 'Вы можете закрыть страницу и вернуться позже. Знакомство повторять не потребуется.', button: 'Проверить готовность' },
+  };
+  if (status === 'ready') {
+    if (pendingStart) return readbackAdmitted ? {
+      title: 'Начало оценки ещё не подтверждено', description: 'Проверка показала, что оценка пока не началась. Можно повторить переход к первой ситуации.',
+      detail: 'Повтор не создаёт новую оценку.', action: 'start', button: 'Повторить старт',
+    } : {
+      title: 'Проверяем начало оценки', description: 'Ответ на нажатие «Приступить к оценке» не получен. Оценка могла уже начаться.',
+      detail: 'Сначала проверьте состояние. Если начало подтверждено, вы перейдёте к текущей ситуации.', action: 'check_start', button: base.button,
+    };
+    return { title: 'Можно приступать к оценке', description: 'План и первая ситуация подготовлены. Следующие ситуации будут готовиться по ходу оценки.',
+      action: 'start', button: 'Приступить к оценке' };
+  }
+  return { ...base, ...(copy[status] || copy.preparing) };
+};

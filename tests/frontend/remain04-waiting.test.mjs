@@ -33,7 +33,7 @@ test('actual waiting click remains waiting, handles refusal, and never opens leg
   assert.equal(run.button.disabled, false);
   const refused = setup(async () => { throw Error('synthetic network refusal'); });
   await refused.click();
-  assert.equal(refused.rendered[0].title, 'Не удалось проверить готовность');
+  assert.equal(refused.rendered[0].status, 'network');
   assert.equal(refused.button.disabled, false);
 });
 

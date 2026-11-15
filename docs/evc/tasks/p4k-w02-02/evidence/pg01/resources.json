@@ -1,0 +1,21 @@
+{
+  "run_id": "w02-02-pg01",
+  "owner": "Codex/P4K-W02-02",
+  "test_pid": 17901,
+  "test_pgid": 17901,
+  "postmaster_pid": 17891,
+  "port": 55503,
+  "db": "agent4k_pytest",
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "--run-integration",
+    "tests/integration/test_remain04_acquaintance_db.py",
+    "tests/integration/test_pilot_start_admission_db.py",
+    "tests/integration/test_m10_product_path_db.py",
+    "-k",
+    "exact_briefing_optional_profile_rollback_replay_and_next_snapshot or absent_unconfirmed_ambiguous_and_new_binding_never_fall_back or reassignment_http_start_presents_new_as_once_with_zero_answers or exact_limited_plan_reaches_explicit_start_same_as_and_zero_answers or two_concurrent_explicit_starts_present_once_without_resetting_time or real_sql_revocation_scope_and_publication_fail_closed_before_start or http_start_uses_same_sql_decision_and_does_not_expose_review_material or http_lost_start_receipt_is_recovered_by_read_only_runtime or http_preparation_retry_requires_server_classified_technical_failure"
+  ]
+}

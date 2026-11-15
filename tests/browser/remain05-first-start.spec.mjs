@@ -69,10 +69,10 @@ test('REMAIN05 invalid201 reload resolves same first AS without another POST', a
   await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
   await page.getByRole('button', { name: 'Приступить к оценке' }).click();
   await expect(page.locator('#onboarding-panel')).toContainText('Состояние не подтверждено');
-  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем первый старт');
+  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем начало оценки');
   expect(startPosts).toBe(1);
   await page.reload();
-  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем первый старт');
+  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем начало оценки');
   await page.getByRole('button', { name: 'Проверить состояние' }).click();
   await expect(page.locator('#interview-case-title')).toHaveText('Сохранённая первая ситуация');
   expect(startPosts).toBe(1);

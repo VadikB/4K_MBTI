@@ -142,6 +142,8 @@ def test_exact_briefing_optional_profile_rollback_replay_and_next_snapshot(stand
     monkeypatch.setattr(contexts,'create_personalized_profile',real)
     result=http.post('/users/1/acquaintance/resolve-profile')
     assert result.status_code==200,result.text
+    assert result.json()['assessment_name'] == 'One'
+    assert http.get('/users/1/acquaintance').json()['assessment_name'] == 'One'
     pid=result.json()['late_readiness']['personalized_profile_id']
     for _ in range(2):
         assert http.post('/users/1/acquaintance/resolve-profile').json()['late_readiness']['personalized_profile_id']==pid
@@ -182,6 +184,7 @@ def test_absent_unconfirmed_ambiguous_and_new_binding_never_fall_back(stand):
         assert sources.current_binding(c,user_id=1,organization_id=10,assignment_ref='A',questionnaire_revision_id=41) is None
         c.execute("UPDATE questionnaire_response_revisions SET status='draft' WHERE id=42")
     result=http.get('/users/1/acquaintance').json()
+    assert result['assessment_name'] is None
     assert result['readiness']['briefing'] is None
     assert result['readiness']['reason']=='confirmed_questionnaire'
     with factory() as c:
