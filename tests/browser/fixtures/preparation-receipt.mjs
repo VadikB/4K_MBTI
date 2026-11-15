@@ -164,9 +164,13 @@ export function verifyFirstCase(receipt, before, selected, { controlledProvider 
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
+    const args = process.argv.slice(4);
+    const controlledProvider = args.includes('--controlled-provider');
+    const source = args.find((arg) => arg !== '--controlled-provider');
     verifyFirstCase(JSON.parse(fs.readFileSync(process.argv[2], 'utf8')),
       JSON.parse(fs.readFileSync(process.argv[3], 'utf8')),
-      process.argv[4] ? JSON.parse(fs.readFileSync(process.argv[4], 'utf8')) : undefined);
+      source ? JSON.parse(fs.readFileSync(source, 'utf8')) : undefined,
+      { controlledProvider });
   } catch {
     // No arbitrary receipt values, assertions, credentials or prompts in summary output.
     process.stderr.write('FIRST_CASE_EVIDENCE_INVALID\n');

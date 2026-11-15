@@ -139,7 +139,7 @@ def test_cli_copies_credentials_only_and_never_forwards_model(tmp_path, monkeypa
     monkeypatch.setattr(runner, 'code_identity', lambda: {'scope': 'synthetic-unit'})
     seen = []
     monkeypatch.setattr(runner, 'check_bootstrap', lambda _d, _p, _py, env: seen.append(env))
-    monkeypatch.setattr(runner, 'summarize_runs', lambda *_args: {'exit_code': 0})
+    monkeypatch.setattr(runner, 'summarize_runs', lambda *_args, **_kw: {'exit_code': 0})
     assert runner.main() == 0
     assert 'DEEPSEEK_MODEL' not in seen[0]
     assert seen[0]['DEEPSEEK_API_KEY_2'] == values['DEEPSEEK_API_KEY_2']
