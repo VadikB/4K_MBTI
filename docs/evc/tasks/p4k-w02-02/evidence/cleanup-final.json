@@ -1,0 +1,90 @@
+{
+  "owned_groups": [
+    27399,
+    15436,
+    20724,
+    21306,
+    29060,
+    20079,
+    15820,
+    17524,
+    19279,
+    25109,
+    25567,
+    27238,
+    20628,
+    28547,
+    17901,
+    28005,
+    29628,
+    33954
+  ],
+  "remaining_owned_processes": [],
+  "ports_closed": {
+    "18764": true,
+    "18784": true,
+    "18830": true,
+    "18859": true,
+    "51156": true,
+    "51667": true,
+    "51675": true,
+    "51784": true,
+    "51791": true,
+    "51798": true,
+    "51977": true,
+    "51984": true,
+    "52205": true,
+    "52238": true,
+    "53153": true,
+    "55503": true
+  },
+  "pg_cleanup": {
+    "pg03": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg04": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg05": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg02": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg07": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg01": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg06": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg08": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    },
+    "pg09": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
+    }
+  },
+  "foreign_pg55432_preserved": true,
+  "pg09_test_exit": 0
+}

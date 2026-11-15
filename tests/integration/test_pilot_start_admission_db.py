@@ -640,3 +640,48 @@ def test_http_lost_start_receipt_is_recovered_by_read_only_runtime(pilot_db, mon
             JOIN m5_assessment_situations s ON s.id=turn.assessment_situation_db_id
             WHERE s.cycle_db_id=%s AND turn.speaker_type='assessee'""",
             (before["id"],)).fetchone()["n"] == 0
+
+
+def test_w02_unstarted_readback_does_not_start_or_duplicate_first_situation(pilot_db, monkeypatch):
+    """A missing command effect permits only an explicit same-operation start."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+
+    factory, cid, profile_id, _ = pilot_db
+    monkeypatch.setattr(routes, 'get_connection', factory)
+    monkeypatch.setattr(routes.web_session_service, 'get_user_by_token',
+                        lambda token: SimpleNamespace(id=99) if token == 'synthetic-owner' else None)
+    app = FastAPI()
+    app.include_router(routes.router)
+    with factory() as c:
+        before = read_cycle(c, cid)
+        ready = start_readiness(c, cycle_id=cid, user_id=99)
+        assert ready['can_start'] is True
+        count = c.execute('SELECT count(*) n FROM m5_cycles WHERE owner_user_id=99').fetchone()['n']
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, 'synthetic-owner')
+        for _ in range(2):
+            response = client.get(f'/users/assessment/cycles/{cid}/runtime')
+            assert response.status_code == 200, response.text
+            pending = response.json()
+            assert pending['cycle_id'] == cid
+            assert pending['current_situation']['status'] == 'admitted'
+            assert pending['current_situation']['assessment_situation_id'] == ready['assessment_situation_id']
+            assert 'participant_payload' not in pending['current_situation']
+        with factory() as c:
+            unchanged = read_cycle(c, cid)
+            assert unchanged['started_at'] is None and unchanged['consumed_seconds'] == 0
+        command = {'cycle_id': cid, 'idempotency_key': 'w02-same-operation-after-unstarted-readback'}
+        first = client.post('/users/assessment/cycles/start', json=command)
+        repeated = client.post('/users/assessment/cycles/start', json=command)
+        assert first.status_code == repeated.status_code == 201
+        assert first.json()['runtime']['current_situation'] == repeated.json()['runtime']['current_situation']
+        assert first.json()['runtime']['current_situation']['assessment_situation_id'] == ready['assessment_situation_id']
+    with factory() as c:
+        after = read_cycle(c, cid)
+        assert after['personalized_profile_id'] == profile_id
+        assert c.execute('SELECT count(*) n FROM m5_cycles WHERE owner_user_id=99').fetchone()['n'] == count
+        assert c.execute("SELECT count(*) n FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting'", (before['id'],)).fetchone()['n'] == 1
+        assert c.execute("""SELECT count(*) n FROM m5_dialogue_turns t JOIN m5_assessment_situations s
+            ON s.id=t.assessment_situation_db_id WHERE s.cycle_db_id=%s AND t.speaker_type='assessee'""", (before['id'],)).fetchone()['n'] == 0

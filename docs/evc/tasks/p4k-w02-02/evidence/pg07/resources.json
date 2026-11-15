@@ -1,0 +1,20 @@
+{
+  "run_id": "w02-02-pg07",
+  "owner": "Codex/P4K-W02-02",
+  "test_pid": 28547,
+  "test_pgid": 28547,
+  "postmaster_pid": 28538,
+  "port": 55503,
+  "db": "agent4k_pytest",
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "path29-participant.spec.mjs",
+    "--grep",
+    "PATH29 owned",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000",
+    "--timeout=60000"
+  ]
+}

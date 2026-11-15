@@ -1,0 +1,18 @@
+{
+  "run_id": "w02-02-browser09",
+  "pid": 29060,
+  "pgid": 29060,
+  "command": [
+    "node_modules/.bin/playwright",
+    "test",
+    "auth-r03.spec.mjs",
+    "w02-readiness.spec.mjs",
+    "--grep",
+    "PG-R1: participant sees|R08 shows the frozen|ready/organization/unknown and footer",
+    "--workers=1",
+    "--retries=0",
+    "--global-timeout=600000"
+  ],
+  "db": null,
+  "containers": []
+}

@@ -1,0 +1,19 @@
+{
+  "run_id": "w02-02-pg02",
+  "owner": "Codex/P4K-W02-02",
+  "test_pid": 20628,
+  "test_pgid": 20628,
+  "postmaster_pid": 20619,
+  "port": 55503,
+  "db": "agent4k_pytest",
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "--run-integration",
+    "tests/integration/test_pilot_start_admission_db.py",
+    "-k",
+    "w02_unstarted_readback"
+  ]
+}

@@ -1,0 +1,52 @@
+[
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814212/job/132739698589",
+    "name": "full-verification",
+    "state": "FAILURE"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814212/job/132737883607",
+    "name": "browser (fast)",
+    "state": "FAILURE"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814212/job/132737883642",
+    "name": "browser (runtime-3-of-4, 3/4)",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814088/job/132737882723",
+    "name": "frontend",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814212/job/132737883363",
+    "name": "integration",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814088/job/132737882370",
+    "name": "pytest",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814212/job/132737883581",
+    "name": "browser (runtime-1-of-4, 1/4)",
+    "state": "FAILURE"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814212/job/132737883519",
+    "name": "browser (runtime-2-of-4, 2/4)",
+    "state": "SUCCESS"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814212/job/132737883662",
+    "name": "browser (runtime-4-of-4, 4/4)",
+    "state": "FAILURE"
+  },
+  {
+    "link": "https://github.com/VadikB/4K_MBTI/actions/runs/43689814088/job/132737884344",
+    "name": "deploy-test",
+    "state": "SKIPPED"
+  }
+]

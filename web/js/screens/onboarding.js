@@ -5,6 +5,7 @@ import { hideAllPanels, syncUrlState, openAcquaintanceWaiting } from '../router.
 import { readApiResponse, createOperationId, fetchWithDeadline as fetch } from '../api.js';
 import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
 import { hasPendingPreparedStart, readPendingPreparedStart } from '../product-cycle-start.js';
+import { readinessPresentation } from '../readiness-presentation.js';
 import { acquaintanceErrorMessage } from '../acquaintance-errors.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../onboarding-flow.js';
 
@@ -55,6 +56,7 @@ const writeDraft = () => {
 };
 const storeOperation = (operation) => {
   localOperation = { operation_id: operation.operation_id, status: operation.status,
+    retry_allowed: operation.retry_allowed === true,
     ...(operation.error ? { error: operation.error } : {}) };
   model.preparation_operation = localOperation;
   const key = operationKey();
@@ -141,64 +143,40 @@ const processCopy = () => {
 };
 const readinessStep = () => {
   const status = preparationView(model, preparationError);
+  const step = readinessPresentation(status, {
+    retryAllowed: model?.preparation_operation?.retry_allowed === true,
+    pendingStart: hasPendingPreparedStart(model?.prepared_plan?.cycle_id), readbackAdmitted: startReadbackAdmitted,
+  });
   const operationId = model?.preparation_operation?.operation_id;
-  const reference = operationId ? paragraph('Код обращения: ' + operationId) : '';
-  if (status === 'conflict') return { title: 'Нужно обновить состояние назначения',
-    description: 'Сервер не разрешил эту подготовку: состояние изменилось или другая операция ещё выполняется. Ответы сохранены; обновите состояние, затем обратитесь к ответственному, если ограничение остаётся.',
-    body: reference, action: 'refresh', button: 'Обновить состояние' };
-  if (status === 'service') return { title: 'Сервис подготовки временно недоступен',
-    description: 'Не удалось получить ответ сервера. Это не подтверждённый отказ подготовки. Ответы и идентификатор операции сохранены; повторите проверку состояния.',
-    body: reference, action: 'refresh', button: 'Проверить состояние' };
-  if (status === 'access') return { title: 'Нет доступа к подготовке',
-    description: 'Права или область назначения изменились. Обновите состояние; если доступ не восстановится, обратитесь к ответственному.',
-    body: reference, action: 'refresh', button: 'Обновить состояние' };
-  if (status === 'plan_blocked') return { title: 'Старт оценки пока заблокирован',
-    description: 'Подготовка не подтверждает все условия старта. Обратитесь к организатору оценки.',
-    body: reference, action: 'refresh', button: 'Обновить состояние' };
-  if (status === 'plan_missing') return { title: 'Подготовленный план пока недоступен',
-    description: 'Сервер сообщил о завершении операции, но допустимый подготовленный план не получен. Время оценки ещё не началось.',
-    body: reference, action: 'refresh', button: 'Проверить состояние' };
-  if (status === 'network') return { title: 'Не удалось проверить подготовку',
-    description: 'Сейчас нет подтверждённого статуса сервера. Это не означает, что подготовка завершилась ошибкой. Ваши ответы и операция сохраняются.',
-    body: reference, action: 'refresh', button: 'Проверить состояние' };
-  if (status === 'organization') return { title: 'Для оценки ещё нужны сведения организации',
-    description: 'Ваши ответы сохранены. Ответственный должен завершить настройку роли и источников оценки. Повторно отвечать на вопросы не нужно.',
-    body: '<div class="onboarding-warning">Обратитесь к администратору вашей организации.</div>',
-    action: 'refresh', button: 'Проверить готовность' };
-  if (status === 'failed') {
-    const canRetry = model?.preparation_operation?.retry_allowed === true;
-    return { title: 'Не удалось подготовить оценку',
-      description: model?.preparation_operation?.error?.message ||
-        'Ваши ответы сохранены. Подготовка завершилась с ошибкой; обратитесь к ответственному за оценку.',
-      body: reference, action: canRetry ? 'retry' : 'refresh',
-      button: canRetry ? 'Повторить подготовку' : 'Проверить состояние' };
-  }
-  if (status === 'ready') {
+  let body = step.detail ? paragraph(step.detail) : '';
+  if (status === 'ready' && !hasPendingPreparedStart(model?.prepared_plan?.cycle_id)) {
     const plan = timing();
-    const pendingStart = hasPendingPreparedStart(model?.prepared_plan?.cycle_id);
-    if (pendingStart && !startReadbackAdmitted) return {
-      title: 'Проверяем первый старт',
-      description: 'Ответ на команду старта не получен. Ваши сведения сохранены. Сначала проверьте состояние: оценка могла уже начаться.',
-      body: reference, action: 'check_start', button: 'Проверить состояние',
-    };
-    if (pendingStart) return {
-      title: 'Старт ещё не подтверждён',
-      description: 'Сервер показывает подготовленную, но ещё не предъявленную ситуацию. Можно явно повторить старт с прежним ключом операции.',
-      body: reference, action: 'start', button: 'Повторить старт',
-    };
-    return { title: 'Можно приступать к оценке',
-      description: 'Подготовлены план и первая ситуация. Следующие ситуации подготавливаются по ходу оценки. Время начнётся после вашего явного действия.' +
-        (plan?.participant_notice ? '\n\n' + plan.participant_notice : ''),
-      body: '<div class="onboarding-metrics"><div><strong>' +
-        Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong>Ситуации в плане</div><div><strong>' +
-        Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин.</strong>Время на выполнение</div></div>',
-      action: 'start', button: 'Приступить к оценке' };
+    const preparationCopy = step.description;
+    if (model?.assessment_name) step.description = model.assessment_name;
+    body = (model?.assessment_name ? paragraph(preparationCopy) : '') +
+      '<div class="onboarding-metrics"><div><strong>' +
+      Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong>ситуаций в плане</div><div><strong>' +
+      Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин</strong>на выполнение оценки</div></div>' +
+      paragraph('Читайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.') +
+      (Number(plan?.calendar_window_seconds) > 0 ? paragraph('Завершить оценку нужно в течение ' +
+        Number(plan.calendar_window_seconds) / 3600 + ' ч. после её начала.') : '') +
+      paragraph('Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.') +
+      paragraph(returnPolicyCopy(plan?.return_policy_snapshot)) +
+      (plan?.participant_notice ? paragraph(plan.participant_notice) : '');
+  } else {
+    if (status === 'preparing') body += '<p class="onboarding-warning" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
+      (model?.preparation_operation?.status === 'queued' ? 'Операция в очереди' : 'Подготовка выполняется') + '</p>';
+    if (step.timeNotice) body += '<p class="onboarding-time-notice">Время выполнения ещё не идёт.</p>';
+    if (operationId && ['service', 'failed', 'conflict', 'plan_missing'].includes(status)) body +=
+      '<details class="onboarding-diagnostics"><summary>Сведения об ошибке</summary>' + paragraph('Код операции: ' + operationId) + '</details>';
   }
-  return { title: 'Готовим вашу оценку', description: 'Готовим первую ситуацию с учётом ваших сведений. Ответы сохранены. Время оценки ещё не началось.',
-    body: '<p role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
-      (model?.preparation_operation?.status === 'queued' ? 'Операция в очереди' :
-        model?.preparation_operation?.status === 'running' ? 'Подготовка выполняется' : 'Проверяем подготовку') + '</p>' + reference,
-    action: 'refresh', button: 'Проверить состояние' };
+  return { ...step, body, status };
+};
+const returnPolicyCopy = (policy) => {
+  const pause = 'Между завершёнными ситуациями можно сделать перерыв. Время выполнения не расходуется, а общий срок завершения продолжает идти.';
+  if (policy?.resume_mode === 'same_assessment_situation') return pause + ' После возврата вы продолжите ту же незавершённую ситуацию.';
+  if (policy?.resume_mode === 'replace_assessment_situation') return pause + ' После возврата незавершённая ситуация будет заменена по правилам этой оценки.';
+  return pause + ' Порядок возврата к незавершённой ситуации определяется правилами назначенной оценки.';
 };
 
 const steps = () => {
@@ -377,6 +355,9 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   const step = loading ? { title: 'Загружаем знакомство', description: 'Проверяем назначение и сохранённый этап.', button: 'Загрузка…', body: '' }
     : loadFailed ? { title: 'Не удалось загрузить знакомство', description: 'Сейчас не удалось получить сохранённое состояние. Попробуйте ещё раз.', action: 'reload', button: 'Повторить', body: paragraph('Повторная проверка не стирает ранее сохранённые ответы.') }
       : reviewMode ? { title: 'Знакомство завершено', description: 'Вы можете прочитать сохранённые сообщения и ответы.', button: 'Вернуться к готовности оценки', body: '' } : all[index];
+  const standalone = loading || loadFailed || (!reviewMode && index === readinessIndex());
+  onboardingPanel.classList.toggle('onboarding-standalone', standalone);
+  onboardingPanel.dataset.readiness = standalone ? step.status || (loading ? 'loading' : 'load-error') : '';
   onboardingPanel.dataset.step = String(index < 2 ? 1 : index <= summaryIndex() ? 2 : 3);
   stepBadgeLabel.textContent = reviewMode ? 'История знакомства' : index === readinessIndex() ? 'Готовность оценки' : 'Знакомство';
   onboardingStepBackButton.hidden = loading || loadFailed || reviewMode || index === 0;
@@ -409,12 +390,22 @@ export const renderOnboarding = ({ focus = false } = {}) => {
     const secondary = (id, label, kind) => {
       const button = document.createElement('button'); button.type = 'button'; button.id = id;
       button.className = kind === 'issue' ? 'onboarding-text-action' : 'ghost-button'; button.dataset.secondary = ''; button.textContent = label; button.disabled = busy;
-      button.addEventListener('click', () => openDialog(kind, button)); actions.append(button);
+      button.addEventListener('click', async () => {
+        if (kind === 'refresh') { await advance({ action: 'refresh' }); return; }
+        if (kind === 'history') { await openOnboarding({ reviewMode: true }); return; }
+        if (kind === 'logout') { const { logoutAndReturnToStart } = await import('../session.js'); await logoutAndReturnToStart(button); return; }
+        openDialog(kind, button);
+      }); actions.append(button);
     };
+    if (standalone) {
+      if (step.action === 'retry') secondary('onboarding-check-state', 'Проверить состояние', 'refresh');
+      if (model?.mandatory_complete) secondary('onboarding-view-history', 'Посмотреть знакомство', 'history');
+      secondary('onboarding-logout', 'Выйти', 'logout');
+    }
     if (step.action === 'confirm' && !model?.mandatory_complete) secondary('onboarding-edit-answers', 'Изменить мои ответы', 'answers');
     if (step.action === 'consent' || step.action === 'confirm') secondary('onboarding-report-issue', 'Сообщить о неточности', 'issue');
   }
-  document.getElementById('onboarding-messages').innerHTML = loading || loadFailed ? '' : all.slice(0, reviewMode ? readinessIndex() : index).map((prior, priorIndex) => {
+  document.getElementById('onboarding-messages').innerHTML = standalone ? '' : all.slice(0, reviewMode ? readinessIndex() : index).map((prior, priorIndex) => {
     const historical = priorIndex === summaryIndex() ? { ...prior, body: summaryHtml() } : prior;
     let html = transcript(historical);
     if (prior.answerKey && answers[prior.answerKey]) html += transcript(null, answers[prior.answerKey], true);
@@ -446,22 +437,25 @@ const beginPreparation = ({ retry = false } = {}) => {
   const current = () => isCurrent(owner, epoch, run) && scopeKey === scope && state.currentScreen === 'onboarding';
   const controller = new AbortController();
   const task = { generation: run, controller, promise: null };
-  task.promise = (async () => {
+  task.promise = Promise.resolve().then(async () => {
+    if (!current()) return;
     preparationError = null;
     try {
-      const resolved = await api('/acquaintance/resolve-profile', { method: 'POST' });
-      if (!current()) return;
-      const resolvedScope = onboardingScopeKey(owner, resolved);
-      if (resolvedScope !== scope) {
-        scopeKey = resolvedScope;
-        scope = resolvedScope;
-        localOperation = null;
+      if (model?.prepared_plan && (!model.preparation_operation || model.preparation_operation.status === 'completed')) return;
+      if (retry || !(model?.preparation_operation || localOperation)) {
+        const resolved = await api('/acquaintance/resolve-profile', { method: 'POST' });
+        if (!current()) return;
+        const resolvedScope = onboardingScopeKey(owner, resolved);
+        if (resolvedScope !== scope) {
+          scopeKey = resolvedScope; scope = resolvedScope; localOperation = null;
+        }
+        model = resolved;
+        try { localOperation = JSON.parse(window.sessionStorage.getItem(operationKey()) || 'null'); }
+        catch { localOperation = null; }
       }
-      model = resolved;
-      try { localOperation = JSON.parse(window.sessionStorage.getItem(operationKey()) || 'null'); }
-      catch { localOperation = null; }
       if (model.late_readiness?.status !== 'ready_to_prepare') { renderOnboarding(); return; }
       let accepted = model.preparation_operation || localOperation;
+      if (retry && model.preparation_operation?.retry_allowed !== true) { renderOnboarding(); return; }
       if (accepted?.status === 'failed' && !retry) { renderOnboarding(); return; }
       if (model.prepared_plan && (!accepted || accepted.status === 'completed')) { renderOnboarding(); return; }
       const callbacks = { signal: controller.signal, isCurrent: current,
@@ -497,7 +491,7 @@ const beginPreparation = ({ retry = false } = {}) => {
       if (error.name === 'PreparationFailed') storeOperation({ operation_id: error.operationId, status: 'failed', error: error.operationError, retry_allowed: error.retryAllowed === true });
       renderOnboarding();
     } finally { if (preparationTask === task) preparationTask = null; }
-  })();
+  });
   preparationTask = task;
   return task.promise;
 };
@@ -535,11 +529,11 @@ export const goBackInOnboarding = () => {
   state.onboardingIndex -= 1; renderOnboarding({ focus: true });
 };
 
-const advance = async () => {
+const advance = async (override = null) => {
   if (loading || busy) return;
   const owner = identity(), epoch = state.identityEpoch, run = generation;
   captureInput();
-  const step = steps()[state.onboardingIndex];
+  const step = override || steps()[state.onboardingIndex];
   busy = true; errorMessage = ''; notice = ''; renderOnboarding();
   try {
     if (loadFailed) { await openOnboarding(); return; }
@@ -585,9 +579,19 @@ const advance = async () => {
       void beginPreparation();
     } else if (['refresh', 'retry'].includes(step.action)) {
       await loadAcquaintance();
+      if (!isCurrent(owner, epoch, run)) return;
       if (model.readiness.status !== 'ready') { openAcquaintanceWaiting(model.readiness); return; }
+      if (step.action === 'refresh' && model.preparation_operation?.operation_id) {
+        const operation = await readApiResponse(await fetch('/users/assessment/cycles/preparation/' +
+          encodeURIComponent(model.preparation_operation.operation_id), { credentials: 'same-origin' }), 'Не удалось проверить готовность.');
+        if (!isCurrent(owner, epoch, run)) return;
+        storeOperation(operation);
+        if (operation.status === 'completed') await loadAcquaintance();
+        if (!isCurrent(owner, epoch, run)) return;
+      }
       if (!model.mandatory_complete) state.onboardingIndex = resumeOnboardingIndex(model, model.onboarding);
-      else void beginPreparation({ retry: step.action === 'retry' });
+      else if (step.action === 'retry' && model.preparation_operation?.retry_allowed === true) void beginPreparation({ retry: true });
+      preparationError = null; startReadbackAdmitted = false;
     } else if (step.action === 'check_start') {
       const cycleId = model.prepared_plan?.cycle_id;
       if (!cycleId) throw new Error('Подготовленный цикл пока недоступен. Проверьте готовность.');
@@ -613,7 +617,21 @@ const advance = async () => {
     }
     persistAssessmentContext();
   } catch (error) {
-    if (isCurrent(owner, epoch, run)) errorMessage = acquaintanceErrorMessage(error);
+    if (isCurrent(owner, epoch, run)) {
+      errorMessage = acquaintanceErrorMessage(error);
+      const refusalStatus = error.status || error.cause?.status;
+      if (['refresh', 'retry', 'start', 'check_start'].includes(step.action) &&
+          (error.name !== 'AssessmentStartUnknown' || [403, 409].includes(refusalStatus))) {
+        preparationError = { kind: refusalStatus === 403 ? 'access' : refusalStatus === 409 ? 'conflict' : refusalStatus >= 500 ? 'service' : 'network' };
+        if ([403, 409].includes(refusalStatus)) {
+          const refusal = preparationError;
+          try { await loadAcquaintance(); } catch { /* Preserve the confirmed refusal. */ }
+          if (!isCurrent(owner, epoch, run)) return;
+          preparationError = refusal;
+          if (isCurrent(owner, epoch, run) && model?.readiness?.status !== 'ready') openAcquaintanceWaiting(model.readiness);
+        }
+      }
+    }
   } finally {
     if (isCurrent(owner, epoch, run)) { busy = false; if (state.currentScreen === 'onboarding') renderOnboarding({ focus: true }); }
   }

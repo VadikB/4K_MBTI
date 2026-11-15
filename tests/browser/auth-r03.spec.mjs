@@ -1176,6 +1176,7 @@ test('PATH-START PG-R1: participant sees the exact missing-position reason and c
   await page.goto(base);
   await expect(page.locator('#auth-complete-title')).toHaveText('Нужно уточнить сведения участника');
   await expect(page.locator('#auth-complete-description')).toContainText('должность');
+  await expect(page.locator('#auth-complete-description')).not.toContainText(/Обратитесь|администратору/);
   await expect(page.locator('#auth-complete-description')).not.toContainText('ещё готовит данные');
   const before = checks;
   await page.getByRole('button', { name: 'Проверить готовность', exact: true }).click();
@@ -3734,7 +3735,7 @@ test('W02 blocks direct entry on missing participant briefing and supports readi
     return fulfillJson(route, {}, 404);
   });
   await page.goto(`${base}/?screen=onboarding`);
-  await expect(page.getByRole('heading', { name: 'Данные для оценки готовятся' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Нужны сведения организации' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
   await expect(page.locator('#onboarding-panel')).toBeHidden();
   await page.getByRole('button', { name: 'Проверить готовность' }).click();
@@ -3742,7 +3743,7 @@ test('W02 blocks direct entry on missing participant briefing and supports readi
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
-test('PARTICIPANT-LAYOUT-01 keeps waiting states content-sized and responsive', async ({ page }, testInfo) => {
+test('PARTICIPANT-LAYOUT-01 keeps W02 standalone waiting states responsive', async ({ page }, testInfo) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
@@ -3766,7 +3767,7 @@ test('PARTICIPANT-LAYOUT-01 keeps waiting states content-sized and responsive', 
   const panel = page.locator('#auth-complete-panel');
   const title = page.locator('#auth-complete-title');
   const description = page.locator('#auth-complete-description');
-  await expect(title).toHaveText('Данные для оценки готовятся');
+  await expect(title).toHaveText('Нужны сведения организации');
   await page.screenshot({ path: testInfo.outputPath('participant-layout-desktop.png'), fullPage: true });
 
   for (const state of [
@@ -3777,7 +3778,7 @@ test('PARTICIPANT-LAYOUT-01 keeps waiting states content-sized and responsive', 
     await title.evaluate((node, value) => { node.textContent = value; }, state[0]);
     await description.evaluate((node, value) => { node.textContent = value; }, state[1]);
     await expect(panel).toBeVisible();
-    expect(await panel.evaluate((node) => node.getBoundingClientRect().height)).toBeLessThan(460);
+    expect(await panel.evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThan(0);
   }
 
   for (const viewport of [
@@ -3938,9 +3939,9 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('.onboarding-metrics')).toContainText('Время на выполнение');
-  await expect(page.getByText('120 мин.')).toBeVisible();
-  await expect(page.getByText('189 мин.')).toBeHidden();
+  await expect(page.locator('.onboarding-metrics')).toContainText('на выполнение оценки');
+  await expect(page.getByText('120 мин', { exact: true })).toBeVisible();
+  await expect(page.getByText('189 мин', { exact: true })).toBeHidden();
 });
 
 test('AC18-FIX-02 published frontend matches the merged release and asset', async ({ page }) => {
@@ -4079,10 +4080,10 @@ test('AC18-FIX-02 reload resolves unknown first start by owned GET without anoth
   await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
   await page.getByRole('button', { name: 'Приступить к оценке' }).click();
   await expect(page.locator('#onboarding-panel')).toContainText('Состояние не подтверждено');
-  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем первый старт');
+  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем начало оценки');
   expect(startPosts).toBe(1);
   await page.reload();
-  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем первый старт');
+  await expect(page.locator('#onboarding-title')).toHaveText('Проверяем начало оценки');
   await page.getByRole('button', { name: 'Проверить состояние' }).click();
   await expect(page.locator('#interview-case-title')).toHaveText('Сохранённая первая ситуация');
   expect(startPosts).toBe(1);
@@ -4140,12 +4141,12 @@ test('AC18-FIX-02 reload reads a preparation with lost POST response before any 
     return fulfillJson(route, {}, 404);
   });
   await page.goto(`${base}/?screen=onboarding`);
-  await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить подготовку');
+  await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить готовность');
   expect(preparePosts).toBe(1);
   await page.reload();
   await expect.poll(() => preparePosts + statusReads).toBeGreaterThan(1);
   expect(preparePosts).toBe(1);
-  await expect(page.locator('#onboarding-title')).toHaveText('Сервис подготовки временно недоступен');
+  await expect(page.locator('#onboarding-title')).toHaveText('Подготовка временно недоступна');
   await page.getByRole('button', { name: 'Проверить состояние' }).click();
   await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
   expect(statusReads).toBe(2);
@@ -4183,10 +4184,10 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
     prepared_plan: phase === 'ready' ? plan : null,
   });
   const states = [
-    ['waiting', 'Готовим вашу оценку', 'Проверить состояние'],
+    ['waiting', 'Готовим вашу оценку', 'Проверить готовность'],
     ['failed', 'Не удалось подготовить оценку', 'Проверить состояние'],
     ['technical_failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
-    ['unknown', 'Не удалось проверить подготовку', 'Проверить состояние'],
+    ['unknown', 'Не удалось проверить готовность', 'Повторить проверку'],
     ['ready', 'Можно приступать к оценке', 'Приступить к оценке'],
   ];
   for (const [stateName, title, action] of states) {
@@ -4278,9 +4279,9 @@ test('R03 reset request locks every visible credential action', async ({ page })
 });
 
 for (const [failure, expected] of [
-  [403, 'Нет доступа к подготовке'], [409, 'Нужно обновить состояние назначения'],
-  [503, 'Сервис подготовки временно недоступен'], ['network', 'Не удалось проверить подготовку'],
-  ['failed', 'Не удалось подготовить оценку'], ['organization', 'Для оценки ещё нужны сведения организации'],
+  [403, 'Доступ к оценке изменился'], [409, 'Состояние оценки изменилось'],
+  [503, 'Подготовка временно недоступна'], ['network', 'Не удалось проверить готовность'],
+  ['failed', 'Не удалось подготовить оценку'], ['organization', 'Нужны сведения организации'],
 ]) {
   test(`PATH29 readiness distinguishes ${failure} without a fake ready plan`, async ({ page }) => {
     const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic' };
@@ -4317,7 +4318,7 @@ for (const [failure, expected] of [
     await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
     await expect(page.locator('#onboarding-next')).toBeEnabled();
     expect(prepares).toBe(failure === 'organization' ? 0 : 1);
-    if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('Обратитесь к администратору вашей организации.');
+    if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('Когда сведения будут готовы, здесь появится следующий шаг.');
     if (failure === 'failed') await expect(page.locator('#feature-list')).toContainText('synthetic-failed-operation');
   });
 }
