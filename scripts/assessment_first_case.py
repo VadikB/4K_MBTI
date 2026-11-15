@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 
 def preflight(port:int,python_path:str|None=None,*,verify_machine:bool=False,
-              legacy_model_present:bool|None=None)->dict:
+              legacy_model_present:bool|None=None,controlled_provider:bool=False)->dict:
     checks=[]
     def add(code,ready,detail):checks.append({'code':code,'status':'READY' if ready else 'BLOCKED','detail':detail})
     add('isolated_database_admin',bool(os.getenv('STAND_ADMIN_URL')),
@@ -15,7 +15,8 @@ def preflight(port:int,python_path:str|None=None,*,verify_machine:bool=False,
     playwright=ROOT/'node_modules/.bin/playwright';add('browser',playwright.is_file(),str(playwright) if playwright.is_file() else 'npm ci is required')
     keys=any(bool(os.getenv(key)) for key in ('DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY',
                                              'DEEPSEEK_API_KEY_2','DEEPSEEK_API_KEY_3'))
-    add('real_provider',keys,'provider credentials are set' if keys else 'DeepSeek provider credentials are required')
+    if not controlled_provider:
+        add('real_provider',keys,'provider credentials are set' if keys else 'DeepSeek provider credentials are required')
     provider={'model_source':'provider_contract', 'legacy_env_model_present':
               'DEEPSEEK_MODEL' in os.environ if legacy_model_present is None else legacy_model_present,
               'legacy_env_model_ignored':True}
@@ -67,6 +68,7 @@ def code_identity():
         'tests/browser/fixtures/assessment-completion-profile.mjs',
         'tests/browser/fixtures/receipt-file.mjs', 'tests/browser/fixtures/preparation-receipt.mjs',
         'tests/browser/fixtures/path-viewports.mjs',
+        'tests/browser/fixtures/path-action-budget.mjs',
         'tests/browser/fixtures/auth-password-form.mjs', 'tests/browser/fixtures/failure-page.mjs',
         'tests/path_start_release_source.py', 'tests/path_start_release_inputs.py',
         'tests/browser/fixtures/path-start-release.json']
@@ -118,7 +120,21 @@ def check_bootstrap(directory, port, python, env):
     print('PASS bootstrap_repeat; sources verified; LLM_CALLS=0; owned database removed', flush=True)
 
 
-def summarize_runs(directory, exit_code):
+def valid_path_budget(budget, run_id):
+    if not isinstance(budget, dict) or budget.get('contract') != 'path-action-budget/1':
+        return False
+    if (budget.get('run_id') != run_id or budget.get('scope') != 'path29-first-case'
+            or budget.get('status') != 'completed' or budget.get('rejected') is not None):
+        return False
+    limits, used = budget.get('limits'), budget.get('used')
+    if not isinstance(limits, dict) or not isinstance(used, dict):
+        return False
+    return all(type(limits.get(k)) is int and limits[k] > 0
+               and type(used.get(k)) is int and 0 <= used[k] <= limits[k]
+               for k in ('actions', 'visuals'))
+
+
+def summarize_runs(directory, exit_code, *, controlled_provider=False):
     runs = []
     for run_path in sorted(directory.glob('*/run.json')):
         run_directory = run_path.parent
@@ -134,6 +150,10 @@ def summarize_runs(directory, exit_code):
                 errors.append('MISSING_OR_INVALID:' + name)
                 return {}
         run, cleanup = read('run'), read('cleanup')
+        if run.get('bounded_path') is True:
+            budget = read('path-action-budget')
+            if not valid_path_budget(budget, run.get('run_id')):
+                errors.append('PATH_BUDGET_INVALID_OR_INCOMPLETE')
         completion = read('completion')
         process_file = run_directory / 'process-result.json'
         process = read('process-result') if process_file.exists() else None
@@ -214,7 +234,8 @@ def summarize_runs(directory, exit_code):
                 try:
                     checked = subprocess.run(['node', str(ROOT / 'tests/browser/fixtures/preparation-receipt.mjs'),
                         str(receipt_path), str(run_directory / 'source-to-runtime-receipt.json')]
-                        + ([str(source_path)] if source_path else []),
+                        + ([str(source_path)] if source_path else [])
+                        + (['--controlled-provider'] if controlled_provider else []),
                         capture_output=True, timeout=30)
                     if checked.returncode:
                         errors.append('FIRST_CASE_EVIDENCE_INVALID')
@@ -237,7 +258,7 @@ def summarize_runs(directory, exit_code):
                 r'DeepSeek request completed duration_ms=([0-9.]+)[^\n]*routing_key=([a-f0-9-]{36}:[a-zA-Z0-9:_-]+)',
                 log.read_text() if log.exists() else '')]
         runs.append({'run': run, 'cleanup': cleanup,
-            'result': ('PASS_BOOTSTRAP_ONLY' if bootstrap else 'PASS') if not errors else 'FAIL',
+            'result': ('PASS_BOOTSTRAP_ONLY' if bootstrap else 'PASS TECH' if controlled_provider else 'PASS') if not errors else 'FAIL',
             'completion': completion, 'process_exit_code': process_exit, 'validation_errors': errors,
             'evidence_directory': str(run_directory),
             'failure': read('failure') if (run_directory / 'failure.json').exists() else None,
@@ -245,13 +266,16 @@ def summarize_runs(directory, exit_code):
             'provider_completions': completions,
             'usage_note': 'Receipt totals count unique retained operations; JSON retries have separate completions, but earlier malformed-response usage is not retained by product trace.'})
     success = exit_code == 0 and bool(runs) and all(run['result'] != 'FAIL' for run in runs)
+    bootstrap_only = success and all(run['result'] == 'PASS_BOOTSTRAP_ONLY' for run in runs)
     profiles = {item.get('run', {}).get('profile') for item in runs}
     profile = ('assessment-execution-contour/2' if 'assessment-execution-contour/2' in profiles
                else 'assessment-execution-contour/1' if 'assessment-execution-contour/1' in profiles
                else 'assessment-first-case/1.1')
     return {'profile': profile, 'scope': 'synthetic_diagnostic',
+        'provider_validation': 'controlled' if controlled_provider else 'real-provider',
         'process_exit_code': exit_code, 'exit_code': exit_code if exit_code else (0 if success else 1),
-        'result': 'PASS' if success else 'FAIL', 'runs': runs}
+        'result': ('PASS_BOOTSTRAP_ONLY' if bootstrap_only else 'PASS TECH' if controlled_provider else 'PASS')
+                  if success else 'FAIL', 'runs': runs}
 
 
 def record_process_result(directory, previous, exit_code):
@@ -277,11 +301,15 @@ def main()->int:
         help='Keep standalone AC18, or continue its owned DB/Cycle through explicit Report opening')
     p.add_argument('--run-deadline-seconds', type=float, default=1200)
     p.add_argument('--no-progress-seconds', type=float, default=900)
+    p.add_argument('--controlled-provider', action='store_true', help='Explicit controlled technical validation; no real LLM')
+    p.add_argument('--path-action-limit', type=int)
+    p.add_argument('--path-visual-limit', type=int)
     p.add_argument('--summarize-only', action='store_true', help='Rebuild normalized summary from existing evidence; no credentials or LLM')
     a=p.parse_args()
     if a.summarize_only:
         original = json.loads((a.directory / 'runner-result.json').read_text())
-        summary = summarize_runs(a.directory, original.get('process_exit_code', original['exit_code']))
+        summary = summarize_runs(a.directory, original.get('process_exit_code', original['exit_code']),
+                                 controlled_provider=a.controlled_provider)
         (a.directory / 'runner-result.normalized.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return summary['exit_code']
@@ -290,10 +318,21 @@ def main()->int:
                                   sha256=a.program_receipt_sha256, version=a.program_version)
     except ValueError as exc:
         p.error(str(exc))
+    if a.controlled_provider and (a.program_source != 'published-pilot' or a.profile != 'first-case'):
+        p.error('CONTROLLED_PROVIDER_REQUIRES_PUBLISHED_FIRST_CASE')
+    bounded = a.path_action_limit is not None or a.path_visual_limit is not None or a.controlled_provider
+    if bounded and a.profile != 'first-case':
+        p.error('BOUNDED_PATH_REQUIRES_FIRST_CASE_PROFILE')
+    if bounded and (not isinstance(a.path_action_limit, int) or a.path_action_limit <= 0
+                    or not isinstance(a.path_visual_limit, int) or a.path_visual_limit <= 0):
+        p.error('POSITIVE_PATH_BUDGET_LIMITS_REQUIRED')
     env=os.environ.copy()
     legacy_model_present='DEEPSEEK_MODEL' in env
     env.pop('DEEPSEEK_MODEL',None)
     env.pop('P4K_PUBLISHED_RELEASE_REF', None)
+    for key in ('P4K_CONTROLLED_PROVIDER', 'P4K_COMPLETION_PROFILE', 'P4K_STOP_AFTER_FIRST_AS',
+                'P4K_PATH_BOUNDED', 'P4K_PATH_ACTION_LIMIT', 'P4K_PATH_VISUAL_LIMIT'):
+        env.pop(key, None)
     if selected is not None:
         env['P4K_PUBLISHED_RELEASE_REF'] = json.dumps(selected)
     env['P4K_PROGRAM_SOURCE'] = a.program_source
@@ -308,7 +347,8 @@ def main()->int:
     os.environ.update({key:value for key,value in env.items() if key in ('STAND_ADMIN_URL',
         'DEEPSEEK_API_KEYS','DEEPSEEK_API_KEY','DEEPSEEK_API_KEY_2','DEEPSEEK_API_KEY_3',
         'DEEPSEEK_BASE_URL','DEEPSEEK_MAX_CONCURRENCY')})
-    result=preflight(a.port,a.python,verify_machine=True,legacy_model_present=legacy_model_present);a.directory.mkdir(parents=True,exist_ok=True);(a.directory/'preflight.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');print(json.dumps(result,ensure_ascii=False,indent=2),flush=True)
+    result=preflight(a.port,a.python,verify_machine=True,legacy_model_present=legacy_model_present,
+                     controlled_provider=a.controlled_provider);a.directory.mkdir(parents=True,exist_ok=True);(a.directory/'preflight.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n');print(json.dumps(result,ensure_ascii=False,indent=2),flush=True)
     if result['status']!='READY':return 2
     if a.preflight_only:return 0
     identity = code_identity()
@@ -321,13 +361,17 @@ def main()->int:
         except (OSError, ValueError, subprocess.SubprocessError):
             exit_code = 1
         record_process_result(a.directory, previous, exit_code)
-        summary = summarize_runs(a.directory, exit_code)
+        summary = summarize_runs(a.directory, exit_code, controlled_provider=a.controlled_provider)
         (a.directory / 'runner-result.json').write_text(json.dumps(
             summary, ensure_ascii=False, indent=2) + '\n')
         return summary['exit_code']
-    env.update(BROWSER_PYTHON=a.python,P4K_FULL_PATH='1',P4K_REAL_PROVIDER='1',
+    env.update(BROWSER_PYTHON=a.python,P4K_FULL_PATH='1',P4K_REAL_PROVIDER='0' if a.controlled_provider else '1',
                P4K_EVIDENCE_DIRECTORY=str(a.directory.resolve()),P4K_PORT=str(a.port),
                P4K_CODE_IDENTITY=json.dumps(identity))
+    if a.controlled_provider: env['P4K_CONTROLLED_PROVIDER'] = '1'
+    if bounded:
+        env.update(P4K_PATH_BOUNDED='1',P4K_PATH_ACTION_LIMIT=str(a.path_action_limit),
+                   P4K_PATH_VISUAL_LIMIT=str(a.path_visual_limit))
     if a.profile == 'ac18-to-report':
         env['P4K_COMPLETION_PROFILE'] = '1'
     previous = set(a.directory.glob('*/run.json'))
@@ -338,7 +382,7 @@ def main()->int:
         progress_file=a.directory, cwd=ROOT, env=env)
     (a.directory/'runner-stop.json').write_text(json.dumps(outcome) + '\n')
     record_process_result(a.directory, previous, outcome['returncode'])
-    summary = summarize_runs(a.directory, outcome['returncode'])
+    summary = summarize_runs(a.directory, outcome['returncode'], controlled_provider=a.controlled_provider)
     summary['runner_outcome'] = outcome
     (a.directory / 'runner-result.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(summary, ensure_ascii=False, indent=2))
