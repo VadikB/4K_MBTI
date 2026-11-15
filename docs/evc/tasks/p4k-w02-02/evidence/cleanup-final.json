@@ -16,7 +16,8 @@
     28547,
     17901,
     28005,
-    29628
+    29628,
+    33954
   ],
   "remaining_owned_processes": [],
   "ports_closed": {
@@ -77,7 +78,13 @@
       "stop_exit": 0,
       "port_closed": true,
       "postmaster_pid_absent": true
+    },
+    "pg09": {
+      "stop_exit": 0,
+      "port_closed": true,
+      "postmaster_pid_absent": true
     }
   },
-  "foreign_pg55432_preserved": true
+  "foreign_pg55432_preserved": true,
+  "pg09_test_exit": 0
 }

@@ -161,3 +161,13 @@ M7/admission SQL/HTTP 25 PASS. Готовность того же PATCH 2.1.8 п
 Активно: второй собственный commit и push в тот же PR222, новый mandatory CI.
 Первый CI остаётся историческим FAIL и описан в CHECKS. Не менялись управляющие
 документы, schema, frozen artifacts, методология и полномочия merge/deploy.
+
+Второй CI head4c9af2e: frontend/pytest/fast/все4runtime PASS; integration1FAIL/
+414PASS/2SKIP. ЕдинственныйFAILновогоconcurrencyтеста:db.info.dsnнамеренноневыдаёт
+пароль, второйconnectionнеавторизованвCIpasswordконтуре. Локальныйtrustэтоомаскировал.
+Исправленtest-onlyисточникурла: штатныйtest_database_urlfixture, credentialsнепечатаются.
+Product/runtimeнеизменён. PG09addressedtest: новыйownedcluster .test-stand/w02-02-pg09,
+55503/agent4k_pytest, прежниевладелец/limits/stopfinally; startscriptpg09, evidencepg09.
+ПослеPASSтолькоtest/docscommit→тотжеPR222→mandatoryCIновогоhead.
+PG09PASS1/0.64s,cleanupstop0/portclosed/postmasterabsent. Product/runtime hashes
+неизменны; изменены только2строкиtestDSN и документы/evidence. НовыйCIhead обязателен.

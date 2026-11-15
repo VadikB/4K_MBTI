@@ -115,3 +115,17 @@ PG03–08 завершены `stop_exit=0`, порты закрыты; actual st
 Финальная расширенная сверка — cleanup-final.json. Предыдущая таблица локальных
 проверок сохраняет историю; для нового head действуют after/pg04/pg08/browser09.
 Человеческое review, фактический TEST и merge/deploy по-прежнему отдельно.
+
+### Второй CI: исправление test DSN
+
+Head `4c9af2e`: frontend/pytest/fast/все четыре runtime-группы PASS.
+Integration: 414 PASS / 2 SKIP / 1 FAIL, поэтому full-verification FAIL.
+Единственная ошибка нового concurrency-теста: psycopg `db.info.dsn` исключает пароль,
+а CI PostgreSQL требует пароль. Локальная trust-аутентификация не выявила этот дефект
+теста. Второй connection теперь использует штатный `test_database_url` fixture;
+никакие credentials не печатаются. Продуктовый код и проверенные runtime-хеши прежние.
+
+PG09: тот же regression **1 PASS / 0.64 s**, stop_exit=0, порт закрыт и postmaster
+остановлен. [Первичный результат](evidence/pg09/pytest.log.gz),
+[второй CI](evidence/ci-second/checks.json). Это test-only исправление, новый head
+снова проходит весь обязательный CI; прежний failed head не выдаётся за PASS.
