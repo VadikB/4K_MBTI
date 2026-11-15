@@ -1,0 +1,592 @@
+{
+  "frontend-release-guard-15711.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16343.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15746.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15750.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-15938.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15707.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16791.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15681.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-15943.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16050.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17252.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15678.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-15810.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16046.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17272.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17376.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-15918.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15727.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17462.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17177.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15731.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17571.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15730.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15726.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-18041.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17072.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16319.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16155.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16339.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15679.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17029.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15680.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17005.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15706.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15751.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17551.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15747.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17382.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-15702.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15710.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16342.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16148.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-18046.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15721.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15737.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-18050.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15717.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15740.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17385.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16040.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16152.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16811.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-15944.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15686.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17280.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15741.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16128.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15716.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17279.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-18051.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15736.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17170.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15720.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-15948.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-18047.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17275.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-16937.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17574.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15735.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17173.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15723.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-16975.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17276.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15719.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17578.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16042.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15739.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15685.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-15947.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16146.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15742.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16347.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-16938.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15715.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16346.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-16893.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15714.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17386.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15743.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15684.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17168.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15738.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17579.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16151.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15718.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16022.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17148.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15722.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16809.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15734.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17575.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16156.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-15845.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16814.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15729.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15683.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15705.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15752.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17378.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17381.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15744.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-18023.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15713.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15733.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15676.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15725.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16232.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16818.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17358.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15709.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15748.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17270.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15749.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15708.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-18043.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16819.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15724.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-15809.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17174.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16049.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15732.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15677.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16337.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15712.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15745.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-native-guard-17569.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-15940.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-release-guard-15728.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-release-guard-15682.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-release-guard-16815.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-guard-16045.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-release-native-guard-17178.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  }
+}

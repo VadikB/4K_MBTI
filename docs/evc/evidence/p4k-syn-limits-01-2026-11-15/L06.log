@@ -1,0 +1,2 @@
+{"exportError":"EXECUTION_EXPORT_READBACK_MISMATCH","cleanupError":"Cleanup deferred: terminal execution export or readback unavailable","commands":[],"diagnostic_file_retained":true,"actual_database":"NOT_CREATED","scope":"existing export+cleanup functions; command spy is not DB readback"}
+{"status": "PARTIAL", "summary_result": "FAIL", "summary_exit": 1, "database_preservation": "NOT_RUN: no DB", "source": "L06-export.json + L06-summary.json"}

@@ -1,0 +1,19 @@
+{
+  "status": "FAIL",
+  "signal": "SIGINT",
+  "caught_interrupt": true,
+  "parent_pid": 7502,
+  "child_pid": 7503,
+  "pgid": 7500,
+  "parent_exit_code": -15,
+  "descendant_alive_after_native_cleanup": true,
+  "actions_spy": [
+    "create",
+    "bootstrap",
+    "seed",
+    "smoke",
+    "destroy"
+  ],
+  "database": "NOT_CREATED",
+  "scope": "actual check() finally; real own process tree; CLI/HTTP are synthetic"
+}

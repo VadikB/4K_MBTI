@@ -1,0 +1,21 @@
+{"limits":{"maxStepsPerAS":5,"maxSteps":100},"reason":"/DRIVER_AS_STEP_LIMIT/","accepted_ask_answers":3,"as_count":1}
+{"limits":{"maxStepsPerAS":100,"maxSteps":6},"reason":"/DRIVER_RUN_STEP_LIMIT/","accepted_ask_answers":3,"as_count":1}
+✔ driver accepts one_ask and does not send a stale command (102.442619ms)
+✔ driver accepts second_ask and does not send a stale command (86.29819ms)
+✔ driver accepts other_client_ended and does not send a stale command (85.844081ms)
+✔ driver accepts calendar_close and does not send a stale command (82.262757ms)
+✔ driver accepts delayed_ask and does not send a stale command (85.902762ms)
+✔ driver never answers an ASK that remains undelivered (3.203619ms)
+✔ actual ASK-loop stops with /DRIVER_AS_STEP_LIMIT/ (4.759087ms)
+✔ actual ASK-loop stops with /DRIVER_RUN_STEP_LIMIT/ (3.383294ms)
+✔ actual driver unchanged processing stops with /RUN_DEADLINE_EXCEEDED/ (82.289916ms)
+✔ actual driver unchanged processing stops with /RUN_NO_PROGRESS_EXCEEDED/ (82.169978ms)
+✔ short positive driver stops at explicit Next within finite limits, before Report (4.410223ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 920.67031

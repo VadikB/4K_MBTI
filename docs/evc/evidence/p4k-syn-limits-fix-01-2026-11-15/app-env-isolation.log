@@ -1,0 +1,4 @@
+SYNTHETIC_FUNCTIONAL_PROVIDER: NO_EXTERNAL_LLM NO_NEW_HUMAN_ADMISSION
+..{"original_counterexample": "L04", "default_limit": 4, "calls_after_reentry": 4}
+.
+3 passed, 16 deselected in 1.24s

@@ -9,10 +9,64 @@ async function json(response, label) {
   if (!response.ok()) throw new Error(`${label}: HTTP ${response.status()}`);
   return response.json();
 }
-async function runtime(page, base, cycleId) {
+async function readRuntime(page, base, cycleId) {
   const value = await json(await page.request.get(`${base}/users/assessment/cycles/${cycleId}/runtime`), 'runtime');
   if (value.cycle_id !== cycleId) throw new Error('COMPOSITE_CYCLE_CHANGED');
   return value;
+}
+
+// Technical executor limits; they never close an AS or change participant time.
+export class DriverBudget {
+  constructor(limits = {}, progressFile) {
+    this.limits = { maxSteps: 600, maxStepsPerAS: 100, deadlineMs: 900000,
+      noProgressMs: 120000, ...limits };
+    for (const value of Object.values(this.limits)) {
+      if (!Number.isFinite(value) || value <= 0) throw Error('DRIVER_LIMITS_INVALID');
+    }
+    this.started = this.progressAt = Date.now();
+    this.steps = 0;
+    this.localSteps = new Map();
+    this.progressFile = progressFile;
+  }
+  check() {
+    if (Date.now() - this.started >= this.limits.deadlineMs) throw Error('RUN_DEADLINE_EXCEEDED');
+    if (Date.now() - this.progressAt >= this.limits.noProgressMs) throw Error('RUN_NO_PROGRESS_EXCEEDED');
+  }
+  step(asId) {
+    this.check();
+    if (this.steps >= this.limits.maxSteps) throw Error('DRIVER_RUN_STEP_LIMIT');
+    const local = this.localSteps.get(asId) || 0;
+    if (local >= this.limits.maxStepsPerAS) throw Error('DRIVER_AS_STEP_LIMIT');
+    this.steps += 1;
+    this.localSteps.set(asId, local + 1);
+  }
+  observe(value) {
+    this.check();
+    // Only persisted material/state identities count. Processing heartbeat does not.
+    const key = createHash('sha256').update(JSON.stringify([value.status?.collection_status,
+      value.current_situation?.assessment_situation_id, value.current_situation?.status,
+      (value.trace?.turns || []).map(t => [t.id, t.speaker_type, t.content_text]),
+      value.clarification?.id, value.clarification?.question_turn_id,
+      value.clarification?.response_outcome, value.between_situations,
+      value.finish_availability?.allowed, value.pipeline?.status])).digest('hex');
+    if (key !== this.progressKey) {
+      this.progressKey = key;
+      this.progressAt = Date.now();
+      if (this.progressFile) fs.writeFileSync(this.progressFile, JSON.stringify({ progress_key: key }));
+    }
+  }
+  async call(fn) {
+    this.check();
+    const deadlineLeft = this.limits.deadlineMs - (Date.now() - this.started);
+    const progressLeft = this.limits.noProgressMs - (Date.now() - this.progressAt);
+    let timer;
+    try {
+      return await Promise.race([fn(), new Promise((_, reject) => {
+        timer = setTimeout(() => reject(Error(deadlineLeft <= progressLeft
+          ? 'RUN_DEADLINE_EXCEEDED' : 'RUN_NO_PROGRESS_EXCEEDED')), Math.min(deadlineLeft, progressLeft));
+      })]);
+    } finally { clearTimeout(timer); }
+  }
 }
 
 const closedStatuses = ['collection_closed', 'calculation_pending', 'calculated'];
@@ -62,16 +116,17 @@ export function destroyOwnedStandIfAdmitted({ executionStarted, terminalExecutio
   }
 }
 
-async function waitRuntime(page, base, cycleId, predicate, timeout = 120000) {
+async function waitForRuntime(page, base, cycleId, predicate, budget, timeout = 120000) {
   const started = Date.now();
   let last;
   while (Date.now() - started < timeout) {
-    last = await runtime(page, base, cycleId);
+    last = await budget.call(() => readRuntime(page, base, cycleId));
+    budget.observe(last);
     if (last.pipeline?.status === 'failed') {
       throw new Error('COMPOSITE_PIPELINE_FAILED: ' + (last.pipeline.error_code || 'UNKNOWN'));
     }
     if (predicate(last)) return last;
-    await page.waitForTimeout(500);
+    await budget.call(() => page.waitForTimeout(500));
   }
   throw new Error(`COMPOSITE_TECHNICAL_TIMEOUT: ${JSON.stringify({
     cycle: cycleId,
@@ -102,8 +157,17 @@ export async function completeStartedAssessment({
   answerFor = (position) => `Синтетический технический ответ для ситуации ${position}. Уточняю условия, фиксирую решение и проверяю понимание участников.`,
   clarificationFor = (position) => `Синтетическое уточнение ${position}: поясняю основание решения и границы договорённости.`,
   advanceWorkers = async () => {}, maxSituations = 12, reloadAtBoundary = false,
-  stopAfterFirstNext = false, onNextAccepted = async () => null,
+  stopAfterFirstNext = false, onNextAccepted = async () => null, limits = {},
 }) {
+  const budget = new DriverBudget(limits, path.join(evidenceDir, 'driver-progress.json'));
+  const runtime = async (...args) => {
+    const value = await budget.call(() => readRuntime(...args));
+    budget.observe(value);
+    return value;
+  };
+  const waitRuntime = (...args) => waitForRuntime(...args, budget);
+  const advance = advanceWorkers;
+  advanceWorkers = () => budget.call(advance);
   // The product asks for explicit Finish confirmation. Runtime specs may have
   // already registered this handler during login; two handlers race to accept
   // the same dialog and fail the browser shard.
@@ -121,6 +185,7 @@ export async function completeStartedAssessment({
 
   const seen = new Set();
   for (let position = 1; position <= maxSituations; position += 1) {
+    budget.step(null);
     let snapshot = await runtime(page, base, cycleId);
     if (collectionClosed(snapshot)) break;
     if (!snapshot.current_situation) throw new Error('COMPOSITE_CURRENT_AS_UNKNOWN');
@@ -130,6 +195,7 @@ export async function completeStartedAssessment({
     const initialTurnCount = (snapshot.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length;
     if (snapshot.current_situation.status === 'active') {
       if (!presented(snapshot)) throw new Error('COMPOSITE_AS_NOT_PRESENTED');
+      budget.step(situationId);
       await submit(page, answerFor(position, snapshot));
       await advanceWorkers();
       snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
@@ -137,6 +203,7 @@ export async function completeStartedAssessment({
         || (value.trace?.turns || []).filter((turn) => turn.speaker_type === 'assessee').length > initialTurnCount);
     }
     if (!collectionClosed(snapshot) && snapshot.current_situation?.status === 'active') {
+      budget.step(situationId);
       const transition = page.waitForResponse((item) => item.request().method() === 'POST'
         && new URL(item.url()).pathname.endsWith('/transitions'), { timeout: 30000 });
       await page.locator('#interview-finish-button').click({ timeout: 15000 });
@@ -147,6 +214,7 @@ export async function completeStartedAssessment({
       || value.between_situations || value.current_situation?.status === 'scenario_ended');
     let clarified = false;
     while (!collectionClosed(snapshot) && !snapshot.between_situations) {
+      budget.step(situationId);
       if (snapshot.current_situation?.assessment_situation_id !== situationId) {
         throw new Error('COMPOSITE_AS_CHANGED_DURING_CLARIFICATION');
       }
@@ -181,6 +249,7 @@ export async function completeStartedAssessment({
       if (!collectionClosed(snapshot)) {
         if (snapshot.current_situation?.assessment_situation_id !== situationId
             || snapshot.finish_availability?.allowed !== true) throw new Error('COMPOSITE_FINISH_NOT_ADMITTED');
+        budget.step(situationId);
         const closed = page.waitForResponse((item) => item.request().method() === 'POST'
           && new URL(item.url()).pathname.endsWith('/finish-situation'), { timeout: 30000 });
         let clickError;
@@ -217,6 +286,7 @@ export async function completeStartedAssessment({
     if (reloadAtBoundary) {
       await page.goto(`${base}/?screen=interview&cycle_id=${encodeURIComponent(cycleId)}`);
     }
+    budget.step(situationId);
     const next = page.getByRole('button', { name: 'Приступить к следующей ситуации' });
     await next.waitFor({ state: 'visible', timeout: 15000 });
     const nextResponse = page.waitForResponse((item) => item.request().method() === 'POST'
@@ -277,7 +347,7 @@ export async function completeStartedAssessment({
     if (journey.report_status === 'ready') break;
     if (journey.assessment?.status === 'failed') throw new Error('REPORT_PIPELINE_FAILED');
     await advanceWorkers();
-    await page.waitForTimeout(500);
+    await budget.call(() => page.waitForTimeout(500));
   }
   if (journey?.report_status !== 'ready') throw new Error('REPORT_NOT_READY');
   await page.goto(`${base}/?screen=processing&cycle_id=${encodeURIComponent(cycleId)}`);

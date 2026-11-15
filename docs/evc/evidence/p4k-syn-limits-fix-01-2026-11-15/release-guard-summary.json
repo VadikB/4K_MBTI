@@ -1,0 +1,9 @@
+{
+  "records": 142,
+  "blocked": {
+    "outgoing_calls_intercepted": 0,
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  }
+}

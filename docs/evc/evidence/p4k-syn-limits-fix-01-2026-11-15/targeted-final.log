@@ -1,0 +1,10 @@
+{"operation": "same", "calls": 5, "limit": 5, "used": 5, "deadline_preserved": true}
+...{"expected": "RUN_DEADLINE_EXCEEDED", "returncode": 1, "reason": "RUN_DEADLINE_EXCEEDED", "wall_seconds": 0.38360801599992556}
+.{"expected": "RUN_NO_PROGRESS_EXCEEDED", "returncode": 1, "reason": "RUN_NO_PROGRESS_EXCEEDED", "wall_seconds": 0.458172624999861}
+..{"mode": "wait", "owned_resource": {"owner": "/private/var/folders/vm/bfnwy91x1fs7355w2cc86bl80000gn/T/pytest-of-vadim_bogachev/pytest-4/test_owned_tree_and_foreign_co0/owner.json", "pid": 10918, "pgid": 10918, "leader_started": "Sun Nov 15 10:40:33 2026    ", "restart_policy": "no", "ports": [], "containers": []}, "tree": {"parent": 10918, "child": 10920, "pgid": 10918}, "control_pid": 10917}
+.{"mode": "exit", "owned_resource": {"owner": "/private/var/folders/vm/bfnwy91x1fs7355w2cc86bl80000gn/T/pytest-of-vadim_bogachev/pytest-4/test_owned_tree_and_foreign_co1/owner.json", "pid": 10942, "pgid": 10942, "leader_started": "Sun Nov 15 10:40:34 2026    ", "restart_policy": "no", "ports": [], "containers": []}, "tree": {"parent": 10942, "child": 10944, "pgid": 10942}, "control_pid": 10941}
+..{"actual_signal": "SIGINT", "tree": {"parent": 10989, "child": 10991, "pgid": 10989}, "actions": ["create", "bootstrap", "seed", "smoke", "destroy"], "external_ps": "no_running_members"}
+.SYNTHETIC_FUNCTIONAL_PROVIDER: NO_EXTERNAL_LLM NO_NEW_HUMAN_ADMISSION
+..{"export": {"reason": "EXECUTION_EXPORT_READBACK_MISMATCH", "commands": []}, "compute": {"pid": 11000, "pgid": 10998}, "state_readback": {"run_id": "synthetic-export", "cycle_status": "active", "material": ["synthetic"]}, "runner_outcome": {"returncode": 0, "reason": null, "wall_seconds": 0.6210155819999272}, "summary_result": "FAIL", "scenario_outcome": "controlled_target_completed"}
+.
+13 passed in 6.72s

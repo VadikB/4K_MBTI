@@ -1,0 +1,71 @@
+{"operation": "same", "calls": 5, "limit": 5, "used": 5, "deadline_preserved": true}
+...{"expected": "RUN_DEADLINE_EXCEEDED", "returncode": 1, "reason": "RUN_DEADLINE_EXCEEDED", "wall_seconds": 0.4165384929992797}
+.{"expected": "RUN_NO_PROGRESS_EXCEEDED", "returncode": 1, "reason": "RUN_NO_PROGRESS_EXCEEDED", "wall_seconds": 0.4949238259996491}
+..{"mode": "wait", "owned_resource": {"owner": "/private/var/folders/vm/bfnwy91x1fs7355w2cc86bl80000gn/T/pytest-of-vadim_bogachev/pytest-8/test_owned_tree_and_foreign_co0/owner.json", "pid": 13844, "pgid": 13844, "leader_started": "Sun Nov 15 10:47:07 2026    ", "restart_policy": "no", "ports": [], "containers": []}, "tree": {"parent": 13844, "child": 13846, "pgid": 13844}, "control_pid": 13843}
+.{"mode": "exit", "owned_resource": {"owner": "/private/var/folders/vm/bfnwy91x1fs7355w2cc86bl80000gn/T/pytest-of-vadim_bogachev/pytest-8/test_owned_tree_and_foreign_co1/owner.json", "pid": 13854, "pgid": 13854, "leader_started": "Sun Nov 15 10:47:07 2026    ", "restart_policy": "no", "ports": [], "containers": []}, "tree": {"parent": 13854, "child": 13856, "pgid": 13854}, "control_pid": 13853}
+..{"actual_signal": "SIGINT", "tree": {"parent": 13901, "child": 13903, "pgid": 13901}, "actions": ["create", "bootstrap", "seed", "smoke", "destroy"], "external_ps": "no_running_members"}
+.SYNTHETIC_FUNCTIONAL_PROVIDER: NO_EXTERNAL_LLM NO_NEW_HUMAN_ADMISSION
+..{"export": {"reason": "EXECUTION_EXPORT_READBACK_MISMATCH", "commands": []}, "compute": {"pid": 13912, "pgid": 13910}, "state_readback": {"run_id": "synthetic-export", "cycle_status": "active", "material": ["synthetic"]}, "runner_outcome": {"returncode": 0, "reason": null, "wall_seconds": 0.5639512859997922}, "summary_result": "FAIL", "scenario_outcome": "controlled_target_completed"}
+......F
+=================================== FAILURES ===================================
+_______________ test_original_l04_counterexample_default_profile _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107819910>
+
+    def test_original_l04_counterexample_default_profile(monkeypatch):
+        from Api.llm import deepseek_gateway as transport
+        from Api.m5_functional_generation_service import _strict_json_call
+        calls = []
+        class Response:
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def read(self):
+                return b'{"choices":[{"message":{"content":"{invalid"},"finish_reason":"stop"}]}'
+        def send(*args, **kwargs):
+            calls.append(len(calls)+1)
+            if len(calls) % 2: raise TimeoutError('synthetic timeout before network')
+            return Response()
+        monkeypatch.setattr(transport.request, 'urlopen', send)
+        monkeypatch.setattr(transport, 'pause_thread_connections_for_external_io', lambda: 0)
+        gateway = transport.DeepSeekGateway(api_keys=['synthetic-key-a', 'synthetic-key-b'], model='deepseek-flash')
+        def invoke():
+            return _strict_json_call(gateway, [{'role':'user','content':'synthetic'}],
+                operation_id='audit-same-operation', max_tokens=20, temperature=0,
+                retry_instruction='synthetic diagnostic retry input')
+>       with pytest.raises(ValueError, match='M5_FUNCTIONAL_PROVIDER_JSON_INVALID'): invoke()
+                                                                                     ^^^^^^^^
+
+tests/unit/test_synthetic_limits.py:315:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests/unit/test_synthetic_limits.py:312: in invoke
+    return _strict_json_call(gateway, [{'role':'user','content':'synthetic'}],
+Api/m5_functional_generation_service.py:399: in _strict_json_call
+    response = gateway.chat_with_trace(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Api.llm.deepseek_gateway.DeepSeekGateway object at 0x1078199d0>
+messages = [{'role': 'user', 'content': 'synthetic'}], temperature = 0
+timeout_seconds = 300, max_tokens = 20, routing_key = 'audit-same-operation'
+thinking = None, response_format = {'type': 'json_object'}
+operation_budget = <Api.llm.deepseek_gateway.OperationBudget object at 0x107819b50>
+
+    def chat_with_trace(
+        self,
+        messages: list[LlmMessage],
+        *,
+        temperature: float = 0.3,
+        timeout_seconds: int = 120,
+        max_tokens: int | None = None,
+        routing_key: str | None = None,
+        thinking: dict[str, str] | None = None,
+        response_format: dict[str, str] | None = None,
+        operation_budget: OperationBudget | None = None,
+    ) -> LlmResponse:
+        if os.getenv("AGENT4K_SYNTHETIC_ONLY") == "1":
+>           raise RuntimeError("SYNTHETIC_PROFILE_EXTERNAL_PROVIDER_FORBIDDEN")
+E           RuntimeError: SYNTHETIC_PROFILE_EXTERNAL_PROVIDER_FORBIDDEN
+
+Api/llm/deepseek_gateway.py:125: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/unit/test_synthetic_limits.py::test_original_l04_counterexample_default_profile
+1 failed, 18 passed in 6.91s

@@ -1,0 +1,18 @@
+✔ driver accepts one_ask and does not send a stale command (100.538313ms)
+✔ driver accepts second_ask and does not send a stale command (83.375431ms)
+✔ driver accepts other_client_ended and does not send a stale command (85.818316ms)
+✔ driver accepts calendar_close and does not send a stale command (81.97551ms)
+✔ driver accepts delayed_ask and does not send a stale command (82.672775ms)
+✔ driver never answers an ASK that remains undelivered (2.988334ms)
+✔ actual ASK-loop stops with /DRIVER_AS_STEP_LIMIT/ (3.040996ms)
+✔ actual ASK-loop stops with /DRIVER_RUN_STEP_LIMIT/ (4.728873ms)
+✔ actual driver unchanged processing stops with /RUN_DEADLINE_EXCEEDED/ (82.121974ms)
+✔ actual driver unchanged processing stops with /RUN_NO_PROGRESS_EXCEEDED/ (82.894011ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 953.676483

@@ -1,0 +1,42 @@
+
+> test:backend:http
+> .venv/bin/python -m pytest -m e2e tests/e2e
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /private/tmp/p4k-syn-limits-fix-01
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.13.0
+collected 168 items / 15 deselected / 153 selected
+
+tests/e2e/test_adm19_02_self_assignment_http.py ..                       [  1%]
+tests/e2e/test_adm27_assignment_http.py ..................               [ 13%]
+tests/e2e/test_adm28_confirmation_http.py ...                            [ 15%]
+tests/e2e/test_adm28_static_http.py .......                              [ 19%]
+tests/e2e/test_arch30_membership_http.py .........                       [ 25%]
+tests/e2e/test_assessment_authoring_http.py ...                          [ 27%]
+tests/e2e/test_assessment_shadow_admin_http.py .....                     [ 30%]
+tests/e2e/test_email_admission_http.py ......                            [ 34%]
+tests/e2e/test_exec03_answer_status_http.py ............                 [ 42%]
+tests/e2e/test_exec03_m5_applied_replay_http.py ....................     [ 55%]
+tests/e2e/test_f01_role_isolation_http.py ........                       [ 60%]
+tests/e2e/test_m10_processing_recovery_http.py ....                      [ 63%]
+tests/e2e/test_m3_role_profile_selection_http.py ....                    [ 66%]
+tests/e2e/test_m5_catalog_http.py ..                                     [ 67%]
+tests/e2e/test_m5_generation_lab_http.py .......                         [ 71%]
+tests/e2e/test_m5_runtime_http.py ...........                            [ 79%]
+tests/e2e/test_m6_evidence_http.py .......                               [ 83%]
+tests/e2e/test_m8_report_access_http.py .                                [ 84%]
+tests/e2e/test_m8_report_comparison_http.py ..                           [ 85%]
+tests/e2e/test_path_start_readiness_http.py ..                           [ 86%]
+tests/e2e/test_program01_invitation_revoke_http.py ....                  [ 89%]
+tests/e2e/test_review_profile_http.py ..........                         [ 96%]
+tests/e2e/test_ux_fix20_04_admin_readiness_http.py ......                [100%]
+
+=============================== warnings summary ===============================
+../../../Users/vadim_bogachev/Developer/4K/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/vadim_bogachev/Developer/4K/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================ 153 passed, 15 deselected, 1 warning in 29.02s ================

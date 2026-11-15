@@ -1,0 +1,9 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "lint:js"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 3.5431935759999997
+}

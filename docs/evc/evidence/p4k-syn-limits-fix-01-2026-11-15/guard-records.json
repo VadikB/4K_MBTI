@@ -1,0 +1,1054 @@
+{
+  "frontend-guard-11094.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14035.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12939.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14062.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11082.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14023.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11470.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14058.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14595.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13580.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11041.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11104.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14019.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11112.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12942.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12807.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13129.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11368.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "regressions-fixed-guard-13910.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11098.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11077.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12935.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14039.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11295.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12827.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11796.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12831.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11391.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-15259.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11061.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-13133.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14054.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11493.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14003.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11108.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-15263.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11606.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14042.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-12303.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14043.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-13124.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "regressions-fixed-guard-13878.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11596.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14002.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11109.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14055.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12723.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14760.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12830.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11797.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11099.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "regressions-fixed-guard-13854.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11076.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14038.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11386.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12943.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11488.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14018.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11113.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11105.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14059.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14594.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14783.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-15254.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11083.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14022.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14063.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11095.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14034.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12938.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11071.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12933.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11769.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12572.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11155.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11682.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14788.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11088.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11067.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14029.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "regressions-final-guard-13737.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14052.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12548.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "regressions-final-guard-13760.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14005.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12732.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14044.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11092.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14033.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14064.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11084.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14025.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14784.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14340.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12728.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11047.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14481.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11102.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11051.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-13601.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12913.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11114.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14048.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14585.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14049.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11050.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14479.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14316.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11046.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14008.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11103.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12729.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11498.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14024.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "app-env-isolation-guard-13929.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14065.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11226.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11093.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14032.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14567.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14045.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11601.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12733.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-15264.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14004.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14053.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11494.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13134.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12725.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11089.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11066.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14028.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14336.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11396.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11787.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12461.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11070.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-12307.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14046.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11602.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11049.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14007.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11497.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-12311.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14050.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-12254.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11065.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11395.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12835.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11792.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "regressions-final-guard-13719.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12462.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12696.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14587.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11100.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14196.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11045.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14591.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14339.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-13998.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11069.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14027.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14031.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11090.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14030.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14142.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11091.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11789.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11068.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14026.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-13999.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14787.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14590.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11249.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11101.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11044.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "http-guard-12386.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11072.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11156.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11793.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12834.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14334.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "driver-final-guard-13686.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11064.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-12310.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14051.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14461.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11048.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14006.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12623.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-12306.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11195.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14047.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11034.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14240.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "regressions-final-guard-13791.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11576.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11110.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-13605.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11106.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11043.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14485.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14344.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "regressions-fixed-guard-13836.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14780.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14021.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11080.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14104.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14060.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14037.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11096.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-15236.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-12301.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14040.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-13609.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14489.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14001.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14173.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-13989.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14056.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11063.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14671.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12825.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11075.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-13019.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11074.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-12424.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11392.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11062.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-final-guard-13130.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11490.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14057.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14000.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14488.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-15260.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13608.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13126.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11605.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13599.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14041.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-candidate-guard-14036.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11097.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14778.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-guard-11388.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14061.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "regressions-final-guard-13704.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13106.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-candidate-guard-14105.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-candidate-guard-14020.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-15256.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11081.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14345.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-12516.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11107.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "frontend-guard-11042.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-candidate-guard-14484.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "frontend-guard-11111.json": {
+    "outgoing_calls_intercepted": 0
+  },
+  "backend-guard-11598.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "backend-final-guard-13604.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "regressions-fixed-guard-13821.json": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  }
+}

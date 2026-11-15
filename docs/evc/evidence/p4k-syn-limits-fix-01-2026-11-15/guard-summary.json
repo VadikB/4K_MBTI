@@ -1,0 +1,16 @@
+{
+  "per_process_records": "guard-records.json",
+  "totals": {
+    "outgoing_calls_intercepted": 0,
+    "socket_connect_blocked": 0,
+    "dns_blocked": 0,
+    "env_read_blocked": 0
+  },
+  "intentional_diagnostic_self_test": {
+    "socket_connect_blocked": 0,
+    "dns_blocked": 1,
+    "env_read_blocked": 0
+  },
+  "successful_external_calls": 0,
+  "proof": "Independent deny plus sanitized environment; fake provider attempt count is independent."
+}

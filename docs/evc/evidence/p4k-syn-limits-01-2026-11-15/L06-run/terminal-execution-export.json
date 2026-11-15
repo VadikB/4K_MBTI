@@ -1,0 +1,10 @@
+{
+  "run_id": "audit-L06",
+  "cycle_id": "cycle-audit",
+  "collection_status": "active",
+  "situations": [],
+  "pipeline": {
+    "status": "processing"
+  }
+}
+corrupted readback
