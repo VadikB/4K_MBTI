@@ -1176,6 +1176,7 @@ test('PATH-START PG-R1: participant sees the exact missing-position reason and c
   await page.goto(base);
   await expect(page.locator('#auth-complete-title')).toHaveText('Нужно уточнить сведения участника');
   await expect(page.locator('#auth-complete-description')).toContainText('должность');
+  await expect(page.locator('#auth-complete-description')).not.toContainText(/Обратитесь|администратору/);
   await expect(page.locator('#auth-complete-description')).not.toContainText('ещё готовит данные');
   const before = checks;
   await page.getByRole('button', { name: 'Проверить готовность', exact: true }).click();
@@ -3938,9 +3939,9 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('.onboarding-metrics')).toContainText('Время на выполнение');
-  await expect(page.getByText('120 мин.')).toBeVisible();
-  await expect(page.getByText('189 мин.')).toBeHidden();
+  await expect(page.locator('.onboarding-metrics')).toContainText('на выполнение оценки');
+  await expect(page.getByText('120 мин', { exact: true })).toBeVisible();
+  await expect(page.getByText('189 мин', { exact: true })).toBeHidden();
 });
 
 test('AC18-FIX-02 published frontend matches the merged release and asset', async ({ page }) => {

@@ -90,3 +90,74 @@ immutable SHA, PR/CI и окончательный статус сохраняю
 после CI, без изменения проверенного head. Human review/visual TEST PENDING;
 merge/deploy/artifact_publish=false. После готового PR/CI — остановка, новая карточка
 не запускается. Настроенная Git identity: VadikB <bvv.fructus@gmail.com>.
+
+## CI #222: связанный дефект выполнения подготовки
+
+Head2d9649b: frontend/pytest/runtime2 PASS; runtime4 FAIL Recovery до первогоAS.
+Primary GitHub job132737883662/run43689814212: ProductCycle preparation deadlock
+в m7_parameter_resolution.ensure_schema, DROPTRIGGER vs CREATEORREPLACEFUNCTION.
+GET/acquaintance resolve_display_timing и worker create_plan одновременно вызывают
+resolve→ensure_schema. Это воспроизведённый серверный дефект принятого действия;
+исправление допускается границей W02-02. Контракт/схема/параметры не меняются.
+Дополнительные старые copy-oracles найдены в runtime blocked и auth-r03 R08 budget.
+
+До PG03 before: новый ownedcluster .test-stand/w02-02-pg03/port55503/agent4k_pytest,
+теже владелецCodex, исходныйPG55432чужой,600s/90s/stopfinally; старт
+.venv/bin/python .test-stand/run-w02-02-pg03.py, evidence/pg03/resources/cleanup.
+Тест детерминированно запускает одновременно display/prepare resolver в READONLY:
+старыйDDL должен датьFAIL. После — убрать только DDLизresolve, bootstrapсохранить.
+PG03 before:1FAIL ReadOnlySqlTransaction (CREATE TABLE из resolve),2resolverпараллельно.
+RootcauseсовпадаетCIstack. Удалёнensure_schemaтолькоизresolve; bootstrap database.ensure_m5_runtime_schema
+и explicit save_revision сохраняются. Нет миграции/изменения параметров/guards.
+PG04 after: новыйownedcluster .test-stand/w02-02-pg04:55503, теже lifecycle/limits,
+start .venv/bin/python .test-stand/run-w02-02-pg04.py; весь M7parameters + pilotadmission,
+evidence/pg04. База/пользователь/исходныечужиересурсы и stopкакPG03.
+PG04 after25PASS/23.87s, stop0/portclosed/postmasterabsent; backend1093PASS/41.77s.
+До actual-browser PG05: новыйownedcluster .test-stand/w02-02-pg05:55503/stand_owner,
+maintenancepostgres толькодлясозданиясвоей test DB штатным test_stand; backend18830
+(runtimeblocked) и18859(PATH29), собственныеstateвignored.test-stand.
+Start .venv/bin/python .test-stand/run-w02-02-pg05.py; statuspgctl/lsof55503/18830/18859;
+stopштатныйtestfinally+ownPGIDTERM/KILL+pg_ctlfaststop. PIDдоиспользованиявpg05/resources.
+ВыборстрогоUnapprovedLIMITED/путьдопервойAS,0оценочныхответов, providersdisabled,
+P4K_FULL_PATH/REAL_PROVIDER/CONTROLLED_PROVIDER/COMPLETION_PROFILE=0, LLM/mail0.
+Global600s/no-progress90s/1worker/retries0. ЧужойPG55432нетронут.
+PG05actualbrowser: blocked1PASS; PATH29FAILстароеизвлечениеoperationIDизвидимоготекста
+preparing, которыйW02эталоннепоказывает. Исправленoracle: savedAcquaintanceHTTPчитает
+прежнийoperation_idдо/послерeload;0extraoperationsпроверяетсяпопрежнему.
+FastCIдополнительнообнаружилпотерюточнойпричиныmissingposition: waitingPresentation
+сохраняетknownparticipant_fields/organizationreasonsвбезопасномтексте безcontact.
+PG-R1 теперьтакжепроверяетотсутствиепредложенияобратитьсякadmin.
+PG06: actualPATH29onlyповтор,новыйownedcluster .test-stand/w02-02-pg06:55503,
+теже18859/noLLM/noletters/600s/90s/oneworker/stopfinally/startscript-pg06/evidencepg06.
+Browser09 послеPG06: толькоPG-R1/R08 плюс3visual;прежнийfixtureprofile/runner/teardown.
+Browser08R08PASS1/1.3s. Это последнийпродуктивныйциклпоисправленнымконкретнымпричинам.
+PG06PATH29FAILnextoldoracle: summaryискаласьнаstandaloneReady. Добавленыявные
+«Посмотреть знакомство»→проверкатехже3ответов→«Вернутьсякготовности».
+Операция/profile/Cycle/AS/countsпроверкисохранены. PG07повтортолькопути,
+новыйownedcluster .test-stand/w02-02-pg07:55503/18859, прежниеowner/stand/limits/stop,
+start .venv/bin/python .test-stand/run-w02-02-pg07.py; evidencepg07.
+PG07actualPATH29PASS1/21.6s: invitation→assignedsources→3answers→lostpreparereply→reload→
+explicitreadiness/history→firstAS,0assessmentanswers. Bootstrap/resolveraftercorrect.
+Beforebrowser09: PG07остановлен, тольконовыеstaticfixtures(18764/ephemeral),
+теже1worker/retries0/600s/90s/stopfinally; scopePG-R1,R08и3W02visual,
+evidence/browser09, старыйфактическийPG55432сохраняется. Replayштатнымrun-browser.py.
+УточнениеграницыPG07: штатныйdefaultPATH29послепредъявленияASотправляет1synthetic
+assessmentanswer. PG07PASS нельзявыдаватьзаитог0answers; этоошибкавыборапрофиля,
+зафиксированнаяотдельно. РеальныхLLM/писемнет. Добавленtest-onlyopt-in
+P4K_STOP_AFTER_FIRST_AS=1 (default0сохраняетCI), ранняяостановкапередTurn/assignmentreplay
+сactualSQLreceipt0answers/sameCycle/assignment/profile/AS/Session.
+PG08короткийповторсэтимфлагом: .test-stand/w02-02-pg08:55503/18859, прежниелимиты,
+owner/stopfinally/отсутствиеautorestart; старт .venv/bin/python .test-stand/run-w02-02-pg08.py,
+evidencepg08. ОстальныеPGstopped/portsfree, исходныйPG55432чужой.
+
+## Повторный кандидат после CI-исправлений
+
+PG08 PASS 1 / 22.3 s: окончательная граница — первая AS открыта, оценочных ответов 0.
+SQL receipt и штатный stand cleanup перенесены в evidence/pg08 без credentials.
+Browser09 PASS 5 / 4.6 s, backend 1093 PASS, frontend 325 PASS;
+M7/admission SQL/HTTP 25 PASS. Готовность того же PATCH 2.1.8 повторно проверена
+штатным ready:prepare от свежего main. Обновлены checked-content hashes.
+
+Активно: второй собственный commit и push в тот же PR222, новый mandatory CI.
+Первый CI остаётся историческим FAIL и описан в CHECKS. Не менялись управляющие
+документы, schema, frozen artifacts, методология и полномочия merge/deploy.

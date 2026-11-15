@@ -179,7 +179,7 @@ async function completeAcquaintance(page,{expectBlocked=false}={}){
  ];
  let answerIndex=0;
  for(let step=0;step<16 && await panel.isVisible();step+=1){
-  if(expectBlocked && await page.locator('#onboarding-title').textContent()==='Старт оценки пока заблокирован')return;
+  if(expectBlocked && await page.locator('#onboarding-title').textContent()==='Старт оценки пока недоступен')return;
   const input=panel.locator('.onboarding-answer');
   if(await input.isEnabled())await input.fill(answers[answerIndex++]||`Синтетический ответ ${answerIndex}.`);
   const next=page.locator('#onboarding-next');
@@ -203,7 +203,7 @@ test('Unapproved LIMITED is blocked by the real server and UI without a componen
  await page.locator('#dashboard-panel:not(.hidden) #assessment-action-button, #ai-welcome-panel:not(.hidden) #start-first-assessment').click();
  await expect(page.locator('#onboarding-panel')).toBeVisible();
  await completeAcquaintance(page,{expectBlocked:true});
- await expect(page.locator('#onboarding-title')).toHaveText('Старт оценки пока заблокирован');
+ await expect(page.locator('#onboarding-title')).toHaveText('Старт оценки пока недоступен');
  await expect(page.getByRole('button',{name:'Приступить к оценке',exact:true})).toHaveCount(0);
  const uid=await page.evaluate(()=>JSON.parse(localStorage.getItem('agent4k.pendingUser')).id);
  const model=await (await page.request.get(`${stand.url}/users/${uid}/acquaintance`)).json();

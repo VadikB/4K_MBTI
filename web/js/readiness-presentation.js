@@ -1,5 +1,22 @@
 // W02 v5 participant copy. Status and permitted actions still come from server contracts.
 export const waitingPresentation = (readiness = {}) => {
+  const reason = String(readiness.reason || '');
+  if (reason.startsWith('participant_fields:')) {
+    const labels = { position: 'должность', full_name: 'ФИО', email: 'email' };
+    const missing = reason.slice('participant_fields:'.length).split(',').map((key) => labels[key]).filter(Boolean);
+    return { title: 'Нужно уточнить сведения участника',
+      description: missing.length ? 'В карточке участника не заполнены: ' + missing.join(', ') + '.' : 'В карточке участника не заполнены обязательные сведения.',
+      detail: 'Когда сведения будут дополнены, вы сможете продолжить здесь.', button: 'Проверить готовность' };
+  }
+  const organizationReasons = {
+    confirmed_questionnaire: ['Анкета назначения пока не подтверждена', 'Для назначенной оценки пока нет подтверждённой анкеты.'],
+    early_minimum: ['Нужно дополнить анкету назначения', 'В анкете назначенной оценки отсутствуют обязательные сведения.'],
+    assessment_assignment: ['Нужно уточнить назначение оценки', 'Найдено несколько назначений. Сейчас нельзя однозначно определить вашу оценку.'],
+  };
+  if (readiness.status === 'waiting_for_organization' && organizationReasons[reason]) return {
+    title: organizationReasons[reason][0], description: organizationReasons[reason][1],
+    detail: 'Когда настройка будет завершена, здесь появится следующий шаг.', button: 'Проверить готовность',
+  };
   if (readiness.status === 'waiting_for_assignment') return {
     title: 'Оценка пока не назначена', description: 'Сейчас для вашего аккаунта нет назначенной оценки.',
     detail: 'Проверьте назначение позже. Когда оно появится, вы сможете продолжить здесь.', button: 'Проверить назначение',

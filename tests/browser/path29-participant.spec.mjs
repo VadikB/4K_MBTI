@@ -388,10 +388,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await page.locator('#onboarding-skip').click();
     // Entering readiness re-reads the committed server operation, not another prepare POST.
     await expect(page.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
-    const code = (await page.locator('#feature-list').innerText()).match(/[a-f0-9]{8}-[a-f0-9-]{27,}/)[0];
+    const code = (await savedAcquaintance()).preparation_operation.operation_id;
+    expect(code).toMatch(/^[a-f0-9]{8}-[a-f0-9-]{27,}$/);
     await page.reload();
     await expect(page.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
-    await expect(page.locator('#feature-list')).toContainText(code);
+    expect((await savedAcquaintance()).preparation_operation.operation_id).toBe(code);
     const second = await participantContext.newPage(); await second.goto(base);
     await expect(second.locator('#onboarding-title')).toHaveText('Готовим вашу оценку');
     expect((await snapshot()).operations).toBe(1);
@@ -427,7 +428,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await fresh.locator('#verify-magic-link-button').click();
     await expect(fresh.locator('#onboarding-panel')).toBeVisible();
     await expect(fresh.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await fresh.getByRole('button', { name: 'Посмотреть знакомство', exact: true }).click();
+    await expect(fresh.locator('#onboarding-title')).toHaveText('Знакомство завершено');
     await expect(fresh.locator('.onboarding-summary-answer')).toHaveText(text);
+    await fresh.getByRole('button', { name: 'Вернуться к готовности оценки', exact: true }).click();
+    await expect(fresh.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.locator('#onboarding-home').click();
     await expect(page.locator('#dashboard-panel')).toBeVisible();
@@ -523,6 +528,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       return;
     }
     step = 'explicit_start_and_first_as';
+    const beforeExplicitStart = await savedAcquaintance();
     const startResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith('/users/assessment/cycles/start'));
     await next.dblclick();
@@ -541,6 +547,22 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     ]);
     // Resizing/reading must not start another Cycle or create assessment answers.
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
+    if (process.env.P4K_STOP_AFTER_FIRST_AS === '1') {
+      const receipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
+      expect(receipt.assessment_answers).toBe(0);
+      expect(receipt.cycle.cycle_id).toBe(beforeExplicitStart.prepared_plan.cycle_id);
+      expect(receipt.cycle.assignment_id).toBe(beforeExplicitStart.assignment_id);
+      expect(receipt.cycle.personalized_profile_id).toBe(beforeExplicitStart.late_readiness.personalized_profile_id);
+      expect(receipt.assessment_situation.assessment_situation_id).toBe(beforeExplicitStart.prepared_plan.start_readiness.assessment_situation_id);
+      expect(receipt.sessions).toHaveLength(1);
+      expect(receipt.sessions[0].started_at).toBeTruthy();
+      save('w02-first-as-stop', { scope: 'SYNTHETIC component plan; actual browser/HTTP/SQL; no real LLM',
+        assessment_answers: receipt.assessment_answers, cycle: receipt.cycle,
+        assignment_lineage: receipt.assignment_lineage, plan: receipt.plan, sessions: receipt.sessions,
+        assessment_situation: receipt.assessment_situation, participant_state: await snapshot() });
+      scenarioCompleted = true;
+      return;
+    }
     const repeatedAssignment = await admin.request.post(base +
       `/users/admin/organizations/${state.path29.organization_id}/assessment-assignments`, { data: {
         user_ids: [participantId], assignment_ref: state.path29.assignment_ref || 'PATH29 browser',

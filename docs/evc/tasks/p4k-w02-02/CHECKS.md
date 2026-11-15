@@ -73,3 +73,45 @@ CI и человеческое review обязательны; merge/deploy не 
 TEST этой задачей не подтверждается. После merge двух блоков человек проверяет
 целый путь на компьютере и телефоне на фактическом TEST.
 Откат: revert собственного PR штатным процессом, без удаления данных и снимков.
+
+## Исправление первого обязательного CI
+
+Head `2d9649b`: frontend/pytest/integration/runtime2/runtime3 PASS;
+full-verification FAIL: runtime1 (старый blocked title), runtime4 (deadlock подготовки),
+fast (старые missing-position / R08 / operation-ID ожидания). Первичные исходы и
+безопасный stack — [ci-first](evidence/ci-first/checks.json). Старый CI не считается PASS.
+
+Найденный серверный дефект относится к принятому действию подготовки: `resolve()`
+эффективного времени пересоздавал SQL function/trigger при каждом GET готовности
+и при создании плана worker. Их одновременный DDL дал DeadlockDetected. Удалён
+только `ensure_schema` из resolver; схема по-прежнему создаётся в явном bootstrap
+`database.ensure_m5_runtime_schema`. Параметры, приоритеты, snapshots, retry/admission
+и публичные команды не менялись; миграции нет.
+
+Детерминированный before: два одновременных resolver в READ ONLY дали
+ReadOnlySqlTransaction, 1 FAIL ([pg03](evidence/pg03/pytest.log.gz)). After: весь
+M7 parameter + pilot admission SQL/HTTP набор **25 PASS / 23.87 s**
+([pg04](evidence/pg04/pytest.log.gz)), включая тот же concurrency regression.
+Повторный backend — **1093 PASS**, frontend **325 PASS**, lint/build/release PASS
+(`*-after.log.gz`). Это адресное исправление root cause, без изменения retry policy.
+
+Actual browser/HTTP/SQL: blocked admission PASS (pg05); default PATH29 PASS (pg07).
+Default PATH29 отправляет один синтетический оценочный ответ после первой AS:
+этот прогон сохранён как дополнительная регрессия и **не** доказывает критерий 0 ответов.
+Для границы W02 добавлен test-only `P4K_STOP_AFTER_FIRST_AS=1`, default остаётся 0.
+Итоговый pg08: **1 PASS / 22.3 s**, остановка до Turn, SQL-квитанция подтверждает
+0 оценочных ответов, те же assignment/profile/Cycle/AS и одну начатую Session:
+[w02-first-as-stop.json](evidence/pg08/w02-first-as-stop.json).
+Это настоящий browser → HTTP → isolated PostgreSQL с синтетической границей плана
+PM-03; не реальная AI-подготовка и не человеческий допуск методологии.
+
+PATH29 oracles адаптированы к standalone W02: operation ID читается через прежний
+server readback; сохранённые ответы проверяются через явный переход в историю и обратно.
+Значения и проверки числа операций не ослаблены. Сохранены точные известные причины
+отсутствия сведений участника/организации, без предложений обратиться к ответственному.
+Browser09: **5 PASS / 4.6 s**, missing-position/no-contact, R08 budget и 3 responsive scenes.
+
+PG03–08 завершены `stop_exit=0`, порты закрыты; actual stand pg08 удалён штатно.
+Финальная расширенная сверка — cleanup-final.json. Предыдущая таблица локальных
+проверок сохраняет историю; для нового head действуют after/pg04/pg08/browser09.
+Человеческое review, фактический TEST и merge/deploy по-прежнему отдельно.
