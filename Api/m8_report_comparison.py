@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 
-CONTRACT_VERSION = "m8-report-comparison/1.0.0"
+CONTRACT_VERSION = "m8-report-comparison/1.1.0"
 REASON_LABELS = {
     "different_role": "Роли в оценках различаются.",
     "role_snapshot_missing": "Не сохранено достаточное подтверждение роли.",
@@ -21,6 +21,10 @@ REASON_LABELS = {
     "numeric_score_missing": "В одном из срезов нет числового результата.",
     "skill_definition_not_confirmed": "Совпадение определения навыка не подтверждено.",
     "skill_absent_in_previous_cycle": "В предыдущей оценке навык отсутствует.",
+    "skill_absent_in_current_cycle": "В текущей оценке навык отсутствует.",
+    "skill_composition_not_confirmed": "Состав показателя по навыку не подтверждён.",
+    "skill_composition_changed": "Обязательный или включённый состав показателя изменился.",
+    "score_completeness_changed": "Полный и частичный результаты не являются одним показателем.",
 }
 
 
@@ -38,8 +42,23 @@ def _same(left: Any, right: Any) -> bool:
 def _skill_definition(skill: dict[str, Any]) -> dict[str, Any]:
     return {key: skill.get(key) for key in (
         "skill_id", "skill_code", "skill_name", "skill_description",
-        "competency_id", "components", "indicators",
+        "competency_id",
     )}
+
+
+def _substantive_ref(value: Any) -> Any:
+    if not isinstance(value, dict):
+        return None
+    # IDs identify storage rows, while a saved checksum identifies their contents.
+    result = {key: item for key, item in value.items() if key not in {"id", "revision_id", "db_id"}}
+    return result if result.get("checksum") else None
+
+
+def _indicator_set(skill: dict[str, Any], key: str) -> frozenset[str] | None:
+    value = (skill.get("presentation") or {}).get(key)
+    if not isinstance(value, list) or any(not isinstance(item, str) or not item for item in value):
+        return None
+    return frozenset(value)
 
 
 def _complete_comparison_evidence(value: dict[str, Any]) -> bool:
@@ -57,30 +76,32 @@ def _complete_comparison_evidence(value: dict[str, Any]) -> bool:
 
 
 def _global_evidence(current: dict[str, Any], previous: dict[str, Any]) -> tuple[str | None, str | None]:
-    if not _same(current.get("role_ref"), previous.get("role_ref")):
-        if current.get("role_ref") is not None and previous.get("role_ref") is not None:
-            return "not_allowed", "different_role"
+    role, old_role = _substantive_ref(current.get("role_ref")), _substantive_ref(previous.get("role_ref"))
+    if role is None or old_role is None:
         return "not_confirmed", "role_snapshot_missing"
+    if role != old_role:
+        if role is not None and old_role is not None:
+            return "not_allowed", "different_role"
     current_provenance = current.get("provenance") or {}
     previous_provenance = previous.get("provenance") or {}
     evidence = current_provenance.get("comparison_evidence") or {}
     previous_evidence = previous_provenance.get("comparison_evidence") or {}
     if not _complete_comparison_evidence(evidence) or not _complete_comparison_evidence(previous_evidence):
         return "not_confirmed", "assessment_conditions_not_confirmed"
-    if not _same(evidence.get("semantic_composition"), previous_evidence.get("semantic_composition")):
-        return "not_confirmed", "m2_composition_not_confirmed"
+    # The global target set may differ while a particular Skill remains comparable.
     if not _same(evidence.get("assessment_conditions"), previous_evidence.get("assessment_conditions")):
         return "not_confirmed", "assessment_conditions_not_confirmed"
     for key, reason in (
         ("sources", "m2_sources_not_confirmed"),
         ("algorithm", "m6_rules_not_confirmed"),
     ):
-        if not _same(current_provenance.get(key), previous_provenance.get(key)):
+        left, right = current_provenance.get(key), previous_provenance.get(key)
+        required = ("M2", "M6") if key == "sources" else ("version", "rules_hash")
+        if not isinstance(left, dict) or not isinstance(right, dict) or any(not left.get(field) or not right.get(field) for field in required) or left != right:
             return "not_confirmed", reason
-    if not _same(current.get("profile_ref"), previous.get("profile_ref")):
+    profile, old_profile = _substantive_ref(current.get("profile_ref")), _substantive_ref(previous.get("profile_ref"))
+    if profile is None or old_profile is None or profile != old_profile:
         return "not_confirmed", "assessment_context_not_confirmed"
-    if not _same(current.get("target_profile"), previous.get("target_profile")):
-        return "not_confirmed", "role_requirements_not_confirmed"
     return None, None
 
 
@@ -101,20 +122,27 @@ def compare_reports(current_report: dict[str, Any], previous_report: dict[str, A
         previous_score = _score(previous_skill or {})
         if previous_skill is None:
             status, reason = "not_allowed", "skill_absent_in_previous_cycle"
-        elif status is None and not _same(_skill_definition(current_skill), _skill_definition(previous_skill)):
+        elif status is None and (not current_skill.get("skill_description") or not previous_skill.get("skill_description")
+                                 or not _same(_skill_definition(current_skill), _skill_definition(previous_skill))):
             status, reason = "not_confirmed", "skill_definition_not_confirmed"
-        elif status is None and (current_skill.get("outcome") != "full_score" or previous_skill.get("outcome") != "full_score"):
+        elif status is None and (current_skill.get("outcome") not in {"full_score", "partial_score"}
+                                 or previous_skill.get("outcome") not in {"full_score", "partial_score"}):
             status, reason = "not_allowed", "full_score_required"
+        elif status is None and current_skill.get("outcome") != previous_skill.get("outcome"):
+            status, reason = "not_allowed", "score_completeness_changed"
         elif status is None and (current_score is None or previous_score is None):
             status, reason = "not_allowed", "numeric_score_missing"
-        elif status is None and (
-            (current.get("partial_result") or {}).get("is_incomplete")
-            or (previous.get("partial_result") or {}).get("is_incomplete")
-        ) and (current_skill.get("presentation") or {}).get("remaining_plan_relevant") is not False:
-            status, reason = "not_confirmed", "partial_cycle"
-        elif status is None and (previous.get("partial_result") or {}).get("is_incomplete") and (
-            previous_skill.get("presentation") or {}).get("remaining_plan_relevant") is not False:
-            status, reason = "not_confirmed", "partial_cycle"
+        elif status is None:
+            required = _indicator_set(current_skill, "required_indicator_ids")
+            old_required = _indicator_set(previous_skill, "required_indicator_ids")
+            included = _indicator_set(current_skill, "included_indicator_ids")
+            old_included = _indicator_set(previous_skill, "included_indicator_ids")
+            if not required or not old_required or included is None or old_included is None:
+                status, reason = "not_confirmed", "skill_composition_not_confirmed"
+            elif required != old_required or included != old_included:
+                status, reason = "not_confirmed", "skill_composition_changed"
+            elif current_skill.get("outcome") == "full_score" and (included != required or old_included != old_required):
+                status, reason = "not_confirmed", "skill_composition_not_confirmed"
         if status is None:
             status, reason = "allowed", None
         delta = current_score - previous_score if status == "allowed" else None
@@ -126,6 +154,21 @@ def compare_reports(current_report: dict[str, Any], previous_report: dict[str, A
             "current": None if current_score is None else float(current_score),
             "difference": None if delta is None else float(delta),
             "comparability": {"status": status, "reason": reason},
+        })
+    current_ids = {str(item.get("skill_id")) for item in current.get("skills", [])}
+    for old_skill in previous.get("skills", []):
+        skill_id = str(old_skill.get("skill_id"))
+        if skill_id in current_ids:
+            continue
+        old_score = _score(old_skill)
+        rows.append({
+            "skill_id": skill_id,
+            "skill_name": old_skill.get("skill_name") or skill_id,
+            "competency_id": old_skill.get("competency_id"),
+            "previous": None if old_score is None else float(old_score),
+            "current": None,
+            "difference": None,
+            "comparability": {"status": "not_allowed", "reason": "skill_absent_in_current_cycle"},
         })
     statuses = {row["comparability"]["status"] for row in rows}
     mode = "numeric" if statuses == {"allowed"} else "mixed" if "allowed" in statuses else "separate"
@@ -146,6 +189,7 @@ def _report_ref(report: dict[str, Any]) -> dict[str, Any]:
         "report_revision_no": report["revision_no"],
         "results_revision_id": str(report["results_revision_id"]),
         "created_at": report.get("created_at"),
+        "program_name": (c67.get("display") or {}).get("program_name"),
         "role_ref": c67.get("role_ref"),
         "started_at": (c67.get("time") or {}).get("started_at"),
         "closed_at": (c67.get("collection") or {}).get("closed_at"),

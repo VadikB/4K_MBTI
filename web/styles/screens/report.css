@@ -33,6 +33,19 @@
 .m8-comparison-slices { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
 .m8-comparison-slices article { display: grid; grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(110px, auto)); gap: var(--space-2) var(--space-4); }
 .m8-comparison-slices article p { grid-column: 1 / -1; margin: 0; color: var(--text-muted); }
+.m8-comparison-note { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.m8-comparison-scales { margin: 24px 0; }
+.m8-comparison-scales h4 { margin: 0 0 6px; }
+.m8-comparison-scales > p { color: var(--text-muted); margin: 0 0 16px; }
+.m8-comparison-scale { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.m8-comparison-scale > strong { display: block; margin-bottom: 8px; }
+.m8-comparison-scale small { display: block; margin-top: 8px; color: var(--text-muted); }
+.m8-comparison-scale-line { display: grid; grid-template-columns: 58px minmax(0, 1fr) 36px; gap: 10px; align-items: center; margin: 8px 0; font-size: 12px; }
+.m8-comparison-track { display: block; height: 8px; border-radius: 4px; background: var(--line); }
+.m8-comparison-track span { display: block; height: 8px; border-radius: 4px; }
+.m8-comparison-past { background: var(--palette-graphite-600); }
+.m8-comparison-now { background: var(--accent); }
+.m8-comparison-scale-line strong { text-align: right; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 640px) {
     .m8-comparison .report-card-head { display: grid; gap: var(--space-3); }
@@ -41,6 +54,15 @@
     .m8-comparison-periods { grid-template-columns: 1fr; }
     .m8-comparison-slices article { grid-template-columns: 1fr; }
     .m8-comparison-slices article p { grid-column: auto; }
+    .m8-comparison-table, .m8-comparison-table tbody { display: block; }
+    .m8-comparison-table thead { display: none; }
+    .m8-comparison-table tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--line); padding: 12px 0; }
+    .m8-comparison-table th, .m8-comparison-table td { border: 0; min-width: 0; padding: 4px; overflow-wrap: normal; word-break: normal; }
+    .m8-comparison-table th { grid-column: 1 / -1; width: auto; }
+    .m8-comparison-table td::before { display: block; color: var(--text-muted); font-size: 11px; }
+    .m8-comparison-table td:nth-child(2)::before { content: 'Ранее'; }
+    .m8-comparison-table td:nth-child(3)::before { content: 'Сейчас'; }
+    .m8-comparison-table td:nth-child(4)::before { content: 'Разность'; }
 }
 
 .m8-report-shell {
