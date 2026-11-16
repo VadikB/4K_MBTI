@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 let server, base;
-const evidence = 'docs/evc/tasks/p4k-postw02-04/evidence/review';
+const evidence = process.env.POSTW02_EVIDENCE || 'docs/evc/tasks/p4k-postw02-04/evidence/review';
 const progress = async (key) => {
   if (process.env.POSTW02_PROGRESS) await fs.writeFile(process.env.POSTW02_PROGRESS, JSON.stringify({ progress_key: key }));
 };
