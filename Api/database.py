@@ -3208,6 +3208,8 @@ def ensure_m5_runtime_schema(connection) -> None:
             time_budget_seconds INTEGER NOT NULL CHECK (time_budget_seconds > 0),
             calendar_window_seconds INTEGER NOT NULL CHECK (calendar_window_seconds > 0),
             parameter_sources_json JSONB NOT NULL,
+            display_snapshot_json JSONB,
+            display_snapshot_checksum TEXT,
             execution_manifest_json JSONB,
             execution_manifest_checksum TEXT,
             usage_scope TEXT NOT NULL CHECK (usage_scope IN ('assessment','qa')),
@@ -3223,6 +3225,15 @@ def ensure_m5_runtime_schema(connection) -> None:
     connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS execution_manifest_json JSONB")
     connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS execution_manifest_checksum TEXT")
     connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS assignment_id BIGINT")
+    connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS display_snapshot_json JSONB")
+    connection.execute("ALTER TABLE m5_cycles ADD COLUMN IF NOT EXISTS display_snapshot_checksum TEXT")
+    connection.execute("""DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='ck_m5_cycle_display_snapshot_pair'
+                       AND conrelid='m5_cycles'::regclass) THEN
+            ALTER TABLE m5_cycles ADD CONSTRAINT ck_m5_cycle_display_snapshot_pair CHECK
+                ((display_snapshot_json IS NULL) = (display_snapshot_checksum IS NULL));
+        END IF;
+    END $$""")
     connection.execute("""DO $$ BEGIN
         IF to_regclass(current_schema()||'.organization_assessment_assignments') IS NOT NULL
            AND NOT EXISTS (SELECT 1 FROM pg_constraint

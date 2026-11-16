@@ -988,6 +988,9 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         assert connection.execute("SELECT status FROM m5_case_versions WHERE case_id='CASE-TDISC-01'").fetchone()["status"]=="FROZEN"
         started=start_or_resume(connection,user_id=99,key="s10-a")
         cycle_id=str(started["plan"]["cycle_id"])
+        assert connection.execute("SELECT display_snapshot_json->>'program_name' AS name FROM m5_cycles WHERE cycle_id=%s",
+            (cycle_id,)).fetchone()["name"] == "Synthetic configuration"
+        connection.execute("UPDATE assessment_configurations SET name='Название после старта' WHERE id=1")
         assert started["presentation"] is not None, {
             "status":started["decision"]["status"],"explanation":started["decision"].get("explanation_json"),
             "considered":started["decision"].get("considered_json"),"catalog0":started["plan"]["plan"]["catalog"][0]}
@@ -1029,6 +1032,10 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
 
     with factory() as connection:
         report=read_latest_report(connection,cycle_id,"assessee")
+        assert report["program_name"] == "Synthetic configuration"
+        assert report["c67"]["display"]["program_name"] == "Synthetic configuration"
+        connection.execute("UPDATE assessment_configurations SET name='Название после оценки' WHERE id=1")
+        assert read_report(connection, report["id"])["program_name"] == "Synthetic configuration"
         assert report["c67"]["contract"]=="C-67"
         assert report["c67"]["recommendations"] == []
         assert report["c67"]["descriptive"]["status"] in {"ready", "failed"}

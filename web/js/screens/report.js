@@ -1316,7 +1316,9 @@ export const openReport = (options = {}) => {
   syncUrlState('report');
   hideAllPanels();
   reportPanel.classList.remove('hidden');
+  reportPanel.classList.toggle('is-m8-report', Boolean(m8CycleId));
   if (m8CycleId) {
+    m8SelectedSkillId = null;
     const legacy = document.getElementById('legacy-report-shell');
     const shell = document.getElementById('m8-report-shell');
     legacy?.classList.add('hidden'); shell?.classList.remove('hidden');
@@ -1380,12 +1382,6 @@ const outcomeLabels = {
   no_result: 'Недостаточно оснований для результата',
 };
 
-const comparisonLabels = {
-  NO_TARGET_REQUIREMENT: 'Целевое требование для сопоставления не задано',
-  NO_SKILL_RESULT: 'Сопоставление недоступно: по навыку нет результата',
-  NOT_COMPARABLE: 'Сопоставление с требованиями недоступно',
-};
-
 const coverageLabels = {
   opportunities: 'Фактическая возможность наблюдения',
   indicator_assessments: 'Обоснованные оценки индикаторов',
@@ -1396,6 +1392,7 @@ const coverageLabels = {
 
 let m8ChartMode = 'fill';
 let m8SelectedCompetencyId = null;
+let m8SelectedSkillId = null;
 let m8ChartResizeObserver = null;
 let m8ChartRenderContext = null;
 let m8ObservedChartWidth = 0;
@@ -1541,9 +1538,10 @@ const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) 
 const focusM8Skill = (skillId) => {
   const skill = document.getElementById(`m8-skill-${skillId}`);
   if (!skill) return;
-  skill.setAttribute('tabindex', '-1');
-  skill.focus({ preventScroll: true });
-  skill.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  skill.click();
+  const selected = document.getElementById(`m8-skill-${skillId}`);
+  selected?.focus({ preventScroll: true });
+  selected?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
 };
 
 const renderM8Chart = (c67, competencyId) => {
@@ -1599,7 +1597,7 @@ const formatParticipantDate = (value) => {
 };
 
 const formatExactScore = (score) => {
-  if (!score || score.value == null) return 'Общий балл не сформирован';
+  if (!score || score.value == null) return 'Числовой показатель не сформирован';
   return `${score.value}`;
 };
 
@@ -1651,52 +1649,64 @@ const renderM8Comparison = (comparison) => {
   node.innerHTML = periods + table + slices + pdf;
 };
 
-const loadM8Comparison = async (reportId, previousReportId = '') => {
+const loadM8Comparison = async (reportId, previousReportId = '', isCurrent = () => true) => {
   const node = document.getElementById('m8-comparison-content');
   if (!node) return;
   node.innerHTML = '<p>Загружаем предыдущую завершённую оценку…</p>';
   try {
     const suffix = previousReportId ? `?previous_report_id=${encodeURIComponent(previousReportId)}` : '';
     const response = await fetch(`/users/assessment/m8/reports/${encodeURIComponent(reportId)}/comparison${suffix}`);
+    if (!isCurrent()) return;
     if (response.status === 404) {
       node.innerHTML = '<p><strong>Предыдущей завершённой оценки пока нет.</strong></p>';
       return;
     }
-    renderM8Comparison(await readApiResponse(response, 'Не удалось загрузить сравнение оценок.'));
+    const comparison = await readApiResponse(response, 'Не удалось загрузить сравнение оценок.');
+    if (isCurrent()) renderM8Comparison(comparison);
   } catch (_error) {
-    node.innerHTML = '<p><strong>Сравнение временно недоступно.</strong> Попробуйте ещё раз.</p>';
+    if (isCurrent()) node.innerHTML = '<p><strong>Сравнение временно недоступно.</strong> Попробуйте ещё раз.</p>';
   }
 };
 
-const setupM8ComparisonOptions = async (cycleId, reportId) => {
+const setupM8ComparisonOptions = async (cycleId, reportId, isCurrent) => {
   const select = document.getElementById('m8-comparison-select');
   const button = document.getElementById('m8-comparison-open');
   if (!select || !button) return;
   try {
     const history = await readApiResponse(await fetch('/users/assessment/m8/history'), 'Не удалось загрузить историю оценок.');
+    if (!isCurrent()) return;
     const currentIndex = history.cycles.findIndex((item) => String(item.cycle_id) === String(cycleId));
     const candidates = currentIndex < 0 ? [] : history.cycles.slice(currentIndex + 1).filter((item) => item.report_id && item.collection_closed_at);
     select.innerHTML = candidates.map((item) => `<option value="${escapeHtml(item.report_id)}">${escapeHtml(formatParticipantDate(item.collection_closed_at || item.created_at))}</option>`).join('') || '<option value="">Предыдущих завершённых оценок нет</option>';
     select.disabled = candidates.length < 2;
   } catch (_error) {
+    if (!isCurrent()) return;
     select.innerHTML = '<option value="">Последняя завершённая</option>';
     select.disabled = true;
   }
   button.disabled = false;
-  button.onclick = () => void loadM8Comparison(reportId, select.value);
+  button.onclick = () => void loadM8Comparison(reportId, select.value, isCurrent);
 };
 
+const buildSkillNarrative = (claims) => [
+  ['observation', 'Наблюдавшееся действие'],
+  ['explanation', 'Что означает результат'],
+  ['context', 'Как это связано с вашей работой'],
+].map(([kind, heading]) => {
+  const items = claims.filter((item) => item.kind === kind && item.text);
+  return items.length ? `<section class="m8-skill-narrative"><h5>${heading}</h5>${items.map((item) => `<p>${escapeHtml(item.text)}</p>`).join('')}</section>` : '';
+}).join('');
+
 const buildSkillDetails = (skill, claims) => {
-  const explanations = claims.filter((item) => item.kind !== 'quote' && item.text).map((item) => item.text);
-  const excerpts = claims.filter((item) => item.kind === 'quote' && item.text).map((item) => item.text);
+  const excerpts = claims.filter((item) => item.kind === 'quote' && item.text);
   const limitations = [...new Set([
     ...(Array.isArray(skill.limitations) ? skill.limitations : []),
+    ...claims.filter((item) => item.kind === 'limitation' && item.text).map((item) => item.text),
     ...claims.flatMap((item) => item.limitations || []),
   ])];
-  if (!explanations.length && !excerpts.length && !limitations.length) return '';
+  if (!excerpts.length && !limitations.length) return '';
   return `<details class="m8-skill-basis"><summary>Почему сделан такой вывод</summary>` +
-    explanations.map((value) => `<p>${escapeHtml(value)}</p>`).join('') +
-    excerpts.map((value) => `<blockquote>${escapeHtml(value)}</blockquote>`).join('') +
+    excerpts.map((item) => `<p class="m8-evidence-caption">Ваш ответ в оценочной ситуации</p><blockquote>${escapeHtml(item.text)}</blockquote>`).join('') +
     limitations.map((value) => `<p class="m8-local-limitation">${escapeHtml(value)}</p>`).join('') +
     `</details>`;
 };
@@ -1711,29 +1721,31 @@ const renderM8Skills = (c67, competencyId) => {
       (competencyOrder.get(String(left.competency_id)) ?? Number.MAX_SAFE_INTEGER)
       - (competencyOrder.get(String(right.competency_id)) ?? Number.MAX_SAFE_INTEGER))
     : (c67.skills || []).filter((skill) => String(skill.competency_id) === String(competencyId));
+  if (!selected.some((skill) => String(skill.skill_id) === String(m8SelectedSkillId))) {
+    m8SelectedSkillId = selected[0]?.skill_id || null;
+  }
   let lastCompetencyId = null;
-  skillsNode.innerHTML = selected.map((skill) => {
-    const related = claims.filter((item) => (item.skill_ids || []).map(String).includes(String(skill.skill_id)));
-    const comparison = comparisonLabels[skill.comparison?.status] || 'Сведения о сопоставлении недоступны';
-    const exact = skill.score?.value == null ? '' : `<details><summary>Как получен результат</summary><p>Точное значение: ${escapeHtml(String(skill.score.value))}; числитель: ${escapeHtml(String(skill.score.numerator))}; знаменатель: ${escapeHtml(String(skill.score.denominator))}.</p></details>`;
-    const scoreState = skill.outcome === 'partial_score'
-      ? '<span class="m8-score-state is-partial">По части проявлений</span>'
-      : skill.outcome === 'full_score'
-        ? '<span class="m8-score-state">Полный расчёт</span>'
-        : '';
+  const rows = selected.map((skill) => {
     const groupHeading = isOverview && String(skill.competency_id) !== String(lastCompetencyId)
       ? `<h4 class="m8-competency-heading">${escapeHtml(skill.competency_name || 'Группа навыков')}</h4>`
       : '';
     lastCompetencyId = skill.competency_id;
-    return `${groupHeading}<article class="report-skill-item" id="m8-skill-${escapeHtml(String(skill.skill_id))}"><div><strong>${escapeHtml(skill.skill_name || 'Навык без названия')}</strong>` +
-      `${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}` +
-      `<p class="m8-outcome">${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</p>` +
-      (skill.presentation?.reasons || []).map((reason) => `<p class="m8-local-limitation">${escapeHtml(reason.message || 'Причина ограничения требует уточнения.')}</p>`).join('') +
-      `<p>В этой версии оценки общий уровень навыка не присваивается.</p>${buildSkillDetails(skill, related)}</div>` +
-      `<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong>${scoreState}` +
-      `<p>${escapeHtml(skill.completeness || (skill.outcome === 'partial_score' ? 'Результат ограничен частью состава навыка' : 'Полнота отдельно не указана'))}</p>` +
-      `<p>${escapeHtml(comparison)}</p>${exact}</div></article>`;
-  }).join('') || '<p>В этой группе нет навыков, включённых в сохранённый результат.</p>';
+    const selectedNow = String(skill.skill_id) === String(m8SelectedSkillId);
+    return `${groupHeading}<button class="m8-skill-row${selectedNow ? ' is-selected' : ''}" type="button" id="m8-skill-${escapeHtml(String(skill.skill_id))}" data-skill-id="${escapeHtml(String(skill.skill_id))}" aria-expanded="${selectedNow}" aria-controls="m8-skill-detail"><span><strong>${escapeHtml(skill.skill_name || 'Навык без названия')}</strong><small>${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</small>${(skill.presentation?.reasons || []).map((reason) => `<small>${escapeHtml(reason.message || 'Причина ограничения требует уточнения.')}</small>`).join('')}</span><span class="m8-skill-row-value">${escapeHtml(formatExactScore(skill.score))}</span></button>`;
+  }).join('');
+  const skill = selected.find((item) => String(item.skill_id) === String(m8SelectedSkillId));
+  const related = skill ? claims.filter((item) => (item.skill_ids || []).map(String).includes(String(skill.skill_id))) : [];
+  const narrative = buildSkillNarrative(related);
+  const basisMarkup = skill && (buildSkillDetails(skill, related)
+    || (c67.descriptive?.status === 'failed' ? '<p>Пояснение временно недоступно. Сохранённый показатель и ограничения показаны выше.</p>' : ''));
+  const exact = skill?.score?.value == null ? '' : `<details><summary>Как получен результат</summary><p>Точное значение: ${escapeHtml(String(skill.score.value))}; числитель: ${escapeHtml(String(skill.score.numerator))}; знаменатель: ${escapeHtml(String(skill.score.denominator))}.</p></details>`;
+  const reasons = (skill?.presentation?.reasons || []).map((reason) => `<p class="m8-local-limitation">${escapeHtml(reason.message || 'Причина ограничения требует уточнения.')}</p>`).join('');
+  const panel = skill ? `<aside id="m8-skill-detail" class="m8-skill-detail" aria-label="Подробности навыка"><p class="section-label">${escapeHtml(skill.competency_name || 'Навык')}</p><h4>${escapeHtml(skill.skill_name || 'Навык без названия')}</h4>${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}${narrative}<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong><p>${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</p><p>${escapeHtml(skill.completeness || (skill.outcome === 'partial_score' ? 'Результат ограничен частью состава навыка' : 'Полнота отдельно не указана'))}</p></div>${reasons}<p>В этой версии оценки общий уровень навыка не присваивается.</p>${basisMarkup}${exact}</aside>` : '<p>В этой группе нет навыков, включённых в сохранённый результат.</p>';
+  skillsNode.innerHTML = `<div class="m8-skill-list">${rows}</div>${panel}`;
+  skillsNode.querySelectorAll('[data-skill-id]').forEach((button) => button.addEventListener('click', () => {
+    m8SelectedSkillId = button.dataset.skillId;
+    renderM8Skills(c67, competencyId);
+  }));
 };
 
 const setupM8CompetencyNavigation = (c67) => {
@@ -1798,13 +1810,12 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
     || (reportId && String(report.id) !== String(reportId))
   ) throw new Error('Сессия или выбранный отчёт изменились.');
   const c67 = report.c67;
-  stateNode.textContent = `Результат готов · версия ${report.revision_no} от ${formatParticipantDate(report.created_at)}`;
+  stateNode.textContent = 'Результат готов';
   const metadata = document.getElementById('m8-report-metadata');
-  const startedAt = c67.time?.started_at || c67.sessions?.[0]?.started_at;
-  const finishedAt = c67.collection?.closed_at || c67.sessions?.at(-1)?.ended_at;
-  metadata.innerHTML = `<div><dt>Оценка</dt><dd>${escapeHtml(report.program_name || '4К — индивидуальный результат')}</dd></div>` +
-    `<div><dt>Период</dt><dd>${escapeHtml(formatParticipantDate(startedAt))} — ${escapeHtml(formatParticipantDate(finishedAt))}</dd></div>` +
-    `<div><dt>Версия отчёта</dt><dd>${escapeHtml(report.revision_no)}</dd></div>`;
+  const finishedAt = report.collection_closed_at || c67.collection?.closed_at;
+  metadata.innerHTML = `<div><dt>Программа</dt><dd>${escapeHtml(report.program_name || 'Программа оценки не указана')}</dd></div>` +
+    `<div><dt>Дата завершения</dt><dd>${escapeHtml(formatParticipantDate(finishedAt))}</dd></div>` +
+    (customerAccess ? `<div><dt>Участник</dt><dd>${escapeHtml(report.participant_name || 'Имя не указано')}</dd></div>` : '');
   const descriptive = c67.descriptive || {};
   const summary = document.getElementById('m8-report-summary');
   if (descriptive.status === 'ready' && descriptive.summary?.length) {
@@ -1841,16 +1852,13 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
     `<p><strong>Проверка расчёта:</strong> ${c67.reliability?.status === 'verified' ? 'подтверждена в указанной области' : c67.reliability?.status === 'not_verified' ? 'ещё не подтверждена' : 'сведения о проверке отсутствуют'}.</p></details>`;
   document.getElementById('m8-report-limitations').innerHTML = (c67.limitations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('');
   const explanations = document.getElementById('m8-report-recommendations');
-  explanations.innerHTML = (descriptive.claims || []).filter((item) => item.kind !== 'quote').map((item) =>
-    `<article class="report-skill-item m8-recommendation-item"><div><strong>${escapeHtml(item.kind === 'context' ? 'Как это связано с вашей работой' : 'Наблюдение')}</strong>` +
-    `<p>${escapeHtml(item.text)}</p></div><div><p class="m8-local-limitation">${(item.limitations || []).map((value) => escapeHtml(value)).join(' · ')}</p></div></article>`
-  ).join('') || `<p>${descriptive.status === 'failed' ? 'Пояснение временно недоступно' : descriptive.status === 'historical' ? 'Для исторической версии персональное пояснение не создавалось.' : 'Пояснение готовится'}</p>`;
+  explanations.replaceChildren();
   document.getElementById('m8-report-recommendation-notices').replaceChildren();
   const download = document.getElementById('report-download-button');
   download.dataset.m8ReportId = report.id;
   download.dataset.m8ReportAccess = customerAccess ? 'customer' : 'owner';
   download.disabled = false;
-  if (!customerAccess) void setupM8ComparisonOptions(cycleId, report.id);
+  if (!customerAccess) void setupM8ComparisonOptions(cycleId, report.id, isCurrent);
 };
 
 export const resolveAssessmentSessionIdByCode = async () => {

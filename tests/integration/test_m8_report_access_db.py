@@ -27,7 +27,7 @@ def _report(report_id, cycle_id):
     return {'id': str(report_id), 'revision_no': 1, 'status': 'ready', 'owner_user_id': 10,
             'cycle_id': str(cycle_id), 'results_revision_id': str(uuid4()),
             'program_name': 'Программа A', 'participant_name': 'Участник',
-            'c67': {'skills': [{'skill_id': 'S1', 'outcome': 'full_score',
+            'c67': {'contract': 'C-67', 'skills': [{'skill_id': 'S1', 'outcome': 'full_score',
                                 'score': {'value': 0, 'numerator': 0, 'denominator': 1},
                                 'components': [{'private': 'hidden'}], 'validator_trace': {'private': True}}],
                     'limitations': ['Ограничение'], 'coverage': {},
@@ -51,7 +51,8 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         connection.execute('CREATE TABLE assessment_personalized_profiles(id bigint PRIMARY KEY,assessment_configuration_id bigint)')
         connection.execute('''CREATE TABLE m5_cycles(id bigint PRIMARY KEY,cycle_id uuid,owner_user_id bigint,
             organization_id bigint,personalized_profile_id bigint,usage_scope text,status text,
-            created_at timestamptz DEFAULT now(),started_at timestamptz,collection_closed_at timestamptz)''')
+            display_snapshot_json jsonb,created_at timestamptz DEFAULT now(),started_at timestamptz,
+            collection_closed_at timestamptz)''')
         connection.execute('CREATE TABLE m10_pipeline_runs(cycle_db_id bigint,status text,stage text,error_code text)')
         connection.execute('CREATE TABLE m8_results(id uuid PRIMARY KEY,cycle_db_id bigint)')
         connection.execute('CREATE TABLE m8_result_revisions(id uuid PRIMARY KEY,results_id uuid,revision_no integer)')
@@ -70,8 +71,8 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         previous_cycle, previous_result, previous_revision, previous_report = uuid4(), uuid4(), uuid4(), uuid4()
         foreign_cycle, foreign_result, foreign_revision, foreign_report = uuid4(), uuid4(), uuid4(), uuid4()
         connection.execute("INSERT INTO m5_cycles(id,cycle_id,owner_user_id,organization_id,personalized_profile_id,"
-                           "usage_scope,status,started_at,collection_closed_at) VALUES(1,%s,10,1,500,'assessment',"
-                           "'calculated',now(),now())", (cycle_id,))
+                           "usage_scope,status,display_snapshot_json,started_at,collection_closed_at) VALUES(1,%s,10,1,500,'assessment',"
+                           "'calculated','{\"program_name\":\"Программа A\"}'::jsonb,now(),now())", (cycle_id,))
         connection.execute('INSERT INTO m8_results VALUES(%s,1)', (result_id,))
         connection.execute('INSERT INTO m8_result_revisions VALUES(%s,%s,1)', (revision_id, result_id))
         connection.execute("INSERT INTO m8_reports(id,result_revision_id,revision_no,audience,c67_json) "
@@ -81,9 +82,10 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
             (3, foreign_cycle, 2, foreign_result, foreign_revision, foreign_report),
         ):
             connection.execute("""INSERT INTO m5_cycles(id,cycle_id,owner_user_id,organization_id,
-                personalized_profile_id,usage_scope,status,created_at,started_at,collection_closed_at)
-                VALUES(%s,%s,10,%s,500,'assessment','calculated',now()-interval '1 day',
-                now()-interval '1 day',now()-interval '1 day')""", (db_id, cid, org_id))
+                personalized_profile_id,usage_scope,status,display_snapshot_json,created_at,started_at,collection_closed_at)
+                VALUES(%s,%s,10,%s,500,'assessment','calculated',%s::jsonb,now()-interval '1 day',
+                now()-interval '1 day',now()-interval '1 day')""", (db_id, cid, org_id,
+                    '{"program_name":"Программа B"}' if db_id == 2 else None))
             connection.execute('INSERT INTO m8_results VALUES(%s,%s)', (result, db_id))
             connection.execute('INSERT INTO m8_result_revisions VALUES(%s,%s,1)', (revision, result))
             connection.execute("INSERT INTO m8_reports(id,result_revision_id,revision_no,audience,c67_json) "
@@ -92,10 +94,12 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         connection.execute('INSERT INTO m8_cycle_report_recipients VALUES(1,22),(1,23)')
         connection.execute('DELETE FROM organization_memberships WHERE organization_id=1 AND user_id IN (10,22)')
         connection.execute("INSERT INTO organization_memberships VALUES(1,21,'admin')")
+        connection.execute("UPDATE assessment_configurations SET name='Новое название' WHERE id=1")
         assert m8_results.owner_can_read_cycle(connection, str(cycle_id), 10)
         assert not m8_results.owner_can_read_cycle(connection, str(cycle_id), 11)
         history = m8_results.list_owned_cycles(connection, 10)
         assert len(history) == 3 and history[0]['program_name'] == 'Программа A'
+        assert next(item for item in history if item['cycle_id'] == str(previous_cycle))['program_name'] == 'Программа B'
         assert history[0]['collection_closed_at'] is not None
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=22)
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=23)
@@ -127,6 +131,7 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
             detail = client.get(own)
             assert detail.status_code == 200 and detail.json()['c67']['skills'][0]['score']['value'] == 0
             assert 'validator_trace' not in detail.text and 'profile_ref' not in detail.text
+            assert detail.json()['c67']['contract'] == 'C-67'
             assert client.get(own + '/pdf').status_code == 200
             comparison = own + '/comparison'
             assert client.get(comparison, params={'previous_report_id': str(previous_report)}).status_code == 200
