@@ -1,4 +1,4 @@
-import { state, persistAssessmentContext, clearAssessmentStorage, setCurrentScreen } from '../state.js';
+import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import {
   reportPanel,
   reportOverallScore,
@@ -1307,6 +1307,10 @@ export const renderReport = () => {
 
 export const openReport = (options = {}) => {
   const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false } = options;
+  if (!m8CycleId) {
+    void openReports();
+    return;
+  }
   const requestEpoch = ++state.reportRequestEpoch;
   const identityEpoch = state.identityEpoch;
   const ownerId = state.pendingUser?.id;
@@ -1358,21 +1362,6 @@ export const openReport = (options = {}) => {
     load();
     return;
   }
-  const legacyUrl = new URL(window.location.href);
-  legacyUrl.searchParams.delete('cycle_id');
-  legacyUrl.searchParams.delete('report_id');
-  legacyUrl.searchParams.delete('report_access');
-  window.history.replaceState({}, '', legacyUrl.pathname + '?' + legacyUrl.searchParams.toString());
-  const downloadButton = document.getElementById('report-download-button');
-  if (downloadButton) {
-    delete downloadButton.dataset.m8ReportId;
-    delete downloadButton.dataset.m8ReportAccess;
-    downloadButton.disabled = !state.pendingUser?.id || !state.assessmentSessionId;
-  }
-  document.getElementById('m8-report-shell')?.classList.add('hidden');
-  document.getElementById('legacy-report-shell')?.classList.remove('hidden');
-  renderReport();
-  clearAssessmentStorage();
 };
 
 const outcomeLabels = {
@@ -1693,16 +1682,16 @@ const setupM8ComparisonOptions = async (cycleId, reportId, isCurrent) => {
   try {
     const history = await readApiResponse(await fetch('/users/assessment/m8/history'), 'Не удалось загрузить историю оценок.');
     if (!isCurrent()) return;
-    const currentIndex = history.cycles.findIndex((item) => String(item.cycle_id) === String(cycleId));
-    const candidates = currentIndex < 0 ? [] : history.cycles.slice(currentIndex + 1).filter((item) => item.report_id && item.collection_closed_at);
-    select.innerHTML = candidates.map((item) => `<option value="${escapeHtml(item.report_id)}">${escapeHtml(formatParticipantDate(item.collection_closed_at || item.created_at))}</option>`).join('') || '<option value="">Предыдущих завершённых оценок нет</option>';
-    select.disabled = candidates.length < 2;
+    const candidates = history.cycles.filter((item) => String(item.cycle_id) !== String(cycleId)
+      && item.report_id && item.collection_closed_at && item.status !== 'failed');
+    select.innerHTML = candidates.map((item) => `<option value="${escapeHtml(item.report_id)}">${escapeHtml(item.program_name || 'Оценка 4К')} · ${escapeHtml(formatParticipantDate(item.collection_closed_at))}</option>`).join('') || '<option value="">Других завершённых оценок нет</option>';
+    select.disabled = candidates.length === 0;
   } catch (_error) {
     if (!isCurrent()) return;
     select.innerHTML = '<option value="">Последняя завершённая</option>';
     select.disabled = true;
   }
-  button.disabled = false;
+  button.disabled = select.disabled;
   button.onclick = () => void loadM8Comparison(reportId, select.value, isCurrent);
 };
 
