@@ -1,6 +1,6 @@
 # CHECKS — P4K-REPORT-05
 
-База `4160a589` (2.1.17); локальный кандидат 2.1.18. Controlled synthetic fixtures, один worker, retries=0, платные LLM-вызовы и письма — 0. Снимки в `evidence/`; прототип v9 визуально просмотрен на 1440/390 px. Tested SHA до commit — рабочий diff от `4160a589`; CI точного head пока отсутствует.
+База `4160a589` (2.1.17); кандидат 2.1.18, commit `fa48a3cbd30e1038863139656864709837fc2377`. Controlled synthetic fixtures, один worker, retries=0, платные LLM-вызовы и письма — 0. Снимки в `evidence/`; прототип v9 визуально просмотрен на 1440/390 px. CI точного head пока отсутствует.
 
 | Критерий | Результат | Доказательство и предел |
 | --- | --- | --- |
@@ -10,8 +10,8 @@
 | AC04 клавиатура/focus/resize | PASS локально | Enter по мобильному ключу открывает одну панель и передаёт фокус; явный возврат к строке. `auth-r03.spec.mjs -g 'RAD01|UI02 full overview|QA19-04'`: 3 PASS, включая 320–1440 и подписи. |
 | AC05 read-only и каталог отчёта | PASS локально | Browser fixture: восемь навыков четырёх К с сохранёнными IDs/ограничениями, отсутствие POST при выборе/рендере. Сервер/БД не менялись. |
 | Регрессия REPORT-04 | PASS локально | `report04-personal.spec.mjs`: 3 PASS до финального изменения только UI выбранного состояния; REPORT-05 browser fixtures повторены после PATCH. |
-| Frontend / release | PASS локально | `node --test tests/frontend/*.test.mjs`: 354 PASS после PATCH; `npm run lint:js`: PASS; `npm run ready:prepare -- --base-ref main --candidate 2.1.18`: PASS; `.venv/bin/python -m pytest -q tests/unit/test_release_version.py`: 11 PASS. Использован локальный `main`, так как `git fetch`/GitHub недоступны. |
-| `git diff --check` | PASS локально | До и после PATCH; staged diff/HEAD после commit — отдельно. |
-| CI/PR/TEST/Prod | NOT_RUN | `gh` не авторизован, `git ls-remote` не разрешил `github.com`; невозможно проверить свежесть удалённого `main`, создать PR и получить обязательные CI. Деплой не выполнялся. |
+| Frontend / release | PASS локально | `node --test tests/frontend/*.test.mjs`: 354 PASS после PATCH; `npm run lint:js`: PASS; `.venv/bin/python -m pytest -q tests/unit/test_release_version.py`: 11 PASS. `git fetch origin main` и штатный `npm run ready:prepare -- --candidate 2.1.18`: PASS, без изменения файлов; удалённый `main` = `4160a589`. |
+| `git diff --check` | PASS локально | `git diff main...HEAD --check`; commit hook проверил staged frontend/dist. |
+| CI/PR/TEST/Prod | PR pending | Ветка опубликована; обязательный CI и review ожидают PR. Деплой не выполнялся. |
 
-Откат: revert commit REPORT-05 и обратный штатный PATCH-кандидат при публикации; SQL/миграций/новых артефактов нет. Риск выпуска — возможный новый commit/версия в удалённом `main` до проверки `ready:prepare` без `--base-ref main`.
+Откат: revert commit REPORT-05 и обратный штатный PATCH-кандидат при публикации; SQL/миграций/новых артефактов нет. Перед merge повторно проверить свежий `origin/main` и обязательный CI точного head.
