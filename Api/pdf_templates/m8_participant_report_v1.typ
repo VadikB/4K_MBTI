@@ -30,11 +30,13 @@
   ]
 ]
 
-#if data.partial_result != none and data.partial_result.is_incomplete [
+#if data.partial_result != none and (data.partial_result.is_incomplete or data.partial_result.limitation_reasons.len() > 0) [
   #block(fill: rgb("#fff8e1"), inset: 10pt, radius: 4pt)[
-    *Оценка завершена не полностью.* \
+    *#data.partial_result.messages.title* \
     Подтверждено #data.partial_result.progress.completed из #data.partial_result.progress.planned запланированных ситуаций.
     Показаны только подтверждённые результаты; непокрытые элементы не считаются неуспехом.
+    #for reason in data.partial_result.limitation_reasons [#reason.message \
+    ]
   ]
 ]
 
@@ -48,6 +50,8 @@
       ]
       #skill.outcome \
       *Балл:* #skill.score · *Полнота:* #skill.completeness \
+      #for reason in skill.reasons [#reason \
+      ]
       В этой версии оценки общий уровень навыка не присваивается.
     ]
   ]

@@ -1461,10 +1461,10 @@ const scheduleM8RadarLabelFit = (node) => {
 
 const buildM8Bars = (skills) => `<div class="m8-score-bars" role="list">${skills.map((skill) => {
   const value = getReportScoreValue(skill);
-  const status = outcomeLabels[skill.outcome] || 'Результат не указан';
+  const status = skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки';
   return `<article class="m8-score-bar" role="listitem"><button type="button" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}">${escapeHtml(skill.skill_name || 'Навык')}</button>` +
     (value == null
-      ? `<span class="m8-score-missing">${escapeHtml(skill.outcome === 'result_without_score' ? 'Есть наблюдения без показателя' : 'Недостаточно данных')}</span>`
+      ? `<span class="m8-score-missing">${escapeHtml(status)}</span>`
       : `<div class="m8-score-track" role="img" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}: ${value} из 3. ${status}`)}"><span class="${skill.outcome === 'partial_score' ? 'is-partial' : ''}" style="--m8-score:${value / 3 * 100}%"></span></div><strong>${escapeHtml(String(value))}</strong>`) +
     `</article>`;
 }).join('')}</div>`;
@@ -1727,7 +1727,8 @@ const renderM8Skills = (c67, competencyId) => {
     lastCompetencyId = skill.competency_id;
     return `${groupHeading}<article class="report-skill-item" id="m8-skill-${escapeHtml(String(skill.skill_id))}"><div><strong>${escapeHtml(skill.skill_name || 'Навык без названия')}</strong>` +
       `${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}` +
-      `<p class="m8-outcome">${escapeHtml(outcomeLabels[skill.outcome] || 'Неизвестный формат результата')}</p>` +
+      `<p class="m8-outcome">${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</p>` +
+      (skill.presentation?.reasons || []).map((reason) => `<p class="m8-local-limitation">${escapeHtml(reason.message || 'Причина ограничения требует уточнения.')}</p>`).join('') +
       `<p>В этой версии оценки общий уровень навыка не присваивается.</p>${buildSkillDetails(skill, related)}</div>` +
       `<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong>${scoreState}` +
       `<p>${escapeHtml(skill.completeness || (skill.outcome === 'partial_score' ? 'Результат ограничен частью состава навыка' : 'Полнота отдельно не указана'))}</p>` +
@@ -1817,12 +1818,14 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
   }
   const partial = c67.partial_result;
   const partialNode = document.getElementById('m8-report-partial');
-  if (partial?.is_incomplete) {
+  if (partial && (partial.is_incomplete || (partial.limitation_reasons || []).length)) {
     const progress = partial.progress || {};
-    partialNode.innerHTML = `<strong>Оценка завершена не полностью</strong><p>Подтверждено ${escapeHtml(String(progress.completed ?? '—'))} из ${escapeHtml(String(progress.planned ?? '—'))} запланированных ситуаций. Показаны только подтверждённые результаты; непокрытые элементы не считаются неуспехом.</p>` +
-      (partial.limitation_reasons || []).map((item) => `<p>${escapeHtml(item.text || item.code)}</p>`).join('');
+    partialNode.classList.toggle('is-complete-scope', partial.plan_completed === true);
+    partialNode.innerHTML = `<strong>${escapeHtml(partial.messages?.title || (partial.is_incomplete ? 'Оценка завершена не полностью' : 'Оценка завершена'))}</strong><p>Подтверждено ${escapeHtml(String(progress.completed ?? '—'))} из ${escapeHtml(String(progress.planned ?? '—'))} запланированных ситуаций. Показаны только подтверждённые результаты; непокрытые элементы не считаются неуспехом.</p>` +
+      (partial.limitation_reasons || []).map((item) => `<p>${escapeHtml(item.message || 'Причина ограничения требует уточнения.')}</p>`).join('');
     partialNode.classList.remove('hidden');
   } else {
+    partialNode.classList.remove('is-complete-scope');
     partialNode.classList.add('hidden');
   }
   setupM8CompetencyNavigation(c67);

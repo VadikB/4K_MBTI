@@ -5,7 +5,9 @@
 а не самостоятельные полномочия. Реализация этой задачи и один draft PR входят
 в порученный результат; merge/deploy/Ready/version bump не разрешены.
 
-База: origin/main a37a4519cc461339a55aaf7343624fce6e91511f (2.1.14), PR228 MERGED.
+Начальная база: origin/main a37a4519cc461339a55aaf7343624fce6e91511f (2.1.14), PR228 MERGED.
+Перед PR интегрирован свежий main c89e9c032bd99f03686d51e027a230d3f7cb5898 (2.1.15, REPORT-03).
+Конфликты только generated dist разрешены пересборкой; собственного bump нет.
 Ветка codex/p4k-postw02-02, отдельный worktree p4k-postw02-02.
 
 ## Результат и границы

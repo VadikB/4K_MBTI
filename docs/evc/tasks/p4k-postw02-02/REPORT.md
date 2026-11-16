@@ -1,7 +1,9 @@
 # P4K-POSTW02-02 — отчёт
 
 Локальная реализация завершена. Основание и границы — [TASK.md](TASK.md).
-Base: `a37a4519cc461339a55aaf7343624fce6e91511f` / main2.1.14 / PR228.
+Текущая base: `c89e9c032bd99f03686d51e027a230d3f7cb5898` / main2.1.15 / REPORT-03 (#229).
+Начальная base a37a451/PR228 сохранена в истории; свежий main интегрирован без отката.
+Конфликты были только в generated web/dist, разрешены пересборкой общих исходников.
 Head фиксируется в PR и локальном delivery receipt после commit; identity содержимого —
 [evidence/identity.json](evidence/identity.json). Ветка `codex/p4k-postw02-02`.
 
@@ -32,15 +34,15 @@ Head фиксируется в PR и локальном delivery receipt пос�
 
 | Проверка | Итог и доказательство |
 |---|---|
-| `node --test tests/frontend/*.test.mjs` | PASS351; frontend.log. После последнего небольшого изменения видимости between-header — адресный PASS26, final-scoped.log, затем проверка recovery23 (recovery-final.log) |
-| `npm run test:backend` | PASS1121 составно: 1112 в общем прогоне, 9 test_synthetic_limits в повторе `--lf` после sandbox EPERM на ps; backend.log и backend-sandbox-retry.log. Между прогонами backend не менялся |
-| `npm run test:backend:http` | PASS177; http.log. Новые2 — реальный owner HTTP с синтетическим SELECT-only хранилищем, общая projection и отсутствие мутаций |
-| `npm run lint:js`, `npm run build:web`, `git diff --check` | PASS; lint.log/build.log; frontend/dist fingerprints в identity |
-| Browser Chromium1440/390 | PASS:5 в browser.log (новые3 + существующие F18/F19 plan8/3). После финальной компоновки затронутые3 повторены PASS в browser-final.log |
+| `node --test tests/frontend/*.test.mjs` | PASS352 на объединённом коде; combined-frontend.log. Прежние frontend351/адресные26/recovery23 сохранены как история |
+| `npm run test:backend` | PASS1126 на объединённом коде; combined-backend.log. Прежний sandbox EPERM/успешный retry9 сохранены в истории |
+| `npm run test:backend:http` | PASS177: combined-http.log176 PASS, один static-asset тест совпал с временным отсутствием dist при пересборке; после build PASS6 parametrized asset routes в combined-static-retry.log. Прежний http.log177 PASS. Новые2 — реальный owner HTTP с синтетическим SELECT-only хранилищем, общая projection и отсутствие мутаций |
+| `npm run lint:js`, `npm run build:web`, `git diff --check` | PASS; combined-lint.log/combined-build.log; frontend/dist fingerprints в identity |
+| Browser Chromium1440/390 | PASS:5 в browser.log (новые3 + существующие F18/F19 plan8/3). После финальной компоновки и интеграции main затронутые3 PASS в combined-browser.log |
 | Exact v10 local reference | PASS получения рендеров5 сцен ×2 ширины, SHA e44fa78. [Галерея](VISUAL_REVIEW.html); не утверждается пиксельная тождественность разных материалов/данных |
 | GitHub CI | Состояние точного head будет в PR/delivery receipt. Локальные результаты не подменяют CI |
 
-Первичные неуспехи сохранены: устаревшие expectations двух счётчиков, неполная
+Первичные неуспехи сохранены (это история, не текущий FAIL): устаревшие expectations двух счётчиков, неполная
 HTTP-fixture, sandbox EPERM. Исправленные ожидания не заменяют переходные проверки:
 добавлены тесты pending45s/read failure/failed/WAIT_TECHNICAL/server ASK,
 неизменного deadline, восстановления consumed continuation intent без повторной Session, GET-only manual checks, late response, unknown draft,

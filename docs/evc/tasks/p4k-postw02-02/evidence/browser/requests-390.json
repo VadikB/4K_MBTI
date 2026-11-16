@@ -50,7 +50,7 @@
     "body": {
       "action": "scenario_end",
       "reason": "user_finished_case",
-      "request_id": "1c52a006-4ed4-4c70-bf34-7536c16c112d"
+      "request_id": "bbdf742a-29d8-4c82-aeca-dfd14c5a409b"
     }
   },
   {
@@ -130,7 +130,7 @@
       "position_no": 3,
       "expected_assessment_situation_id": "synthetic-as",
       "expected_state": "scenario_ended",
-      "idempotency_key": "a932971a-22e0-4993-b42e-afd88df278c3",
+      "idempotency_key": "ad1c2d60-f5c0-402c-addd-65e7931980ab",
       "generation_operation_id": null
     }
   },
@@ -138,7 +138,7 @@
     "url": "/users/assessment/m7/cycles/synthetic-cycle/presence",
     "method": "POST",
     "body": {
-      "client_id": "5aed5fbe-ee56-422c-bfe0-ee30c7aff5b1",
+      "client_id": "f3f4993c-8080-4db5-9bb2-8e1853e3aace",
       "expected_assessment_situation_id": "synthetic-as"
     }
   },

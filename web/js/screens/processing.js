@@ -267,7 +267,7 @@ const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = fals
 
 const cycleOutcomeKind = (snapshot) => {
   if (snapshot?.results_status === 'failed') return 'failed';
-  if (snapshot?.report_status === 'ready') return snapshot?.partial_result?.is_incomplete ? 'limited' : 'ready';
+  if (snapshot?.report_status === 'ready') return snapshot?.partial_result?.plan_completed === false || snapshot?.partial_result?.is_incomplete ? 'limited' : 'ready';
   if (['time_budget', 'calendar_deadline'].includes(snapshot?.close_reason)) return 'expired';
   return 'waiting';
 };

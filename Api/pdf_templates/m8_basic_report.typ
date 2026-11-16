@@ -17,7 +17,7 @@
   ]
 ]
 
-#if data.partial_result != none and data.partial_result.is_incomplete [
+#if data.partial_result != none and (data.partial_result.is_incomplete or data.partial_result.limitation_reasons.len() > 0) [
   #block(fill: rgb("#fff8e1"), inset: 8pt, radius: 4pt)[
     *#data.partial_result.messages.title* \
     #data.partial_result.messages.confirmed \
