@@ -78,7 +78,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
 
         confirmed = confirm(
             connection, revision_id=preview["id"], organization_id=10,
-            confirmed_by=2, recipients=[], recipient_user_ids=[],
+            confirmed_by=2,
         )
         assert confirmed["status"] == "confirmed"
         version = connection.execute(
@@ -88,17 +88,15 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert version["status"] == "published"
         assert "participant_briefing" not in version["definition_json"]
         assert confirmed["briefing_json"]["purpose"]
-        assert confirmed["briefing_json"]["result_recipients"] == (
-            "Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы."
-        )
-        assert confirmed["briefing_json"]["recipient_mapping"] == ["participant", "organization_admin"]
+        assert "result_recipients" not in confirmed["briefing_json"]
+        assert "recipient_mapping" not in confirmed["briefing_json"]
         assert "authorized_recipients" not in confirmed["briefing_json"]
         assert "responsible_contact" not in confirmed["briefing_json"]
         assert confirmed["briefing_json"]["assignment_ref"] == "synthetic-assignment"
         assert version["source_manifest_json"]["questionnaire_revision_id"] == preview["id"]
         assert confirm(
             connection, revision_id=preview["id"], organization_id=10,
-            confirmed_by=2, recipients=["participant", "organization_admin"], recipient_user_ids=[2],
+            confirmed_by=2,
         )["organization_context_version_id"] == confirmed["organization_context_version_id"]
         assert connection.execute("SELECT COUNT(*) AS n FROM questionnaire_response_revisions WHERE id=%s AND status='confirmed'",
                                   (preview["id"],)).fetchone()["n"] == 1
@@ -114,7 +112,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert admin_assignment_readiness(connection, organization_id=10,
                                           assignment_ref="missing-assignment")["early"]["status"] == "data_missing"
         assert confirm(connection, revision_id=preview["id"], organization_id=10,
-                       confirmed_by=2, recipients=["participant"])["id"] == preview["id"]
+                       confirmed_by=2)["id"] == preview["id"]
 
         stale = save_preview(connection, **{
             **kwargs, "idempotency_key": "preview-stale",
@@ -138,10 +136,10 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         }
         assert "questionnaire_revision_id" not in projection["participant_preview"]
         confirm(connection, revision_id=fresh["id"], organization_id=10,
-                confirmed_by=2, recipients=["participant"])
+                confirmed_by=2)
         with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_CONFLICT"):
             confirm(connection, revision_id=stale["id"], organization_id=10,
-                    confirmed_by=2, recipients=["participant"])
+                    confirmed_by=2)
 
         second_kwargs = {
             **kwargs, "assignment_ref": "second-assignment", "idempotency_key": "preview-2",
@@ -163,7 +161,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
                                              (second["id"],)).fetchone()
         assert public_revision(saved_old_draft)["status"] == "ready_for_confirmation"
         confirm(connection, revision_id=second["id"], organization_id=10,
-                confirmed_by=2, recipients=["participant"])
+                confirmed_by=2)
         manual = save_preview(connection, **{
             **kwargs, "assignment_ref": "manual-assignment", "channel": "product_form",
             "raw_text": None, "answers": parse_csv(EXAMPLE.read_text())["answers"],
@@ -171,7 +169,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         })
         assert manual["status"] == "ready_for_confirmation"
         manual_confirmed = confirm(connection, revision_id=manual["id"], organization_id=10,
-                                   confirmed_by=2, recipients=[], recipient_user_ids=[999])
+                                   confirmed_by=2)
         assert manual_confirmed["status"] == "confirmed"
         assert assignment_readiness(connection, organization_id=10,
                                     assignment_ref="manual-assignment")["status"] == "ready"
@@ -218,6 +216,6 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_NOT_FOUND"):
             confirm(
                 connection, revision_id=preview["id"], organization_id=20,
-                confirmed_by=2, recipients=["participant"],
+                confirmed_by=2,
             )
         connection.rollback()

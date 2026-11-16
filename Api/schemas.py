@@ -1103,8 +1103,7 @@ class QuestionnairePreviewRequest(BaseModel):
 
 
 class QuestionnaireConfirmRequest(BaseModel):
-    recipients: list[Literal["participant", "organization_admin"]] = Field(default_factory=list)
-    recipient_user_ids: list[int] = Field(default_factory=list)
+    pass
 
 
 class AdminReportCaseMessage(BaseModel):

@@ -172,9 +172,7 @@ def save_preview(connection, *, organization_id: int, assignment_ref: str, chann
     return dict(row)
 
 
-def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by: int,
-            recipients: list[str] | None = None, recipient_user_ids: list[int] | None = None) -> dict:
-    # Legacy callers may still send recipient choices; current access ignores them.
+def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by: int) -> dict:
     candidate = connection.execute(
         "SELECT assignment_ref FROM questionnaire_response_revisions WHERE id=%s AND organization_id=%s",
         (revision_id, organization_id),
@@ -215,14 +213,11 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     definition.update(answers["C01"])
     definition.update({key: value for key, value in answers["C17"].items()
                        if key in {"case_reality_level", "organization_name_usage_rules", "restrictions"}})
-    access_projection = recipient_access_projection()
     participant_briefing = {
         "purpose": answers["C02a"]["participant_text"],
         "customer_question": answers.get("C02b", {}).get("answer", ""),
         "organizer": answers["C21"]["organizer"],
         "results_usage": answers["C03"]["participant_text"],
-        "result_recipients": access_projection["result_recipients"],
-        "recipient_mapping": access_projection["recipient_mapping"],
         "organization_type": answers["C01"]["organization_type"],
         "provided_participant_fields": PROVIDED_PARTICIPANT_FIELDS,
         "participant_questions": PARTICIPANT_QUESTIONS,
@@ -240,20 +235,14 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
                          "source_checksum": row["source_checksum"]},
     )
     publish_organization_context(connection, version_id=version_id, confirmed_by_user_id=confirmed_by)
-    from Api import m8_report_access
-    m8_report_access.create_revision(
-        connection, questionnaire_revision_id=int(row["id"]), organization_id=organization_id,
-        assignment_ref=str(row["assignment_ref"]),
-        source_author=str(row["source_author"]), confirmed_by=confirmed_by,
-    )
     saved = connection.execute(
         """UPDATE questionnaire_response_revisions SET status='confirmed',confirmed_by_user_id=%s,
            confirmed_at=NOW(),organization_context_version_id=%s,briefing_json=%s::jsonb,
-           answers_json=%s::jsonb,validation_json=%s::jsonb,recipient_mapping_json=%s::jsonb
+           answers_json=%s::jsonb,validation_json=%s::jsonb
            WHERE id=%s RETURNING *""",
         (confirmed_by, version_id, json.dumps(participant_briefing, ensure_ascii=False),
          json.dumps(answers, ensure_ascii=False), json.dumps({"errors": [], "missing": []}),
-         json.dumps(access_projection["recipient_mapping"]), row["id"]),
+         row["id"]),
     ).fetchone()
     return dict(saved)
 
@@ -439,17 +428,8 @@ def template_csv() -> str:
     return output.getvalue()
 
 
-def recipient_access_projection(recipient_mapping: list[str] | None = None) -> dict:
-    """Participant-safe explanation of the current membership-based access rule."""
-    return {
-        "recipient_mapping": ["participant", "organization_admin"],
-        "result_recipients": "Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы.",
-    }
-
-
-def _participant_projection(answers: dict, *, recipient_mapping: list[str] | None = None) -> dict:
+def _participant_projection(answers: dict) -> dict:
     """Fields that a participant may see before starting an assessment."""
-    access = recipient_access_projection(recipient_mapping)
     return {
         "organization_name": str(answers.get("C01", {}).get("name") or ""),
         "organization_type": str(answers.get("C01", {}).get("organization_type") or ""),
@@ -457,7 +437,6 @@ def _participant_projection(answers: dict, *, recipient_mapping: list[str] | Non
         "activity_description": str(answers.get("C01", {}).get("activity_description") or ""),
         "purpose": str(answers.get("C02a", {}).get("participant_text") or ""),
         "results_usage": str(answers.get("C03", {}).get("participant_text") or ""),
-        "result_recipients": access["result_recipients"],
         "organizer": str(answers.get("C21", {}).get("organizer") or ""),
     }
 
@@ -475,7 +454,6 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     item = dict(row)
     normalized = _current_revision_validation(item)
     answers = normalized["answers"]
-    access_projection = recipient_access_projection()
     participant_preview = _participant_projection(answers)
     current_projection = _participant_projection(
         dict((confirmed_row or {}).get("answers_json") or {}),
@@ -494,8 +472,6 @@ def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
         "participant_preview": participant_preview,
         "changes": _projection_changes(current_projection, participant_preview),
         "is_first_publication": confirmed_row is None,
-        "recipient_mapping": access_projection["recipient_mapping"],
-        "recipient_user_ids": [],
         "confirmed_at": item.get("confirmed_at"),
         "effective_confirmed": {
             "id": int(effective["id"]),

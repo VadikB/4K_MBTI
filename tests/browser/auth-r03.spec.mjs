@@ -2132,7 +2132,7 @@ test('ADM19-01 saves early organization data through the versioned product form 
   expect(submittedPayload.idempotency_key).toBeTruthy();
 });
 
-test('REMAIN-02 confirms fixed access rule without invalidating content preview', async ({ page }) => {
+test('REMAIN-02 confirms content preview without recipient controls', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [{ status: 'queued' }] }), {
     ...withConnectedAssessment('Поток B'),
     admins: [{ user_id: 18, email: 'admin@example.test', full_name: 'Admin' }],
@@ -2148,7 +2148,6 @@ test('REMAIN-02 confirms fixed access rule without invalidating content preview'
         organization_name: payload.answers.C01.name,
         purpose: payload.answers.C02a.participant_text,
         results_usage: payload.answers.C03.participant_text,
-        result_recipients: 'Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы.',
         organizer: payload.answers.C21.organizer,
       },
       changes: [{ field: 'purpose', before: 'Старая цель', after: payload.answers.C02a.participant_text }],
@@ -2182,7 +2181,7 @@ test('REMAIN-02 confirms fixed access rule without invalidating content preview'
   await expect(preview).toContainText('Что увидит участник');
   await expect(preview).toContainText('Новая цель участника');
   await expect(preview).toContainText('Старая цель');
-  await expect(preview).toContainText('Готовые отчёты организации видят её действующие администраторы.');
+  await expect(preview).not.toContainText('Получатели результатов');
   await expect(preview.locator('[name="questionnaire_recipient"]')).toHaveCount(0);
   await expect(preview).not.toContainText('Обновите предпросмотр перед подтверждением');
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();

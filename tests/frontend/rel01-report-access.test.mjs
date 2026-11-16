@@ -8,8 +8,8 @@ const report = fs.readFileSync('web/js/screens/report.js', 'utf8');
 const wiring = fs.readFileSync('web/js/wiring.js', 'utf8');
 const main = fs.readFileSync('web/js/main.js', 'utf8');
 
-test('REMAIN-02 uses current organization administrators without a recipient picker', () => {
-  assert.match(organizations, /publishedRevision\.participant_preview\.result_recipients/);
+test('REPORT-02 removes the recipient section from organization forms', () => {
+  assert.doesNotMatch(organizations, /result_recipients/);
   assert.doesNotMatch(organizations, /questionnaire_recipient_user/);
   assert.doesNotMatch(organizations, /name="result_recipients"/);
   assert.doesNotMatch(organizations, /name="responsible_contact"/);

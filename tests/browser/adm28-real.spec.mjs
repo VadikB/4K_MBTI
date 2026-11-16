@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-test('ADM28 real isolated backend: draft, recipients, publication, self-assignment and own journey', async ({ page }) => {
+test('ADM28 real isolated backend: draft, publication, self-assignment and own journey', async ({ page }) => {
   test.setTimeout(150000);
   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit isolated STAND_ADMIN_URL required');
   const root = process.cwd();
@@ -85,11 +85,11 @@ test('ADM28 real isolated backend: draft, recipients, publication, self-assignme
     expect(savedResponse.status()).toBe(200);
     const saved = await savedResponse.json();
     expect(saved.status).toBe('confirmed');
-    expect(saved.recipient_user_ids).toHaveLength(0);
-    expect(saved.recipient_mapping).toEqual(['participant', 'organization_admin']);
+    expect(saved.recipient_user_ids).toBeUndefined();
+    expect(saved.recipient_mapping).toBeUndefined();
     // Legacy payload is accepted but cannot change the current membership rule.
     expect((await page.request.post(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}/confirm`, {
-      data: { recipients: saved.recipient_mapping, recipient_user_ids: saved.recipient_user_ids },
+      data: { recipients: ['participant', 'organization_admin'], recipient_user_ids: [] },
     })).status()).toBe(200);
     expect((await page.request.post(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}/confirm`, {
       data: { recipients: ['participant'], recipient_user_ids: [] },

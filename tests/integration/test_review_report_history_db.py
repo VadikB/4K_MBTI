@@ -15,6 +15,11 @@ def test_history_groups_cycles_and_preserves_all_saved_versions(test_database_ur
         c.execute(psycopg.sql.SQL('SET LOCAL search_path TO {}').format(psycopg.sql.Identifier(schema)))
         c.execute('CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY,cycle_id UUID,owner_user_id BIGINT,usage_scope TEXT,created_at TIMESTAMPTZ DEFAULT NOW())')
         c.execute("ALTER TABLE m5_cycles ADD COLUMN organization_id BIGINT DEFAULT 1, ADD COLUMN status TEXT DEFAULT 'calculated', ADD COLUMN started_at TIMESTAMPTZ, ADD COLUMN collection_closed_at TIMESTAMPTZ DEFAULT NOW()")
+        c.execute('ALTER TABLE m5_cycles ADD COLUMN personalized_profile_id BIGINT')
+        c.execute('CREATE TABLE assessment_personalized_profiles(id BIGINT PRIMARY KEY,assessment_configuration_id BIGINT)')
+        c.execute('CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,name TEXT)')
+        c.execute("INSERT INTO assessment_configurations VALUES(1,'Синтетическая программа')")
+        c.execute('INSERT INTO assessment_personalized_profiles VALUES(1,1)')
         c.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN)')
         c.execute('CREATE TABLE organization_memberships(user_id BIGINT,organization_id BIGINT)')
         c.execute('INSERT INTO organizations VALUES(1,TRUE)')
@@ -27,6 +32,7 @@ def test_history_groups_cycles_and_preserves_all_saved_versions(test_database_ur
         for cycle_db_id,owner,scope in [(1,91,'assessment'),(2,91,'assessment'),(3,92,'assessment'),(4,91,'qa')]:
             cycle,results,rr=uuid4(),uuid4(),uuid4()
             c.execute('INSERT INTO m5_cycles(id,cycle_id,owner_user_id,usage_scope) VALUES(%s,%s,%s,%s)',(cycle_db_id,cycle,owner,scope))
+            c.execute('UPDATE m5_cycles SET personalized_profile_id=1 WHERE id=%s',(cycle_db_id,))
             c.execute('INSERT INTO m8_results VALUES(%s,%s)',(results,cycle_db_id))
             c.execute('INSERT INTO m8_result_revisions VALUES(%s,%s,1)',(rr,results))
             reports=[]

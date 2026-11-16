@@ -40,7 +40,6 @@ def lineage_db(test_database_url):
             'm8_results': 'id bigint,cycle_db_id bigint',
             'm8_result_revisions': 'id bigint,results_id bigint,revision_no int,payload_json jsonb',
             'm8_reports': 'id bigint,result_revision_id bigint,audience text,revision_no int',
-            'm8_cycle_report_recipients': 'cycle_db_id bigint,user_id bigint',
             'm7_cycle_plans': 'id bigint,cycle_db_id bigint,status text',
             'm7_plan_revisions': 'plan_id bigint,revision_no int,content_json jsonb',
             'm5_assessment_situations': 'id bigint,cycle_db_id bigint,status text',
@@ -64,7 +63,7 @@ def lineage_db(test_database_url):
 
 
 def project(c):
-    return {row['assignment_ref']: row for row in c.execute(stage_sql(), (1, [10])).fetchall()}
+    return {row['assignment_ref']: row for row in c.execute(stage_sql(), ([10],)).fetchall()}
 
 
 def test_two_assignments_same_configuration_keep_their_exact_profile_job(lineage_db):

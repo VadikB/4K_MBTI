@@ -38,8 +38,7 @@ TABLES = (
     'assessment_program_allowed_roles', 'organization_assessment_assignments',
     'organization_assessment_assignment_operations', 'organization_assessment_source_bindings',
     'questionnaire_response_revisions', 'assessment_organization_contexts',
-    'assessment_organization_context_versions', 'm8_report_access_revisions',
-    'm8_report_access_recipients',
+    'assessment_organization_context_versions',
     'assessment_personalized_profiles', 'participant_acquaintance_confirmations',
     'assessment_preparation_jobs', 'product_cycle_preparation_operations', 'm5_cycles',
 )

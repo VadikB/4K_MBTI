@@ -402,15 +402,16 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  await info.attach('saved-results',{body:JSON.stringify(results,null,2),contentType:'application/json'});
  const mixed=results.results.observations.filter(x=>['K1.I16','K1.I17'].includes(x.indicator_id));
  expect(mixed.map(x=>x.outcome)).toEqual(['INSUFFICIENT_EVIDENCE','L1']);
- const scored=saved.c67.skills.filter(x=>x.skill_result_exists);
+ const scored=saved.c67.skills.filter(x=>x.score?.value!=null);
  expect(scored.map(x=>x.skill_id)).toEqual(['K1.3','K1.4']);
  for(const skill of scored){expect(skill.outcome).toBe('partial_score');expect(skill.score).toEqual({value:1,numerator:1,denominator:1});expect(skill.skill_level).toBeUndefined();}
  expect(saved.c67.coverage.full_m2.admissible_contributions.numerator).toBe(2);
  expect(saved.c67.coverage.full_m2.admissible_contributions.denominator).toBe(61);
- expect(saved.c67.recommendations).toEqual([]);
+ expect(saved.c67.recommendations).toBeUndefined();
  expect(['ready','failed']).toContain(saved.c67.descriptive.status);
- expect(saved.c67.descriptive.input.cycle_id).toBe(saved.cycle_id);
- expect(saved.c67.descriptive.input.results_revision_id).toBe(saved.results_revision_id);
+ expect(saved.c67.descriptive.input).toBeUndefined();
+ expect(saved.c67.cycle_id).toBe(saved.cycle_id);
+ expect(saved.c67.results_revision_id).toBe(saved.results_revision_id);
  const other=await page.context().browser().newContext();const second=await other.newPage();await login(second,stand,'other@example.test',false,true,true);
  for(const endpoint of [`/users/assessment/m8/cycles/${saved.cycle_id}/results`,`/users/assessment/m8/cycles/${saved.cycle_id}/reports/latest`,`/users/assessment/m8/reports/${saved.id}/pdf`])expect((await second.request.get(stand.url+endpoint)).status()).toBe(403);
  await other.close();
@@ -421,7 +422,7 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
    await page.reload();
    const dir=path.join(stand.dir,kind);fs.mkdirSync(dir);
    const rare=await report(page,{...stand,dir},info);
-   expect(rare.results_revision_id).toBe(saved.results_revision_id);expect(rare.c67.recommendations).toHaveLength(0);
+   expect(rare.results_revision_id).toBe(saved.results_revision_id);expect(rare.c67.recommendations).toBeUndefined();
    expect(rare.c67.skills).toEqual(saved.c67.skills);
    if(kind==='failure')expect(rare.c67.descriptive.status).toBe('failed');
    await expect(page.locator('#report-panel')).not.toContainText('Недопустимое историческое проявление');
@@ -1238,7 +1239,7 @@ test('S10-B interruption and Additional Session preserve Cycle and deadline',asy
  await answer(page,'Уточняю смысл своего предыдущего ответа: сначала проверить условия передачи.');
  await expect(page.locator('#interview-finish-button')).toBeEnabled({timeout:30000});await page.locator('#interview-finish-button').click();
  const saved=await report(page,stand,info);expect(saved.c67.sessions).toHaveLength(2);
- expect(new Set(saved.c67.sessions.map(x=>x.session_id)).size).toBe(2);
+ expect(saved.c67.sessions.every(x=>x.session_id===undefined && x.started_at && x.ended_at)).toBe(true);
  const denied=await page.request.post(`${stand.url}/users/assessment/m7/cycles/${first.cycle_id}/additional-sessions`,{data:{intent_id:second.continuation.intent_id,idempotency_key:'after-close'}});
  expect(denied.status()).toBe(409);
  const newCycle=await page.request.post(stand.url+'/users/assessment/cycles/start',{data:{idempotency_key:randomUUID(),selected_skills:['K1','K2','K3','K4']}});
@@ -1384,7 +1385,7 @@ test('S10-A character branch: actual character Turn, order and no invented recom
  await page.locator('#interview-finish-button').click();
  expect((await situationFinish).ok()).toBeTruthy();
  stand.cli('drain');
- const saved=await report(page,stand,info);expect(saved.c67.recommendations).toHaveLength(0);
+ const saved=await report(page,stand,info);expect(saved.c67.recommendations).toBeUndefined();
  expect(['ready','failed']).toContain(saved.c67.descriptive.status);
 });
 
@@ -1400,10 +1401,11 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  const saved=await report(page,stand,info);
  const results=await (await page.request.get(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/results`)).json();
  expect(results.results.personalized_profile_snapshot.content.user_context.position_or_status).toBe('Эксперт по программам');
- expect(saved.c67.recommendations).toEqual([]);
- const contexts=Object.fromEntries(saved.c67.descriptive.input.context.map(item=>[item.ref,item.text]));
- expect(contexts['user_context.regular_tasks']).toBeTruthy();
- expect(contexts['organization_context.activity_description']).toBe('Техническая проверка');
+ expect(saved.c67.recommendations).toBeUndefined();
+ expect(saved.c67.descriptive.input).toBeUndefined();
+ const profile=results.results.personalized_profile_snapshot.content;
+ expect(profile.user_context.regular_tasks).toBeTruthy();
+ expect(profile.organization_context.activity_description).toBe('Техническая проверка');
  await info.attach('canonical-results',{body:JSON.stringify(results,null,2),contentType:'application/json'});
  const regenerated=await page.request.post(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/reports/regenerate`,{data:{idempotency_key:'review-history-revision'}});
  expect(regenerated.status()).toBe(404);const latest=saved;
@@ -1613,8 +1615,9 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(after.cycles[0].organization_id).toBe(ready.profiles[0].organization_id);
  expect(after.cycles[0].profile_ref_json.checksum).toBe(ready.profiles[0].checksum);
  expect(results.results.personalized_profile_snapshot.content.user_context.position_or_status).toBe('Эксперт по программам');
- expect(first.c67.recommendations).toEqual([]);
- const projection=JSON.stringify(first.c67.descriptive.input.context);
+ expect(first.c67.recommendations).toBeUndefined();
+ expect(first.c67.descriptive.input).toBeUndefined();
+ const projection=JSON.stringify(first.c67);
  expect(projection).not.toContain('participant@example.test');expect(projection).not.toContain('full_name');
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-restart-button').click();
@@ -1638,7 +1641,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  const secondDir=path.join(stand.dir,'G03-second');fs.mkdirSync(secondDir);
  const second=await report(page,{...stand,dir:secondDir},info);
  expect(second.cycle_id).not.toBe(first.cycle_id);expect(second.results_revision_id).not.toBe(first.results_revision_id);
- expect(second.c67.descriptive.input.cycle_id).toBe(second.cycle_id);
+ expect(second.c67.cycle_id).toBe(second.cycle_id);
  const regenerateUrl=`${stand.url}/users/assessment/m8/cycles/${first.cycle_id}/reports/regenerate`;
  const regenerated=await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}});
  expect(regenerated.status()).toBe(404);const revision=first;

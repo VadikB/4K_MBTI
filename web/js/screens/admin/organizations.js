@@ -368,7 +368,7 @@ const restoreAdminOrganizationsDraft = () => {
     });
     syncParticipantSelection(card);
     card.querySelectorAll('.admin-questionnaire-preview').forEach((preview) =>
-      updateAdminOrganizationQuestionnaireRecipients(organizationId, preview));
+      updateAdminOrganizationQuestionnaireConfirmState(organizationId, preview));
   });
 };
 
@@ -827,7 +827,7 @@ export const markAdminOrganizationQuestionnairePreviewStale = (organizationId, a
   });
 };
 
-export const updateAdminOrganizationQuestionnaireRecipients = (organizationId, preview) => {
+export const updateAdminOrganizationQuestionnaireConfirmState = (organizationId, preview) => {
   if (!preview) return;
   const busy = questionnaireConfirmRequestsInFlight.has(assessmentKey(organizationId, preview.dataset.assessmentRef));
   const outcome = questionnaireConfirmOutcomes.get(assessmentKey(organizationId, preview.dataset.assessmentRef));
@@ -1558,7 +1558,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
   if (questionnaireConfirmRequestsInFlight.has(requestKey) ||
     (priorOutcome?.status === 'unknown' && Number(priorOutcome.revisionId) === Number(revisionId))) return;
   questionnaireConfirmRequestsInFlight.add(requestKey);
-  updateAdminOrganizationQuestionnaireRecipients(organizationId, confirmButton?.closest('.admin-questionnaire-preview'));
+  updateAdminOrganizationQuestionnaireConfirmState(organizationId, confirmButton?.closest('.admin-questionnaire-preview'));
   if (confirmButton) {
     confirmButton.disabled = true;
     confirmButton.textContent = 'Подтверждаем…';
@@ -1650,7 +1650,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
       );
       if (currentButton) {
         currentButton.textContent = 'Подтвердить сведения';
-        updateAdminOrganizationQuestionnaireRecipients(organizationId, currentButton.closest('.admin-questionnaire-preview'));
+        updateAdminOrganizationQuestionnaireConfirmState(organizationId, currentButton.closest('.admin-questionnaire-preview'));
       }
     }
   }
@@ -2379,8 +2379,6 @@ export const renderAdminOrganizations = () => {
             ? 'Итог подтверждения неизвестен' : 'Сведения подтверждены') + '</strong>' +
           (publishedRevision ? revisionAttribution(publishedRevision) : '') +
           (!programConfirmed ? '<p>Доступность для текущей программы будет определена после проверки подключения.</p>' : '') +
-          (publishedRevision?.participant_preview?.result_recipients
-            ? '<p>' + escapeHtml(publishedRevision.participant_preview.result_recipients) + '</p>' : '') +
           (confirmationOutcome ? '<p>' + (confirmationOutcome.status === 'unknown'
             ? 'Проверьте сохранение этой редакции перед повторной отправкой.'
             : confirmationOutcome.status === 'refresh_failed' ? 'Не удалось обновить готовность.' : 'Готовность обновляется…') +
@@ -2392,7 +2390,7 @@ export const renderAdminOrganizations = () => {
       const participant = questionnairePreview?.participant_preview || {};
       const fieldLabels = { organization_name: 'Организация', organization_type: 'Тип организации',
         industry: 'Сфера деятельности', activity_description: 'Описание деятельности', purpose: 'Цель оценки',
-        results_usage: 'Использование результатов', result_recipients: 'Доступ к готовым отчётам',
+        results_usage: 'Использование результатов',
         organizer: 'Организатор' };
       const validationLabels = { C01: 'сведения об организации', C02a: 'цель оценки', C03: 'использование результатов',
         C17: 'правила кейсов', C21: 'организатор' };

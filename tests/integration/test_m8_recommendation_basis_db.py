@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from test_m6_evidence_db import database, enqueue, empty_output, _assessment_output
-from Api import m6_repository, m6_assessment_repository, m8_results
+from Api import m6_repository, m6_assessment_repository, m8_results, m8_report_access
 from Api.m6_worker import run_request
 from Api.m6_assessment_worker import run_request as run_assessment
 from Api.m6_assessment_package import load_mechanism
@@ -130,7 +130,9 @@ def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp
         assert historical['c67']['recommendations']==[]
         assert c.execute('SELECT c67_json FROM m8_reports WHERE id=%s',(old_id,)).fetchone()['c67_json']==old
         newer_profile={'role_profile':{'typical_tasks':['Новая задача вне snapshot Cycle']}}
-        c.execute("INSERT INTO assessment_personalized_profiles VALUES(8,'ready',%s::jsonb,'{}',%s)",
+        c.execute("""INSERT INTO assessment_personalized_profiles
+            (id,status,content_json,provenance_json,checksum)
+            VALUES(8,'ready',%s::jsonb,'{}',%s)""",
                   (json.dumps(newer_profile),checksum(newer_profile)))
         fresh=m8_results.create_report(c,results_revision_id=results['revision_id'],audience='assessee',key='new',target_profile=None,created_by=99)
         assert 'Новая задача вне snapshot Cycle' not in json.dumps(fresh,ensure_ascii=False,default=str)
@@ -147,13 +149,13 @@ def test_r11_history_regeneration_failure_and_real_http(database,monkeypatch,tmp
         http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
         url=f"/users/assessment/m8/cycles/{results['cycle_id']}/reports/latest"
         response=http.get(url);assert response.status_code==200
-        assert response.json()['c67']['descriptive']==fresh['c67']['descriptive']
+        assert response.json()['c67']['descriptive']==m8_report_access.public_projection(fresh)['c67']['descriptive']
         # REV-03: selecting a historical report must not silently open the latest revision.
         saved_response=http.get(f"/users/assessment/m8/reports/{report['id']}")
         assert saved_response.status_code==200
         assert saved_response.json()['id']==report['id']
         assert saved_response.json()['revision_no']==1
-        assert saved_response.json()['c67']==report['c67']
+        assert saved_response.json()['c67']==m8_report_access.public_projection(report)['c67']
         with factory() as history_connection:
             history=m8_results.list_owned_reports(history_connection,99)
         assert len(history)==1 and len(history[0]['versions'])==3

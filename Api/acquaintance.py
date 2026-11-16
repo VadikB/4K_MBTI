@@ -12,7 +12,6 @@ from Api import acquaintance_state_store as state_store
 from Api.m7_parameter_resolution import resolve as resolve_parameters
 from Api.questionnaire_sources import assignment_readiness
 from Api.questionnaire_sources import PARTICIPANT_QUESTION_SCHEMA
-from Api.questionnaire_sources import recipient_access_projection
 
 
 REQUIRED_BRIEFING_FIELDS = ("purpose", "organizer", "results_usage")
@@ -109,7 +108,6 @@ def early_readiness(connection, *, user_id: int) -> dict:
                 waiting = _waiting('participant_fields:' + ','.join(missing), university=False, organization=organization)
                 return waiting
             safe_briefing = {key: briefing[key] for key in REQUIRED_BRIEFING_FIELDS}
-            safe_briefing['result_recipients'] = recipient_access_projection()['result_recipients']
             safe_briefing.update({
                 "provided_participant_fields": provided,
                 "questions": briefing["participant_questions"],
@@ -170,7 +168,6 @@ def early_readiness(connection, *, user_id: int) -> dict:
         key: briefing[key]
         for key in REQUIRED_BRIEFING_FIELDS
     }
-    safe_briefing['result_recipients'] = recipient_access_projection()['result_recipients']
     safe_briefing.update({
         "provided_participant_fields": provided,
         "questions": [str(q).strip() for q in questions],

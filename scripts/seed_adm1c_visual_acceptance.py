@@ -276,10 +276,6 @@ def main() -> None:
                        VALUES(%s,%s,1,'assessee','synthetic-visual/1','{}',%s,'ready',%s,%s,%s)""",
                     (report_id, revision_id, digest({"report": key}), f"report-{key}", digest({"request": key}), actor),
                 )
-                connection.execute(
-                    "INSERT INTO m8_cycle_report_recipients(cycle_db_id,user_id) VALUES(%s,%s)",
-                    (cycle_db_id, actor),
-                )
                 connection.execute("SET LOCAL session_replication_role=origin")
 
         assigned("07-assigned", "07 · Оценка назначена")

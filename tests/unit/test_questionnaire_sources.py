@@ -4,7 +4,7 @@ import pytest
 
 from Api.questionnaire_sources import (
     PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, admin_assignment_readiness,
-    normalize_answers, parse_csv, public_revision, recipient_access_projection, template_csv,
+    normalize_answers, parse_csv, public_revision, template_csv,
 )
 
 
@@ -100,7 +100,7 @@ def test_public_preview_has_participant_projection_and_safe_diff():
     assert result["source_author"] == "Синтетический заказчик"
 
 
-def test_recipient_projection_ignores_contradictory_free_text():
+def test_legacy_recipient_fields_are_absent_from_new_projection():
     answers = parse_csv(EXAMPLE.read_text())["answers"]
     answers["C04"] = {"answer": "Результаты увидит только участник"}
     answers["C21"]["responsible_contact"] = "old@example.test"
@@ -108,14 +108,11 @@ def test_recipient_projection_ignores_contradictory_free_text():
            "channel": "csv", "validation_json": {}, "answers_json": answers, "confirmed_at": None,
            "recipient_mapping_json": ["participant", "organization_admin"]}
     result = public_revision(row)
-    assert result["participant_preview"]["result_recipients"] == (
-        "Свой готовый отчёт видит участник. Готовые отчёты организации видят её действующие администраторы."
-    )
+    assert "result_recipients" not in result["participant_preview"]
+    assert "recipient_mapping" not in result
+    assert "recipient_user_ids" not in result
     assert "C04" not in result["answers_json"]
     assert "responsible_contact" not in result["answers_json"]["C21"]
-    assert recipient_access_projection(["participant"])["result_recipients"] == (
-        result["participant_preview"]["result_recipients"]
-    )
 
 
 class _One:
