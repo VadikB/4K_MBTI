@@ -160,6 +160,10 @@ def database(test_database_url, request):
                            execution_rules=json.loads((OUTPUT/'execution-rules.json').read_text()))
             c.execute("INSERT INTO assessment_personalized_profiles VALUES(7,'ready',%s::jsonb,'{}',%s)",
                       (json.dumps({'role_profile':{'code':case['base_role']},'email':'synthetic@example.invalid'}),'c'*64))
+            c.execute('ALTER TABLE assessment_personalized_profiles ADD COLUMN assessment_configuration_id BIGINT')
+            c.execute('CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,name TEXT)')
+            c.execute("INSERT INTO assessment_configurations VALUES(1,'Синтетическая программа')")
+            c.execute('UPDATE assessment_personalized_profiles SET assessment_configuration_id=1 WHERE id=7')
             cycle,session=create_cycle_session_for_case(c,personalized_profile_id=7,case_id=case['case_id'],
                 case_version=case['version'],created_by=99,usage_scope='qa')
             prepared=prepare_assessment_situation(c,assessment_situation_id=str(uuid4()),case_id=case['case_id'],

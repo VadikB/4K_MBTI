@@ -3128,7 +3128,6 @@ def ensure_questionnaire_source_schema(connection) -> None:
             confirmed_at TIMESTAMPTZ,
             organization_context_version_id BIGINT REFERENCES assessment_organization_context_versions(id) ON DELETE RESTRICT,
             briefing_json JSONB,
-            recipient_mapping_json JSONB,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             UNIQUE(uploaded_by_user_id,idempotency_key)
         )

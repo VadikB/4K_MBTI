@@ -24,7 +24,7 @@ def main():
                          row_factory=dict_row) as connection:
         connection.execute('SET TRANSACTION READ ONLY')
         revision = connection.execute('''SELECT id,organization_id,assignment_ref,status,
-            source_author,answers_json,recipient_mapping_json
+            source_author,answers_json
             FROM questionnaire_response_revisions WHERE id=%s''', (args.revision_id,)).fetchone()
         counts = {name: connection.execute('SELECT COUNT(*) AS n FROM ' + table).fetchone()['n']
                   for name, table in {

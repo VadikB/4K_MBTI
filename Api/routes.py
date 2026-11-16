@@ -693,9 +693,10 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         JOIN assessment_configurations configuration ON configuration.id=p.assessment_configuration_id
         JOIN organizations organization ON organization.id=c.organization_id
         LEFT JOIN m7_route_positions position ON position.cycle_db_id=c.id
-        WHERE c.owner_user_id=%s AND c.usage_scope=%s AND organization.is_active=TRUE
-          AND EXISTS (SELECT 1 FROM organization_memberships member
-              WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id)
+        WHERE c.owner_user_id=%s AND c.usage_scope=%s
+          AND (c.collection_closed_at IS NOT NULL OR (organization.is_active=TRUE
+            AND EXISTS (SELECT 1 FROM organization_memberships member
+              WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id)))
         GROUP BY c.id,configuration.name,organization.name
         ORDER BY c.created_at DESC,c.id DESC""", (user.id, usage_scope())).fetchall()
     history_by_cycle = {item['cycle_id']: item for item in m8_results.list_owned_cycles(connection, user.id)}
@@ -1277,10 +1278,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                    pipeline.status AS pipeline_status,
                    ready_report.id AS report_id,
                    ready_report.id IS NOT NULL AS report_ready,
-                   (ready_report.id IS NOT NULL AND EXISTS (
-                       SELECT 1 FROM m8_cycle_report_recipients recipient
-                       WHERE recipient.cycle_db_id=cycle.id AND recipient.user_id=%s
-                   )) AS report_access,
+                   ready_report.id IS NOT NULL AS report_access,
                    'customer' AS report_access_kind
             FROM organization_assessment_assignments assignment
             JOIN LATERAL (
@@ -1392,7 +1390,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             WHERE assignment.organization_id=ANY(%s)
             ORDER BY assignment.id DESC
             """,
-            (int(actor_user_id or (scope.actor_user_id if scope else None) or -1), org_ids),
+            (org_ids,),
         ).fetchall()
         for row in stage_rows:
             row = dict(row)
@@ -9526,7 +9524,8 @@ def read_owned_m8_results(cycle_id: UUID, request: Request):
 def read_owned_m8_report(cycle_id: UUID, request: Request):
     _m8_owned_cycle(request, str(cycle_id))
     try:
-        with get_connection() as connection: return m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+        with get_connection() as connection:
+            return m8_report_access.public_projection(m8_results.read_latest_report(connection, str(cycle_id), 'assessee'))
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
 
 
@@ -9551,7 +9550,7 @@ def _owned_saved_report(request: Request, report_id: UUID):
 
 @router.get('/assessment/m8/reports/{report_id}')
 def read_owned_saved_m8_report(report_id: UUID, request: Request):
-    return _owned_saved_report(request, report_id)
+    return m8_report_access.public_projection(_owned_saved_report(request, report_id))
 
 
 @router.get('/assessment/m8/reports/{report_id}/comparison')
@@ -9621,7 +9620,7 @@ def download_owned_m8_report_comparison(report_id: UUID, request: Request, previ
 
 @router.get('/assessment/m8/reports/{report_id}/pdf')
 def download_owned_m8_report(report_id: UUID, request: Request):
-    report = _owned_saved_report(request, report_id)
+    report = m8_report_access.public_projection(_owned_saved_report(request, report_id))
     pdf = m8_results.render_pdf(report)
     return Response(content=pdf, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 

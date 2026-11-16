@@ -503,20 +503,13 @@ def create_report_detached(*, results_revision_id: str, audience: str, key: str,
         return saved
 
 
-OWNER_CYCLE_SCOPE = """c.owner_user_id=%s AND c.usage_scope='assessment'
-    AND EXISTS (SELECT 1 FROM organization_memberships member
-        JOIN organizations org ON org.id=member.organization_id
-        WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id
-          AND org.is_active=TRUE)"""
+OWNER_CYCLE_SCOPE = "c.owner_user_id=%s AND c.usage_scope='assessment'"
 
 
 def owner_can_read_cycle(connection, cycle_id: str, user_id: int) -> bool:
     from Api.qa_orchestration import permits
     row = connection.execute("""SELECT c.id,c.usage_scope FROM m5_cycles c WHERE c.cycle_id=%s
-        AND c.owner_user_id=%s AND EXISTS (SELECT 1 FROM organization_memberships member
-          JOIN organizations org ON org.id=member.organization_id
-          WHERE member.user_id=c.owner_user_id AND member.organization_id=c.organization_id
-            AND org.is_active=TRUE)""", (UUID(str(cycle_id)), user_id)).fetchone()
+        AND c.owner_user_id=%s""", (UUID(str(cycle_id)), user_id)).fetchone()
     return bool(row and permits(row["usage_scope"]))
 
 
@@ -526,12 +519,15 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
     owner_scope = OWNER_CYCLE_SCOPE.replace("c.usage_scope='assessment'", sql_scope("c"))
     rows = connection.execute("""SELECT c.cycle_id,c.status AS cycle_status,
         c.created_at AS cycle_created_at,c.started_at,c.collection_closed_at,
+        configuration.name AS program_name,
         pipeline.status AS processing_status,pipeline.stage AS processing_stage,
         (to_jsonb(pipeline)->>'error_code') AS processing_error,
         rr.id AS results_revision_id,rr.revision_no AS results_revision_no,
         p.id AS report_id,p.revision_no,p.created_at,
         to_jsonb(p)->'c67_json'->'processing'->>'status' AS report_processing_status
         FROM m5_cycles c
+        LEFT JOIN assessment_personalized_profiles profile ON profile.id=c.personalized_profile_id
+        LEFT JOIN assessment_configurations configuration ON configuration.id=profile.assessment_configuration_id
         LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=c.id
         LEFT JOIN m8_results r ON r.cycle_db_id=c.id
         LEFT JOIN m8_result_revisions rr ON rr.results_id=r.id
@@ -544,6 +540,7 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         cid = str(row['cycle_id'])
         item = cycles.setdefault(cid, {
             'cycle_id':cid, 'cycle_status':row['cycle_status'],
+            'program_name':row['program_name'],
             'cycle_created_at':row['cycle_created_at'], 'started_at':row['started_at'],
             'collection_closed_at':row['collection_closed_at'],
             'processing_status':row['processing_status'], 'processing_stage':row['processing_stage'],
@@ -580,9 +577,15 @@ def list_owned_reports(connection, user_id: int) -> list[dict]:
 
 
 def read_report(connection, report_id) -> dict:
-    row = connection.execute("""SELECT p.*,r.payload_json AS results_payload,x.cycle_db_id,c.cycle_id,c.owner_user_id
+    row = connection.execute("""SELECT p.*,r.payload_json AS results_payload,x.cycle_db_id,c.cycle_id,c.owner_user_id,
+        configuration.name AS program_name,c.collection_closed_at,
+        to_jsonb(participant)->>'full_name' AS participant_name
         FROM m8_reports p JOIN m8_result_revisions r ON r.id=p.result_revision_id
-        JOIN m8_results x ON x.id=r.results_id JOIN m5_cycles c ON c.id=x.cycle_db_id WHERE p.id=%s""",
+        JOIN m8_results x ON x.id=r.results_id JOIN m5_cycles c ON c.id=x.cycle_db_id
+        LEFT JOIN assessment_personalized_profiles profile ON profile.id=c.personalized_profile_id
+        LEFT JOIN assessment_configurations configuration ON configuration.id=profile.assessment_configuration_id
+        LEFT JOIN users participant ON participant.id=c.owner_user_id
+        WHERE p.id=%s""",
         (UUID(str(report_id)),)).fetchone()
     if not row:
         raise ValueError("M8_REPORT_NOT_FOUND")
@@ -604,7 +607,10 @@ def read_report(connection, report_id) -> dict:
                 "recommendations":[], "notices":presented["recommendation_notices"]}
     return {"id": str(row["id"]), "revision_no": row["revision_no"], "audience": row["audience"],
             "status": row["status"], "cycle_id": str(row["cycle_id"]), "owner_user_id": row["owner_user_id"],
-            "results_revision_id": str(row["result_revision_id"]), "created_at": row["created_at"], "c67": presented}
+            "results_revision_id": str(row["result_revision_id"]), "created_at": row["created_at"],
+            "program_name": row.get("program_name"), "collection_closed_at": row.get("collection_closed_at"),
+            "participant_name": row.get("participant_name"),
+            "c67": presented}
 
 
 def _present_report(saved: dict) -> dict:

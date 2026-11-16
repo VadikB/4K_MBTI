@@ -48,16 +48,16 @@ def test_commit_survives_supplementary_readiness_failure(confirmation_client):
     assert connection.committed
     assert response.json()['status'] == 'confirmed'
     assert response.json()['readiness_refresh_required'] is True
-    assert response.json()['recipient_user_ids'] == []
+    assert 'recipient_user_ids' not in response.json()
 
 
-def test_exact_revision_check_reads_current_access_rule_and_checks_scope(confirmation_client):
+def test_exact_revision_check_omits_legacy_recipient_fields_and_checks_scope(confirmation_client):
     client, _ = confirmation_client
     saved = client.get('/users/admin/organizations/3/questionnaire/71')
     assert saved.status_code == 200
     assert saved.json()['id'] == 71
-    assert saved.json()['recipient_mapping'] == ['participant', 'organization_admin']
-    assert saved.json()['recipient_user_ids'] == []
+    assert 'recipient_mapping' not in saved.json()
+    assert 'recipient_user_ids' not in saved.json()
     assert client.get('/users/admin/organizations/4/questionnaire/71').status_code == 403
 
 

@@ -92,7 +92,6 @@ def seed(state):
                 'purpose':'Техническая проверка полного пользовательского пути.',
                 'organizer':'Синтетическая организация E10.2',
                 'results_usage':'Только проверка изолированного тестового контура.',
-                'result_recipients':'Синтетический участник и технический проверяющий.',
                 'provided_participant_fields':['role','position','duties'],
                 'participant_questions':[item['text'] for item in PARTICIPANT_QUESTION_SCHEMA['questions']],
                 'participant_question_schema':PARTICIPANT_QUESTION_SCHEMA,

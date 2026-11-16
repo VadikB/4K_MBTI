@@ -66,8 +66,8 @@ def main(base):
             assert revision['uploaded_by_email'] == expected_emails[uploader]
         if confirmed:
             assert revision['status'] == 'confirmed'
-            assert revision['recipient_mapping'] == ['participant', 'organization_admin']
-            assert revision['recipient_user_ids'] == []
+            assert 'recipient_mapping' not in revision
+            assert 'recipient_user_ids' not in revision
         assert 'C04' not in revision['answers_json']
         assert 'responsible_contact' not in revision['answers_json']['C21']
         assert 'responsible_contact' not in revision['participant_preview']

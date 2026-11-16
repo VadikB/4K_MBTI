@@ -10,7 +10,7 @@ export {
   selectAdminOrganizationAssessment,
   getSelectedAdminOrganizationAssessment,
   markAdminOrganizationQuestionnairePreviewStale,
-  updateAdminOrganizationQuestionnaireRecipients,
+  updateAdminOrganizationQuestionnaireConfirmState,
   retryAdminOrganizationQuestionnaireLoad,
   checkAdminOrganizationConfirmation,
   updateAdminOrganizationProfile,
