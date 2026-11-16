@@ -1,6 +1,6 @@
 # Проверки P4K-REPORT-04
 
-Текущая база `99d225119108526912c44a6b8a6e6012cc289b04`; точный SHA кандидата будет записан после коммита. Синтетические fixtures, один worker, retries=0, без LLM/почты. PostgreSQL 15 на `127.0.0.1:55434`, отдельные `p4k_report04_pytest` для адресных сценариев и `agent4k_pytest` для полного набора; maintenance `postgres` того же собственного кластера. Результаты до переноса обозначены отдельно.
+База `99d225119108526912c44a6b8a6e6012cc289b04`; проверенный продуктовый SHA `2284f352f7102609167c71c43754f505ccfb0b88`. Синтетические fixtures, один worker, retries=0, без LLM/почты. PostgreSQL 15 на `127.0.0.1:55434`, отдельные `p4k_report04_pytest` для адресных сценариев и `agent4k_pytest` для полного набора; maintenance `postgres` того же собственного кластера. Кластер остановлен после проверок. Результаты до переноса обозначены отдельно.
 
 | Критерий | Статус | Доказательство и предел |
 | --- | --- | --- |
@@ -13,7 +13,7 @@
 | Backend | PASS на `99d22511` | `PYTHONDONTWRITEBYTECODE=1 ../../.venv/bin/python -m pytest -q -m 'not integration and not e2e and not llm' --tb=short` — 1126 PASS. Первый sandbox запуск до переноса: 9 FAIL из-за запрета `ps`; с системным доступом PASS. |
 | Integration | PASS на `99d22511` | `STAND_ADMIN_URL=…/postgres TEST_DATABASE_URL=…/agent4k_pytest PYTHONDONTWRITEBYTECODE=1 ../../.venv/bin/python -m pytest -q --run-integration -m integration --tb=short --maxfail=1` — 421 PASS, 2 SKIPPED (явный real-provider acceptance), exit 0, PostgreSQL 15. Ранние прогоны локализовали неполные synthetic fixtures M7/M8/истории; после их исправления заключительный прогон прошёл целиком. CI использует PostgreSQL 16 и остаётся отдельной проверкой. |
 | HTTP e2e | PASS на `99d22511` | `PYTHONDONTWRITEBYTECODE=1 ../../.venv/bin/python -m pytest -q -m e2e tests/e2e --tb=short` — 177 PASS. |
-| `git diff --check` | PASS до финальной записи | Повторить после фиксации документов/сборки. |
+| `git diff --check` | PASS | `git diff --cached --check` до коммита и `git diff origin/main...HEAD --check` после коммита — exit 0. |
 | Ready/CI/production | NOT_RUN | Первый `ready:prepare` обновил remote до `99d22511` и вернул stale-base (exit 1). После fast-forward повторный preflight установил `2.1.16 → 2.1.17` и вернул exit 2: нужен утверждённый `--candidate`. Версия не изменена. Обязательные `frontend`, `pytest`, `full-verification` и review нужны на точном head PR; локальный PASS их не заменяет. |
 
 Изолированная БД и browser preview не содержат реальных персональных данных. Фактический live LLM и содержательная оценка текста вне этой controlled-проверки.
