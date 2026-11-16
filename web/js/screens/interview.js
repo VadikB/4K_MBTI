@@ -1331,11 +1331,30 @@ const waitForProductClarification = async (previousDecisionId = null) => {
 const completeProductCycle = async () => {
   const scope = productInterviewAnswerScope();
   stopProductPresence();
-  const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'complete', reason: 'user_completed_scenario', idempotency_key: createOperationId() }),
-  });
-  await readApiResponse(response, 'Не удалось завершить сбор оценки.');
+  try {
+    const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'complete', reason: 'user_completed_scenario', idempotency_key: createOperationId() }),
+    });
+    await readApiResponse(response, 'Не удалось завершить сбор оценки.');
+  } catch (error) {
+    // A lost response can follow a committed closure. Read the server before
+    // offering any further action; the closed Cycle must never reopen.
+    try {
+      const response = await fetch('/users/assessment/m8/cycles/' + encodeURIComponent(state.productCycleId) + '/status', {
+        credentials: 'same-origin',
+      });
+      const status = await readApiResponse(response, 'Не удалось проверить завершение оценки.');
+      if (!['collection_closed', 'calculation_pending', 'calculated'].includes(status.collection_status)
+          && status.report_status !== 'ready') throw error;
+    } catch (readError) {
+      if (readError === error) throw error;
+      if (!isProductInterviewAnswerCurrent(scope)) return;
+      safeStorage.setItem(STORAGE_KEYS.completionPending, '1');
+      openProcessing();
+      return;
+    }
+  }
   if (!isProductInterviewAnswerCurrent(scope)) return;
   safeStorage.setItem(STORAGE_KEYS.completionPending, '1');
   openProcessing();

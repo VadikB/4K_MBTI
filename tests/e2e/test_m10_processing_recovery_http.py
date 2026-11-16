@@ -37,7 +37,7 @@ def http(monkeypatch):
     monkeypatch.setattr(routes, "require_platform_permission",
         lambda _c, user, _p: None if user else (_ for _ in ()).throw(PermissionError("auth required")))
     monkeypatch.setattr(routes, "_get_admin_scope_or_403",
-        lambda *_args: SimpleNamespace(is_superadmin=False, organization_ids=[11]))
+        lambda *_args: SimpleNamespace(is_superadmin=True, organization_ids=[11]))
     captured = {}
     def request_recovery(_connection, **kwargs):
         captured.update(kwargs)
@@ -59,9 +59,12 @@ def test_recovery_requires_responsible_authority_and_server_actor(http):
     assert captured == {"cycle_id":str(cycle), "idempotency_key":"retry-1", "created_by":7}
 
 
-def test_recovery_rejects_foreign_organization(http):
+def test_recovery_rejects_organization_administrator(http, monkeypatch):
     client, db, captured = http
     db.organization_id = 12
+    # A scoped organization administrator is not a service-recovery actor.
+    monkeypatch.setattr(routes, "_get_admin_scope_or_403",
+        lambda *_args: SimpleNamespace(is_superadmin=False, organization_ids=[11]))
     client.cookies.set(routes.SESSION_COOKIE_NAME, "operator")
     response = client.post(f"/users/admin/assessment/m8/cycles/{uuid4()}/processing-recovery",
                            json={"idempotency_key":"retry-foreign"})

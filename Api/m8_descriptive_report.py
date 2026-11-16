@@ -196,7 +196,13 @@ def generate(results: dict, resolved: dict, *, gateway=None, package_path: Path 
                 "version": package["manifest"]["version"], "checksum": package["package_checksum"]},
                 "input": model_input, "input_checksum": checksum(model_input)}
     if not model_input["bases"]:
-        return {**metadata, "status": "ready", "failure_reason": None, "summary": [], "claims": []}
+        partial = model_input.get("partial_result") or {}
+        summary = [item["message"] for item in partial.get("limitation_reasons", []) if item.get("message")]
+        if not summary and partial.get("messages", {}).get("not_inferred"):
+            summary = [partial["messages"]["not_inferred"]]
+        return {**metadata, "status": "ready" if summary else "failed",
+                "failure_reason": None if summary else "DESCRIPTION_BASIS_MISSING",
+                "summary": summary[:4], "claims": []}
     try:
         if gateway is None:
             from Api.llm.deepseek_gateway import DeepSeekGateway

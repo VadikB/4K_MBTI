@@ -132,7 +132,7 @@ def test_m8_results_c67_and_pdf_contract(client):
     assert report.status_code==201 and report.json()['c67']['contract']=='C-67'
 
 
-def test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded(client):
+def test_owner_regeneration_is_not_available(client):
     http,monkeypatch=client;http.cookies.set(routes.SESSION_COOKIE_NAME,'admin')
     cycle_id=str(uuid4());results_revision=str(uuid4());report_id=str(uuid4());calls=[]
     monkeypatch.setattr(routes,'_m8_owned_cycle',lambda request,cycle:SimpleNamespace(id=7))
@@ -142,11 +142,8 @@ def test_t11_owner_regeneration_is_scoped_and_idempotency_is_forwarded(client):
         calls.append(kwargs);return {'id':report_id,'revision_no':2,'c67':{'recommendations':[]}}
     monkeypatch.setattr(routes.m8_results,'create_report_detached',create)
     response=http.post(f'/users/assessment/m8/cycles/{cycle_id}/reports/regenerate',json={'idempotency_key':'regen-1'})
-    assert response.status_code==201 and response.json()['revision_no']==2
-    assert len(calls)==1
-    assert {k:v for k,v in calls[0].items() if k!='connection_factory'}=={
-        'results_revision_id':results_revision,'audience':'assessee','key':'regen-1',
-        'target_profile':None,'created_by':7}
+    assert response.status_code==404
+    assert not calls
 
 
 def test_substantive_admission_endpoint_rejects_client_decisions_and_requires_admin(client):

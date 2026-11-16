@@ -56,14 +56,12 @@ def test_detached_admission_and_m8_provider_phases_hold_no_db_context(database):
         def chat(self, messages, **kwargs):
             assert active["count"] == 0
             self.calls += 1
-            value = json.loads(messages[1]["content"])
-            if "candidate" in value:
-                return json.dumps({"status": "accepted", "claim_decisions": [], "summary_decisions": []})
-            return json.dumps({"summary": [], "claims": []})
+            from Api.m10_test_gateway import BrowserAcceptanceGateway
+            return BrowserAcceptanceGateway().chat(messages, **kwargs)
 
     description_gateway = DescriptionGateway()
     report = m8_results.create_report_detached(
-        results_revision_id=results["revision_id"], audience="assessee",
+        results_revision_id=results["revision_id"], audience="customer",
         key="r05-detached-report", target_profile=None, created_by=99,
         gateway=description_gateway, connection_factory=monitored_factory,
     )
