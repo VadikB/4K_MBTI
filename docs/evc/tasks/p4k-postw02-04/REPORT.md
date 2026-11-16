@@ -16,8 +16,12 @@ Base: `99d225119108526912c44a6b8a6e6012cc289b04` / `2.1.16`.
 Поручение пользователя: «выполни задание 4» от 16.11.2026. Приложения
 `P4K_POSTW02_04_Preparation_Status.txt` и `REFERENCE_POSTW02_04_05.txt`, rev1.0,
 задают требования. Это источник требований, а прямой запрос пользователя —
-источник полномочия выполнения. Флаги этапа передачи: `branch_push=true`,
-`pr=true` (один draft); `merge/deploy/version_bump/artifact_publish=false`.
+источник полномочия локального выполнения. Передача подготовлена как один draft PR,
+но внешний этап требует отдельного подтверждения: `branch_push/pr=pending_approval`,
+`merge/deploy/version_bump/artifact_publish=false`. Автоматическая проверка безопасности
+отклонила push в `VadikB/4K_MBTI`: прямой запрос задачи не признан достаточным
+разрешением на экспорт исходников, тестов, отчёта и снимков в этот remote. Ветка
+не отправлена, PR не создан; владельцу задан конкретный вопрос о push/draft PR.
 
 Прочитаны AGENTS, README, CONTRIBUTING; EVC agent-workflow, verification-matrix,
 artifact-recipe, decision-register, review-checklist; architecture context/registry;
@@ -140,6 +144,7 @@ worker, один раз на операцию/этап/попытку, а не G
 | Browser actual dist + fake API | PASS:2,1440/390 | Готовность/reload/read error, следующая ситуация/фокус, отчёт/budget/manual GET/ограничения, admin/clipboard; длинный текст без overflow; без registration/full Cycle |
 | Lint / build / diff-check / source hashes | PASS | Сборка существующим esbuild, CI не изменён |
 | Полный synthetic Cycle, реальный provider/письма, Prod | NOT_RUN | Явно исключены постановкой; содержательное качество LLM этим не доказано |
+| GitHub draft PR / быстрый CI | NOT_RUN | Push отклонён auto-review; ожидается явный допуск на конкретный payload/destination |
 | Полный integration/browser CI, release/deploy, human acceptance | NOT_RUN | Следующий этап после Ready и нового номера; локальные узкие проверки не заменяют обязательный CI |
 
 Исправлены выявленные во время разработки ошибки: моковые read-only fixtures
