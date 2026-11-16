@@ -112,6 +112,7 @@ export const state = {
   profileAvatarDraft: null,
   profileSelectedSessionId: null,
   profileHistoryPage: 1,
+  reportHistoryCycles: [],
   profileSkillAssessments: [],
   profileSkillsBySession: {},
   currentScreen: 'auth',
@@ -456,6 +457,7 @@ export const clearAssessmentContext = () => {
   state.pendingUser = null;
   state.dashboard = null;
   state.profileSummary = null;
+  state.reportHistoryCycles = [];
   state.profileAvatarDraft = null;
   state.profileSelectedSessionId = null;
   state.profileSkillAssessments = [];

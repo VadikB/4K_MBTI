@@ -101,6 +101,23 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         assert len(history) == 3 and history[0]['program_name'] == 'Программа A'
         assert next(item for item in history if item['cycle_id'] == str(previous_cycle))['program_name'] == 'Программа B'
         assert history[0]['collection_closed_at'] is not None
+        # A newer technical revision, even with an older creation timestamp, stays
+        # on the same Cycle card. Closure time, not report creation, orders cards.
+        correction_id, correction_report_id = uuid4(), uuid4()
+        connection.execute('UPDATE m5_cycles SET collection_closed_at=now()-interval \'2 days\' WHERE id=1')
+        connection.execute('UPDATE m5_cycles SET collection_closed_at=now()-interval \'1 day\' WHERE id=2')
+        connection.execute('UPDATE m5_cycles SET collection_closed_at=now()-interval \'3 days\' WHERE id=3')
+        connection.execute('INSERT INTO m8_result_revisions VALUES(%s,%s,2)', (correction_id, result_id))
+        connection.execute("""INSERT INTO m8_reports
+            (id,result_revision_id,revision_no,audience,created_at,c67_json)
+            VALUES(%s,%s,1,'assessee',now()-interval '10 days','{}')""",
+            (correction_report_id, correction_id))
+        history = m8_results.list_owned_cycles(connection, 10)
+        assert [item['cycle_id'] for item in history] == [str(previous_cycle), str(cycle_id), str(foreign_cycle)]
+        corrected = history[1]
+        assert corrected['program_name'] == 'Программа A'
+        assert corrected['report_id'] == str(correction_report_id)
+        assert len(corrected['versions']) == 2
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=22)
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=23)
         assert m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=21)

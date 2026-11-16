@@ -722,7 +722,7 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         if cycle['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'}:
             status, label, description, action, button = _participant_cycle_outcome(history)
             completed_assessments.append(ParticipantAssessmentCard(
-                cycle_id=cycle_id, title=cycle['assessment_title'],
+                cycle_id=cycle_id, title=history.get('program_name') or cycle['assessment_title'],
                 organization_name=cycle['organization_name'], status=status,
                 status_label=label, description=description, action=action,
                 button_label=button, completed_cases=completed_cases,

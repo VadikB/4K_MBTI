@@ -4,254 +4,109 @@ import { PROFILE_HISTORY_PAGE_SIZE } from '../config.js';
 import { escapeHtml, formatProfileDate } from '../utils/format.js';
 import { readApiResponse } from '../api.js';
 import { hideAllPanels, syncUrlState } from '../router.js';
-import { loadProfileSummary, renderProfile } from './profile.js';
-import { loadSkillAssessments, openReport, buildProfileSkillsMarkup } from './report.js';
+import { openReport } from './report.js';
 
-export const openProfileHistoryReport = async (sessionId, triggerButton = null) => {
-  if (!state.pendingUser?.id || !sessionId) {
-    return;
-  }
+let historyRequestEpoch = 0;
 
-  const ownerId = state.pendingUser.id; const epoch = state.identityEpoch;
-  const previousSessionId = state.assessmentSessionId;
-  const previousSkillAssessments = state.skillAssessments;
-  const previousReportInterpretation = state.reportInterpretation;
-  const previousButtonText = triggerButton ? triggerButton.textContent : '';
-
-  if (triggerButton) {
-    triggerButton.disabled = true;
-    triggerButton.textContent = 'Открываем...';
-  }
-
-  try {
-    state.assessmentSessionId = sessionId;
-    state.reportCompetencyTab = 'Коммуникация';
-    persistAssessmentContext();
-    await loadSkillAssessments();
-    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId) return;
-    openReport({ returnTarget: 'reports' });
-  } catch (error) {
-    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId) return;
-    state.assessmentSessionId = previousSessionId;
-    state.skillAssessments = previousSkillAssessments;
-    state.reportInterpretation = previousReportInterpretation;
-    persistAssessmentContext();
-    if (triggerButton) {
-      triggerButton.textContent = 'Не удалось открыть';
-      window.setTimeout(() => {
-        triggerButton.disabled = false;
-        triggerButton.textContent = previousButtonText || 'Открыть отчет';
-      }, 1800);
-    }
-    console.error('Failed to open history report', error);
-  }
-};
-
-export const loadProfileSessionSkills = async (sessionId) => {
-  if (!state.pendingUser?.id || !sessionId) {
-    state.profileSkillAssessments = [];
-    renderProfile();
-    return;
-  }
-  const ownerId = state.pendingUser.id; const epoch = state.identityEpoch;
-  const response = await fetch('/users/' + ownerId + '/assessment/' + sessionId + '/skill-assessments');
-  const data = await readApiResponse(response, 'Не удалось загрузить навыки по выбранной попытке.');
-  if (state.pendingUser?.id !== ownerId || state.identityEpoch !== epoch) return;
-  state.profileSkillAssessments = data;
-  state.profileSkillsBySession[sessionId] = data;
-  renderReportsPage();
+const statusLabels = {
+  processing: 'Отчёт готовится',
+  results_ready: 'Результат готов, отчёт готовится',
+  failed: 'Не удалось подготовить отчёт. Ответы сохранены.',
+  report_ready: 'Отчёт доступен',
 };
 
 export const renderReportsPage = () => {
-  const summary = state.profileSummary;
-  profileHistoryList.innerHTML = '';
-  const cycles = summary?.cycle_history || summary?.cycle_reports || [];
-  for (const item of cycles) {
+  const closedStatuses = new Set(['processing', 'results_ready', 'failed', 'report_ready']);
+  const cycles = (state.reportHistoryCycles || []).filter((item) =>
+    item.collection_closed_at || closedStatuses.has(item.status));
+  profileHistoryList.replaceChildren();
+  if (!cycles.length) {
+    profileHistoryList.innerHTML = '<p class="report-empty-state">Предыдущих завершённых оценок пока нет.</p>';
+    return;
+  }
+
+  const totalPages = Math.ceil(cycles.length / PROFILE_HISTORY_PAGE_SIZE);
+  state.profileHistoryPage = Math.min(Math.max(1, state.profileHistoryPage || 1), totalPages);
+  const start = (state.profileHistoryPage - 1) * PROFILE_HISTORY_PAGE_SIZE;
+  for (const item of cycles.slice(start, start + PROFILE_HISTORY_PAGE_SIZE)) {
     const card = document.createElement('article');
     card.className = 'profile-history-accordion cycle-report';
     card.dataset.cycleId = item.cycle_id;
-    const labels = {collecting:'Оценка ещё не завершена', processing:'Результат готовится', results_ready:'Результат готов, отчёт готовится', failed:'Техническая ошибка. Обработка требует восстановления.', report_ready:'Отчёт доступен'};
-    if (!item.report_id) {
-      card.innerHTML = `<h3>${escapeHtml(item.program_name || 'Оценка 4К')} · ${escapeHtml(formatProfileDate(item.cycle_created_at || item.created_at))}</h3><p>${escapeHtml(labels[item.status] || 'Результат пока недоступен')}</p>`;
-      const refresh = document.createElement('button'); refresh.type = 'button'; refresh.className = 'ghost-button'; refresh.textContent = 'Обновить состояние';
-      refresh.addEventListener('click', () => { void openReports(); }); card.appendChild(refresh); profileHistoryList.appendChild(card); continue;
+    const label = item.status === 'report_ready' && item.report_id
+      ? statusLabels.report_ready : statusLabels[item.status] || statusLabels.processing;
+    card.innerHTML = `<h3>${escapeHtml(item.program_name || 'Программа оценки не указана')}</h3>` +
+      `<p class="cycle-report-date">${escapeHtml(formatProfileDate(item.collection_closed_at))}</p>` +
+      `<p class="cycle-report-status">${escapeHtml(label)}</p>`;
+    if (item.status === 'report_ready' && item.report_id) {
+      const open = document.createElement('button');
+      open.type = 'button'; open.className = 'ghost-button cycle-report-open';
+      open.textContent = 'Открыть отчёт';
+      open.addEventListener('click', () => openReport({
+        returnTarget: 'reports', m8CycleId: item.cycle_id, m8ReportId: item.report_id,
+      }));
+      const pdf = document.createElement('a');
+      pdf.className = 'primary-button cycle-report-pdf';
+      pdf.href = `/users/assessment/m8/reports/${encodeURIComponent(item.report_id)}/pdf`;
+      pdf.textContent = 'Скачать PDF';
+      card.append(open, pdf);
+    } else {
+      const refresh = document.createElement('button');
+      refresh.type = 'button'; refresh.className = 'ghost-button';
+      refresh.textContent = 'Обновить состояние';
+      refresh.addEventListener('click', () => void openReports());
+      card.append(refresh);
     }
-    card.innerHTML = `<h3>${escapeHtml(item.program_name || 'Оценка 4К')} · ${escapeHtml(formatProfileDate(item.collection_closed_at || item.cycle_created_at || item.created_at))}</h3><p>Отчёт доступен</p>` +
-      `<label>Сохранённая версия<select aria-label="Версия отчёта">${item.versions.map((v) => `<option value="${escapeHtml(v.report_id)}">Результат ${v.results_revision_no} · отчёт ${v.revision_no}</option>`).join('')}</select></label>` +
-      '<button type="button" class="ghost-button cycle-report-open">Открыть отчёт</button>' +
-      '<a class="primary-button cycle-report-pdf">Скачать PDF</a>';
-    const select = card.querySelector('select');
-    const pdf = card.querySelector('.cycle-report-pdf');
-    const updateDownload = () => { pdf.href = `/users/assessment/m8/reports/${encodeURIComponent(select.value)}/pdf`; };
-    updateDownload(); select.addEventListener('change', updateDownload);
-    card.querySelector('.cycle-report-open').addEventListener('click', () => {
-      openReport({returnTarget: 'reports', m8CycleId: item.cycle_id, m8ReportId: select.value});
-    });
     profileHistoryList.appendChild(card);
   }
-  if (!summary?.history?.length && !cycles.length) {
-    profileHistoryList.innerHTML = '<p class="report-empty-state">Пользователь еще не проходил оценку компетенций.</p>';
-  } else if (summary?.history?.length) {
-    const heading = document.createElement('h3');
-    heading.textContent = 'Архив прежних оценок';
-    profileHistoryList.appendChild(heading);
-    const history = Array.isArray(summary.history) ? summary.history : [];
-    const selectedIndex = state.profileSelectedSessionId
-      ? history.findIndex((item) => item.session_id === state.profileSelectedSessionId)
-      : -1;
-    if (selectedIndex >= 0) {
-      state.profileHistoryPage = Math.floor(selectedIndex / PROFILE_HISTORY_PAGE_SIZE) + 1;
-    }
 
-    const totalPages = Math.max(1, Math.ceil(history.length / PROFILE_HISTORY_PAGE_SIZE));
-    state.profileHistoryPage = Math.min(Math.max(1, state.profileHistoryPage || 1), totalPages);
-    const pageStart = (state.profileHistoryPage - 1) * PROFILE_HISTORY_PAGE_SIZE;
-    const pageItems = history.slice(pageStart, pageStart + PROFILE_HISTORY_PAGE_SIZE);
-
-    pageItems.forEach((item) => {
-      const skills = state.profileSkillsBySession[item.session_id] || [];
-      const expanded = state.profileSelectedSessionId === item.session_id;
-      const card = document.createElement('article');
-      card.className = 'profile-history-accordion' + (expanded ? ' active' : '');
-      const statusVariant = item.status === 'completed' ? 'done' : item.status === 'active' ? 'active' : 'draft';
-      const statusLabel =
-        item.status === 'completed' ? 'Завершена' : item.status === 'active' ? 'В процессе' : 'Черновик';
-      const scoreText = item.overall_score_percent != null ? item.overall_score_percent + '%' : '—';
-      const scoreClass = item.overall_score_percent != null ? '' : ' empty';
-      card.innerHTML =
-        '<button type="button" class="profile-history-item" aria-expanded="' +
-        (expanded ? 'true' : 'false') +
-        '">' +
-        '<div class="profile-history-item-main">' +
-        '<span class="profile-history-item-title">Сессия #' +
-        item.session_id +
-        '</span>' +
-        '<span class="profile-history-item-sub">' +
-        formatProfileDate(item.started_at) +
-        ' · ' +
-        item.completed_cases +
-        '/' +
-        item.total_cases +
-        ' кейсов</span>' +
-        '</div>' +
-        '<span class="profile-history-item-status ' +
-        statusVariant +
-        '">' +
-        statusLabel +
-        '</span>' +
-        '<span class="profile-history-item-score' +
-        scoreClass +
-        '">' +
-        scoreText +
-        '</span>' +
-        '<span class="profile-history-item-chevron" aria-hidden="true"></span>' +
-        '</button>' +
-        '<div class="profile-history-panel' +
-        (expanded ? ' expanded' : '') +
-        '">' +
-        '<div class="profile-history-panel-actions">' +
-        '<button type="button" class="ghost-button compact-ghost profile-history-report-button" data-session-id="' +
-        item.session_id +
-        '">Открыть отчет</button>' +
-        '<button type="button" class="primary-button compact-primary profile-history-download-button" data-session-id="' +
-        item.session_id +
-        '"><img class="button-icon" src="/web/assets/icons/download-icon.svg" alt="" aria-hidden="true">Скачать PDF</button>' +
-        '</div>' +
-        '<div class="profile-history-panel-body">' +
-        (item.expert_comment
-          ? '<div class="profile-history-expert-comment"><span>Комментарий эксперта</span><p>' +
-            escapeHtml(item.expert_comment) +
-            '</p></div>'
-          : '') +
-        (expanded ? buildProfileSkillsMarkup(skills) : '') +
-        '</div>' +
-        '</div>';
-      card.querySelector('.profile-history-item').addEventListener('click', () => {
-        if (expanded) {
-          state.profileSelectedSessionId = null;
-          state.profileSkillAssessments = [];
-          renderReportsPage();
-          return;
-        }
-        state.profileSelectedSessionId = item.session_id;
-        void loadProfileSessionSkills(item.session_id);
-      });
-      const reportButton = card.querySelector('.profile-history-report-button');
-      if (reportButton) {
-        reportButton.addEventListener('click', (event) => {
-          event.stopPropagation();
-          void openProfileHistoryReport(item.session_id, reportButton);
-        });
-      }
-      const pdfButton = card.querySelector('.profile-history-download-button');
-      if (pdfButton) {
-        pdfButton.addEventListener('click', (event) => {
-          event.stopPropagation();
-          if (!state.pendingUser?.id) {
-            return;
-          }
-          window.location.href = '/users/' + state.pendingUser.id + '/assessment/' + item.session_id + '/report.pdf';
-        });
-      }
-      profileHistoryList.appendChild(card);
-    });
-
-    if (totalPages > 1) {
-      const pagination = document.createElement('div');
-      pagination.className = 'profile-history-pagination';
-      pagination.innerHTML =
-        '<button type="button" class="ghost-button compact-ghost profile-history-page-button prev"' +
-        (state.profileHistoryPage <= 1 ? ' disabled' : '') +
-        '>Назад</button>' +
-        '<span class="profile-history-page-indicator">Страница ' +
-        state.profileHistoryPage +
-        ' из ' +
-        totalPages +
-        '</span>' +
-        '<button type="button" class="ghost-button compact-ghost profile-history-page-button next"' +
-        (state.profileHistoryPage >= totalPages ? ' disabled' : '') +
-        '>Вперед</button>';
-
-      const prevButton = pagination.querySelector('.profile-history-page-button.prev');
-      const nextButton = pagination.querySelector('.profile-history-page-button.next');
-      if (prevButton) {
-        prevButton.addEventListener('click', () => {
-          state.profileHistoryPage = Math.max(1, state.profileHistoryPage - 1);
-          renderReportsPage();
-        });
-      }
-      if (nextButton) {
-        nextButton.addEventListener('click', () => {
-          state.profileHistoryPage = Math.min(totalPages, state.profileHistoryPage + 1);
-          renderReportsPage();
-        });
-      }
-      profileHistoryList.appendChild(pagination);
-    }
+  if (totalPages > 1) {
+    const pager = document.createElement('nav');
+    pager.className = 'profile-history-pagination';
+    pager.setAttribute('aria-label', 'Страницы истории оценок');
+    const previous = document.createElement('button');
+    previous.type = 'button'; previous.className = 'ghost-button compact-ghost';
+    previous.textContent = 'Назад'; previous.disabled = state.profileHistoryPage === 1;
+    const next = document.createElement('button');
+    next.type = 'button'; next.className = 'ghost-button compact-ghost';
+    next.textContent = 'Вперёд'; next.disabled = state.profileHistoryPage === totalPages;
+    const position = document.createElement('span');
+    position.className = 'profile-history-page-indicator';
+    position.textContent = `${state.profileHistoryPage} из ${totalPages}`;
+    previous.addEventListener('click', () => { state.profileHistoryPage -= 1; renderReportsPage(); });
+    next.addEventListener('click', () => { state.profileHistoryPage += 1; renderReportsPage(); });
+    pager.append(previous, position, next);
+    profileHistoryList.appendChild(pager);
   }
 };
 
 export const openReports = async () => {
   const ownerId = state.pendingUser?.id;
-  const epoch = state.identityEpoch;
+  const identityEpoch = state.identityEpoch;
+  const requestEpoch = ++historyRequestEpoch;
+  ++state.reportRequestEpoch;
   setCurrentScreen('reports');
   persistAssessmentContext();
   syncUrlState('reports');
   hideAllPanels();
   reportsPanel.classList.remove('hidden');
-  profileHistoryList.innerHTML = '<p class="report-empty-state">Загружаем историю прохождений...</p>';
-
+  profileHistoryList.innerHTML = '<p class="report-empty-state">Загружаем историю прохождений…</p>';
+  const isCurrent = () => requestEpoch === historyRequestEpoch
+    && state.identityEpoch === identityEpoch && state.pendingUser?.id === ownerId
+    && state.currentScreen === 'reports';
   try {
-    await loadProfileSummary();
-    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId || state.currentScreen !== 'reports') return;
-    if (state.profileSelectedSessionId) {
-      await loadProfileSessionSkills(state.profileSelectedSessionId);
-      return;
-    }
-    state.profileSkillAssessments = [];
+    const response = await fetch('/users/assessment/m8/history', { credentials: 'same-origin' });
+    const data = await readApiResponse(response, 'Не удалось загрузить историю оценок.');
+    if (!isCurrent()) return;
+    if (!Array.isArray(data.cycles)) throw new Error('Некорректный ответ истории оценок.');
+    state.reportHistoryCycles = data.cycles;
     renderReportsPage();
   } catch (error) {
-    if (state.identityEpoch !== epoch || state.pendingUser?.id !== ownerId || state.currentScreen !== 'reports') return;
-    profileHistoryList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
+    if (!isCurrent()) return;
+    profileHistoryList.innerHTML = `<p class="report-empty-state" role="alert">${escapeHtml(error.message)}</p>`;
+    const retry = document.createElement('button');
+    retry.type = 'button'; retry.className = 'ghost-button';
+    retry.textContent = 'Повторить загрузку';
+    retry.addEventListener('click', () => void openReports());
+    profileHistoryList.appendChild(retry);
   }
 };
