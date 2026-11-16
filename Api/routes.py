@@ -7337,10 +7337,13 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
     user=_m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
-            _m7_require_explicit_return(connection, owner_user_id=int(user.id),
-                                        assessment_situation_id=str(assessment_situation_id))
+            # Pause/resume check saved receipts before any presence mutation.
+            if payload.action not in {'pause','resume'}:
+                _m7_require_explicit_return(connection, owner_user_id=int(user.id),
+                                            assessment_situation_id=str(assessment_situation_id))
             result = m5_scenario_runtime.transition(connection, assessment_situation_id=str(assessment_situation_id),
-                                                    action=payload.action, reason=payload.reason, request_id=payload.request_id)
+                                                    action=payload.action, reason=payload.reason, request_id=payload.request_id,
+                                                    participant_command=True)
             if payload.action=='scenario_end':
                 handoff=m5_scenario_runtime.build_c45(connection,str(assessment_situation_id),mode='interim')
                 queued=m10_orchestration.enqueue_handoff(connection,handoff_id=str(handoff['handoff_id']),created_by=int(user.id))
@@ -7633,7 +7636,7 @@ def control_owned_m7_cycle(cycle_id:UUID,payload:CycleControlRequest,request:Req
     user=_m7_owned_cycle(request,str(cycle_id))
     try:
         with get_connection() as connection:
-            result=m7_completion.control(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id));connection.commit();return result
+            result=m7_completion.control(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id),participant_command=True);connection.commit();return result
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
@@ -7642,7 +7645,7 @@ def complete_owned_m7_cycle(cycle_id:UUID,payload:CompletionRequest,request:Requ
     user=_m7_owned_cycle(request,str(cycle_id))
     try:
         with get_connection() as connection:
-            result=m7_completion.complete(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id));connection.commit();return result
+            result=m7_completion.complete(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id),participant_command=True);connection.commit();return result
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 

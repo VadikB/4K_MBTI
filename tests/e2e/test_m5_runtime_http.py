@@ -222,10 +222,10 @@ def test_product_turn_and_transition_use_runtime_without_exposing_execution_snap
     monkeypatch.setattr(routes.m5_scenario_runtime, "transition",
                         lambda *_args, **kwargs: {"status": kwargs["action"], "idempotent": False})
     transition = http.post(f"/users/assessment/m5/situations/{situation_id}/transitions", json={
-        "request_id": "pause-1", "action": "pause", "reason": "Пауза участника",
+        "request_id": "terminate-1", "action": "terminate", "reason": "Завершение ситуации",
     })
     assert transition.status_code == 200
-    assert transition.json()["status"] == "pause"
+    assert transition.json()["status"] == "terminate"
 
 
 def test_admin_c45_and_technical_qa_evidence_use_common_runtime(client):

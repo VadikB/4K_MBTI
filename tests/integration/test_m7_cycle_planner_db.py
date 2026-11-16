@@ -720,6 +720,11 @@ def test_interruption_allows_one_additional_session_without_copying_dialogue(db)
         interrupted=complete(c,cycle_id=cycle_id,key='later',action='interrupt_for_continuation',reason='authorized_return',initiated_by=99)
         new_session=create_additional_session(c,cycle_id=cycle_id,intent_id=interrupted['continuation_intent_id'],key='additional-1',created_by=99)
         assert new_session['ordinal']==2 and new_session['status']=='prepared'
+        replay=create_additional_session(c,cycle_id=cycle_id,intent_id=interrupted['continuation_intent_id'],key='additional-1',created_by=99)
+        assert replay['session_id']==new_session['session_id']
+        assert c.execute('SELECT count(*) AS n FROM m5_cycle_sessions').fetchone()['n']==2
+        with pytest.raises(ValueError,match='IDEMPOTENCY_CONFLICT'):
+            create_additional_session(c,cycle_id=cycle_id,intent_id=str(uuid4()),key='additional-1',created_by=99)
         assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n']==1
         assert c.execute('SELECT status FROM m5_assessment_situations WHERE assessment_situation_id=%s',(old_as,)).fetchone()['status']=='closed'
         with pytest.raises(ValueError,match='M7_ADDITIONAL_SESSION_NOT_ALLOWED'):

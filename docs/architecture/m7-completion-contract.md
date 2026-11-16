@@ -58,6 +58,27 @@ Product-owned API предоставляет status, pause/resume, completion и
 Session, проверяя owner и assessment scope. Служебный C-46 и blocking waits доступны
 только существующему superadmin. Legacy `user_sessions` не переименован в M7 Session.
 
+### Уточнение публичной поверхности POSTW02-03 от 16.11.2026
+
+Новые команды участника `pause` и `interrupt_for_continuation` отклоняются
+в Cycle/control, Cycle/completion и применимом AS/transitions с HTTP409 /
+`M7_PARTICIPANT_MANUAL_CONTROL_NOT_ALLOWED`. Внутренние доменные и admin/QA-вызовы
+сохраняют прежний контракт. Клиентский `reason` не определяет доступ к действию.
+Результат уже выполненной команды читается до запрета; ключ с другим содержанием
+даёт `IDEMPOTENCY_CONFLICT`. Для старых AS events содержание сравнивается по
+сохранённым event_type/action и cause.reason, без миграции истории.
+
+Публичный resume — только восстановление подтверждённой паузы текущей незакрытой
+AS: для Cycle нужны сохранённые pause receipt и authorized_pause той же Session,
+для AS-only паузы — сохранённый interaction_paused при active Session/Cycle.
+Проверяются маршрут, причины, оба лимита и отсутствие обязательного return-continue.
+Межкейсовое состояние и блокирующее ожидание не снимаются этой командой.
+Неподтверждённые сочетания дают `M7_PARTICIPANT_RESUME_NOT_ALLOWED`, истёкшие
+лимиты — `M7_TIME_LIMIT_REACHED`, признанное отсутствие —
+`M7_RETURN_EXPLICIT_CONTINUE_REQUIRED`. Pending intent старого interrupted Cycle
+по-прежнему потребляется через Additional Session; новая команда прерывания
+участнику недоступна. Подробные сочетания — в [отчёте](../evc/tasks/p4k-postw02-03/REPORT.md).
+
 Откат останавливает worker и новые команды, сохраняя события, C-45, outbox и C-46.
 Закрытые Cycle не открываются; незавершённую PM-05 обработку можно продолжить по
 сохранённому outbox после восстановления совместимого consumer.

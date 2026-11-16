@@ -858,14 +858,28 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
     return {"turn": dict(turn), "events": events, "idempotent": bool(existing)}
 
 
-def transition(connection, *, assessment_situation_id: str, action: str, reason: str, request_id: str) -> dict:
+def transition(connection, *, assessment_situation_id: str, action: str, reason: str, request_id: str,
+               participant_command: bool = False) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
+    event_types = {"pause": "interaction_paused", "resume": "interaction_resumed", "scenario_end": "scenario_completed",
+                   "terminate": "interaction_terminated", "close": "assessment_situation_closed"}
     existing = connection.execute(
         "SELECT * FROM m5_scenario_events WHERE assessment_situation_db_id=%s AND event_key=%s",
         (row["id"], f"transition:{request_id}"),
     ).fetchone()
     if existing:
+        if participant_command and (existing['event_type'] != event_types.get(action)
+                or existing['cause_json'].get('reason') != reason):
+            raise ValueError('IDEMPOTENCY_CONFLICT')
         return {"status": existing["payload_json"]["status"], "event": dict(existing), "idempotent": True}
+    if participant_command and action == 'pause':
+        raise ValueError('M7_PARTICIPANT_MANUAL_CONTROL_NOT_ALLOWED')
+    if participant_command and action == 'resume':
+        from Api.m7_completion import assert_participant_resume
+        cycle = connection.execute('SELECT * FROM m5_cycles WHERE id=%s', (row['cycle_db_id'],)).fetchone()
+        session = connection.execute('SELECT * FROM m5_cycle_sessions WHERE id=%s FOR UPDATE',
+                                     (row['session_db_id'],)).fetchone()
+        assert_participant_resume(connection,cycle=cycle,session=session,situation=row,resume_session=False)
     transitions = {
         ("active", "pause"): "paused", ("paused", "resume"): "active",
         ("active", "scenario_end"): "scenario_ended", ("active", "terminate"): "terminated",
@@ -885,8 +899,6 @@ def transition(connection, *, assessment_situation_id: str, action: str, reason:
                              material_id=material["material_id"], payload={"condition_available": True})
     timestamps = ", scenario_ended_at=NOW()" if target in {"scenario_ended", "terminated"} else ", closed_at=NOW()" if target == "closed" else ""
     connection.execute(f"UPDATE m5_assessment_situations SET status=%s{timestamps} WHERE id=%s", (target, row["id"]))
-    event_types = {"pause": "interaction_paused", "resume": "interaction_resumed", "scenario_end": "scenario_completed",
-                   "terminate": "interaction_terminated", "close": "assessment_situation_closed"}
     event = append_event(connection, as_db_id=int(row["id"]), event_type=event_types[action], event_key=f"transition:{request_id}",
                          cause={"reason": reason, "from": row["status"], "to": target}, payload={"status": target})
     saved = _state(connection, row, lock=True)
