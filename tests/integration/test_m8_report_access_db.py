@@ -118,6 +118,16 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         assert corrected['program_name'] == 'Программа A'
         assert corrected['report_id'] == str(correction_report_id)
         assert len(corrected['versions']) == 2
+        # The comparison endpoint orders by completion, even if a correction
+        # makes its report revision appear at another creation time.
+        previous_correction_revision, previous_correction_report = uuid4(), uuid4()
+        connection.execute('INSERT INTO m8_result_revisions VALUES(%s,%s,2)',
+                           (previous_correction_revision, previous_result))
+        connection.execute("""INSERT INTO m8_reports
+            (id,result_revision_id,revision_no,audience,created_at,c67_json)
+            VALUES(%s,%s,1,'assessee',now()-interval '10 days','{}')""",
+            (previous_correction_report, previous_correction_revision))
+        connection.execute("UPDATE m5_cycles SET collection_closed_at=now() WHERE id=1")
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=22)
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=23)
         assert m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=21)
@@ -133,6 +143,7 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
                                               'removed': 22, 'foreign': 23}[token])
             if token in {'owner', 'other', 'admin', 'new', 'removed', 'foreign'} else None)
         report_cycles = {str(report_id): cycle_id, str(previous_report): previous_cycle,
+                         str(previous_correction_report): previous_cycle,
                          str(foreign_report): foreign_cycle}
         monkeypatch.setattr(routes.m8_results, 'read_report',
                             lambda _, rid: _report(rid, report_cycles[str(rid)]))
@@ -142,6 +153,8 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         with TestClient(app) as client:
             own = f'/users/assessment/m8/reports/{report_id}'
             admin = f'/users/admin/m8-access/reports/{report_id}'
+            counts_before = tuple(connection.execute(f'SELECT count(*) AS n FROM {table}').fetchone()['n']
+                                  for table in ('m8_results', 'm8_result_revisions', 'm8_reports'))
             assert client.get(own).status_code == client.get(admin).status_code == 401
             client.cookies.set(routes.SESSION_COOKIE_NAME, 'owner')
             assert client.get('/users/assessment/m8/history').json()['reports_total'] == 3
@@ -152,8 +165,14 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
             assert client.get(own + '/pdf').status_code == 200
             comparison = own + '/comparison'
             assert client.get(comparison, params={'previous_report_id': str(previous_report)}).status_code == 200
+            auto = client.get(comparison)
+            assert auto.status_code == 200
+            assert auto.json()['previous']['report_id'] == str(previous_correction_report)
+            assert client.get(comparison, params={'previous_report_id': str(correction_report_id)}).status_code == 403
             assert client.get(own + '/comparison.pdf', params={'previous_report_id': str(previous_report)}).status_code == 200
             assert client.get(comparison, params={'previous_report_id': str(foreign_report)}).status_code == 403
+            assert tuple(connection.execute(f'SELECT count(*) AS n FROM {table}').fetchone()['n']
+                         for table in ('m8_results', 'm8_result_revisions', 'm8_reports')) == counts_before
             client.cookies.set(routes.SESSION_COOKIE_NAME, 'other')
             assert client.get(own).status_code == client.get(own + '/pdf').status_code == 403
             assert client.get(comparison, params={'previous_report_id': str(previous_report)}).status_code == 403

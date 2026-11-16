@@ -9625,9 +9625,9 @@ def compare_owned_saved_m8_report(report_id: UUID, request: Request, previous_re
                 JOIN m8_result_revisions rr ON rr.results_id=r.id
                 JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
                 WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.id<>%s
-                  AND c.collection_closed_at IS NOT NULL AND c.created_at<%s
-                ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC,p.revision_no DESC LIMIT 1""",
-                (user.id, current_scope['organization_id'], current_scope['cycle_db_id'], current_scope['cycle_created_at'])).fetchone()
+                  AND c.collection_closed_at IS NOT NULL AND c.collection_closed_at<%s
+                ORDER BY c.collection_closed_at DESC,c.id DESC,rr.revision_no DESC,p.revision_no DESC LIMIT 1""",
+                (user.id, current_scope['organization_id'], current_scope['cycle_db_id'], current_scope['collection_closed_at'])).fetchone()
         if not previous_scope:
             raise HTTPException(404, detail='PREVIOUS_COMPLETED_REPORT_NOT_FOUND')
         valid_pair = (
@@ -9635,7 +9635,7 @@ def compare_owned_saved_m8_report(report_id: UUID, request: Request, previous_re
             and previous_scope['organization_id'] == current_scope['organization_id']
             and str(previous_scope['cycle_id']) != str(current_scope['cycle_id'])
             and previous_scope['collection_closed_at'] is not None
-            and previous_scope['cycle_created_at'] < current_scope['cycle_created_at']
+            and previous_scope['collection_closed_at'] < current_scope['collection_closed_at']
             and m8_results.owner_can_read_cycle(connection, str(previous_scope['cycle_id']), user.id)
         )
         if not valid_pair:
