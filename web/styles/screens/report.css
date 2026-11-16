@@ -126,8 +126,73 @@
 }
 
 .m8-report-skills {
+  min-width: 0;
+}
+
+.m8-chart-layout {
   display: grid;
-  gap: 12px;
+  grid-template-columns: minmax(0, 2fr) minmax(290px, 0.85fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.m8-chart-column,
+.m8-report-detail { min-width: 0; }
+
+.m8-report-detail { position: sticky; top: 16px; }
+
+.m8-skill-back {
+  margin-bottom: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.m8-skill-list { min-width: 0; }
+.m8-skill-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--panel);
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+}
+.m8-skill-row.is-selected { background: var(--control-bg); }
+.m8-skill-row strong { display: block; }
+.m8-skill-row small { display: block; margin-top: 5px; color: var(--text-muted); }
+.m8-skill-row-value { flex: 0 1 auto; max-width: 100%; font-weight: 600; overflow-wrap: anywhere; }
+.m8-skill-detail {
+  min-width: 0;
+  padding: 20px;
+  border-radius: 8px;
+  background: var(--control-bg);
+}
+.m8-skill-detail h4 { margin: 6px 0 12px; font-size: 20px; }
+.m8-skill-detail h5 { margin: 0 0 6px; font-size: 14px; }
+.m8-skill-narrative { margin: 18px 0; }
+.m8-skill-narrative p { margin: 0; font-size: 14px; line-height: 22px; }
+.m8-evidence-caption { color: var(--text-muted); font-size: 12px; }
+.m8-skill-detail .m8-skill-result { margin: 16px 0; padding: 12px 0; border-block: 1px solid var(--line); }
+.m8-skill-detail .m8-skill-result p { margin-top: 5px; }
+.m8-skill-detail .m8-skill-basis { margin-top: 14px; }
+
+@media (max-width: 1200px) {
+  .m8-chart-layout { grid-template-columns: minmax(0, 1fr); }
+  .m8-report-detail { position: static; }
+}
+
+@media (max-width: 390px) {
+  .m8-skill-row { flex-wrap: wrap; }
 }
 
 .m8-report-recommendations {
@@ -1603,13 +1668,29 @@ body.report-info-modal-open {
     stroke-width: 3;
 }
 
+.m8-radar-selection {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    pointer-events: none;
+}
+
+.m8-report-chart a.is-selected .m8-radar-label,
+.m8-radar-key a.is-selected,
+.m8-score-bar button.is-selected {
+    color: var(--accent);
+    fill: var(--accent);
+    font-weight: var(--fw-semibold);
+    text-decoration: underline;
+}
+
 .m8-radar-hit {
     fill: transparent;
 }
 
 .m8-radar-label {
     fill: var(--text-main);
-    font-size: 15px;
+    font-size: 15.2px;
     font-weight: var(--fw-medium);
     line-height: 1.2;
     pointer-events: auto;
@@ -1740,6 +1821,7 @@ body.report-info-modal-open {
 }
 
 .m8-score-bar button {
+    min-width: 0;
     padding: 0;
     border: 0;
     background: transparent;
@@ -1749,6 +1831,7 @@ body.report-info-modal-open {
     text-decoration: underline;
     text-decoration-color: var(--palette-graphite-200);
     text-underline-offset: 3px;
+    overflow-wrap: anywhere;
     cursor: pointer;
 }
 
@@ -1815,14 +1898,6 @@ body.report-info-modal-open {
         padding: var(--space-2);
     }
 
-    .m8-report-chart.is-overview svg {
-        min-width: 680px;
-    }
-
-    .m8-report-chart.is-overview {
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-    }
     .m8-chart-head {
         align-items: stretch;
         flex-direction: column;
@@ -1830,25 +1905,21 @@ body.report-info-modal-open {
 
     .m8-chart-modes {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        min-width: 0;
     }
 
     .m8-chart-modes button {
+        min-width: 0;
         min-height: 48px;
         padding-inline: 8px;
+        overflow-wrap: anywhere;
     }
 
     .m8-chart-note {
         text-align: left;
     }
 
-    .m8-report-chart.is-overview {
-        display: none;
-    }
-
-    .m8-report-chart.is-overview + .m8-chart-note::before {
-        content: "На телефоне выберите направление для радиальной схемы. Все навыки доступны списком ниже. ";
-    }
 
     .m8-score-bar {
         grid-template-columns: minmax(0, 1fr) 40px;
@@ -2342,4 +2413,38 @@ body.report-info-modal-open {
         height: 100% !important;
         background: linear-gradient(90deg, var(--palette-cyan-500) 0%, var(--palette-cyan-500) 54%, var(--palette-cyan-500) 100%);
     }
+}
+
+.report-panel.is-m8-report { background: var(--participant-canvas); }
+.m8-report-shell > .report-details-card {
+    margin-top: 0;
+    padding: 24px;
+    gap: 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+}
+.m8-report-shell > .m8-report-header { border: 0; background: transparent; padding-inline: 0; }
+.m8-report-shell .report-card-head a { color: var(--participant-focus); white-space: nowrap; }
+.m8-report-header .report-metadata-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+.m8-report-header .report-metadata-list > div { min-width: 0; }
+.m8-report-header .report-metadata-list dt { color: var(--text-muted); font-size: var(--fs-caption); }
+.m8-report-header .report-metadata-list dd { margin: 4px 0 0; overflow-wrap: anywhere; }
+.m8-report-shell #m8-report-limitations { color: var(--text-muted); }
+.m8-report-shell #m8-report-limitations li {
+    border: 0;
+    background: var(--control-bg);
+    box-shadow: none;
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-regular);
+}
+@media (max-width: 720px) {
+    .m8-report-shell > .report-details-card { padding: 16px; }
+    .m8-report-header .report-metadata-list { grid-template-columns: 1fr; }
+    .m8-report-shell .report-card-head { display: block; }
+    .m8-report-shell .report-card-head a { display: inline-block; margin-top: 10px; white-space: normal; }
 }

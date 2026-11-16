@@ -45,15 +45,14 @@ def record_access(connection, *, report_id: str, user_id: int, channel: str) -> 
 def list_customer_reports(connection, *, user_id: int) -> list[dict]:
     rows = connection.execute("""SELECT DISTINCT ON (r.cycle_db_id)
         p.id AS report_id,p.revision_no,p.created_at,c.cycle_id,c.owner_user_id,
-        c.started_at,c.collection_closed_at,configuration.name AS program_name,
+        c.started_at,c.collection_closed_at,
+        COALESCE(p.c67_json->'display'->>'program_name',c.display_snapshot_json->>'program_name') AS program_name,
         to_jsonb(u)->>'full_name' AS full_name,rr.revision_no AS results_revision_no
         FROM m5_cycles c
         JOIN organization_memberships membership ON membership.organization_id=c.organization_id
             AND membership.user_id=%s AND membership.role='admin'
         JOIN organizations organization ON organization.id=c.organization_id AND organization.is_active=TRUE
         JOIN users u ON u.id=c.owner_user_id
-        LEFT JOIN assessment_personalized_profiles profile ON profile.id=c.personalized_profile_id
-        LEFT JOIN assessment_configurations configuration ON configuration.id=profile.assessment_configuration_id
         JOIN m8_results r ON r.cycle_db_id=c.id
         JOIN m8_result_revisions rr ON rr.results_id=r.id
         JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
