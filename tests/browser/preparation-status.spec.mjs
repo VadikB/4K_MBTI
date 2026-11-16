@@ -92,8 +92,8 @@ for (const width of [1440,390]) test(`04 detailed status, reload, read error and
   await expect(page.locator('#onboarding-panel [data-preparation-status]')).toHaveCount(0);
   run.journey.next_action='show_onboarding';
   await page.getByRole('button',{name:'Вернуться к готовности оценки',exact:true}).click();
-  run.journey.next_action='show_dashboard';
   await expect(page.locator('#onboarding-panel [data-preparation-stage]')).toContainText(saved.stage_label);
+  run.journey.next_action='show_dashboard';
   const root=page.locator('#onboarding-panel [data-preparation-status]');
   await expect(root.locator('[data-preparation-duration]')).toContainText('30 мин.');
   await root.locator('summary').click();
