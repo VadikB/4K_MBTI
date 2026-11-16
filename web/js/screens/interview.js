@@ -15,7 +15,6 @@ import {
   interviewSummary,
   interviewCompleteActions,
   interviewCaseBadge,
-  interviewProgressFill,
   interviewCaseTitle,
   interviewCaseStatus,
   interviewTimerBadge,
@@ -130,6 +129,11 @@ export const showInterviewRuntimeError = (error) => {
       : 'Пока не удалось подтвердить исход отправки. Проверьте сохранение кнопкой в сообщении.');
     return;
   }
+  if (productProcessingPending(confirmedProductInterviewSnapshot)) {
+    showProductCommandRecovery(productInterviewAnswerScope(), 'Не удалось проверить состояние. Попробуйте ещё раз.');
+    return;
+  }
+  delete interviewError.dataset.tone;
   showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: isCurrentInterviewDraftSaved() }));
 };
 
@@ -244,11 +248,12 @@ const saveProductCommand = (kind, scope, operationId) => {
   return command;
 };
 const clearProductCommand = (kind, scope) => window.sessionStorage.removeItem(productCommandKey(kind, scope));
-const showProductCommandRecovery = (scope, message) => {
+const showProductCommandRecovery = (scope, message, { failed = false } = {}) => {
   if (!isProductInterviewAnswerCurrent(scope)) return;
   interviewTextarea.disabled = true;
   interviewSubmitButton.disabled = true;
   interviewFinishButton.disabled = true;
+  interviewError.dataset.tone = failed ? 'failed' : 'neutral';
   showError(interviewError, message);
   interviewError.dataset.productCommandRecovery = 'true';
   const button = document.createElement('button');
@@ -260,9 +265,9 @@ const showProductCommandRecovery = (scope, message) => {
     try {
       await loadProductRuntime();
       if (isProductInterviewAnswerCurrent(scope)) button.disabled = false;
-    } catch (error) {
+    } catch (_error) {
       if (isProductInterviewAnswerCurrent(scope)) {
-        showProductCommandRecovery(scope, assessmentRuntimeErrorMessage(error) + ' Повторите проверку.');
+        showProductCommandRecovery(scope, 'Не удалось проверить состояние. Попробуйте ещё раз.');
       }
     }
   });
@@ -318,11 +323,42 @@ const saveProductInterviewAnswer = (operation) => {
   productInterviewPendingAnswers.set(productInterviewRequestKey(operation), { ...operation });
 };
 
+// One wait deadline per saved processing phase; manual reads never renew it.
+const productProcessingBudgets = new Map();
+
 const productInterviewSourcePhase = (snapshot) => JSON.stringify([
   snapshot.current_situation?.status, snapshot.clarification?.id || null,
   snapshot.clarification?.status || null, snapshot.clarification?.response_outcome || null,
   snapshot.clarification?.question_turn_id || null,
 ]);
+
+const productProcessingPending = (snapshot) => snapshot?.current_situation?.status === 'scenario_ended'
+  && !(snapshot.clarification?.status === 'ASK' && !snapshot.clarification.response_outcome)
+  && snapshot.finish_availability?.allowed !== true;
+
+const productProcessingBudget = (snapshot) => {
+  const scope = productInterviewAnswerScope();
+  const phase = snapshot?.clarification?.answer_turn_id || snapshot?.clarification?.id || 'scenario_end';
+  const key = productCommandKey('wait:' + phase, scope);
+  let deadline = productProcessingBudgets.get(key);
+  if (!deadline) {
+    try { deadline = Number(window.sessionStorage.getItem(key)); } catch { /* page cache below */ }
+    if (!Number.isFinite(deadline) || deadline <= 0) deadline = Date.now() + 45000;
+    productProcessingBudgets.set(key, deadline);
+    try { window.sessionStorage.setItem(key, String(deadline)); } catch { /* bounded in this page */ }
+  }
+  return deadline;
+};
+
+const productProcessingFailed = (snapshot) => snapshot?.pipeline?.status === 'failed'
+  || snapshot?.finish_availability?.reason === 'ANALYSIS_FAILED';
+
+const productRuntimePollAllowed = () => !(productProcessingPending(confirmedProductInterviewSnapshot)
+  || readProductCommand('scenario_end', productInterviewAnswerScope())
+  || readProductCommand('finish_situation', productInterviewAnswerScope()))
+  || (!productProcessingFailed(confirmedProductInterviewSnapshot)
+    && confirmedProductInterviewSnapshot?.finish_availability?.reason !== 'WAIT_TECHNICAL'
+    && Date.now() < productProcessingBudget(confirmedProductInterviewSnapshot));
 
 const productInterviewSourceReady = (snapshot) => snapshot.clarification?.status === 'ASK' && !snapshot.clarification.response_outcome
   ? snapshot.current_situation?.status === 'scenario_ended' && Boolean(snapshot.clarification.question_turn_id)
@@ -765,7 +801,11 @@ const renderProductRuntime = (snapshot) => {
   const currentPosition = routePositions.find((position) =>
     position.current_assessment_situation_id === current?.assessment_situation_id)
     || routePositions.find((position) => ['in_progress', 'awaiting_replacement'].includes(position.state));
-  const completedPositions = routePositions.filter((position) => position.state === 'completed').length;
+  const progress = snapshot.participant_progress || {
+    planned_total: snapshot.route?.progress?.total_positions, current_position_no: currentPosition?.position_no,
+  };
+  interviewPanel.classList.remove('return-required');
+  interviewCaseBadge.hidden = Boolean(snapshot.between_situations);
   state.assessmentRuntimeKind = 'cycle';
   state.productCycleId = snapshot.cycle_id;
   state.productAssessmentSituationId = current?.assessment_situation_id || null;
@@ -781,9 +821,9 @@ const renderProductRuntime = (snapshot) => {
   state.productClarificationDecisionId = snapshot.clarification?.id || null;
   state.productCycleStatus = snapshot.status?.collection_status || null;
   state.assessmentRemainingSeconds = serverRemainingSeconds(snapshot.status?.remaining_seconds);
-  state.assessmentCaseNumber = serverPositionCount(currentPosition?.position_no)
-    || (current ? completedPositions + 1 : null);
-  state.assessmentTotalCases = serverPositionCount(snapshot.route?.progress?.total_positions);
+  state.assessmentCaseNumber = serverPositionCount(snapshot.between_situations
+    ? progress.last_completed_position_no : progress.current_position_no) || null;
+  state.assessmentTotalCases = serverPositionCount(progress.planned_total);
   state.assessmentCompletedCases = serverPositionCount(snapshot.route?.progress?.completed_positions);
   state.assessmentCaseTitle = current?.participant_payload?.title || current?.participant_payload?.case_title || 'Оценочная ситуация';
   state.activeInterviewCaseKey = current?.assessment_situation_id || null;
@@ -851,6 +891,7 @@ const renderProductRuntime = (snapshot) => {
   interviewTimerBadge.classList.remove('is-paused');
 
   if (snapshot.between_situations) {
+    interviewFinishButton.classList.add('hidden');
     if (interviewError.dataset.productCommandRecovery === 'true') {
       showError(interviewError, '');
       delete interviewError.dataset.productCommandRecovery;
@@ -859,7 +900,7 @@ const renderProductRuntime = (snapshot) => {
     interviewTimerBadge.classList.add('is-paused');
     interviewMessages.innerHTML = '';
     const card = document.createElement('section'); card.className = 'interview-return-card';
-    const title = document.createElement('h3'); title.textContent = `Ситуация ${state.assessmentCaseNumber} завершена`;
+    const title = document.createElement('h3'); title.textContent = state.assessmentCaseNumber ? `Ситуация ${state.assessmentCaseNumber} завершена` : 'Ситуация завершена';
     const copy = document.createElement('p');
     copy.textContent = 'Ответы сохранены. Сейчас пауза: время на выполнение не расходуется, но общий срок завершения оценки продолжает идти.';
     const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button';
@@ -998,18 +1039,18 @@ const renderProductRuntime = (snapshot) => {
   const waitingQuestion = clarification?.status === 'ASK' && !clarification.response_outcome;
   const closed = ['collection_closed', 'calculation_pending', 'calculated', 'failed'].includes(cycleStatus);
   const suspended = ['paused', 'interrupted'].includes(cycleStatus);
-  interviewTimerBadge.classList.toggle('is-paused', suspended);
+  interviewTimerBadge.classList.toggle('is-paused', suspended || snapshot.blocking_system_wait === true);
   interviewTextarea.disabled = closed || suspended || !current;
   interviewSubmitButton.disabled = closed || suspended || !current;
   interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion
     || (current.status === 'scenario_ended' && snapshot.finish_availability?.allowed !== true);
-  interviewPauseButton?.classList.toggle('hidden', closed || !current || cycleStatus === 'interrupted');
-  interviewAdditionalButton?.classList.toggle('hidden', closed || (!current && cycleStatus !== 'interrupted'));
-  if (interviewPauseButton) interviewPauseButton.textContent = state.productCycleStatus === 'paused' ? 'Продолжить' : 'Пауза';
-  if (interviewAdditionalButton) interviewAdditionalButton.textContent = cycleStatus === 'interrupted'
-    ? 'Продолжить в дополнительной сессии' : 'Прервать и продолжить позже';
+  // Only recovery of an already saved suspension is available here.
+  interviewPauseButton?.classList.toggle('hidden', cycleStatus !== 'paused' || !current);
+  interviewAdditionalButton?.classList.toggle('hidden', cycleStatus !== 'interrupted' || !['pending', 'consumed'].includes(snapshot.continuation?.status));
+  if (interviewPauseButton) interviewPauseButton.textContent = 'Продолжить оценку';
+  if (interviewAdditionalButton) interviewAdditionalButton.textContent = 'Продолжить сохранённое прохождение';
   interviewCaseStatus.textContent = cycleStatus === 'interrupted'
-    ? 'Сессия прервана. Ответы сохранены; можно продолжить в дополнительной сессии в пределах оставшегося времени.'
+    ? 'Прохождение прервано. Ответы сохранены; доступно продолжение в пределах оставшегося времени.'
     : !current
     ? 'Нет доступной оценочной ситуации. Для продолжения требуется подготовка назначения.'
     : closed
@@ -1021,29 +1062,45 @@ const renderProductRuntime = (snapshot) => {
       : current?.status === 'scenario_ended'
         ? snapshot.finish_availability?.allowed === true
           ? 'Уточнение завершено. Можно завершить ситуацию.'
-          : snapshot.pipeline?.status === 'failed' || ['WAIT_TECHNICAL', 'ANALYSIS_FAILED'].includes(snapshot.finish_availability?.reason)
+          : productProcessingFailed(snapshot)
             ? 'Не удалось завершить анализ. Ответы сохранены; ожидаем восстановления обработки.'
             : 'Анализируем последний ответ. Завершение ситуации пока недоступно.'
-        : 'Ответы сохраняются в текущей Assessment Situation.';
+        : 'Ваши сообщения сохраняются в чате этой ситуации.';
   confirmedProductInterviewCanSend = !interviewSubmitButton.disabled && productInterviewSourceReady(snapshot);
   if (!confirmedProductInterviewCanSend) {
     interviewTextarea.disabled = true;
     interviewSubmitButton.disabled = true;
   }
+  if (interviewTextarea.labels?.[0]) interviewTextarea.labels[0].textContent = waitingQuestion
+    ? 'Ваш ответ на уточнение' : 'Ваше сообщение';
+  interviewTextarea.placeholder = productProcessingPending(snapshot)
+    ? 'Дождитесь завершения обработки' : waitingQuestion ? 'Поясните ваше решение…' : 'Введите ответ или вопрос собеседнику…';
   renderProductInterviewAnswerDelivery(snapshot, confirmedProductInterviewCanSend);
   const pendingCommand = readProductCommand('scenario_end', commandScope)
     || readProductCommand('finish_situation', commandScope);
-  if (pendingCommand) {
-    interviewTextarea.disabled = true;
-    interviewSubmitButton.disabled = true;
-    interviewFinishButton.disabled = true;
-    showProductCommandRecovery(commandScope, current?.status === 'scenario_ended'
-      ? 'Основной сценарий завершён. Проверяем уточнение или готовность закрытия ситуации.'
-      : 'Итог завершения ситуации пока не подтверждён. Проверьте состояние той же команды.');
+  if (productProcessingPending(snapshot)) {
+    productProcessingBudget(snapshot);
+    const pendingAnswer = readProductInterviewAnswer();
+    const unknownAnswer = pendingAnswer && !pendingAnswer.accepted && pendingAnswer.status !== 'saved';
+    const saved = !unknownAnswer && (snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee');
+    const message = productProcessingFailed(snapshot)
+      ? 'Не удалось обработать ответ. Проверьте состояние для восстановления обработки.'
+      : snapshot.finish_availability?.reason === 'WAIT_TECHNICAL'
+        ? 'Обработка ожидает восстановления. Проверьте состояние позже.'
+        : saved ? 'Ответ сохранён. Обработка продолжается.'
+          : unknownAnswer ? 'Обработка продолжается. Исход последней отправки пока не подтверждён.'
+            : 'Обработка продолжается.';
+    showProductCommandRecovery(commandScope, message, { failed: productProcessingFailed(snapshot) });
+  } else if (pendingCommand) {
+    showProductCommandRecovery(commandScope, 'Итог завершения ситуации пока не подтверждён. Проверьте состояние той же команды.');
   } else if (interviewError.dataset.productCommandRecovery === 'true') {
     showError(interviewError, '');
     delete interviewError.dataset.productCommandRecovery;
+    delete interviewError.dataset.tone;
   }
+  const hasAnswer = (snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee');
+  interviewFinishButton.disabled ||= !hasAnswer;
+  interviewFinishButton.classList.toggle('hidden', interviewFinishButton.disabled);
   updateInterviewTimer();
   updateInterviewMessagesScrollIndicator();
   return snapshot;
@@ -1102,15 +1159,22 @@ const renderReturnCard = (value) => {
     state.caseOutcomeByNumber = {};
     renderedProductCycleId = value.cycle_id;
   }
+  interviewPanel.classList.remove('between-situations');
+  interviewPanel.classList.add('return-required');
+  interviewCaseBadge.hidden = false;
+  interviewPauseButton?.classList.add('hidden');
+  interviewAdditionalButton?.classList.add('hidden');
+  interviewFinishButton.classList.add('hidden');
   const progress = value.progress || {};
   const completedPositions = serverPositionCount(progress.completed_positions);
-  const totalPositions = serverPositionCount(progress.total_positions);
+  const totalPositions = serverPositionCount(value.participant_progress
+    ? value.participant_progress.planned_total : progress.total_positions);
   state.assessmentRuntimeKind = 'cycle';
   state.productCycleId = value.cycle_id;
   state.productAssessmentSituationId = value.current_assessment_situation_id;
   state.productCycleStatus = value.collection_status;
-  state.assessmentCaseNumber = Number.isInteger(Number(value.position_no))
-    ? Math.max(1, Number(value.position_no)) : completedPositions + 1;
+  state.assessmentCaseNumber = serverPositionCount(value.participant_progress
+    ? value.participant_progress.current_position_no : value.position_no) || null;
   state.assessmentTotalCases = totalPositions;
   state.assessmentCompletedCases = completedPositions;
   state.assessmentCaseTitle = 'Продолжение оценки';
@@ -1129,9 +1193,7 @@ const renderReturnCard = (value) => {
   const remainingCopy = remainingSeconds === null
     ? 'Остаток времени выполнения уточняется.'
     : `Остаток времени выполнения: ${Math.ceil(remainingSeconds / 60)} мин.`;
-  const progressCopy = completedPositions === null || totalPositions === null
-    ? 'Прогресс уточняется.' : `Завершено ${completedPositions} из ${totalPositions}.`;
-  copy.textContent = `${progressCopy} ${remainingCopy}`;
+  copy.textContent = remainingCopy;
   const reason = document.createElement('p');
   reason.textContent = value.allowed_action === 'replace_current'
     ? 'После продолжения текущая незавершённая ситуация будет обновлена. Частичный диалог не переносится, завершённые ситуации сохраняются.'
@@ -1151,7 +1213,7 @@ const renderReturnCard = (value) => {
     try {
       const pending = pendingReturnContinue(value);
       if (value.allowed_action === 'replace_current' && !pending.generationOperationId) {
-        if (!value.provider_config_ref) throw new Error('Для этого Cycle ещё не подключён допущенный provider обновления.');
+        if (!value.provider_config_ref) throw new Error('Подготовка обновлённой ситуации пока недоступна. Обратитесь к организатору.');
         const generatedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId)
           + '/positions/' + encodeURIComponent(value.position_no) + '/equivalent-candidate', {
           method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
@@ -1241,7 +1303,7 @@ const loadReturnState = async ({ generation = productRuntimePollGeneration } = {
 };
 
 export const loadProductRuntime = async ({ generation = productRuntimePollGeneration } = {}) => {
-  if (!state.productCycleId) throw new Error('Cycle runtime не инициализирован.');
+  if (!state.productCycleId) throw new Error('Не удалось определить текущую оценку.');
   const requestGeneration = generation ?? productRuntimePollGeneration;
   const mutationGeneration = productRuntimeMutationGeneration;
   const viewGeneration = getAssessmentViewGeneration();
@@ -1309,21 +1371,18 @@ export const loadProductRuntime = async ({ generation = productRuntimePollGenera
 
 const waitForProductClarification = async (previousDecisionId = null) => {
   const scope = productInterviewAnswerScope();
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < 45000) {
+  const deadline = productProcessingBudget(confirmedProductInterviewSnapshot);
+  while (Date.now() < deadline) {
     if (!isProductInterviewAnswerCurrent(scope)) return null;
     const snapshot = await loadProductRuntime();
-    if (!snapshot) return null;
+    if (!snapshot || !isProductInterviewAnswerCurrent(scope)) return null;
     const decision = snapshot.clarification;
-    if (snapshot.pipeline?.status === 'failed') throw new Error(snapshot.pipeline.error_code || 'Ошибка анализа.');
+    if (productProcessingFailed(snapshot) || snapshot.finish_availability?.reason === 'WAIT_TECHNICAL') return snapshot;
     if ((decision?.status === 'ASK' && !decision.response_outcome && decision.id !== previousDecisionId)
         || snapshot.finish_availability?.allowed === true) return snapshot;
-    if (snapshot.finish_availability?.reason === 'WAIT_TECHNICAL') {
-      throw new Error('Уточнение ожидает восстановления обработки. Ответы сохранены.');
-    }
-    await new Promise((resolve) => window.setTimeout(resolve, PRODUCT_RUNTIME_POLL_MS));
+    await new Promise((resolve) => window.setTimeout(resolve, Math.min(PRODUCT_RUNTIME_POLL_MS, Math.max(0, deadline - Date.now()))));
   }
-  throw Object.assign(new Error('Анализ продолжается. Проверьте состояние позже.'), {
+  throw Object.assign(new Error('Ответ сохранён. Обработка продолжается.'), {
     name: 'ClarificationWaitLimit',
   });
 };
@@ -1365,7 +1424,7 @@ export const finishProductAssessment = async () => {
   let snapshot = await loadProductRuntime();
   if (!snapshot || !isProductInterviewAnswerCurrent(scope)) return;
   const current = snapshot.current_situation;
-  if (!current) throw new Error('Текущая Assessment Situation не найдена.');
+  if (!current) throw new Error('Текущая ситуация не найдена.');
   if (readProductCommand('scenario_end', scope) || readProductCommand('finish_situation', scope)) {
     showProductCommandRecovery(scope, 'Проверяем исход предыдущего завершения ситуации. Повторную команду не отправляем.');
     return;
@@ -1398,8 +1457,8 @@ export const finishProductAssessment = async () => {
     } catch (error) {
       if (isProductInterviewAnswerCurrent(scope)) showProductCommandRecovery(scope,
         error.name === 'ClarificationWaitLimit'
-          ? 'Анализ продолжается. Проверьте состояние позже.'
-          : assessmentRuntimeErrorMessage(error) + ' Проверьте состояние.');
+          ? 'Ответ сохранён. Обработка продолжается.'
+          : 'Не удалось проверить состояние. Попробуйте ещё раз.');
       return;
     }
   }
@@ -1438,7 +1497,8 @@ export const finishProductAssessment = async () => {
 
 export const toggleProductPause = async () => {
   const scope = productInterviewAnswerScope();
-  const action = state.productCycleStatus === 'paused' ? 'resume' : 'pause';
+  if (state.productCycleStatus !== 'paused') return;
+  const action = 'resume';
   const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/control', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, reason: 'user_' + action, idempotency_key: createOperationId() }),
@@ -1452,33 +1512,21 @@ export const createProductAdditionalSession = async () => {
   const scope = productInterviewAnswerScope();
   let snapshot = await loadProductRuntime();
   if (!snapshot || !isProductInterviewAnswerCurrent(scope)) return;
-  if (snapshot.status?.collection_status !== 'interrupted') {
-    if (!(snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee')) {
-      throw new Error('Перед Additional Session сохраните ответ по текущей ситуации.');
-    }
-    stopProductPresence();
-    const interruptedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'interrupt_for_continuation', reason: 'user_requested_additional_session', idempotency_key: createOperationId() }),
-    });
-    await readApiResponse(interruptedResponse, 'Не удалось прервать текущую сессию.');
-    if (!isProductInterviewAnswerCurrent(scope)) return;
-    await loadProductRuntime();
-    return;
-  }
+  if (snapshot.status?.collection_status !== 'interrupted'
+      || !['pending', 'consumed'].includes(snapshot.continuation?.status)) return;
   if (snapshot.continuation?.status === 'pending') {
     const sessionResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/additional-sessions', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ intent_id: snapshot.continuation.intent_id, idempotency_key: createOperationId() }),
     });
-    await readApiResponse(sessionResponse, 'Не удалось создать Additional Session.');
+    await readApiResponse(sessionResponse, 'Не удалось продолжить сохранённое прохождение.');
     if (!isProductInterviewAnswerCurrent(scope)) return;
   }
   const nextResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/next', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ idempotency_key: createOperationId() }),
   });
-  const accepted = await readApiResponse(nextResponse, 'Не удалось выбрать следующую Assessment Situation.');
+  const accepted = await readApiResponse(nextResponse, 'Не удалось открыть следующую ситуацию.');
   if (!isProductInterviewAnswerCurrent(scope)) return;
   if (accepted.operation_id) await waitForProductCyclePreparation(accepted);
   if (!isProductInterviewAnswerCurrent(scope)) return;
@@ -1820,7 +1868,7 @@ const setCaseSidebarOpen = (isOpen) => {
 const placeInterviewTimerBadge = () => {
   if (!interviewTimerBadge || !interviewTitleRow || !interviewCaseHeading) return;
   const compact = Boolean(interviewCompactQuery?.matches);
-  const target = compact ? interviewTitleRow : interviewCaseHeading;
+  const target = compact && !isCycleAssessment() ? interviewTitleRow : interviewCaseHeading;
   if (interviewTimerBadge.parentElement !== target) {
     target.appendChild(interviewTimerBadge);
   }
@@ -1886,22 +1934,16 @@ const disableTextareaAssistFeatures = (element) => {
 const renderInterviewMeta = () => {
   const cycle = isCycleAssessment();
   const total = state.assessmentTotalCases;
-  const completed = state.assessmentCompletedCases;
-  const positionCopy = state.assessmentCaseNumber
-    ? `Ситуация ${state.assessmentCaseNumber} из ${total}` : `Всего ситуаций: ${total}`;
+  const position = state.assessmentCaseNumber;
+  const knownTotal = Number.isInteger(total) && total > 0;
+  const knownPosition = Number.isInteger(position) && position > 0 && (!knownTotal || position <= total);
   interviewCaseBadge.textContent = cycle
-    ? total === null || total === undefined || completed === null || completed === undefined
-      ? 'Прогресс уточняется' : `${positionCopy}\nЗавершено ${completed} из ${total}`
-    : 'Ситуация ' + state.assessmentCaseNumber + ' из ' + total;
+    ? knownPosition && knownTotal ? `${position} ситуация из ${total}`
+      : knownTotal ? `Всего ситуаций: ${total}` : 'Прогресс уточняется'
+    : 'Ситуация ' + position + ' из ' + total;
   interviewCaseTitle.textContent = state.assessmentCaseTitle || 'Оценочная ситуация';
   interviewCaseStatus.textContent = '';
-  if (interviewProgressFill) {
-    const totalCases = Math.max(1, Number(state.assessmentTotalCases || 0));
-    const caseNumber = Math.max(1, Math.min(totalCases, Number(state.assessmentCaseNumber || 1)));
-    const caseProgress = cycle ? Math.min(1, Math.max(0, Number(completed || 0) / totalCases))
-      : (totalCases > 1 ? (caseNumber - 1) / (totalCases - 1) : 1) / 2;
-    interviewProgressFill.style.width = Math.round(caseProgress * 100) + '%';
-  }
+
 };
 
 const renderCaseProgress = (assessmentCompleted = false) => {
@@ -2287,7 +2329,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
     const response = await fetchWithDeadline(operation.endpoint, { method: 'POST',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     let receipt;
-    try { receipt = await readApiResponse(response, 'Не удалось сохранить ответ в Cycle runtime.'); }
+    try { receipt = await readApiResponse(response, 'Не удалось сохранить ответ.'); }
     catch (error) {
       if ([403, 409].includes(Number(error?.status))) error.productTurnPostRejected = true;
       throw error;
@@ -2345,7 +2387,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
 export const resumeProductRuntimePolling = () => {
   clearInterviewTimer();
   state.assessmentTimerId = window.setInterval(() => {
-    if (!document.hidden && !interviewPanel.classList.contains('hidden')) {
+    if (!document.hidden && !interviewPanel.classList.contains('hidden') && productRuntimePollAllowed()) {
       void loadProductRuntime({ generation: productRuntimePollGeneration }).catch(showInterviewRuntimeError);
     }
   }, PRODUCT_RUNTIME_POLL_MS);

@@ -1,0 +1,57 @@
+
+> test:backend:http
+> .venv/bin/python -m pytest -m e2e tests/e2e
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0
+rootdir: <WORKTREE>
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.16.0
+collected 192 items / 15 deselected / 177 selected
+
+tests/e2e/test_adm19_02_self_assignment_http.py ..                       [  1%]
+tests/e2e/test_adm27_assignment_http.py ..................               [ 11%]
+tests/e2e/test_adm28_confirmation_http.py ...                            [ 12%]
+tests/e2e/test_adm28_static_http.py .F.....                              [ 16%]
+tests/e2e/test_arch30_membership_http.py .........                       [ 22%]
+tests/e2e/test_assessment_authoring_http.py ...                          [ 23%]
+tests/e2e/test_assessment_shadow_admin_http.py .....                     [ 26%]
+tests/e2e/test_email_admission_http.py ......                            [ 29%]
+tests/e2e/test_exec03_answer_status_http.py ............                 [ 36%]
+tests/e2e/test_exec03_m5_applied_replay_http.py ....................     [ 48%]
+tests/e2e/test_f01_role_isolation_http.py ........                       [ 52%]
+tests/e2e/test_m10_processing_recovery_http.py ....                      [ 54%]
+tests/e2e/test_m3_role_profile_selection_http.py ....                    [ 57%]
+tests/e2e/test_m5_catalog_http.py ..                                     [ 58%]
+tests/e2e/test_m5_generation_lab_http.py .......                         [ 62%]
+tests/e2e/test_m5_runtime_http.py ...........                            [ 68%]
+tests/e2e/test_m6_evidence_http.py .......                               [ 72%]
+tests/e2e/test_m8_report_access_http.py .                                [ 72%]
+tests/e2e/test_m8_report_comparison_http.py ..                           [ 74%]
+tests/e2e/test_path_start_readiness_http.py ..                           [ 75%]
+tests/e2e/test_postw02_assessment_ui_http.py ..                          [ 76%]
+tests/e2e/test_postw02_dashboard_http.py ......................          [ 88%]
+tests/e2e/test_program01_invitation_revoke_http.py ....                  [ 90%]
+tests/e2e/test_review_profile_http.py ..........                         [ 96%]
+tests/e2e/test_ux_fix20_04_admin_readiness_http.py ......                [100%]
+
+=================================== FAILURES ===================================
+_ test_public_assets_with_cookie_do_not_resolve_user_or_audit_database[/web/dist/main.js] _
+
+path = '/web/dist/main.js'
+
+    @pytest.mark.parametrize('path', ['/', '/web/dist/main.js', '/web/styles/base.css',
+                                     '/web/assets/fonts/onest/Onest-Variable.woff', '/favicons/favicon.ico', '/web/missing-file'])
+    def test_public_assets_with_cookie_do_not_resolve_user_or_audit_database(path):
+        def unavailable_database(_token): raise AssertionError('Public asset attempted session lookup')
+        with TestClient(middleware_app(unavailable_database)) as client:
+            client.cookies.set('agent4k_session_token', 'synthetic-unreachable-session')
+            response = client.get(path)
+>           assert response.status_code == (404 if 'missing' in path else 200)
+E           assert 404 == 200
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/e2e/test_adm28_static_http.py:53: AssertionError
+=========================== short test summary info ============================
+FAILED tests/e2e/test_adm28_static_http.py::test_public_assets_with_cookie_do_not_resolve_user_or_audit_database[/web/dist/main.js]
+================ 1 failed, 176 passed, 15 deselected in 11.41s =================

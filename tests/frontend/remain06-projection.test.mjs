@@ -11,12 +11,13 @@ test('F18 pending entry discards local placeholder progress and time until serve
 });
 
 for (const completed of [undefined, null, '0']) {
-  test(`F18 missing or invalid completed count ${String(completed)} stays unknown`, () => {
+  test(`F18 missing or invalid completed count ${String(completed)} does not hide known N/M`, () => {
     const h = createInterviewHarness({ meta: true });
     const saved = h.snapshot();
     saved.route.progress = { total_positions: 8, completed_positions: completed };
+    saved.participant_progress = { planned_total: 8, current_position_no: 3 };
     h.subject.renderProductRuntime(saved);
-    assert.equal(h.badge.textContent, 'Прогресс уточняется');
+    assert.equal(h.badge.textContent, '3 ситуация из 8');
   });
 }
 
@@ -26,8 +27,8 @@ for (const total of [8, 3]) {
     h.subject.renderReturnCard({ cycle_id: 'cycle-a', current_assessment_situation_id: 'as-a',
       position_no: 1, collection_status: 'active', allowed_action: 'continue_current', remaining_seconds: 123,
       progress: { total_positions: total, completed_positions: 0 } });
-    assert.equal(h.badge.textContent, `Ситуация 1 из ${total}\nЗавершено 0 из ${total}`);
-    assert.match(h.messages.firstChild.children[1].textContent, new RegExp(`Завершено 0 из ${total}`));
+    assert.equal(h.badge.textContent, `1 ситуация из ${total}`);
+    assert.doesNotMatch(h.messages.firstChild.children[1].textContent, /Завершено/);
     assert.equal(h.timer.textContent, 'Пауза · 02:03');
   });
   test(`F18 frozen plan${total}, catalog9, materialized1: current and completed use server facts`, () => {
@@ -37,13 +38,13 @@ for (const total of [8, 3]) {
     saved.route = { positions: [{ position_no: 1, current_assessment_situation_id: 'as-a', state: 'in_progress' }],
       progress: { total_positions: total, completed_positions: 0 } };
     h.subject.renderProductRuntime(saved);
-    assert.equal(h.badge.textContent, `Ситуация 1 из ${total}\nЗавершено 0 из ${total}`);
+    assert.equal(h.badge.textContent, `1 ситуация из ${total}`);
     // The current position never implies that all earlier positions completed.
     saved.route.positions[0].position_no = 3;
     saved.route.progress.completed_positions = 1;
     h.subject.renderProductRuntime(saved);
-    assert.equal(h.badge.textContent, `Ситуация 3 из ${total}\nЗавершено 1 из ${total}`);
-    assert.equal(h.context.interviewProgressFill.style.width, Math.round(100 / total) + '%');
+    assert.equal(h.badge.textContent, `3 ситуация из ${total}`);
+    assert.equal(h.context.interviewProgressFill.style.width, undefined);
   });
 }
 

@@ -1,0 +1,269 @@
+FF.............................                                          [100%]
+=================================== FAILURES ===================================
+____ test_runtime_and_return_use_same_validated_plan_not_materialized_count ____
+
+runtime = (<starlette.testclient.TestClient object at 0x10c69f080>, <test_postw02_assessment_ui_http.runtime.<locals>.Storage ob...d=%s AND p.state IN('not_presented','in_progress','awaiting_replacement')\n           ORDER BY p.position_no LIMIT 1"])
+
+    def test_runtime_and_return_use_same_validated_plan_not_materialized_count(runtime):
+        client, db, cycle, _position, _saved, queries = runtime
+        expected = participant_dashboard.cycle_progress(db, cycle)
+        for suffix in [f'/assessment/cycles/{cycle["cycle_id"]}/runtime', f'/assessment/m7/cycles/{cycle["cycle_id"]}/return-state']:
+>           response = client.get('/users' + suffix)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/e2e/test_postw02_assessment_ui_http.py:70:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:1112: in get
+    return self.request(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:518: in request
+    return super().request(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:796: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:993: in send
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:987: in send
+    response.read()
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_models.py:877: in read
+    self._content = b"".join(self.iter_bytes())
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_models.py:893: in iter_bytes
+    for raw_bytes in self.iter_raw():
+                     ^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_models.py:948: in iter_raw
+    for raw_stream_bytes in self.stream:
+                            ^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:143: in __iter__
+    yield from self._stream
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:384: in iter_body
+    exit_stack.close()
+/opt/homebrew/Cellar/python@3.12/3.12.16/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:618: in close
+    self.__exit__(None, None, None)
+/opt/homebrew/Cellar/python@3.12/3.12.16/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:610: in __exit__
+    raise exc_details[1]
+/opt/homebrew/Cellar/python@3.12/3.12.16/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:595: in __exit__
+    if cb(*exc_details):
+       ^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:399: in close_app
+    raise exception
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/from_thread.py:272: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:366: in run_app
+    await self.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/applications.py:1194: in __call__
+    await super().__call__(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py:151: in __call__
+    await self.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/routing.py:683: in __call__
+    await self.middleware_stack(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:2811: in app
+    await route.handle(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:1839: in handle
+    await self.original_router.handle(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:2894: in handle
+    await included_router._handle_selected(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:1865: in _handle_selected
+    await original_route.handle(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:1328: in handle
+    await effective_context.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:166: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:152: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:745: in app
+    raw_response = await run_endpoint_function(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:374: in run_endpoint_function
+    return await run_in_threadpool(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2779: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1124: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py:244: in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+Api/routes.py:7464: in read_owned_assessment_runtime
+    return m10_product_flow.read_runtime(connection,cycle_id=str(cycle_id))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Api/m10_product_flow.py:380: in read_runtime
+    trace = participant_trace(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+trace = {'turns': [], 'events': []}
+
+    def participant_trace(trace: dict) -> dict:
+        """Only delivered dialogue/material; no execution envelope, hidden cards or AI reasoning."""
+        if trace.get('status') in {'prepared', 'admitted', 'rejected'}:
+            return {'assessment_situation_id': trace['assessment_situation_id'],
+                    'status': trace['status'], 'turns': [], 'events': []}
+>       return {'assessment_situation_id':trace['assessment_situation_id'],'status':trace['status'],
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            'turns':[{**{k:x[k] for k in ('turn_id','sequence_no','speaker_type','speaker_id','content_text')},
+                      'speaker_name':x.get('speaker_name')} for x in trace['turns']],
+            'events':[{k:x[k] for k in ('event_id','event_type','sequence_no','material_id','payload_json')}
+                      for x in trace['events'] if x['event_type'] in ('material_disclosed','mandatory_update')]}
+E       KeyError: 'assessment_situation_id'
+
+Api/m10_product_flow.py:460: KeyError
+_ test_unpresented_or_untrusted_position_stays_unknown_and_blocking_wait_is_server_fact _
+
+runtime = (<starlette.testclient.TestClient object at 0x10c94e5a0>, <test_postw02_assessment_ui_http.runtime.<locals>.Storage ob...d=%s AND p.state IN('not_presented','in_progress','awaiting_replacement')\n           ORDER BY p.position_no LIMIT 1"])
+
+    def test_unpresented_or_untrusted_position_stays_unknown_and_blocking_wait_is_server_fact(runtime):
+        client, db, cycle, position, saved, _queries = runtime
+        position['started_at'] = None
+        db.blocking = False
+        url = f'/users/assessment/cycles/{cycle["cycle_id"]}/runtime'
+>       value = client.get(url).json()
+                ^^^^^^^^^^^^^^^
+
+tests/e2e/test_postw02_assessment_ui_http.py:90:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:1112: in get
+    return self.request(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:518: in request
+    return super().request(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:796: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:993: in send
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:987: in send
+    response.read()
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_models.py:877: in read
+    self._content = b"".join(self.iter_bytes())
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_models.py:893: in iter_bytes
+    for raw_bytes in self.iter_raw():
+                     ^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_models.py:948: in iter_raw
+    for raw_stream_bytes in self.stream:
+                            ^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/httpx2/_client.py:143: in __iter__
+    yield from self._stream
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:384: in iter_body
+    exit_stack.close()
+/opt/homebrew/Cellar/python@3.12/3.12.16/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:618: in close
+    self.__exit__(None, None, None)
+/opt/homebrew/Cellar/python@3.12/3.12.16/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:610: in __exit__
+    raise exc_details[1]
+/opt/homebrew/Cellar/python@3.12/3.12.16/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py:595: in __exit__
+    if cb(*exc_details):
+       ^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:399: in close_app
+    raise exception
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/from_thread.py:272: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/testclient.py:366: in run_app
+    await self.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/applications.py:1194: in __call__
+    await super().__call__(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py:151: in __call__
+    await self.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/routing.py:683: in __call__
+    await self.middleware_stack(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:2811: in app
+    await route.handle(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:1839: in handle
+    await self.original_router.handle(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:2894: in handle
+    await included_router._handle_selected(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:1865: in _handle_selected
+    await original_route.handle(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:1328: in handle
+    await effective_context.app(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:166: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:152: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:745: in app
+    raw_response = await run_endpoint_function(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/routing.py:374: in run_endpoint_function
+    return await run_in_threadpool(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2779: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1124: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../p4k-w02-01/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py:244: in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+Api/routes.py:7464: in read_owned_assessment_runtime
+    return m10_product_flow.read_runtime(connection,cycle_id=str(cycle_id))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Api/m10_product_flow.py:380: in read_runtime
+    trace = participant_trace(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+trace = {'turns': [], 'events': []}
+
+    def participant_trace(trace: dict) -> dict:
+        """Only delivered dialogue/material; no execution envelope, hidden cards or AI reasoning."""
+        if trace.get('status') in {'prepared', 'admitted', 'rejected'}:
+            return {'assessment_situation_id': trace['assessment_situation_id'],
+                    'status': trace['status'], 'turns': [], 'events': []}
+>       return {'assessment_situation_id':trace['assessment_situation_id'],'status':trace['status'],
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            'turns':[{**{k:x[k] for k in ('turn_id','sequence_no','speaker_type','speaker_id','content_text')},
+                      'speaker_name':x.get('speaker_name')} for x in trace['turns']],
+            'events':[{k:x[k] for k in ('event_id','event_type','sequence_no','material_id','payload_json')}
+                      for x in trace['events'] if x['event_type'] in ('material_disclosed','mandatory_update')]}
+E       KeyError: 'assessment_situation_id'
+
+Api/m10_product_flow.py:460: KeyError
+=========================== short test summary info ============================
+FAILED tests/e2e/test_postw02_assessment_ui_http.py::test_runtime_and_return_use_same_validated_plan_not_materialized_count
+FAILED tests/e2e/test_postw02_assessment_ui_http.py::test_unpresented_or_untrusted_position_stays_unknown_and_blocking_wait_is_server_fact
+2 failed, 29 passed in 3.74s

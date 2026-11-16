@@ -257,11 +257,9 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
     policy = _saved_policy(connection, cycle)
     timing = read_cycle(connection, cycle_id)
     route = replacement_metadata(connection, cycle["id"])
-    plan = connection.execute("""SELECT r.content_json FROM m7_cycle_plans p
-        JOIN LATERAL(SELECT content_json FROM m7_plan_revisions
-            WHERE plan_id=p.id ORDER BY revision_no DESC LIMIT 1) r ON TRUE
-        WHERE p.cycle_db_id=%s""", (cycle["id"],)).fetchone()
-    planned_positions = len((plan["content_json"] or {}).get("route", [])) if plan else None
+    from Api.participant_dashboard import cycle_progress
+    participant_progress = cycle_progress(connection, cycle)
+    planned_positions = participant_progress["planned_total"]
     event = connection.execute("SELECT * FROM m7_return_absence_events WHERE cycle_db_id=%s AND status='recognized' ORDER BY created_at DESC LIMIT 1",
                                (cycle["id"],)).fetchone()
     now = evaluated_at or datetime.now(timezone.utc)
@@ -304,8 +302,7 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
             action = "replace_current" if ready else "replacement_candidate_required"
         event_id = str(event["id"])
     progress = {**route["progress"]}
-    if planned_positions is not None:
-        progress["total_positions"] = planned_positions
+    progress["total_positions"] = planned_positions
     return {"cycle_id": cycle_id, "collection_status": cycle["status"],
             "position_no": position["position_no"],
             "current_assessment_situation_id": str(situation["assessment_situation_id"]),
@@ -313,6 +310,7 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
             "absence_event_id": event_id, "recognized_absence_seconds": absence_seconds,
             "allowed_action": action, "remaining_seconds": timing["remaining_seconds"],
             "calendar_deadline": timing["calendar_deadline"], "progress": progress,
+            "participant_progress": participant_progress,
             "planned_positions": planned_positions,
             "planned_total": planned_positions is not None,
             "heartbeat_interval_seconds": int(policy["heartbeat_interval_seconds"]),

@@ -1,0 +1,16 @@
+
+> test:backend
+> .venv/bin/python -m pytest -m "not integration and not e2e and not llm" --lf
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0
+rootdir: <WORKTREE>
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0, anyio-4.16.0
+collected 9 items
+run-last-failure: rerun previous 9 failures (skipped 215 files)
+
+tests/unit/test_synthetic_limits.py .........                            [100%]
+
+============================== 9 passed in 5.00s ===============================

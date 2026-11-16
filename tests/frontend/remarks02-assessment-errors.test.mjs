@@ -45,6 +45,8 @@ const setup = () => {
 };
 
 const installActionHandlers = (h, module = h.subject) => {
+  // Pause handler is now recovery-only; exercise an existing saved suspension.
+  h.state.productCycleStatus = 'paused';
   h.context.loadInterview = async () => module;
   h.context.window.confirm = () => true;
   h.context.interviewSubmitLabel = { textContent: '' };
@@ -61,6 +63,7 @@ test('F07 actual Finish/Pause/Additional handlers normalize rejected network cal
   for (const action of ['finish', 'pause', 'additional']) {
     const h = setup();
     const handlers = installActionHandlers(h);
+    if (action === 'pause') h.state.productCycleStatus = 'paused';
     h.setFetch(async () => { throw new TypeError('Failed to fetch'); });
     await handlers[action]();
     assert.match(h.errors.at(-1), /Проверьте соединение/);

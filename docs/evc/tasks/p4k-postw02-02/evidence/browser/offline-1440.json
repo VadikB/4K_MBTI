@@ -1,0 +1,26 @@
+{
+  "viewport": 1440,
+  "scrollWidth": 1440,
+  "input": {
+    "x": 160,
+    "y": 828,
+    "width": 1120,
+    "height": 180,
+    "bottom": 1008
+  },
+  "messages": {
+    "x": 160,
+    "y": 84,
+    "width": 1120,
+    "height": 580,
+    "bottom": 664
+  },
+  "font": "Onest, sans-serif",
+  "feedbackColor": "rgb(34, 44, 48)",
+  "visibleControls": [
+    "Мои оценки",
+    "👤\n              Выйти",
+    "Проверить состояние",
+    "Отправить"
+  ]
+}

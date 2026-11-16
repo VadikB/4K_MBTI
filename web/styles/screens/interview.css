@@ -1333,3 +1333,205 @@
     padding: 0;
     scrollbar-gutter: auto;
 }
+
+/* POSTW02-02 / exact v10: one conversation and a separate finish action.
+   Reuse the participant tokens already adopted by POSTW02-01. */
+.interview-panel {
+    background: var(--participant-canvas);
+    color: var(--participant-text);
+}
+
+.interview-layout {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+}
+
+.interview-main {
+    min-width: 0;
+    gap: 24px;
+}
+
+.interview-case-badge {
+    margin: 8px 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--participant-text);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 32px;
+    white-space: normal;
+}
+
+.interview-timer-badge {
+    color: var(--participant-caption);
+    background: transparent;
+    font-variant-numeric: tabular-nums;
+}
+
+.interview-case-header p {
+    color: var(--participant-caption);
+}
+
+.interview-form {
+    align-items: end;
+    gap: 8px 16px;
+}
+
+.interview-form label {
+    grid-column: 1 / -1;
+    color: var(--participant-caption);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+}
+
+.interview-form textarea {
+    height: 96px;
+    min-height: 48px;
+    max-height: 120px;
+    padding: 12px;
+    resize: vertical;
+}
+
+.interview-form .primary-button {
+    border-color: var(--participant-primary);
+    background: var(--participant-primary);
+    color: var(--participant-text);
+}
+
+.interview-form .primary-button:hover,
+.interview-return-card .primary-button:hover {
+    border-color: var(--participant-primary-hover);
+    background: var(--participant-primary-hover);
+}
+
+.interview-form textarea:focus-visible,
+.interview-panel button:focus-visible {
+    outline: 2px solid var(--participant-focus);
+    outline-offset: 2px;
+}
+
+.interview-secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.interview-secondary-actions .text-button {
+    min-height: 44px;
+    padding: 10px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--participant-focus);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+#interview-error[data-tone="neutral"] {
+    margin: 0;
+    padding: 20px;
+    border: 0;
+    border-left: 3px solid var(--user-bubble);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--participant-text);
+    font-size: 16px;
+    line-height: 24px;
+}
+
+#interview-error .text-button {
+    color: var(--participant-focus);
+}
+
+.interview-return-card {
+    border-color: var(--participant-border);
+    box-shadow: none;
+}
+
+.interview-panel.return-required .interview-form,
+.interview-panel.return-required .interview-secondary-actions,
+.interview-panel.between-situations .interview-secondary-actions {
+    display: none;
+}
+
+.interview-panel.return-required .interview-messages-shell {
+    min-height: 0;
+    height: auto;
+    max-height: none;
+}
+
+@media (max-width: 900px) {
+    .interview-panel .interview-layout { grid-template-columns: minmax(0, 1fr); }
+    .interview-case-badge { font-size: 20px; line-height: 28px; }
+    .interview-panel .interview-action-buttons { display: flex; }
+    .interview-secondary-actions { justify-content: flex-start; }
+}
+
+.interview-send-note {
+    grid-column: 1 / -1;
+    color: var(--participant-caption);
+    font-size: 12px;
+    line-height: 16px;
+}
+
+#interview-case-title { display: none; }
+.interview-main { width: 100%; max-width: 100%; }
+#interview-error[data-tone="neutral"] {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 400;
+    text-align: left;
+}
+#interview-error[data-tone="neutral"]::before { display: none; }
+#interview-error[hidden] { display: none; }
+.interview-case-badge { flex: 1 1 auto; }
+.interview-timer-badge { flex: 0 0 auto; }
+.product-situation-message .interview-structured-block-label {
+    color: var(--participant-caption);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+#interview-error .text-button {
+    display: block;
+    min-height: 44px;
+    margin-top: 8px;
+    padding: 10px 0;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.interview-form .primary-button:disabled,
+.interview-form .primary-button:disabled:hover {
+    border-color: var(--button-muted);
+    background: var(--button-muted);
+    color: var(--text-muted);
+}
+
+.interview-case-badge[hidden] { display: none; }
+.interview-panel.return-required .interview-return-card,
+.interview-panel.between-situations .interview-return-card {
+    width: 80%;
+    max-width: 880px;
+    margin-inline: auto;
+    border: 0;
+}
+@media (max-width: 900px) {
+    .interview-panel.return-required .interview-return-card,
+    .interview-panel.between-situations .interview-return-card {
+        width: 100%;
+        margin-inline: 0;
+    }
+}

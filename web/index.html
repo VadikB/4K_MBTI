@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4K Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.15">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.15">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.16">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
@@ -56,7 +56,7 @@
     <header class="auth-header" aria-label="4К Ассистент">
       <span class="auth-header-brand">4К Ассистент</span>
       <span class="auth-waiting-section">Оценка</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.15</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.16</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -1578,18 +1578,14 @@
         <div class="interview-topbar-head">
           <div class="interview-title-row">
             <strong id="interview-section-title">4К Ассистент</strong>
-            <span id="interview-case-badge" class="interview-case-badge">Прогресс уточняется</span>
           </div>
           <div class="interview-topbar-actions">
-            <button id="interview-profile-button" type="button" class="ghost-button compact-ghost">Домой</button>
+            <button id="interview-profile-button" type="button" class="ghost-button compact-ghost">Мои оценки</button>
             <button id="interview-exit-button" type="button" class="topbar-exit-button">
               <span class="topbar-user-icon" aria-hidden="true">👤</span>
               <span>Выйти</span>
             </button>
           </div>
-        </div>
-        <div class="interview-progress-line">
-          <div id="interview-progress-fill" class="interview-progress-fill"></div>
         </div>
       </div>
 
@@ -1597,21 +1593,12 @@
         <div class="interview-main">
           <div class="interview-case-header">
             <div class="interview-case-heading">
-              <h3 id="interview-case-title">Оценочная ситуация</h3>
+              <h1 id="interview-case-badge" class="interview-case-badge">Прогресс уточняется</h1>
+              <h3 id="interview-case-title" class="hidden">Оценочная ситуация</h3>
               <span id="interview-timer-badge" class="interview-timer-badge">Время уточняется</span>
             </div>
             <p id="interview-case-status">Ожидается запуск интервью</p>
           </div>
-
-          <aside class="interview-case-guide" aria-labelledby="interview-case-guide-title">
-            <strong id="interview-case-guide-title">Как работать с ситуацией</strong>
-            <ol>
-              <li>Изучите ситуацию и опишите своё решение в поле ответа.</li>
-              <li>Если для решения не хватает информации, можно задать собеседнику вопрос.</li>
-              <li><b>«Отправить»</b> сохраняет сообщение и продолжает диалог. После отправки ответ нельзя изменить.</li>
-              <li><b>«Завершить ситуацию»</b> доступно после сохранения хотя бы одного ответа.</li>
-            </ol>
-          </aside>
 
           <div class="interview-messages-shell">
             <div id="interview-scroll-area" class="interview-scroll-area" role="region" aria-label="История диалога и материалы ситуации" tabindex="0">
@@ -1626,7 +1613,9 @@
             <button id="interview-go-processing-button" type="button" class="primary-button">Перейти к анализу</button>
           </div>
 
+          <p id="interview-error" class="error" role="status" aria-live="polite" hidden></p>
           <form id="interview-form" class="interview-form">
+            <label for="interview-textarea">Ваше сообщение</label>
             <textarea
               id="interview-textarea"
               aria-label="Ваш ответ или вопрос собеседнику"
@@ -1641,15 +1630,16 @@
             ></textarea>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
-                <button id="interview-pause-button" type="button" class="ghost-button interview-finish-button hidden">Пауза</button>
-                <button id="interview-finish-button" type="button" class="ghost-button interview-finish-button" title="Завершить основной диалог текущей ситуации" disabled>Завершить ситуацию</button>
-                <button id="interview-additional-button" type="button" class="ghost-button interview-finish-button hidden">Дополнительная сессия</button>
                 <button id="interview-submit-button" type="button" class="primary-button" disabled><span id="interview-submit-label">Отправить</span></button>
               </div>
             </div>
+            <small class="interview-send-note">После отправки ответ нельзя изменить.</small>
           </form>
-          <p id="interview-error" class="error" hidden></p>
-          <p class="interview-footnote">Ответы анализируются алгоритмами AI для оценки компетенций</p>
+          <div class="interview-secondary-actions">
+            <button id="interview-finish-button" type="button" class="text-button interview-finish-button hidden" disabled>Завершить ситуацию</button>
+            <button id="interview-pause-button" type="button" class="text-button hidden">Продолжить оценку</button>
+            <button id="interview-additional-button" type="button" class="text-button hidden">Продолжить сохранённое прохождение</button>
+          </div>
         </div>
       </div>
     </section>
@@ -2012,7 +2002,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.1.15</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.1.16</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -2028,6 +2018,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.15"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.16"></script>
 </body>
 </html>

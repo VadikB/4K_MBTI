@@ -1,0 +1,13 @@
+
+Running 6 tests using 1 worker
+
+(node:21669) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/auth-r03.spec.mjs:181:3 › AS projection CASE.SPEC.01: concrete public materials, no author passport, four widths (9.0s)
+  ✓  2 tests/browser/auth-r03.spec.mjs:181:3 › AS projection CASE.SPEC.02: concrete public materials, no author passport, four widths (8.7s)
+  ✓  3 tests/browser/auth-r03.spec.mjs:3473:1 › P03 return card hides stopped AS and keeps explicit continue in the same chat (210ms)
+  ✓  4 tests/browser/auth-r03.spec.mjs:3548:1 › P3-B return card keeps unknown time distinct from known zero (278ms)
+  ✓  5 tests/browser/auth-r03.spec.mjs:3626:1 › E01 renders accepted active assessment copy, colors and AS-scoped draft (313ms)
+  ✓  6 tests/browser/p3b-visual.spec.mjs:21:1 › P3-B synthetic visual states, progress and Continue are reproducible (5.3s)
+
+  6 passed (24.9s)
