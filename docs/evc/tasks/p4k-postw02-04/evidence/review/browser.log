@@ -1,0 +1,10 @@
+
+Running 3 tests using 1 worker
+
+(node:84671) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/preparation-status.spec.mjs:102:37 › 04 review real screens 1440 CSS px (4.1s)
+  ✓  2 tests/browser/preparation-status.spec.mjs:102:37 › 04 review real screens 390 CSS px (3.5s)
+  ✓  3 tests/browser/preparation-status.spec.mjs:102:37 › 04 review real screens 320 CSS px (4.4s)
+
+  3 passed (12.8s)

@@ -43,3 +43,6 @@ CURRENT не меняется. Глоссарий WORKING найден вне ma
    frontend regression. Ранее подтверждённый неизменённый backend не повторяется целиком.
 4. Обновить отчёт/снимки/состояние. Ограничения 04, server stages/diagnostics и snapshots
    сохраняются. Merge/deploy/Ready/version bump не выполняются.
+
+Доработка review: шаги1–4 завершены локально. Проверенный код0145485;
+REVIEW_FIX_REPORT.md/галерея/checks.json фиксируют A–H и ограничения.
