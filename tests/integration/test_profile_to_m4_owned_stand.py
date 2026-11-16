@@ -243,8 +243,8 @@ def internal(destination):
         assert results['results']['personalized_profile_snapshot']['content'] == original['content_json']
         regenerated = http.post(f'/users/assessment/m8/cycles/{cycle_id}/reports/regenerate',
             json={'idempotency_key':'task112-historical-context'})
-        assert regenerated.status_code == 201, regenerated.text
-        assert regenerated.json()['c67']['descriptive']['input'] == generation['input']
+        assert regenerated.status_code == 404, regenerated.text
+        assert http.get(f'/users/assessment/m8/cycles/{cycle_id}/reports/latest').json()['id'] == saved_report['id']
         assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}").json() == saved_report
         assert 'Synthetic after completion' not in json.dumps(generation)
         assert payload['full_name'] not in json.dumps(generation)
@@ -274,7 +274,7 @@ def internal(destination):
         assert history['assessments_total'] == history['reports_total'] == history['completed_assessments'] == 2
         assert {row['cycle_id'] for row in history['cycles']} == {cycle_id,next_id}
         first = next(row for row in history['cycles'] if row['cycle_id'] == cycle_id)
-        assert len(first['versions']) == 2
+        assert len(first['versions']) == 1
         summary = http.get(f'/users/{owner}/profile-summary').json()
         assert summary['cycle_history'] == history['cycles']
         assert summary['legacy_assessments_total'] == 0
@@ -295,7 +295,7 @@ def internal(destination):
         assert history['reports_total'] == 2
         first = next(row for row in history['cycles'] if row['cycle_id'] == cycle_id)
         assert first['status'] == 'report_ready' and first['report_id'] == base_report['id']
-        assert len(first['versions']) == 3
+        assert len(first['versions']) == 2
         for hidden in (customer, qa_report):
             assert hidden['id'] not in json.dumps(history)
             for suffix in ('','/pdf'):

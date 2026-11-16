@@ -51,7 +51,7 @@ from Api import questionnaire_sources
 from Api import m8_results
 from Api import m8_report_access
 from Api import m8_report_comparison
-from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest, RegenerateReportRequest
+from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest
 from Api import m10_product_flow, m10_orchestration
 from Api.m10_contracts import ProductCycleStartRequest, ProductCycleActionRequest, ProductNextRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
@@ -9452,7 +9452,8 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
                 report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
             except ValueError:
                 report = None
-            return {**cycle,'results_status':'failed',
+            if not report or report.get('c67', {}).get('processing', {}).get('status', 'failed') == 'failed':
+                return {**cycle,'results_status':'failed',
                     'report_status':'limited' if report else 'not_created',
                     'report_id':report['id'] if report else None,
                     'pipeline_stage':pipeline['stage'],
@@ -9495,13 +9496,12 @@ def request_m8_processing_recovery(cycle_id: UUID, payload: M10ProcessingRecover
     try:
         with get_connection() as connection:
             require_platform_permission(connection, user, "configuration.publish")
+            scope = _get_admin_scope_or_403(connection, user)
+            if not scope.is_superadmin:
+                raise PermissionError("Service recovery requires superadmin authority")
             cycle = connection.execute("SELECT organization_id FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
             if cycle is None:
                 raise ValueError("M5_CYCLE_NOT_FOUND")
-            if cycle['organization_id'] is not None:
-                scope = _get_admin_scope_or_403(connection, user)
-                if not scope.is_superadmin and int(cycle['organization_id']) not in scope.organization_ids:
-                    raise PermissionError("Organization admin access required")
             result = m10_orchestration.request_processing_recovery(
                 connection, cycle_id=str(cycle_id), idempotency_key=payload.idempotency_key,
                 created_by=int(user.id))
@@ -9528,21 +9528,6 @@ def read_owned_m8_report(cycle_id: UUID, request: Request):
     try:
         with get_connection() as connection: return m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
-
-
-@router.post('/assessment/m8/cycles/{cycle_id}/reports/regenerate', status_code=201)
-def regenerate_owned_m8_report(cycle_id: UUID, payload: RegenerateReportRequest, request: Request):
-    user = _m8_owned_cycle(request, str(cycle_id))
-    try:
-        with get_connection() as connection:
-            results = m8_results.read_latest_results(connection, str(cycle_id))
-            previous = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
-            target_profile = previous['c67'].get('target_profile')
-            connection.commit()
-        return m8_results.create_report_detached(
-            results_revision_id=results['revision_id'], audience='assessee', key=payload.idempotency_key,
-            target_profile=target_profile, created_by=int(user.id), connection_factory=get_connection)
-    except (ValueError, KeyError) as exc: raise HTTPException(409, detail=str(exc)) from exc
 
 
 def _owned_saved_report(request: Request, report_id: UUID):

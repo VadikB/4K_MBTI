@@ -86,6 +86,15 @@ test('UI03 keeps participant and admin primary actions semantically distinct', (
 test('UI03 prevents local six-digit hex colors outside the owner palette', () => {
   for (const file of [...cssFiles, ...collectFiles('web/js', '.js')]) {
     let source = readFileSync(file, 'utf8').toLowerCase();
+    if (file === 'web/styles/tokens.css') {
+      // REPORT_01 S10-A: approved outcome colors are isolated as semantic tokens.
+      assert.match(source, /--palette-outcome-canvas:\s*#f7f7f7;/);
+      assert.match(source, /--palette-outcome-icon:\s*#e0f4f5;/);
+      assert.match(source, /--palette-outcome-text:\s*#464554;/);
+      assert.match(source, /--palette-outcome-border:\s*#e3e9ea;/);
+      assert.match(source, /--palette-outcome-link:\s*#007d89;/);
+      source = source.replace(/--palette-outcome-(?:canvas|icon|text|border|link):\s*#[0-9a-f]{6};/g, '');
+    }
     if (file === 'web/styles/screens/auth.css') {
       // AUTH R01 + owner task 05.11: this exact field border is an auth-only exception.
       // Keep rejecting the color in any other selector, shared token, or JS file.

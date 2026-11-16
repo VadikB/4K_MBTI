@@ -287,6 +287,15 @@ async function report(page,stand,info){
  expect(readyCycle).toBeTruthy();
  await page.goto(`${stand.url}/?screen=processing&cycle_id=${encodeURIComponent(readyCycle)}`);
  await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов',{timeout:70000});
+ await page.screenshot({path:path.join(stand.dir,'outcome-ready-1440.png'),fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:path.join(stand.dir,'outcome-ready-390.png'),fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+ for (const width of [320,720]) {
+  await page.setViewportSize({width,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+ }
+ await page.setViewportSize({width:1440,height:1000});
  await page.getByRole('button',{name:'Посмотреть результат'}).click();
  await expect(page.locator('#report-panel')).toBeVisible();
  await expect(page.locator('#m8-report-state')).toContainText('Результат готов',{timeout:70000});
@@ -346,6 +355,41 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  const situationFinish=page.waitForResponse(response=>response.request().method()==='POST' && new URL(response.url()).pathname.endsWith('/finish-situation'));
  await page.locator('#interview-finish-button').click();
  expect((await situationFinish).ok()).toBeTruthy();
+ const outcomeCycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
+ const closed=await page.request.post(`${stand.url}/users/assessment/m7/cycles/${outcomeCycle}/completion`,{
+  data:{action:'complete',reason:'browser_fixture_plan_finished',idempotency_key:randomUUID()},
+ });
+ expect(closed.ok()).toBeTruthy();
+ const journeyPattern='**/users/*/journey-state';
+ await page.route(journeyPattern,route=>route.fulfill({json:{assessment:{status:'processing'},report_status:'not_ready'}}));
+ const detailPattern='**/users/assessment/m8/cycles/*/status';
+ await page.route(detailPattern,route=>route.fulfill({json:{collection_status:'collection_closed',
+  results_status:'processing',report_status:'not_created',route_progress:{completed:1,total:2}}}));
+ await page.goto(`${stand.url}/?screen=processing&cycle_id=${encodeURIComponent(outcomeCycle)}`);
+ await expect(page.locator('#processing-outcome-title')).toHaveText('Спасибо за ваши ответы');
+ await expect(page.locator('#processing-outcome-notice')).toBeHidden();
+ await page.screenshot({path:path.join(stand.dir,'outcome-waiting-1440.png'),fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:path.join(stand.dir,'outcome-waiting-390.png'),fullPage:true});
+ await page.setViewportSize({width:1440,height:1000});
+ await page.unroute(detailPattern);
+ await page.unroute(journeyPattern);
+ await page.route(journeyPattern,route=>route.fulfill({json:{assessment:{status:'failed'},report_status:'not_ready'}}));
+ await page.reload();
+ await expect(page.locator('#processing-outcome-title')).toHaveText('Не удалось подготовить результат');
+ await page.screenshot({path:path.join(stand.dir,'outcome-failed-1440.png'),fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:path.join(stand.dir,'outcome-failed-390.png'),fullPage:true});
+ await page.unroute(journeyPattern);
+ await page.route(journeyPattern,route=>route.abort());
+ await page.route(detailPattern,route=>route.abort());
+ await page.getByRole('button',{name:'Проверить готовность'}).click();
+ await expect(page.locator('#processing-outcome-notice')).toContainText('Не удалось проверить готовность');
+ await page.screenshot({path:path.join(stand.dir,'outcome-offline-390.png'),fullPage:true});
+ await page.setViewportSize({width:1440,height:1000});
+ await page.screenshot({path:path.join(stand.dir,'outcome-offline-1440.png'),fullPage:true});
+ await page.unroute(journeyPattern);
+ await page.unroute(detailPattern);
  stand.cli('drain');
  const saved=await report(page,stand,info);
  const resultResponse=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/results`);
@@ -377,10 +421,8 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
    if(kind==='failure')expect(rare.c67.descriptive.status).toBe('failed');
    await expect(page.locator('#report-panel')).not.toContainText('Недопустимое историческое проявление');
    const url=`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/reports/regenerate`,data={idempotency_key:'browser-regenerate-'+kind};
-   const freshResponse=await page.request.post(url,{data});expect(freshResponse.status()).toBe(201);const fresh=await freshResponse.json();
-   expect(fresh.revision_no).toBe(rare.revision_no+1);expect(fresh.results_revision_id).toBe(saved.results_revision_id);
-   expect((await (await page.request.post(url,{data})).json()).id).toBe(fresh.id);
-   expect(fresh.c67.descriptive.input).toEqual(saved.c67.descriptive.input);
+   const blocked=await page.request.post(url,{data});expect(blocked.status()).toBe(404);
+   expect((await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${rare.id}`)).json()).id).toBe(rare.id);
  }
 
 });
@@ -1359,7 +1401,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  expect(contexts['organization_context.activity_description']).toBe('Техническая проверка');
  await info.attach('canonical-results',{body:JSON.stringify(results,null,2),contentType:'application/json'});
  const regenerated=await page.request.post(`${stand.url}/users/assessment/m8/cycles/${saved.cycle_id}/reports/regenerate`,{data:{idempotency_key:'review-history-revision'}});
- expect(regenerated.status()).toBe(201);const latest=await regenerated.json();expect(latest.id).not.toBe(saved.id);
+ expect(regenerated.status()).toBe(404);const latest=saved;
  // Ordinary logout, then a new login and the dashboard history entry.
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click();
@@ -1594,9 +1636,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(second.c67.descriptive.input.cycle_id).toBe(second.cycle_id);
  const regenerateUrl=`${stand.url}/users/assessment/m8/cycles/${first.cycle_id}/reports/regenerate`;
  const regenerated=await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}});
- expect(regenerated.status()).toBe(201);const revision=await regenerated.json();
- expect(revision.id).not.toBe(first.id);expect(revision.results_revision_id).toBe(first.results_revision_id);
- expect(await (await page.request.post(regenerateUrl,{data:{idempotency_key:'G03-representation'}})).json()).toEqual(revision);
+ expect(regenerated.status()).toBe(404);const revision=first;
  expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
  await page.locator('#report-back-button').click();
@@ -1604,7 +1644,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  const history=await (await page.request.get(`${stand.url}/users/assessment/m8/history`)).json();
  expect(history.assessments_total).toBe(2);expect(history.reports_total).toBe(2);
  const firstHistory=history.cycles.find(item=>item.cycle_id===first.cycle_id);
- expect(firstHistory).toBeTruthy();expect(firstHistory.versions).toHaveLength(2);
+ expect(firstHistory).toBeTruthy();expect(firstHistory.versions).toHaveLength(1);
  await info.attach('G03-two-independent-results',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await info.attach('G01-03-receipts',{body:JSON.stringify({before,ready,after,final:profileReceipts(stand),first,second,revision,results},null,2),contentType:'application/json'});
 });

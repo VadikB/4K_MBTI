@@ -433,7 +433,8 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
 
 def create_report_detached(*, results_revision_id: str, audience: str, key: str,
                            target_profile: dict | None, created_by: int, gateway=None,
-                           connection_factory=None) -> dict:
+                           connection_factory=None, service_recovery: bool = False,
+                           claim_cycle_db_id: int | None = None, claim_token=None) -> dict:
     """Generate and validate descriptive content outside the DB transaction."""
     if connection_factory is None:
         from Api.database import get_connection as connection_factory
@@ -452,15 +453,47 @@ def create_report_detached(*, results_revision_id: str, audience: str, key: str,
             if prior["request_hash"] != request_hash:
                 raise ValueError("IDEMPOTENCY_CONFLICT")
             return read_report(connection, prior["id"])
+        if audience == "assessee" and not service_recovery:
+            existing = connection.execute("""SELECT p.id FROM m8_results r
+                JOIN m8_result_revisions rr ON rr.results_id=r.id
+                JOIN m8_reports p ON p.result_revision_id=rr.id
+                WHERE r.cycle_db_id=(SELECT cycle_db_id FROM m8_results WHERE id=%s)
+                  AND p.audience='assessee' AND p.status='ready' LIMIT 1""",
+                (UUID(results["id"]),)).fetchone()
+            if existing:
+                raise ValueError("M8_REPORT_ALREADY_PUBLISHED")
         _, _, descriptive_path, _ = _cycle_report_packages(connection, results["cycle_id"])
         resolved = resolve(connection, results)
         frozen_checksum = checksum({"revision_id": results["revision_id"], "results": results["results"]})
         connection.commit()
     descriptive = generate(results, resolved, gateway=gateway, package_path=descriptive_path)
+    if audience == "assessee" and (descriptive.get("status") != "ready"
+                                  or not (descriptive.get("summary") or descriptive.get("claims"))):
+        raise ValueError("M8_REPORT_CONTENT_NOT_PUBLISHABLE")
     with connection_factory() as connection:
+        if audience == "assessee":
+            # Serialize publication across revisions and API callers on the
+            # stable Cycle row, then recheck after detached generation.
+            connection.execute("SELECT id FROM m5_cycles WHERE cycle_id=%s FOR UPDATE",
+                               (UUID(results["cycle_id"]),)).fetchone()
+        if claim_cycle_db_id is not None:
+            claimed = connection.execute("""SELECT 1 FROM m10_report_claims
+                WHERE cycle_db_id=%s AND token=%s AND lease_until > NOW()""",
+                (claim_cycle_db_id, claim_token)).fetchone()
+            if not claimed:
+                raise ValueError("M10_REPORT_CLAIM_LOST")
         current = read_results_revision(connection, results_revision_id)
         if checksum({"revision_id": current["revision_id"], "results": current["results"]}) != frozen_checksum:
             raise ValueError("M8_RESULTS_REVISION_CHANGED")
+        if audience == "assessee" and not service_recovery:
+            existing = connection.execute("""SELECT p.id FROM m8_results r
+                JOIN m8_result_revisions rr ON rr.results_id=r.id
+                JOIN m8_reports p ON p.result_revision_id=rr.id
+                WHERE r.cycle_db_id=(SELECT cycle_db_id FROM m8_results WHERE id=%s)
+                  AND p.audience='assessee' AND p.status='ready' LIMIT 1""",
+                (UUID(results["id"]),)).fetchone()
+            if existing:
+                raise ValueError("M8_REPORT_ALREADY_PUBLISHED")
         saved = create_report(
             connection, results_revision_id=results_revision_id, audience=audience, key=key,
             target_profile=target_profile, created_by=created_by,
@@ -496,7 +529,8 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         pipeline.status AS processing_status,pipeline.stage AS processing_stage,
         (to_jsonb(pipeline)->>'error_code') AS processing_error,
         rr.id AS results_revision_id,rr.revision_no AS results_revision_no,
-        p.id AS report_id,p.revision_no,p.created_at
+        p.id AS report_id,p.revision_no,p.created_at,
+        to_jsonb(p)->'c67_json'->'processing'->>'status' AS report_processing_status
         FROM m5_cycles c
         LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=c.id
         LEFT JOIN m8_results r ON r.cycle_db_id=c.id
@@ -521,7 +555,8 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             'results_revision_no':row['results_revision_no'],
             'latest_results_revision_id':str(row['results_revision_id']) if row['results_revision_id'] else None,
             'latest_results_revision_no':row['results_revision_no'],
-            'report_id':None, 'revision_no':None, 'created_at':row['cycle_created_at'], 'versions':[]})
+            'report_id':None, 'revision_no':None, 'created_at':row['cycle_created_at'], 'versions':[],
+            'report_processing_status':None})
         if row['report_id']:
             version = {'cycle_id':cid,'report_id':str(row['report_id']), 'revision_no':row['revision_no'],
                 'created_at':row['created_at'],'results_revision_id':str(row['results_revision_id']),
@@ -529,11 +564,14 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             item['versions'].append(version)
             if item['report_id'] is None:
                 item.update({k:version[k] for k in ('report_id','revision_no','created_at','results_revision_id','results_revision_no')})
+                item['report_processing_status'] = row['report_processing_status']
     for item in cycles.values():
-        item['status'] = ('failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else
-            'report_ready' if item['report_id'] else
+        item['status'] = ('report_ready' if item['report_id'] and item['report_processing_status'] != 'failed' else
+            'failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else
             'results_ready' if item['results_revision_id'] else
             'processing' if item['cycle_status'] in {'collection_closed','calculation_pending','calculated'} else 'collecting')
+        if item['status'] == 'report_ready':
+            item['processing_message'] = None
     return list(cycles.values())
 
 

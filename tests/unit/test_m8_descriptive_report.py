@@ -163,14 +163,25 @@ def test_input_uses_only_selected_frozen_context():
     assert "email" not in str(model_input)
 
 
-def test_no_interpretable_basis_returns_empty_ready_description_without_provider_call():
+def test_no_interpretable_basis_uses_saved_limitation_without_provider_call():
     results, resolved = inputs()
     resolved["projections"] = []
+    results["results"]["partial_result"] = {"limitation_reasons": [
+        {"code": "observation_missing", "message": "Оснований для вывода пока нет."}]}
     gateway = Gateway({"summary": ["must not be used"], "claims": []})
     report = generate(results, resolved, gateway=gateway)
     assert report["status"] == "ready"
-    assert report["summary"] == [] and report["claims"] == []
+    assert report["summary"] == ["Оснований для вывода пока нет."] and report["claims"] == []
     assert gateway.calls == []
+
+
+def test_no_basis_and_no_saved_explanation_is_not_publishable():
+    results, resolved = inputs()
+    resolved["projections"] = []
+    results["results"]["partial_result"] = None
+    report = generate(results, resolved, gateway=Gateway({"summary": [], "claims": []}))
+    assert report["status"] == "failed"
+    assert report["failure_reason"] == "DESCRIPTION_BASIS_MISSING"
 
 
 def test_forbidden_advice_and_unverified_references_fail_closed():
