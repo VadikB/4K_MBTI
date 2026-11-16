@@ -1,0 +1,174 @@
+TAP version 13
+# (node:9589) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared projection wins with completed=undefined
+ok 1 - shared projection wins with completed=undefined
+  ---
+  duration_ms: 4.859667
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=null
+ok 2 - shared projection wins with completed=null
+  ---
+  duration_ms: 1.239
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=0
+ok 3 - shared projection wins with completed=0
+  ---
+  duration_ms: 1.228292
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=2
+ok 4 - shared projection wins with completed=2
+  ---
+  duration_ms: 1.180208
+  type: 'test'
+  ...
+# Subtest: 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+ok 5 - 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+  ---
+  duration_ms: 32.853458
+  type: 'test'
+  ...
+# Subtest: failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+ok 6 - failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+  ---
+  duration_ms: 1.592083
+  type: 'test'
+  ...
+# Subtest: ordinary active actions never pause or interrupt; existing saved recovery remains
+ok 7 - ordinary active actions never pause or interrupt; existing saved recovery remains
+  ---
+  duration_ms: 1.602208
+  type: 'test'
+  ...
+# Subtest: late status read cannot paint another screen or owner
+ok 8 - late status read cannot paint another screen or owner
+  ---
+  duration_ms: 1.282208
+  type: 'test'
+  ...
+# Subtest: F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+ok 9 - F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+  ---
+  duration_ms: 2.133292
+  type: 'test'
+  ...
+# (node:9591) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F18 pending entry discards local placeholder progress and time until server readback
+ok 10 - F18 pending entry discards local placeholder progress and time until server readback
+  ---
+  duration_ms: 3.212125
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count undefined does not hide known N/M
+ok 11 - F18 missing or invalid completed count undefined does not hide known N/M
+  ---
+  duration_ms: 2.284292
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count null does not hide known N/M
+ok 12 - F18 missing or invalid completed count null does not hide known N/M
+  ---
+  duration_ms: 1.291917
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count 0 does not hide known N/M
+ok 13 - F18 missing or invalid completed count 0 does not hide known N/M
+  ---
+  duration_ms: 1.194208
+  type: 'test'
+  ...
+# Subtest: F18 return card and header share frozen plan8, completed0 and confirmed pause
+ok 14 - F18 return card and header share frozen plan8, completed0 and confirmed pause
+  ---
+  duration_ms: 1.531417
+  type: 'test'
+  ...
+# Subtest: F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+ok 15 - F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.353417
+  type: 'test'
+  ...
+# Subtest: F18 return card and header share frozen plan3, completed0 and confirmed pause
+ok 16 - F18 return card and header share frozen plan3, completed0 and confirmed pause
+  ---
+  duration_ms: 1.253666
+  type: 'test'
+  ...
+# Subtest: F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+ok 17 - F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.835792
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 120 never falls back to stale legacy fields
+ok 18 - F19 Cycle time 120 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.652209
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 19 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.512333
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time null never falls back to stale legacy fields
+ok 20 - F19 Cycle time null never falls back to stale legacy fields
+  ---
+  duration_ms: 1.098666
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time undefined never falls back to stale legacy fields
+ok 21 - F19 Cycle time undefined never falls back to stale legacy fields
+  ---
+  duration_ms: 0.971125
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time -1 never falls back to stale legacy fields
+ok 22 - F19 Cycle time -1 never falls back to stale legacy fields
+  ---
+  duration_ms: 0.988
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 23 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 0.980875
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time NaN never falls back to stale legacy fields
+ok 24 - F19 Cycle time NaN never falls back to stale legacy fields
+  ---
+  duration_ms: 0.958334
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time Infinity never falls back to stale legacy fields
+ok 25 - F19 Cycle time Infinity never falls back to stale legacy fields
+  ---
+  duration_ms: 0.958625
+  type: 'test'
+  ...
+# Subtest: F19 known legacy timer remains compatible outside Cycle runtime
+ok 26 - F19 known legacy timer remains compatible outside Cycle runtime
+  ---
+  duration_ms: 1.605375
+  type: 'test'
+  ...
+1..26
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 141.410875

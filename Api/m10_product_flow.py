@@ -344,7 +344,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     """Owner-facing read model assembled only from persisted runtime state."""
     plan = m7_cycle_planner.read_plan(connection, cycle_id)
     status = m7_completion.read_status(connection, cycle_id)
-    cycle = connection.execute("SELECT id FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
+    cycle = connection.execute("SELECT id,cycle_id,profile_ref_json FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
     situations = connection.execute(
         """SELECT id,assessment_situation_id,status,snapshot_json,started_at,scenario_ended_at,closed_at
            FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id""", (cycle["id"],)
@@ -411,18 +411,22 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     ).fetchone()
     from Api.m7_route_replacement import replacement_metadata
     route = replacement_metadata(connection, cycle["id"])
-    saved_route = plan.get("plan", {}).get("route")
-    if isinstance(saved_route, list):
-        route["progress"]["total_positions"] = len(saved_route)
+    from Api.participant_dashboard import cycle_progress
+    participant_progress = cycle_progress(connection, cycle)
+    route["progress"]["total_positions"] = participant_progress["planned_total"]
     attached_ids = {item["assessment_situation_id"] for position in route["positions"]
                     for item in position["history"]}
     visible_situations = [x for x in situations
                           if not route["positions"] or str(x["assessment_situation_id"]) in attached_ids]
     return {
         "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": participant_plan(plan), "status": status,
-        "between_situations": between_situations,
+        "between_situations": between_situations, "participant_progress": participant_progress,
         "return_policy_enabled": bool(plan.get("plan", {}).get("return_policy_snapshot")),
         "route": route,
+        "blocking_system_wait": bool(connection.execute(
+            "SELECT 1 FROM m5_cycle_time_intervals WHERE cycle_db_id=%s "
+            "AND interval_type='blocking_system_wait' AND ended_at IS NULL LIMIT 1",
+            (cycle["id"],)).fetchone()),
         "situations": [{"assessment_situation_id": str(x["assessment_situation_id"]), "status": x["status"]}
                        for x in visible_situations],
         "current_situation": ({

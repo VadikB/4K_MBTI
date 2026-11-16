@@ -1,0 +1,318 @@
+TAP version 13
+# (node:3480) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+ok 1 - F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+  ---
+  duration_ms: 47.850125
+  type: 'test'
+  ...
+# Subtest: F08 lost scenario_end response retains command identity and locks input through reload
+ok 2 - F08 lost scenario_end response retains command identity and locks input through reload
+  ---
+  duration_ms: 3.598292
+  type: 'test'
+  ...
+# Subtest: F09 lost Next response and reload check the saved operation without a second POST
+ok 3 - F09 lost Next response and reload check the saved operation without a second POST
+  ---
+  duration_ms: 2.931792
+  type: 'test'
+  ...
+# Subtest: F09 server-opened next AS retires the old between-situations command
+ok 4 - F09 server-opened next AS retires the old between-situations command
+  ---
+  duration_ms: 1.583375
+  type: 'test'
+  ...
+# Subtest: F09 known Next refusal makes the next click a readback rather than a new POST
+ok 5 - F09 known Next refusal makes the next click a readback rather than a new POST
+  ---
+  duration_ms: 3.430583
+  type: 'test'
+  ...
+# Subtest: F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+ok 6 - F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+  ---
+  duration_ms: 2.529625
+  type: 'test'
+  ...
+# (node:3482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F18 pending entry discards local placeholder progress and time until server readback
+ok 7 - F18 pending entry discards local placeholder progress and time until server readback
+  ---
+  duration_ms: 3.9555
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count undefined stays unknown
+not ok 8 - F18 missing or invalid completed count undefined stays unknown
+  ---
+  duration_ms: 4.07125
+  type: 'test'
+  location: '<WORKTREE>/tests/frontend/remain06-projection.test.mjs:14:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Всего ситуаций: 8'
+    - 'Прогресс уточняется'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Прогресс уточняется'
+  actual: 'Всего ситуаций: 8'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///<WORKTREE>/tests/frontend/remain06-projection.test.mjs:19:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: F18 missing or invalid completed count null stays unknown
+not ok 9 - F18 missing or invalid completed count null stays unknown
+  ---
+  duration_ms: 1.730209
+  type: 'test'
+  location: '<WORKTREE>/tests/frontend/remain06-projection.test.mjs:14:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Всего ситуаций: 8'
+    - 'Прогресс уточняется'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Прогресс уточняется'
+  actual: 'Всего ситуаций: 8'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///<WORKTREE>/tests/frontend/remain06-projection.test.mjs:19:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: F18 missing or invalid completed count 0 stays unknown
+not ok 10 - F18 missing or invalid completed count 0 stays unknown
+  ---
+  duration_ms: 1.596541
+  type: 'test'
+  location: '<WORKTREE>/tests/frontend/remain06-projection.test.mjs:14:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Всего ситуаций: 8'
+    - 'Прогресс уточняется'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Прогресс уточняется'
+  actual: 'Всего ситуаций: 8'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///<WORKTREE>/tests/frontend/remain06-projection.test.mjs:19:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: F18 return card and header share frozen plan8, completed0 and confirmed pause
+not ok 11 - F18 return card and header share frozen plan8, completed0 and confirmed pause
+  ---
+  duration_ms: 1.783792
+  type: 'test'
+  location: '<WORKTREE>/tests/frontend/remain06-projection.test.mjs:24:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + '1 ситуация из 8'
+    - 'Ситуация 1 из 8\nЗавершено 0 из 8'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    Ситуация 1 из 8
+    Завершено 0 из 8
+  actual: '1 ситуация из 8'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///<WORKTREE>/tests/frontend/remain06-projection.test.mjs:29:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+not ok 12 - F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.53975
+  type: 'test'
+  location: '<WORKTREE>/tests/frontend/remain06-projection.test.mjs:33:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + '1 ситуация из 8'
+    - 'Ситуация 1 из 8\nЗавершено 0 из 8'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    Ситуация 1 из 8
+    Завершено 0 из 8
+  actual: '1 ситуация из 8'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///<WORKTREE>/tests/frontend/remain06-projection.test.mjs:40:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: F18 return card and header share frozen plan3, completed0 and confirmed pause
+not ok 13 - F18 return card and header share frozen plan3, completed0 and confirmed pause
+  ---
+  duration_ms: 1.638709
+  type: 'test'
+  location: '<WORKTREE>/tests/frontend/remain06-projection.test.mjs:24:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + '1 ситуация из 3'
+    - 'Ситуация 1 из 3\nЗавершено 0 из 3'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    Ситуация 1 из 3
+    Завершено 0 из 3
+  actual: '1 ситуация из 3'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///<WORKTREE>/tests/frontend/remain06-projection.test.mjs:29:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+not ok 14 - F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.70575
+  type: 'test'
+  location: '<WORKTREE>/tests/frontend/remain06-projection.test.mjs:33:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + '1 ситуация из 3'
+    - 'Ситуация 1 из 3\nЗавершено 0 из 3'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    Ситуация 1 из 3
+    Завершено 0 из 3
+  actual: '1 ситуация из 3'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///<WORKTREE>/tests/frontend/remain06-projection.test.mjs:40:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: F19 Cycle time 120 never falls back to stale legacy fields
+ok 15 - F19 Cycle time 120 never falls back to stale legacy fields
+  ---
+  duration_ms: 2.260625
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 16 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.855541
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time null never falls back to stale legacy fields
+ok 17 - F19 Cycle time null never falls back to stale legacy fields
+  ---
+  duration_ms: 1.592833
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time undefined never falls back to stale legacy fields
+ok 18 - F19 Cycle time undefined never falls back to stale legacy fields
+  ---
+  duration_ms: 1.313709
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time -1 never falls back to stale legacy fields
+ok 19 - F19 Cycle time -1 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.252792
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 20 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.251
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time NaN never falls back to stale legacy fields
+ok 21 - F19 Cycle time NaN never falls back to stale legacy fields
+  ---
+  duration_ms: 1.489458
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time Infinity never falls back to stale legacy fields
+ok 22 - F19 Cycle time Infinity never falls back to stale legacy fields
+  ---
+  duration_ms: 1.519833
+  type: 'test'
+  ...
+# Subtest: F19 known legacy timer remains compatible outside Cycle runtime
+ok 23 - F19 known legacy timer remains compatible outside Cycle runtime
+  ---
+  duration_ms: 2.185542
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 16
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 173.944333

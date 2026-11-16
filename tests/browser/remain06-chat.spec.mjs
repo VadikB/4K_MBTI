@@ -69,7 +69,7 @@ for (const total of [8, 3]) test(`F18/F19 pending, plan${total}, network recover
     await expect(page.locator('#interview-textarea')).toBeDisabled();
     await page.screenshot({ path: info.outputPath('pending.png') });
     f.release();
-    await expect(page.locator('#interview-case-badge')).toHaveText(`Ситуация 1 из ${total}\nЗавершено 0 из ${total}`);
+    await expect(page.locator('#interview-case-badge')).toHaveText(`1 ситуация из ${total}`);
     await expect(page.locator('#interview-timer-badge')).toHaveText('02:03');
     f.fail(true);
     await expect(page.locator('#interview-timer-badge')).toHaveText('Время уточняется');
@@ -79,7 +79,7 @@ for (const total of [8, 3]) test(`F18/F19 pending, plan${total}, network recover
     f.model.status.remaining_seconds = null;
     await expect(page.locator('#interview-timer-badge')).toHaveText('Время уточняется');
     await page.reload();
-    await expect(page.locator('#interview-case-badge')).toHaveText(`Ситуация 1 из ${total}\nЗавершено 0 из ${total}`);
+    await expect(page.locator('#interview-case-badge')).toHaveText(`1 ситуация из ${total}`);
     await expect(page.locator('#interview-timer-badge')).toHaveText('Время уточняется');
     expect(f.reads()).toBeLessThanOrEqual(12);
     await page.screenshot({ path: info.outputPath('recovered.png') });

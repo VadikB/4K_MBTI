@@ -3127,7 +3127,6 @@ if (interviewAdditionalButton) {
     const current = () => generation === interviewActionGeneration && isInterviewSendContextCurrent(context);
     let interviewModule;
     showError(interviewError, '');
-    if (!window.confirm('Завершить текущую сессию и открыть допустимую дополнительную сессию?')) return;
     interviewAdditionalButton.disabled = true;
     try {
       interviewModule = await loadInterview();

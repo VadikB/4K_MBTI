@@ -1,0 +1,266 @@
+TAP version 13
+# (node:4207) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+ok 1 - F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+  ---
+  duration_ms: 51.663833
+  type: 'test'
+  ...
+# Subtest: F08 lost scenario_end response retains command identity and locks input through reload
+ok 2 - F08 lost scenario_end response retains command identity and locks input through reload
+  ---
+  duration_ms: 4.31475
+  type: 'test'
+  ...
+# Subtest: F09 lost Next response and reload check the saved operation without a second POST
+ok 3 - F09 lost Next response and reload check the saved operation without a second POST
+  ---
+  duration_ms: 3.054209
+  type: 'test'
+  ...
+# Subtest: F09 server-opened next AS retires the old between-situations command
+ok 4 - F09 server-opened next AS retires the old between-situations command
+  ---
+  duration_ms: 1.585708
+  type: 'test'
+  ...
+# Subtest: F09 known Next refusal makes the next click a readback rather than a new POST
+ok 5 - F09 known Next refusal makes the next click a readback rather than a new POST
+  ---
+  duration_ms: 3.140541
+  type: 'test'
+  ...
+# (node:4208) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared projection wins with completed=undefined
+ok 6 - shared projection wins with completed=undefined
+  ---
+  duration_ms: 7.16725
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=null
+ok 7 - shared projection wins with completed=null
+  ---
+  duration_ms: 1.5905
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=0
+ok 8 - shared projection wins with completed=0
+  ---
+  duration_ms: 1.597
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=2
+ok 9 - shared projection wins with completed=2
+  ---
+  duration_ms: 1.493166
+  type: 'test'
+  ...
+# Subtest: 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+ok 10 - 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+  ---
+  duration_ms: 41.016875
+  type: 'test'
+  ...
+# Subtest: failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+ok 11 - failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+  ---
+  duration_ms: 2.327916
+  type: 'test'
+  ...
+# Subtest: ordinary active actions never pause or interrupt; existing saved recovery remains
+ok 12 - ordinary active actions never pause or interrupt; existing saved recovery remains
+  ---
+  duration_ms: 2.405333
+  type: 'test'
+  ...
+# Subtest: late status read cannot paint another screen or owner
+ok 13 - late status read cannot paint another screen or owner
+  ---
+  duration_ms: 1.99
+  type: 'test'
+  ...
+# Subtest: F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+ok 14 - F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+  ---
+  duration_ms: 2.949625
+  type: 'test'
+  ...
+# (node:4210) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F18 pending entry discards local placeholder progress and time until server readback
+ok 15 - F18 pending entry discards local placeholder progress and time until server readback
+  ---
+  duration_ms: 5.094416
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count undefined does not hide known N/M
+ok 16 - F18 missing or invalid completed count undefined does not hide known N/M
+  ---
+  duration_ms: 3.148709
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count null does not hide known N/M
+ok 17 - F18 missing or invalid completed count null does not hide known N/M
+  ---
+  duration_ms: 1.477416
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count 0 does not hide known N/M
+ok 18 - F18 missing or invalid completed count 0 does not hide known N/M
+  ---
+  duration_ms: 1.3455
+  type: 'test'
+  ...
+# Subtest: F18 return card and header share frozen plan8, completed0 and confirmed pause
+ok 19 - F18 return card and header share frozen plan8, completed0 and confirmed pause
+  ---
+  duration_ms: 1.60725
+  type: 'test'
+  ...
+# Subtest: F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+ok 20 - F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.470292
+  type: 'test'
+  ...
+# Subtest: F18 return card and header share frozen plan3, completed0 and confirmed pause
+ok 21 - F18 return card and header share frozen plan3, completed0 and confirmed pause
+  ---
+  duration_ms: 1.339792
+  type: 'test'
+  ...
+# Subtest: F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+ok 22 - F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.662167
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 120 never falls back to stale legacy fields
+ok 23 - F19 Cycle time 120 never falls back to stale legacy fields
+  ---
+  duration_ms: 3.039875
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 24 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.754417
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time null never falls back to stale legacy fields
+ok 25 - F19 Cycle time null never falls back to stale legacy fields
+  ---
+  duration_ms: 1.375333
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time undefined never falls back to stale legacy fields
+ok 26 - F19 Cycle time undefined never falls back to stale legacy fields
+  ---
+  duration_ms: 1.254708
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time -1 never falls back to stale legacy fields
+ok 27 - F19 Cycle time -1 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.227
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 28 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.232
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time NaN never falls back to stale legacy fields
+ok 29 - F19 Cycle time NaN never falls back to stale legacy fields
+  ---
+  duration_ms: 1.382083
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time Infinity never falls back to stale legacy fields
+ok 30 - F19 Cycle time Infinity never falls back to stale legacy fields
+  ---
+  duration_ms: 1.359041
+  type: 'test'
+  ...
+# Subtest: F19 known legacy timer remains compatible outside Cycle runtime
+ok 31 - F19 known legacy timer remains compatible outside Cycle runtime
+  ---
+  duration_ms: 5.248792
+  type: 'test'
+  ...
+# (node:4211) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F07 actual Finish/Pause/Additional handlers normalize rejected network calls and retain business reasons
+ok 32 - F07 actual Finish/Pause/Additional handlers normalize rejected network calls and retain business reasons
+  ---
+  duration_ms: 11.76725
+  type: 'test'
+  ...
+# Subtest: F08 rejected polling and heartbeat retain unknown answer recovery and its original operation
+ok 33 - F08 rejected polling and heartbeat retain unknown answer recovery and its original operation
+  ---
+  duration_ms: 5.913417
+  type: 'test'
+  ...
+# Subtest: F08 storage value/context failure never promises current draft revision is saved
+ok 34 - F08 storage value/context failure never promises current draft revision is saved
+  ---
+  duration_ms: 6.799208
+  type: 'test'
+  ...
+# Subtest: F08 active pending POST retains recovery priority when a poll fails before its receipt
+ok 35 - F08 active pending POST retains recovery priority when a poll fails before its receipt
+  ---
+  duration_ms: 36.222959
+  type: 'test'
+  ...
+# Subtest: F09 actual rejected return/runtime polling requests cannot alter a newer owner/epoch/Cycle/AS/screen/generation
+ok 36 - F09 actual rejected return/runtime polling requests cannot alter a newer owner/epoch/Cycle/AS/screen/generation
+  ---
+  duration_ms: 24.6135
+  type: 'test'
+  ...
+# Subtest: F09 default runtime load captures generation across navigation back to the same owner/Cycle/AS
+ok 37 - F09 default runtime load captures generation across navigation back to the same owner/Cycle/AS
+  ---
+  duration_ms: 1.659
+  type: 'test'
+  ...
+# Subtest: F09 rejected presence is scoped to identity/Cycle/AS and its own heartbeat generation
+ok 38 - F09 rejected presence is scoped to identity/Cycle/AS and its own heartbeat generation
+  ---
+  duration_ms: 11.997709
+  type: 'test'
+  ...
+# Subtest: F09 actual action handlers ignore late rejection/finally after owner/Cycle/AS and action generation change
+ok 39 - F09 actual action handlers ignore late rejection/finally after owner/Cycle/AS and action generation change
+  ---
+  duration_ms: 39.085791
+  type: 'test'
+  ...
+# Subtest: F09 same-scope re-entry cannot revive a rejected old send or action
+ok 40 - F09 same-scope re-entry cannot revive a rejected old send or action
+  ---
+  duration_ms: 4.307209
+  type: 'test'
+  ...
+1..40
+# tests 40
+# suites 0
+# pass 40
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 275.983041

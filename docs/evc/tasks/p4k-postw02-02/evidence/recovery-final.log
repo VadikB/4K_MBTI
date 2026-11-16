@@ -1,0 +1,160 @@
+TAP version 13
+# (node:10454) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+ok 1 - F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+  ---
+  duration_ms: 48.000875
+  type: 'test'
+  ...
+# Subtest: F08 lost scenario_end response retains command identity and locks input through reload
+ok 2 - F08 lost scenario_end response retains command identity and locks input through reload
+  ---
+  duration_ms: 3.118791
+  type: 'test'
+  ...
+# Subtest: F09 lost Next response and reload check the saved operation without a second POST
+ok 3 - F09 lost Next response and reload check the saved operation without a second POST
+  ---
+  duration_ms: 3.77475
+  type: 'test'
+  ...
+# Subtest: F09 server-opened next AS retires the old between-situations command
+ok 4 - F09 server-opened next AS retires the old between-situations command
+  ---
+  duration_ms: 1.359042
+  type: 'test'
+  ...
+# Subtest: F09 known Next refusal makes the next click a readback rather than a new POST
+ok 5 - F09 known Next refusal makes the next click a readback rather than a new POST
+  ---
+  duration_ms: 3.689958
+  type: 'test'
+  ...
+# (node:10455) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared projection wins with completed=undefined
+ok 6 - shared projection wins with completed=undefined
+  ---
+  duration_ms: 5.888625
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=null
+ok 7 - shared projection wins with completed=null
+  ---
+  duration_ms: 1.294125
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=0
+ok 8 - shared projection wins with completed=0
+  ---
+  duration_ms: 1.817042
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=2
+ok 9 - shared projection wins with completed=2
+  ---
+  duration_ms: 1.346959
+  type: 'test'
+  ...
+# Subtest: 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+ok 10 - 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+  ---
+  duration_ms: 41.887292
+  type: 'test'
+  ...
+# Subtest: failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+ok 11 - failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+  ---
+  duration_ms: 3.076041
+  type: 'test'
+  ...
+# Subtest: ordinary active actions never pause or interrupt; existing saved recovery remains
+ok 12 - ordinary active actions never pause or interrupt; existing saved recovery remains
+  ---
+  duration_ms: 2.216
+  type: 'test'
+  ...
+# Subtest: late status read cannot paint another screen or owner
+ok 13 - late status read cannot paint another screen or owner
+  ---
+  duration_ms: 1.464291
+  type: 'test'
+  ...
+# Subtest: interrupted recovery after a lost additional-session receipt reuses its consumed intent
+ok 14 - interrupted recovery after a lost additional-session receipt reuses its consumed intent
+  ---
+  duration_ms: 4.027791
+  type: 'test'
+  ...
+# (node:10456) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F07 actual Finish/Pause/Additional handlers normalize rejected network calls and retain business reasons
+ok 15 - F07 actual Finish/Pause/Additional handlers normalize rejected network calls and retain business reasons
+  ---
+  duration_ms: 11.754667
+  type: 'test'
+  ...
+# Subtest: F08 rejected polling and heartbeat retain unknown answer recovery and its original operation
+ok 16 - F08 rejected polling and heartbeat retain unknown answer recovery and its original operation
+  ---
+  duration_ms: 6.210292
+  type: 'test'
+  ...
+# Subtest: F08 storage value/context failure never promises current draft revision is saved
+ok 17 - F08 storage value/context failure never promises current draft revision is saved
+  ---
+  duration_ms: 7.2265
+  type: 'test'
+  ...
+# Subtest: F08 active pending POST retains recovery priority when a poll fails before its receipt
+ok 18 - F08 active pending POST retains recovery priority when a poll fails before its receipt
+  ---
+  duration_ms: 36.359667
+  type: 'test'
+  ...
+# Subtest: F09 actual rejected return/runtime polling requests cannot alter a newer owner/epoch/Cycle/AS/screen/generation
+ok 19 - F09 actual rejected return/runtime polling requests cannot alter a newer owner/epoch/Cycle/AS/screen/generation
+  ---
+  duration_ms: 22.982125
+  type: 'test'
+  ...
+# Subtest: F09 default runtime load captures generation across navigation back to the same owner/Cycle/AS
+ok 20 - F09 default runtime load captures generation across navigation back to the same owner/Cycle/AS
+  ---
+  duration_ms: 1.5815
+  type: 'test'
+  ...
+# Subtest: F09 rejected presence is scoped to identity/Cycle/AS and its own heartbeat generation
+ok 21 - F09 rejected presence is scoped to identity/Cycle/AS and its own heartbeat generation
+  ---
+  duration_ms: 10.567334
+  type: 'test'
+  ...
+# Subtest: F09 actual action handlers ignore late rejection/finally after owner/Cycle/AS and action generation change
+ok 22 - F09 actual action handlers ignore late rejection/finally after owner/Cycle/AS and action generation change
+  ---
+  duration_ms: 33.452833
+  type: 'test'
+  ...
+# Subtest: F09 same-scope re-entry cannot revive a rejected old send or action
+ok 23 - F09 same-scope re-entry cannot revive a rejected old send or action
+  ---
+  duration_ms: 3.798041
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 255.443667

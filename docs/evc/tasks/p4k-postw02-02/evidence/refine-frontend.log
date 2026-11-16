@@ -1,0 +1,280 @@
+TAP version 13
+# Subtest: E01 names assessment positions as situations and separates sending from completion
+ok 1 - E01 names assessment positions as situations and separates sending from completion
+  ---
+  duration_ms: 0.820375
+  type: 'test'
+  ...
+# Subtest: E01 keeps the absolute deadline outside assessment and marks only server-confirmed pauses
+ok 2 - E01 keeps the absolute deadline outside assessment and marks only server-confirmed pauses
+  ---
+  duration_ms: 0.481334
+  type: 'test'
+  ...
+# Subtest: E01 scopes editable drafts to cycle and assessment situation
+ok 3 - E01 scopes editable drafts to cycle and assessment situation
+  ---
+  duration_ms: 0.108834
+  type: 'test'
+  ...
+# Subtest: E01 protects supplied materials and silently blocks transferred answers
+ok 4 - E01 protects supplied materials and silently blocks transferred answers
+  ---
+  duration_ms: 0.354833
+  type: 'test'
+  ...
+# Subtest: E01 applies accepted conversation tokens and mobile layout
+ok 5 - E01 applies accepted conversation tokens and mobile layout
+  ---
+  duration_ms: 0.142458
+  type: 'test'
+  ...
+# Subtest: E01 ADD01 presents the admitted situation once inside the chat without raw JSON or a route column
+ok 6 - E01 ADD01 presents the admitted situation once inside the chat without raw JSON or a route column
+  ---
+  duration_ms: 2.093958
+  type: 'test'
+  ...
+# (node:8419) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server INTERIM_PENDING
+ok 7 - EXEC01 C1/C3 ordinary finish remains disabled for server INTERIM_PENDING
+  ---
+  duration_ms: 4.851792
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server WAIT_TECHNICAL
+ok 8 - EXEC01 C1/C3 ordinary finish remains disabled for server WAIT_TECHNICAL
+  ---
+  duration_ms: 1.100875
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server DECISION_STALE
+ok 9 - EXEC01 C1/C3 ordinary finish remains disabled for server DECISION_STALE
+  ---
+  duration_ms: 1.063917
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server ANALYSIS_FAILED
+ok 10 - EXEC01 C1/C3 ordinary finish remains disabled for server ANALYSIS_FAILED
+  ---
+  duration_ms: 1.043
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1 open ASK remains answerable and blocks Finish
+ok 11 - EXEC01 C1 open ASK remains answerable and blocks Finish
+  ---
+  duration_ms: 1.01625
+  type: 'test'
+  ...
+# Subtest: EXEC01 C2 server current decision enables ordinary Finish; new pending snapshot locks it again
+ok 12 - EXEC01 C2 server current decision enables ordinary Finish; new pending snapshot locks it again
+  ---
+  duration_ms: 1.04175
+  type: 'test'
+  ...
+# Subtest: EXEC01 A1 failed first presence never hides the already confirmed ASK/history
+ok 13 - EXEC01 A1 failed first presence never hides the already confirmed ASK/history
+  ---
+  duration_ms: 2.293334
+  type: 'test'
+  ...
+# Subtest: EXEC01 A2 Continue preserves the AS and ordinary draft without retargeting it into ASK
+ok 14 - EXEC01 A2 Continue preserves the AS and ordinary draft without retargeting it into ASK
+  ---
+  duration_ms: 1.502334
+  type: 'test'
+  ...
+# (node:8420) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: P3-A HTML and synchronous Cycle entry keep input/actions disabled until confirmed runtime
+ok 15 - P3-A HTML and synchronous Cycle entry keep input/actions disabled until confirmed runtime
+  ---
+  duration_ms: 6.101667
+  type: 'test'
+  ...
+# Subtest: P3-A late preflight cannot post or mutate a different Cycle/AS/screen/owner/epoch
+ok 16 - P3-A late preflight cannot post or mutate a different Cycle/AS/screen/owner/epoch
+  ---
+  duration_ms: 35.381667
+  type: 'test'
+  ...
+# Subtest: P3-A known POST receipt survives failed readback/reload and is never resent
+ok 17 - P3-A known POST receipt survives failed readback/reload and is never resent
+  ---
+  duration_ms: 4.619792
+  type: 'test'
+  ...
+# Subtest: P3-A commit then lost response retains one identity across reload and same-key provider recovery
+ok 18 - P3-A commit then lost response retains one identity across reload and same-key provider recovery
+  ---
+  duration_ms: 4.728125
+  type: 'test'
+  ...
+# Subtest: P3-A failed readback never establishes absence or permits a fresh blind command
+ok 19 - P3-A failed readback never establishes absence or permits a fresh blind command
+  ---
+  duration_ms: 2.038833
+  type: 'test'
+  ...
+# Subtest: P3-A raw multiline draft changed during POST is not erased by an older acceptance
+ok 20 - P3-A raw multiline draft changed during POST is not erased by an older acceptance
+  ---
+  duration_ms: 2.074083
+  type: 'test'
+  ...
+# Subtest: P3-A late POST success/error stays in its original scope and cannot enable/focus another view
+ok 21 - P3-A late POST success/error stays in its original scope and cannot enable/focus another view
+  ---
+  duration_ms: 8.888125
+  type: 'test'
+  ...
+# Subtest: P3-A a pause confirmed during POST remains authoritative after the old request fails
+ok 22 - P3-A a pause confirmed during POST remains authoritative after the old request fails
+  ---
+  duration_ms: 1.723625
+  type: 'test'
+  ...
+# Subtest: P3-A double retry shares one in-flight guard and preserves the pending row through history rebuild
+ok 23 - P3-A double retry shares one in-flight guard and preserves the pending row through history rebuild
+  ---
+  duration_ms: 1.977583
+  type: 'test'
+  ...
+# Subtest: P3-A stale retained retry callback cannot turn an old answer into a new AS command
+ok 24 - P3-A stale retained retry callback cannot turn an old answer into a new AS command
+  ---
+  duration_ms: 1.893
+  type: 'test'
+  ...
+# Subtest: P3-A a failed preflight sent nothing and leaves the draft editable for a corrected new answer
+ok 25 - P3-A a failed preflight sent nothing and leaves the draft editable for a corrected new answer
+  ---
+  duration_ms: 2.163333
+  type: 'test'
+  ...
+# Subtest: P3-A reload during prepared preflight discards only the undispatched operation and keeps its draft
+ok 26 - P3-A reload during prepared preflight discards only the undispatched operation and keeps its draft
+  ---
+  duration_ms: 2.5185
+  type: 'test'
+  ...
+# Subtest: P3-A a retained retry callback cannot resurrect a resolved operation in the same AS
+ok 27 - P3-A a retained retry callback cannot resurrect a resolved operation in the same AS
+  ---
+  duration_ms: 2.34175
+  type: 'test'
+  ...
+# Subtest: P3-A paused/closed/unpresented clarification phases do not issue POST or enable their input
+ok 28 - P3-A paused/closed/unpresented clarification phases do not issue POST or enable their input
+  ---
+  duration_ms: 5.05775
+  type: 'test'
+  ...
+# Subtest: P3-A source endpoint/clarification decision is never retargeted after phase changes
+ok 29 - P3-A source endpoint/clarification decision is never retargeted after phase changes
+  ---
+  duration_ms: 3.0815
+  type: 'test'
+  ...
+# Subtest: P3-A receipt validation distinguishes M5 turn and M7 answer; empty/foreign 2xx stays unknown
+ok 30 - P3-A receipt validation distinguishes M5 turn and M7 answer; empty/foreign 2xx stays unknown
+  ---
+  duration_ms: 8.634417
+  type: 'test'
+  ...
+# Subtest: P3-A a return/Continue card survives a pending GET error without cached AS resurrection
+ok 31 - P3-A a return/Continue card survives a pending GET error without cached AS resurrection
+  ---
+  duration_ms: 1.171542
+  type: 'test'
+  ...
+# Subtest: P3-A malformed persisted operation and overlong new text never fetch or corrupt the editable draft
+ok 32 - P3-A malformed persisted operation and overlong new text never fetch or corrupt the editable draft
+  ---
+  duration_ms: 7.962209
+  type: 'test'
+  ...
+# Subtest: P3-A UUID fallback uses secure random bytes and preserves the draft when crypto is unavailable
+ok 33 - P3-A UUID fallback uses secure random bytes and preserves the draft when crypto is unavailable
+  ---
+  duration_ms: 1.965791
+  type: 'test'
+  ...
+# Subtest: P3-A wiring captures scope/raw draft before lazy import and its old guard cannot block a new AS
+ok 34 - P3-A wiring captures scope/raw draft before lazy import and its old guard cannot block a new AS
+  ---
+  duration_ms: 2.444334
+  type: 'test'
+  ...
+# Subtest: P3-A wiring preserves the exact pre-import raw draft while a newer multiline draft is entered
+ok 35 - P3-A wiring preserves the exact pre-import raw draft while a newer multiline draft is entered
+  ---
+  duration_ms: 1.958833
+  type: 'test'
+  ...
+# (node:8421) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<WORKTREE>/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared projection wins with completed=undefined
+ok 36 - shared projection wins with completed=undefined
+  ---
+  duration_ms: 5.701792
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=null
+ok 37 - shared projection wins with completed=null
+  ---
+  duration_ms: 1.275083
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=0
+ok 38 - shared projection wins with completed=0
+  ---
+  duration_ms: 1.228917
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=2
+ok 39 - shared projection wins with completed=2
+  ---
+  duration_ms: 1.585291
+  type: 'test'
+  ...
+# Subtest: 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+ok 40 - 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+  ---
+  duration_ms: 33.440292
+  type: 'test'
+  ...
+# Subtest: failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+ok 41 - failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+  ---
+  duration_ms: 1.894125
+  type: 'test'
+  ...
+# Subtest: ordinary active actions never pause or interrupt; existing saved recovery remains
+ok 42 - ordinary active actions never pause or interrupt; existing saved recovery remains
+  ---
+  duration_ms: 1.899125
+  type: 'test'
+  ...
+# Subtest: late status read cannot paint another screen or owner
+ok 43 - late status read cannot paint another screen or owner
+  ---
+  duration_ms: 1.587583
+  type: 'test'
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 206.121958

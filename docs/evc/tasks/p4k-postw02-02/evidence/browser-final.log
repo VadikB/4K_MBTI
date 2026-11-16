@@ -1,0 +1,10 @@
+
+Running 3 tests using 1 worker
+
+(node:9735) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/postw02-assessment-ui.spec.mjs:105:34 › chat, clarification, bounded waiting, return, break 1440 (2.0s)
+  ✓  2 tests/browser/postw02-assessment-ui.spec.mjs:105:34 › chat, clarification, bounded waiting, return, break 390 (1.6s)
+  ✓  3 tests/browser/postw02-assessment-ui.spec.mjs:202:1 › unknown answer outcome keeps the draft; manual processing check never resends it (431ms)
+
+  3 passed (4.8s)

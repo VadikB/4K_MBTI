@@ -58,7 +58,7 @@ test('P3-A HTML and synchronous Cycle entry keep input/actions disabled until co
     held.resolve(runtime); await tick();
     assert.equal(h.controls.textarea.disabled, paused);
     assert.equal(h.controls.submit.disabled, paused);
-    assert.equal(h.controls.finish.disabled, paused);
+    assert.equal(h.controls.finish.disabled, true); // no saved answer yet
     assert.equal(h.textarea.value, raw);
   }
 });
