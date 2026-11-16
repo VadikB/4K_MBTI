@@ -2983,6 +2983,17 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await page.setViewportSize({ width: 320, height: 700 });
   const comparisonGeometry = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
   expect(comparisonGeometry.scroll).toBe(comparisonGeometry.viewport);
+  // 683 CSS px is the available layout width at 200% zoom on a 1366 px display.
+  await page.setViewportSize({ width: 683, height: 900 });
+  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  const zoomGeometry = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth,
+    contentRight: document.querySelector('#m8-comparison-content').getBoundingClientRect().right,
+  }));
+  expect(zoomGeometry.scroll).toBe(zoomGeometry.viewport);
+  expect(zoomGeometry.contentRight).toBeLessThanOrEqual(zoomGeometry.viewport);
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-200pct-equivalent.png') });
   let comparisonVariant = { ...comparison, skills: [comparison.skills[0]] };
   await page.route('**/users/assessment/m8/reports/report-rad01/comparison*', (route) => fulfillJson(route, comparisonVariant));
   await page.setViewportSize({ width: 1440, height: 900 });

@@ -47,7 +47,7 @@
 .m8-comparison-now { background: var(--accent); }
 .m8-comparison-scale-line strong { text-align: right; font-variant-numeric: tabular-nums; }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
     .m8-comparison .report-card-head { display: grid; gap: var(--space-3); }
     .m8-comparison-actions { display: grid; align-items: stretch; width: 100%; }
     .m8-comparison-actions select { width: 100%; }
