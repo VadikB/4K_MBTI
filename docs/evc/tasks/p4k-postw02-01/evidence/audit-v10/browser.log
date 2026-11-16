@@ -1,0 +1,18 @@
+
+Running 11 tests using 1 worker
+
+(node:28101) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product active 1440 (996ms)
+  ✓   2 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product preparing 1440 (392ms)
+  ✓   3 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product ready 1440 (399ms)
+  ✓   4 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product return 1440 (394ms)
+  ✓   5 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product result 1440 (397ms)
+  ✓   6 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product active 390 (634ms)
+  ✓   7 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product preparing 390 (366ms)
+  ✓   8 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product ready 390 (353ms)
+  ✓   9 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product return 390 (361ms)
+  ✓  10 tests/browser/postw02-reference-audit.spec.mjs:91:5 › exact v10 / product result 390 (359ms)
+  ✓  11 tests/browser/postw02-reference-audit.spec.mjs:132:1 › 320 overflow only (647ms)
+
+  11 passed (6.1s)

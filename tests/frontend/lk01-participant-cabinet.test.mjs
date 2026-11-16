@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 const dashboard = await readFile(new URL('../../web/js/screens/dashboard.js', import.meta.url), 'utf8');
 const markup = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
+const presentation = await readFile(new URL('../../web/js/dashboard-presentation.js', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../../web/styles/screens/dashboard.css', import.meta.url), 'utf8');
 
 test('LK01 renders server-owned current and completed Cycle cards', () => {
@@ -12,8 +13,8 @@ test('LK01 renders server-owned current and completed Cycle cards', () => {
   assert.match(markup, /id="completed-assessments"/);
   assert.match(dashboard, /dashboard\.current_assessments/);
   assert.match(dashboard, /dashboard\.completed_assessments/);
-  assert.match(dashboard, /assessmentPositionText\(card\)/);
-  assert.match(dashboard, /Europe\/Moscow/);
+  assert.match(dashboard, /assessmentMetadata\(card\)/);
+  assert.match(presentation, /Europe\/Moscow/);
 });
 
 test('LK01 has explicit Cycle actions and no catalogue or repeat action', () => {
@@ -30,7 +31,7 @@ test('LK01 has explicit Cycle actions and no catalogue or repeat action', () => 
 test('LK01 keeps accessible mobile actions and accepted visual tokens', () => {
   assert.match(styles, /min-height:\s*48px/);
   assert.match(styles, /background:\s*var\(--participant-primary\)/);
-  assert.match(styles, /outline:\s*3px solid var\(--participant-focus\)/);
+  assert.match(styles, /outline:\s*2px solid var\(--participant-focus\)/);
   assert.match(styles, /@media \(max-width: 560px\)/);
   assert.match(styles, /width:\s*100%/);
 });

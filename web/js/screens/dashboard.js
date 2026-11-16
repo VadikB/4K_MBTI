@@ -8,7 +8,7 @@ import { hideAllPanels, syncUrlState } from '../router.js';
 import { sanitizeDisplayRole, getSignupFirstName, buildInitials } from '../utils/format.js';
 import { handleAssessmentEntryClick } from './interview.js';
 import { readApiResponse } from '../api.js';
-import { assessmentPositionText } from '../dashboard-presentation.js';
+import { assessmentMetadata, formatAssessmentDate } from '../dashboard-presentation.js';
 
 const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
 const DASHBOARD_RETRY_INTERVAL_MS = 60000;
@@ -62,19 +62,6 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && state.currentScreen === 'dashboard') void refreshDashboard();
 });
 
-const formatDeadline = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  const datePart = new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric', month: 'long', timeZone: 'Europe/Moscow',
-  }).format(date);
-  const timePart = new Intl.DateTimeFormat('ru-RU', {
-    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Moscow',
-  }).format(date);
-  return `Завершить до ${datePart}, ${timePart} (МСК)`;
-};
-
 const performCardAction = async (card, event) => {
   if (card.cycle_id) {
     state.productCycleId = card.cycle_id;
@@ -105,62 +92,72 @@ const performCardAction = async (card, event) => {
   await handleAssessmentEntryClick(event);
 };
 
+const appendCardAction = (article, card, { primaryEntry, history }) => {
+  if (!card.action || !card.button_label) return;
+  const actions = document.createElement('div');
+  actions.className = 'participant-assessment-actions';
+  const button = document.createElement('button');
+  if (primaryEntry) button.id = 'assessment-action-button';
+  button.type = 'button';
+  const secondary = history || card.action === 'open_processing';
+  button.className = `${secondary ? 'ghost-button' : 'primary-button'} participant-assessment-action`;
+  button.dataset.dashboardAction = card.action;
+  button.dataset.cycleId = card.cycle_id || '';
+  button.textContent = history && card.action === 'open_report' ? 'Открыть отчёт' : card.button_label;
+  button.addEventListener('click', (event) => void performCardAction(card, event));
+  actions.appendChild(button);
+  article.appendChild(actions);
+};
+
 const buildCard = (card, { primaryEntry = false, history = false } = {}) => {
   const article = document.createElement('article');
-  article.className = `card participant-assessment-card${history ? ' participant-assessment-card--history' : ''}`;
+  article.className = history ? 'participant-assessment-card participant-assessment-card--history'
+    : 'card participant-assessment-card';
   article.dataset.cycleId = card.cycle_id || '';
   article.dataset.journeyState = card.journey_state || card.status;
   const main = document.createElement('div');
   main.className = 'participant-assessment-main';
-  const top = document.createElement('div');
-  top.className = 'participant-assessment-top';
-  if (card.organization_name) {
-    const organization = document.createElement('span');
-    organization.className = 'participant-assessment-organization';
-    organization.textContent = card.organization_name;
-    top.appendChild(organization);
+  if (history) {
+    const title = document.createElement('h3');
+    title.className = 'participant-assessment-title';
+    title.textContent = card.title;
+    const details = document.createElement('p');
+    details.className = 'participant-assessment-history-details';
+    details.textContent = [card.organization_name, formatAssessmentDate(card.closed_at),
+      card.action === 'open_processing' ? card.status_label : null].filter(Boolean).join(' · ');
+    main.append(title, details);
+  } else {
+    const top = document.createElement('div');
+    top.className = 'participant-assessment-top';
+    if (card.organization_name) {
+      const organization = document.createElement('span');
+      organization.className = 'participant-assessment-organization';
+      organization.textContent = card.organization_name;
+      top.appendChild(organization);
+    }
+    const status = document.createElement('span');
+    status.className = 'participant-assessment-status';
+    status.textContent = card.status_label;
+    top.appendChild(status);
+    const title = document.createElement('h2');
+    title.className = 'participant-assessment-title';
+    title.textContent = card.title;
+    const description = document.createElement('p');
+    description.className = 'participant-assessment-description';
+    description.textContent = card.description;
+    main.append(top, title, description);
+    const metadata = document.createElement('dl');
+    metadata.className = 'participant-assessment-metadata';
+    assessmentMetadata(card).forEach(({ label, value }) => {
+      const item = document.createElement('div');
+      const term = document.createElement('dt'); term.textContent = label;
+      const detail = document.createElement('dd'); detail.textContent = value;
+      item.append(term, detail); metadata.appendChild(item);
+    });
+    if (metadata.children.length) main.appendChild(metadata);
   }
-  const status = document.createElement('span');
-  status.className = 'participant-assessment-status';
-  status.textContent = card.status_label;
-  top.appendChild(status);
-  main.appendChild(top);
-  const title = document.createElement('h4');
-  title.textContent = card.title;
-  main.appendChild(title);
-  const description = document.createElement('p');
-  description.className = 'participant-assessment-description';
-  description.textContent = card.description;
-  main.appendChild(description);
-  const metadata = document.createElement('dl');
-  metadata.className = 'participant-assessment-metadata';
-  const addMeta = (label, value) => {
-    if (!value) return;
-    const item = document.createElement('div');
-    const term = document.createElement('dt'); term.textContent = label;
-    const detail = document.createElement('dd'); detail.textContent = value;
-    item.append(term, detail); metadata.append(item);
-  };
-  addMeta('Прохождение', assessmentPositionText(card));
-  if (card.closed_at) {
-    const date = new Date(card.closed_at);
-    if (!Number.isNaN(date.getTime())) addMeta('Завершена', new Intl.DateTimeFormat('ru-RU', {
-      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Moscow',
-    }).format(date));
-  } else addMeta('Срок оценки', formatDeadline(card.calendar_deadline));
-  if (metadata.children.length) main.appendChild(metadata);
   article.appendChild(main);
-  if (card.action && card.button_label) {
-    const button = document.createElement('button');
-    if (primaryEntry) button.id = 'assessment-action-button';
-    button.type = 'button';
-    button.className = `${history ? 'ghost-button' : 'primary-button'} participant-assessment-action`;
-    button.dataset.dashboardAction = card.action;
-    button.dataset.cycleId = card.cycle_id || '';
-    button.textContent = card.button_label;
-    button.addEventListener('click', (event) => void performCardAction(card, event));
-    article.appendChild(button);
-  }
+  appendCardAction(article, card, { primaryEntry, history });
   return article;
 };
 

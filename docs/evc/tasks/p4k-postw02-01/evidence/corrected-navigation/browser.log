@@ -1,0 +1,10 @@
+
+Running 3 tests using 1 worker
+
+(node:39117) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/postw02-cabinet.spec.mjs:72:3 › POSTW02 cabinet at 1440px (1.3s)
+  ✓  2 tests/browser/postw02-cabinet.spec.mjs:72:3 › POSTW02 cabinet at 390px (1.1s)
+  ✓  3 tests/browser/postw02-cabinet.spec.mjs:72:3 › POSTW02 cabinet at 320px (230ms)
+
+  3 passed (3.2s)

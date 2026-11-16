@@ -670,14 +670,16 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
 def _participant_cycle_outcome(history: dict) -> tuple[str, str, str, str, str]:
     """Project one closed Cycle; processing failure wins over an existing limited Report."""
     if history.get('status') == 'failed':
-        return ('failed', 'Не удалось подготовить результат',
-                'Ваши ответы сохранены. Повторно проходить оценку не нужно.',
-                'open_processing', 'Подробнее')
+        return ('failed', 'Не удалось подготовить отчёт',
+                'Ответы сохранены. Возвращаться к заданиям не требуется.',
+                'open_processing', 'Посмотреть состояние')
     if history.get('report_id'):
         return ('report_ready', 'Результат готов',
-                'Результат оценки доступен для просмотра.', 'open_report', 'Посмотреть результат')
-    return ('processing', 'Результат готовится', 'Вы можете вернуться позже.',
-            'open_processing', 'Подробнее')
+                'Вы завершили оценку. В отчёте — ваши навыки, примеры из ответов и пояснения к результатам.',
+                'open_report', 'Посмотреть результаты →')
+    return ('processing', 'Отчёт готовится',
+            'Ответы сохранены. Результаты появятся здесь, когда отчёт будет готов.',
+            'open_processing', 'Посмотреть состояние')
 
 
 def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
@@ -738,12 +740,15 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                     'Ваши ответы сохранены. Проверьте состояние подготовки.', 'open_readiness', 'Проверить состояние')
             elif operation.get('status') in {'queued', 'running'}:
                 journey_state, label, description, action, button = (
-                    'preparing', 'Оценка готовится', 'Время выполнения ещё не идёт.', 'open_readiness', 'Посмотреть готовность')
+                    'preparing', 'Подготовка оценки',
+                    'Готовим план и первую ситуацию. Ваши ответы знакомства сохранены. Время оценки ещё не идёт.',
+                    'open_readiness', 'Посмотреть состояние')
             elif (start_decision['can_start'] and total_cases
                     and start_decision.get('plan_revision_id') == progress['plan_revision_id']):
                 journey_state, label, description, action, button = (
-                    'ready', 'Готова к началу', 'Ваша оценка подготовлена. Время выполнения ещё не идёт.',
-                    'open_readiness', 'Приступить к оценке')
+                    'ready', 'Готова к началу',
+                    'План и первая ситуация подготовлены. Перед началом вы сможете прочитать инструкцию.',
+                    'open_readiness', 'Перейти к готовности →')
             elif start_decision.get('reasons'):
                 journey_state, label, description, action, button = (
                     'readiness_error', 'Не удалось подтвердить готовность',
@@ -755,7 +760,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                     'Проверьте сохранённое состояние оценки перед началом.', 'open_readiness', 'Проверить готовность')
         else:
             journey_state, label, description, action, button = (
-                'active', 'Оценка начата', 'Продолжите с того же места.', 'continue', 'Продолжить')
+                'active', 'Оценка идёт', 'Продолжите прохождение с текущей ситуации.',
+                'continue', 'Продолжить оценку →')
             if progress['between_situations']:
                 journey_state, label, description = ('between_situations',
                     'Между ситуациями', 'Ответы сохранены. Следующую ситуацию вы начнёте сами.')
@@ -766,8 +772,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                 except ValueError:
                     returning = {}  # Legacy Cycle without a saved return policy.
                 if returning.get('allowed_action') in {'continue_current', 'replace_current', 'replacement_candidate_required'}:
-                    journey_state, label, description = ('return_required', 'Возвращение к оценке',
-                        'Откройте оценку и подтвердите продолжение на экране возврата.')
+                    journey_state, label, description, button = ('return_required', 'Можно продолжить',
+                        'Вернитесь к той же сохранённой ситуации и переписке.', 'Вернуться к оценке →')
         if cycle['status'] != 'prepared' and history.get('status') == 'failed':
             journey_state, label, description = ('runtime_error', 'Не удалось продолжить оценку',
                 'Ваши ответы сохранены. Откройте оценку, чтобы проверить состояние.')

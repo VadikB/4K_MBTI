@@ -1,0 +1,19 @@
+
+Running 12 tests using 1 worker
+
+(node:38276) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product active 1440 (1.3s)
+  ✓   2 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product preparing 1440 (560ms)
+  ✓   3 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product ready 1440 (568ms)
+  ✓   4 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product return 1440 (607ms)
+  ✓   5 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product result 1440 (600ms)
+  ✓   6 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product active 390 (968ms)
+  ✓   7 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product preparing 390 (528ms)
+  ✓   8 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product ready 390 (492ms)
+  ✓   9 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product return 390 (536ms)
+  ✓  10 tests/browser/postw02-cabinet-reference.spec.mjs:113:5 › exact v10 / product result 390 (518ms)
+  ✓  11 tests/browser/postw02-cabinet-reference.spec.mjs:159:1 › 320 overflow only (825ms)
+  ✓  12 tests/browser/postw02-cabinet-reference.spec.mjs:178:1 › breakpoint and interactive style probes (2.7s)
+
+  12 passed (11.2s)

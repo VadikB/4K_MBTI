@@ -234,3 +234,26 @@ def test_released_unmanaged_entry_keeps_its_existing_action(cabinet, monkeypatch
     assert card['planned_total'] is None
     monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *_a, **_kw: True)
     assert dashboard(cabinet)['current_assessments'][0]['action'] == 'open_readiness'
+
+@pytest.mark.parametrize('scene', ['active', 'preparing', 'prepared_preparing', 'ready', 'return', 'result'])
+def test_cabinet_copy_matches_exact_v10_without_changing_actions(cabinet, scene):
+    import json
+    from pathlib import Path
+    expected = json.loads((Path(__file__).parents[1] / 'fixtures/postw02-reference-copy.json').read_text())['scenes']
+    _client, db, model, _admission, returning, history = cabinet
+    if scene == 'preparing':
+        db.cycles = []
+        model['preparation_operation'] = {'status': 'queued'}
+    elif scene in {'ready', 'prepared_preparing'}:
+        db.cycle.update(status='prepared', started_at=None)
+        if scene == 'prepared_preparing': model['preparation_operation'] = {'status': 'queued'}
+    elif scene == 'return':
+        returning['allowed_action'] = 'continue_current'
+    elif scene == 'result':
+        db.cycle.update(status='calculated', collection_closed_at=datetime(2026, 10, 17, tzinfo=timezone.utc))
+        history.append({'cycle_id': db.cycle_id, 'status': 'report_ready', 'report_id': 'saved-report'})
+    result = dashboard(cabinet)
+    card = (result['completed_assessments'] if scene == 'result' else result['current_assessments'])[0]
+    assert {key: card[key] for key in ('status_label', 'description', 'button_label')} == expected['preparing' if scene == 'prepared_preparing' else scene]
+    expected_action = 'open_report' if scene == 'result' else 'continue' if scene in {'active', 'return'} else 'open_readiness'
+    assert card['action'] == expected_action

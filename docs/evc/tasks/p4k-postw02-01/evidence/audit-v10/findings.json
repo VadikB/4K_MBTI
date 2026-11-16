@@ -1,0 +1,164 @@
+[
+  {
+    "id": "A01",
+    "severity": "существенное",
+    "title": "История стала повторением основной карточки",
+    "expected": "Компактная строка: название, организация · дата, действие. 99 px на 1440; 161 px на 390 (active).",
+    "actual": "Полная карточка со статусом, описанием и dl. 254 px на 1440; первая 342 px на 390. Это не разные данные: fixture названий, организации и дат одинаковый.",
+    "product_source": "web/js/screens/dashboard.js:106; web/styles/screens/dashboard.css:425",
+    "reference_source": "dist/report.mjs:287; dist/report-cabinet.css:56"
+  },
+  {
+    "id": "A02",
+    "severity": "существенное",
+    "title": "Состав метаданных заменён во всех состояниях",
+    "expected": "Организация + Текущая ситуация / Начало оценки / План оценки / Дата завершения.",
+    "actual": "Универсальное Прохождение + Срок оценки / Завершена. Организация в dl отсутствует; срок добавлен вместо предусмотренного поля. Само значение срока берётся с сервера, выдуманным оно не является.",
+    "product_source": "web/js/screens/dashboard.js:144",
+    "reference_source": "dist/report.mjs:300"
+  },
+  {
+    "id": "A03",
+    "severity": "существенное",
+    "title": "В подготовке исчезает весь блок метаданных",
+    "expected": "Организация и Начало оценки → Оценка ещё не начата; рамки и две колонки остаются.",
+    "actual": "При planned_total=null, closed_at=null и deadline=null dl не добавляется. Высота карточки 288 против 428 px desktop; 296 против 460 px mobile. Это допустимое реальное состояние до появления Cycle/плана.",
+    "product_source": "web/js/screens/dashboard.js:137; Api/participant_dashboard.py:92",
+    "reference_source": "dist/report.mjs:273; dist/report.mjs:300"
+  },
+  {
+    "id": "A04",
+    "severity": "существенное",
+    "title": "Произвольно изменены тексты пяти состояний и действий",
+    "expected": "Тексты phases и result из renderHistory v10, включая сохранённую ситуацию/переписку и переход к готовности.",
+    "actual": "Другие status_label, description, button_label в Api/routes.py/participant_dashboard.py. Например: Оценка начата / Продолжить вместо Оценка идёт / Продолжить оценку →; готовность названа Приступить к оценке, хотя открывает отдельный экран. Точная таблица ниже.",
+    "product_source": "Api/routes.py:672; Api/routes.py:739; Api/participant_dashboard.py:90",
+    "reference_source": "dist/report.mjs:271"
+  },
+  {
+    "id": "A05",
+    "severity": "существенное",
+    "title": "Тексты обеих информационных карточек переписаны",
+    "expected": "Здесь только ваши оценки и результаты. Вторая карточка перечисляет общение, командную работу, креативность и критическое мышление.",
+    "actual": "Первый текст длиннее: здесь можно продолжить назначенную оценку...; второй заменён на общий текст о рабочих задачах и новых подходах. Первая карточка выросла со 118 до 168 px desktop. Это UI copy, а не запрещённые к переносу демонстрационные данные.",
+    "product_source": "web/index.html:245",
+    "reference_source": "dist/report.mjs:305"
+  },
+  {
+    "id": "A06",
+    "severity": "визуальное",
+    "title": "Лишние рамки основной и боковых карточек",
+    "expected": "Белая .card, border=0; рамки есть у строк истории и внутри метаданных.",
+    "actual": "Всем .card кабинета добавлена обводка 1px #CBD5E1. Она также сдвигает внутреннее содержимое на 1px. Цвет обводки правильный, её применение к этим карточкам отличается.",
+    "product_source": "web/styles/screens/dashboard.css:396",
+    "reference_source": "dist/report.css:4"
+  },
+  {
+    "id": "A07",
+    "severity": "визуальное",
+    "title": "Неверный вертикальный зазор боковых карточек",
+    "expected": "16 px на desktop и узких экранах.",
+    "actual": "24 px при width>800, 16 px ниже. На desktop вторая карточка дополнительно сдвинута увеличенным первым текстом.",
+    "product_source": "web/styles/screens/dashboard.css:395",
+    "reference_source": "dist/report-cabinet.css:53"
+  },
+  {
+    "id": "A08",
+    "severity": "визуальное",
+    "title": "Заголовок и начало контента подняты",
+    "expected": "Личный раздел имеет margin-top:8px. h1 y=112 desktop /92 mobile. Сетка y=208 /200.",
+    "actual": "Отсутствует 8px: h2 y=104 /84. Сетка y=200 /194; на mobile разница 6px из-за другой типографики подзаголовка. Padding контейнера сам по себе совпадает.",
+    "product_source": "web/styles/screens/dashboard.css:388",
+    "reference_source": "dist/report-cabinet.css:12"
+  },
+  {
+    "id": "A09",
+    "severity": "визуальное",
+    "title": "Типографика вводной части",
+    "expected": "h1 letter-spacing:-0.5px; subtitle 14/22 desktop, 13/22 mobile; margin-top10px.",
+    "actual": "letter-spacing:normal; subtitle15/24 на обеих ширинах; margin-top8px. Размер/вес главного заголовка 32/40/700 и 26/34/700 совпадают.",
+    "product_source": "web/styles/screens/dashboard.css:389",
+    "reference_source": "dist/report.css:2; dist/report.css:3; dist/report.css:9"
+  },
+  {
+    "id": "A10",
+    "severity": "визуальное",
+    "title": "Отступ верхней строки основной карточки",
+    "expected": "margin-bottom24px; организация line-height24px.",
+    "actual": "margin-bottom20px; организация line-height22px. Размер статуса13/20 и padding6/12 совпадают.",
+    "product_source": "web/styles/screens/dashboard.css:408",
+    "reference_source": "dist/report-cabinet.css:30"
+  },
+  {
+    "id": "A11",
+    "severity": "визуальное",
+    "title": "Геометрия метаданных",
+    "expected": "padding18px 0; gap16px (12px при<=560); dt line-height24px; margin-bottom24px.",
+    "actual": "padding20px 0; gap20px на desktop; dt20px; margin-bottom0, а кнопку отодвигает flex gap24. Суммарная высота активной карточки случайно близка, но внутренние координаты другие.",
+    "product_source": "web/styles/screens/dashboard.css:417",
+    "reference_source": "dist/report-cabinet.css:42"
+  },
+  {
+    "id": "A12",
+    "severity": "визуальное",
+    "title": "Вес и межстрочный интервал кнопок",
+    "expected": "Основная:14/24/600; вторичная:14/24/500.",
+    "actual": "Обе14/18.9/700 вследствие наследования из .primary-button/button. min-height48 и padding12/20 выполнены.",
+    "product_source": "web/styles/screens/dashboard.css:421; web/styles/components.css:101",
+    "reference_source": "dist/report.css:3; dist/report-cabinet.css:75"
+  },
+  {
+    "id": "A13",
+    "severity": "существенное",
+    "title": "Hover основной кнопки перекрыт старым CSS",
+    "expected": "Фактически rgb(16,158,171), #109EAB; совпадает с заданным participant-primary-hover продукта.",
+    "actual": "Фактически rgb(131,220,227), #83DCE3. Общий .primary-button:hover с более высокой специфичностью перекрывает новую запись dashboard.css:422. Проверка текста CSS эту ошибку не выявляет.",
+    "product_source": "web/styles/components.css:107; web/styles/screens/dashboard.css:422",
+    "reference_source": "dist/report.css:3; web/styles/tokens.css:108"
+  },
+  {
+    "id": "A14",
+    "severity": "визуальное",
+    "title": "Слишком жирные заголовки боковых карточек",
+    "expected": "18/26/600.",
+    "actual": "18/26/700. В dashboard-info-card не переопределён общий вес h3.",
+    "product_source": "web/styles/screens/dashboard.css:401; web/styles/base.css:31",
+    "reference_source": "dist/report.css:2"
+  },
+  {
+    "id": "A15",
+    "severity": "визуальное",
+    "title": "Интервалы и шрифт истории",
+    "expected": "Отступ сверху28px; от заголовка до списка14px; между строками12px. Название17/25/600, подпись14/22.",
+    "actual": "32px; фактический зазор до списка24px от .dashboard-section; между строками16px. Название20/28/700; вместо короткой подписи — описание15/24 и dl.",
+    "product_source": "web/styles/screens/dashboard.css:403; web/styles/screens/dashboard.css:426",
+    "reference_source": "dist/report-cabinet.css:54"
+  },
+  {
+    "id": "A16",
+    "severity": "визуальное",
+    "title": "Цвет текста статуса",
+    "expected": "Подпись #464554, прямо задана task rev1.1 и v10.",
+    "actual": "Основной #222C30. Рамка статуса #CBD5E1 совпадает.",
+    "product_source": "web/styles/screens/dashboard.css:413",
+    "reference_source": "dist/report-cabinet.css:39; dist/ui-theme.css:11"
+  },
+  {
+    "id": "A17",
+    "severity": "визуальное",
+    "title": "Фокус отличается по толщине и отступу",
+    "expected": "2px #007D89, outline-offset3px.",
+    "actual": "3px #007D89, offset2px. Цвет совпадает, доступность фокуса есть. Это различие точной формы, не отсутствие keyboard focus.",
+    "product_source": "web/styles/screens/dashboard.css:424",
+    "reference_source": "dist/report.css:2"
+  },
+  {
+    "id": "A18",
+    "severity": "визуальное",
+    "title": "В подвале остаётся другой фон страницы",
+    "expected": "Нейтральный #F7F7F7 продолжается до низа, footer padding32px 20px.",
+    "actual": "Подвал #F6F9F9 (старый --palette-canvas), padding24px. Панель отдельно min-height100vh + padding-bottom48px. Дополнительная строка версии продукта допустима и не считается ошибкой.",
+    "product_source": "web/styles/components.css:371; web/styles/base.css:78; web/styles/screens/dashboard.css:379",
+    "reference_source": "dist/report.css:7"
+  }
+]

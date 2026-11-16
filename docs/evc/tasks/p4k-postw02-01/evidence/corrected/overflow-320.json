@@ -1,0 +1,27 @@
+{
+  "active": {
+    "referenceWidth": 320,
+    "productWidth": 320,
+    "viewportWidth": 320
+  },
+  "preparing": {
+    "referenceWidth": 320,
+    "productWidth": 320,
+    "viewportWidth": 320
+  },
+  "ready": {
+    "referenceWidth": 320,
+    "productWidth": 320,
+    "viewportWidth": 320
+  },
+  "return": {
+    "referenceWidth": 320,
+    "productWidth": 320,
+    "viewportWidth": 320
+  },
+  "result": {
+    "referenceWidth": 320,
+    "productWidth": 320,
+    "viewportWidth": 320
+  }
+}
