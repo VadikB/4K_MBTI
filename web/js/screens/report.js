@@ -1801,7 +1801,7 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
   const metadata = document.getElementById('m8-report-metadata');
   const startedAt = c67.time?.started_at || c67.sessions?.[0]?.started_at;
   const finishedAt = c67.collection?.closed_at || c67.sessions?.at(-1)?.ended_at;
-  metadata.innerHTML = `<div><dt>Оценка</dt><dd>4К — индивидуальный результат</dd></div>` +
+  metadata.innerHTML = `<div><dt>Оценка</dt><dd>${escapeHtml(report.program_name || '4К — индивидуальный результат')}</dd></div>` +
     `<div><dt>Период</dt><dd>${escapeHtml(formatParticipantDate(startedAt))} — ${escapeHtml(formatParticipantDate(finishedAt))}</dd></div>` +
     `<div><dt>Версия отчёта</dt><dd>${escapeHtml(report.revision_no)}</dd></div>`;
   const descriptive = c67.descriptive || {};

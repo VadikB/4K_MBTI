@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from test_m6_evidence_db import database
 from test_m8_recommendation_basis_db import saved_chain
 from tests.m6_admission_fixture import RecordedAdmissionGateway
-from Api import m6_cycle_aggregation_repository as calculations, m8_results
+from Api import m6_cycle_aggregation_repository as calculations, m8_results, m8_report_access
 from Api.m6_admission_material import resolve
 from Api.m7_completion import read_c46
 from Api.m5_case_runtime import checksum
@@ -134,7 +134,7 @@ def test_saved_chain_retry_and_http(database,monkeypatch,tmp_path,mode):
     with TestClient(app) as http:
         http.cookies.set(routes.SESSION_COOKIE_NAME,'owner')
         response=http.get(f"/users/assessment/m8/reports/{report['id']}")
-        assert response.status_code==200 and response.json()['c67']==report['c67']
+        assert response.status_code==200 and response.json()['c67']==m8_report_access.public_projection(report)['c67']
         pdf=http.get(f"/users/assessment/m8/reports/{report['id']}/pdf")
         assert pdf.status_code==200 and pdf.content.startswith(b'%PDF')
         (tmp_path/'admission.pdf').write_bytes(pdf.content)

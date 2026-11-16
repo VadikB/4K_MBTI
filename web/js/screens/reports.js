@@ -72,11 +72,11 @@ export const renderReportsPage = () => {
     card.dataset.cycleId = item.cycle_id;
     const labels = {collecting:'Оценка ещё не завершена', processing:'Результат готовится', results_ready:'Результат готов, отчёт готовится', failed:'Техническая ошибка. Обработка требует восстановления.', report_ready:'Отчёт доступен'};
     if (!item.report_id) {
-      card.innerHTML = `<h3>Оценка от ${escapeHtml(formatProfileDate(item.cycle_created_at || item.created_at))}</h3><p>${escapeHtml(labels[item.status] || 'Результат пока недоступен')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(item.program_name || 'Оценка 4К')} · ${escapeHtml(formatProfileDate(item.cycle_created_at || item.created_at))}</h3><p>${escapeHtml(labels[item.status] || 'Результат пока недоступен')}</p>`;
       const refresh = document.createElement('button'); refresh.type = 'button'; refresh.className = 'ghost-button'; refresh.textContent = 'Обновить состояние';
       refresh.addEventListener('click', () => { void openReports(); }); card.appendChild(refresh); profileHistoryList.appendChild(card); continue;
     }
-    card.innerHTML = `<h3>Оценка от ${escapeHtml(formatProfileDate(item.cycle_created_at || item.created_at))}</h3><p>Отчёт доступен</p>` +
+    card.innerHTML = `<h3>${escapeHtml(item.program_name || 'Оценка 4К')} · ${escapeHtml(formatProfileDate(item.collection_closed_at || item.cycle_created_at || item.created_at))}</h3><p>Отчёт доступен</p>` +
       `<label>Сохранённая версия<select aria-label="Версия отчёта">${item.versions.map((v) => `<option value="${escapeHtml(v.report_id)}">Результат ${v.results_revision_no} · отчёт ${v.revision_no}</option>`).join('')}</select></label>` +
       '<button type="button" class="ghost-button cycle-report-open">Открыть отчёт</button>' +
       '<a class="primary-button cycle-report-pdf">Скачать PDF</a>';

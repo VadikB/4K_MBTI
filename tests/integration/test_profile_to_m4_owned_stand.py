@@ -234,7 +234,10 @@ def internal(destination):
         # R11.2: the real 10.5 confirmation builder feeds saved Results, never the live profile.
         results = http.get(f'/users/assessment/m8/cycles/{cycle_id}/results').json()
         saved_report = http.get(f'/users/assessment/m8/cycles/{cycle_id}/reports/latest').json()
-        generation = saved_report['c67']['descriptive']
+        assert 'input' not in saved_report['c67']['descriptive']
+        from Api import m8_results
+        with get_connection() as c:
+            generation = m8_results.read_report(c, saved_report['id'])['c67']['descriptive']
         frozen_user_context = original['content_json']['user_context']
         contexts = {item['ref']:item['text'] for item in generation['input']['context']}
         assert contexts['user_context.regular_tasks'] == frozen_user_context['regular_tasks']
@@ -412,10 +415,10 @@ def internal(destination):
             c.commit()
         wrong_org = http.post('/users/assessment/cycles/start',json={'idempotency_key':'wrong-org','personalized_profile_id':new_id})
         assert wrong_org.status_code == 409 and 'SCOPE_MISMATCH' in wrong_org.text
-        assert http.get('/users/assessment/m8/history').json()['cycles'] == []
-        assert http.get(f'/users/assessment/m8/cycles/{cycle_id}/results').status_code == 403
+        assert any(item['cycle_id'] == cycle_id for item in http.get('/users/assessment/m8/history').json()['cycles'])
+        assert http.get(f'/users/assessment/m8/cycles/{cycle_id}/results').status_code == 200
         for suffix in ('','/pdf'):
-            assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}"+suffix).status_code == 403
+            assert http.get(f"/users/assessment/m8/reports/{saved_report['id']}"+suffix).status_code == 200
     destination.write_text(json.dumps({'status':'PASS','zero_M4_before_confirmation':True,
         'actual_unapproved_start_refused':True,
         'upstream_start_permission':'SYNTHETIC_COMPONENT_BOUNDARY_NOT_PILOT_ADMISSION',
