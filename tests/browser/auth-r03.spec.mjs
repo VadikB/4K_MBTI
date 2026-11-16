@@ -2849,7 +2849,7 @@ test('LK01 renders selected Cycle cards without catalogue or horizontal overflow
     current_assessments: [{ cycle_id: 'cycle-current', title: 'Оценка руководителей',
       organization_name: 'Организация с очень длинным названием для проверки переноса строки',
       status: 'active', status_label: 'Оценка начата', description: 'Продолжите с того же места.',
-      action: 'continue', button_label: 'Продолжить', completed_cases: 0, total_cases: 4,
+      action: 'continue', button_label: 'Продолжить', completed_cases: 0, total_cases: 4, planned_total: 4, current_position_no: 1,
       calendar_deadline: '2026-10-19T15:30:00Z' }],
     completed_assessments: [{ cycle_id: 'cycle-ready', report_id: 'report-ready', title: 'Оценка 4К',
       organization_name: 'Организация', status: 'report_ready', status_label: 'Результат готов',
@@ -2869,7 +2869,7 @@ test('LK01 renders selected Cycle cards without catalogue or horizontal overflow
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(base);
   await expect(page.getByRole('heading', { name: 'Мои оценки' })).toBeVisible();
-  await expect(page.getByText('Завершено ситуаций: 0 из 4')).toBeVisible();
+  await expect(page.getByText('1 ситуация из 4')).toBeVisible();
   await expect(page.getByText('Завершить до 19 октября, 18:30 (МСК)')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Продолжить' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Посмотреть результат' })).toBeVisible();

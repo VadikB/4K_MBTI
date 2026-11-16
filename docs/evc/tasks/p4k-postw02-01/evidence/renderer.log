@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: LK01 renders server-owned current and completed Cycle cards
+ok 1 - LK01 renders server-owned current and completed Cycle cards
+  ---
+  duration_ms: 0.893042
+  type: 'test'
+  ...
+# Subtest: LK01 has explicit Cycle actions and no catalogue or repeat action
+ok 2 - LK01 has explicit Cycle actions and no catalogue or repeat action
+  ---
+  duration_ms: 0.301333
+  type: 'test'
+  ...
+# Subtest: LK01 keeps accessible mobile actions and accepted visual tokens
+ok 3 - LK01 keeps accessible mobile actions and accepted visual tokens
+  ---
+  duration_ms: 0.156458
+  type: 'test'
+  ...
+# (node:18026) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<LOCAL_USER>/Library/CloudStorage/GoogleDrive-<LOCAL_ACCOUNT>/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-postw02-01/web/js/dashboard-presentation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: POSTW02 shows saved current position even when completed is unknown
+ok 4 - POSTW02 shows saved current position even when completed is unknown
+  ---
+  duration_ms: 0.735958
+  type: 'test'
+  ...
+# Subtest: POSTW02 never infers a current position or total from materialized/completed counts
+ok 5 - POSTW02 never infers a current position or total from materialized/completed counts
+  ---
+  duration_ms: 0.139875
+  type: 'test'
+  ...
+# Subtest: POSTW02 between screen stays on last presented closed position
+ok 6 - POSTW02 between screen stays on last presented closed position
+  ---
+  duration_ms: 0.059875
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 101.170792

@@ -1,0 +1,12 @@
+{
+  "project_id": "appgprj_6ad211b93f948191a7bc6106570630ea",
+  "version_number": 10,
+  "source_commit_sha": "e44fa78efb1ec8605b28cf9bc2c2272da2b9122a",
+  "version_id": "appgprj_6ad211b93f948191a7bc6106570630ea~appgver_92b06c40ff6c819193bd3ff687265b34",
+  "archive_content_hash": "sha256:ecf526d83c88d5525779266a7701bb2e9af33fc276e79abec0f2ebc27c863023",
+  "publication_status": "succeeded",
+  "publication_updated_at": "2026-11-16T12:12:31.676435+00:00",
+  "reference_source_contents": "NOT_RUN: no read/download source capability in available Sites tools; exact local v10 checkout unavailable",
+  "authenticated_live_browser": "NOT_RUN per task; Google login not attempted",
+  "requirements": "P4K_POSTW02_01_Cabinet rev1.1 + REFERENCE_CURRENT.txt; directly selected by owner during this chat"
+}

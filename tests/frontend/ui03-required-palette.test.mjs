@@ -83,6 +83,13 @@ test('UI03 keeps participant and admin primary actions semantically distinct', (
   assert.match(components, /\.admin-panel \.primary-button,[\s\S]*background:\s*var\(--admin-primary\);[\s\S]*color:\s*var\(--admin-primary-text\)/);
 });
 
+// POSTW02-01 reuses the accepted W02 values as shared semantic tokens.
+// Exact declarations only: a second local palette is still rejected.
+const sharedParticipantColors = {
+  '--participant-canvas': '#f7f7f7', '--participant-caption': '#464554',
+  '--participant-border': '#cbd5e1', '--participant-primary-hover': '#109eab',
+  '--participant-primary-active': '#0c8591', '--participant-focus': '#007d89',
+};
 test('UI03 prevents local six-digit hex colors outside the owner palette', () => {
   for (const file of [...cssFiles, ...collectFiles('web/js', '.js')]) {
     let source = readFileSync(file, 'utf8').toLowerCase();
@@ -93,10 +100,17 @@ test('UI03 prevents local six-digit hex colors outside the owner palette', () =>
       assert.equal([...source.matchAll(authBorder)].length, 1);
       source = source.replace(authBorder, (block) => block.replace('#cbd5e1', ''));
     }
+    if (file === 'web/styles/tokens.css') {
+      for (const [name, color] of Object.entries(sharedParticipantColors)) {
+        assert.equal(rootTokens.get(name), color);
+        source = source.replace(`${name}: ${color};`, '');
+      }
+    }
     if (file === 'web/styles/screens/onboarding.css') {
-      // P4K-W02-01: owner-approved W02 v5 tokens, scoped to acquaintance only.
+      // W02 aliases resolve to the same accepted participant values.
       const scoped = source.match(/\.shell:has\(> #auth-complete-panel\.w02-waiting:not\(\.hidden\)\)\s*\{([^}]+)\}/)?.[1] || '';
-      const w02 = new Set(['#f7f7f7', '#464554', '#cbd5e1', '#109eab', '#0c8591', '#007d89', '#e5f4f5']);
+      const w02 = new Set(['#e5f4f5']);
+      for (const name of Object.keys(sharedParticipantColors)) assert.ok(scoped.includes(`var(${name})`));
       for (const color of w02) assert.ok(scoped.includes(color), `Missing W02 token ${color}`);
       source = source.replace(/\.shell:has\(> #onboarding-panel:not\(\.hidden\)\),\s*\.shell:has\(> #auth-complete-panel\.w02-waiting:not\(\.hidden\)\)\s*\{[^}]+\}/, (block) =>
         block.replace(/#[0-9a-f]{6}\b/g, (color) => w02.has(color) ? '' : color));

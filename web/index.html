@@ -163,6 +163,7 @@
           <button id="onboarding-home" type="button" class="brand dashboard-brand">4К Ассистент</button>
           <button id="onboarding-step-back" type="button" class="step-badge-back" aria-label="Назад" hidden></button>
           <span class="onboarding-section-label" id="step-badge-label">Знакомство</span>
+          <button id="onboarding-dashboard" type="button" class="text-link" hidden>Мои оценки</button>
         </div>
         <main id="onboarding-history" class="onboarding-history" aria-label="История знакомства">
         <div class="onboarding-thread">
@@ -223,22 +224,35 @@
 
       <div class="dashboard-hero">
         <h2 id="dashboard-greeting">Мои оценки</h2>
-        <p class="dashboard-subtitle">Здесь собраны ваши текущие и завершённые оценки.</p>
+        <p class="dashboard-subtitle">Ваши назначения, прохождение и результаты — всё в одном месте.</p>
         <div id="dashboard-refresh-status" class="dashboard-refresh-status hidden" role="status" aria-live="polite">
           <span>Не удалось обновить сведения</span>
           <button id="dashboard-refresh-button" type="button" class="text-link">Повторить</button>
         </div>
       </div>
 
-      <section class="dashboard-section">
-        <h3 id="current-assessments-title" class="dashboard-section-title">Текущая оценка</h3>
-        <div id="current-assessments" class="participant-assessment-list" aria-live="polite"></div>
-      </section>
-
-      <section class="dashboard-section">
-        <h3 class="dashboard-section-title">Завершённые оценки</h3>
-        <div id="completed-assessments" class="participant-assessment-list" aria-live="polite"></div>
-      </section>
+      <div class="dashboard-content">
+        <div class="dashboard-cabinet-grid">
+          <section class="dashboard-section dashboard-current">
+            <h3 id="current-assessments-title" class="dashboard-section-title">Текущая оценка</h3>
+            <div id="current-assessments" class="participant-assessment-list" aria-live="polite"></div>
+          </section>
+          <aside class="dashboard-information" aria-label="Об оценке">
+            <section class="card dashboard-info-card">
+              <h3>Ваш личный раздел</h3>
+              <p>Здесь можно продолжить назначенную оценку и вернуться к сохранённым результатам.</p>
+            </section>
+            <section class="card dashboard-info-card">
+              <h3>Что покажет оценка</h3>
+              <p>Результаты помогут увидеть, как вы решаете рабочие задачи, взаимодействуете с людьми и находите новые подходы.</p>
+            </section>
+          </aside>
+        </div>
+        <section class="dashboard-section dashboard-history">
+          <h3 class="dashboard-section-title">Предыдущие оценки</h3>
+          <div id="completed-assessments" class="participant-assessment-list" aria-live="polite"></div>
+        </section>
+      </div>
     </section>
 
     <section class="panel ai-welcome-panel hidden" id="ai-welcome-panel">

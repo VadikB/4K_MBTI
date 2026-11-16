@@ -8,6 +8,7 @@ import { hideAllPanels, syncUrlState } from '../router.js';
 import { sanitizeDisplayRole, getSignupFirstName, buildInitials } from '../utils/format.js';
 import { handleAssessmentEntryClick } from './interview.js';
 import { readApiResponse } from '../api.js';
+import { assessmentPositionText } from '../dashboard-presentation.js';
 
 const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
 const DASHBOARD_RETRY_INTERVAL_MS = 60000;
@@ -74,14 +75,6 @@ const formatDeadline = (value) => {
   return `Завершить до ${datePart}, ${timePart} (МСК)`;
 };
 
-const progressText = (card) => {
-  const completed = Number(card.completed_cases);
-  const total = Number(card.total_cases);
-  if (!Number.isInteger(completed) || completed < 0) return '';
-  if (Number.isInteger(total) && total > 0) return `Завершено ситуаций: ${completed} из ${total}`;
-  return ['prepared', 'ready'].includes(card.status) ? '' : `Завершено ситуаций: ${completed}`;
-};
-
 const performCardAction = async (card, event) => {
   if (card.cycle_id) {
     state.productCycleId = card.cycle_id;
@@ -98,57 +91,70 @@ const performCardAction = async (card, event) => {
     await openProcessingScreen();
     return;
   }
-  if (card.action === 'acquaintance') {
+  if (['acquaintance', 'open_readiness'].includes(card.action)) {
     const { openOnboardingScreen } = await import('../screen-loaders.js');
-    await openOnboardingScreen();
+    await openOnboardingScreen({ readOnlyEntry: true, expectedCycleId: card.cycle_id || null });
+    return;
+  }
+  if (card.action === 'continue' && card.cycle_id) {
+    const { loadInterview } = await import('../screen-loaders.js');
+    const interview = await loadInterview();
+    interview.openInterview(); // The saved return-flow still requires its explicit Continue.
     return;
   }
   await handleAssessmentEntryClick(event);
 };
 
-const buildCard = (card, { primaryEntry = false } = {}) => {
+const buildCard = (card, { primaryEntry = false, history = false } = {}) => {
   const article = document.createElement('article');
-  article.className = `card participant-assessment-card participant-assessment-card--${card.status}`;
+  article.className = `card participant-assessment-card${history ? ' participant-assessment-card--history' : ''}`;
+  article.dataset.cycleId = card.cycle_id || '';
+  article.dataset.journeyState = card.journey_state || card.status;
   const main = document.createElement('div');
   main.className = 'participant-assessment-main';
+  const top = document.createElement('div');
+  top.className = 'participant-assessment-top';
+  if (card.organization_name) {
+    const organization = document.createElement('span');
+    organization.className = 'participant-assessment-organization';
+    organization.textContent = card.organization_name;
+    top.appendChild(organization);
+  }
+  const status = document.createElement('span');
+  status.className = 'participant-assessment-status';
+  status.textContent = card.status_label;
+  top.appendChild(status);
+  main.appendChild(top);
   const title = document.createElement('h4');
   title.textContent = card.title;
   main.appendChild(title);
-  if (card.organization_name) {
-    const organization = document.createElement('p');
-    organization.className = 'participant-assessment-organization';
-    organization.textContent = card.organization_name;
-    main.appendChild(organization);
-  }
-  const status = document.createElement('strong');
-  status.className = 'participant-assessment-status';
-  status.textContent = card.status_label;
-  main.appendChild(status);
   const description = document.createElement('p');
+  description.className = 'participant-assessment-description';
   description.textContent = card.description;
   main.appendChild(description);
-  const progress = progressText(card);
-  if (progress) {
-    const node = document.createElement('p');
-    node.className = 'participant-assessment-meta';
-    node.textContent = progress;
-    main.appendChild(node);
-  }
-  const deadline = formatDeadline(card.calendar_deadline);
-  if (deadline) {
-    const node = document.createElement('p');
-    node.className = 'participant-assessment-meta';
-    node.textContent = deadline;
-    main.appendChild(node);
-  }
+  const metadata = document.createElement('dl');
+  metadata.className = 'participant-assessment-metadata';
+  const addMeta = (label, value) => {
+    if (!value) return;
+    const item = document.createElement('div');
+    const term = document.createElement('dt'); term.textContent = label;
+    const detail = document.createElement('dd'); detail.textContent = value;
+    item.append(term, detail); metadata.append(item);
+  };
+  addMeta('Прохождение', assessmentPositionText(card));
+  if (card.closed_at) {
+    const date = new Date(card.closed_at);
+    if (!Number.isNaN(date.getTime())) addMeta('Завершена', new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Moscow',
+    }).format(date));
+  } else addMeta('Срок оценки', formatDeadline(card.calendar_deadline));
+  if (metadata.children.length) main.appendChild(metadata);
   article.appendChild(main);
   if (card.action && card.button_label) {
     const button = document.createElement('button');
-    // Keep the stable entry-point id on the first actionable assessment card.
-    // The action can be acquaintance before it becomes start/continue.
     if (primaryEntry) button.id = 'assessment-action-button';
     button.type = 'button';
-    button.className = 'primary-button participant-assessment-action';
+    button.className = `${history ? 'ghost-button' : 'primary-button'} participant-assessment-action`;
     button.dataset.dashboardAction = card.action;
     button.dataset.cycleId = card.cycle_id || '';
     button.textContent = card.button_label;
@@ -163,6 +169,7 @@ const renderCards = (container, cards, emptyTitle, emptyDescription) => {
   if (cards.length) {
     cards.forEach((card, index) => container.appendChild(buildCard(card, {
       primaryEntry: container === currentAssessments && index === 0,
+      history: container === completedAssessments,
     })));
     return;
   }
@@ -191,8 +198,12 @@ export const renderDashboard = () => {
   const current = Array.isArray(dashboard.current_assessments) ? dashboard.current_assessments : [];
   const completed = Array.isArray(dashboard.completed_assessments) ? dashboard.completed_assessments : [];
   currentAssessmentsTitle.textContent = current.length > 1 ? 'Текущие оценки' : 'Текущая оценка';
-  renderCards(currentAssessments, current, 'Пока нет назначенных оценок', 'Когда вам назначат оценку, она появится здесь');
-  renderCards(completedAssessments, completed, 'Здесь появятся результаты ваших оценок', 'Завершённые оценки пока отсутствуют');
+  // Promote the latest closed Cycle into the main card only when no assignment is active.
+  // It remains a single entry; technical Report revisions never become separate rows.
+  const featured = current.length ? current : completed.slice(0, 1);
+  const previous = current.length ? completed : completed.slice(1);
+  renderCards(currentAssessments, featured, 'Пока нет назначенных оценок', 'Когда вам назначат оценку, она появится здесь');
+  renderCards(completedAssessments, previous, 'Здесь появятся результаты ваших оценок', 'Завершённые оценки пока отсутствуют');
 };
 
 export const openDashboard = () => {

@@ -1,0 +1,84 @@
+
+Running 2 tests using 1 worker
+
+(node:18980) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/postw02-cabinet.spec.mjs:64:3 › POSTW02 cabinet at 1440px (5.8s)
+(node:19030) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/browser/postw02-cabinet.spec.mjs:64:3 › POSTW02 cabinet at 390px (5.6s)
+
+
+  1) tests/browser/postw02-cabinet.spec.mjs:64:3 › POSTW02 cabinet at 1440px ───────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#onboarding-title')
+    Expected substring: "Подготавливаем"
+    Received string:    "Готовим вашу оценку"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#onboarding-title') with timeout 5000ms
+      - waiting for locator('#onboarding-title')
+        - locator resolved to <h2 tabindex="-1" id="onboarding-title">Состояние оценки изменилось</h2>
+        - unexpected value "Состояние оценки изменилось"
+        13 × locator resolved to <h2 tabindex="-1" id="onboarding-title">Готовим вашу оценку</h2>
+           - unexpected value "Готовим вашу оценку"
+
+
+      112 |         await expect(page.locator('#current-assessments')).toContainText('Оценка готовится');
+      113 |         await page.locator('#assessment-action-button').click();
+    > 114 |         await expect(page.locator('#onboarding-title')).toContainText('Подготавливаем');
+          |                                                         ^
+      115 |         await page.locator('#onboarding-home').click();
+      116 |         await expect(page.locator('#dashboard-panel')).toBeVisible();
+      117 |       }
+        at <WORKTREE>/tests/browser/postw02-cabinet.spec.mjs:114:57
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/postw02-cabinet-POSTW02-cabinet-at-1440px/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/postw02-cabinet-POSTW02-cabinet-at-1440px/error-context.md
+
+    Error Context: .test-stand/browser-output/postw02-cabinet-POSTW02-cabinet-at-1440px/error-context.md
+
+  2) tests/browser/postw02-cabinet.spec.mjs:64:3 › POSTW02 cabinet at 390px ────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#onboarding-title')
+    Expected substring: "Подготавливаем"
+    Received string:    "Готовим вашу оценку"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#onboarding-title') with timeout 5000ms
+      - waiting for locator('#onboarding-title')
+        - locator resolved to <h2 tabindex="-1" id="onboarding-title">Состояние оценки изменилось</h2>
+        - unexpected value "Состояние оценки изменилось"
+        13 × locator resolved to <h2 tabindex="-1" id="onboarding-title">Готовим вашу оценку</h2>
+           - unexpected value "Готовим вашу оценку"
+
+
+      112 |         await expect(page.locator('#current-assessments')).toContainText('Оценка готовится');
+      113 |         await page.locator('#assessment-action-button').click();
+    > 114 |         await expect(page.locator('#onboarding-title')).toContainText('Подготавливаем');
+          |                                                         ^
+      115 |         await page.locator('#onboarding-home').click();
+      116 |         await expect(page.locator('#dashboard-panel')).toBeVisible();
+      117 |       }
+        at <WORKTREE>/tests/browser/postw02-cabinet.spec.mjs:114:57
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/postw02-cabinet-POSTW02-cabinet-at-390px/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/postw02-cabinet-POSTW02-cabinet-at-390px/error-context.md
+
+    Error Context: .test-stand/browser-output/postw02-cabinet-POSTW02-cabinet-at-390px/error-context.md
+
+  2 failed
+    tests/browser/postw02-cabinet.spec.mjs:64:3 › POSTW02 cabinet at 1440px ────────────────────────
+    tests/browser/postw02-cabinet.spec.mjs:64:3 › POSTW02 cabinet at 390px ─────────────────────────

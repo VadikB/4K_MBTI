@@ -12,14 +12,14 @@ test('LK01 renders server-owned current and completed Cycle cards', () => {
   assert.match(markup, /id="completed-assessments"/);
   assert.match(dashboard, /dashboard\.current_assessments/);
   assert.match(dashboard, /dashboard\.completed_assessments/);
-  assert.match(dashboard, /Завершено ситуаций:.*из/);
+  assert.match(dashboard, /assessmentPositionText\(card\)/);
   assert.match(dashboard, /Europe\/Moscow/);
 });
 
 test('LK01 has explicit Cycle actions and no catalogue or repeat action', () => {
   assert.match(dashboard, /card\.action === 'open_processing'/);
   assert.match(dashboard, /card\.action === 'open_report'/);
-  assert.match(dashboard, /card\.action === 'acquaintance'/);
+  assert.match(dashboard, /'acquaintance', 'open_readiness'/);
   assert.match(dashboard, /if \(primaryEntry\) button\.id = 'assessment-action-button'/);
   assert.doesNotMatch(dashboard, /staticAssessments|Скоро|Пройти ассессмент снова|Перейти к кейсам|К кейсам/);
   assert.match(dashboard, /DASHBOARD_REFRESH_INTERVAL_MS/);
@@ -29,8 +29,8 @@ test('LK01 has explicit Cycle actions and no catalogue or repeat action', () => 
 
 test('LK01 keeps accessible mobile actions and accepted visual tokens', () => {
   assert.match(styles, /min-height:\s*48px/);
-  assert.match(styles, /background:\s*#18b8c6/);
-  assert.match(styles, /outline:\s*3px solid var\(--accent\)/);
-  assert.match(styles, /@media \(max-width: 640px\)/);
+  assert.match(styles, /background:\s*var\(--participant-primary\)/);
+  assert.match(styles, /outline:\s*3px solid var\(--participant-focus\)/);
+  assert.match(styles, /@media \(max-width: 560px\)/);
   assert.match(styles, /width:\s*100%/);
 });

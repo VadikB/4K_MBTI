@@ -99,4 +99,13 @@
     --admin-primary: var(--palette-graphite-900);
     --admin-primary-hover: var(--palette-graphite-600);
     --admin-primary-text: var(--palette-white);
+    /* Shared participant tokens accepted in W02 / Katya's specification. */
+    --participant-canvas: #f7f7f7;
+    --participant-text: var(--palette-graphite-900);
+    --participant-caption: #464554;
+    --participant-border: #cbd5e1;
+    --participant-primary: var(--palette-cyan-500);
+    --participant-primary-hover: #109eab;
+    --participant-primary-active: #0c8591;
+    --participant-focus: #007d89;
 }

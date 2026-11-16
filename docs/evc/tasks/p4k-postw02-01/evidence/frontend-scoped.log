@@ -1,0 +1,262 @@
+TAP version 13
+# Subtest: LK01 renders server-owned current and completed Cycle cards
+ok 1 - LK01 renders server-owned current and completed Cycle cards
+  ---
+  duration_ms: 2.079416
+  type: 'test'
+  ...
+# Subtest: LK01 has explicit Cycle actions and no catalogue or repeat action
+ok 2 - LK01 has explicit Cycle actions and no catalogue or repeat action
+  ---
+  duration_ms: 0.704416
+  type: 'test'
+  ...
+# Subtest: LK01 keeps accessible mobile actions and accepted visual tokens
+ok 3 - LK01 keeps accessible mobile actions and accepted visual tokens
+  ---
+  duration_ms: 0.271792
+  type: 'test'
+  ...
+# (node:18627) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<LOCAL_USER>/Library/CloudStorage/GoogleDrive-<LOCAL_ACCOUNT>/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-postw02-01/web/js/readiness-presentation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: resume uses actual consent and saved answers rather than legacy skipped/current_step
+ok 4 - resume uses actual consent and saved answers rather than legacy skipped/current_step
+  ---
+  duration_ms: 0.965
+  type: 'test'
+  ...
+# Subtest: local operation key separates account, tenant, assignment generation and questionnaire revision
+ok 5 - local operation key separates account, tenant, assignment generation and questionnaire revision
+  ---
+  duration_ms: 0.1865
+  type: 'test'
+  ...
+# Subtest: prepared plan survives reload even when a stale briefing projection disagrees on consent
+ok 6 - prepared plan survives reload even when a stale briefing projection disagrees on consent
+  ---
+  duration_ms: 0.080292
+  type: 'test'
+  ...
+# Subtest: readiness distinguishes organizational waiting, job status, network and admitted prepared plan
+ok 7 - readiness distinguishes organizational waiting, job status, network and admitted prepared plan
+  ---
+  duration_ms: 0.085
+  type: 'test'
+  ...
+# Subtest: nonempty READY or LIMITED route never substitutes for server admission
+ok 8 - nonempty READY or LIMITED route never substitutes for server admission
+  ---
+  duration_ms: 0.21375
+  type: 'test'
+  ...
+# Subtest: server admission cannot enable a missing route or time budget
+ok 9 - server admission cannot enable a missing route or time budget
+  ---
+  duration_ms: 0.083834
+  type: 'test'
+  ...
+# Subtest: W02 FIX a prepared plan preserves the current explanation on reload
+ok 10 - W02 FIX a prepared plan preserves the current explanation on reload
+  ---
+  duration_ms: 0.139708
+  type: 'test'
+  ...
+# Subtest: ADD01 early assignment sources uses participant copy without changing server distinctions
+ok 11 - ADD01 early assignment sources uses participant copy without changing server distinctions
+  ---
+  duration_ms: 0.123291
+  type: 'test'
+  ...
+# (node:18628) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<LOCAL_USER>/Library/CloudStorage/GoogleDrive-<LOCAL_ACCOUNT>/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-postw02-01/web/js/dashboard-presentation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: POSTW02 shows saved current position even when completed is unknown
+ok 12 - POSTW02 shows saved current position even when completed is unknown
+  ---
+  duration_ms: 0.744959
+  type: 'test'
+  ...
+# Subtest: POSTW02 never infers a current position or total from materialized/completed counts
+ok 13 - POSTW02 never infers a current position or total from materialized/completed counts
+  ---
+  duration_ms: 0.317333
+  type: 'test'
+  ...
+# Subtest: POSTW02 between screen stays on last presented closed position
+ok 14 - POSTW02 between screen stays on last presented closed position
+  ---
+  duration_ms: 0.087333
+  type: 'test'
+  ...
+# (node:18629) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<LOCAL_USER>/Library/CloudStorage/GoogleDrive-<LOCAL_ACCOUNT>/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-postw02-01/web/js/acquaintance-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <WORKTREE>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: actual acquaintance handler retains answer/step after answer TypeError
+ok 15 - actual acquaintance handler retains answer/step after answer TypeError
+  ---
+  duration_ms: 2.92725
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after answer AbortError
+ok 16 - actual acquaintance handler retains answer/step after answer AbortError
+  ---
+  duration_ms: 0.508792
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after answer RequestDeadlineError
+ok 17 - actual acquaintance handler retains answer/step after answer RequestDeadlineError
+  ---
+  duration_ms: 0.349791
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after answer opaque409
+ok 18 - actual acquaintance handler retains answer/step after answer opaque409
+  ---
+  duration_ms: 0.808541
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent TypeError
+ok 19 - actual acquaintance handler retains answer/step after consent TypeError
+  ---
+  duration_ms: 0.618125
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent AbortError
+ok 20 - actual acquaintance handler retains answer/step after consent AbortError
+  ---
+  duration_ms: 0.34875
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent RequestDeadlineError
+ok 21 - actual acquaintance handler retains answer/step after consent RequestDeadlineError
+  ---
+  duration_ms: 0.519708
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent opaque409
+ok 22 - actual acquaintance handler retains answer/step after consent opaque409
+  ---
+  duration_ms: 0.376166
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress TypeError
+ok 23 - actual acquaintance handler retains answer/step after progress TypeError
+  ---
+  duration_ms: 1.190375
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress AbortError
+ok 24 - actual acquaintance handler retains answer/step after progress AbortError
+  ---
+  duration_ms: 0.868875
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress RequestDeadlineError
+ok 25 - actual acquaintance handler retains answer/step after progress RequestDeadlineError
+  ---
+  duration_ms: 0.455375
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress opaque409
+ok 26 - actual acquaintance handler retains answer/step after progress opaque409
+  ---
+  duration_ms: 0.339625
+  type: 'test'
+  ...
+# Subtest: safe renderer preserves known cancellation/admission reasons and separates reference
+ok 27 - safe renderer preserves known cancellation/admission reasons and separates reference
+  ---
+  duration_ms: 0.227541
+  type: 'test'
+  ...
+# Subtest: actual start refusal codes and opaque UUID keep safe reasons
+ok 28 - actual start refusal codes and opaque UUID keep safe reasons
+  ---
+  duration_ms: 0.181
+  type: 'test'
+  ...
+# Subtest: UI03 exposes the owner palette and semantic aliases from one token source
+ok 29 - UI03 exposes the owner palette and semantic aliases from one token source
+  ---
+  duration_ms: 0.925541
+  type: 'test'
+  ...
+# Subtest: QA19-02 resolves every palette token and rejects retired undefined names
+ok 30 - QA19-02 resolves every palette token and rejects retired undefined names
+  ---
+  duration_ms: 6.489416
+  type: 'test'
+  ...
+# Subtest: UI03 keeps participant and admin primary actions semantically distinct
+ok 31 - UI03 keeps participant and admin primary actions semantically distinct
+  ---
+  duration_ms: 0.356291
+  type: 'test'
+  ...
+# Subtest: UI03 prevents local six-digit hex colors outside the owner palette
+ok 32 - UI03 prevents local six-digit hex colors outside the owner palette
+  ---
+  duration_ms: 15.288792
+  type: 'test'
+  ...
+# Subtest: UI03 keeps embedded SVG fills inside the owner palette
+ok 33 - UI03 keeps embedded SVG fills inside the owner palette
+  ---
+  duration_ms: 1.040334
+  type: 'test'
+  ...
+# Subtest: UI03 invalidates cached CSS and JavaScript entrypoints
+ok 34 - UI03 invalidates cached CSS and JavaScript entrypoints
+  ---
+  duration_ms: 0.127542
+  type: 'test'
+  ...
+# Subtest: W02 uses server briefing, saves each answer and confirms all three before 4K
+ok 35 - W02 uses server briefing, saves each answer and confirms all three before 4K
+  ---
+  duration_ms: 0.840375
+  type: 'test'
+  ...
+# Subtest: W02 keeps preparation separate from explicit assessment start
+ok 36 - W02 keeps preparation separate from explicit assessment start
+  ---
+  duration_ms: 0.224542
+  type: 'test'
+  ...
+# Subtest: W02 displays server-resolved assignment timing and restores the prepared snapshot
+ok 37 - W02 displays server-resolved assignment timing and restores the prepared snapshot
+  ---
+  duration_ms: 0.170458
+  type: 'test'
+  ...
+# Subtest: UX-AUD29-05 explains return from the saved policy instead of snapshot truthiness
+ok 38 - UX-AUD29-05 explains return from the saved policy instead of snapshot truthiness
+  ---
+  duration_ms: 0.242209
+  type: 'test'
+  ...
+# Subtest: W02 closes one situation and requires an explicit start for the next one
+ok 39 - W02 closes one situation and requires an explicit start for the next one
+  ---
+  duration_ms: 0.254125
+  type: 'test'
+  ...
+# Subtest: Cycle progress is based on route positions rather than generated situations
+ok 40 - Cycle progress is based on route positions rather than generated situations
+  ---
+  duration_ms: 0.176292
+  type: 'test'
+  ...
+1..40
+# tests 40
+# suites 0
+# pass 40
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 159.892291
