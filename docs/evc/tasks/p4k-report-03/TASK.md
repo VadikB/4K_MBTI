@@ -6,10 +6,21 @@
 
 ## Источники и решения
 
-- Base: `1bcc119c074d0b0e6b66c0c901c2f59d43bf4d49`, `origin/main` после `git fetch origin main`, REPORT-01/02 включены в main.
-- Прочитано: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `docs/evc/{agent-workflow,verification-matrix,artifact-recipe,task-template,review-checklist}.md`, `docs/architecture/product-4k/1.0/{context.md,updates/2026-10-01/README.md}`, `docs/architecture/product-4k/registry.md`, `docs/methodology/source-sets/2026-10-01/manifest.json`, M6 v1.8 §6.7/9, M7 v1.3 §7.3/7.7, M8 v1.2 §2.1/7.1–3, `m8-partial-result-contract.md`, `m8-results-report-contract.md`, приложенные постановка, стартовый файл, `CURRENT_PRODUCT_DECISIONS.txt`, `SOURCES_AND_SCREENS.txt`. Статусы M1 v1.4 FROZEN/CURRENT=NO, M6–M8 FROZEN; текущая реализация не присваивает им новый статус.
+- Исходная база разведки: `1bcc119c074d0b0e6b66c0c901c2f59d43bf4d49`. Пока выполнялась задача, `origin/main` продвинулся до `a37a4519cc461339a55aaf7343624fce6e91511f` (`2.1.14`, P4K-POSTW02-01). Собственный commit перенесён через rebase; сборка `web/dist` заново получена из объединённых исходников. Текущая база — `a37a4519`.
+- Прочитано: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `docs/evc/{agent-workflow,verification-matrix,artifact-recipe,task-template,review-checklist}.md`, `docs/architecture/product-4k/1.0/{context.md,updates/2026-10-01/README.md}`, `docs/architecture/product-4k/registry.md`, `docs/methodology/source-sets/2026-10-01/manifest.json`, M6 v1.8 §6.7/9, M7 v1.3 §7.3/7.7, M8 v1.2 §2.1/7.1–3, `m8-partial-result-contract.md`, `m8-results-report-contract.md`, приложенные постановка, стартовый файл, `CURRENT_PRODUCT_DECISIONS.txt`, `SOURCES_AND_SCREENS.txt`, `prototype/REPORT_BASELINE_2026-11-10.md`, `prototype/UI_BASELINE.md`, адресные записи `prototype/dist/report-data.mjs`. Статусы M1 v1.4 FROZEN/CURRENT=NO, M6–M8 FROZEN; текущая реализация не присваивает им новый статус.
 - Решение владельца: пункт 8–9 `CURRENT_PRODUCT_DECISIONS.txt` от 15.11.2026 и REPORT-03, четыре исхода и независимая полнота плана/навыка. Старый `is_incomplete=bool(любого ограничения)` противоречит этому решению.
 - Открытого предметного стоп-условия не выявлено. Совместимость: старый ключ остаётся, но означает только незавершённое прохождение; новые поля добавляются. Старые immutable Reports не переписываются; чтение старой версии требует безопасной адаптации.
+
+Контрольные SHA-256 прочитанных выбранных источников: `source.md` Change 01 —
+`ee03f59d78e441f69964352bcd94a1e7c375c2ce306433a8d0cd056ba3af93d2`;
+Task SourceSet `manifest.json` —
+`f95a390f1257f4adbccf61be59bdcb0b99396501ca34cf117eb0efc10b237db8`;
+derived M6 v1.8 — `f081bc9ca795257b6a4afbebbd4b56f32243a1a75f5c25d91a77c64d64fc86fa`;
+M7 v1.3 — `9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8`;
+M8 v1.2 — `f0272e304f36dc2d58777080b753a5fcc55578d22947e3afbae308b8afb71e0e`.
+Новый draft `m8_basic_report/1.5.0` имеет checksum `template.json`
+`c7760103e4ece154cc99903818db705e752edbbe8041963139d6c8268c1b564c`;
+фактическое исполнение старых Cycle привязано к их сохранённому manifest.
 
 ## Первичные проверки
 
@@ -37,4 +48,4 @@
 
 ## Состояние
 
-Активный шаг: контракт и проекция. Следующий шаг: потребители, проверки, reviewable кандидат.
+Контракт, проекция, потребители и адресные проверки выполнены. `ready:prepare` подготовил PATCH `2.1.15` на базе `a37a4519`; текущий шаг — финальные проверки объединённого кандидата и передача в review.
