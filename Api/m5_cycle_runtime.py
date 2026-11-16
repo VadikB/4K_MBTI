@@ -94,6 +94,19 @@ def create_cycle(
         raise ValueError("M7_TIME_LIMIT_INVALID")
     if usage_scope not in {"assessment", "qa"}:
         raise ValueError("M7_USAGE_SCOPE_INVALID")
+    display_snapshot = None
+    if profile.get("assessment_configuration_id") is not None:
+        configuration = connection.execute(
+            "SELECT id,name FROM assessment_configurations WHERE id=%s",
+            (profile["assessment_configuration_id"],),
+        ).fetchone()
+        if not configuration:
+            raise ValueError("ASSESSMENT_CONFIGURATION_NOT_FOUND")
+        display_snapshot = {
+            "program_name": str(configuration["name"]).strip() or None,
+            "assessment_configuration_id": int(configuration["id"]),
+            "assignment_id": assignment_id,
+        }
     normalized_targets = sorted(
         ({"indicator_id": str(x["indicator_id"]), "m2_version": str(x["m2_version"])} for x in target_set),
         key=lambda x: (x["indicator_id"], x["m2_version"]),
@@ -127,15 +140,16 @@ def create_cycle(
         "parameter_sources": sources,
         "usage_scope": usage_scope,
         "catalog_ref": catalog_ref,
+        "display_snapshot": display_snapshot,
     }
     row = connection.execute(
         """
         INSERT INTO m5_cycles
             (cycle_id,owner_user_id,organization_id,assignment_id,personalized_profile_id,profile_ref_json,
              selected_role_ref_json,target_set_json,target_set_checksum,time_budget_seconds,
-             calendar_window_seconds,parameter_sources_json,execution_manifest_json,
+             calendar_window_seconds,parameter_sources_json,display_snapshot_json,display_snapshot_checksum,execution_manifest_json,
              execution_manifest_checksum,usage_scope,catalog_ref_json,status,created_by)
-        VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s::jsonb,'prepared',%s)
+        VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s::jsonb,%s,%s,%s::jsonb,'prepared',%s)
         RETURNING *
         """,
         (
@@ -151,6 +165,8 @@ def create_cycle(
             time_budget_seconds,
             calendar_window_seconds,
             json.dumps(sources),
+            json.dumps(display_snapshot) if display_snapshot else None,
+            checksum(display_snapshot) if display_snapshot else None,
             json.dumps(execution_manifest),
             execution_manifest_checksum,
             usage_scope,

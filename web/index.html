@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4K Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.16">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.16">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.17">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.17">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
@@ -56,7 +56,7 @@
     <header class="auth-header" aria-label="4К Ассистент">
       <span class="auth-header-brand">4К Ассистент</span>
       <span class="auth-waiting-section">Оценка</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.16</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.17</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -1845,7 +1845,7 @@
           <div id="m8-report-partial" class="m8-report-notice hidden"></div>
         </section>
         <section class="card report-details-card">
-          <div class="report-card-head"><div><p class="section-label">Компетенции и навыки</p><h3>Ваши результаты по 4К</h3></div></div>
+          <div class="report-card-head"><div><p class="section-label">Компетенции и навыки</p><h3>Ваши навыки в этой оценке</h3><p>Выберите навык, чтобы увидеть наблюдения и основание вывода.</p></div><a href="#m8-report-coverage">Как читать результат</a></div>
           <div class="m8-chart-head">
             <p>Показатель навыка · шкала 0–3</p>
             <div id="m8-report-chart-modes" class="m8-chart-modes" role="group" aria-label="Вид графика">
@@ -1876,7 +1876,7 @@
           <div id="m8-report-coverage"></div>
           <ul id="m8-report-limitations" class="report-recommendations"></ul>
         </section>
-        <section class="card report-details-card">
+        <section class="card report-details-card hidden" aria-hidden="true">
           <div class="report-card-head"><div><p class="section-label">Пояснение</p><h3>Почему сделан такой вывод</h3></div></div>
           <div id="m8-report-recommendations" class="m8-report-recommendations"></div>
           <ul id="m8-report-recommendation-notices" class="report-recommendations"></ul>
@@ -2002,7 +2002,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.1.16</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.1.17</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -2018,6 +2018,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.16"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.17"></script>
 </body>
 </html>

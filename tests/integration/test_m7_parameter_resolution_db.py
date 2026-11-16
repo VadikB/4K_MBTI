@@ -25,13 +25,13 @@ def db(test_database_url):
     connection.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
     connection.execute('CREATE TABLE users(id BIGINT PRIMARY KEY)')
     connection.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN NOT NULL)')
-    connection.execute("CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,status TEXT NOT NULL)")
+    connection.execute("CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,name TEXT NOT NULL,status TEXT NOT NULL)")
     connection.execute('''CREATE TABLE assessment_personalized_profiles(
         id BIGINT PRIMARY KEY,user_id BIGINT,organization_id BIGINT,assessment_configuration_id BIGINT,
         status TEXT,content_json JSONB,provenance_json JSONB,checksum TEXT)''')
     connection.execute("INSERT INTO users VALUES(7),(99)")
     connection.execute("INSERT INTO organizations VALUES(10,TRUE),(20,TRUE)")
-    connection.execute("INSERT INTO assessment_configurations VALUES(100,'published'),(200,'published')")
+    connection.execute("INSERT INTO assessment_configurations VALUES(100,'Программа 100','published'),(200,'Программа 200','published')")
     connection.execute("""INSERT INTO assessment_personalized_profiles VALUES
         (1,7,10,100,'ready','{}','{}',%s)""", ('p'*64,))
     ensure_m5_runtime_schema(connection)
@@ -60,6 +60,7 @@ def test_sources_resolve_independently_and_started_cycle_keeps_snapshot(db):
     assert display['resolved_checksum']==resolved['resolved_checksum']
     cycle=create_cycle(db,personalized_profile_id=1,selected_role_ref={'id':'r','version':'1','checksum':'x'},
         target_set=[{'indicator_id':'K1.I1','m2_version':'1'}],created_by=7,usage_scope='assessment')
+    assert cycle['display_snapshot_json']['program_name'] == 'Программа 100'
     save_revision(db,source_scope='organization',organization_id=10,assessment_configuration_id=None,
                   values={'time_budget_seconds':4800},created_by=99)
     assert db.execute('SELECT time_budget_seconds FROM m5_cycles WHERE id=%s',(cycle['id'],)).fetchone()['time_budget_seconds']==4200

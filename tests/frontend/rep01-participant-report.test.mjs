@@ -27,7 +27,7 @@ test('REP01 groups saved skills and hides technical trace identifiers from parti
 
 test('REP02 presents saved descriptions and explicit non-blocking states without advice', () => {
   assert.match(markup, /Главное из вашей оценки/);
-  assert.match(markup, /Ваши результаты по 4К/);
+  assert.match(markup, /Ваши результаты/);
   assert.match(markup, /Что удалось оценить и где данных недостаточно/);
   assert.match(report, /Пояснение готовится/);
   assert.match(report, /Пояснение временно недоступно/);

@@ -147,7 +147,9 @@ def test_skill_presentation_preserves_m6_outcomes_and_explains_missing_values():
 
 
 def test_public_projection_keeps_human_reasons_and_hides_comparison_ids():
-    report = {"id": "r", "c67": {"skills": [{"skill_id": "S", "outcome": "full_score",
+    report = {"id": "r", "revision_no": 2, "created_at": "2026-11-16T12:00:00Z",
+        "results_revision_id": "internal-revision", "c67": {"contract": "C-67", "template_version": "internal-template",
+        "report_mechanism": {"version": "internal-version"}, "skills": [{"skill_id": "S", "outcome": "full_score",
         "score": {"value": 0, "numerator": 0, "denominator": 1},
         "presentation": {"label": "Полный показатель по навыку", "reasons": [
             {"code": "plan_scope", "message": "Программа охватывала часть навыка."}],
@@ -160,6 +162,11 @@ def test_public_projection_keeps_human_reasons_and_hides_comparison_ids():
     assert value["skills"][0]["presentation"]["reasons"][0]["message"] == "Программа охватывала часть навыка."
     assert "included_indicator_ids" not in value["skills"][0]["presentation"]
     assert value["partial_result"]["plan_completed"] is True
+    projected = public_projection(report)
+    assert value["contract"] == "C-67"
+    assert projected["revision_no"] == 2
+    assert projected["results_revision_id"] == "internal-revision"
+    assert value["template_version"] == "internal-template"
 
 
 def test_coverage_context_keeps_catalog_plan_facts_and_result_separate():
