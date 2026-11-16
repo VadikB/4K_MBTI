@@ -1,3 +1,8 @@
 
 > ready:prepare
 > python3.12 scripts/prepare_ready_release.py --candidate 2.1.13
+
+From https://github.com/VadikB/4K_MBTI
+ * branch            main       -> FETCH_HEAD
+   32a13d3..1bcc119  main       -> origin/main
+Ready preflight failed: Branch is based on stale origin/main (32a13d3da6c7c63f33f13b126773aeb8861099e6); update it to 1bcc119c074d0b0e6b66c0c901c2f59d43bf4d49 before preparing a release candidate

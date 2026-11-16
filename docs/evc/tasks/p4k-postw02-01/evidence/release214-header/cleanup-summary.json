@@ -1,0 +1,9 @@
+{
+  "port": 57201,
+  "errno": 61,
+  "result": "ECONNREFUSED",
+  "registry_absent": true,
+  "db": null,
+  "real_llm": 0,
+  "mail": 0
+}

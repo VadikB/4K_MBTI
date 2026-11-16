@@ -24,7 +24,7 @@
     "history_runtime": 2,
     "lint": "PASS",
     "build": "PASS",
-    "release_preflight": "PASS",
+    "release_preflight": "FAIL_STALE_MAIN: concurrent main1bcc119, then integrated in b2b5e26",
     "cleanup": "PASS"
   },
   "next": "mandatory CI new head; no bypass/relaxed gates/version bump"

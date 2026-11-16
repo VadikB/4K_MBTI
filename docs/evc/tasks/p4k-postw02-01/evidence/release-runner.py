@@ -10,7 +10,9 @@ commands={
  'http':(['.venv/bin/python','-m','pytest','-q','-m','e2e','tests/e2e'],300,90),
 }
 command,whole,idle=commands[mode]
-folder=Path('docs/evc/tasks/p4k-postw02-01/evidence/release');folder.mkdir(exist_ok=True)
+stage=sys.argv[2] if len(sys.argv)>2 else 'release'
+assert stage in {'release','release214'}
+folder=Path('docs/evc/tasks/p4k-postw02-01/evidence')/stage;folder.mkdir(exist_ok=True)
 log_path=folder/f'{mode}.log';progress=folder/f'{mode}-progress.json';stopped=threading.Event()
 def watch_output():
  previous=-1

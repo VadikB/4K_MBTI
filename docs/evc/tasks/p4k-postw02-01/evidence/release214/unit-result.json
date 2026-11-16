@@ -1,0 +1,13 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-m",
+    "not integration and not e2e and not llm"
+  ],
+  "returncode": 0,
+  "reason": null,
+  "wall_seconds": 47.252701124998566
+}

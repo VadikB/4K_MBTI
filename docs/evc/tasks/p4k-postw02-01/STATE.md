@@ -1,5 +1,19 @@
 # STATE — P4K-POSTW02-01
 
+Текущий кандидат2.1.14, база main1bcc119/REPORT-02/2.1.13, интеграцияb2b5e26.
+Все исправления885c15d и ранее сохранены. Источники/тесты автообъединились, dist
+пересобран. Устаревшая база выявлена preflight и не допущена в main; фактический
+FAIL сохранён/ошибочная запись PASS исправлена. Новый identity release214/identity.json.
+
+Ready-preflight2.1.14/frontend343/unit1121/HTTP175/header4/lint/build/diff/cleanup PASS.
+Локальные legacy/history/negative LIMITED адресные PASS в предыдущих evidence.
+PR228 тот же, сейчас Draft только для подготовки актуальной базы. Следующий шаг:
+commit/push, Ready, обязательные frontend/pytest/full-verification точного SHA,
+squash merge и автоматический TEST. Допуск владельца PR/main/TEST действует;
+pilot/paidPATH/предметная публикация/POSTW02-02–05 не входят. Внешние результаты
+фиксируются в DELIVERY_STATUS.json/GitHub без сброса CI новым status-only commit.
+Ниже история, а не текущие статусы.
+
 Текущий PR228, ветка прежняя, выпуск2.1.13. Первый head65fcfba: GitHub frontend/
 pytest/integration PASS; browser FAIL на legacy entry и двух старых expectations.
 Исправлены проверка saved onboarding vs answers_confirmed, сохранён прежний
