@@ -1,3 +1,4 @@
+import { renderPreparation } from '../preparation-status.js';
 import { state, persistAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen } from '../state.js';
 import {
   dashboardPanel, dashboardGreeting,
@@ -163,6 +164,7 @@ const buildCard = (card, { primaryEntry = false, history = false } = {}) => {
     });
     if (metadata.children.length) main.appendChild(metadata);
   }
+  if (card.preparation) renderPreparation(main, card.preparation);
   article.appendChild(main);
   appendCardAction(article, card, { primaryEntry, history });
   return article;

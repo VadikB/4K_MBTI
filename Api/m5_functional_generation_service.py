@@ -709,13 +709,18 @@ def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path 
         actual_endpoint = f"{str(getattr(gateway, 'base_url', '')).rstrip('/')}/chat/completions"
         if str(getattr(gateway, "model", "")) != provider["model"] or actual_endpoint != provider["endpoint"]:
             raise ValueError("M5_FUNCTIONAL_PROVIDER_IDENTITY_MISMATCH")
+    from Api import preparation_observation as observation
+    observation.materials()
     generation = generate(snapshot, gateway)
+    observation.progress('checking')
     tested = test_candidate(snapshot, generation, gateway)
     repair = None
     if (not tested["aggregation"]["admitted_for_participant"]
             and (tested["aggregation"]["blocking_failures"]
                  or tested["aggregation"]["deterministic_failures"])):
+        observation.materials()
         repaired = repair_candidate(snapshot, generation, tested, gateway)
+        observation.progress('checking')
         retested = test_candidate(snapshot, repaired, gateway)
         repair = {
             "original_candidate_checksum": generation["candidate_checksum"],

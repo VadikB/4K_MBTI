@@ -1,0 +1,11 @@
+.preparation-status { margin-block: 16px; min-width: 0; color: var(--text-main); font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.preparation-status p { margin: 6px 0; }
+.preparation-status details { margin-top: 12px; }
+.preparation-status summary { cursor: pointer; }
+.preparation-status button { margin: 8px 8px 0 0; border: 1px solid var(--border-color); background: var(--palette-white); color: var(--text-main); padding: 9px 12px; border-radius: 10px; cursor: pointer; font: inherit; }
+.preparation-status [data-preparation-duration], .preparation-status [data-preparation-freshness] { color: var(--text-muted); }
+.preparation-status [data-preparation-notice]:empty { display: none; }
+.admin-organization-member-stage .preparation-status { font-size: 12px; }
+
+.admin-organization-member-stage .preparation-status:not(:has(details[open])) [data-preparation-explanation],
+.admin-organization-member-stage .preparation-status:not(:has(details[open])) [data-preparation-duration] { display: none; }

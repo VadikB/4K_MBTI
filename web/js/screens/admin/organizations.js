@@ -1,3 +1,4 @@
+import { preparationHtml, renderPreparation } from '../../preparation-status.js';
 import { createOperationId, readApiResponse, fetchWithDeadline as fetch, previewAccountPurge,
   getPendingAccountPurges, confirmAccountPurge, executeAccountPurge, accountPurgeErrorMessage } from '../../api.js';
 import {
@@ -2146,7 +2147,7 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
           '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
           escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
           '</div>' +
-          '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span></div>' +
+          '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span>' + (scopedStage?.preparation ? preparationHtml(scopedStage.preparation) : '') + '</div>' +
           '<div class="admin-organization-member-actions">' +
           primaryAction +
           '<details class="admin-organization-member-menu"><summary aria-label="Другие действия" aria-haspopup="menu">⋯</summary><div role="menu">' + menuActions + '</div></details>' +
@@ -2551,6 +2552,14 @@ export const renderAdminOrganizations = () => {
       );
     })
     .join('');
+  for (const organization of organizations) for (const member of organization.members || []) {
+    for (const stage of Object.values(member.assessment_stages || {})) {
+      const model = stage.preparation;
+      if (model) for (const root of adminOrganizationsList.querySelectorAll('[data-preparation-status]')) {
+        if (root.dataset.preparationReferenceId === model.reference) renderPreparation(root, model);
+      }
+    }
+  }
   restoreAdminOrganizationsDraft();
   restoreProgramConnectionFeedback();
   adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')

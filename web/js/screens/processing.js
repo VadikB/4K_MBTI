@@ -1,3 +1,4 @@
+import { renderPreparation } from '../preparation-status.js';
 import { state, setCurrentScreen } from '../state.js';
 import {
   processingPanel,
@@ -25,13 +26,16 @@ const ANALYSIS_POLL_INTERVAL_MS = 1200;
 const CYCLE_POLL_INTERVAL_MS = 5000;
 let cycleRequestEpoch = 0;
 let lastCycleSnapshot = null;
-let cycleStatusUsesJourney = false;
+let cycleSnapshotScope = '';
+let cyclePollDeadline = 0;
+let cyclePollDelay = CYCLE_POLL_INTERVAL_MS;
+const cycleBudgets = new Map();
 
 document.addEventListener('visibilitychange', () => {
   if (state.currentScreen !== 'processing' || state.assessmentRuntimeKind !== 'cycle') return;
   if (document.hidden) {
     clearProcessingTimer();
-  } else {
+  } else if (Date.now() < cyclePollDeadline) {
     void pollAnalysisStatus();
   }
 });
@@ -145,6 +149,15 @@ export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
   const cycleIdFromUrl = new URLSearchParams(window.location.search).get('cycle_id');
   if (!state.productCycleId && cycleIdFromUrl) state.productCycleId = cycleIdFromUrl;
   if (state.productCycleId) state.assessmentRuntimeKind = 'cycle';
+  const scope = String(state.pendingUser?.id) + ':' + String(state.productCycleId);
+  if (scope !== cycleSnapshotScope) { lastCycleSnapshot = null; cycleSnapshotScope = scope; }
+  const budgetKey = 'p4k-report-wait:' + state.productCycleId;
+  let budget = cycleBudgets.get(scope);
+  try { budget ??= Number(window.sessionStorage.getItem(budgetKey)) || null; } catch { /* Memory budget. */ }
+  budget ??= Date.now() + 60000;
+  cycleBudgets.set(scope, budget); cyclePollDeadline = budget;
+  try { window.sessionStorage.setItem(budgetKey, String(budget)); } catch { /* Memory budget. */ }
+  cyclePollDelay = CYCLE_POLL_INTERVAL_MS;
   setCurrentScreen('processing');
   const recoveryCycleId = state.productCycleId;
   if (recoveryCycleId) {
@@ -161,7 +174,6 @@ export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
   state.processingDataLoaded = false;
   state.processingAutoTransitionStarted = false;
   state.processingServerProgress = 0;
-  cycleStatusUsesJourney = false;
   const restoredCycleSnapshot = initialCycleSnapshot || (
     state.assessmentRuntimeKind === 'cycle' && state.productReportStatus
       ? {
@@ -246,6 +258,14 @@ const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = fals
     (['ready', 'limited'].includes(kind) ? ' is-static' : kind === 'failed' || kind === 'confirmationError' ? ' is-error' : '');
   processingOutcomeIndicator.textContent = ['ready', 'limited'].includes(kind) ? '✓'
     : kind === 'failed' || kind === 'confirmationError' ? '!' : kind === 'expired' ? '◷' : '';
+  let preparationPanel = processingOutcomeCard.querySelector('.processing-preparation');
+  if (snapshot?.preparation) {
+    if (!preparationPanel) { preparationPanel = document.createElement('div'); preparationPanel.className = 'processing-preparation'; processingOutcomeActions.before(preparationPanel); }
+    renderPreparation(preparationPanel, snapshot.preparation, { readError: offline || snapshot.preparation_stale === true });
+  } else preparationPanel?.remove();
+  const actionsKey = [kind, offline, snapshot?.report_id].join(':');
+  if (processingOutcomeActions.dataset.preparationActions === actionsKey) return;
+  processingOutcomeActions.dataset.preparationActions = actionsKey;
   processingOutcomeActions.innerHTML = '';
   if (['ready', 'limited'].includes(kind)) {
     addOutcomeButton('Посмотреть результат', true, () => {
@@ -259,6 +279,7 @@ const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = fals
   } else if (kind === 'confirmationError' || offline) {
     addOutcomeButton('Повторить проверку', true, () => void pollAnalysisStatus());
   } else if (['waiting', 'expired'].includes(kind)) {
+    addOutcomeButton('Проверить состояние', false, () => void pollAnalysisStatus());
     addOutcomeButton('В личный кабинет', true, dashboardAction);
   } else if (['accessDenied', 'unavailable'].includes(kind)) {
     addOutcomeButton('В личный кабинет', true, dashboardAction);
@@ -380,9 +401,13 @@ const renderAnalysisFailure = (snapshot) => {
 
 const scheduleAnalysisPoll = () => {
   clearProcessingTimer();
+  if (state.assessmentRuntimeKind === 'cycle' && (Date.now() >= cyclePollDeadline || state.currentScreen !== 'processing' || document.hidden)) return;
+  const delay = state.assessmentRuntimeKind === 'cycle' ? cyclePollDelay : ANALYSIS_POLL_INTERVAL_MS;
+  cyclePollDelay = Math.min(15000, cyclePollDelay * 1.5);
   state.processingTimerId = window.setTimeout(() => {
+    if (state.assessmentRuntimeKind === 'cycle' && (Date.now() >= cyclePollDeadline || state.currentScreen !== 'processing' || document.hidden)) return;
     void pollAnalysisStatus();
-  }, state.assessmentRuntimeKind === 'cycle' ? CYCLE_POLL_INTERVAL_MS : ANALYSIS_POLL_INTERVAL_MS);
+  }, delay);
 };
 
 export const pollAnalysisStatus = async () => {
@@ -395,14 +420,12 @@ export const pollAnalysisStatus = async () => {
       try { journeySnapshot = await readJourneyCycleStatus(); } catch { /* The explicit Cycle status remains authoritative. */ }
       if (journeySnapshot?.report_status === 'ready' || journeySnapshot?.results_status === 'failed') {
         snapshot = journeySnapshot;
-      } else if (cycleStatusUsesJourney && journeySnapshot) {
-        snapshot = journeySnapshot;
+
       } else {
         try {
           ({ response, snapshot } = await readDetailedCycleStatus());
         } catch (error) {
           if (error?.name !== 'AbortError' || !journeySnapshot) throw error;
-          cycleStatusUsesJourney = true;
           snapshot = journeySnapshot;
         }
       }
@@ -414,6 +437,9 @@ export const pollAnalysisStatus = async () => {
       }
       if (!snapshot) snapshot = await readApiResponse(response, 'Не удалось получить состояние Cycle runtime.');
       if (requestEpoch !== cycleRequestEpoch || state.currentScreen !== 'processing') return;
+      if (!snapshot.preparation && lastCycleSnapshot?.preparation && snapshot.report_status !== 'ready' && snapshot.results_status !== 'failed') {
+        snapshot = { ...snapshot, preparation: lastCycleSnapshot.preparation, preparation_stale: true };
+      }
       lastCycleSnapshot = snapshot;
       renderCycleOutcome(cycleOutcomeKind(snapshot), snapshot);
       if (snapshot.report_status === 'ready' || snapshot.results_status === 'failed') { clearProcessingTimer(); return; }

@@ -1,3 +1,4 @@
+import { preparationHtml, renderPreparation } from '../preparation-status.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import { stepBadgeLabel, onboardingTitle, onboardingDescription, featureList,
   onboardingVisual, onboardingNext, onboardingSkip, onboardingStepBackButton, onboardingPanel } from '../dom.js';
@@ -154,7 +155,7 @@ const readinessStep = () => {
     retryAllowed: model?.preparation_operation?.retry_allowed === true,
     pendingStart: hasPendingPreparedStart(model?.prepared_plan?.cycle_id), readbackAdmitted: startReadbackAdmitted,
   });
-  const operationId = model?.preparation_operation?.operation_id;
+  if (status === 'preparing' && model?.preparation_operation?.operation_id) step.button = 'Проверить состояние';
   let body = step.detail ? paragraph(step.detail) : '';
   if (status === 'ready' && !hasPendingPreparedStart(model?.prepared_plan?.cycle_id)) {
     const plan = timing();
@@ -170,11 +171,11 @@ const readinessStep = () => {
       '<p class="onboarding-summary-note">Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.</p>' +
       (plan?.participant_notice ? paragraph(plan.participant_notice) : '');
   } else {
-    if (status === 'preparing') body += '<p class="onboarding-live" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
+    if (model?.preparation_operation?.preparation) body += preparationHtml(model.preparation_operation.preparation);
+    else if (status === 'preparing') body += '<p class="onboarding-live" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
       'Подготовка выполняется</p>';
     if (step.timeNotice) body += '<p class="onboarding-time-notice">Время выполнения ещё не идёт.</p>';
-    if (operationId && ['service', 'failed', 'conflict', 'plan_missing'].includes(status)) body +=
-      '<details class="onboarding-diagnostics"><summary>Сведения об ошибке</summary>' + paragraph('Код операции: ' + operationId) + '</details>';
+
   }
   return { ...step, body, status };
 };
@@ -400,6 +401,9 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   const bubble = onboardingPanel.querySelector('.onboarding-copy > .onboarding-bubble');
   bubble.querySelector(':scope > .onboarding-diagnostics')?.remove();
   featureList.innerHTML = step.body || '';
+  if (!loading && !loadFailed && !reviewMode && index === readinessIndex() && step.status !== 'ready') {
+    renderPreparation(featureList, model?.preparation_operation?.preparation, { readError: Boolean(preparationError && preparationError.kind !== 'failed') });
+  }
   const diagnostics = featureList.querySelector('.onboarding-diagnostics');
   diagnostics?.remove();
   const input = onboardingPanel.querySelector('.onboarding-answer');
@@ -505,7 +509,8 @@ const beginPreparation = ({ retry = false } = {}) => {
       const callbacks = { signal: controller.signal, isCurrent: current,
         onRequested: (operation) => { if (current()) storeOperation(operation); },
         onAccepted: (operation) => { if (current()) storeOperation(operation); },
-        onStatus: (operation) => { if (current()) { storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderOnboarding(); } },
+        onStatus: (operation) => { if (current()) { storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderPreparation(document.querySelector('#onboarding-panel'), operation.preparation); } },
+        onReadError: () => { if (current()) renderPreparation(document.querySelector('#onboarding-panel'), model?.preparation_operation?.preparation, { readError: true }); },
       };
       // A lost command response has an operation ID: reconcile it through owned GET,
       // never send another preparation command merely because the page reloaded.
@@ -532,7 +537,7 @@ const beginPreparation = ({ retry = false } = {}) => {
         : error.status === 403 ? { kind: 'access' } : error.status === 409 ? { kind: 'conflict' }
           : error.status >= 500 ? { kind: 'service' } : { kind: 'network' };
       if (error.status === 404 && localOperation) storeOperation({ ...localOperation, status: 'unknown' });
-      if (error.name === 'PreparationFailed') storeOperation({ operation_id: error.operationId, status: 'failed', error: error.operationError, retry_allowed: error.retryAllowed === true });
+      if (error.name === 'PreparationFailed') storeOperation({ ...model?.preparation_operation, operation_id: error.operationId, status: 'failed', error: error.operationError, retry_allowed: error.retryAllowed === true });
       renderOnboarding();
     } finally { if (preparationTask === task) preparationTask = null; }
   });

@@ -17,6 +17,7 @@ from uuid import uuid4
 from fastapi.encoders import jsonable_encoder
 
 from Api.database import get_connection
+from Api import preparation_observation as observation
 
 logger = logging.getLogger("agent4k.product_cycle_preparation")
 HEARTBEAT_INTERVAL_SECONDS = 30.0
@@ -44,7 +45,7 @@ def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignm
     table = connection.execute("SELECT to_regclass(current_schema()||'.product_cycle_preparation_operations') AS relation").fetchone()
     if not table or not table.get('relation'):
         return None
-    row = connection.execute('''SELECT operation_id,status,error_code,error_message,request_json,created_at FROM product_cycle_preparation_operations
+    row = connection.execute('''SELECT operation_id,status,attempt_token,error_code,error_message,request_json,created_at,updated_at,completed_at FROM product_cycle_preparation_operations
         WHERE user_id=%s AND request_json->>'personalized_profile_id'=%s
           AND request_json->>'assignment_ref'=%s
           AND request_json->>'questionnaire_revision_id' IS NOT DISTINCT FROM %s
@@ -57,7 +58,7 @@ def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignm
         return None
     operation = dict(row)
     ProductCyclePreparationQueue._project_retry_guard(connection, operation, user_id=user_id)
-    return public_operation(operation)
+    return public_operation(observation.attach(connection, operation))
 
 
 def latest_next_operation(connection, *, cycle_id: str, user_id: int) -> dict | None:
@@ -67,7 +68,7 @@ def latest_next_operation(connection, *, cycle_id: str, user_id: int) -> dict | 
         return None
     scope = m10_product_flow.next_preparation_scope(connection, cycle_id=cycle_id, user_id=user_id, check_current=False)
     row = connection.execute(
-        """SELECT operation_id,status,error_code,error_message,request_json,created_at
+        """SELECT operation_id,status,attempt_token,error_code,error_message,request_json,created_at,updated_at,completed_at
            FROM product_cycle_preparation_operations op WHERE user_id=%s
              AND request_json->>'kind'='next' AND request_json->>'cycle_id'=%s
              AND (((request_json->'next_preparation_scope') - 'plan_revision_id')=(%s::jsonb - 'plan_revision_id')
@@ -79,10 +80,11 @@ def latest_next_operation(connection, *, cycle_id: str, user_id: int) -> dict | 
            ORDER BY created_at DESC,id DESC LIMIT 1""", (user_id, cycle_id, _canonical(scope), cycle_id),
     ).fetchone()
     if not row:
-        return None
+        synchronous = observation.sync_for_cycle(connection, cycle_id, user_id)
+        return public_operation(synchronous) if synchronous else None
     operation = dict(row)
     ProductCyclePreparationQueue._project_retry_guard(connection, operation, user_id=user_id)
-    return public_operation(operation)
+    return public_operation(observation.attach(connection, operation))
 
 
 def _operation_lock_key(operation_id: str) -> int:
@@ -95,7 +97,7 @@ PUBLIC_FAILURE = {
 }
 PUBLIC_TECHNICAL_FAILURE = {
     "code": "ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE",
-    "message": "Подготовка завершилась технической ошибкой. Ваши ответы сохранены; можно запустить её повторно.",
+    "message": "Не удалось завершить подготовку. Можно повторить её.",
 }
 PUBLIC_FAILURES_BY_PREFIX = {
     "M7_NO_ADMISSIBLE_CASE": {
@@ -104,7 +106,7 @@ PUBLIC_FAILURES_BY_PREFIX = {
     },
     "M5_FUNCTIONAL_AS_NOT_ADMITTED": {
         "code": "ASSESSMENT_AS_NOT_ADMITTED",
-        "message": "Ситуация не прошла обязательную проверку. Ваши ответы сохранены; обратитесь к ответственному за оценку.",
+        "message": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки.",
     },
 }
 RETRYABLE_TECHNICAL_ERRORS = frozenset({"TimeoutError", "ConnectionError", "LlmGatewayError", "LlmCapacityError"})
@@ -133,6 +135,9 @@ def public_operation(operation: dict) -> dict:
         payload["error"] = dict(next((value for prefix, value in PUBLIC_FAILURES_BY_PREFIX.items()
                                       if internal_message.startswith(prefix)),
                                      PUBLIC_TECHNICAL_FAILURE if payload["retry_allowed"] else PUBLIC_FAILURE))
+    if operation.get('preparation'):
+        payload['preparation'] = {**operation['preparation'], 'allowed_actions':
+            ['check'] if operation['status'] in {'queued','running'} else ['retry'] if payload.get('retry_allowed') else []}
     return payload
 
 
@@ -193,7 +198,7 @@ class ProductCyclePreparationQueue:
                 result.pop("request_json", None)
                 result.pop("request_checksum", None)
                 result.pop("user_id", None)
-                return result
+                return observation.attach(connection, result)
             if request.get("kind") == "next":
                 request["next_preparation_scope"] = m10_product_flow.next_preparation_scope(
                     connection, cycle_id=str(request["cycle_id"]), user_id=user_id,
@@ -231,7 +236,7 @@ class ProductCyclePreparationQueue:
                 else:
                     result.pop("request_checksum", None)
                     result.pop("request_json", None)
-                    return result
+                    return observation.attach(connection, result)
             request["preparation_key"] = ((existing["request_json"].get("preparation_key")
                 or existing["request_json"]["idempotency_key"]) if existing else request["idempotency_key"])
             self._guard_request(connection, request, user_id=user_id)
@@ -262,23 +267,29 @@ class ProductCyclePreparationQueue:
                    RETURNING operation_id,status,result_json,error_code,error_message,created_at,updated_at,completed_at""",
                 (operation_id, user_id, request_text, request_checksum),
             ).fetchone()
+            connection.execute('''INSERT INTO preparation_observations
+                (source,operation_id,attempt_token,kind,stage,history_json) VALUES
+                ('cycle',%s,'queued',%s,'queued',jsonb_build_array(jsonb_build_object('stage','queued','at',NOW())))
+                ON CONFLICT(source,operation_id,attempt_token) DO NOTHING''',
+                (operation_id, 'next' if request.get('kind') == 'next' else 'assessment'))
         self._wake.set()
-        return dict(row)
+        with get_connection() as connection:
+            return observation.attach(connection, dict(row))
 
     def get_status(self, operation_id: str) -> dict | None:
         with get_connection() as connection:
             row = connection.execute(
-                """SELECT operation_id,user_id,status,attempts,result_json,error_code,error_message,
+                """SELECT operation_id,user_id,status,attempt_token,attempts,result_json,error_code,error_message,
                           created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations WHERE operation_id=%s""",
                 (operation_id,),
             ).fetchone()
-        return dict(row) if row else None
+            return observation.attach(connection, dict(row)) if row else None
 
     def get_owned_status(self, operation_id: str, user_id: int) -> dict | None:
         with get_connection() as connection:
             row = connection.execute(
-                """SELECT operation_id,user_id,status,attempts,result_json,error_code,error_message,request_json,
+                """SELECT operation_id,user_id,status,attempt_token,attempts,result_json,error_code,error_message,request_json,
                           created_at,updated_at,completed_at
                    FROM product_cycle_preparation_operations
                    WHERE operation_id=%s AND user_id=%s""",
@@ -287,8 +298,8 @@ class ProductCyclePreparationQueue:
             if row:
                 result = dict(row)
                 self._project_retry_guard(connection, result, user_id=user_id)
-                return result
-        return None
+                return observation.attach(connection, result)
+            return observation.sync_owned(connection, operation_id, user_id)
 
     @staticmethod
     def _guard_request(connection, request: dict, *, user_id: int, created_at=None, lock: bool = True) -> None:
@@ -375,11 +386,16 @@ class ProductCyclePreparationQueue:
 
     def _claim(self) -> dict | None:
         with get_connection() as connection:
+            observation.notice_delays(connection)
             connection.execute(
                 """UPDATE product_cycle_preparation_operations
                    SET status='queued',worker_id=NULL,attempt_token=NULL,locked_at=NULL,updated_at=NOW()
                    WHERE status='running' AND locked_at < NOW() - INTERVAL '10 minutes'"""
             )
+            connection.execute('''UPDATE preparation_observations p SET status='lease_expired',error_category='lease_expired'
+                WHERE p.source='cycle' AND p.status='running' AND p.attempt_token<>'queued'
+                  AND EXISTS(SELECT 1 FROM product_cycle_preparation_operations op
+                    WHERE op.operation_id=p.operation_id AND op.status='queued' AND op.attempts>0)''')
             row = connection.execute(
                 """SELECT id,operation_id,user_id,request_json,request_checksum
                    FROM product_cycle_preparation_operations WHERE status='queued'
@@ -423,6 +439,8 @@ class ProductCyclePreparationQueue:
                                WHERE id=%s AND status='running' AND attempt_token=%s""",
                             (job["id"], job["attempt_token"]),
                         )
+                    observation.record(('cycle', str(job['operation_id']), str(job['attempt_token']), get_connection,
+                        'next' if job['request_json'].get('kind') == 'next' else 'assessment'), heartbeat=True)
                 except Exception:
                     logger.exception(
                         "Product Cycle preparation heartbeat failed operation_id=%s",
@@ -451,7 +469,11 @@ class ProductCyclePreparationQueue:
         failure_result = None
         try:
             with self._lease_heartbeat(job):
-                self._process_current_attempt(job)
+                observer = observation.begin('cycle', job['operation_id'], job['attempt_token'],
+                    'next' if job['request_json'].get('kind') == 'next' else 'assessment',
+                    'unknown', factory=get_connection)
+                with observation.observing(observer):
+                    self._process_current_attempt(job)
             return
         except Exception as exc:
             if str(exc) == "PRODUCT_CYCLE_PREPARATION_ATTEMPT_STALE":
@@ -468,6 +490,11 @@ class ProductCyclePreparationQueue:
                      if getattr(exc, "failure_result", None) else None,
                      type(exc).__name__, str(exc)[:2000], job["id"], job["attempt_token"]),
                 )
+                connection.execute('''UPDATE preparation_observations SET
+                    status=CASE WHEN status='lease_expired' THEN status ELSE 'failed' END,
+                    error_category=COALESCE(error_category,%s)
+                    WHERE source='cycle' AND operation_id=%s AND attempt_token=%s''',
+                    (type(exc).__name__,str(job['operation_id']),str(job['attempt_token'])))
 
     def _process_current_attempt(self, job: dict) -> None:
         from Api import m10_product_flow, m7_cycle_planner
@@ -635,6 +662,8 @@ class ProductCyclePreparationQueue:
                     (json.dumps(jsonable_encoder(participant_result), ensure_ascii=False),
                      job["id"], job["attempt_token"]),
                 )
+                connection.execute("UPDATE preparation_observations SET status='completed' WHERE source='cycle' AND operation_id=%s AND attempt_token=%s",
+                    (str(job['operation_id']),str(job['attempt_token'])))
         except Exception as exc:
             if failure_result is not None:
                 setattr(exc, "failure_result", failure_result)

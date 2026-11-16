@@ -1,3 +1,4 @@
+import { renderPreparation } from '../preparation-status.js';
 import {
   state,
   safeStorage,
@@ -898,8 +899,16 @@ const renderProductRuntime = (snapshot) => {
     }
     stopProductPresence();
     interviewTimerBadge.classList.add('is-paused');
+    const existingPreparationCard = interviewMessages.querySelector('.interview-return-card');
+    if (existingPreparationCard?.dataset.preparationOperation === snapshot.preparation_operation?.operation_id
+        && snapshot.preparation_operation?.preparation
+        && ['queued','running'].includes(snapshot.preparation_operation.status)) {
+      renderPreparation(existingPreparationCard, snapshot.preparation_operation.preparation);
+      return;
+    }
     interviewMessages.innerHTML = '';
     const card = document.createElement('section'); card.className = 'interview-return-card';
+    card.dataset.preparationOperation = snapshot.preparation_operation?.operation_id || '';
     const title = document.createElement('h3'); title.textContent = state.assessmentCaseNumber ? `Ситуация ${state.assessmentCaseNumber} завершена` : 'Ситуация завершена';
     const copy = document.createElement('p');
     copy.textContent = 'Ответы сохранены. Сейчас пауза: время на выполнение не расходуется, но общий срок завершения оценки продолжает идти.';
@@ -962,8 +971,11 @@ const renderProductRuntime = (snapshot) => {
           throw new Error('Сервер вернул другую операцию подготовки.');
         }
         const next = accepted.operation_id ? await waitForProductCyclePreparation(accepted, {
-          isCurrent: current,
+          ...(posted ? {} : { maxWaitMs: 0 }),
+          isCurrent: () => current() && card.isConnected,
+          onReadError: () => { if (visible()) renderPreparation(card, preparation?.preparation, { readError: true }); },
           onStatus: (operation) => {
+            if (visible() && operation.preparation) renderPreparation(card, operation.preparation);
             if (visible()) status.textContent = operation.status === 'running'
               ? 'Подготовка следующей ситуации выполняется…' : 'Подготовка ожидает очереди…';
           },
@@ -1013,7 +1025,9 @@ const renderProductRuntime = (snapshot) => {
           }
           void loadProductRuntime().catch(showInterviewRuntimeError);
         } else if (visible()) {
-          status.textContent = [403, 409].includes(Number(error?.status))
+          status.textContent = error.name === 'PreparationWaitLimit'
+            ? 'Состояние обновлено. Подготовка ещё не завершена.'
+            : [403, 409].includes(Number(error?.status))
             ? productNextRefusalMessage(error)
             : 'Подготовка продолжается либо ответ не получен. Проверьте состояние той же операции.';
           button.textContent = 'Проверить состояние';
@@ -1025,6 +1039,8 @@ const renderProductRuntime = (snapshot) => {
       }
     });
     card.append(title, copy, button, status); interviewMessages.appendChild(card);
+    if (renderedProductMessages) renderedProductMessages.node = card;
+    if (preparation?.preparation) renderPreparation(card, preparation.preparation);
     interviewTextarea.value = '';
     interviewTextarea.placeholder = 'Ситуация завершена. Следующий ответ станет доступен после перехода.';
     interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
@@ -1066,6 +1082,11 @@ const renderProductRuntime = (snapshot) => {
             ? 'Не удалось завершить анализ. Ответы сохранены; ожидаем восстановления обработки.'
             : 'Анализируем последний ответ. Завершение ситуации пока недоступно.'
         : 'Ваши сообщения сохраняются в чате этой ситуации.';
+  let preparationPanel = interviewPanel.querySelector('.interview-preparation-status');
+  if (snapshot.report_preparation) {
+    if (!preparationPanel) { preparationPanel = document.createElement('div'); preparationPanel.id = 'interview-preparation-status'; preparationPanel.className = 'interview-preparation-status'; interviewCaseStatus.after(preparationPanel); }
+    renderPreparation(preparationPanel, snapshot.report_preparation);
+  } else preparationPanel?.remove();
   confirmedProductInterviewCanSend = !interviewSubmitButton.disabled && productInterviewSourceReady(snapshot);
   if (!confirmedProductInterviewCanSend) {
     interviewTextarea.disabled = true;

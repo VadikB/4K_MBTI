@@ -41,6 +41,7 @@ class ReadOnlyStorage:
         self.statements.append((sql, params))
         assert sql.strip().startswith('SELECT'), sql
         assert 'FOR UPDATE' not in sql and 'FOR SHARE' not in sql
+        if 'FROM m10_pipeline_runs p' in sql or 'to_regclass' in sql or 'FROM preparation_observations' in sql: return Result([])
         if 'FROM users u' in sql: return Result([{'id': 8}])
         if 'COUNT(position.id)' in sql:
             assert params[0] == 8
