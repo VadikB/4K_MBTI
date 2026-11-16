@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.insert(0,str(Path.cwd()))
 from scripts.owned_process import run_bounded
 mode=sys.argv[1] if len(sys.argv)>1 else 'header-review'
-assert mode in {'header-review','header-review-refine'}
+assert mode in {'header-review','header-review-refine','release-header'}
 evidence=Path('docs/evc/tasks/p4k-postw02-01/evidence')/mode
 evidence.mkdir(parents=True,exist_ok=True);progress=evidence/'progress.json'
 env={**os.environ,'POSTW02_EVIDENCE':str(evidence.resolve()),'POSTW02_PROGRESS':str(progress.resolve()),'POSTW02_REFERENCE':str(Path('../outputs/p4k-postw02-01-20261116/reference-v10/.sites-checkout').resolve())}

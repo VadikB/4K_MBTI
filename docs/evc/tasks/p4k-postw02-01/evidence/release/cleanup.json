@@ -1,0 +1,10 @@
+{
+  "owned_registries_absent": [
+    "frontend",
+    "unit",
+    "http"
+  ],
+  "db": null,
+  "llm": 0,
+  "mail": 0
+}

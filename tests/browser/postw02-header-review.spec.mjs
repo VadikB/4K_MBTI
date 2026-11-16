@@ -5,6 +5,7 @@ import http from 'node:http';
 import path from 'node:path';
 const evidence = process.env.POSTW02_EVIDENCE;
 const reference = process.env.POSTW02_REFERENCE;
+const appRelease = (await fs.readFile('web/js/config.js', 'utf8')).match(/export const APP_RELEASE = ["']([^"']+)["']/)[1];
 test.skip(!evidence || !reference, 'Explicit bounded owner follow-up with local exact reference required');
 let server, base;
 const progress = async (key) => fs.writeFile(process.env.POSTW02_PROGRESS, JSON.stringify({ progress_key: key }));
@@ -48,7 +49,7 @@ async function fixture(page, fullName) {
     const request = route.request(), pathname = new URL(request.url()).pathname;
     calls.push({ method: request.method(), pathname });
     const send = (body) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
-    if (pathname === '/users/version') return send({ version: '2.1.11' });
+    if (pathname === '/users/version') return send({ version: appRelease });
     if (pathname === '/users/session/restore') return send({ authenticated: true, user, dashboard });
     if (pathname === '/users/8/session-bootstrap') return send({ user, dashboard });
     if (pathname === '/users/8/journey-state') return send({ next_action: 'show_dashboard', can_open_dashboard: true,
@@ -95,6 +96,7 @@ for (const width of [1440, 390]) {
       expect(actual.avatar.radius).toBe('50%'); expect(actual.avatar.background).toBe('rgb(240, 240, 240)');
       expect(actual.avatar.color).toBe('rgb(34, 44, 48)'); expect(actual.status.background).toBe('rgb(250, 250, 250)');
       expect(actual.footer.color).toBe('rgba(100, 116, 139, 0.6)'); expect(actual.footer.background).toBe('rgb(247, 247, 247)');
+      await expect(page.locator('.app-footer-release')).toHaveText(`Версия ${appRelease}`);
       expect(actual.header.height).toBe(width === 1440 ? 72 : 64);
       expect(actual.grid.x).toBe(width === 1440 ? 160 : 16); expect(actual.grid.y).toBe(width === 1440 ? 208 : 200);
       expect(actual.grid.gap).toBe(width === 1440 ? '24px' : '16px'); expect(actual.aside.gap).toBe('16px');
@@ -140,7 +142,7 @@ for (const width of [1440, 390]) {
         expect(legacy.footer.color).toBe('rgb(104, 119, 124)');
       }
       expect(run.calls.every((call) => call.method === 'GET')).toBe(true); expect(run.unexpected).toEqual([]); expect(errors).toEqual([]);
-      await fs.writeFile(path.join(evidence, `${key}.json`), JSON.stringify({ user: run.user, dashboard: run.dashboard, actual, calls: run.calls }, null, 2));
+      await fs.writeFile(path.join(evidence, `${key}.json`), JSON.stringify({ appRelease, user: run.user, dashboard: run.dashboard, actual, calls: run.calls }, null, 2));
       await progress(`done-${key}`);
     });
   }

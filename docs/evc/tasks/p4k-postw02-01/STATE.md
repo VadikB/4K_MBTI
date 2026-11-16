@@ -1,5 +1,23 @@
 # STATE — P4K-POSTW02-01
 
+Текущее: владелец поручил «выкладывай на main». Свежая main32a13d3/2.1.12
+интегрирована в прежнюю ветку локальным commit00e2748; исходники объединились
+автоматически, dist-конфликты разрешены штатной сборкой. Исправленияfae264c сохранены.
+
+На объединённой базе: frontend343/unit1121/HTTP174/header-browser4 PASS,
+lint/build/diff PASS, bounded owned cleanup PASS. Отчёт RELEASE.md, evidence/release
+и release-header. КандидатPATCH2.1.13 ещё не назначен, публикации нет.
+
+Существующего PR нет. Активный ruleset26191885 требует PR+frontend/pytest/
+full-verification; merge автоматически запускает TEST deploy. Из-за прежнего
+прямого запрета на новый PR/deploy задан один async вопрос: разрешить единственный
+PR из прежней ветки, PATCH2.1.13 и TEST deploy после merge. Ответ пока не получен;
+зависимые внешние действия ожидают его. Новый PR/ветка/push/main merge/deploy
+NOT_RUN. Pilot/paidPATH/предметная публикация не входят. Следующий шаг после ответа:
+ready:prepare2.1.13, commit/push, один PR/обязательный CI, merge/наблюдениеTEST.
+
+Ниже — история, прежние формулировки запретов/готовности не являются текущим статусом.
+
 Текущее: локальный follow-up после dc65d39 выполнен: общий header component,
 полное доступное имя/fallback, круг32px/#F0F0F0/avatar→name, навигация и два цвета v10
 через root participant tokens. Композиция, backend N/M/provenance и задания02–05
