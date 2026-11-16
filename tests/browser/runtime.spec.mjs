@@ -526,7 +526,7 @@ test('F08 late Finish receipt cannot restore a closed AS or restart the timer',a
    // Finish stops polling while its response is pending. The late receipt must
    // read the server's current AS and render position 2 before we inspect storage.
    releaseReceipt();
-   await expect(page.locator('#interview-case-badge')).toContainText('Ситуация 2 из', {timeout:15000});
+   await expect(page.locator('#interview-case-badge')).toContainText('2 ситуация из', {timeout:15000});
    await page.waitForTimeout(500);
    expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))
      .toBe(secondSituationId);
@@ -869,7 +869,7 @@ test('F07 late Turn receipt cannot redraw an AS advanced in another tab',async({
    expect(secondSituationId).not.toBe(firstSituationId);
    // The other tab can write this shared storage key before this page renders
    // the new AS. Synchronize on this page's visible position before late receipt.
-   await expect(page.locator('#interview-case-badge')).toContainText('Ситуация 2 из', {timeout:15000});
+   await expect(page.locator('#interview-case-badge')).toContainText('2 ситуация из', {timeout:15000});
    releaseReceipt();
    await page.waitForTimeout(500);
    expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))
@@ -1186,7 +1186,8 @@ test('EXEC-CONTOUR scenario end from another tab needs no duplicate transition',
  const other=await context.newPage();
  other.on('dialog',(dialog)=>dialog.accept());
  await other.goto(page.url());
- await other.locator('#interview-finish-button').waitFor({state:'visible'});
+ await expect(other.locator('#interview-textarea')).toBeEnabled();
+ await expect(other.locator('#interview-finish-button')).toBeHidden();
  let ended=false;
  const receipt=await completeStartedAssessment({
    page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
@@ -1218,13 +1219,20 @@ async function runtime(page,stand){
  const response=await page.waitForResponse(r=>r.url().endsWith('/runtime'));
  return response.json();
 }
-test('S10-B interruption and Additional Session preserve Cycle and deadline',async({page,stand},info)=>{
+test('S10-B saved interruption recovery preserves Cycle and deadline',async({page,stand},info)=>{
  await login(page,stand);await start(page);await answer(page);
  const first=await runtime(page,stand);
- await page.locator('#interview-additional-button').click();
- await expect(page.locator('#interview-case-status')).toContainText('Сессия прервана');
+ await expect(page.locator('#interview-additional-button')).toBeHidden();
+ // Seed an old saved interrupted state through the existing synthetic server.
+ // This is recovery coverage, not an ordinary participant interruption action.
+ info.annotations.push({type:'historical_state',description:'Synthetic saved interrupted Cycle; ordinary UI interrupt must remain absent.'});
+ const interrupted=await page.request.post(`${stand.url}/users/assessment/m7/cycles/${first.cycle_id}/completion`,{
+   data:{action:'interrupt_for_continuation',reason:'synthetic_historical_interruption',idempotency_key:randomUUID()},
+ });
+ expect(interrupted.ok()).toBe(true);
  await page.reload();
- await expect(page.locator('#interview-additional-button')).toHaveText('Продолжить в дополнительной сессии');
+ await expect(page.locator('#interview-case-status')).toContainText('Прохождение прервано');
+ await expect(page.locator('#interview-additional-button')).toHaveText('Продолжить сохранённое прохождение');
  await page.locator('#interview-additional-button').click();
  await expect(page.locator('#interview-textarea')).toBeEnabled();
  const second=await runtime(page,stand);
@@ -1252,7 +1260,14 @@ for(const variant of ['C1','C2']) test(`S10-${variant} background time closure w
  const before=await runtime(page,stand);
  await info.attach('runtime-before-expiry',{body:JSON.stringify(before,null,2),contentType:'application/json'});
  if(variant==='C2'){
-   await page.locator('#interview-pause-button').click();await expect(page.locator('#interview-pause-button')).toHaveText('Продолжить');
+   await expect(page.locator('#interview-pause-button')).toBeHidden();
+   // Existing saved pause is a server fixture; UI no longer creates new pauses.
+   const paused=await page.request.post(`${stand.url}/users/assessment/m7/cycles/${before.cycle_id}/control`,{
+     data:{action:'pause',reason:'synthetic_historical_pause',idempotency_key:randomUUID()},
+   });
+   expect(paused.ok()).toBe(true);
+   await page.reload();
+   await expect(page.locator('#interview-pause-button')).toHaveText('Продолжить оценку');
    await page.close();page=await context.newPage();
  }else{
    page.acceptanceCdp=await context.newCDPSession(page);

@@ -27,3 +27,10 @@ frontend/pytest/integration/browser/full-verification для точного head
 и rebuild выполнены. Изменены только release metadata (pyproject/uv.lock/config/
 HTML cache keys) и generated dist. Прежние runtime/frontend/HTTP PASS переиспользуются
 по неизменённой логике; новый CI выполняется для финального release head.
+
+Перед полным CI обнаружены устаревшие browser expectations runtime.spec.mjs:
+два ожидания прежней подписи позиции, первая видимость finish без ответа и два
+сценария создания pause/interrupt кнопками. Приведены к текущему UI; legacy состояния
+создаются явно через synthetic test server, затем проверяется реальное recovery.
+Проверки Cycle/deadline/остатка/новой AS/запрета после закрытия сохранены.
+Версия2.1.16 остаётся той же: кандидат ещё не выпускался, runtime не изменён.
