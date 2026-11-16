@@ -670,23 +670,26 @@ def _compact_user_response(user: UserResponse | None) -> UserResponse | None:
 def _participant_cycle_outcome(history: dict) -> tuple[str, str, str, str, str]:
     """Project one closed Cycle; processing failure wins over an existing limited Report."""
     if history.get('status') == 'failed':
-        return ('failed', 'Не удалось подготовить результат',
-                'Ваши ответы сохранены. Повторно проходить оценку не нужно.',
-                'open_processing', 'Подробнее')
+        return ('failed', 'Не удалось подготовить отчёт',
+                'Ответы сохранены. Возвращаться к заданиям не требуется.',
+                'open_processing', 'Посмотреть состояние')
     if history.get('report_id'):
         return ('report_ready', 'Результат готов',
-                'Результат оценки доступен для просмотра.', 'open_report', 'Посмотреть результат')
-    return ('processing', 'Результат готовится', 'Вы можете вернуться позже.',
-            'open_processing', 'Подробнее')
+                'Вы завершили оценку. В отчёте — ваши навыки, примеры из ответов и пояснения к результатам.',
+                'open_report', 'Посмотреть результаты →')
+    return ('processing', 'Отчёт готовится',
+            'Ответы сохранены. Результаты появятся здесь, когда отчёт будет готов.',
+            'open_processing', 'Посмотреть состояние')
 
 
 def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
     from Api.qa_orchestration import usage_scope
+    from Api.participant_dashboard import cycle_progress, preparation_state
     # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
     readiness = participant_profile.readiness(connection, user_id=user.id, profile_id=profile_id)
     cycle_rows = connection.execute("""SELECT c.id,c.cycle_id,c.status,c.started_at,c.collection_closed_at,
+        c.personalized_profile_id,c.assignment_id,c.profile_ref_json,
         configuration.name AS assessment_title,organization.name AS organization_name,
-        COUNT(position.id)::int AS total_cases,
         COUNT(position.id) FILTER (WHERE position.state='completed')::int AS completed_cases
         FROM m5_cycles c
         JOIN assessment_personalized_profiles p ON p.id=c.personalized_profile_id
@@ -700,6 +703,7 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         GROUP BY c.id,configuration.name,organization.name
         ORDER BY c.created_at DESC,c.id DESC""", (user.id, usage_scope())).fetchall()
     history_by_cycle = {item['cycle_id']: item for item in m8_results.list_owned_cycles(connection, user.id)}
+    acquaintance_state = acquaintance.read_state(connection, user_id=user.id)
     current_assessments: list[ParticipantAssessmentCard] = []
     completed_assessments: list[ParticipantAssessmentCard] = []
     for raw_cycle in cycle_rows:
@@ -707,7 +711,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         cycle_id = str(cycle['cycle_id'])
         history = history_by_cycle.get(cycle_id, {})
         completed_cases = int(cycle['completed_cases'] or 0)
-        total_cases = int(cycle['total_cases'] or 0)
+        progress = cycle_progress(connection, cycle)
+        total_cases = progress['planned_total']
         deadline = None
         if cycle['started_at'] and cycle['status'] in {'active', 'paused', 'interrupted'}:
             try:
@@ -721,26 +726,64 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                 organization_name=cycle['organization_name'], status=status,
                 status_label=label, description=description, action=action,
                 button_label=button, completed_cases=completed_cases,
-                total_cases=total_cases or None, report_id=history.get('report_id'),
+                total_cases=total_cases, **progress, journey_state=status, report_id=history.get('report_id'),
                 closed_at=cycle['collection_closed_at']))
             continue
         if cycle['status'] == 'prepared':
-            label, description, action, button = (
-                'Можно начать', 'Ваша оценка подготовлена.', 'start', 'Приступить к оценке')
             from Api.assessment_start_readiness import read as read_start_readiness
             start_decision = read_start_readiness(connection, cycle_id=cycle_id, user_id=int(user.id))
-            if not start_decision['can_start']:
-                label, description, action, button = (
-                    'Старт заблокирован', 'Не подтверждены условия старта оценки. Обратитесь к организатору.', None, None)
+            same_assignment = (acquaintance_state.get('assignment_id') == cycle['assignment_id']
+                and acquaintance_state.get('late_readiness', {}).get('personalized_profile_id') == cycle['personalized_profile_id'])
+            operation = (acquaintance_state.get('preparation_operation') or {}) if same_assignment else {}
+            if operation.get('status') == 'failed':
+                journey_state, label, description, action, button = (
+                    'preparation_failed', 'Не удалось подготовить оценку',
+                    'Ваши ответы сохранены. Проверьте состояние подготовки.', 'open_readiness', 'Проверить состояние')
+            elif operation.get('status') in {'queued', 'running'}:
+                journey_state, label, description, action, button = (
+                    'preparing', 'Подготовка оценки',
+                    'Готовим план и первую ситуацию. Ваши ответы знакомства сохранены. Время оценки ещё не идёт.',
+                    'open_readiness', 'Посмотреть состояние')
+            elif (start_decision['can_start'] and total_cases
+                    and start_decision.get('plan_revision_id') == progress['plan_revision_id']):
+                journey_state, label, description, action, button = (
+                    'ready', 'Готова к началу',
+                    'План и первая ситуация подготовлены. Перед началом вы сможете прочитать инструкцию.',
+                    'open_readiness', 'Перейти к готовности →')
+            elif start_decision.get('reasons'):
+                journey_state, label, description, action, button = (
+                    'readiness_error', 'Не удалось подтвердить готовность',
+                    'Сохранённая оценка не прошла проверку готовности. Откройте её состояние.',
+                    'open_readiness', 'Проверить состояние')
+            else:
+                journey_state, label, description, action, button = (
+                    'not_ready', 'Готовность пока не подтверждена',
+                    'Проверьте сохранённое состояние оценки перед началом.', 'open_readiness', 'Проверить готовность')
         else:
-            label, description, action, button = (
-                'Оценка начата', 'Продолжите с того же места.', 'continue', 'Продолжить')
+            journey_state, label, description, action, button = (
+                'active', 'Оценка идёт', 'Продолжите прохождение с текущей ситуации.',
+                'continue', 'Продолжить оценку →')
+            if progress['between_situations']:
+                journey_state, label, description = ('between_situations',
+                    'Между ситуациями', 'Ответы сохранены. Следующую ситуацию вы начнёте сами.')
+            elif progress['current_position_no'] is not None:
+                from Api.m7_return_integration import read_return_state
+                try:
+                    returning = read_return_state(connection, cycle_id=cycle_id, owner_user_id=int(user.id))
+                except ValueError:
+                    returning = {}  # Legacy Cycle without a saved return policy.
+                if returning.get('allowed_action') in {'continue_current', 'replace_current', 'replacement_candidate_required'}:
+                    journey_state, label, description, button = ('return_required', 'Можно продолжить',
+                        'Вернитесь к той же сохранённой ситуации и переписке.', 'Вернуться к оценке →')
+        if cycle['status'] != 'prepared' and history.get('status') == 'failed':
+            journey_state, label, description = ('runtime_error', 'Не удалось продолжить оценку',
+                'Ваши ответы сохранены. Откройте оценку, чтобы проверить состояние.')
         current_assessments.append(ParticipantAssessmentCard(
             cycle_id=cycle_id, title=cycle['assessment_title'],
-            organization_name=cycle['organization_name'], status=cycle['status'],
+            organization_name=cycle['organization_name'], status=cycle['status'], journey_state=journey_state,
             status_label=label, description=description, action=action,
             button_label=button, completed_cases=completed_cases,
-            total_cases=total_cases or None, calendar_deadline=deadline))
+            total_cases=total_cases, **progress, calendar_deadline=deadline))
 
     completed_assessments.sort(
         key=lambda card: (
@@ -750,45 +793,38 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         reverse=True,
     )
 
-    acquaintance_state = acquaintance.read_state(connection, user_id=user.id)
-    if not current_assessments and not any(row['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'} for row in cycle_rows):
-        organization_name = acquaintance_state['readiness'].get('organization_name')
-        assessment_title = 'Оценка 4К'
-        if readiness.get('assessment_configuration_id'):
-            assignment = connection.execute("""SELECT configuration.name,organization.name AS organization_name
-                FROM assessment_personalized_profiles profile
-                JOIN assessment_configurations configuration ON configuration.id=profile.assessment_configuration_id
-                JOIN organizations organization ON organization.id=profile.organization_id
-                WHERE profile.id=%s""", (readiness.get('id'),)).fetchone()
-            if assignment:
-                assessment_title = assignment['name']
-                organization_name = assignment['organization_name']
-        if (acquaintance_state['readiness']['status'] != 'ready'
-                and acquaintance_state['readiness'].get('organization_id') is None):
-            status = None
-        elif acquaintance_state['readiness']['status'] != 'ready':
-            status, label, description, action, button = ('organization_preparing', 'Оценка ещё не готова к началу',
-                'Организация завершает подготовку оценки.', None, None)
-        elif acquaintance_state['state']['status'] not in {'completed', 'skipped'}:
-            started = int(acquaintance_state['state'].get('current_step') or 0) > 0
-            status, label, description, action, button = ('acquaintance', 'Знакомство с оценкой',
-                'Перед началом познакомьтесь с форматом оценки.', 'acquaintance',
-                'Продолжить знакомство' if started else 'Познакомиться с оценкой')
-        elif readiness['status'] != 'ready':
-            status, label, description, action, button = ('organization_preparing', 'Оценка ещё не готова к началу',
-                readiness['message'], None, None)
-        else:
-            status, label, description, action, button = ('ready', 'Можно начать',
-                'Оценка готова к началу.', 'start', 'Приступить к оценке')
-        if status is not None:
+    # A new assignment may coexist with old completed Cycles. Never let history
+    # suppress its preparation card, and never duplicate a Cycle as an assignment.
+    assignment_id = acquaintance_state.get('assignment_id')
+    has_assignment_cycle = any(
+        row['assignment_id'] == assignment_id if assignment_id is not None else
+        row['personalized_profile_id'] == readiness.get('id') for row in cycle_rows)
+    if not current_assessments and not has_assignment_cycle:
+        early = acquaintance_state['readiness']
+        if early.get('organization_id') is not None:
+            status, label, description, action, button = preparation_state(acquaintance_state)
+            if (early['status'] == 'ready' and assignment_id is None
+                    and early.get('questionnaire_revision_id') is None
+                    and acquaintance_state.get('mandatory_complete')
+                    and acquaintance_state.get('onboarding', {}).get('status') in {'completed', 'skipped'}
+                    and not assessment_assignment_sources.has_managed_assignment(connection, user_id=int(user.id))):
+                # Answers are answers_confirmed, not completed. The legacy entry
+                # follows saved onboarding and the existing M4 gate; managed W02 never uses it.
+                status, label, description, action, button = ('acquaintance', 'Знакомство с оценкой',
+                    'Перед началом познакомьтесь с форматом оценки.',
+                    'open_legacy_acquaintance' if readiness['status'] == 'ready' else 'start',
+                    'Продолжить знакомство')
             current_assessments.append(ParticipantAssessmentCard(
-                title=assessment_title, organization_name=organization_name, status=status,
+                title=acquaintance_state.get('assessment_name') or 'Оценка 4К',
+                organization_name=early.get('organization_name'), status=status, journey_state=status,
                 status_label=label, description=description, action=action, button_label=button))
 
     report_rows = m8_results.list_owned_reports(connection, user.id)
     latest_cycle = dict(cycle_rows[0]) if cycle_rows else None
     completed_cases = int(latest_cycle['completed_cases'] or 0) if latest_cycle else 0
-    total_cases = int(latest_cycle['total_cases'] or 0) if latest_cycle else 0
+    latest_card = next((card for card in current_assessments + completed_assessments
+                        if latest_cycle and card.cycle_id == str(latest_cycle['cycle_id'])), None)
+    total_cases = latest_card.planned_total or 0 if latest_card else 0
     is_complete = bool(latest_cycle and latest_cycle['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'})
     # Compatibility field: no inferred percent for an adaptive, not-yet-finished plan.
     progress_percent = 100 if is_complete else 0

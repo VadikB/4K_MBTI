@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:39076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/postw02-cabinet-reference.spec.mjs:226:1 › unknown position and report errors remain honest in compact rows (526ms)
+
+  1 passed (1.4s)

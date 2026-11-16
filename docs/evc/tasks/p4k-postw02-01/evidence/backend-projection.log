@@ -1,0 +1,224 @@
+EEEEEEEEEE                                                               [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_full_plan_eight_not_materialized_one_and_read_entry_has_no_writes _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108a53aa0>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_presented_three_of_eight_is_independent_of_completed_and_catalogue _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108ad8f20>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+__ ERROR at setup of test_between_positions_does_not_present_admitted_next_as __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108adaab0>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_other_plan_revision_does_not_invent_current_position __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108adba70>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_preparation_and_confirmed_failure_are_distinct[queued-preparing] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108b2bda0>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_preparation_and_confirmed_failure_are_distinct[running-preparing] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108b28b90>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_preparation_and_confirmed_failure_are_distinct[failed-preparation_failed] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108b29ca0>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_return_is_read_only_and_retains_explicit_continue_route _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x105832b10>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_closed_cycle_uses_one_owned_history_entry_and_new_assignment_is_visible _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108adae40>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+_ ERROR at setup of test_owner_bootstrap_rejects_missing_and_foreign_identity __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x108ad95e0>
+
+    @pytest.fixture
+    def cabinet(monkeypatch):
+        db = ReadOnlyStorage()
+>       user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', created_at=datetime(2026, 11, 16))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 3 validation errors for UserResponse
+E       role_id
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       job_description
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+E       raw_duties
+E         Field required [type=missing, input_value={'id': 8, 'email': 'synth...ime(2026, 11, 16, 0, 0)}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.14/v/missing
+
+tests/e2e/test_postw02_dashboard_http.py:63: ValidationError
+=========================== short test summary info ============================
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_full_plan_eight_not_materialized_one_and_read_entry_has_no_writes
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_presented_three_of_eight_is_independent_of_completed_and_catalogue
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_between_positions_does_not_present_admitted_next_as
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_other_plan_revision_does_not_invent_current_position
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_preparation_and_confirmed_failure_are_distinct[queued-preparing]
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_preparation_and_confirmed_failure_are_distinct[running-preparing]
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_preparation_and_confirmed_failure_are_distinct[failed-preparation_failed]
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_return_is_read_only_and_retains_explicit_continue_route
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_closed_cycle_uses_one_owned_history_entry_and_new_assignment_is_visible
+ERROR tests/e2e/test_postw02_dashboard_http.py::test_owner_bootstrap_rejects_missing_and_foreign_identity
+10 errors in 0.63s

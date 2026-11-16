@@ -1,0 +1,128 @@
+[
+  {
+    "id": "A01",
+    "title": "История стала повторением основной карточки",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A02",
+    "title": "Состав метаданных заменён во всех состояниях",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A03",
+    "title": "В подготовке исчезает весь блок метаданных",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A04",
+    "title": "Произвольно изменены тексты пяти состояний и действий",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A05",
+    "title": "Тексты обеих информационных карточек переписаны",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A06",
+    "title": "Лишние рамки основной и боковых карточек",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A07",
+    "title": "Неверный вертикальный зазор боковых карточек",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A08",
+    "title": "Заголовок и начало контента подняты",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A09",
+    "title": "Типографика вводной части",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A10",
+    "title": "Отступ верхней строки основной карточки",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A11",
+    "title": "Геометрия метаданных",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A12",
+    "title": "Вес и межстрочный интервал кнопок",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A13",
+    "title": "Hover основной кнопки перекрыт старым CSS",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A14",
+    "title": "Слишком жирные заголовки боковых карточек",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A15",
+    "title": "Интервалы и шрифт истории",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A16",
+    "title": "Цвет текста статуса",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A17",
+    "title": "Фокус отличается по толщине и отступу",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  },
+  {
+    "id": "A18",
+    "title": "В подвале остаётся другой фон страницы",
+    "status": "PASS_LOCAL",
+    "proof": "corrected/*.json and corrected/probes.json; targeted tests and visual inspection",
+    "exceptions": "Accepted palette1.2 and product account/version/unsupported compare are documented separately"
+  }
+]

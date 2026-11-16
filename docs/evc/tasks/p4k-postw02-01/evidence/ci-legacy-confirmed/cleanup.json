@@ -1,0 +1,10 @@
+{
+  "owned_cluster_removed": true,
+  "closed_port_errno": {
+    "postgres": 61,
+    "app": 61
+  },
+  "registry_absent": true,
+  "real_llm": 0,
+  "mail": 0
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-m",
+    "e2e",
+    "tests/e2e"
+  ],
+  "returncode": 0,
+  "reason": null,
+  "wall_seconds": 13.954763209003431
+}

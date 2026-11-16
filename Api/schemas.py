@@ -362,6 +362,13 @@ class ParticipantAssessmentCard(BaseModel):
     button_label: str | None = None
     completed_cases: int | None = None
     total_cases: int | None = None
+    # Additive, scoped to this Cycle's saved plan revision; never inferred from completed.
+    planned_total: int | None = Field(default=None, ge=1)
+    current_position_no: int | None = Field(default=None, ge=1)
+    last_completed_position_no: int | None = Field(default=None, ge=1)
+    plan_revision_id: str | None = None
+    journey_state: str | None = None
+    between_situations: bool = False
     calendar_deadline: datetime | None = None
     report_id: str | None = None
     closed_at: datetime | None = None

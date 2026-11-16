@@ -1,17 +1,17 @@
 /* W02 v5. These tokens and rules belong only to the acquaintance screen. */
 .shell:has(> #onboarding-panel:not(.hidden)),
 .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) {
-    --w02-canvas: #f7f7f7;
+    --w02-canvas: var(--participant-canvas);
     --w02-white: #ffffff;
     --w02-secondary: #f6f9f9;
-    --w02-text: #222c30;
-    --w02-muted: #464554;
-    --w02-border: #cbd5e1;
+    --w02-text: var(--participant-text);
+    --w02-muted: var(--participant-caption);
+    --w02-border: var(--participant-border);
     --w02-user: #b3ebef;
-    --w02-primary: #18b8c6;
-    --w02-hover: #109eab;
-    --w02-active: #0c8591;
-    --w02-focus: #007d89;
+    --w02-primary: var(--participant-primary);
+    --w02-hover: var(--participant-primary-hover);
+    --w02-active: var(--participant-primary-active);
+    --w02-focus: var(--participant-focus);
     --w02-disabled: #d6e2e5;
     --w02-disabled-text: #68777c;
     --w02-highlight: rgb(24 184 198 / 20%);
@@ -232,3 +232,10 @@
     .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-waiting-section { position: static; transform: none; margin-left: auto; font-size: 12px; line-height: 16px; }
     #auth-complete-panel.w02-waiting .auth-complete-actions button { width: 100%; }
 }
+
+#onboarding-panel #onboarding-dashboard {
+    margin-left: auto; min-height: 44px; padding: 8px 0;
+    color: var(--participant-focus); font-size: 14px; white-space: nowrap;
+}
+#onboarding-panel #onboarding-dashboard[hidden] { display: none; }
+#onboarding-panel #onboarding-dashboard:focus-visible { outline: 3px solid var(--participant-focus); outline-offset: 2px; }

@@ -1,0 +1,30 @@
+[
+  {
+    "method": "GET",
+    "pathname": "/users/version"
+  },
+  {
+    "method": "GET",
+    "pathname": "/users/session/restore"
+  },
+  {
+    "method": "GET",
+    "pathname": "/users/8/journey-state"
+  },
+  {
+    "method": "GET",
+    "pathname": "/users/8/session-bootstrap"
+  },
+  {
+    "method": "GET",
+    "pathname": "/users/8/session-bootstrap"
+  },
+  {
+    "method": "GET",
+    "pathname": "/users/8/session-bootstrap"
+  },
+  {
+    "method": "GET",
+    "pathname": "/users/8/session-bootstrap"
+  }
+]

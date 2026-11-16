@@ -1,0 +1,16 @@
+{
+  "project_id": "appgprj_6ad211b93f948191a7bc6106570630ea",
+  "version_number": 10,
+  "source_commit_sha": "e44fa78efb1ec8605b28cf9bc2c2272da2b9122a",
+  "version_id": "appgprj_6ad211b93f948191a7bc6106570630ea~appgver_92b06c40ff6c819193bd3ff687265b34",
+  "archive_content_hash": "sha256:ecf526d83c88d5525779266a7701bb2e9af33fc276e79abec0f2ebc27c863023",
+  "publication_status": "succeeded",
+  "publication_updated_at": "2026-11-16T12:12:31.676435+00:00",
+  "reference_source_contents": "PASS: exact checkout e44fa78 opened through supported Sites source workflow without archive/push/publication; prior NOT_RUN cause was incorrect and superseded by REFERENCE_AUDIT.md",
+  "authenticated_live_browser": "NOT_RUN per task; Google login not attempted",
+  "requirements": "P4K_POSTW02_01_Cabinet rev1.1 + REFERENCE_CURRENT.txt; directly selected by owner during this chat",
+  "local_reference_render": "PASS evidence collection, 5 scenes at 1440/390 +2 long-title stress pairs; product conformity FAIL",
+  "reference_source_identity": "audit-v10/identity.json",
+  "initial_product_verdict": "FAIL e1b07b3, REFERENCE_AUDIT.md",
+  "corrected_product_verdict": "PASS_LOCAL within REFERENCE_FIXES.md; accepted palette1.2/account/version/unsupported compare differences preserved"
+}

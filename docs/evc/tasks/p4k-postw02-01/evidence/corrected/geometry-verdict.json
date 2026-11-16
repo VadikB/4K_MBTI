@@ -1,0 +1,103 @@
+{
+  "max_geometry_delta_css_px": 0,
+  "geometry_allowance_css_px": 0.6,
+  "additional_saved_background_and_border_checks": "PASS; status background allowed by palette1.2",
+  "metrics": [
+    {
+      "scene": "active",
+      "width": 1440,
+      "reference_card_height": 404,
+      "product_card_height": 404,
+      "reference_history_height": 99,
+      "product_history_height": 99
+    },
+    {
+      "scene": "preparing",
+      "width": 1440,
+      "reference_card_height": 428,
+      "product_card_height": 428,
+      "reference_history_height": 99,
+      "product_history_height": 99
+    },
+    {
+      "scene": "ready",
+      "width": 1440,
+      "reference_card_height": 404,
+      "product_card_height": 404,
+      "reference_history_height": 99,
+      "product_history_height": 99
+    },
+    {
+      "scene": "return",
+      "width": 1440,
+      "reference_card_height": 404,
+      "product_card_height": 404,
+      "reference_history_height": 99,
+      "product_history_height": 99
+    },
+    {
+      "scene": "result",
+      "width": 1440,
+      "reference_card_height": 428,
+      "product_card_height": 428,
+      "reference_history_height": 99,
+      "product_history_height": 99
+    },
+    {
+      "scene": "long",
+      "width": 1440,
+      "reference_card_height": 506,
+      "product_card_height": 506,
+      "reference_history_height": 99,
+      "product_history_height": 99
+    },
+    {
+      "scene": "active",
+      "width": 390,
+      "reference_card_height": 412,
+      "product_card_height": 412,
+      "reference_history_height": 161,
+      "product_history_height": 161
+    },
+    {
+      "scene": "preparing",
+      "width": 390,
+      "reference_card_height": 460,
+      "product_card_height": 460,
+      "reference_history_height": 161,
+      "product_history_height": 161
+    },
+    {
+      "scene": "ready",
+      "width": 390,
+      "reference_card_height": 436,
+      "product_card_height": 436,
+      "reference_history_height": 161,
+      "product_history_height": 161
+    },
+    {
+      "scene": "return",
+      "width": 390,
+      "reference_card_height": 412,
+      "product_card_height": 412,
+      "reference_history_height": 161,
+      "product_history_height": 161
+    },
+    {
+      "scene": "result",
+      "width": 390,
+      "reference_card_height": 436,
+      "product_card_height": 436,
+      "reference_history_height": 161,
+      "product_history_height": 161
+    },
+    {
+      "scene": "long",
+      "width": 390,
+      "reference_card_height": 616,
+      "product_card_height": 616,
+      "reference_history_height": 161,
+      "product_history_height": 161
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "run": "audit-v10",
+    "port": 51006,
+    "listening": false,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "audit-v10-probes",
+    "port": 51101,
+    "listening": false,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "audit-v10-report",
+    "port": 52114,
+    "listening": false,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  }
+]

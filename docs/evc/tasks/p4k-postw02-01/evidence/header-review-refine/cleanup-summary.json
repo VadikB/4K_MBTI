@@ -1,0 +1,13 @@
+{
+  "server_port": 54315,
+  "probe_errno": 61,
+  "probe_result": "ECONNREFUSED",
+  "owner_registry_exists": false,
+  "server_afterAll_close": {
+    "port": 54315,
+    "listening": false
+  },
+  "db": null,
+  "llm": 0,
+  "mail": 0
+}

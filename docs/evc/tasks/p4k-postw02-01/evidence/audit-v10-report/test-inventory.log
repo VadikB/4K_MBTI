@@ -1,0 +1,15 @@
+Listing tests:
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product active 1440
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product preparing 1440
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product ready 1440
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product return 1440
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product result 1440
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product active 390
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product preparing 390
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product ready 390
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product return 390
+  postw02-reference-audit.spec.mjs:94:5 › exact v10 / product result 390
+  postw02-reference-audit.spec.mjs:135:1 › 320 overflow only
+  postw02-reference-audit.spec.mjs:154:1 › breakpoint and interactive style probes
+  postw02-reference-audit.spec.mjs:196:1 › local comparison report renders and switches pairs
+Total: 13 tests in 1 file

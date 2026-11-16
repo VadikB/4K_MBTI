@@ -144,8 +144,12 @@ const processHtml = () => {
       (returnCopy ? returnCopy.trim() : 'Порядок возврата к незавершённой ситуации определяется правилами назначенной оценки.')) +
     (hours > 0 ? paragraph(`Завершить оценку нужно в течение ${hours} ч. после её начала.`) : '');
 };
+let passiveDashboardEntry = false;
+let dashboardEntryCycleId = null;
+
 const readinessStep = () => {
-  const status = preparationView(model, preparationError);
+  let status = preparationView(model, preparationError);
+  if (dashboardEntryCycleId && model?.prepared_plan?.cycle_id !== dashboardEntryCycleId && status === 'ready') status = 'conflict';
   const step = readinessPresentation(status, {
     retryAllowed: model?.preparation_operation?.retry_allowed === true,
     pendingStart: hasPendingPreparedStart(model?.prepared_plan?.cycle_id), readbackAdmitted: startReadbackAdmitted,
@@ -426,7 +430,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
       button.className = ['issue', 'history'].includes(kind) ? 'onboarding-text-action' : 'ghost-button'; button.dataset.secondary = ''; button.textContent = label; button.disabled = busy;
       button.addEventListener('click', async () => {
         if (kind === 'refresh') { await advance({ action: 'refresh' }); return; }
-        if (kind === 'history') { await openOnboarding({ reviewMode: true }); return; }
+        if (kind === 'history') { await openOnboarding({ reviewMode: true, readOnlyEntry: passiveDashboardEntry, expectedCycleId: dashboardEntryCycleId }); return; }
         if (kind === 'logout') { const { logoutAndReturnToStart } = await import('../session.js'); await logoutAndReturnToStart(button); return; }
         openDialog(kind, button);
       });
@@ -458,6 +462,8 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingNext.classList.toggle('ghost-button', standalone && !['start', 'retry'].includes(step.action));
   onboardingSkip.disabled = true;
   document.getElementById('onboarding-home').disabled = loading || busy;
+  const dashboardLink = document.getElementById('onboarding-dashboard');
+  dashboardLink.hidden = !standalone; dashboardLink.disabled = loading || busy;
   showMessages();
   if (focus) window.requestAnimationFrame(() => {
     const current = onboardingPanel.querySelector('.onboarding-copy');
@@ -534,7 +540,8 @@ const beginPreparation = ({ retry = false } = {}) => {
   return task.promise;
 };
 
-export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedReview = false } = {}) => {
+export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedReview = false, readOnlyEntry = false, expectedCycleId = null } = {}) => {
+  passiveDashboardEntry = Boolean(readOnlyEntry); dashboardEntryCycleId = expectedCycleId;
   closeDialog();
   generation += 1; preparationTask?.controller.abort(); busy = false; progressTail = Promise.resolve();
   const owner = identity(), epoch = state.identityEpoch, run = generation;
@@ -550,7 +557,7 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
     if (model.readiness.status !== 'ready') { loading = false; openAcquaintanceWaiting(model.readiness); return; }
     reviewMode = reviewMode && Boolean(model.mandatory_complete);
     state.onboardingIndex = reviewMode ? readinessIndex() : resumeOnboardingIndex(model, model.onboarding);
-    if (!reviewMode && model.onboarding?.status === 'not_started') await saveProgress('in_progress');
+    if (!passiveDashboardEntry && !reviewMode && model.onboarding?.status === 'not_started') await saveProgress('in_progress');
   } catch (error) {
     if (!isCurrent(owner, epoch, run)) return;
     loadFailed = true; errorMessage = acquaintanceErrorMessage(error);
@@ -558,7 +565,7 @@ export const openOnboarding = async ({ currentStep = 0, reviewMode: requestedRev
   if (!isCurrent(owner, epoch, run) || state.currentScreen !== 'onboarding') return;
   loading = false;
   persistAssessmentContext(); syncUrlState('onboarding'); renderOnboarding({ focus: true });
-  if (!loadFailed && model?.mandatory_complete && !reviewMode && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
+  if (!passiveDashboardEntry && !loadFailed && model?.mandatory_complete && !reviewMode && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
 };
 
 export const goBackInOnboarding = () => {
@@ -590,7 +597,7 @@ const advance = async (override = null) => {
       reviewMode = false;
       state.onboardingIndex = model.mandatory_complete ? readinessIndex() : resumeOnboardingIndex(model, model.onboarding);
       persistAssessmentContext();
-      if (model.mandatory_complete && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
+      if (!passiveDashboardEntry && model.mandatory_complete && model.late_readiness?.status === 'ready_to_prepare') void beginPreparation();
       return;
     }
     if (step.answerKey) {
@@ -688,7 +695,7 @@ export const initOnboarding = () => {
     event.preventDefault(); onboardingNext.click();
   });
   onboardingStepBackButton.addEventListener('click', goBackInOnboarding);
-  document.getElementById('onboarding-home').addEventListener('click', async () => {
+  const returnToDashboard = async () => {
     if (busy) return;
     captureInput();
     if (Object.entries(answers).some(([key, value]) => value !== savedAnswers[key])) {
@@ -710,7 +717,9 @@ export const initOnboarding = () => {
       else { notice = 'Сейчас доступно продолжение знакомства. Уже сохранённые ответы остаются на месте.'; showMessages(); }
     } catch (error) { if (isCurrent(owner, epoch, run)) { errorMessage = acquaintanceErrorMessage(error); showMessages(); } }
     finally { if (isCurrent(owner, epoch, run)) { busy = false; if (state.currentScreen === 'onboarding') renderOnboarding(); } }
-  });
+  };
+  document.getElementById('onboarding-home').addEventListener('click', returnToDashboard);
+  document.getElementById('onboarding-dashboard').addEventListener('click', returnToDashboard);
   window.addEventListener('agent4k:assessment-context-cleared', () => {
     closeDialog(); issueDrafts.clear();
     generation += 1; preparationTask?.controller.abort(); preparationTask = null;

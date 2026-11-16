@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4K Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.13">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.13">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/admin-report-detail.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.14">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.14">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
@@ -56,7 +56,7 @@
     <header class="auth-header" aria-label="4К Ассистент">
       <span class="auth-header-brand">4К Ассистент</span>
       <span class="auth-waiting-section">Оценка</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.13</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.14</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -163,6 +163,7 @@
           <button id="onboarding-home" type="button" class="brand dashboard-brand">4К Ассистент</button>
           <button id="onboarding-step-back" type="button" class="step-badge-back" aria-label="Назад" hidden></button>
           <span class="onboarding-section-label" id="step-badge-label">Знакомство</span>
+          <button id="onboarding-dashboard" type="button" class="text-link" hidden>Мои оценки</button>
         </div>
         <main id="onboarding-history" class="onboarding-history" aria-label="История знакомства">
         <div class="onboarding-thread">
@@ -197,48 +198,65 @@
     </section>
 
     <section class="panel dashboard-panel hidden" id="dashboard-panel">
-      <div class="dashboard-topbar">
-        <div class="brand dashboard-brand">4K Ассистент</div>
+      <header class="dashboard-topbar app-header app-header--participant" data-app-header>
+        <button class="brand dashboard-brand" type="button" data-header-home>4K Ассистент</button>
+        <nav class="app-header-navigation" aria-label="Разделы аккаунта">
+          <button id="dashboard-cabinet-button" class="app-header-navigation-current" type="button" aria-current="page" data-header-home>Мои оценки</button>
+        </nav>
         <div class="dashboard-topbar-actions">
           <button id="dashboard-mobile-exit-button" class="topbar-exit-button dashboard-mobile-exit-button" type="button">
             <span class="topbar-user-icon" aria-hidden="true">👤</span>
             <span>Выйти</span>
           </button>
           <div class="user-menu">
-            <div class="user-chip" tabindex="0" aria-haspopup="true" aria-label="Меню пользователя">
+            <div class="user-chip" data-header-user-menu tabindex="0" aria-haspopup="true" aria-label="Меню пользователя">
+              <div id="dashboard-avatar" class="user-avatar" data-header-avatar aria-hidden="true">У</div>
               <div class="user-chip-copy">
-                <strong id="dashboard-user-name">Александр</strong>
-                <span id="dashboard-user-role">Product Lead</span>
+                <strong id="dashboard-user-name" data-header-name>Участник</strong>
+                <span id="dashboard-user-role" data-header-role></span>
               </div>
-              <div id="dashboard-avatar" class="user-avatar">А</div>
             </div>
             <div class="user-menu-dropdown" role="menu" aria-label="Меню пользователя">
+              <span class="app-header-mobile-name" data-header-name>Участник</span>
               <button id="dashboard-onboarding-button" class="user-menu-item" type="button" role="menuitem">Как это работает</button>
               <button id="dashboard-profile-button" class="user-menu-item" type="button" role="menuitem">Настройки</button>
               <button id="dashboard-restart-button" class="user-menu-item" type="button" role="menuitem">Выйти</button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <div class="dashboard-hero">
-        <h2 id="dashboard-greeting">Мои оценки</h2>
-        <p class="dashboard-subtitle">Здесь собраны ваши текущие и завершённые оценки.</p>
+        <h1 id="dashboard-greeting">Мои оценки</h1>
+        <p class="dashboard-subtitle">Ваши назначения, прохождение и результаты — всё в одном месте.</p>
         <div id="dashboard-refresh-status" class="dashboard-refresh-status hidden" role="status" aria-live="polite">
           <span>Не удалось обновить сведения</span>
           <button id="dashboard-refresh-button" type="button" class="text-link">Повторить</button>
         </div>
       </div>
 
-      <section class="dashboard-section">
-        <h3 id="current-assessments-title" class="dashboard-section-title">Текущая оценка</h3>
-        <div id="current-assessments" class="participant-assessment-list" aria-live="polite"></div>
-      </section>
-
-      <section class="dashboard-section">
-        <h3 class="dashboard-section-title">Завершённые оценки</h3>
-        <div id="completed-assessments" class="participant-assessment-list" aria-live="polite"></div>
-      </section>
+      <div class="dashboard-content">
+        <div class="dashboard-cabinet-grid">
+          <section class="dashboard-section dashboard-current">
+            <h3 id="current-assessments-title" class="dashboard-section-title">Текущая оценка</h3>
+            <div id="current-assessments" class="participant-assessment-list" aria-live="polite"></div>
+          </section>
+          <aside class="dashboard-information" aria-label="Об оценке">
+            <section class="card dashboard-info-card">
+              <h3>Ваш личный раздел</h3>
+              <p>Здесь только ваши оценки и результаты.</p>
+            </section>
+            <section class="card dashboard-info-card">
+              <h3>Что покажет оценка</h3>
+              <p>Как проявляются ваши навыки общения, командной работы, креативности и критического мышления в рабочих ситуациях.</p>
+            </section>
+          </aside>
+        </div>
+        <section class="dashboard-section dashboard-history">
+          <h2 class="dashboard-section-title">Предыдущие оценки</h2>
+          <div id="completed-assessments" class="participant-assessment-list" aria-live="polite"></div>
+        </section>
+      </div>
     </section>
 
     <section class="panel ai-welcome-panel hidden" id="ai-welcome-panel">
@@ -1994,7 +2012,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.1.13</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.1.14</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -2010,6 +2028,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.13"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.14"></script>
 </body>
 </html>

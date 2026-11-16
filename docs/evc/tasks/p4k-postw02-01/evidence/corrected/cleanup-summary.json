@@ -1,0 +1,34 @@
+[
+  {
+    "run": "corrected",
+    "port": 52804,
+    "listening": false,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "corrected-refine",
+    "port": 52892,
+    "listening": false,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "corrected-navigation",
+    "port": 52901,
+    "listening": false,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "corrected-report",
+    "port": 53070,
+    "listening": false,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  }
+]

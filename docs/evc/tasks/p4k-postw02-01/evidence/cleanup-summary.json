@@ -1,0 +1,50 @@
+[
+  {
+    "run": "after",
+    "port": 50174,
+    "server_closed": true,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "after-final",
+    "port": 50252,
+    "server_closed": true,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "after-fixed",
+    "port": 50234,
+    "server_closed": true,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "before",
+    "port": 50041,
+    "server_closed": true,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "refresh-verified",
+    "port": 50316,
+    "server_closed": true,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  },
+  {
+    "run": "verified",
+    "port": 50276,
+    "server_closed": true,
+    "port_closed": true,
+    "connect_errno": 61,
+    "registry_absent": true
+  }
+]

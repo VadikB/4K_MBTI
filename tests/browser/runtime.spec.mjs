@@ -240,12 +240,17 @@ async function startIndependentCycle(page,stand,expected='готовности')
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
 }
+const completedCycleCards=(page)=>page.locator('#dashboard-panel .participant-assessment-card[data-journey-state="report_ready"]');
 async function openCompletedReport(page,expectedCycles,cycleId=null){
  await expect(page.locator('#dashboard-panel')).toBeVisible();
- await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(expectedCycles);
+ const completed=completedCycleCards(page);
+ await expect(completed).toHaveCount(expectedCycles);
+ const cycleIds=await completed.evaluateAll(cards=>cards.map(card=>card.dataset.cycleId));
+ expect(cycleIds.every(Boolean)).toBe(true);expect(new Set(cycleIds).size).toBe(expectedCycles);
  const card=cycleId
-  ? page.locator(`#completed-assessments .participant-assessment-card [data-cycle-id="${cycleId}"]`).locator('..')
-  : page.locator('#completed-assessments .participant-assessment-card').first();
+  ? page.locator(`#dashboard-panel .participant-assessment-card[data-journey-state="report_ready"][data-cycle-id="${cycleId}"]`)
+  : completed.first();
+ await expect(card).toHaveCount(1);
  await card.locator('.participant-assessment-action').click();
  await expect(page.locator('#m8-report-state')).toContainText('Результат готов');
 }
@@ -1434,7 +1439,7 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  const second=await report(page,{...stand,dir:secondDir},info);
  expect(second.cycle_id).not.toBe(saved.cycle_id); expect(second.results_revision_id).not.toBe(saved.results_revision_id);
  await page.locator('#report-back-button').click();
- await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(2);
+ await expect(completedCycleCards(page)).toHaveCount(2);
  await info.attach('two-cycles-and-legacy',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
  await openCompletedReport(page,2,saved.cycle_id);
  await expect(page.locator('#report-download-button')).toHaveAttribute('data-m8-report-id',latest.id);
@@ -1643,7 +1648,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(await (await page.request.get(resultUrl)).json()).toEqual(results);
  expect(await (await page.request.get(`${stand.url}/users/assessment/m8/reports/${first.id}`)).json()).toEqual(first);
  await page.locator('#report-back-button').click();
- await expect(page.locator('#completed-assessments .participant-assessment-card')).toHaveCount(2);
+ await expect(completedCycleCards(page)).toHaveCount(2);
  const history=await (await page.request.get(`${stand.url}/users/assessment/m8/history`)).json();
  expect(history.assessments_total).toBe(2);expect(history.reports_total).toBe(2);
  const firstHistory=history.cycles.find(item=>item.cycle_id===first.cycle_id);

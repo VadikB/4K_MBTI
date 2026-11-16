@@ -5,7 +5,7 @@ def test_closed_cycle_waits_for_report() -> None:
     status, label, _, action, button = _participant_cycle_outcome({"status": "processing"})
 
     assert (status, label, action, button) == (
-        "processing", "Результат готовится", "open_processing", "Подробнее",
+        "processing", "Отчёт готовится", "open_processing", "Посмотреть состояние",
     )
 
 
@@ -15,7 +15,7 @@ def test_owned_report_is_an_explicit_result_action() -> None:
     )
 
     assert (status, label, action, button) == (
-        "report_ready", "Результат готов", "open_report", "Посмотреть результат",
+        "report_ready", "Результат готов", "open_report", "Посмотреть результаты →",
     )
 
 
@@ -25,6 +25,6 @@ def test_processing_failure_wins_over_previously_created_report() -> None:
     )
 
     assert status == "failed"
-    assert label == "Не удалось подготовить результат"
-    assert "Повторно проходить" in description
+    assert label == "Не удалось подготовить отчёт"
+    assert "Возвращаться к заданиям не требуется" in description
     assert action == "open_processing"

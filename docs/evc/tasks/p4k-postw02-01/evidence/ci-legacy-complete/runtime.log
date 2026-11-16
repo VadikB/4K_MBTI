@@ -1,0 +1,7 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 tests/browser/runtime.spec.mjs:1278:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (14.6s)
+  ✓  2 tests/browser/runtime.spec.mjs:1577:1 › P10.5 ready profile with no admitted catalog (8.4s)
+
+  2 passed (24.0s)

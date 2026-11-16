@@ -1,0 +1,107 @@
+TAP version 13
+# file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-postw02-01/web/js/config.js:3
+#     window.__APP_CONFIG__?.assessmentExternalAnswerTransferEnabled === true;
+#     ^
+# ReferenceError: window is not defined
+#     at file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-postw02-01/web/js/config.js:3:5
+#     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+#     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+#     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+# Node.js v22.23.4
+# Subtest: tests/frontend/app-header.test.mjs
+not ok 1 - tests/frontend/app-header.test.mjs
+  ---
+  duration_ms: 111.483541
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/tests/frontend/app-header.test.mjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: LK01 renders server-owned current and completed Cycle cards
+ok 2 - LK01 renders server-owned current and completed Cycle cards
+  ---
+  duration_ms: 0.928583
+  type: 'test'
+  ...
+# Subtest: LK01 has explicit Cycle actions and no catalogue or repeat action
+ok 3 - LK01 has explicit Cycle actions and no catalogue or repeat action
+  ---
+  duration_ms: 0.343334
+  type: 'test'
+  ...
+# Subtest: LK01 keeps accessible mobile actions and accepted visual tokens
+ok 4 - LK01 keeps accessible mobile actions and accepted visual tokens
+  ---
+  duration_ms: 0.218958
+  type: 'test'
+  ...
+# (node:53921) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-postw02-01/web/js/components/app-footer.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared footer is visible on common panels and hidden on chat panels
+ok 5 - shared footer is visible on common panels and hidden on chat panels
+  ---
+  duration_ms: 0.936334
+  type: 'test'
+  ...
+# Subtest: footer has one non-interactive document block and a runtime year
+ok 6 - footer has one non-interactive document block and a runtime year
+  ---
+  duration_ms: 0.36475
+  type: 'test'
+  ...
+# Subtest: footer uses shared Onest and palette tokens with responsive flow layout
+ok 7 - footer uses shared Onest and palette tokens with responsive flow layout
+  ---
+  duration_ms: 0.541
+  type: 'test'
+  ...
+# Subtest: UI03 exposes the owner palette and semantic aliases from one token source
+ok 8 - UI03 exposes the owner palette and semantic aliases from one token source
+  ---
+  duration_ms: 1.153125
+  type: 'test'
+  ...
+# Subtest: QA19-02 resolves every palette token and rejects retired undefined names
+ok 9 - QA19-02 resolves every palette token and rejects retired undefined names
+  ---
+  duration_ms: 5.869875
+  type: 'test'
+  ...
+# Subtest: UI03 keeps participant and admin primary actions semantically distinct
+ok 10 - UI03 keeps participant and admin primary actions semantically distinct
+  ---
+  duration_ms: 0.383333
+  type: 'test'
+  ...
+# Subtest: UI03 prevents local six-digit hex colors outside the owner palette
+ok 11 - UI03 prevents local six-digit hex colors outside the owner palette
+  ---
+  duration_ms: 18.997125
+  type: 'test'
+  ...
+# Subtest: UI03 keeps embedded SVG fills inside the owner palette
+ok 12 - UI03 keeps embedded SVG fills inside the owner palette
+  ---
+  duration_ms: 1.171625
+  type: 'test'
+  ...
+# Subtest: UI03 invalidates cached CSS and JavaScript entrypoints
+ok 13 - UI03 invalidates cached CSS and JavaScript entrypoints
+  ---
+  duration_ms: 0.18025
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 12
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 158.451709

@@ -1,0 +1,31 @@
+{
+  "second_head": "a189284923c91c051f8e709ef25d328e160e5f45",
+  "second_ci": {
+    "CI": 43895946730,
+    "Full verification": 43895946650,
+    "frontend": "PASS",
+    "pytest": "PASS",
+    "integration": "PASS",
+    "fast": "PASS",
+    "runtime2": "PASS",
+    "runtime3": "PASS",
+    "runtime1": "FAIL: unmanaged LIMITED must enter actual readiness UI",
+    "runtime4": "FAIL: report history helper excluded latest featured Cycle"
+  },
+  "corrections": {
+    "UI": "Only explicit server-authorized open_legacy_acquaintance retains old unmanaged onboarding; ready M4 required; managed readOnlyEntry unchanged",
+    "history_helper": "Count all report_ready cards across cabinet, assert unique nonempty Cycle IDs and exact selected report; no duplicate latest Cycle"
+  },
+  "local_checks": {
+    "targeted_backend": 25,
+    "targeted_frontend": 15,
+    "limited_real_denial_runtime": 1,
+    "positive_legacy_runtime": 2,
+    "history_runtime": 2,
+    "lint": "PASS",
+    "build": "PASS",
+    "release_preflight": "FAIL_STALE_MAIN: concurrent main1bcc119, then integrated in b2b5e26",
+    "cleanup": "PASS"
+  },
+  "next": "mandatory CI new head; no bypass/relaxed gates/version bump"
+}

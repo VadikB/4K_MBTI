@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:32019) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/postw02-reference-audit.spec.mjs:193:1 › local comparison report renders and switches pairs (527ms)
+
+  1 passed (1.2s)
