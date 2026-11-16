@@ -214,7 +214,7 @@ const dashboardAction = () => {
 const addOutcomeButton = (label, primary, handler) => {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = primary ? 'primary-button' : 'ghost-button';
+  button.className = primary ? 'primary-button' : 'outcome-text-button';
   button.textContent = label;
   button.addEventListener('click', handler);
   processingOutcomeActions.appendChild(button);
@@ -244,6 +244,8 @@ const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = fals
   processingOutcomeNotice.classList.toggle('hidden', !processingOutcomeNotice.textContent);
   processingOutcomeIndicator.className = 'processing-outcome-indicator' +
     (['ready', 'limited'].includes(kind) ? ' is-static' : kind === 'failed' || kind === 'confirmationError' ? ' is-error' : '');
+  processingOutcomeIndicator.textContent = ['ready', 'limited'].includes(kind) ? '✓'
+    : kind === 'failed' || kind === 'confirmationError' ? '!' : kind === 'expired' ? '◷' : '';
   processingOutcomeActions.innerHTML = '';
   if (['ready', 'limited'].includes(kind)) {
     addOutcomeButton('Посмотреть результат', true, () => {
@@ -389,16 +391,17 @@ export const pollAnalysisStatus = async () => {
     try {
       let response = null;
       let snapshot = null;
-      const journeySnapshot = await readJourneyCycleStatus();
-      if (journeySnapshot.report_status === 'ready' || journeySnapshot.results_status === 'failed') {
+      let journeySnapshot = null;
+      try { journeySnapshot = await readJourneyCycleStatus(); } catch { /* The explicit Cycle status remains authoritative. */ }
+      if (journeySnapshot?.report_status === 'ready' || journeySnapshot?.results_status === 'failed') {
         snapshot = journeySnapshot;
-      } else if (cycleStatusUsesJourney) {
+      } else if (cycleStatusUsesJourney && journeySnapshot) {
         snapshot = journeySnapshot;
       } else {
         try {
-          ({ response } = await readDetailedCycleStatus());
+          ({ response, snapshot } = await readDetailedCycleStatus());
         } catch (error) {
-          if (error?.name !== 'AbortError') throw error;
+          if (error?.name !== 'AbortError' || !journeySnapshot) throw error;
           cycleStatusUsesJourney = true;
           snapshot = journeySnapshot;
         }

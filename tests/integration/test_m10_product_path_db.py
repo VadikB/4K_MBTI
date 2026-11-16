@@ -26,7 +26,8 @@ from Api.m10_product_flow import prepare, start_prepared, start_or_resume, read_
 from Api.m10_product_flow import next_situation
 from Api.product_cycle_preparation_queue import ProductCyclePreparationQueue
 from Api.m7_cycle_planner import create_plan
-from tests.m6_admission_fixture import RecordedAdmissionGateway
+from tests.m6_admission_fixture import RecordedAdmissionGateway as AdmissionOnlyGateway
+from Api.m10_test_gateway import BrowserAcceptanceGateway
 from Api import m10_orchestration
 from Api import m6_repository
 from Api.m6_worker import run_request as run_evidence
@@ -42,6 +43,16 @@ from Api.m5_runtime_rules import import_runtime_rule_version, load_runtime_rule_
 from Api.m5_catalog_integrity import publication_plan, publish_catalog
 
 pytestmark = pytest.mark.integration
+
+
+class RecordedAdmissionGateway(AdmissionOnlyGateway):
+    """Isolated transport for both M6 admission and publishable M8 content."""
+
+    def chat(self, messages, **kwargs):
+        value = json.loads(messages[1]["content"])
+        if value.get("contract_version") == "m8-descriptive-report/1.2.0":
+            return BrowserAcceptanceGateway().chat(messages, **kwargs)
+        return super().chat(messages, **kwargs)
 
 
 @pytest.fixture
@@ -1158,6 +1169,200 @@ def test_s10_d_closed_cycle_without_presented_material_has_no_result_report(prod
             "collection_incomplete","observation_missing"}
         assert render_pdf(report).startswith(b"%PDF")
         assert connection.execute("SELECT status FROM m10_pipeline_runs").fetchone()["status"] == "ready"
+        from Api.m8_results import list_owned_cycles
+        cycle_db_id = connection.execute("SELECT id FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()["id"]
+        m10_orchestration._set_state(connection, cycle_db_id, status="failed",
+            stage="recovery_failed", error="synthetic_late_service_failure")
+        card = list_owned_cycles(connection, 99)[0]
+        assert card["status"] == "report_ready" and card["report_id"] == report["id"]
+        assert card["processing_message"] is None
+
+
+def test_report_failure_recovers_saved_results_without_recalculation(product_db, monkeypatch):
+    factory = product_db
+    with factory() as connection:
+        plan = create_plan(connection, personalized_profile_id=factory.profile_id,
+            selected_skills=["K1", "K2", "K3", "K4"], created_by=99,
+            key="report01-fault-plan", usage_scope="assessment")
+        cycle_id = str(plan["cycle_id"])
+        complete(connection, cycle_id=cycle_id, key="report01-fault-close",
+            action="complete", reason="no_presented_material", initiated_by=99)
+        connection.commit()
+    original = m10_orchestration.m8_results.create_report_detached
+    def fail_report_once(**_kwargs):
+        raise RuntimeError("synthetic_report_storage_failure")
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", fail_report_once)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        state = connection.execute("SELECT status,stage FROM m10_pipeline_runs").fetchone()
+        assert state == {"status": "failed", "stage": "report_failed"}
+        results_before = connection.execute("SELECT id,payload_checksum FROM m8_result_revisions").fetchone()
+        calculation_before = connection.execute("SELECT id,c56_hash FROM m6_cycle_calculations").fetchone()
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 0
+        m10_orchestration.request_processing_recovery(connection, cycle_id=cycle_id,
+            idempotency_key="report01-service-recovery", created_by=99)
+        connection.commit()
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", original)
+    def forbidden_recalculation(**_kwargs):
+        raise AssertionError("valid C-56 must not be recalculated")
+    monkeypatch.setattr(m10_orchestration.m6_cycle_aggregation_repository,
+        "create_substantive_detached", forbidden_recalculation)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        assert connection.execute("SELECT id,payload_checksum FROM m8_result_revisions").fetchone() == results_before
+        assert connection.execute("SELECT id,c56_hash FROM m6_cycle_calculations").fetchone() == calculation_before
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 1
+        assert connection.execute("SELECT status FROM m10_pipeline_runs").fetchone()["status"] == "ready"
+    with pytest.raises(ValueError, match="M8_REPORT_ALREADY_PUBLISHED"):
+        original(results_revision_id=str(results_before["id"]), audience="assessee",
+            key="report01-unjustified-second-publication", target_profile=None,
+            created_by=99, gateway=RecordedAdmissionGateway(), connection_factory=factory)
+
+
+def test_restart_after_results_commit_finishes_one_report(product_db, monkeypatch):
+    factory = product_db
+    with factory() as connection:
+        plan = create_plan(connection, personalized_profile_id=factory.profile_id,
+            selected_skills=["K1", "K2", "K3", "K4"], created_by=99,
+            key="report01-restart-plan", usage_scope="assessment")
+        cycle_id = str(plan["cycle_id"])
+        complete(connection, cycle_id=cycle_id, key="report01-restart-close",
+            action="complete", reason="no_presented_material", initiated_by=99)
+        connection.commit()
+    original = m10_orchestration.m8_results.create_report_detached
+    class WorkerStopped(BaseException):
+        pass
+    def stop_after_results(**_kwargs):
+        raise WorkerStopped()
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", stop_after_results)
+    with pytest.raises(WorkerStopped):
+        m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        result = connection.execute("SELECT id,payload_checksum FROM m8_result_revisions").fetchone()
+        calculation = connection.execute("SELECT id,c56_hash FROM m6_cycle_calculations").fetchone()
+        assert connection.execute("SELECT status FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()["status"] == "calculated"
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 0
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", original)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    assert not m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        assert connection.execute("SELECT id,payload_checksum FROM m8_result_revisions").fetchone() == result
+        assert connection.execute("SELECT id,c56_hash FROM m6_cycle_calculations").fetchone() == calculation
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 1
+
+
+def test_concurrent_workers_do_not_generate_second_report(product_db, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+    factory = product_db
+    with factory() as connection:
+        plan = create_plan(connection, personalized_profile_id=factory.profile_id,
+            selected_skills=["K1", "K2", "K3", "K4"], created_by=99,
+            key="report01-concurrent-plan", usage_scope="assessment")
+        cycle_id = str(plan["cycle_id"])
+        complete(connection, cycle_id=cycle_id, key="report01-concurrent-close",
+            action="complete", reason="no_presented_material", initiated_by=99)
+        connection.commit()
+    entered, release = Event(), Event()
+    original = m10_orchestration.m8_results.create_report_detached
+    calls = []
+    def slow_report(**kwargs):
+        calls.append(kwargs["results_revision_id"])
+        entered.set()
+        assert release.wait(10)
+        return original(**kwargs)
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", slow_report)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(m10_orchestration.advance_once,
+            connection_factory=factory, gateway=RecordedAdmissionGateway())
+        assert entered.wait(10)
+        try:
+            assert not m10_orchestration.advance_once(connection_factory=factory,
+                gateway=RecordedAdmissionGateway())
+        finally:
+            release.set()
+        assert first.result(timeout=10)
+    assert len(calls) == 1
+    with factory() as connection:
+        assert connection.execute("SELECT count(*) AS n FROM m8_result_revisions").fetchone()["n"] == 1
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 1
+
+
+def test_restart_after_report_commit_reconciles_pipeline_without_generation(product_db, monkeypatch):
+    factory = product_db
+    with factory() as connection:
+        plan = create_plan(connection, personalized_profile_id=factory.profile_id,
+            selected_skills=["K1", "K2", "K3", "K4"], created_by=99,
+            key="report01-committed-plan", usage_scope="assessment")
+        cycle_id = str(plan["cycle_id"])
+        complete(connection, cycle_id=cycle_id, key="report01-committed-close",
+            action="complete", reason="no_presented_material", initiated_by=99)
+        connection.commit()
+    original = m10_orchestration._set_state
+    class WorkerStopped(BaseException):
+        pass
+    def stop_before_pipeline_ready(connection, cycle_db_id, **kwargs):
+        if kwargs.get("stage") == "report_ready":
+            raise WorkerStopped()
+        return original(connection, cycle_db_id, **kwargs)
+    monkeypatch.setattr(m10_orchestration, "_set_state", stop_before_pipeline_ready)
+    with pytest.raises(WorkerStopped):
+        m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 1
+        pipeline = connection.execute("SELECT status FROM m10_pipeline_runs").fetchone()
+        assert pipeline is None or pipeline["status"] != "ready"
+    monkeypatch.setattr(m10_orchestration, "_set_state", original)
+    def forbidden_generation(**_kwargs):
+        raise AssertionError("committed report must not be generated again")
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", forbidden_generation)
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    with factory() as connection:
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 1
+        pipeline = connection.execute("SELECT stage,error_code FROM m10_pipeline_runs").fetchone()
+        assert pipeline == {"stage": "report_ready", "error_code": None}
+
+
+def test_concurrent_direct_report_publication_keeps_one_assessee_report(product_db, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    from Api import m8_descriptive_report
+    factory = product_db
+    with factory() as connection:
+        plan = create_plan(connection, personalized_profile_id=factory.profile_id,
+            selected_skills=["K1", "K2", "K3", "K4"], created_by=99,
+            key="report01-direct-plan", usage_scope="assessment")
+        cycle_id = str(plan["cycle_id"])
+        complete(connection, cycle_id=cycle_id, key="report01-direct-close",
+            action="complete", reason="no_presented_material", initiated_by=99)
+        connection.commit()
+    original_report = m10_orchestration.m8_results.create_report_detached
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached",
+                        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("synthetic_report_failure")))
+    assert m10_orchestration.advance_once(connection_factory=factory, gateway=RecordedAdmissionGateway())
+    monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", original_report)
+    with factory() as connection:
+        revision_id = str(connection.execute("SELECT id FROM m8_result_revisions").fetchone()["id"])
+    barrier = Barrier(2)
+    original_generate = m8_descriptive_report.generate
+    def concurrent_generate(*args, **kwargs):
+        result = original_generate(*args, **kwargs)
+        barrier.wait(timeout=10)
+        return result
+    monkeypatch.setattr(m8_descriptive_report, "generate", concurrent_generate)
+    def publish(key):
+        try:
+            return original_report(results_revision_id=revision_id, audience="assessee", key=key,
+                target_profile=None, created_by=99, gateway=RecordedAdmissionGateway(),
+                connection_factory=factory)
+        except ValueError as exc:
+            return str(exc)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(publish, ("report01-direct-a", "report01-direct-b")))
+    assert sum(isinstance(item, dict) for item in outcomes) == 1
+    assert "M8_REPORT_ALREADY_PUBLISHED" in outcomes
+    with factory() as connection:
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 1
 
 
 def test_s10_e_recalculation_preserves_old_results_and_report(product_db):

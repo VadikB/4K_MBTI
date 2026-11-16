@@ -32,6 +32,9 @@ def ensure_schema(connection) -> None:
         stage TEXT NOT NULL, error_code TEXT, latest_calculation_id UUID,
         latest_results_revision_id UUID, latest_report_id UUID,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS m10_report_claims(
+        cycle_db_id BIGINT PRIMARY KEY REFERENCES m5_cycles(id),
+        token UUID NOT NULL, lease_until TIMESTAMPTZ NOT NULL)""")
     connection.execute("""CREATE TABLE IF NOT EXISTS m10_pipeline_revisions(
         id BIGSERIAL PRIMARY KEY, cycle_db_id BIGINT NOT NULL REFERENCES m5_cycles(id), revision_no INTEGER NOT NULL,
         status TEXT NOT NULL, stage TEXT NOT NULL, error_code TEXT, calculation_id UUID,
@@ -244,7 +247,9 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
         if enabled():
             gateway = BrowserAcceptanceGateway()
     row = connection.execute(f"""SELECT c.id,c.cycle_id,c.created_by FROM m5_cycles c
-        WHERE {sql_scope('c')} AND c.status IN('collection_closed','calculation_pending')
+        WHERE {sql_scope('c')} AND c.status IN('collection_closed','calculation_pending','calculated')
+          AND NOT EXISTS (SELECT 1 FROM m10_pipeline_runs p WHERE p.cycle_db_id=c.id
+                          AND p.status IN ('ready','failed'))
           AND NOT EXISTS(SELECT 1 FROM m7_finalization_outbox o JOIN m5_assessment_situations s ON s.id=o.assessment_situation_db_id
               LEFT JOIN m6_processing_requests e ON e.id=o.m6_request_id
               LEFT JOIN m6_analysis_revisions ar ON ar.request_id=e.id
@@ -253,29 +258,99 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
         ORDER BY c.updated_at FOR UPDATE OF c SKIP LOCKED LIMIT 1""").fetchone()
     if not row:
         return False
-    cycle_id = str(row["cycle_id"])
-    c46 = m7_completion.read_c46(connection, cycle_id)
+    # A committed claim survives detached provider calls and pooled connection
+    # releases. Only an expired claim can be taken over after a worker crash.
+    from uuid import uuid4
+    claim_token = uuid4()
+    claimed = connection.execute("""INSERT INTO m10_report_claims(cycle_db_id,token,lease_until)
+        VALUES(%s,%s,NOW() + INTERVAL '10 minutes')
+        ON CONFLICT(cycle_db_id) DO UPDATE SET token=EXCLUDED.token,lease_until=EXCLUDED.lease_until
+        WHERE m10_report_claims.lease_until < NOW() RETURNING token""",
+        (row["id"], claim_token)).fetchone()
+    if not claimed:
+        return False
     connection.commit()
     factory = connection_factory or get_connection
-    calculation = m6_cycle_aggregation_repository.create_substantive_detached(
-        cycle_id=cycle_id,
-        key=f"product-calculation:{c46['composition_checksum']}:{ADMISSION_VERSION}",
-        expected_composition_checksum=c46["composition_checksum"],
-        created_by=int(row["created_by"]), gateway=gateway, connection_factory=factory,
-    )
-    results = m8_results.create_results(connection, cycle_id=cycle_id, calculation_id=calculation["id"],
-        key=f"product-results:{calculation['id']}", target_profile=None, created_by=int(row["created_by"]))
-    connection.commit()
-    report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
-        key="product-report:assessee", target_profile=None, created_by=int(row["created_by"]), gateway=gateway,
-        connection_factory=factory)
-    failure = _processing_failure(calculation)
-    _set_state(connection, int(row["id"]), status="failed" if failure else "ready",
-               stage="admission_processing_failed" if failure else "report_ready",
-               error=failure["code"] if failure else None, calculation_id=UUID(calculation["id"]),
-               results_revision_id=UUID(results["revision_id"]), report_id=UUID(report["id"]),
-               created_by=int(row["created_by"]))
-    return True
+    heartbeat_stop = threading.Event()
+    claim_lost = threading.Event()
+
+    def renew_claim() -> None:
+        while not heartbeat_stop.wait(30):
+            try:
+                with factory() as heartbeat_connection:
+                    renewed = heartbeat_connection.execute("""UPDATE m10_report_claims
+                        SET lease_until=NOW() + INTERVAL '10 minutes'
+                        WHERE cycle_db_id=%s AND token=%s RETURNING token""",
+                        (row["id"], claim_token)).fetchone()
+                    heartbeat_connection.commit()
+                if not renewed:
+                    claim_lost.set()
+                    return
+            except Exception:
+                claim_lost.set()
+                return
+
+    heartbeat = threading.Thread(target=renew_claim, name="m10-report-claim", daemon=True)
+    heartbeat.start()
+    cycle_id = str(row["cycle_id"])
+    try:
+        try:
+            saved_report = m8_results.read_latest_report(connection, cycle_id, "assessee")
+        except ValueError:
+            saved_report = None
+        if saved_report and saved_report["status"] == "ready":
+            saved_results = m8_results.read_results_revision(
+                connection, saved_report["results_revision_id"])
+            saved_calculation = m6_cycle_aggregation_repository.read(
+                connection, saved_results["results"]["c56_ref"]["calculation_id"])
+            failure = _processing_failure(saved_calculation)
+            _set_state(connection, int(row["id"]), status="failed" if failure else "ready",
+                       stage="admission_processing_failed" if failure else "report_ready",
+                       error=failure["code"] if failure else None,
+                       calculation_id=UUID(saved_calculation["id"]),
+                       results_revision_id=UUID(saved_report["results_revision_id"]),
+                       report_id=UUID(saved_report["id"]), created_by=int(row["created_by"]))
+            return True
+        c46 = m7_completion.read_c46(connection, cycle_id)
+        connection.commit()
+        calculation = m6_cycle_aggregation_repository.create_substantive_detached(
+            cycle_id=cycle_id,
+            key=f"product-calculation:{c46['composition_checksum']}:{ADMISSION_VERSION}",
+            expected_composition_checksum=c46["composition_checksum"],
+            created_by=int(row["created_by"]), gateway=gateway, connection_factory=factory,
+        )
+        results = m8_results.create_results(connection, cycle_id=cycle_id, calculation_id=calculation["id"],
+            key=f"product-results:{calculation['id']}", target_profile=None, created_by=int(row["created_by"]))
+        connection.commit()
+        if claim_lost.is_set():
+            raise RuntimeError("M10_REPORT_CLAIM_LOST")
+        try:
+            report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
+                key="product-report:assessee", target_profile=None, created_by=int(row["created_by"]), gateway=gateway,
+                connection_factory=factory, claim_cycle_db_id=int(row["id"]), claim_token=claim_token)
+        except Exception as exc:
+            _set_state(connection, int(row["id"]), status="failed", stage="report_failed",
+                       error=type(exc).__name__, calculation_id=UUID(calculation["id"]),
+                       results_revision_id=UUID(results["revision_id"]), created_by=int(row["created_by"]))
+            return True
+        failure = _processing_failure(calculation)
+        _set_state(connection, int(row["id"]), status="failed" if failure else "ready",
+                   stage="admission_processing_failed" if failure else "report_ready",
+                   error=failure["code"] if failure else None, calculation_id=UUID(calculation["id"]),
+                   results_revision_id=UUID(results["revision_id"]), report_id=UUID(report["id"]),
+                   created_by=int(row["created_by"]))
+        return True
+    except Exception as exc:
+        connection.rollback()
+        _set_state(connection, int(row["id"]), status="failed", stage="processing_failed",
+                   error=type(exc).__name__, created_by=int(row["created_by"]))
+        return True
+    finally:
+        heartbeat_stop.set()
+        heartbeat.join(timeout=1)
+        connection.execute("DELETE FROM m10_report_claims WHERE cycle_db_id=%s AND token=%s",
+                           (row["id"], claim_token))
+        connection.commit()
 
 
 def request_processing_recovery(connection, *, cycle_id: str, idempotency_key: str, created_by: int) -> dict:
@@ -293,7 +368,13 @@ def request_processing_recovery(connection, *, cycle_id: str, idempotency_key: s
             raise ValueError("IDEMPOTENCY_CONFLICT")
         return dict(prior)
     if (not cycle or cycle["pipeline_status"] != "failed"
-            or cycle["pipeline_stage"] not in {"admission_processing_failed", "recovery_failed"}):
+            or cycle["pipeline_stage"] not in {"admission_processing_failed", "report_failed", "processing_failed", "recovery_failed"}):
+        raise ValueError("M10_PROCESSING_RECOVERY_NOT_AVAILABLE")
+    try:
+        published = m8_results.read_latest_report(connection, cycle_id, "assessee")
+    except ValueError:
+        published = None
+    if published and published["c67"].get("processing", {}).get("status") == "completed":
         raise ValueError("M10_PROCESSING_RECOVERY_NOT_AVAILABLE")
     frozen = {"cycle_id": cycle_id, "catalog_ref": cycle["catalog_ref_json"],
               "profile_ref": cycle["profile_ref_json"], "target_set_checksum": cycle["target_set_checksum"],
@@ -314,6 +395,10 @@ def request_processing_recovery(connection, *, cycle_id: str, idempotency_key: s
 
 def _process_recovery(connection, gateway=None, connection_factory=None) -> bool:
     from Api.m5_case_runtime import checksum
+    # A crashed worker releases its DB locks but can leave a committed running
+    # receipt. Reclaim only after the bounded provider window has elapsed.
+    connection.execute("""UPDATE m10_processing_recoveries SET status='queued',started_at=NULL
+        WHERE status='running' AND started_at < NOW() - INTERVAL '10 minutes'""")
     row = connection.execute("""SELECT r.*,c.cycle_id,c.catalog_ref_json,c.profile_ref_json,c.target_set_checksum,
         c.collection_closed_at FROM m10_processing_recoveries r JOIN m5_cycles c ON c.id=r.cycle_db_id
         WHERE r.status='queued' ORDER BY r.created_at FOR UPDATE OF r SKIP LOCKED LIMIT 1""").fetchone()
@@ -331,17 +416,28 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
         c46 = m7_completion.read_c46(connection, str(row["cycle_id"]))
         connection.commit()
         factory = connection_factory or get_connection
-        calculation = m6_cycle_aggregation_repository.create_substantive_detached(
-            cycle_id=str(row["cycle_id"]),
-            key=f"processing-recovery:{row['id']}:{ADMISSION_VERSION}",
-            expected_composition_checksum=c46["composition_checksum"], created_by=int(row["created_by"]), gateway=gateway,
-            connection_factory=factory)
-        results = m8_results.create_results(connection, cycle_id=str(row["cycle_id"]), calculation_id=calculation["id"],
-            key=f"processing-recovery-results:{row['id']}", target_profile=None, created_by=int(row["created_by"]))
-        connection.commit()
+        try:
+            saved_results = m8_results.read_latest_results(connection, str(row["cycle_id"]))
+        except ValueError:
+            saved_results = None
+        if saved_results and saved_results["results"].get("processing", {}).get("status") == "completed":
+            # A report-only failure must never recalculate a valid C-56/Results.
+            results = saved_results
+            calculation = m6_cycle_aggregation_repository.read(
+                connection, saved_results["results"]["c56_ref"]["calculation_id"])
+        else:
+            calculation = m6_cycle_aggregation_repository.create_substantive_detached(
+                cycle_id=str(row["cycle_id"]),
+                key=f"processing-recovery:{row['id']}:{ADMISSION_VERSION}",
+                expected_composition_checksum=c46["composition_checksum"], created_by=int(row["created_by"]), gateway=gateway,
+                connection_factory=factory)
+            results = m8_results.create_results(connection, cycle_id=str(row["cycle_id"]), calculation_id=calculation["id"],
+                key=f"processing-recovery-results:{row['id']}", target_profile=None, created_by=int(row["created_by"]))
+            connection.commit()
         report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
-            key=f"processing-recovery-report:{row['id']}", target_profile=None, created_by=int(row["created_by"]),
-            gateway=gateway, connection_factory=factory)
+            key="product-report:assessee" if saved_results else f"processing-recovery-report:{row['id']}",
+            target_profile=None, created_by=int(row["created_by"]), gateway=gateway, connection_factory=factory,
+            service_recovery=True)
         failure = _processing_failure(calculation)
         status = "failed" if failure else "succeeded"
         connection.execute("""UPDATE m10_processing_recoveries SET status=%s,finished_at=NOW(),calculation_id=%s,

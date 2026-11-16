@@ -47,14 +47,15 @@ test('E02 polling is cancellable, visibility-aware and ignores stale responses',
   assert.match(processing, /state\.currentScreen !== 'processing'/);
   assert.match(processing, /CYCLE_POLL_INTERVAL_MS = 5000/);
   assert.match(processing, /cycleIdFromUrl/);
-  assert.match(processing, /const journeySnapshot = await readJourneyCycleStatus\(\)/);
-  assert.match(processing, /journeySnapshot\.report_status === 'ready'/);
+  assert.match(processing, /journeySnapshot = await readJourneyCycleStatus\(\)/);
+  assert.match(processing, /journeySnapshot\?\.report_status === 'ready'/);
+  assert.match(processing, /\(\{ response, snapshot \} = await readDetailedCycleStatus\(\)\)/);
   assert.match(processing, /await readApiResponse\(response,[\s\S]*window\.clearTimeout\(timeoutId\)/);
   assert.match(wiring, /module\.openProcessing\(\{[\s\S]*initialCycleSnapshot:[\s\S]*journey\?\.report_status/);
 });
 
 test('E02 uses accepted visual tokens and mobile actions', () => {
-  assert.match(styles, /background: var\(--palette-graphite-050\)/);
+  assert.match(styles, /background: var\(--palette-outcome-canvas\)/);
   assert.match(styles, /width: min\(100%, 680px\)/);
   assert.match(styles, /background: #18b8c6/);
   assert.match(styles, /outline: 3px solid var\(--accent\)/);
