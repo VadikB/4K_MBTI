@@ -20,10 +20,12 @@
 | Frontend | PASS | `node --test tests/frontend/*.test.mjs`: 343 passed; `/private/tmp/p4k-report03-frontend-2.1.15.log`. |
 | Integration | PASS адресно | `TEST_DATABASE_URL=… .venv/bin/python -m pytest -q --run-integration ...`: 8 passed, 21 deselected; `/private/tmp/p4k-report03-integration-2.1.15.log`. Полный integration-набор остаётся за обязательным CI. |
 | JS lint / сборка / diff | PASS | `npm run lint:js`, `npm run build:web` в `ready:prepare`, `git diff --check`; на рабочем дереве release кандидата. |
-| CI / TEST / Prod | NOT_RUN | До push/PR обязательные jobs и release deploy отсутствуют; локальные результаты их не заменяют. |
+| Push / PR / CI / TEST / Prod | NOT_RUN | Auto-review отклонил `git push -u origin codex/p4k-report-03`: публикация приватного кода и артефактов на GitHub не подтверждена явным разрешением или доказанным доверенным назначением remote. Повтор через иной инструмент запрещён; `gh auth status` также показывает отсутствие входа. Обязательные CI jobs и release deploy отсутствуют; локальные результаты их не заменяют. |
 
 ## Восстановление
 
 Схема БД и опубликованные исторические Results/Reports не меняются. При откате
 вернуть предыдущий release и его default dependency; новый draft `1.5.0`
 останется файлом, старый `1.4.1` и frozen manifests сохранены.
+Собственный PostgreSQL остановлен (`pg_isready 127.0.0.1:55433` — no response);
+локальный preview завершён после browser-тестов.
