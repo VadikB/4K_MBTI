@@ -22,7 +22,7 @@ test('REP01 groups saved skills and hides technical trace identifiers from parti
   assert.match(report, /skill\.competency_id/);
   assert.match(report, /Почему сделан такой вывод/);
   assert.doesNotMatch(report, /Indicator:|IA:|Turn:|Fragment:/);
-  assert.match(report, /Неизвестный формат результата/);
+  assert.match(report, /Результат требует проверки/);
 });
 
 test('REP02 presents saved descriptions and explicit non-blocking states without advice', () => {

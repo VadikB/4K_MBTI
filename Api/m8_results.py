@@ -13,7 +13,7 @@ from Api.typst_pdf_renderer import render_typst_report
 from Api.cycle_execution_manifest import resolve_cycle_dependency
 
 RESULTS_VERSION = "m8-results/1.0.0"
-REPORT_TEMPLATE_VERSION = "m8-basic-report/1.4.1"
+REPORT_TEMPLATE_VERSION = "m8-basic-report/1.5.0"
 ALLOWED_AUDIENCES = {"assessee", "customer", "methodology_qa"}
 
 
@@ -87,39 +87,103 @@ def _comparison(skill: dict, target: dict | None) -> dict:
 def _partial_result_projection(c46: dict, c56: dict, processing: dict, template: dict) -> dict:
     situations = list(c56["cycle_context"].get("assessment_situations") or [])
     route = list((c46["payload_json"].get("plan") or {}).get("untraversed_route") or [])
+    positions = list((c46["payload_json"].get("route") or {}).get("positions") or [])
     planned = len(route)
     presented = [x for x in situations if x.get("handoff_id") or x.get("status") not in {"prepared", "admitted"}]
     completed = [x for x in situations if x.get("handoff_id")]
     interrupted = [x for x in presented if x.get("status") in {"terminated", "closed"} and not x.get("handoff_id")]
-    not_presented = max(0, planned - len(presented))
+    presented_count = (sum(value.get("state") not in {"not_presented", None} for value in positions)
+                       if positions else len(presented))
+    not_presented = max(0, planned - presented_count)
     full_cut = c56["coverage"]["full_m2"]["indicator_assessments"]
     plan_cut = c56["coverage"]["cycle_plan"]["indicator_assessments"]
     codes = []
     if c56["coverage"]["cycle_plan"]["indicator_assessments"]["denominator"] < full_cut["denominator"]:
         codes.append("plan_scope")
     close_reason = str(c46["payload_json"].get("collection", {}).get("reason") or "")
-    if not_presented or close_reason in {"time_budget", "calendar_deadline"}:
+    completed_positions = {int(value["position_no"]) for value in positions
+                           if value.get("state") == "completed" and value.get("position_no") is not None}
+    plan_complete = (planned > 0 and len(completed_positions) >= planned
+                     if positions else planned > 0 and len(completed) >= planned and not interrupted)
+    if not plan_complete:
         codes.append("collection_incomplete")
     if plan_cut["numerator"] < plan_cut["denominator"]:
         codes.append("observation_missing")
-    if c56.get("limitations"):
-        codes.append("context_limited")
     if processing["status"] == "failed":
         codes.append("technical_failure")
     messages = template["partial_result"]
+    reason_messages = messages["reasons"]
     result = {
-        "contract_version": "m8-partial-result/1.0.0",
-        "is_incomplete": bool(codes), "close_reason": close_reason,
-        "progress": {"completed": len(completed), "planned": planned,
-                     "presented": len(presented), "interrupted": len(interrupted),
+        "contract_version": "m8-partial-result/1.1.0",
+        "is_incomplete": not plan_complete, "plan_completed": plan_complete,
+        "plan_scope_limited": "plan_scope" in codes,
+        "observation_limited": "observation_missing" in codes,
+        "context_limited": "context_limited" in codes,
+        "source_limited": bool(c56.get("limitations")),
+        "technical_failure": "technical_failure" in codes,
+        "close_reason": close_reason,
+        "progress": {"completed": len(completed_positions) if positions else len(completed), "planned": planned,
+                     "presented": presented_count, "interrupted": len(interrupted),
                      "not_presented": not_presented,
                      "formula": "completed AS with final handoff / immutable accepted plan route"},
         "plan_revision_id": (c46["payload_json"].get("plan") or {}).get("revision_id"),
-        "limitation_reasons": [{"code": code, "message": messages["reasons"][code]} for code in dict.fromkeys(codes)],
-        "messages": {"title": messages["incomplete_title"] if codes else "Оценка завершена",
+        "limitation_reasons": [{"code": code, "message": reason_messages.get(code, messages.get("unknown_reason") or messages["not_inferred"])} for code in dict.fromkeys(codes)],
+        "messages": {"title": (messages.get("completed_title") or "Оценка завершена") if plan_complete else messages["incomplete_title"],
                      "confirmed": messages["confirmed"], "not_inferred": messages["not_inferred"]},
     }
     return result
+
+
+def _skill_presentation(skill: dict, c56: dict, c46: dict, processing: dict, template: dict) -> dict:
+    """Explain an M6 outcome using saved composition and plan facts, without scoring."""
+    copy = template["skill_result"]
+    components = skill.get("components") or []
+    required = {str(value) for component in components for value in component.get("required_indicator_ids") or []}
+    included = {str(value) for component in components for value in component.get("included_indicator_ids") or []}
+    planned = {str(value["indicator_id"]) for value in c56.get("planned_target_set") or []}
+    outcome = skill.get("outcome")
+    codes = []
+    if required and required - planned:
+        codes.append("plan_scope")
+    if outcome == "partial_score":
+        codes.append("partial_composition")
+    elif outcome == "result_without_score":
+        codes.append("numeric_not_admissible")
+    elif outcome == "no_result":
+        codes.append("no_justified_result")
+    affected = {str(value) for value in processing.get("affected_indicator_ids") or []}
+    if required & affected:
+        codes.append("technical_failure")
+    source_reasons = (c56.get("coverage") or {}).get("full_m2", {}).get("admissible_contributions", {}).get("missing_reasons") or {}
+    source_codes = sorted({str(source_reasons[value]) for value in required - included if value in source_reasons})
+    plan = c46["payload_json"].get("plan") or {}
+    route = list(plan.get("untraversed_route") or [])
+    positions = {int(value["position_no"]): value for value in (c46["payload_json"].get("route") or {}).get("positions") or []
+                 if value.get("position_no") is not None}
+    remaining_targets = set()
+    targets_known = bool(route and required)
+    for index, item in enumerate(route, 1):
+        position = positions.get(index)
+        if position and position.get("state") == "completed":
+            continue
+        target_ids = (position.get("expected_targets") if position else None) or item.get("purpose_target_ids")
+        if not isinstance(target_ids, list):
+            targets_known = False
+            continue
+        remaining_targets.update(str(value) for value in target_ids)
+    return {
+        "outcome": outcome,
+        "label": copy["outcomes"].get(outcome, copy["unknown_outcome"]),
+        "reasons": ([{"code": code, "message": copy["reasons"].get(code, copy["unknown_reason"])} for code in codes]
+                    + [{"code": code, "message": copy["source_reasons"].get(code, copy["unknown_reason"])}
+                       for code in source_codes]),
+        "source_reason_codes": source_codes,
+        "required_indicator_ids": sorted(required),
+        "included_indicator_ids": sorted(included),
+        "missing_indicator_ids": sorted(required - included),
+        "planned_indicator_ids": sorted(required & planned),
+        "remaining_plan_relevant": bool(required & remaining_targets) if targets_known else None,
+    }
 
 
 def _coverage_context(c46: dict, c56: dict) -> dict:
@@ -213,6 +277,10 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
         c46, c56, processing,
         report_template if report_template is not None else load_report_package()["template"],
     )
+    skill_template = report_template if report_template is not None else load_report_package()["template"]
+    if "skill_result" in skill_template:
+        for skill in skills:
+            skill["presentation"] = _skill_presentation(skill, c56, c46, processing, skill_template)
     limitations += [x["message"] for x in partial_result["limitation_reasons"]]
     plan = c46["payload_json"].get("plan") or {}
     return_policy = plan.get("return_policy_snapshot") or {}
@@ -407,7 +475,10 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
                   target_profile: dict | None, created_by: int, gateway=None,
                   descriptive_override: dict | None = None) -> dict:
     results = read_results_revision(connection, results_revision_id)
-    request = {"audience": audience, "target_profile": target_profile, "template_version": REPORT_TEMPLATE_VERSION}
+    _, report_path, _, source_set = _cycle_report_packages(connection, results["cycle_id"])
+    package = load_report_package(report_path, source_set / "manifest.json")
+    template_version = "m8-basic-report/" + package["manifest"]["version"]
+    request = {"audience": audience, "target_profile": target_profile, "template_version": template_version}
     request_hash = checksum(request)
     prior = connection.execute("SELECT id,request_hash FROM m8_reports WHERE result_revision_id=%s AND request_key=%s",
                                (UUID(results_revision_id), key)).fetchone()
@@ -421,13 +492,13 @@ def create_report(connection, *, results_revision_id: str, audience: str, key: s
     c67 = _report_content(results, audience, target_profile, connection=connection, gateway=gateway,
                           descriptive_override=descriptive_override)
     c67["report_id"] = str(report_id); c67["report_revision_no"] = revision_no
-    c67["template_version"] = REPORT_TEMPLATE_VERSION
+    c67["template_version"] = template_version
     target_hash = checksum(target_profile) if target_profile else None
     connection.execute("""INSERT INTO m8_reports
         (id,result_revision_id,revision_no,audience,target_profile_json,target_profile_checksum,template_version,c67_json,c67_checksum,status,request_key,request_hash,created_by)
         VALUES(%s,%s,%s,%s,%s::jsonb,%s,%s,%s::jsonb,%s,'ready',%s,%s,%s)""",
         (report_id, UUID(results_revision_id), revision_no, audience, json.dumps(target_profile) if target_profile else None,
-         target_hash, REPORT_TEMPLATE_VERSION, json.dumps(c67, ensure_ascii=False), checksum(c67), key, request_hash, created_by))
+         target_hash, template_version, json.dumps(c67, ensure_ascii=False), checksum(c67), key, request_hash, created_by))
     return read_report(connection, report_id)
 
 
@@ -442,8 +513,10 @@ def create_report_detached(*, results_revision_id: str, audience: str, key: str,
     from Api.m8_descriptive_report import generate
     with connection_factory() as connection:
         results = read_results_revision(connection, results_revision_id)
+        _, report_path, _, source_set = _cycle_report_packages(connection, results["cycle_id"])
+        template_version = "m8-basic-report/" + load_report_package(report_path, source_set / "manifest.json")["manifest"]["version"]
         request = {"audience": audience, "target_profile": target_profile,
-                   "template_version": REPORT_TEMPLATE_VERSION}
+                   "template_version": template_version}
         request_hash = checksum(request)
         prior = connection.execute(
             "SELECT id,request_hash FROM m8_reports WHERE result_revision_id=%s AND request_key=%s",
@@ -617,6 +690,19 @@ def _present_report(saved: dict) -> dict:
     """Pure projection: immutable historical C-67 remains untouched; no generation on GET."""
     from copy import deepcopy
     c67 = deepcopy(saved)
+    partial = c67.get("partial_result")
+    if isinstance(partial, dict) and "plan_completed" not in partial:
+        progress = partial.get("progress") or {}
+        completed, planned = progress.get("completed"), progress.get("planned")
+        if isinstance(completed, int) and isinstance(planned, int) and planned > 0:
+            partial["plan_completed"] = completed >= planned and not progress.get("interrupted")
+            partial["is_incomplete"] = not partial["plan_completed"]
+            partial.setdefault("messages", {})["title"] = (
+                "Оценка завершена" if partial["plan_completed"] else "Оценка завершена не полностью")
+        partial["plan_scope_limited"] = any(x.get("code") == "plan_scope" for x in partial.get("limitation_reasons") or [])
+        partial["observation_limited"] = any(x.get("code") == "observation_missing" for x in partial.get("limitation_reasons") or [])
+        partial["context_limited"] = any(x.get("code") == "context_limited" for x in partial.get("limitation_reasons") or [])
+        partial["technical_failure"] = any(x.get("code") == "technical_failure" for x in partial.get("limitation_reasons") or [])
     if c67.get("recommendations") or c67.get("recommendation_generation"):
         c67["recommendations"] = []
         c67["recommendation_notices"] = []
@@ -656,14 +742,16 @@ def render_pdf(report: dict) -> bytes:
         "components_with_score": "Компоненты с баллом",
         "complete_components": "Полностью оценённые компоненты",
     }
-    participant_pdf = c67.get("template_version") == REPORT_TEMPLATE_VERSION
+    participant_pdf = c67.get("template_version") in {"m8-basic-report/1.4.1", REPORT_TEMPLATE_VERSION}
     skills = []
     for skill in c67["skills"]:
         score = skill.get("score")
         skills.append({
             "name": skill.get("skill_name") or skill["skill_id"],
             "description": skill.get("skill_description") or "",
-            "outcome": (participant_labels if participant_pdf else labels).get(skill["outcome"], "Неизвестный формат результата"),
+            "outcome": skill.get("presentation", {}).get("label") or (participant_labels if participant_pdf else labels).get(skill["outcome"], "Неизвестный формат результата"),
+            "reasons": [item.get("message") or "Причина ограничения требует уточнения."
+                        for item in (skill.get("presentation") or {}).get("reasons") or []],
             "score": "—" if score is None else f"{score['numerator']}/{score['denominator']} ({score['value']})",
             "completeness": skill.get("completeness") or "—",
             "competency": skill.get("competency_name") or "Группа навыков",

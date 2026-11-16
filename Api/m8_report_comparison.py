@@ -81,8 +81,6 @@ def _global_evidence(current: dict[str, Any], previous: dict[str, Any]) -> tuple
         return "not_confirmed", "assessment_context_not_confirmed"
     if not _same(current.get("target_profile"), previous.get("target_profile")):
         return "not_confirmed", "role_requirements_not_confirmed"
-    if (current.get("partial_result") or {}).get("is_incomplete") or (previous.get("partial_result") or {}).get("is_incomplete"):
-        return "not_allowed", "partial_cycle"
     return None, None
 
 
@@ -109,6 +107,14 @@ def compare_reports(current_report: dict[str, Any], previous_report: dict[str, A
             status, reason = "not_allowed", "full_score_required"
         elif status is None and (current_score is None or previous_score is None):
             status, reason = "not_allowed", "numeric_score_missing"
+        elif status is None and (
+            (current.get("partial_result") or {}).get("is_incomplete")
+            or (previous.get("partial_result") or {}).get("is_incomplete")
+        ) and (current_skill.get("presentation") or {}).get("remaining_plan_relevant") is not False:
+            status, reason = "not_confirmed", "partial_cycle"
+        elif status is None and (previous.get("partial_result") or {}).get("is_incomplete") and (
+            previous_skill.get("presentation") or {}).get("remaining_plan_relevant") is not False:
+            status, reason = "not_confirmed", "partial_cycle"
         if status is None:
             status, reason = "allowed", None
         delta = current_score - previous_score if status == "allowed" else None

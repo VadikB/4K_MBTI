@@ -1,7 +1,9 @@
 """G10.7-09: actual saved QA chain; synthetic numeric outputs, not semantic GC."""
 import json
+from io import BytesIO
 from types import SimpleNamespace
 import pytest
+from pypdf import PdfReader
 from test_m6_evidence_db import database, enqueue, empty_output, _assessment_output
 from Api import m6_repository, m6_assessment_repository, m6_cycle_aggregation_repository, m8_results, m8_report_access
 from Api.m6_worker import run_request
@@ -91,3 +93,8 @@ def test_four_saved_outcomes_and_ai_independent_read(database,monkeypatch,mode,l
         assert read.status_code==200 and read.json()['c67']==m8_report_access.public_projection(report)['c67']
         pdf=http.get(f'/users/assessment/m8/reports/{report["id"]}/pdf')
         assert pdf.status_code==200 and pdf.content.startswith(b'%PDF')
+        text=' '.join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+        assert projected['skill_name'] in text
+        assert projected['presentation']['label'] in text
+        if score == 0:
+            assert '0/1 (0.0)' in text

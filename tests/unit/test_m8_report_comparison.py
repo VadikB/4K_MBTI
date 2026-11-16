@@ -104,6 +104,18 @@ def test_non_full_outcomes_remain_separate(outcome):
     assert row["comparability"] == {"status": "not_allowed", "reason": "full_score_required"}
 
 
+def test_incomplete_cycle_uses_saved_skill_relevance_not_global_prohibition():
+    current = report("current", "r2", 2.0)
+    previous = report("previous", "r1", 1.0)
+    current["c67"]["partial_result"] = {"is_incomplete": True}
+    current["c67"]["skills"][0]["presentation"] = {"remaining_plan_relevant": False}
+    allowed = compare_reports(current, previous)["skills"][0]
+    assert allowed["comparability"]["status"] == "allowed"
+    current["c67"]["skills"][0]["presentation"]["remaining_plan_relevant"] = None
+    unknown = compare_reports(current, previous)["skills"][0]
+    assert unknown["comparability"] == {"status": "not_confirmed", "reason": "partial_cycle"}
+
+
 def test_comparison_pdf_uses_exact_projection_and_server_renderer(monkeypatch):
     captured = []
     monkeypatch.setattr("Api.typst_pdf_renderer.render_typst_report", lambda payload, template: captured.append((payload, template)) or b"%PDF")

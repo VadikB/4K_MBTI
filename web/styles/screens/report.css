@@ -45,11 +45,14 @@
 
 .m8-report-shell {
   width: min(1120px, 100%);
+  min-width: 0;
   margin-inline: auto;
   gap: 24px;
 }
 
 .m8-report-shell > .card {
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 24px;
   border-radius: 8px;
   box-shadow: none;
@@ -70,6 +73,11 @@
 
 .m8-report-notice p {
   margin: 8px 0 0;
+}
+
+.m8-report-notice.is-complete-scope {
+  border-left-color: var(--palette-cyan-500);
+  background: var(--palette-graphite-050);
 }
 
 .m8-report-shell .report-tab-button {
