@@ -1172,7 +1172,10 @@ def _project_admin_assessment_stage(row: dict) -> dict:
     if outcomes:
         if outcomes == {"no_result"}:
             result_summary = {"kind": "insufficient", "label": "Недостаточно оснований для результата"}
-        elif outcomes == {"full_score"} and not (payload.get("partial_result") or {}).get("is_incomplete"):
+        elif outcomes == {"full_score"} and not any(
+            (payload.get("partial_result") or {}).get(key)
+            for key in ("is_incomplete", "plan_scope_limited", "observation_limited", "source_limited", "technical_failure")
+        ):
             result_summary = {"kind": "full", "label": "Полный результат"}
         else:
             result_summary = {"kind": "partial", "label": "Частичный или ограниченный результат"}

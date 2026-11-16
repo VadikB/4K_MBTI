@@ -5,14 +5,15 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "assessment_definitions/reports/m8_basic_report/v1_4"
+PACKAGE = ROOT / "assessment_definitions/reports/m8_basic_report/v1_5"
 
 
 def load_package(package: Path = PACKAGE, source_set: Path | None = None) -> dict:
     manifest = json.loads((package / "manifest.json").read_bytes())
     raw = (package / "template.json").read_bytes()
-    expected = (1, "m8_basic_report", "1.4.1", "draft", "m8_individual_report", "PM-06")
-    if tuple(manifest.get(k) for k in ("schema_version", "id", "version", "status", "scope", "owner")) != expected:
+    expected = (1, "m8_basic_report", "draft", "m8_individual_report", "PM-06")
+    if (tuple(manifest.get(k) for k in ("schema_version", "id", "status", "scope", "owner")) != expected
+            or manifest.get("version") not in {"1.4.1", "1.5.0"}):
         raise ValueError("M8_REPORT_PACKAGE_INVALID")
     if manifest.get("artifacts") != [{"name": "template.json", "sha256": hashlib.sha256(raw).hexdigest()}]:
         raise ValueError("CHECKSUM_MISMATCH")

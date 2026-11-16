@@ -1,6 +1,7 @@
 from Api import m8_results
 from Api.m8_results import _comparison, _coverage_context, _partial_result_projection, _report_content
 from Api.m8_report_package import load_package
+from Api.m8_report_access import public_projection
 
 
 def skill(outcome="full_score", score=None):
@@ -68,8 +69,9 @@ def test_partial_result_uses_as_lifecycle_not_message_count_and_keeps_reasons_se
     assert result["progress"] == {"completed":2,"planned":5,"presented":3,"interrupted":1,
         "not_presented":2,"formula":"completed AS with final handoff / immutable accepted plan route"}
     assert {x["code"] for x in result["limitation_reasons"]} == {
-        "plan_scope","collection_incomplete","observation_missing","context_limited"}
+        "plan_scope","collection_incomplete","observation_missing"}
     assert "technical_failure" not in {x["code"] for x in result["limitation_reasons"]}
+    assert result["plan_completed"] is False
 
 
 def test_technical_failure_is_not_collection_incomplete():
@@ -81,6 +83,83 @@ def test_technical_failure_is_not_collection_incomplete():
            "limitations":[]}
     result = _partial_result_projection(c46, c56, {"status":"failed"}, load_package()["template"])
     assert [x["code"] for x in result["limitation_reasons"]] == ["technical_failure"]
+    assert result["plan_completed"] is True
+    assert result["is_incomplete"] is False
+
+
+def test_completed_short_program_keeps_scope_limitation_without_false_incompletion():
+    cut = lambda numerator, denominator: {"numerator": numerator, "denominator": denominator}
+    c46 = {"payload_json": {"collection": {"reason": "plan_finished"}, "plan": {
+        "revision_id": "frozen-plan", "untraversed_route": [{"case_id": str(i)} for i in range(3)]}}}
+    c56 = {"cycle_context": {"assessment_situations": [
+        {"status": "closed", "handoff_id": str(i)} for i in range(3)]},
+        "coverage": {"full_m2": {"indicator_assessments": cut(2, 4)},
+                     "cycle_plan": {"indicator_assessments": cut(2, 2)}},
+        "limitations": []}
+    projected = _partial_result_projection(c46, c56, {"status": "completed"}, load_package()["template"])
+    assert projected["plan_completed"] is True
+    assert projected["is_incomplete"] is False
+    assert projected["messages"]["title"] == "Оценка завершена"
+    assert [value["code"] for value in projected["limitation_reasons"]] == ["plan_scope"]
+    assert projected["plan_revision_id"] == "frozen-plan"
+
+
+def test_remaining_plan_relevance_uses_frozen_route_positions():
+    from Api.m8_results import _skill_presentation
+    c46 = {"payload_json": {"plan": {"untraversed_route": [
+        {"purpose_target_ids": ["I1"]}, {"purpose_target_ids": ["I2"]},
+        {"purpose_target_ids": ["I3"]}]},
+        "route": {"positions": [{"position_no": 1, "state": "completed"},
+                                {"position_no": 2, "state": "completed"}]}}}
+    c56 = {"planned_target_set": [{"indicator_id": value} for value in ("I1", "I2", "I3")]}
+    template = load_package()["template"]
+    skill = {"outcome": "full_score", "components": [{"required_indicator_ids": ["I1"],
+        "included_indicator_ids": ["I1"]}]}
+    assert _skill_presentation(skill, c56, c46, {}, template)["remaining_plan_relevant"] is False
+    skill["components"][0]["required_indicator_ids"] = ["I1", "I3"]
+    assert _skill_presentation(skill, c56, c46, {}, template)["remaining_plan_relevant"] is True
+
+
+def test_skill_presentation_preserves_m6_outcomes_and_explains_missing_values():
+    from Api.m8_results import _skill_presentation
+    template = load_package()["template"]
+    c46 = {"payload_json": {"plan": {"untraversed_route": []}}}
+    c56 = {"planned_target_set": [{"indicator_id": "I1"}], "coverage": {"full_m2": {
+        "admissible_contributions": {"missing_reasons": {"I2": "NO_JUSTIFIED_FINAL_IA"}}}}}
+    component = {"required_indicator_ids": ["I1", "I2"], "included_indicator_ids": ["I1"]}
+    for outcome in ("full_score", "partial_score", "result_without_score", "no_result"):
+        skill = {"outcome": outcome, "components": [component]}
+        projected = _skill_presentation(skill, c56, c46, {"affected_indicator_ids": []}, template)
+        assert projected["outcome"] == outcome
+        assert projected["included_indicator_ids"] == ["I1"]
+        assert projected["missing_indicator_ids"] == ["I2"]
+        assert projected["reasons"][0]["code"] == "plan_scope"
+        assert projected["source_reason_codes"] == ["NO_JUSTIFIED_FINAL_IA"]
+        assert "нет обоснованной" in projected["reasons"][-1]["message"]
+        assert all(value["message"] and value["message"] != value["code"] for value in projected["reasons"])
+    assert _skill_presentation({"outcome": "no_result", "components": [component]}, c56, c46,
+        {"affected_indicator_ids": ["I2"]}, template)["reasons"][-2]["code"] == "technical_failure"
+    c56["coverage"]["full_m2"]["admissible_contributions"]["missing_reasons"]["I2"] = "NEW_UNKNOWN_REASON"
+    unknown = _skill_presentation({"outcome": "no_result", "components": [component]}, c56, c46,
+        {"affected_indicator_ids": []}, template)
+    assert unknown["source_reason_codes"] == ["NEW_UNKNOWN_REASON"]
+    assert unknown["reasons"][-1]["message"] == template["skill_result"]["unknown_reason"]
+
+
+def test_public_projection_keeps_human_reasons_and_hides_comparison_ids():
+    report = {"id": "r", "c67": {"skills": [{"skill_id": "S", "outcome": "full_score",
+        "score": {"value": 0, "numerator": 0, "denominator": 1},
+        "presentation": {"label": "Полный показатель по навыку", "reasons": [
+            {"code": "plan_scope", "message": "Программа охватывала часть навыка."}],
+            "included_indicator_ids": ["I1"], "missing_indicator_ids": ["I2"]}}],
+        "partial_result": {"plan_completed": True, "is_incomplete": False, "plan_scope_limited": True,
+            "progress": {"completed": 3, "planned": 3}, "messages": {"title": "Оценка завершена"},
+            "limitation_reasons": [{"code": "plan_scope", "message": "Часть состава."}]}}}
+    value = public_projection(report)["c67"]
+    assert value["skills"][0]["score"]["value"] == 0
+    assert value["skills"][0]["presentation"]["reasons"][0]["message"] == "Программа охватывала часть навыка."
+    assert "included_indicator_ids" not in value["skills"][0]["presentation"]
+    assert value["partial_result"]["plan_completed"] is True
 
 
 def test_coverage_context_keeps_catalog_plan_facts_and_result_separate():

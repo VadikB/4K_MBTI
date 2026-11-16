@@ -95,6 +95,11 @@ def public_projection(report: dict, *, audience: str = "assessee") -> dict:
         skill["comparison"] = (_select(value.get("comparison"), ("status", "reason"))
                                if value.get("comparison") is not None else None)
         skill["limitations"] = _strings(value.get("limitations"))
+        presentation = value.get("presentation")
+        if isinstance(presentation, dict):
+            skill["presentation"] = _select(presentation, ("outcome", "label", "remaining_plan_relevant"))
+            skill["presentation"]["reasons"] = [_select(item, ("code", "message"))
+                for item in presentation.get("reasons") or []]
         c67["skills"].append(skill)
     c67["competencies"] = []
     for value in source.get("competencies") or []:
@@ -117,7 +122,8 @@ def public_projection(report: dict, *, audience: str = "assessee") -> dict:
     c67["sessions"] = [_select(value, ("started_at", "ended_at")) for value in source.get("sessions") or []]
     partial = source.get("partial_result")
     if isinstance(partial, dict):
-        c67["partial_result"] = _select(partial, ("is_incomplete", "close_reason"))
+        c67["partial_result"] = _select(partial, ("contract_version", "is_incomplete", "plan_completed", "plan_scope_limited",
+            "observation_limited", "context_limited", "source_limited", "technical_failure", "close_reason"))
         c67["partial_result"]["progress"] = _select(partial.get("progress"),
             ("completed", "planned", "presented", "interrupted", "not_presented"))
         c67["partial_result"]["messages"] = _select(partial.get("messages"), ("title", "confirmed", "not_inferred"))

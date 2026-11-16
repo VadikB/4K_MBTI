@@ -98,6 +98,13 @@ def test_m8_result_meaning_is_separate_from_technical_failure():
                          "partial_result": {"is_incomplete": True}, "processing": {"status": "completed"}},
     ))
     assert full["result_summary"] == {"kind": "full", "label": "Полный результат", "technical_failure": False}
+    limited_plan = _project_admin_assessment_stage(row(
+        cycle_status="calculated", report_ready=True,
+        results_payload={"assessed_skill_profile": [{"outcome": "full_score"}],
+                         "partial_result": {"is_incomplete": False, "plan_scope_limited": True},
+                         "processing": {"status": "completed"}},
+    ))
+    assert limited_plan["result_summary"]["kind"] == "partial"
     assert partial["result_summary"]["kind"] == "partial"
     assert partial["result_summary"]["technical_failure"] is True
     assert insufficient["result_summary"]["kind"] == "insufficient"
