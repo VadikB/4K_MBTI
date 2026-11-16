@@ -24,4 +24,4 @@
 
 Base `32a13d3da6c7c63f33f13b126773aeb8861099e6` (`origin/main` локально); ветка `codex/p4k-report-02`. У основного checkout есть чужой незавершённый diff; используется отдельный worktree. Актуальность remote требует повторной проверки при восстановлении сети. Стоп-условия EVC: изменения смысла оценки, PM/LU, прав сверх указанного решения, новый предметный артефакт — нет; схема меняется по явному заданию с планом совместимости и восстановления. Исторические immutable snapshots и audit не перезаписывать. Откат приложения — revert ветки; миграция должна содержать отдельный восстановительный путь без уничтожения сохранённых данных.
 
-Флаги: `branch_push=false`, `pr=false` до проверенного кандидата; `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`. Выпуск PATCH готовится `ready:prepare` перед Ready при доступной актуальной базе.
+Флаги: `branch_push=true`, `pr=true` (draft PR #227), `version_bump=true` для отдельно утверждённого PATCH `2.1.13`; `merge=false`, `deploy=false`, `artifact_publish=false`. Выпуск подготовлен `ready:prepare` перед Ready на актуальной базе.

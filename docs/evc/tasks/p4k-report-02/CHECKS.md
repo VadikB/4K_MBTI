@@ -1,6 +1,6 @@
 # Проверки P4K-REPORT-02
 
-Base `32a13d3d`; точный SHA кандидата будет указан после коммита. Все данные синтетические. PostgreSQL 15 запущен локально на `127.0.0.1:55432`, базы `agent4k_pytest` и `p4k_report02_pytest` созданы только для этой задачи. Реальные LLM и почта не вызывались.
+Base `32a13d3d`; product commit `94233541`, draft PR #227. Все данные синтетические. PostgreSQL 15 запускался локально на `127.0.0.1:55432` с базами `agent4k_pytest` и `p4k_report02_pytest` только для этой задачи и остановлен после проверок. Реальные LLM и почта не вызывались.
 
 | Критерий | Статус | Доказательство / предел |
 | --- | --- | --- |
@@ -13,7 +13,9 @@ Base `32a13d3d`; точный SHA кандидата будет указан п�
 | Frontend | PASS | `node --test tests/frontend/*.test.mjs`: 334 passed. |
 | Интеграция | PASS | Полный повтор `TEST_DATABASE_URL=… .venv/bin/python -m pytest -q --run-integration tests/integration`: 421 passed. Дополнение матрицы сравнения и финальный PDF/projection проверены адресно после запуска полного прогона: 3 passed и 6 passed. Предыдущий проход с 25 падениями был исправлен; журналы в `/private/tmp/p4k-report02-*`. |
 | JS lint/build/diff | PASS | `npm run lint:js`, `npm run build:web`, `git diff --check`. |
-| CI точного head | NOT_RUN | PR ещё не создан; GitHub DNS недоступен (`Could not resolve host: github.com`). Требуются jobs `frontend`, `pytest`, `full-verification` после Ready. |
+| CI product commit `94233541` | PASS / SKIPPED | В draft PR #227 jobs `frontend` и `pytest` PASS; `full-verification` ожидаемо SKIPPED до Ready. После release commit проверка повторяется на новом head. |
+| Release preflight | PASS | Владелец утвердил PATCH `2.1.13`. `npm run ready:prepare -- --candidate 2.1.13` и точный повтор — PASS, diff между повторами идентичен; `git diff --check` PASS. |
+| CI release head | PENDING | После commit/push и перехода PR #227 в Ready необходимы `frontend`, `pytest`, `full-verification` на точном head. |
 
 ## Карта удаления и сохранения
 
