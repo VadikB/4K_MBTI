@@ -206,7 +206,7 @@ export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
 const outcomeCopy = {
   confirming: ['Проверяем завершение оценки…', 'Уточняем состояние вашей оценки'],
   confirmationError: ['Не удалось подтвердить завершение', 'Сейчас не удалось получить подтверждение от системы. Проверьте подключение и попробуйте ещё раз'],
-  waiting: ['Спасибо за ваши ответы', 'Готовим ваш результат. Вы можете закрыть страницу и вернуться позже — результат будет доступен в личном кабинете'],
+  waiting: ['Спасибо за ваши ответы', 'Отчёт появится в «Моих оценках». Можно закрыть страницу и вернуться позже'],
   expired: ['Время оценки закончилось', 'Ваши сохранённые ответы будут учтены. В результате мы покажем, что удалось оценить'],
   ready: ['Ваш результат готов', 'Посмотрите, что удалось узнать о ваших навыках'],
   limited: ['Ваш результат готов', 'Посмотрите, что удалось оценить по вашим ответам. В результате будут объяснены ограничения'],
@@ -248,8 +248,8 @@ const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = fals
   const status = kind === 'ready' || kind === 'limited' ? 'Можно посмотреть результат'
     : kind === 'failed' ? 'Подготовка не завершена'
       : ['waiting', 'expired'].includes(kind) ? 'Результат готовится' : '';
-  processingOutcomeStatus.textContent = status;
-  processingOutcomeNotice.textContent = offline
+  processingOutcomeStatus.textContent = snapshot?.preparation ? '' : status;
+  processingOutcomeNotice.textContent = offline && !snapshot?.preparation
     ? 'Не удалось проверить готовность. Проверьте подключение и попробуйте ещё раз'
     : kind === 'failed' && snapshot?.report_status === 'limited'
       ? 'Ранее созданный ограниченный отчёт не означает, что техническая обработка завершена.' : '';
@@ -262,7 +262,8 @@ const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = fals
   if (snapshot?.preparation) {
     if (!preparationPanel) { preparationPanel = document.createElement('div'); preparationPanel.className = 'processing-preparation'; processingOutcomeActions.before(preparationPanel); }
     renderPreparation(preparationPanel, snapshot.preparation, { readError: offline || snapshot.preparation_stale === true });
-  } else preparationPanel?.remove();
+    preparationPanel.querySelector('[data-preparation-actions]').append(processingOutcomeActions);
+  } else if (preparationPanel) { preparationPanel.before(processingOutcomeActions); preparationPanel.remove(); }
   const actionsKey = [kind, offline, snapshot?.report_id].join(':');
   if (processingOutcomeActions.dataset.preparationActions === actionsKey) return;
   processingOutcomeActions.dataset.preparationActions = actionsKey;
@@ -272,22 +273,23 @@ const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = fals
       clearProcessingTimer();
       openReport({ m8CycleId: state.productCycleId, m8ReportId: snapshot?.report_id });
     });
-    addOutcomeButton('В личный кабинет', false, dashboardAction);
+    addOutcomeButton('Мои оценки', false, dashboardAction);
   } else if (kind === 'failed') {
-    addOutcomeButton('Проверить готовность', true, () => void pollAnalysisStatus());
-    addOutcomeButton('В личный кабинет', false, dashboardAction);
+    addOutcomeButton('Проверить состояние', false, () => void pollAnalysisStatus());
+    addOutcomeButton('Мои оценки', false, dashboardAction);
   } else if (kind === 'confirmationError' || offline) {
-    addOutcomeButton('Повторить проверку', true, () => void pollAnalysisStatus());
+    addOutcomeButton('Проверить состояние', false, () => void pollAnalysisStatus());
+    addOutcomeButton('Мои оценки', true, dashboardAction);
   } else if (['waiting', 'expired'].includes(kind)) {
     addOutcomeButton('Проверить состояние', false, () => void pollAnalysisStatus());
-    addOutcomeButton('В личный кабинет', true, dashboardAction);
+    addOutcomeButton('Мои оценки', true, dashboardAction);
   } else if (['accessDenied', 'unavailable'].includes(kind)) {
-    addOutcomeButton('В личный кабинет', true, dashboardAction);
+    addOutcomeButton('Мои оценки', true, dashboardAction);
   }
 };
 
 const cycleOutcomeKind = (snapshot) => {
-  if (snapshot?.results_status === 'failed') return 'failed';
+  if (snapshot?.results_status === 'failed' || snapshot?.preparation?.status === 'failed') return 'failed';
   if (snapshot?.report_status === 'ready') return snapshot?.partial_result?.plan_completed === false || snapshot?.partial_result?.is_incomplete ? 'limited' : 'ready';
   if (['time_budget', 'calendar_deadline'].includes(snapshot?.close_reason)) return 'expired';
   return 'waiting';

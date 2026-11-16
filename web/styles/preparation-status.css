@@ -1,11 +1,41 @@
 .preparation-status { margin-block: 16px; min-width: 0; color: var(--text-main); font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .preparation-status p { margin: 6px 0; }
-.preparation-status details { margin-top: 12px; }
-.preparation-status summary { cursor: pointer; }
+.preparation-status details { margin-top: 12px; min-width: 0; }
+.preparation-status summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; }
 .preparation-status button { margin: 8px 8px 0 0; border: 1px solid var(--border-color); background: var(--palette-white); color: var(--text-main); padding: 9px 12px; border-radius: 10px; cursor: pointer; font: inherit; }
-.preparation-status [data-preparation-duration], .preparation-status [data-preparation-freshness] { color: var(--text-muted); }
-.preparation-status [data-preparation-notice]:empty { display: none; }
-.admin-organization-member-stage .preparation-status { font-size: 12px; }
-
-.admin-organization-member-stage .preparation-status:not(:has(details[open])) [data-preparation-explanation],
-.admin-organization-member-stage .preparation-status:not(:has(details[open])) [data-preparation-duration] { display: none; }
+.preparation-status [data-preparation-duration], .preparation-status dt { color: var(--text-muted); }
+.preparation-status [data-preparation-notice]:empty, .preparation-status [data-preparation-explanation]:empty { display: none; }
+.preparation-status.is-failed [data-preparation-notice] > p:first-child { color: var(--palette-error); }
+.preparation-details { padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--palette-white); }
+.preparation-details dl { margin: 0; display: grid; gap: 8px 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.preparation-details dd { margin: 0; overflow-wrap: anywhere; }
+.preparation-details p { color: var(--text-muted); }
+.preparation-status--compact { margin-block: 8px; }
+.preparation-status--compact [data-preparation-explanation] { display: none; }
+.preparation-status [data-preparation-actions] > div { margin-top: 16px; }
+.preparation-status [data-preparation-actions] .primary-button { background: var(--accent); color: var(--palette-white); }
+.preparation-status [data-preparation-copied]:empty { display: none; }
+@media (max-width: 480px) { .preparation-details dl { grid-template-columns: minmax(0, 1fr); } }
+/* The compact admin summary stays in the status column; details use the card width. */
+.admin-organization-member { align-items: start; }
+.admin-organization-member > .preparation-status { display: contents; }
+.admin-organization-member > .preparation-status > .preparation-summary { grid-column: 3; grid-row: 1; min-width: 0; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.admin-organization-member > .preparation-status > details { grid-column: 2 / -1; grid-row: 2; margin-top: 0; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.admin-organization-member > .preparation-status > [data-preparation-time],
+.admin-organization-member > .preparation-status > [data-preparation-actions] { display: none; }
+.admin-organization-member:has(> .preparation-status) > .admin-organization-member-select { grid-column: 1; grid-row: 1; }
+.admin-organization-member:has(> .preparation-status) > .admin-organization-member-main { grid-column: 2; grid-row: 1; min-width: 0; }
+.admin-organization-member:has(> .preparation-status) > .admin-organization-member-actions { grid-column: 4; grid-row: 1; align-items: start; }
+@media (max-width: 860px) {
+    .admin-organization-member:has(> .preparation-status) > .admin-organization-member-main { grid-column: 1 / -1; grid-row: 2; }
+    .admin-organization-member > .preparation-status > .preparation-summary { grid-column: 1 / -1; grid-row: 3; }
+    .admin-organization-member:has(> .preparation-status) > .admin-organization-member-actions { display: contents; }
+    .admin-organization-member:has(> .preparation-status) .admin-organization-member-actions > button { grid-column: 1 / -1; grid-row: 4; }
+    .admin-organization-member > .preparation-status > details { grid-column: 1 / -1; grid-row: 5; }
+    .interview-panel .interview-topbar-head { flex-wrap: wrap; row-gap: 8px; }
+    .interview-panel .interview-title-row { flex: 1 1 150px; }
+    .interview-panel #interview-section-title { display: block; white-space: normal; }
+    .interview-panel .interview-topbar-actions { flex-wrap: wrap; margin-left: 0; }
+    .interview-panel #interview-timer-badge { max-width: 100%; white-space: normal; }
+}
+.interview-return-card > .preparation-status { margin-block: 0; }

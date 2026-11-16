@@ -158,3 +158,35 @@ def test_report_clock_does_not_start_with_an_open_cycle_interim_marker(product_d
         observed=observation.read(c,'report',cycle_id)
         assert observed['stage']=='answers'
         assert observed['started_at']==observed['stage_started_at']==closed_at
+
+
+def test_public_numbers_resolve_distinct_real_operations_attempts_and_owners(observation_db):
+    """Use generated operation IDs and real public projection, never a copied fixture code."""
+    factory = observation_db
+    references = set()
+    for kind, stage in [('assessment', 'plan'), ('next', 'checking')]:
+        operation_id = 'review-' + uuid4().hex
+        attempts = [uuid4(), uuid4()]
+        with factory() as c:
+            c.execute('''INSERT INTO product_cycle_preparation_operations
+                (operation_id,status,attempt_token,attempts,locked_at,request_json,result_json)
+                VALUES (%s,'running',%s,1,NOW(),%s,'{}')''',
+                (operation_id, attempts[0], json.dumps({'assignment_id': 91, 'cycle_id': str(uuid4())})))
+        for index, token in enumerate(attempts):
+            with factory() as c:
+                c.execute('UPDATE product_cycle_preparation_operations SET attempt_token=%s,attempts=%s WHERE operation_id=%s',
+                          (token, index + 1, operation_id))
+            observer = observation.begin('cycle', operation_id, token, kind, stage, factory=factory)
+            observation.record(observer, stage, heartbeat=True)
+        with factory() as c:
+            c.execute('SET TRANSACTION READ ONLY')
+            public = observation.project({'operation_id': operation_id, 'status': 'running'},
+                                         observation.read(c, 'cycle', operation_id))
+            found = lookup(c, public['reference'])
+            assert len(found) == 2
+            assert {item['operation_id'] for item in found} == {operation_id}
+            assert {item['attempt_token'] for item in found} == {str(token) for token in attempts}
+            assert {item['owner'] for item in found} == {observation.OWNERS[stage]}
+            assert all(item['operation']['assignment_id'] == '91' for item in found)
+            assert public['reference'] not in references
+            references.add(public['reference'])

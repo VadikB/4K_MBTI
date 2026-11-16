@@ -164,7 +164,7 @@ const buildCard = (card, { primaryEntry = false, history = false } = {}) => {
     });
     if (metadata.children.length) main.appendChild(metadata);
   }
-  if (card.preparation) renderPreparation(main, card.preparation);
+  if (card.preparation) renderPreparation(main, card.preparation, { compact: true });
   article.appendChild(main);
   appendCardAction(article, card, { primaryEntry, history });
   return article;

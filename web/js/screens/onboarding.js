@@ -56,9 +56,12 @@ const writeDraft = () => {
   } catch { /* The in-memory draft remains available until navigation. */ }
 };
 const storeOperation = (operation) => {
+  if (operation.preparation?.reference === localOperation?.preparation?.reference &&
+      Date.parse(operation.preparation?.read_at) < Date.parse(localOperation?.preparation?.read_at)) return;
   localOperation = { operation_id: operation.operation_id, status: operation.status,
     retry_allowed: operation.retry_allowed === true,
-    ...(operation.error ? { error: operation.error } : {}) };
+    ...(operation.error ? { error: operation.error } : {}),
+    ...(operation.preparation ? { preparation: operation.preparation } : operation.operation_id === localOperation?.operation_id && localOperation?.preparation ? { preparation: localOperation.preparation } : {}) };
   model.preparation_operation = localOperation;
   const key = operationKey();
   operationKeys.add(key);
@@ -149,13 +152,19 @@ let passiveDashboardEntry = false;
 let dashboardEntryCycleId = null;
 
 const readinessStep = () => {
-  let status = preparationView(model, preparationError);
+  const hasObservation = Boolean(model?.preparation_operation?.preparation);
+  let status = preparationView(model, hasObservation && ['read', 'network', 'service'].includes(preparationError?.kind) ? null : preparationError);
   if (dashboardEntryCycleId && model?.prepared_plan?.cycle_id !== dashboardEntryCycleId && status === 'ready') status = 'conflict';
   const step = readinessPresentation(status, {
     retryAllowed: model?.preparation_operation?.retry_allowed === true,
     pendingStart: hasPendingPreparedStart(model?.prepared_plan?.cycle_id), readbackAdmitted: startReadbackAdmitted,
   });
   if (status === 'preparing' && model?.preparation_operation?.operation_id) step.button = 'Проверить состояние';
+  if (hasObservation && ['preparing', 'failed'].includes(status)) {
+    step.description = 'Знакомство завершено, ваши ответы сохранены. Можно закрыть страницу и вернуться позже.';
+    step.detail = '';
+    step.button = status === 'failed' && model.preparation_operation.retry_allowed ? 'Повторить подготовку' : 'Проверить состояние';
+  }
   let body = step.detail ? paragraph(step.detail) : '';
   if (status === 'ready' && !hasPendingPreparedStart(model?.prepared_plan?.cycle_id)) {
     const plan = timing();
@@ -400,9 +409,21 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingVisual.replaceChildren();
   const bubble = onboardingPanel.querySelector('.onboarding-copy > .onboarding-bubble');
   bubble.querySelector(':scope > .onboarding-diagnostics')?.remove();
+  const preparationOpen = featureList.querySelector('[data-preparation-status] details')?.open;
+  const previousReference = featureList.querySelector('[data-preparation-status]')?.dataset.preparationReferenceId;
+  const readinessActions = document.getElementById('onboarding-actions');
+  // Preserve the existing action nodes before replacing the readiness body.
+  if (featureList.contains(readinessActions)) bubble.append(readinessActions);
   featureList.innerHTML = step.body || '';
   if (!loading && !loadFailed && !reviewMode && index === readinessIndex() && step.status !== 'ready') {
-    renderPreparation(featureList, model?.preparation_operation?.preparation, { readError: Boolean(preparationError && preparationError.kind !== 'failed') });
+    renderPreparation(featureList, model?.preparation_operation?.preparation, { readError: Boolean(preparationError && ['read', 'network', 'service'].includes(preparationError.kind)) });
+    const preparationRoot = featureList.querySelector('[data-preparation-status]');
+    if (preparationRoot) {
+      preparationRoot.querySelector('details').open = Boolean(preparationOpen && previousReference === preparationRoot.dataset.preparationReferenceId);
+      const timeNotice = featureList.querySelector('.onboarding-time-notice');
+      if (timeNotice) preparationRoot.querySelector('[data-preparation-time]').append(timeNotice);
+      preparationRoot.querySelector('[data-preparation-actions]').append(readinessActions);
+    }
   }
   const diagnostics = featureList.querySelector('.onboarding-diagnostics');
   diagnostics?.remove();
@@ -423,7 +444,8 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   if (step.answerKey) composer.append(onboardingNext);
   window.requestAnimationFrame(() => resizeAnswer(input));
   const copy = onboardingPanel.querySelector('.onboarding-copy');
-  (standalone ? bubble : copy).append(actions);
+  const readinessActionSlot = featureList.querySelector('[data-preparation-actions]');
+  (standalone && readinessActionSlot ? readinessActionSlot : standalone ? bubble : copy).append(actions);
   if (standalone && diagnostics) bubble.append(diagnostics);
   const tail = document.getElementById('onboarding-status-tail');
   tail.replaceChildren(); tail.hidden = true;
@@ -509,8 +531,8 @@ const beginPreparation = ({ retry = false } = {}) => {
       const callbacks = { signal: controller.signal, isCurrent: current,
         onRequested: (operation) => { if (current()) storeOperation(operation); },
         onAccepted: (operation) => { if (current()) storeOperation(operation); },
-        onStatus: (operation) => { if (current()) { storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderPreparation(document.querySelector('#onboarding-panel'), operation.preparation); } },
-        onReadError: () => { if (current()) renderPreparation(document.querySelector('#onboarding-panel'), model?.preparation_operation?.preparation, { readError: true }); },
+        onStatus: (operation) => { if (current()) { preparationError = null; errorMessage = ''; storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderPreparation(document.querySelector('#onboarding-panel'), operation.preparation); } },
+        onReadError: () => { if (current()) { preparationError = { kind: 'read' }; renderPreparation(document.querySelector('#onboarding-panel'), model?.preparation_operation?.preparation, { readError: true }); } },
       };
       // A lost command response has an operation ID: reconcile it through owned GET,
       // never send another preparation command merely because the page reloaded.
@@ -533,7 +555,7 @@ const beginPreparation = ({ retry = false } = {}) => {
         } catch { /* The original conflict remains distinct from a job failure. */ }
         if (!current()) return;
       }
-      preparationError = error.name === 'PreparationFailed' ? { kind: 'failed' }
+      preparationError = error.name === 'PreparationWaitLimit' ? null : error.name === 'PreparationFailed' ? { kind: 'failed' }
         : error.status === 403 ? { kind: 'access' } : error.status === 409 ? { kind: 'conflict' }
           : error.status >= 500 ? { kind: 'service' } : { kind: 'network' };
       if (error.status === 404 && localOperation) storeOperation({ ...localOperation, status: 'unknown' });
@@ -668,7 +690,7 @@ const advance = async (override = null) => {
     persistAssessmentContext();
   } catch (error) {
     if (isCurrent(owner, epoch, run)) {
-      errorMessage = acquaintanceErrorMessage(error);
+      errorMessage = ['refresh', 'retry'].includes(step.action) && model?.preparation_operation?.preparation ? '' : acquaintanceErrorMessage(error);
       const refusalStatus = error.status || error.cause?.status;
       if (['refresh', 'retry', 'start', 'check_start'].includes(step.action) &&
           (error.name !== 'AssessmentStartUnknown' || [403, 409].includes(refusalStatus))) {
