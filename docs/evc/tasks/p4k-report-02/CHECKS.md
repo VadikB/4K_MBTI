@@ -1,6 +1,6 @@
 # Проверки P4K-REPORT-02
 
-Base `32a13d3d`; product commit `94233541`, draft PR #227. Все данные синтетические. PostgreSQL 15 запускался локально на `127.0.0.1:55432` с базами `agent4k_pytest` и `p4k_report02_pytest` только для этой задачи и остановлен после проверок. Реальные LLM и почта не вызывались.
+Base `32a13d3d`; product commit `94233541`, release commit `74c8072`, Ready PR #227. Все данные синтетические. PostgreSQL 15 запускался локально на `127.0.0.1:55432` с базами `agent4k_pytest` и `p4k_report02_pytest` только для этой задачи. Реальные LLM и почта не вызывались.
 
 | Критерий | Статус | Доказательство / предел |
 | --- | --- | --- |
@@ -15,7 +15,8 @@ Base `32a13d3d`; product commit `94233541`, draft PR #227. Все данные �
 | JS lint/build/diff | PASS | `npm run lint:js`, `npm run build:web`, `git diff --check`. |
 | CI product commit `94233541` | PASS / SKIPPED | В draft PR #227 jobs `frontend` и `pytest` PASS; `full-verification` ожидаемо SKIPPED до Ready. После release commit проверка повторяется на новом head. |
 | Release preflight | PASS | Владелец утвердил PATCH `2.1.13`. `npm run ready:prepare -- --candidate 2.1.13` и точный повтор — PASS, diff между повторами идентичен; `git diff --check` PASS. |
-| CI release head | PENDING | После commit/push и перехода PR #227 в Ready необходимы `frontend`, `pytest`, `full-verification` на точном head. |
+| CI release head `74c8072` | FAIL | Ready CI: `frontend` и `pytest` PASS, `integration` PASS, `browser runtime-2-of-4` PASS; остальные browser jobs и агрегат `full-verification` FAIL. Причины: browser ожидал внутренние поля публичного C-67, readback SQL читал удалённую колонку `recipient_mapping_json`, ADM28/REMAIN-02 ожидали удалённый выбор получателей. Исправлены только тесты/fixture readback. |
+| Регрессия CI-исправления | PASS адресно | После исправления: runtime Report/PDF, character, REV-02, G10.7 — 4 passed; ADM28, questionnaire readback, S10-B — 3 passed; ADM-PROGRAM, REMAIN-02, Q-DRAFT — 3 passed. Повтор полного CI на новом head ожидается. |
 
 ## Карта удаления и сохранения
 
