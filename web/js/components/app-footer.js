@@ -16,6 +16,7 @@ export const initAppFooter = ({ root = document, now = new Date() } = {}) => {
     const visiblePanel = findVisiblePanel(root);
     const visible = shouldShowAppFooter(visiblePanel?.id, visiblePanel?.classList.contains('onboarding-standalone'));
     footer.classList.toggle('hidden', !visible);
+    footer.classList.toggle('app-footer--participant', visiblePanel?.id === 'dashboard-panel');
     footer.setAttribute('aria-hidden', visible ? 'false' : 'true');
     const isAuth = visiblePanel?.id === 'auth-panel' || visiblePanel?.id === 'session-restore-panel';
     footer.querySelector('.app-footer-release')?.classList.toggle('hidden', isAuth);

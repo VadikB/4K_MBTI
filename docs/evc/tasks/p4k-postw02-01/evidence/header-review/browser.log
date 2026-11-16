@@ -1,0 +1,11 @@
+
+Running 4 tests using 1 worker
+
+(node:54816) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/postw02-header-review.spec.mjs:72:5 › header known 1440 (750ms)
+  ✓  2 tests/browser/postw02-header-review.spec.mjs:72:5 › header fallback 1440 (402ms)
+  ✓  3 tests/browser/postw02-header-review.spec.mjs:72:5 › header known 390 (498ms)
+  ✓  4 tests/browser/postw02-header-review.spec.mjs:72:5 › header fallback 390 (481ms)
+
+  4 passed (3.0s)

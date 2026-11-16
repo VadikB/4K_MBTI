@@ -386,11 +386,6 @@
     background: var(--participant-canvas);
     color: var(--participant-text);
 }
-#dashboard-panel .dashboard-topbar {
-    min-height: 72px; padding: 0 32px;
-    background: var(--panel); border-bottom: 1px solid var(--participant-border);
-    backdrop-filter: none;
-}
 #dashboard-panel .dashboard-hero { max-width: 1200px; padding: 40px 40px 0; }
 #dashboard-panel .dashboard-hero h1 { margin: 0; max-width: none; font: 700 32px/40px var(--font-heading); letter-spacing: -0.5px; }
 #dashboard-panel .dashboard-subtitle { margin: 10px 0 0; color: var(--participant-caption); font-size: 14px; line-height: 22px; }
@@ -416,7 +411,7 @@
 #dashboard-panel .participant-assessment-status {
     max-width: 100%; padding: 6px 12px;
     border: 1px solid var(--participant-border); border-radius: var(--radius-sm);
-    background: var(--control-bg); color: var(--participant-caption); font-size: 13px; line-height: 20px;
+    background: var(--participant-status-surface); color: var(--participant-caption); font-size: 13px; line-height: 20px;
 }
 #dashboard-panel .participant-assessment-title { margin: 0; max-width: 24ch; overflow-wrap: anywhere; color: var(--participant-text); font: 700 26px/34px var(--font-heading); letter-spacing: normal; }
 #dashboard-panel .participant-assessment-description { margin: 12px 0 0; color: var(--participant-caption); font-size: 15px; line-height: 24px; }
@@ -435,7 +430,7 @@
 #dashboard-panel .participant-assessment-history-details { margin: 6px 0 0; font-size: 14px; line-height: 22px; color: var(--participant-caption); overflow-wrap: anywhere; }
 #dashboard-panel .participant-assessment-empty { padding: 28px; }
 #dashboard-panel .participant-assessment-empty p { margin: 8px 0 0; color: var(--participant-caption); }
-.shell:has(> #dashboard-panel:not(.hidden)) > .app-footer { padding: 32px 20px; background: var(--participant-canvas); font-size: 12px; line-height: 16px; }
+.shell:has(> #dashboard-panel:not(.hidden)) > .app-footer { padding: 32px 20px; font-size: 12px; line-height: 16px; }
 @media (max-width: 1050px) {
     #dashboard-panel .dashboard-hero { padding: 36px 24px 0; }
     #dashboard-panel .dashboard-content { padding: 24px 24px 0; }
@@ -448,7 +443,6 @@
     #dashboard-panel .participant-assessment-card--history { flex-wrap: wrap; }
 }
 @media (max-width: 680px) {
-    #dashboard-panel .dashboard-topbar { min-height: 64px; padding: 0 16px; }
     #dashboard-panel .dashboard-hero { padding: 28px 16px 0; }
     #dashboard-panel .dashboard-hero h1 { font-size: 26px; line-height: 34px; }
     #dashboard-panel .dashboard-subtitle { font-size: 13px; }

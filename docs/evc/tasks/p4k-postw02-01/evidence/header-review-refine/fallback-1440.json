@@ -1,0 +1,171 @@
+{
+  "user": {
+    "id": 8,
+    "email": "header@example.test",
+    "full_name": null
+  },
+  "dashboard": {
+    "greeting_name": "коллега",
+    "current_assessments": [
+      {
+        "cycle_id": "synthetic-header-cycle",
+        "title": "Совместная работа: тестовое назначение",
+        "organization_name": "Синтетический центр «Вектор»",
+        "status": "active",
+        "journey_state": "active",
+        "status_label": "Оценка идёт",
+        "description": "Продолжите прохождение с текущей ситуации.",
+        "action": "continue",
+        "button_label": "Продолжить оценку →",
+        "planned_total": 5,
+        "current_position_no": 2,
+        "completed_cases": null,
+        "total_cases": 1,
+        "plan_revision_id": "saved-header-plan",
+        "calendar_deadline": "2030-03-05T12:00:00Z"
+      }
+    ],
+    "completed_assessments": [
+      {
+        "cycle_id": "synthetic-header-previous",
+        "title": "Тестовая программа команды",
+        "organization_name": "Синтетический центр «Вектор»",
+        "status": "report_ready",
+        "journey_state": "report_ready",
+        "status_label": "Результат готов",
+        "description": "Продолжите прохождение с текущей ситуации.",
+        "action": "open_report",
+        "button_label": "Посмотреть результаты →",
+        "planned_total": 5,
+        "current_position_no": null,
+        "completed_cases": null,
+        "total_cases": 1,
+        "plan_revision_id": "saved-header-plan",
+        "calendar_deadline": "2030-03-05T12:00:00Z",
+        "report_id": "header-report",
+        "closed_at": "2030-02-13T12:00:00Z"
+      }
+    ]
+  },
+  "actual": {
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 72,
+      "background": "rgb(255, 255, 255)",
+      "color": "rgb(34, 44, 48)",
+      "radius": "0px",
+      "display": "flex",
+      "columns": "none",
+      "gap": "16px",
+      "maxWidth": "none",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "text": "\n        4K Ассистент\n        \n          Мои оценки\n        \n        \n          \n            👤\n            Выйти\n          \n          \n            \n              У\n              \n                Участник\n                \n              \n            \n            \n              Участник\n              Как это работает\n              Настройки\n              Выйти\n            \n          \n        \n      "
+    },
+    "avatar": {
+      "x": 1211.5,
+      "y": 19.5,
+      "width": 32,
+      "height": 32,
+      "background": "rgb(240, 240, 240)",
+      "color": "rgb(34, 44, 48)",
+      "radius": "50%",
+      "display": "grid",
+      "columns": "32px",
+      "gap": "normal",
+      "maxWidth": "none",
+      "font": "14px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "text": "У"
+    },
+    "status": {
+      "x": 758.03125,
+      "y": 236,
+      "width": 104.625,
+      "height": 34,
+      "background": "rgb(250, 250, 250)",
+      "color": "rgb(70, 69, 84)",
+      "radius": "8px",
+      "display": "block",
+      "columns": "none",
+      "gap": "normal",
+      "maxWidth": "100%",
+      "font": "13px / 20px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "text": "Оценка идёт"
+    },
+    "footer": {
+      "x": 0,
+      "y": 811,
+      "width": 1440,
+      "height": 144,
+      "background": "rgb(247, 247, 247)",
+      "color": "rgba(100, 116, 139, 0.6)",
+      "radius": "0px",
+      "display": "flex",
+      "columns": "none",
+      "gap": "16px",
+      "maxWidth": "none",
+      "font": "12px / 16px Onest, sans-serif",
+      "text": "\n      \n        Политика конфиденциальности\n        Согласие на обработку персональных данных\n      \n      Версия 2.1.11\n      © 2026 LIDUM\n    "
+    },
+    "grid": {
+      "x": 160,
+      "y": 208,
+      "width": 1120,
+      "height": 404,
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(34, 44, 48)",
+      "radius": "0px",
+      "display": "grid",
+      "columns": "730.656px 365.344px",
+      "gap": "24px",
+      "maxWidth": "none",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "text": "\n          \n            Текущая оценка\n            Синтетический центр «Вектор»Оценка идётСовместная работа: тестовое назначениеПродолжите прохождение с текущей ситуации.ОрганизацияСинтетический центр «Вектор»Текущая ситуация2 ситуация из 5Продолжить оценку →\n          \n          \n            \n              Ваш личный раздел\n              Здесь только ваши оценки и результаты.\n            \n            \n              Что покажет оценка\n              Как проявляются ваши навыки общения, командной работы, креативности и критического мышления в рабочих ситуациях.\n            \n          \n        "
+    },
+    "aside": {
+      "x": 914.65625,
+      "y": 208,
+      "width": 365.34375,
+      "height": 324,
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(34, 44, 48)",
+      "radius": "0px",
+      "display": "grid",
+      "columns": "365.344px",
+      "gap": "16px",
+      "maxWidth": "none",
+      "font": "16px / 24px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "text": "\n            \n              Ваш личный раздел\n              Здесь только ваши оценки и результаты.\n            \n            \n              Что покажет оценка\n              Как проявляются ваши навыки общения, командной работы, креативности и критического мышления в рабочих ситуациях.\n            \n          "
+    },
+    "title": {
+      "x": 188,
+      "y": 294,
+      "width": 411.953125,
+      "height": 68,
+      "background": "rgba(0, 0, 0, 0)",
+      "color": "rgb(34, 44, 48)",
+      "radius": "0px",
+      "display": "block",
+      "columns": "none",
+      "gap": "normal",
+      "maxWidth": "411.965px",
+      "font": "700 26px / 34px Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+      "text": "Совместная работа: тестовое назначение"
+    }
+  },
+  "calls": [
+    {
+      "method": "GET",
+      "pathname": "/users/version"
+    },
+    {
+      "method": "GET",
+      "pathname": "/users/session/restore"
+    },
+    {
+      "method": "GET",
+      "pathname": "/users/8/journey-state"
+    }
+  ]
+}

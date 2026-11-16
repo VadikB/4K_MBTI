@@ -108,4 +108,8 @@
     --participant-primary-hover: #109eab;
     --participant-primary-active: #0c8591;
     --participant-focus: #007d89;
+    /* POSTW02-01 owner visual follow-up: explicit v10 participant values. */
+    --participant-avatar-surface: #f0f0f0;
+    --participant-status-surface: #fafafa;
+    --participant-footer-text: rgb(100 116 139 / 60%);
 }

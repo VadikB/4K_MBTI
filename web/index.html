@@ -198,29 +198,33 @@
     </section>
 
     <section class="panel dashboard-panel hidden" id="dashboard-panel">
-      <div class="dashboard-topbar">
-        <div class="brand dashboard-brand">4K Ассистент</div>
+      <header class="dashboard-topbar app-header app-header--participant" data-app-header>
+        <button class="brand dashboard-brand" type="button" data-header-home>4K Ассистент</button>
+        <nav class="app-header-navigation" aria-label="Разделы аккаунта">
+          <button id="dashboard-cabinet-button" class="app-header-navigation-current" type="button" aria-current="page" data-header-home>Мои оценки</button>
+        </nav>
         <div class="dashboard-topbar-actions">
           <button id="dashboard-mobile-exit-button" class="topbar-exit-button dashboard-mobile-exit-button" type="button">
             <span class="topbar-user-icon" aria-hidden="true">👤</span>
             <span>Выйти</span>
           </button>
           <div class="user-menu">
-            <div class="user-chip" tabindex="0" aria-haspopup="true" aria-label="Меню пользователя">
+            <div class="user-chip" data-header-user-menu tabindex="0" aria-haspopup="true" aria-label="Меню пользователя">
+              <div id="dashboard-avatar" class="user-avatar" data-header-avatar aria-hidden="true">У</div>
               <div class="user-chip-copy">
-                <strong id="dashboard-user-name">Александр</strong>
-                <span id="dashboard-user-role">Product Lead</span>
+                <strong id="dashboard-user-name" data-header-name>Участник</strong>
+                <span id="dashboard-user-role" data-header-role></span>
               </div>
-              <div id="dashboard-avatar" class="user-avatar">А</div>
             </div>
             <div class="user-menu-dropdown" role="menu" aria-label="Меню пользователя">
+              <span class="app-header-mobile-name" data-header-name>Участник</span>
               <button id="dashboard-onboarding-button" class="user-menu-item" type="button" role="menuitem">Как это работает</button>
               <button id="dashboard-profile-button" class="user-menu-item" type="button" role="menuitem">Настройки</button>
               <button id="dashboard-restart-button" class="user-menu-item" type="button" role="menuitem">Выйти</button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <div class="dashboard-hero">
         <h1 id="dashboard-greeting">Мои оценки</h1>

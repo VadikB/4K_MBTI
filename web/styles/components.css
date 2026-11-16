@@ -415,3 +415,66 @@ textarea {
         gap: 12px;
     }
 }
+
+/* One shared footer; its theme follows the active common-zone panel. */
+.app-footer.app-footer--participant {
+    background: var(--participant-canvas);
+    color: var(--participant-footer-text);
+}
+
+/* Shared header component; participant variant is explicitly selected by its consumer. */
+.app-header.app-header--participant {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 32px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--participant-border);
+    backdrop-filter: none;
+}
+.app-header--participant .dashboard-brand {
+    padding: 0;
+    background: transparent;
+    color: var(--participant-text);
+    font: 700 20px/24px var(--font-heading);
+    letter-spacing: normal;
+    white-space: nowrap;
+}
+.app-header-navigation { margin-right: auto; }
+.app-header-navigation-current {
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--participant-avatar-surface);
+    color: var(--participant-text);
+    font: 600 16px/24px var(--font-heading);
+    white-space: nowrap;
+}
+.app-header--participant .user-menu { order: 0; }
+.app-header--participant .topbar-exit-button { order: 1; }
+.app-header--participant .user-chip { gap: 10px; }
+.app-header--participant .user-chip-copy strong { font-weight: 400; line-height: 24px; }
+.app-header--participant .user-avatar {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--participant-avatar-surface);
+    color: var(--participant-text);
+    font: 400 14px/24px var(--font-body);
+}
+.app-header-mobile-name { display: none; }
+.app-header--participant [data-header-home]:focus-visible {
+    outline: 2px solid var(--participant-focus);
+    outline-offset: 3px;
+}
+@media (max-width: 680px) {
+    .app-header.app-header--participant { min-height: 64px; padding: 0 16px; gap: 8px; }
+    .app-header--participant .dashboard-brand { font-size: 18px; }
+    .app-header--participant .user-chip-copy { display: none; }
+    .app-header--participant .app-header-navigation-current { font-size: 13px; padding-inline: 10px; }
+    .app-header--participant .dashboard-mobile-exit-button { display: none; }
+    .app-header--participant .app-header-mobile-name { display: block; padding: 8px 10px; font-size: 13px; }
+}

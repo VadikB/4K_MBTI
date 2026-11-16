@@ -1,11 +1,11 @@
 import { state, persistAssessmentContext, safeStorage, STORAGE_KEYS, setCurrentScreen } from '../state.js';
 import {
-  dashboardPanel, dashboardGreeting, dashboardUserName, dashboardUserRole, dashboardAvatar,
+  dashboardPanel, dashboardGreeting,
   currentAssessmentsTitle, currentAssessments, completedAssessments,
   dashboardRefreshStatus, dashboardRefreshButton,
 } from '../dom.js';
 import { hideAllPanels, syncUrlState } from '../router.js';
-import { sanitizeDisplayRole, getSignupFirstName, buildInitials } from '../utils/format.js';
+import { initAppHeader } from '../components/app-header.js';
 import { handleAssessmentEntryClick } from './interview.js';
 import { readApiResponse } from '../api.js';
 import { assessmentMetadata, formatAssessmentDate } from '../dashboard-presentation.js';
@@ -14,6 +14,7 @@ const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
 const DASHBOARD_RETRY_INTERVAL_MS = 60000;
 let dashboardRefreshTimer = null;
 let dashboardRefreshPending = false;
+const header = initAppHeader({ root: dashboardPanel.querySelector('[data-app-header]'), onHome: () => openDashboard() });
 
 const scheduleDashboardRefresh = (delay = DASHBOARD_REFRESH_INTERVAL_MS) => {
   window.clearTimeout(dashboardRefreshTimer);
@@ -184,14 +185,8 @@ export const renderDashboard = () => {
   const dashboard = state.dashboard;
   if (!dashboard) return;
   const user = state.pendingUser;
-  const position = sanitizeDisplayRole(user?.job_description || '');
   dashboardGreeting.textContent = 'Мои оценки';
-  dashboardUserName.textContent = user
-    ? getSignupFirstName(user.full_name, dashboard.greeting_name)
-    : getSignupFirstName(dashboard.greeting_name);
-  dashboardUserRole.textContent = position;
-  dashboardUserRole.style.display = position ? '' : 'none';
-  dashboardAvatar.textContent = buildInitials(user ? user.full_name : dashboard.greeting_name);
+  header.updateUser(user);
   const current = Array.isArray(dashboard.current_assessments) ? dashboard.current_assessments : [];
   const completed = Array.isArray(dashboard.completed_assessments) ? dashboard.completed_assessments : [];
   currentAssessmentsTitle.textContent = current.length > 1 ? 'Текущие оценки' : 'Текущая оценка';

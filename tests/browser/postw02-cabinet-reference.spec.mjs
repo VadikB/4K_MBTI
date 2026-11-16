@@ -105,7 +105,7 @@ function assertCabinet(ref, product) {
     for (const prop of ['x', 'y', 'height']) expect(Math.abs(a[prop] - b[prop]), key + '.' + prop).toBeLessThan(0.6);
     for (const prop of ['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color']) expect(a.css[prop], key + '.' + prop).toBe(b.css[prop]);
   }
-  expect(product.nodes.status[0].css.backgroundColor).toBe('rgb(247, 249, 251)'); // Palette1.2 overrides demo1.1.
+  expect(product.nodes.status[0].css.backgroundColor).toBe('rgb(250, 250, 250)'); // Explicit owner follow-up selects v10 participant status.
   expect(product.scrollWidth).toBe(product.viewport.width);
 }
 for (const width of [1440, 390]) {
@@ -217,7 +217,7 @@ test('breakpoint and interactive style probes', async ({ page, context }) => {
   expect(results[1440].product.interactive.hovered).toBe('rgb(16, 158, 171)');
   expect(results[1440].product.interactive.focused).toEqual(results[1440].reference.interactive.focused);
   expect(results[1440].product.nodes.footer[0].css.backgroundColor).toBe('rgb(247, 247, 247)');
-  expect(results[1440].product.nodes.footer[0].css.color).toBe('rgb(104, 119, 124)');
+  expect(results[1440].product.nodes.footer[0].css.color).toBe('rgba(100, 116, 139, 0.6)');
   await productPage.close();
   await progress('done-probes');
 });

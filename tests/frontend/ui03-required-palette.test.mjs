@@ -90,6 +90,11 @@ const sharedParticipantColors = {
   '--participant-border': '#cbd5e1', '--participant-primary-hover': '#109eab',
   '--participant-primary-active': '#0c8591', '--participant-focus': '#007d89',
 };
+// Explicit POSTW02-01 owner follow-up resolves the v10/palette1.2 conflict only for these semantic roles.
+const participantFollowUpTokens = {
+  '--participant-avatar-surface': '#f0f0f0', '--participant-status-surface': '#fafafa',
+  '--participant-footer-text': 'rgb(100 116 139 / 60%)',
+};
 test('UI03 prevents local six-digit hex colors outside the owner palette', () => {
   for (const file of [...cssFiles, ...collectFiles('web/js', '.js')]) {
     let source = readFileSync(file, 'utf8').toLowerCase();
@@ -101,7 +106,7 @@ test('UI03 prevents local six-digit hex colors outside the owner palette', () =>
       source = source.replace(authBorder, (block) => block.replace('#cbd5e1', ''));
     }
     if (file === 'web/styles/tokens.css') {
-      for (const [name, color] of Object.entries(sharedParticipantColors)) {
+      for (const [name, color] of Object.entries({ ...sharedParticipantColors, ...participantFollowUpTokens })) {
         assert.equal(rootTokens.get(name), color);
         source = source.replace(`${name}: ${color};`, '');
       }
