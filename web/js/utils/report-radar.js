@@ -36,3 +36,33 @@ export const summarizeReportScores = (skills) => {
     missingCount: values.filter((value) => value == null).length,
   };
 };
+
+// Pure projection of one saved Report. It is also suitable for a PDF or comparison
+// renderer: neither geometry nor labels need a browser or a current catalog.
+export const projectReportRadar = (skills) => {
+  const axes = skills.map((skill) => {
+    const value = getReportScoreValue(skill);
+    return {
+      skillId: skill.skill_id,
+      competencyId: skill.competency_id,
+      name: skill.skill_name || 'Навык',
+      value,
+      displayValue: value == null ? null : String(skill.score.value),
+      partial: skill.outcome === 'partial_score',
+      status: skill.presentation?.label || null,
+      limitations: [
+        ...(skill.presentation?.reasons || []).map((reason) => reason.message).filter(Boolean),
+        ...(Array.isArray(skill.limitations) ? skill.limitations : []),
+      ],
+    };
+  });
+  return { axes, runs: splitRadarRuns(axes.map((axis) => axis.value)) };
+};
+
+export const radarPoint = (index, value, count, centerX, centerY, radius) => {
+  const angle = -Math.PI / 2 + index * Math.PI * 2 / count;
+  return {
+    x: centerX + Math.cos(angle) * radius * value / 3,
+    y: centerY + Math.sin(angle) * radius * value / 3,
+  };
+};

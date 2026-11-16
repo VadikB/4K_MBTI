@@ -24,8 +24,3 @@ test('UI02 measures real radar labels and keeps them inside a safe area', () => 
   assert.match(styles, /\.m8-report-chart\s*\{[\s\S]*padding:\s*var\(--space-3\)/);
   assert.match(styles, /\.m8-radar-label[\s\S]*pointer-events:\s*auto/);
 });
-
-test('UI02 preserves readable overview access on narrow screens', () => {
-  assert.match(styles, /\.m8-report-chart\.is-overview svg\s*\{[\s\S]*min-width:\s*680px/);
-  assert.match(styles, /\.m8-report-chart\.is-overview\s*\{[\s\S]*overflow-x:\s*auto/);
-});

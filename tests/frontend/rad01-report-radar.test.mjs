@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { getReportScoreValue, splitRadarRuns, summarizeReportScores } from '../../web/js/utils/report-radar.js';
+import { getReportScoreValue, projectReportRadar, radarPoint, splitRadarRuns, summarizeReportScores } from '../../web/js/utils/report-radar.js';
 
 const report = await readFile(new URL('../../web/js/screens/report.js', import.meta.url), 'utf8');
 const markup = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
@@ -27,6 +27,30 @@ test('RAD01 never joins a radar line across missing values', () => {
   ]);
   assert.deepEqual(splitRadarRuns([0, 0, 0]), [{ indexes: [0, 1, 2], closed: true }]);
   assert.deepEqual(splitRadarRuns([null, null]), []);
+  assert.deepEqual(splitRadarRuns([null, 1, 2, null, 0]), [
+    { indexes: [1, 2], closed: false }, { indexes: [4], closed: false },
+  ]);
+  assert.deepEqual(splitRadarRuns([2, null, null, 1]), [
+    { indexes: [3, 0], closed: false },
+  ]);
+  assert.deepEqual(splitRadarRuns([null, 1, null]), [{ indexes: [1], closed: false }]);
+});
+
+test('REPORT-05 projection preserves saved identity, exact score and limitations', () => {
+  const source = [
+    { skill_id: 'K2-S9', skill_name: 'Длинное название', competency_id: 'K2', outcome: 'partial_score',
+      score: { value: '1.7500' }, presentation: { label: 'Частичный показатель', reasons: [{ message: 'Часть состава' }] } },
+    { skill_id: 'K2-S2', skill_name: 'Другой навык', competency_id: 'K2', score: null },
+    { skill_id: 'K4-S8', skill_name: 'Третий навык', competency_id: 'K4', score: { value: 0 } },
+  ];
+  const projection = projectReportRadar(source);
+  assert.deepEqual(projection.axes.map((axis) => axis.skillId), ['K2-S9', 'K2-S2', 'K4-S8']);
+  assert.deepEqual(projection.axes.map((axis) => axis.value), [1.75, null, 0]);
+  assert.equal(projection.axes[0].displayValue, '1.7500');
+  assert.equal(projection.axes[0].partial, true);
+  assert.deepEqual(projection.axes[0].limitations, ['Часть состава']);
+  assert.deepEqual(projection.runs, [{ indexes: [2, 0], closed: false }]);
+  assert.deepEqual(radarPoint(0, 3, 4, 100, 100, 60), { x: 100, y: 40 });
 });
 
 test('RAD01 exposes fill, outline and bars with a permanent text list', () => {
