@@ -1,0 +1,45 @@
+
+> ready:prepare
+> python3.12 scripts/prepare_ready_release.py --candidate 2.1.13
+
+From https://github.com/VadikB/4K_MBTI
+ * branch            main       -> FETCH_HEAD
+
+> prebuild:web
+> npm run clean:web
+
+
+> clean:web
+> node scripts/clean_web_dist.mjs
+
+
+> build:web
+> esbuild web/js/main.js --outdir=web/dist --target=es2020 --format=esm --splitting --public-path=/web/dist/ --entry-names=[name] --chunk-names=[name]-[hash] --bundle --minify
+
+
+  web/dist/chunk-A4V5SUNR.js                   283.0kb
+  web/dist/chunk-5BTDF3I4.js                   152.3kb
+  web/dist/main.js                             101.5kb
+  web/dist/admin-methodology-C34JQNGB.js        67.4kb
+  web/dist/chunk-2ZUQLQO2.js                    63.6kb
+  web/dist/chunk-33YLJKOV.js                    52.8kb
+  web/dist/admin-prompt-lab-4PQDNSQY.js         45.5kb
+  web/dist/chunk-G3PSZCKU.js                    35.0kb
+  web/dist/chunk-LSYTTB7A.js                    24.0kb
+  web/dist/chunk-SSJJHTLC.js                    19.8kb
+  web/dist/admin-reports-MRKEHH32.js            12.8kb
+  web/dist/admin-regression-tests-AB7ESZIK.js   12.8kb
+  web/dist/chunk-RT3LHTAP.js                    11.8kb
+  web/dist/chunk-5XKLRMKF.js                    11.8kb
+  web/dist/chunk-IIMPM7BJ.js                     8.7kb
+  web/dist/chunk-DTT4DEVI.js                     7.0kb
+  web/dist/chunk-RHU4MR2S.js                     5.7kb
+  web/dist/chunk-Z4T342D3.js                     4.0kb
+  web/dist/chunk-NQVMK6K5.js                     4.0kb
+  web/dist/chunk-WB5DOQRS.js                     3.8kb
+  ...and 26 more output files...
+
+⚡ Done in 37ms
+patch: 2.1.12 → 2.1.13; updated: pyproject.toml, uv.lock, web/js/config.js, web/index.html
+Next step: npm run build:web
+Ready preflight passed: release 2.1.13; product paths: 73
