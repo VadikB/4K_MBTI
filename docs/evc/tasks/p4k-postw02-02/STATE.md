@@ -4,8 +4,10 @@
 новые полномочия на PATCH/Ready/merge и автоматический TEST. Прежние запреты ниже
 сохранены как история и не действуют в области этого выпуска.
 PR230, head981b8f8, basec89e9c0/2.1.15; быстрый CI frontend/pytest PASS, draft.
-Ready-preflight2.1.16 PASS, исходная логика не меняется. Активно: release commit/push,
-Ready прежнего PR230, полный CI и merge без bypass.
+Ready-preflight2.1.16 PASS, runtime неизменён. CI c633916: integration/runtime4 PASS,
+fast FAIL7 (устаревшие ожидания + masking error в viewport fixture). Исправлены tests,
+локально affected browser6/regression2 PASS. Активно: corrective commit/push, полный
+CI нового head и merge только при всех PASS. Прежние ошибки сохранены в RELEASE.md.
 
 История предыдущего этапа:
 

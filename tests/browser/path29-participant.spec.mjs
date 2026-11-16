@@ -557,11 +557,12 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     if (boundedPath) await capturePathViewports(page, dir, 'first-as', [
       { name: 'answer-input', locator: page.locator('#interview-textarea') },
     ], viewportOptions);
+    await expect(page.locator('#interview-pause-button')).toBeHidden();
+    await expect(page.locator('#interview-additional-button')).toBeHidden();
+    await expect(page.locator('#interview-finish-button')).toBeHidden();
     if (!boundedPath) await capturePathViewports(page, dir, 'first-as', [
       { name: 'home', locator: page.locator('#interview-profile-button') },
       { name: 'answer-input', locator: page.locator('#interview-textarea') },
-      { name: 'pause', locator: page.locator('#interview-pause-button') },
-      { name: 'finish', locator: page.locator('#interview-finish-button') },
       { name: 'answer-submit', locator: page.locator('#interview-submit-button') },
     ]);
     // Resizing/reading must not start another Cycle or create assessment answers.

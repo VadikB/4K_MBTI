@@ -231,7 +231,9 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
     // scroll, while timer updates still apply. Do not pause/intercept poll timers.
     const originalNode = await situation.elementHandle();
     const beforeReads = reads;
-    await page.locator('#interview-finish-button').click({ trial: true });
+    await expect(page.locator('#interview-finish-button')).toBeHidden();
+    await expect(page.locator('#interview-pause-button')).toBeHidden();
+    await page.locator('#interview-submit-button').click({ trial: true });
     const beforeY = await page.evaluate(() => scrollY);
     remainingSeconds = 7100;
     await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeReads + 2);
@@ -243,8 +245,6 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
     await capturePathViewports(page, dir, 'first-as', [
       { name: 'home', locator: page.locator('#interview-profile-button') },
       { name: 'answer-input', locator: page.locator('#interview-textarea') },
-      { name: 'pause', locator: page.locator('#interview-pause-button') },
-      { name: 'finish', locator: page.locator('#interview-finish-button') },
       { name: 'answer-submit', locator: page.locator('#interview-submit-button') },
     ]);
     // Desktop intentionally has an inner message scroller. Prove its last
@@ -3499,8 +3499,8 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   });
   await page.goto(`${base}/?screen=interview`);
   await expect(page.locator('.interview-return-card')).toBeVisible();
-  await expect(page.locator('.interview-return-card')).toContainText('Завершено 2 из 4');
-  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 4\nЗавершено 2 из 4');
+  await expect(page.locator('.interview-return-card')).not.toContainText('Завершено 2 из 4');
+  await expect(page.locator('#interview-case-badge')).toHaveText('1 ситуация из 4');
   await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
   await expect(page.getByText('Календарный срок:', { exact: false })).toBeHidden();
   await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
@@ -3566,13 +3566,13 @@ test('P3-B return card keeps unknown time distinct from known zero', async ({ pa
     return fulfillJson(route, {}, 404);
   });
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.getByText('Завершено 0 из 8. Остаток времени выполнения уточняется.')).toBeVisible();
+  await expect(page.getByText('Остаток времени выполнения уточняется.')).toBeVisible();
   await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · Время уточняется');
   await expect(page.getByText('0 мин.', { exact: false })).toBeHidden();
   await expect(page.getByText('Без лимита', { exact: false })).toBeHidden();
   remainingSeconds = 0;
   await page.reload();
-  await expect(page.getByText('Завершено 0 из 8. Остаток времени выполнения: 0 мин.')).toBeVisible();
+  await expect(page.getByText('Остаток времени выполнения: 0 мин.')).toBeVisible();
   await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · 00:00');
 });
 
@@ -3655,7 +3655,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   });
 
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 3\nЗавершено 0 из 3');
+  await expect(page.locator('#interview-case-badge')).toHaveText('1 ситуация из 3');
   await expect(page.locator('#interview-section-title')).toHaveText('4К Ассистент');
   await expect(page.locator('.case-sidebar')).toHaveCount(0);
   await expect(page.locator('.interview-message--situation')).toHaveCount(1);
@@ -3668,7 +3668,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   await expect(page.locator('.interview-message--situation')).toContainText('Обсудите изменение сроков');
   await expect(page.locator('.interview-message--situation')).toContainText('Не обещать сроки без проверки');
   await expect(page.locator('.interview-message--situation')).toContainText('Письмо клиента: Содержание письма');
-  await expect(page.getByRole('button', { name: 'Завершить ситуацию' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Завершить ситуацию' })).toBeHidden();
   await expect(page.getByText('После отправки ответ нельзя изменить')).toBeVisible();
   await expect(page.locator('[data-speaker-label="Анна"]')).toBeVisible();
   await expect(page.locator('.interview-bubble.bot').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');

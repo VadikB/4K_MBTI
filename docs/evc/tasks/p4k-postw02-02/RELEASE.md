@@ -34,3 +34,14 @@ HTML cache keys) и generated dist. Прежние runtime/frontend/HTTP PASS п
 создаются явно через synthetic test server, затем проверяется реальное recovery.
 Проверки Cycle/deadline/остатка/новой AS/запрета после закрытия сохранены.
 Версия2.1.16 остаётся той же: кандидат ещё не выпускался, runtime не изменён.
+
+Полный CI c633916: integration PASS; все4 runtime browser shards PASS; fast FAIL7.
+Причины:6 старых UI expectations (двойной прогресс и отсутствующие до первого ответа
+обычные pause/finish); PATH29 capture также требовал скрытые элементы, а catch
+fixture маскировал исходный assertion TDZ ReferenceError. Исправлены только tests:
+проверка явного N/M, отсутствие старых кнопок, actionability существующих ввода/
+отправки, диагностический failedRecord без shadowing. Никакие gates/таймауты не
+ослаблены. Локально affected browser6 PASS (включая четыре ширины/поллинг/материалы)
+и regression2 PASS на сохранение исходной ошибки/восстановление viewport.
+PATH29 остаётся в полном CI на owned PostgreSQL; paid/path provider не запускался.
+Новый head требует полного CI заново; прежний FAIL не объявляется PASS.

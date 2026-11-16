@@ -89,11 +89,11 @@ export async function capturePathViewports(page, directory, phase, controls, { w
     }
   } catch (error) {
     failed = true;
-    const failed = records.at(-1);
-    if (failed) {
-      failed.error = 'VIEWPORT_ASSERTION_FAILED';
+    const failedRecord = records.at(-1);
+    if (failedRecord) {
+      failedRecord.error = 'VIEWPORT_ASSERTION_FAILED';
       fs.writeFileSync(receipt, JSON.stringify(records, null, 2) + '\n');
-      try { await page.screenshot({ path: path.join(directory, `${phase}-failed-${failed.width}.png`), fullPage: true }); }
+      try { await page.screenshot({ path: path.join(directory, `${phase}-failed-${failedRecord.width}.png`), fullPage: true }); }
       catch { /* Preserve the assertion or budget failure. */ }
     }
     throw error;
