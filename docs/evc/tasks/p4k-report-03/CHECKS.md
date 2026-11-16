@@ -20,7 +20,8 @@
 | Frontend | PASS | `node --test tests/frontend/*.test.mjs`: 343 passed; `/private/tmp/p4k-report03-frontend-2.1.15.log`. |
 | Integration | PASS адресно | `TEST_DATABASE_URL=… .venv/bin/python -m pytest -q --run-integration ...`: 8 passed, 21 deselected; `/private/tmp/p4k-report03-integration-2.1.15.log`. Полный integration-набор остаётся за обязательным CI. |
 | JS lint / сборка / diff | PASS | `npm run lint:js`, `npm run build:web` в `ready:prepare`, `git diff --check`; на рабочем дереве release кандидата. |
-| Push / PR / CI / TEST / Prod | NOT_RUN | Auto-review отклонил `git push -u origin codex/p4k-report-03`: публикация приватного кода и артефактов на GitHub не подтверждена явным разрешением или доказанным доверенным назначением remote. Повтор через иной инструмент запрещён; `gh auth status` также показывает отсутствие входа. Обязательные CI jobs и release deploy отсутствуют; локальные результаты их не заменяют. |
+| Push / PR | PASS | Владелец явно подтвердил доверенный `origin` и разрешил отправить REPORT_03 для PR. `git push -u origin codex/p4k-report-03` выполнен; создан [PR #229](https://github.com/VadikB/4K_MBTI/pull/229) Ready for review. GitHub web-сессия использована для PR, поскольку `gh auth status` не авторизован. |
+| CI / TEST / Prod | PENDING / NOT_RUN | Обязательные CI jobs запущены после создания PR; их итог на точном head ещё не получен. TEST/Prod deploy не выполнялся, локальные результаты не заменяют CI. |
 
 ## Восстановление
 
