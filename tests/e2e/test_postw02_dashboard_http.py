@@ -62,7 +62,8 @@ def cabinet(monkeypatch):
     db = ReadOnlyStorage()
     user = UserResponse(id=8, email='synthetic@example.test', full_name='Synthetic', role_id=None, job_description=None, raw_duties=None, created_at=datetime(2026, 11, 16))
     model = {'readiness': {'status': 'ready', 'organization_id': 10, 'organization_name': 'Synthetic', 'assignment_ref': 'saved'},
-             'state': {'status': 'completed'}, 'assignment_id': 91, 'assessment_name': 'Synthetic assignment',
+             'state': {'status': 'answers_confirmed'}, 'onboarding': {'status': 'completed'},
+             'assignment_id': 91, 'assessment_name': 'Synthetic assignment',
              'mandatory_complete': True, 'late_readiness': {'status': 'ready_to_prepare', 'personalized_profile_id': 4}}
     admission = {'can_start': True, 'plan_revision_id': db.revision_id, 'reasons': []}
     returning = {'allowed_action': 'connected'}
@@ -229,11 +230,27 @@ def test_released_unmanaged_entry_keeps_its_existing_action(cabinet, monkeypatch
     model['assignment_id'] = None
     monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *_a, **_kw: False)
     card = dashboard(cabinet)['current_assessments'][0]
-    assert card['journey_state'] == 'ready'
+    assert card['journey_state'] == 'acquaintance'  # No saved plan: never claim start readiness.
     assert card['action'] == 'start'
     assert card['planned_total'] is None
     monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *_a, **_kw: True)
     assert dashboard(cabinet)['current_assessments'][0]['action'] == 'open_readiness'
+
+
+def test_unmanaged_entry_keeps_existing_m4_gate_when_profile_is_not_ready(cabinet, monkeypatch):
+    _client, db, model, *_ = cabinet
+    db.cycles = []
+    model['assignment_id'] = None
+    monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *_a, **_kw: False)
+    monkeypatch.setattr(routes.participant_profile, 'readiness', lambda *_a, **_kw:
+        {'status': 'not_ready', 'id': None, 'message': 'Synthetic profile needs confirmation'})
+    card = dashboard(cabinet)['current_assessments'][0]
+    assert card['journey_state'] == 'acquaintance'
+    assert card['action'] == 'start'  # Existing guarded entry, not a server-start command.
+    assert card['button_label'] == 'Продолжить знакомство'
+    model['mandatory_complete'] = False
+    assert dashboard(cabinet)['current_assessments'][0]['action'] == 'acquaintance'
+
 
 @pytest.mark.parametrize('scene', ['active', 'preparing', 'prepared_preparing', 'ready', 'return', 'result'])
 def test_cabinet_copy_matches_exact_v10_without_changing_actions(cabinet, scene):

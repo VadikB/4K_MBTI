@@ -890,7 +890,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(page.locator('#interview-messages .own')).toContainText([ownAnswer]);
     await page.locator('#interview-profile-button').click();
     await expect(page.locator('#dashboard-panel')).toBeVisible();
-    await page.locator('.user-chip[aria-label="Меню пользователя"]').focus();
+    await page.locator('#dashboard-panel [data-header-user-menu]').focus();
     await page.locator('#dashboard-onboarding-button').click();
     await expect(page.locator('#onboarding-panel')).toBeVisible();
     await expect(page.locator('#onboarding-title')).toHaveText('Знакомство завершено');

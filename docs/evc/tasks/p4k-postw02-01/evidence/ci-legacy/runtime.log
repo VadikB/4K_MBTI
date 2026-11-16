@@ -1,0 +1,70 @@
+
+Running 2 tests using 1 worker
+
+  ✘  1 tests/browser/runtime.spec.mjs:1273:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (1.1s)
+  ✘  2 tests/browser/runtime.spec.mjs:1572:1 › P10.5 ready profile with no admitted catalog (748ms)
+
+
+  1) tests/browser/runtime.spec.mjs:1273:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries
+
+    Error: destroy: Traceback (most recent call last):
+      File "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/scripts/test_stand.py", line 202, in <module>
+        main()
+      File "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/scripts/test_stand.py", line 167, in main
+        with owned(state) as c:
+             ^^^^^^^^^^^^
+      File "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/scripts/test_stand.py", line 82, in owned
+        c.close();raise ValueError('STAND_NOT_OWNED')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ValueError: STAND_NOT_OWNED
+
+
+      14 |   const dir=path.join(root,'.test-stand/browser',randomUUID());fs.mkdirSync(dir,{recursive:true});
+      15 |   const statePath=path.join(dir,'state.json'),port=18830;
+    > 16 |   const cli=(action)=>{const r=spawnSync(python,['scripts/test_stand.py',action,'--state',statePath,'--port',String(port),'--gateway','1'],{encoding:'utf8'});fs.appendFileSync(path.join(dir,'prepare.log'),r.stdout+r.stderr);if(r.status!==0)throw new Error(action+': '+r.stderr);};
+         |                                                                                                                                                                                                                                                       ^
+      17 |   let server;
+      18 |   cli('create');
+      19 |   try{
+        at cli (/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/tests/browser/runtime.spec.mjs:16:247)
+        at Object.stand (/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/tests/browser/runtime.spec.mjs:67:5)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-Recovery-lost-resp-14c90-o-tabs-and-owner-boundaries/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-Recovery-lost-resp-14c90-o-tabs-and-owner-boundaries/error-context.md
+
+  2) tests/browser/runtime.spec.mjs:1572:1 › P10.5 ready profile with no admitted catalog ──────────
+
+    Error: destroy: Traceback (most recent call last):
+      File "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/scripts/test_stand.py", line 202, in <module>
+        main()
+      File "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/scripts/test_stand.py", line 167, in main
+        with owned(state) as c:
+             ^^^^^^^^^^^^
+      File "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/scripts/test_stand.py", line 82, in owned
+        c.close();raise ValueError('STAND_NOT_OWNED')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ValueError: STAND_NOT_OWNED
+
+
+      14 |   const dir=path.join(root,'.test-stand/browser',randomUUID());fs.mkdirSync(dir,{recursive:true});
+      15 |   const statePath=path.join(dir,'state.json'),port=18830;
+    > 16 |   const cli=(action)=>{const r=spawnSync(python,['scripts/test_stand.py',action,'--state',statePath,'--port',String(port),'--gateway','1'],{encoding:'utf8'});fs.appendFileSync(path.join(dir,'prepare.log'),r.stdout+r.stderr);if(r.status!==0)throw new Error(action+': '+r.stderr);};
+         |                                                                                                                                                                                                                                                       ^
+      17 |   let server;
+      18 |   cli('create');
+      19 |   try{
+        at cli (/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/tests/browser/runtime.spec.mjs:16:247)
+        at Object.stand (/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/tests/browser/runtime.spec.mjs:67:5)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-P10-5-ready-profile-with-no-admitted-catalog/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-P10-5-ready-profile-with-no-admitted-catalog/error-context.md
+
+  2 failed
+    tests/browser/runtime.spec.mjs:1273:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries
+    tests/browser/runtime.spec.mjs:1572:1 › P10.5 ready profile with no admitted catalog ───────────

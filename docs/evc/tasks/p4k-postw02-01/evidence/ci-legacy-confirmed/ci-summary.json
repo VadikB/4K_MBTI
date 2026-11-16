@@ -1,0 +1,35 @@
+{
+  "first_head": "65fcfba225aaa119c9167278a5caad74e5baa8f1",
+  "first_ci": {
+    "CI": 43891665056,
+    "Full verification": 43891665106,
+    "frontend": "PASS",
+    "pytest": "PASS",
+    "integration": "PASS",
+    "runtime": "FAIL: legacy entry checked answers status instead of saved onboarding",
+    "fast": {
+      "passed": 291,
+      "skipped": 40,
+      "failed": 2,
+      "failures": [
+        "LK01 expectation still included removed deadline/copy",
+        "PATH29 selector still expected name-free aria-label"
+      ]
+    }
+  },
+  "correction": {
+    "backend": "Keep released unmanaged M4 entry after mandatory confirmation and saved onboarding, exclude managed assignment and questionnaire binding; without a saved plan do not claim prepared readiness",
+    "LK01": "Assert v10 current-position metadata, actual closed_at history date and Open report copy",
+    "PATH29": "Use scoped shared-header user-menu selector; dynamic accessible name remains"
+  },
+  "local_checks": {
+    "targeted_backend": 25,
+    "runtime_recovery_and_no_catalog": 2,
+    "LK01_browser": 1,
+    "cleanup": "PASS",
+    "first_local_repro": "FAIL: SQL_ASCII marker type; cluster closed and removed, guard unchanged",
+    "second_repro": "Recovery PASS; no-catalog revealed false-ready legacy copy, corrected",
+    "final_repro": "2 PASS"
+  },
+  "mandatory_ci_new_head": "pending automatic rerun; no checks disabled"
+}

@@ -2853,6 +2853,7 @@ test('LK01 renders selected Cycle cards without catalogue or horizontal overflow
       calendar_deadline: '2026-10-19T15:30:00Z' }],
     completed_assessments: [{ cycle_id: 'cycle-ready', report_id: 'report-ready', title: 'Оценка 4К',
       organization_name: 'Организация', status: 'report_ready', status_label: 'Результат готов',
+      closed_at: '2026-10-17T12:00:00Z',
       description: 'Результат оценки доступен для просмотра.', action: 'open_report',
       button_label: 'Посмотреть результат', completed_cases: 4, total_cases: 4 }],
   };
@@ -2870,9 +2871,11 @@ test('LK01 renders selected Cycle cards without catalogue or horizontal overflow
   await page.goto(base);
   await expect(page.getByRole('heading', { name: 'Мои оценки' })).toBeVisible();
   await expect(page.getByText('1 ситуация из 4')).toBeVisible();
-  await expect(page.getByText('Завершить до 19 октября, 18:30 (МСК)')).toBeVisible();
+  await expect(page.locator('#current-assessments dl')).toContainText('Текущая ситуация');
+  await expect(page.locator('#current-assessments')).not.toContainText('19 октября');
+  await expect(page.locator('#completed-assessments')).toContainText('17 октября 2026');
   await expect(page.getByRole('button', { name: 'Продолжить' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Посмотреть результат' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Открыть отчёт' })).toBeVisible();
   await expect(page.getByText('Скоро')).toHaveCount(0);
   const desktopCard = await page.locator('.participant-assessment-card').first().boundingBox();
   const desktopButton = await page.getByRole('button', { name: 'Продолжить' }).boundingBox();

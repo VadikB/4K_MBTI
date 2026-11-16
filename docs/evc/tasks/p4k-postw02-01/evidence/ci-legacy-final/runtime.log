@@ -1,0 +1,49 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 tests/browser/runtime.spec.mjs:1273:1 › Recovery: lost response, unaccepted request, two tabs and owner boundaries (13.0s)
+  ✘  2 tests/browser/runtime.spec.mjs:1572:1 › P10.5 ready profile with no admitted catalog (13.2s)
+
+
+  1) tests/browser/runtime.spec.mjs:1572:1 › P10.5 ready profile with no admitted catalog ──────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#current-assessments')
+    Expected substring: "Знакомство с оценкой"
+    Received string:    "Синтетическая организация E10.2Готова к началуОценка 4КОткройте инструкцию перед началом оценки.ОрганизацияСинтетическая организация E10.2Приступить к оценке"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#current-assessments') with timeout 5000ms
+      - waiting for locator('#current-assessments')
+        14 × locator resolved to <div aria-live="polite" id="current-assessments" class="participant-assessment-list">…</div>
+           - unexpected value "Синтетическая организация E10.2Готова к началуОценка 4КОткройте инструкцию перед началом оценки.ОрганизацияСинтетическая организация E10.2Приступить к оценке"
+
+
+      1578 |  await page.reload();
+      1579 |  await expect(page.locator('#dashboard-panel')).toBeVisible();
+    > 1580 |  await expect(page.locator('#current-assessments')).toContainText('Знакомство с оценкой');
+           |                                                     ^
+      1581 |  await expect(page.locator('#assessment-action-button')).toHaveText('Продолжить знакомство');
+      1582 |  expect(profileReceipts(stand)).toEqual(ready);
+      1583 |  await expect(page.getByRole('button',{name:'Подтвердить профиль',exact:true})).toBeHidden();
+        at /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-postw02-01/tests/browser/runtime.spec.mjs:1580:53
+
+    attachment #1: browser-version (text/plain) ────────────────────────────────────────────────────
+    153.0.8010.12
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-P10-5-ready-profile-with-no-admitted-catalog/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #6: server-log (text/plain) ─────────────────────────────────────────────────────────
+    .test-stand/browser-output/runtime-P10-5-ready-profile-with-no-admitted-catalog/attachments/server-log-2711d31e962f8b837020fb8d160d3dd585ffb98e.log
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/runtime-P10-5-ready-profile-with-no-admitted-catalog/error-context.md
+
+  1 failed
+    tests/browser/runtime.spec.mjs:1572:1 › P10.5 ready profile with no admitted catalog ───────────
+  1 passed (27.1s)

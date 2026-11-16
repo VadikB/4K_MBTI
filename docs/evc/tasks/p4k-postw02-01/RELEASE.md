@@ -88,3 +88,42 @@ PR/merge следует после просмотра результата. Пр
 допуск указан в начале документа. Head/PR/CI/merge/deploy после публикации фиксируются
 во внешнем receipt DELIVERY_STATUS.json и GitHub, без status-only commits, которые
 меняли бы уже проверенный SHA. Действия публикации только после этого commit.
+
+## CI регрессия legacy entry и адресная диагностика
+
+Первый CI head65fcfba: frontend/pytest/integration PASS; runtime shards FAIL на
+одной входной legacy-ветке (completeAcquaintance ждёт изменения, UI остаётся
+на пассивной готовности без operation). Диагностика по job133384210017 и остальным
+завершённым shard-логам. Код ошибочно проверял answers state.status как completed,
+хотя реальное значение answers_confirmed; окончание знакомства хранится отдельно
+в onboarding.status. Исправление сохраняет старый unmanaged M4 gate и проверяет
+mandatory_complete + сохранённый onboarding, не расширяет managed/read-only flow.
+Fixture HTTP приведён к реальному answers_confirmed; added regression profile
+not-ready проверяет прежнюю M4 entry, не подменяет готовность успешной.
+
+Адресный локальный repro: два существующих runtime-теста Recovery и P10.5noCatalog
+на новом disposable owned PostgreSQL16 из /opt/homebrew/opt/postgresql@16/bin,
+tempdir postw02-pg-*; свободный localhost ephemeral PG port, app18830 только если
+свободен. STAND_ADMIN_URL только этого кластера, stand сам создаёт marker-owned
+product4k_pytest_* БД и destroy. Реальных/developer/общих TEST баз нет.
+Gateway1 синтетический, real LLM/mail0, .env отключён, worker1/retries0, whole240s/
+idle90s, owned-process teardown плюс pg_ctl stop только собственного data-dir
+в finally, проверка закрытия портов и удаление только созданного tempdir.
+Это локальная диагностическая проверка после фактического CI FAIL; remote
+обязательный набор нового head будет повторён. Версия2.1.13 не повышается заново.
+
+Итог адресной диагностики: HTTP/outcome25PASS; runtime Recovery и noCatalog2PASS,
+LK01 browser1PASS. Cleanup собственных PostgreSQL/app/registry PASS. Первый локальный
+cluster SQL_ASCII остановлен ownership guard (bytes/string mismatch), полностью
+удалён; UTF8 cluster решает setup, guard не изменялся. Второй repro выявил ложное
+ready в legacy без плана; прежняя acquaintance/M4 entry copy восстановлена.
+Managed ready/read-only flow не менялся.
+
+Fast CI65fcfba:291PASS/40skip/2FAIL. LK01 старое ожидание deadline/кнопки истории
+заменено утверждённой metadata v10 и фактической датой closed_at (проверка усилена);
+PATH29 timeout — селектор точной aria-label без имени после добавления доступного
+имени пользователя. Исправлен только scoped selector shared header, шаги/таймауты/
+assertions PATH29 не удалялись. Общий PATH29 локально не повторялся; обязательный
+remote fast/runtime/integration нового head запускается обычным push.
+Версия2.1.13 и frontend dist не менялись после исправления backend branch.
+ci-legacy-confirmed/ci-summary.json и identity.json сохраняют точный scope/evidence.

@@ -1,5 +1,17 @@
 # STATE — P4K-POSTW02-01
 
+Текущий PR228, ветка прежняя, выпуск2.1.13. Первый head65fcfba: GitHub frontend/
+pytest/integration PASS; browser FAIL на legacy entry и двух старых expectations.
+Исправлены проверка saved onboarding vs answers_confirmed, сохранён прежний
+unmanaged M4 gate без ложной prepared-ready; managed/read-only исключён из legacy.
+HTTP/outcome25PASS, existing runtime Recovery/noCatalog2PASS, LK01 browser1PASS,
+owned cleanup PASS. LK01 ожидания согласованы с v10; PATH29 selector использует
+общий header вместо точной строки aria-label без имени, проверки/timeout сохранены.
+Следующий шаг — исправляющий commit/push в тот же PR, обязательный CI нового SHA,
+после всех PASS squash merge и штатный TEST. Версия не повышается повторно.
+Подробности RELEASE.md и evidence/ci-legacy-confirmed; внешние итоги — receipt.
+Ниже история, не текущий статус.
+
 Текущее: прямой ответ владельца «давай PR и сливай в main» разрешает один PR
 из прежней ветки, PATCH2.1.13, merge после обязательного CI и автоматический TEST
 путь. Прежние запреты сняты только в этой области. Pilot/paidPATH/02–05 вне задачи.
