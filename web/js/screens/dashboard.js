@@ -79,6 +79,12 @@ const performCardAction = async (card, event) => {
     await openProcessingScreen();
     return;
   }
+  if (card.action === 'open_legacy_acquaintance') {
+    // Explicit server-authorized historical route, excluded for managed assignments.
+    const { openOnboardingScreen } = await import('../screen-loaders.js');
+    await openOnboardingScreen();
+    return;
+  }
   if (['acquaintance', 'open_readiness'].includes(card.action)) {
     const { openOnboardingScreen } = await import('../screen-loaders.js');
     await openOnboardingScreen({ readOnlyEntry: true, expectedCycleId: card.cycle_id || null });

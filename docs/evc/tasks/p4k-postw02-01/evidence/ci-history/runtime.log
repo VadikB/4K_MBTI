@@ -1,0 +1,7 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 tests/browser/runtime.spec.mjs:1392:1 › REV-02 fresh M4 confirmation, canonical context and saved history after login (36.2s)
+  ✓  2 tests/browser/runtime.spec.mjs:1595:1 › G10.7 fresh participant, immutable M4, logout history and independent Cycle (33.1s)
+
+  2 passed (1.2m)

@@ -810,7 +810,9 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                 # Answers are answers_confirmed, not completed. The legacy entry
                 # follows saved onboarding and the existing M4 gate; managed W02 never uses it.
                 status, label, description, action, button = ('acquaintance', 'Знакомство с оценкой',
-                    'Перед началом познакомьтесь с форматом оценки.', 'start', 'Продолжить знакомство')
+                    'Перед началом познакомьтесь с форматом оценки.',
+                    'open_legacy_acquaintance' if readiness['status'] == 'ready' else 'start',
+                    'Продолжить знакомство')
             current_assessments.append(ParticipantAssessmentCard(
                 title=acquaintance_state.get('assessment_name') or 'Оценка 4К',
                 organization_name=early.get('organization_name'), status=status, journey_state=status,

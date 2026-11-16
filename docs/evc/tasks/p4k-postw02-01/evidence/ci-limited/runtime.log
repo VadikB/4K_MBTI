@@ -1,0 +1,6 @@
+
+Running 1 test using 1 worker
+
+  ✓  1 tests/browser/runtime.spec.mjs:204:1 › Unapproved LIMITED is blocked by the real server and UI without a component substitution (9.8s)
+
+  1 passed (10.6s)

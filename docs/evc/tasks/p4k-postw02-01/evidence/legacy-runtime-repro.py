@@ -5,7 +5,7 @@ sys.path.insert(0,str(Path.cwd()))
 from scripts.owned_process import run_bounded
 root=Path.cwd();bin_dir=Path('/opt/homebrew/opt/postgresql@16/bin')
 mode=sys.argv[1] if len(sys.argv)>1 else 'ci-legacy'
-assert mode in {'ci-legacy','ci-legacy-final','ci-legacy-confirmed'}
+assert mode in {'ci-legacy','ci-legacy-final','ci-legacy-confirmed','ci-history','ci-limited','ci-legacy-complete'}
 folder=root/'docs/evc/tasks/p4k-postw02-01/evidence'/mode;folder.mkdir(exist_ok=True)
 with socket.socket() as sock:
  sock.settimeout(1);assert sock.connect_ex(('127.0.0.1',18830))==errno.ECONNREFUSED,'APP_PORT_NOT_FREE'
@@ -28,7 +28,8 @@ try:
   subprocess.run([str(bin_dir/'pg_ctl'),'-D',str(data),'-l',str(cluster/'postgres.log'),'-o',f'-h 127.0.0.1 -p {port} -k {cluster}','-w','start'],check=True,env=env,stdout=log,stderr=log,timeout=30);started=True
  watcher=threading.Thread(target=watch_output);watcher.start()
  with log_path.open('w') as log:
-  result=run_bounded(['node_modules/.bin/playwright','test','tests/browser/runtime.spec.mjs','--grep','Recovery: lost response|P10.5 ready profile with no admitted catalog','--workers=1'],registry='.test-stand/postw02-legacy-repro-owner.json',deadline_seconds=240,no_progress_seconds=90,progress_file=progress,env=env,stdout=log,stderr=log)
+  selection='Unapproved LIMITED' if mode=='ci-limited' else 'REV-02 fresh M4 confirmation|G10.7 fresh participant' if mode=='ci-history' else 'Recovery: lost response|P10.5 ready profile with no admitted catalog'
+  result=run_bounded(['node_modules/.bin/playwright','test','tests/browser/runtime.spec.mjs','--grep',selection,'--workers=1'],registry='.test-stand/postw02-legacy-repro-owner.json',deadline_seconds=360 if mode=='ci-history' else 240,no_progress_seconds=160 if mode=='ci-history' else 90,progress_file=progress,env=env,stdout=log,stderr=log)
 finally:
  stop.set()
  if watcher:watcher.join()

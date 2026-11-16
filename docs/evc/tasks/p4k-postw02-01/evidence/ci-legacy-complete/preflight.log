@@ -1,0 +1,3 @@
+
+> ready:prepare
+> python3.12 scripts/prepare_ready_release.py --candidate 2.1.13

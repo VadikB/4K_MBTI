@@ -127,3 +127,31 @@ assertions PATH29 не удалялись. Общий PATH29 локально н
 remote fast/runtime/integration нового head запускается обычным push.
 Версия2.1.13 и frontend dist не менялись после исправления backend branch.
 ci-legacy-confirmed/ci-summary.json и identity.json сохраняют точный scope/evidence.
+
+## История завершённых Cycle: адресная синхронизация runtime expectations
+
+Второй CI/a189284: runtime2 PASS, runtime4 дошёл до завершённых Report и
+обнаружил старое ожидание: все completed cards только в нижнем списке. По принятой
+композиции задания01 последний завершённый Cycle занимает основную карточку,
+из нижней истории исключается. Продукт не меняется; existing helper REV02/G10.7
+считает report_ready карточки во всём кабинете, отдельно проверяет непустые и
+уникальные Cycle IDs, открывает точный выбранный Cycle. Дубликаты не допускаются,
+assertions количества/owner Report сохранены.
+Адресный repro двух именно упавших existing runtime tests на новом disposable
+UTF8 PG16 по прежнему ownership profile, worker1/retries0, whole360/idle160; каждый
+test ограничен existing150s. DB/app/cluster cleanup в finally. Никакого общего
+paid PATH/LLM, новых данных или изменения UI-композиции.
+
+Второй runtime1 дошёл до отрицательного LIMITED и выявил, что старому unmanaged
+клиенту нельзя заменять прямой переход знакомства общей M4/prechat navigation:
+он должен увидеть реальное M7 start_readiness=false до кнопки старта. Сервер
+теперь явно выдаёт technical action open_legacy_acquaintance только для уже
+подтверждённого unmanaged/no-questionnaire/no-assignment клиента с готовым M4.
+Frontend обрабатывает именно этот action прежним onboarding-путём. Для неготового
+M4 сохраняется его прежняя confirmation route; managed acquaintance/readiness
+по-прежнему readOnlyEntry=true. Общего fallback/самостоятельного выбора legacy
+по имени/пустому Cycle нет; direct start/admission и policy не меняются. Action
+строковый/аддитивный, новые схемы и migrations не нужны.
+Адресно повторяется существующий отрицательный Unapproved LIMITED на том же
+disposable owned PG16 profile (ci-limited, whole240/idle90), реальные UI denial +
+HTTP409 + отсутствие deadline/start. Результат сохраняется без изменения проверок.

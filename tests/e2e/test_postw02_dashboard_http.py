@@ -231,7 +231,7 @@ def test_released_unmanaged_entry_keeps_its_existing_action(cabinet, monkeypatch
     monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *_a, **_kw: False)
     card = dashboard(cabinet)['current_assessments'][0]
     assert card['journey_state'] == 'acquaintance'  # No saved plan: never claim start readiness.
-    assert card['action'] == 'start'
+    assert card['action'] == 'open_legacy_acquaintance'
     assert card['planned_total'] is None
     monkeypatch.setattr(routes.assessment_assignment_sources, 'has_managed_assignment', lambda *_a, **_kw: True)
     assert dashboard(cabinet)['current_assessments'][0]['action'] == 'open_readiness'
