@@ -74,6 +74,7 @@ test('REPORT-05 modes and selection use one saved skill and adjacent detail', as
   await expect(page.locator('.m8-score-bars')).toContainText('1.75');
   await page.locator('.m8-score-bar button[data-m8-skill-id="S2"]').click();
   await expect(page.locator('#m8-skill-detail')).toContainText('Точное выражение мысли');
+  await expect(page.locator('#m8-report-detail')).toContainText('общий уровень навыка не присваивается');
   await expect(page.locator('#m8-skill-detail')).toContainText('Оценена часть обязательного состава.');
   await expect(page.locator('#m8-skill-detail')).toBeFocused();
   const chart = await page.locator('#m8-report-chart').boundingBox();

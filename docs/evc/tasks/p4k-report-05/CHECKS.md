@@ -12,6 +12,6 @@
 | Регрессия REPORT-04 | PASS локально | `report04-personal.spec.mjs`: 3 PASS до финального изменения только UI выбранного состояния; REPORT-05 browser fixtures повторены после PATCH. |
 | Frontend / release | PASS локально | `node --test tests/frontend/*.test.mjs`: 354 PASS после PATCH; `npm run lint:js`: PASS; `.venv/bin/python -m pytest -q tests/unit/test_release_version.py`: 11 PASS. `git fetch origin main` и штатный `npm run ready:prepare -- --candidate 2.1.18`: PASS, без изменения файлов; удалённый `main` = `4160a589`. |
 | `git diff --check` | PASS локально | `git diff main...HEAD --check`; commit hook проверил staged frontend/dist. |
-| CI/PR/TEST/Prod | PR pending | Ветка опубликована; обязательный CI и review ожидают PR. Деплой не выполнялся. |
+| CI/PR/TEST/Prod | PARTIAL | Ready PR #233 на `ae03a0c6`: `CI / frontend` и `CI / pytest` PASS. `Full verification / browser (runtime-4-of-4)` FAIL: три сценария вызывали общий helper с прежним селектором `#m8-report-skills`, тогда как текст «общий уровень навыка не присваивается» теперь находится в связанной панели `#m8-report-detail`. Исправлен адресный selector в `tests/browser/runtime.spec.mjs`, добавлена регрессия панели в REPORT-05 fixture: 1 PASS локально. Остальной полный CI точного исправленного head ожидается; review и deploy не выполнялись. |
 
 Откат: revert commit REPORT-05 и обратный штатный PATCH-кандидат при публикации; SQL/миграций/новых артефактов нет. Перед merge повторно проверить свежий `origin/main` и обязательный CI точного head.
