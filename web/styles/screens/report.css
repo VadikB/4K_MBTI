@@ -1653,7 +1653,7 @@ body.report-info-modal-open {
 
 .m8-radar-label {
     fill: var(--text-main);
-    font-size: 15px;
+    font-size: 15.2px;
     font-weight: var(--fw-medium);
     line-height: 1.2;
     pointer-events: auto;

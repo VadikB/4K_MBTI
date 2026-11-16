@@ -2949,7 +2949,8 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('.m8-radar-label').filter({ hasText: 'Понимание' })).toContainText('собеседника');
   await expect(page.locator('.m8-radar-point')).toHaveCount(2);
   await expect(page.locator('.m8-radar-point.is-partial')).toHaveCount(1);
-  await expect(page.locator('#m8-report-skills')).toContainText('По части проявлений');
+  await expect(page.locator('#m8-report-skills .m8-skill-row')).toHaveCount(skills.length);
+  await expect(page.locator('#m8-report-skills')).toContainText('Результат по части навыка');
   await expect(page.locator('#m8-report-chart-note')).toContainText('Пропуски оставлены открытыми');
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
   await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
@@ -3163,7 +3164,7 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
       await page.locator('#m8-report-tab-select').selectOption(`K${groupIndex + 1}`);
       if (groupIndex === 3) {
         await expect(page.locator('.m8-chart-empty')).toBeVisible();
-        await expect(page.locator('#m8-report-skills .report-skill-item')).toHaveCount(groups[groupIndex][1].length);
+        await expect(page.locator('#m8-report-skills .m8-skill-row')).toHaveCount(groups[groupIndex][1].length);
         continue;
       }
       await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[groupIndex][1].length);
