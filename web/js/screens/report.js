@@ -36,7 +36,7 @@ import { getLevelPercent } from '../utils/competency.js';
 import { readApiResponse } from '../api.js';
 import { hideAllPanels, syncUrlState, navigateToScreen } from '../router.js';
 import { formatAdminChartLabel } from './admin/charts.js';
-import { getReportScoreValue, splitRadarRuns, summarizeReportScores } from '../utils/report-radar.js';
+import { projectReportRadar, radarPoint, summarizeReportScores } from '../utils/report-radar.js';
 import { openHomePage } from './ai-welcome.js';
 import { openReports } from './reports.js';
 
@@ -1394,6 +1394,7 @@ let m8ChartMode = 'fill';
 let m8SelectedCompetencyId = null;
 let m8SelectedSkillId = null;
 let m8ChartResizeObserver = null;
+let m8ChartResizeHandler = null;
 let m8ChartRenderContext = null;
 let m8ObservedChartWidth = 0;
 
@@ -1456,35 +1457,34 @@ const scheduleM8RadarLabelFit = (node) => {
   document.fonts?.ready?.then(() => fitM8RadarLabels(node));
 };
 
-const buildM8Bars = (skills) => `<div class="m8-score-bars" role="list">${skills.map((skill) => {
-  const value = getReportScoreValue(skill);
-  const status = skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки';
-  return `<article class="m8-score-bar" role="listitem"><button type="button" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}">${escapeHtml(skill.skill_name || 'Навык')}</button>` +
+const buildM8Bars = (skills) => `<div class="m8-score-bars" role="list">${projectReportRadar(skills).axes.map((axis, index) => {
+  const skill = skills[index];
+  const value = axis.value;
+  const status = axis.status || outcomeLabels[skill.outcome] || 'Результат требует проверки';
+  return `<article class="m8-score-bar" role="listitem"><button type="button" class="${String(skill.skill_id) === String(m8SelectedSkillId) ? 'is-selected' : ''}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-pressed="${String(skill.skill_id) === String(m8SelectedSkillId)}">${escapeHtml(skill.skill_name || 'Навык')}</button>` +
     (value == null
       ? `<span class="m8-score-missing">${escapeHtml(status)}</span>`
-      : `<div class="m8-score-track" role="img" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}: ${value} из 3. ${status}`)}"><span class="${skill.outcome === 'partial_score' ? 'is-partial' : ''}" style="--m8-score:${value / 3 * 100}%"></span></div><strong>${escapeHtml(String(value))}</strong>`) +
+      : `<div class="m8-score-track" role="img" aria-label="${escapeHtml(`${axis.name}: ${axis.displayValue} из 3. ${status}`)}"><span class="${axis.partial ? 'is-partial' : ''}" style="--m8-score:${value / 3 * 100}%"></span></div><strong>${escapeHtml(axis.displayValue)}</strong>`) +
     `</article>`;
 }).join('')}</div>`;
 
 const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) => {
-  const { values } = summarizeReportScores(skills);
-  const width = compact ? chartWidth : 960;
-  const height = compact ? Math.max(260, width) : 560;
+  const { axes, runs } = projectReportRadar(skills);
+  const values = axes.map((axis) => axis.value);
+  const width = chartWidth;
+  const height = compact ? Math.max(360, width * 1.16) : 560;
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = compact ? Math.min(width * 0.27, height * 0.29, 108) : 170;
+  const radius = compact ? Math.min(width * 0.30, height * 0.29, 132) : Math.min(170, width * 0.23);
   const count = skills.length;
   const angle = (index) => -Math.PI / 2 + index * Math.PI * 2 / count;
-  const point = (index, value) => ({
-    x: centerX + Math.cos(angle(index)) * radius * value / 3,
-    y: centerY + Math.sin(angle(index)) * radius * value / 3,
-  });
+  const point = (index, value) => radarPoint(index, value, count, centerX, centerY, radius);
   const polygon = (level) => skills.map((_, index) => {
     const value = point(index, level);
     return `${value.x.toFixed(1)},${value.y.toFixed(1)}`;
   }).join(' ');
-  const runs = splitRadarRuns(values);
-  const description = skills.map((skill, index) => `${skill.skill_name || 'Навык'}: ${values[index] == null ? 'без числового показателя' : `${values[index]} из 3`}`).join('. ');
+  const description = axes.map((axis) => `${axis.name}: ${axis.value == null ? 'без числового показателя' : `${axis.displayValue} из 3${axis.partial ? ', частичный показатель' : ''}`}`).join('. ');
+  const selectedMarkup = (skill) => String(skill.skill_id) === String(m8SelectedSkillId) ? ' class="is-selected" aria-current="true"' : '';
   let svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="m8-radar-title m8-radar-description"><title id="m8-radar-title">Показатели навыков выбранной компетенции</title><desc id="m8-radar-description">Шкала от 0 до 3. ${escapeHtml(description)}. Полный текстовый список расположен после графика.</desc>`;
   for (let level = 1; level <= 3; level += 1) {
     svg += `<polygon points="${polygon(level)}" class="m8-radar-grid"/><text x="${centerX + 8}" y="${centerY - radius * level / 3 + 4}" class="m8-radar-scale">${level}</text>`;
@@ -1495,7 +1495,7 @@ const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) 
     if (compact) {
       const marker = point(index, 3.85);
       svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/>` +
-        `<a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${index + 1}. ${skill.skill_name || 'Навык'}. Открыть подробности`)}">` +
+        `<a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${index + 1}. ${skill.skill_name || 'Навык'}. Открыть подробности`)}">` +
         `<circle cx="${marker.x.toFixed(1)}" cy="${marker.y.toFixed(1)}" r="15" class="m8-radar-marker-bg"/>` +
         `<text x="${marker.x.toFixed(1)}" y="${marker.y.toFixed(1)}" class="m8-radar-marker" text-anchor="middle" dominant-baseline="central">${index + 1}</text></a>`;
       return;
@@ -1508,7 +1508,7 @@ const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) 
     const labelMarkup = lines.map((line, lineIndex) =>
       `<tspan x="${labelX}" y="${startY + lineIndex * 16}">${escapeHtml(line)}</tspan>`
     ).join('');
-    svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/><a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}. Открыть подробности`)}"><polyline class="m8-radar-leader"/><text x="${labelX}" y="${startY}" text-anchor="${side === 'left' ? 'start' : 'end'}" class="m8-radar-label" data-m8-side="${side}" data-m8-anchor-y="${label.y.toFixed(1)}" data-m8-axis-x="${end.x.toFixed(1)}" data-m8-axis-y="${end.y.toFixed(1)}">${labelMarkup}</text></a>`;
+    svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/><a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}. Открыть подробности`)}"><polyline class="m8-radar-leader"/><text x="${labelX}" y="${startY}" text-anchor="${side === 'left' ? 'start' : 'end'}" class="m8-radar-label" data-m8-side="${side}" data-m8-anchor-y="${label.y.toFixed(1)}" data-m8-axis-x="${end.x.toFixed(1)}" data-m8-axis-y="${end.y.toFixed(1)}">${labelMarkup}</text></a>`;
   });
   runs.forEach((run) => {
     const points = run.indexes.map((index) => point(index, values[index]));
@@ -1524,42 +1524,54 @@ const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) 
   skills.forEach((skill, index) => {
     if (values[index] == null) return;
     const value = point(index, values[index]);
-    svg += `<a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}: ${values[index]} из 3. Открыть подробности`)}"><circle cx="${value.x}" cy="${value.y}" r="16" class="m8-radar-hit"/><circle cx="${value.x}" cy="${value.y}" r="6" class="m8-radar-point${skill.outcome === 'partial_score' ? ' is-partial' : ''}"/></a>`;
+    svg += `<a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}: ${axes[index].displayValue} из 3${axes[index].partial ? ', частичный показатель' : ''}. Открыть подробности`)}"><circle cx="${value.x}" cy="${value.y}" r="16" class="m8-radar-hit"/>${String(skill.skill_id) === String(m8SelectedSkillId) ? `<circle cx="${value.x}" cy="${value.y}" r="11" class="m8-radar-selection"/>` : ''}<circle cx="${value.x}" cy="${value.y}" r="6" class="m8-radar-point${skill.outcome === 'partial_score' ? ' is-partial' : ''}"/></a>`;
   });
   const key = compact ? `<ol class="m8-radar-key" aria-label="Навыки на схеме">${skills.map((skill, index) =>
-    `<li><a href="#m8-skill-${escapeHtml(String(skill.skill_id))}" data-m8-skill-id="${escapeHtml(String(skill.skill_id))}">` +
+    `<li><a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}">` +
     `<span class="m8-radar-key-marker" aria-hidden="true">${index + 1}</span>` +
     `<span class="m8-radar-key-name">${escapeHtml(skill.skill_name || 'Навык')}</span>` +
-    `<span class="m8-radar-key-value">${values[index] == null ? 'Нет числового показателя' : `${escapeHtml(String(values[index]))} из 3${skill.outcome === 'partial_score' ? ' · частичный результат' : ''}`}</span>` +
+    `<span class="m8-radar-key-value">${values[index] == null ? 'Нет числового показателя' : `${escapeHtml(axes[index].displayValue)} из 3${skill.outcome === 'partial_score' ? ' · частичный результат' : ''}`}</span>` +
     `</a></li>`).join('')}</ol>` : '';
   return `${svg}</svg>${key}`;
 };
 
 const focusM8Skill = (skillId) => {
-  const skill = document.getElementById(`m8-skill-${skillId}`);
-  if (!skill) return;
-  skill.click();
-  const selected = document.getElementById(`m8-skill-${skillId}`);
-  selected?.focus({ preventScroll: true });
-  selected?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  if (!m8ChartRenderContext?.c67?.skills?.some((skill) => String(skill.skill_id) === String(skillId))) return;
+  m8SelectedSkillId = skillId;
+  renderM8Skills(m8ChartRenderContext.c67, m8ChartRenderContext.competencyId);
+  renderM8Chart(m8ChartRenderContext.c67, m8ChartRenderContext.competencyId);
+  document.getElementById('m8-skill-detail')?.focus({ preventScroll: true });
 };
 
 const renderM8Chart = (c67, competencyId) => {
   const node = document.getElementById('m8-report-chart');
   const note = document.getElementById('m8-report-chart-note');
-  const compact = competencyId !== 'all' && window.matchMedia('(max-width: 960px)').matches;
-  m8ChartRenderContext = { c67, competencyId, compact };
   const style = window.getComputedStyle(node);
   const contentWidth = node.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const compact = competencyId !== 'all' && (window.matchMedia('(max-width: 960px)').matches || contentWidth < 800);
+  const mobileOverview = competencyId === 'all' && window.matchMedia('(max-width: 720px)').matches;
+  m8ChartRenderContext = { c67, competencyId, compact, mobileOverview };
+  document.querySelectorAll('#m8-report-chart-modes [data-chart-mode]').forEach((button) => {
+    button.disabled = mobileOverview && button.dataset.chartMode !== 'bars';
+  });
+  if (!m8ChartResizeHandler) {
+    m8ChartResizeHandler = () => {
+      const context = m8ChartRenderContext;
+      if (!context) return;
+      renderM8Chart(context.c67, context.competencyId);
+    };
+    window.addEventListener('resize', m8ChartResizeHandler);
+  }
   m8ObservedChartWidth = Math.round(contentWidth);
   if (!m8ChartResizeObserver && typeof ResizeObserver !== 'undefined') {
     m8ChartResizeObserver = new ResizeObserver(([entry]) => {
       const nextWidth = Math.round(entry.contentRect.width);
       if (!nextWidth || !m8ChartRenderContext) return;
-      const nextCompact = m8ChartRenderContext.competencyId !== 'all' && window.matchMedia('(max-width: 720px)').matches;
-      if (nextWidth === m8ObservedChartWidth && nextCompact === m8ChartRenderContext.compact) return;
+      const nextCompact = m8ChartRenderContext.competencyId !== 'all' && (window.matchMedia('(max-width: 960px)').matches || nextWidth < 800);
+      const nextMobileOverview = m8ChartRenderContext.competencyId === 'all' && window.matchMedia('(max-width: 720px)').matches;
+      if (nextWidth === m8ObservedChartWidth && nextCompact === m8ChartRenderContext.compact && nextMobileOverview === m8ChartRenderContext.mobileOverview) return;
       m8ObservedChartWidth = nextWidth;
-      if (nextCompact || nextCompact !== m8ChartRenderContext.compact) {
+      if (nextCompact || nextCompact !== m8ChartRenderContext.compact || nextMobileOverview !== m8ChartRenderContext.mobileOverview) {
         renderM8Chart(m8ChartRenderContext.c67, m8ChartRenderContext.competencyId);
       } else if (m8ChartMode !== 'bars') {
         scheduleM8RadarLabelFit(node);
@@ -1572,6 +1584,10 @@ const renderM8Chart = (c67, competencyId) => {
   const skills = isOverview
     ? (c67.skills || [])
     : (c67.skills || []).filter((skill) => String(skill.competency_id) === String(competencyId));
+  const mode = mobileOverview ? 'bars' : m8ChartMode;
+  document.querySelectorAll('#m8-report-chart-modes [data-chart-mode]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.chartMode === mode));
+  });
   node.classList.toggle('is-overview', isOverview);
   node.classList.toggle('is-compact', compact);
   const summary = summarizeReportScores(skills);
@@ -1579,11 +1595,13 @@ const renderM8Chart = (c67, competencyId) => {
     node.innerHTML = '<div class="m8-chart-empty"><strong>Числовых показателей нет</strong><p>Доступные наблюдения и причины отсутствия результата приведены в списке ниже.</p></div>';
     note.textContent = 'Отсутствующие значения не заменяются нулями.';
   } else {
-    node.innerHTML = m8ChartMode === 'bars' ? buildM8Bars(skills) : buildM8Radar(skills, m8ChartMode, { compact, chartWidth });
-    if (m8ChartMode !== 'bars' && !compact) scheduleM8RadarLabelFit(node);
-    note.textContent = summary.missingCount
-      ? 'Пропуски оставлены открытыми: линия и заливка через них не продолжаются.'
-      : 'Каждая ось — отдельный навык. Площадь фигуры не является общим баллом.';
+    node.innerHTML = mode === 'bars' ? buildM8Bars(skills) : buildM8Radar(skills, mode, { compact, chartWidth });
+    if (mode !== 'bars' && !compact) scheduleM8RadarLabelFit(node);
+    note.textContent = mobileOverview
+      ? 'Все навыки показаны шкалами. Выберите компетенцию, чтобы увидеть её радиальную схему.'
+      : summary.missingCount
+        ? 'Пропуски оставлены открытыми: линия и заливка через них не продолжаются.'
+        : 'Каждая ось — отдельный навык. Площадь фигуры не является общим баллом.';
   }
   node.querySelectorAll('[data-m8-skill-id]').forEach((item) => item.addEventListener('click', (event) => {
     event.preventDefault();
@@ -1740,11 +1758,20 @@ const renderM8Skills = (c67, competencyId) => {
     || (c67.descriptive?.status === 'failed' ? '<p>Пояснение временно недоступно. Сохранённый показатель и ограничения показаны выше.</p>' : ''));
   const exact = skill?.score?.value == null ? '' : `<details><summary>Как получен результат</summary><p>Точное значение: ${escapeHtml(String(skill.score.value))}; числитель: ${escapeHtml(String(skill.score.numerator))}; знаменатель: ${escapeHtml(String(skill.score.denominator))}.</p></details>`;
   const reasons = (skill?.presentation?.reasons || []).map((reason) => `<p class="m8-local-limitation">${escapeHtml(reason.message || 'Причина ограничения требует уточнения.')}</p>`).join('');
-  const panel = skill ? `<aside id="m8-skill-detail" class="m8-skill-detail" aria-label="Подробности навыка"><p class="section-label">${escapeHtml(skill.competency_name || 'Навык')}</p><h4>${escapeHtml(skill.skill_name || 'Навык без названия')}</h4>${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}${narrative}<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong><p>${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</p><p>${escapeHtml(skill.completeness || (skill.outcome === 'partial_score' ? 'Результат ограничен частью состава навыка' : 'Полнота отдельно не указана'))}</p></div>${reasons}<p>В этой версии оценки общий уровень навыка не присваивается.</p>${basisMarkup}${exact}</aside>` : '<p>В этой группе нет навыков, включённых в сохранённый результат.</p>';
-  skillsNode.innerHTML = `<div class="m8-skill-list">${rows}</div>${panel}`;
+  const panel = skill ? `<aside id="m8-skill-detail" class="m8-skill-detail" aria-label="Подробности навыка" tabindex="-1"><button type="button" class="m8-skill-back">← К списку навыков</button><p class="section-label">${escapeHtml(skill.competency_name || 'Навык')}</p><h4>${escapeHtml(skill.skill_name || 'Навык без названия')}</h4>${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}${narrative}<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong><p>${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</p><p>${escapeHtml(skill.completeness || (skill.outcome === 'partial_score' ? 'Результат ограничен частью состава навыка' : 'Полнота отдельно не указана'))}</p></div>${reasons}<p>В этой версии оценки общий уровень навыка не присваивается.</p>${basisMarkup}${exact}</aside>` : '<p>В этой группе нет навыков, включённых в сохранённый результат.</p>';
+  skillsNode.innerHTML = `<div class="m8-skill-list">${rows}</div>`;
+  const detailNode = document.getElementById('m8-report-detail');
+  if (detailNode) {
+    detailNode.innerHTML = panel;
+    detailNode.querySelector('.m8-skill-back')?.addEventListener('click', () => {
+      document.getElementById(`m8-skill-${m8SelectedSkillId}`)?.focus();
+    });
+  }
   skillsNode.querySelectorAll('[data-skill-id]').forEach((button) => button.addEventListener('click', () => {
     m8SelectedSkillId = button.dataset.skillId;
     renderM8Skills(c67, competencyId);
+    renderM8Chart(c67, competencyId);
+    document.getElementById('m8-skill-detail')?.focus({ preventScroll: true });
   }));
 };
 
@@ -1773,7 +1800,8 @@ const setupM8CompetencyNavigation = (c67) => {
   if (groups[0]) selectGroup(groups[0].competency_id);
   const modes = document.getElementById('m8-report-chart-modes');
   modes?.querySelectorAll('[data-chart-mode]').forEach((button) => {
-    button.setAttribute('aria-pressed', String(button.dataset.chartMode === m8ChartMode));
+    const initialMode = m8ChartRenderContext?.mobileOverview ? 'bars' : m8ChartMode;
+    button.setAttribute('aria-pressed', String(button.dataset.chartMode === initialMode));
     button.onclick = () => {
       m8ChartMode = button.dataset.chartMode;
       modes.querySelectorAll('[data-chart-mode]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));

@@ -2959,9 +2959,10 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await page.getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-score-bars')).toBeVisible();
   await page.setViewportSize({ width: 360, height: 760 });
-  await page.getByRole('button', { name: 'Заливка' }).click();
-  await expect(page.locator('#m8-report-chart')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Заливка' })).toBeDisabled();
+  await expect(page.locator('.m8-score-bar')).toHaveCount(skills.length);
   await page.locator('#m8-report-tab-select').selectOption('K1');
+  await page.getByRole('button', { name: 'Заливка' }).click();
   await expect(page.locator('#m8-report-chart svg')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 900 });
   await expect(page.locator('.m8-radar-key li')).toHaveCount(3);
@@ -3207,7 +3208,7 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
   await page.locator('.m8-radar-key a').first().focus();
   await expect(page.locator('.m8-radar-key a').first()).toBeFocused();
   await page.locator('.m8-radar-key a').first().click();
-  await expect(page.locator('#m8-skill-S1-1')).toBeFocused();
+  await expect(page.locator('#m8-skill-detail')).toBeFocused();
 
   for (const width of [768, 1024, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
