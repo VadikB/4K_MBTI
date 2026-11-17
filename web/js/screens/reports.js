@@ -1,3 +1,4 @@
+import { bindReportPdf } from '../utils/report-download.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import { reportsPanel, profileHistoryList } from '../dom.js';
 import { PROFILE_HISTORY_PAGE_SIZE } from '../config.js';
@@ -44,11 +45,18 @@ export const renderReportsPage = () => {
       open.addEventListener('click', () => openReport({
         returnTarget: 'reports', m8CycleId: item.cycle_id, m8ReportId: item.report_id,
       }));
-      const pdf = document.createElement('a');
+      const pdf = document.createElement('button');
+      pdf.type = 'button';
       pdf.className = 'primary-button cycle-report-pdf';
-      pdf.href = `/users/assessment/m8/reports/${encodeURIComponent(item.report_id)}/pdf`;
+
       pdf.textContent = 'Скачать PDF';
-      card.append(open, pdf);
+      const status = document.createElement('p');
+      status.className = 'report-pdf-status'; status.setAttribute('role', 'status');
+      bindReportPdf(pdf, { status,
+        url: `/users/assessment/m8/reports/${encodeURIComponent(item.report_id)}/pdf`,
+        filename: `4k-report-${item.report_id}.pdf`,
+      });
+      card.append(open, pdf, status);
     } else {
       const refresh = document.createElement('button');
       refresh.type = 'button'; refresh.className = 'ghost-button';

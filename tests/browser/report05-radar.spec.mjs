@@ -34,7 +34,7 @@ const report = {
       skill_ids: skills.filter((skill) => skill.competency_id === id).map((skill) => skill.skill_id),
     })),
     collection: { closed_at: '2026-11-15T12:00:00Z' }, coverage: {},
-    reliability: { status: 'not_verified' }, limitations: [],
+    reliability: { status: 'not_verified' }, limitations: ['Числовой показатель не определяет общий уровень владения навыком'],
     descriptive: { status: 'ready', summary: ['Сохранённый результат.'], claims: [
       { kind: 'observation', skill_ids: ['S2'], text: 'Уточнил смысл запроса.', limitations: [] },
       { kind: 'quote', skill_ids: ['S2'], text: 'Я уточню задачу.', limitations: [] },
@@ -74,7 +74,8 @@ test('REPORT-05 modes and selection use one saved skill and adjacent detail', as
   await expect(page.locator('.m8-score-bars')).toContainText('1.75');
   await page.locator('.m8-score-bar button[data-m8-skill-id="S2"]').click();
   await expect(page.locator('#m8-skill-detail')).toContainText('Точное выражение мысли');
-  await expect(page.locator('#m8-report-detail')).toContainText('общий уровень навыка не присваивается');
+  await expect(page.locator('#m8-report-limitations li').filter({ hasText: 'Числовой показатель не определяет общий уровень владения навыком' })).toHaveCount(1);
+  await expect(page.locator('#m8-report-detail')).not.toContainText('общий уровень навыка не присваивается');
   await expect(page.locator('#m8-skill-detail')).toContainText('Оценена часть обязательного состава.');
   await expect(page.locator('#m8-skill-detail')).toBeFocused();
   const chart = await page.locator('#m8-report-chart').boundingBox();

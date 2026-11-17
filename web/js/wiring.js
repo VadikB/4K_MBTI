@@ -3082,32 +3082,8 @@ if (reportsBackButton) {
   });
 }
 
-reportDownloadButton.addEventListener('click', async () => {
-  if (reportDownloadButton.dataset.m8ReportId) {
-    const status = document.getElementById('report-download-status');
-    if (status) status.textContent = '';
-    reportDownloadButton.disabled = true;
-    try {
-      const reportId = reportDownloadButton.dataset.m8ReportId;
-      const response = reportDownloadButton.dataset.m8ReportAccess === 'customer'
-        ? await fetch('/users/admin/m8-access/reports/' + encodeURIComponent(reportId) + '/pdf')
-        : await fetch('/users/assessment/m8/reports/' + encodeURIComponent(reportId) + '/pdf');
-      if (!response.ok) throw new Error('PDF_UNAVAILABLE');
-      const href = URL.createObjectURL(await response.blob());
-      const link = document.createElement('a');
-      link.href = href;
-      link.download = `4k-report-${reportId}.pdf`;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(href), 0);
-    } catch (_error) {
-      if (status) status.textContent = 'Не удалось скачать PDF. Попробуйте ещё раз.';
-    } finally {
-      reportDownloadButton.disabled = false;
-    }
-    return;
-  }
-  const status = document.getElementById('report-download-status');
-  if (status) status.textContent = 'PDF доступен после подготовки сохранённого Report.';
+reportDownloadButton.addEventListener('click', () => {
+  withScreen(loadReport, (module) => module.downloadSelectedReportPdf());
 });
 
 };

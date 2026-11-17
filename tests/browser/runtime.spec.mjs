@@ -316,7 +316,8 @@ async function report(page,stand,info){
   await expect(page.locator('#m8-report-chart .m8-score-bars')).toBeVisible();
   await page.getByRole('button',{name:'Заливка'}).click();
  }else await expect(page.locator('#m8-report-chart .m8-chart-empty')).toContainText('Числовых показателей нет');
- await expect(page.locator('#m8-report-detail')).toContainText('общий уровень навыка не присваивается');
+ await expect(page.locator('#m8-report-limitations li').filter({hasText:'Числовой показатель не определяет общий уровень владения навыком'})).toHaveCount(1);
+ await expect(page.locator('#m8-report-detail')).not.toContainText('общий уровень навыка не присваивается');
  await expect(page.locator('#m8-report-shell')).not.toContainText(/Indicator:|IA:|Turn:|Fragment:/);
  const downloadPromise=page.waitForEvent('download');await page.locator('#report-download-button').click();
  const download=await downloadPromise;const pdf=path.join(stand.dir,'report.pdf');await download.saveAs(pdf);

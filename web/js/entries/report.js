@@ -1,6 +1,7 @@
 export {
   initReport,
   openReport,
+  downloadSelectedReportPdf,
   loadSkillAssessments,
   handleReportBack,
   closeReportInfoModal,

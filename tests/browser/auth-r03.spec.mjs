@@ -2942,6 +2942,14 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
     }
     return fulfillJson(route, {}, 404);
   });
+  const assertComparisonPdfPair = async () => {
+    const request = page.waitForRequest((item) => new URL(item.url()).pathname.endsWith('/comparison.pdf'));
+    await page.getByRole('button', { name: 'Скачать сравнение PDF' }).click();
+    const url = new URL((await request).url());
+    expect(url.pathname).toBe('/users/assessment/m8/reports/report-rad01/comparison.pdf');
+    expect(url.searchParams.get('previous_report_id')).toBe('report-previous');
+    await expect(page.locator('.report-pdf-action [role="status"]')).toContainText('Не удалось скачать PDF');
+  };
   await page.goto(base);
   await page.getByRole('button', { name: 'Посмотреть результат' }).click();
   await expect(page.locator('#m8-report-chart svg')).toBeVisible();
@@ -2965,7 +2973,7 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('.m8-comparison-periods')).toContainText('Программа сейчас');
   await expect(page.locator('.m8-comparison-scales .m8-comparison-scale')).toHaveCount(2);
   await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
-  await expect(page.getByRole('link', { name: 'Скачать сравнение PDF' })).toHaveAttribute('href', /report-previous/);
+  await assertComparisonPdfPair();
   await page.locator('#m8-comparison-select').selectOption('report-other');
   await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
@@ -2973,7 +2981,7 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await page.waitForTimeout(300);
   await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
-  await expect(page.getByRole('link', { name: 'Скачать сравнение PDF' })).toHaveAttribute('href', /report-previous/);
+  await assertComparisonPdfPair();
   const comparisonEvidence = path.join(root, 'docs/evc/tasks/p4k-report-07/evidence');
   await fs.mkdir(comparisonEvidence, { recursive: true });
   await page.setViewportSize({ width: 1440, height: 900 });

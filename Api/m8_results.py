@@ -699,6 +699,7 @@ def read_report(connection, report_id) -> dict:
 def _present_report(saved: dict) -> dict:
     """Pure projection: immutable historical C-67 remains untouched; no generation on GET."""
     from copy import deepcopy
+    from Api.m8_report_access import present_public_copy
     c67 = deepcopy(saved)
     partial = c67.get("partial_result")
     if isinstance(partial, dict) and "plan_completed" not in partial:
@@ -723,7 +724,7 @@ def _present_report(saved: dict) -> dict:
     if "descriptive" not in c67:
         c67["descriptive"] = {"contract_version":"m8-descriptive-report/1.1.0",
             "status":"historical", "failure_reason":None, "summary":[], "claims":[]}
-    return c67
+    return present_public_copy(c67)
 
 
 def read_latest_report(connection, cycle_id: str, audience: str) -> dict:
@@ -801,4 +802,4 @@ def render_pdf(report: dict) -> bytes:
         "processing": c67.get("processing", {"status":"completed","message":"Обработка завершена."}),
         "descriptive": c67.get("descriptive", {"status":"historical", "summary":[], "claims":[]}),
     }
-    return render_typst_report(payload, "m8_participant_report_v2.typ")
+    return render_typst_report(payload, "m8_participant_report_v3.typ")

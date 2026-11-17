@@ -78,3 +78,47 @@ def test_customer_list_parameters_and_retired_routes(monkeypatch):
             assert client.get(path).status_code == 410
         assert client.post('/users/admin/reports/expert-group.zip').status_code == 410
         assert client.get('/users/20/assessment/123/report.pdf').status_code == 410
+
+
+def test_public_api_and_pdf_share_compatible_copy_without_rewriting_c67(monkeypatch):
+    from copy import deepcopy
+    from io import BytesIO
+    from pypdf import PdfReader
+
+    report_id = uuid4()
+    report = {"id": str(report_id), "cycle_id": str(uuid4()), "owner_user_id": 10,
+              "program_name": "Контрольная HTTP программа", "collection_closed_at": "2026-11-17",
+              "c67": {"template_version": "m8-basic-report/1.5.0", "skills": [
+                  {"skill_id": "S", "skill_name": "HTTP навык", "outcome": "full_score",
+                   "completeness": "full", "score": {"value": 0, "numerator": 0, "denominator": 1}}],
+                  "limitations": ["Skill Level is not derived from numeric Score", "Сохранённое ограничение"],
+                  "descriptive": {"status": "ready", "summary": [], "claims": []}}}
+    original = deepcopy(report)
+    @contextmanager
+    def connection():
+        yield SimpleNamespace(commit=lambda: None)
+    monkeypatch.setattr(routes, "get_connection", connection)
+    monkeypatch.setattr(routes, "_owned_saved_report", lambda *_args, **_kwargs: report)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token", lambda _token: SimpleNamespace(id=20))
+    monkeypatch.setattr(routes.m8_report_access, "customer_can_read_report", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(routes.m8_results, "read_report", lambda *_args: report)
+    monkeypatch.setattr(routes.m8_report_corrections, "public_notice", lambda *_args: None)
+    monkeypatch.setattr(routes.m8_report_access, "record_access", lambda *_args, **_kwargs: None)
+    report["correction"] = None
+    original["correction"] = None
+    app = FastAPI(); app.include_router(routes.router)
+    with TestClient(app) as client:
+        for prefix in ("/users/assessment/m8", "/users/admin/m8-access"):
+            url = f"{prefix}/reports/{report_id}"
+            response = client.get(url)
+            assert response.status_code == 200
+            view = response.json()["c67"]
+            assert view["skills"][0]["score"]["value"] == 0
+            assert "Skill Level" not in response.text
+            pdf = client.get(url + "/pdf")
+            assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF-")
+            assert pdf.headers["content-disposition"] == f'attachment; filename="4k-report-{report_id}.pdf"'
+            text = "\n".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+            for message in view["limitations"] + ["Контрольная HTTP программа", "2026-11-17"]:
+                assert message in text
+    assert report == original

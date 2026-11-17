@@ -2489,3 +2489,7 @@ body.report-info-modal-open {
     .m8-report-shell .report-card-head { display: block; }
     .m8-report-shell .report-card-head a { display: inline-block; margin-top: 10px; white-space: normal; }
 }
+
+.report-pdf-status { display: block; flex-basis: 100%; min-width: 0; max-width: 100%; color: var(--text-muted); font-size: var(--fs-caption); line-height: 1.5; overflow-wrap: anywhere; }
+.report-pdf-status:empty { display: none; }
+.report-pdf-action { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
