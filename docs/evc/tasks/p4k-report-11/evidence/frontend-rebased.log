@@ -1,0 +1,26 @@
+✔ CMP01 has an explicit comparison entry and exact columns (2.354191ms)
+✔ CMP01 renders non-comparable values as separate slices without delta (0.268291ms)
+(node:7357) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/vadim_bogachev/Developer/4K/worktrees/p4k-report-11/web/js/utils/report-radar.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/vadim_bogachev/Developer/4K/worktrees/p4k-report-11/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ RAD01 preserves real zero and keeps null out of the chart (4.011724ms)
+✔ RAD01 never joins a radar line across missing values (0.492423ms)
+✔ REPORT-05 projection preserves saved identity, exact score and limitations (0.553135ms)
+✔ RAD01 exposes fill, outline and bars with a permanent text list (0.926041ms)
+✔ REPORT-02 removes the recipient section from organization forms (2.833258ms)
+✔ UX-FIX20-03 routes invitations through the shared selected assessment (0.449055ms)
+✔ REL01 customer report uses protected read and PDF endpoints (0.350066ms)
+✔ REP01 presents the four M8 outcomes without derived levels or competency scores (3.054625ms)
+✔ REP01 groups saved skills and hides technical trace identifiers from participant markup (0.826876ms)
+✔ REP02 presents saved descriptions and explicit non-blocking states without advice (0.360945ms)
+✔ REP01 keeps exact report binding and handles PDF failure locally (0.440601ms)
+✔ A05 separates catalog, assessment tasks and factual coverage from the score (0.396444ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 244.779764

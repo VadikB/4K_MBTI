@@ -1,0 +1,40 @@
+{
+  "owner_user_id": 99,
+  "cycles": [
+    {
+      "cycle_id": "b76b5faf-2d8e-4cc5-bafb-624e4c9883f2",
+      "cycle_status": "calculated",
+      "program_name": "Synthetic configuration",
+      "cycle_created_at": "2026-11-17T17:07:24.512059+03:00",
+      "started_at": "2026-11-17T17:07:24.512059+03:00",
+      "collection_closed_at": "2026-11-17T17:07:25.075671+03:00",
+      "processing_status": "ready",
+      "processing_stage": "report_ready",
+      "processing_error": null,
+      "processing_message": null,
+      "allowed_actions": [],
+      "results_revision_id": "59130c7e-0668-4cf2-bd7c-ffc3eaa6f4a6",
+      "results_revision_no": 1,
+      "latest_results_revision_id": "59130c7e-0668-4cf2-bd7c-ffc3eaa6f4a6",
+      "latest_results_revision_no": 1,
+      "report_id": "fcb0fe39-526a-4df1-9cca-21ad659bd5f1",
+      "revision_no": 1,
+      "created_at": "2026-11-17T17:07:27.956905+03:00",
+      "versions": [
+        {
+          "cycle_id": "b76b5faf-2d8e-4cc5-bafb-624e4c9883f2",
+          "report_id": "fcb0fe39-526a-4df1-9cca-21ad659bd5f1",
+          "revision_no": 1,
+          "created_at": "2026-11-17T17:07:27.956905+03:00",
+          "results_revision_id": "59130c7e-0668-4cf2-bd7c-ffc3eaa6f4a6",
+          "results_revision_no": 1
+        }
+      ],
+      "report_processing_status": "completed",
+      "status": "report_ready"
+    }
+  ],
+  "assessments_total": 1,
+  "reports_total": 1,
+  "completed_assessments": 1
+}

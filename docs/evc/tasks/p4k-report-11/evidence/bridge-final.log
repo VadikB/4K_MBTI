@@ -1,0 +1,9 @@
+REPORT11_BRIDGE_RECEIPT={"cycle_id": "d36a72d9-a3ed-44db-ad68-9cb6fb1452ae", "gateway_calls": 22, "pdf_pages": 6, "pipeline_rounds": 3, "report_id": "ee0e75e0-7948-4c93-a3f5-82075853b915", "results_id": "02866bb7-cdd1-4525-b157-22b6cecc1ea7", "results_revision_id": "9f37fe8f-7b5a-47cc-a315-b5bb8aeb288f", "saved_counts_after_read": {"m6_cycle_calculations": 1, "m8_reports": 1, "m8_result_revisions": 1, "m8_results": 1}}
+.
+=============================== warnings summary ===============================
+tests/integration/test_m10_product_path_db.py::test_report11_http_close_reaches_saved_report_history_and_pdf
+  /Users/vadim_bogachev/Developer/4K/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 9.98s
