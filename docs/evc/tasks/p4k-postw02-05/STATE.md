@@ -1,3 +1,17 @@
+# Выпуск05 разрешён — 17.11.2026
+
+Прямое поручение владельца: «Хорошо, сливай на main». На его основании и по
+CONTRIBUTING разрешены branch_push=true, pr=true, version_bump=true (следующий PATCH),
+Ready=true, merge=true и штатный automatic deploy на test; artifact_publish=false,
+pilot/production promotion=false. Прежний pending_approval экспорта снят этим
+новым прямым поручением; код/тесты/отчёт/PNG этой задачи входят в публикуемый PR.
+Свежий main02596d71019092ebb1f26b7e5eb6bd13394c1df0 (2.1.25/REPORT_09+10)
+интегрирован локально. Ready preflight PASS для кандидата2.1.26.
+Обязательные CI/merge и результат штатного test deployment фиксируются отдельно;
+готовность не присваивается до успешных проверок точного head.
+
+---
+
 # Актуальное дополнение UI — 17.11.2026
 
 Замечания UI выполнены в той же codex/p4k-postw02-05. Подробный результат и A–F:
