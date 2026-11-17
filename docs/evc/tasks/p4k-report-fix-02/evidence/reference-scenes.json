@@ -1,0 +1,50 @@
+{
+  "prototype": "e44fa78efb1ec8605b28cf9bc2c2272da2b9122a",
+  "viewport": "1440x900",
+  "aliases": {
+    "report-limited": "report-partial",
+    "report-insufficient": "report-empty"
+  },
+  "results": [
+    {
+      "scene": "report-overview",
+      "heading": "Ваши результаты"
+    },
+    {
+      "scene": "report-direction",
+      "heading": "Ваши результаты"
+    },
+    {
+      "scene": "report-skill",
+      "heading": "Ваши результаты"
+    },
+    {
+      "scene": "report-evidence",
+      "heading": "Ваши результаты"
+    },
+    {
+      "scene": "report-partial",
+      "heading": "Ваши результаты"
+    },
+    {
+      "scene": "report-unscored",
+      "heading": "Ваши результаты"
+    },
+    {
+      "scene": "report-empty",
+      "heading": "Ваши результаты"
+    },
+    {
+      "scene": "report-comparison",
+      "heading": "Сравнение оценок"
+    },
+    {
+      "scene": "report-comparison-limited",
+      "heading": "Сравнение оценок"
+    },
+    {
+      "scene": "report-comparison-role",
+      "heading": "Сравнение оценок"
+    }
+  ]
+}

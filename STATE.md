@@ -1,3 +1,20 @@
+# STATE — P4K-REPORT-FIX-02, 17.11.2026
+
+Локальная реализация завершена: [TASK](docs/evc/tasks/p4k-report-fix-02/TASK.md),
+[STATE](docs/evc/tasks/p4k-report-fix-02/STATE.md), [CHECKS](docs/evc/tasks/p4k-report-fix-02/CHECKS.md).
+Base/FIX-01 `71a9c535`, code candidate/tested `9422308cce138fd39330412ee7a89021797a678f`,
+2.1.28, ветка `codex/p4k-report-fix-02`. Обе полноты/исходы и основания в сравнении
+1.2.0; две серии радара, панель/пара/reload; серверный PDF v3; оболочка POSTW02;
+`npm run preview:reports` P01–P06. Итог: backend1224/HTTP202/frontend404/browser38,
+lint/build/diff PASS. Четыре снимка/два PDF; реальные БД/LLM/письма=0, свои процессы
+остановлены. [Как посмотреть](docs/evc/tasks/p4k-report-fix-02/HOW_TO_VIEW.md):
+`http://127.0.0.1:18972/__reports/`, Ctrl+C, TTL15 минут.
+branch_push/pr/merge/deploy/version_bump/artifact_publish=false; текущий запрос
+разрешает локальный результат. REPORT-11 не изменялся. Следующий шаг — просмотр
+владельцем. Исторические полномочия ниже не переносятся.
+
+---
+
 # STATE — P4K-REPORT-FIX-01, 17.11.2026
 
 Активная карточка: [P4K-REPORT-FIX-01](docs/evc/tasks/p4k-report-fix-01/TASK.md).

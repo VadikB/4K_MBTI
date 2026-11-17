@@ -1,0 +1,22 @@
+[
+  {
+    "run": 1,
+    "url": "http://127.0.0.1:18972/__reports/",
+    "status": 200,
+    "examples": 6,
+    "head": "9422308cce138fd39330412ee7a89021797a678f",
+    "listeningAfterClose": false
+  },
+  {
+    "run": 2,
+    "url": "http://127.0.0.1:18972/__reports/",
+    "status": 200,
+    "examples": 6,
+    "head": "9422308cce138fd39330412ee7a89021797a678f",
+    "listeningAfterClose": false
+  },
+  {
+    "shortenedTtlMs": 150,
+    "listeningAfterTtl": false
+  }
+]
