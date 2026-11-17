@@ -1,13 +1,14 @@
 # STATE — P4K-REPORT-FIX-01, 17.11.2026
 
 Активная карточка: [P4K-REPORT-FIX-01](docs/evc/tasks/p4k-report-fix-01/TASK.md).
-База `0aadde0` (2.1.27), ветка `codex/p4k-report-fix-01`. Локально исправлены
+База `0aadde0` (2.1.27), кандидат `2.1.28`, ветка `codex/p4k-report-fix-01`. Локально исправлены
 F01/F04/F05: очистка выбранного отчёта/контекста графика, единая загрузка PDF с
 ошибкой/повтором и защитой выбора, совместимые публичные подписи API/UI/PDF.
 Results/C-67 и рабочая БД не изменялись; миграции, LLM и письма не использовались.
 [CHECKS и снимки](docs/evc/tasks/p4k-report-fix-01/CHECKS.md).
-`branch_push/pr/merge/deploy/version_bump/artifact_publish=false`.
-Следующий шаг — приёмка владельца; FIX-02 и REPORT-11 не запускались.
+`branch_push/pr/merge/version_bump=true`, `deploy=test`, `artifact_publish=false`: прямое
+поручение владельца «выкладывай на main» после передачи `32ecd71`.
+Следующий шаг — PATCH/Ready/PR, обязательный CI и штатный squash merge/test deploy; FIX-02 и REPORT-11 не запускались.
 Ниже сохранена история; её полномочия не переносятся на эту задачу.
 
 ---

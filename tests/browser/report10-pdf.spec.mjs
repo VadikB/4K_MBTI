@@ -67,10 +67,10 @@ const pair = { mode: 'comparable', current: { report_id: 'report-pdf', program_n
     comparability: { status: 'allowed' } }] };
 let selectedBytes, comparisonBytes, projectedReport;
 test.beforeAll(() => {
-  const render = (input, module, fn) => execFileSync('.venv/bin/python', ['-c',
+  const render = (input, module, fn) => execFileSync(process.env.BROWSER_PYTHON || '.venv/bin/python', ['-c',
     `import json,sys; from Api.${module} import ${fn}; sys.stdout.buffer.write(${fn}(json.load(sys.stdin)))`],
   { input: JSON.stringify(input), env: { ...process.env, PYTHON_DOTENV_DISABLED: '1', DB_POOL_MIN_SIZE: '0' } });
-  projectedReport = JSON.parse(execFileSync('.venv/bin/python', ['-c',
+  projectedReport = JSON.parse(execFileSync(process.env.BROWSER_PYTHON || '.venv/bin/python', ['-c',
     'import json,sys; from Api.m8_report_access import public_projection; print(json.dumps(public_projection(json.load(sys.stdin))))'],
   { input: JSON.stringify(fixReport), env: { ...process.env, PYTHON_DOTENV_DISABLED: '1', DB_POOL_MIN_SIZE: '0' } }));
   selectedBytes = render(fixReport, 'm8_results', 'render_pdf');

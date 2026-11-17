@@ -19,7 +19,8 @@ M8 v1.2 (исходы, Score/Level, представления); m8-results-repo
 M8 public projection и Typst PDF. Источники в базе указанного commit.
 M8 v1.2 FROZEN/CURRENT=NO, Change 01 WORKING; новый CURRENT не назначается.
 Decision IDs: SYN-CONTOUR-OWNERSHIP — только свои синтетические проверки;
-CONTRIBUTING-MERGE-AUTH-01 прочитан, merge в этой задаче не поручен.
+CONTRIBUTING-MERGE-AUTH-01 прочитан; на исходном локальном этапе merge не поручался,
+допуск выпуска зафиксирован ниже.
 
 Не найден упомянутый `00_START_P4K_REPORT_FIXES_LOCAL_2026-11-17.txt`: поиск
 по каталогу «Архитектура» и перечню reference zip. Это вспомогательный порядок;
@@ -57,3 +58,20 @@ presentation.consistency. Новый PDF v3 по существующему ко
 от v2 только удалением повторяющейся строки об общем уровне в каждой карточке;
 v2, предметные пакеты и сохранённые версии не редактировались.
 Источники/хеши: `evidence/sources.json`; проверки, review и ограничения: `CHECKS.md`.
+
+
+## Допуск выпуска — прямое поручение владельца
+
+17.11.2026: после передачи результата `32ecd71` владелец написал «выкладывай на main».
+Это прямой допуск текущего FIX-01 к выпуску по CONTRIBUTING-MERGE-AUTH-01:
+branch_push=true, pr=true, merge=true, deploy=test (штатный workflow),
+version_bump=true (следующий PATCH свежего origin/main), artifact_publish=false.
+Pilot/production, реальные LLM/письма и предметная публикация не входят.
+Действующий этап: актуальная база → ready:prepare → PR/CI → squash merge → test deploy.
+Существующие CI/review/release gates не обходятся. Дополнительно для GitHub runner
+browser fixture использует штатный BROWSER_PYTHON вместо жёсткой локальной .venv.
+
+Кандидат выпуска: `2.1.28` от свежего `origin/main=0aadde0` / 2.1.27;
+`ready:prepare` PASS. Локальные frontend=404, release/M8 unit=45, PDF browser=17 PASS
+после подготовки версии и поддержки штатного BROWSER_PYTHON; основные проверки
+неизменённого приложения описаны в CHECKS. Следующий шаг: PR и обязательный CI.

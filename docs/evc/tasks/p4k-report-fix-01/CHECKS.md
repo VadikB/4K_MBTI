@@ -60,7 +60,7 @@ finally при переключении общего PDF-контрола. Но�
 
 NOT_RUN: PostgreSQL integration (схема/БД не меняются, применимая строка матрицы
 закрыта HTTP); полный путь оценки/реальные LLM/письма (вне области); CI, push/PR,
-merge/deploy и bump версии (не поручены). Это локальная техническая приёмка;
+merge/deploy и bump версии (не были поручены на момент локальной передачи `32ecd71`). Это локальная техническая приёмка;
 человеческая приёмка владельца и будущий обязательный CI остаются отдельно.
 FIX-02/REPORT-11 не выполнялись. Упомянутый 00_START не найден; ограничение
 и область поиска сохранены в TASK, F01/F04/F05 не зависели от новой оболочки.
@@ -68,3 +68,23 @@ FIX-02/REPORT-11 не выполнялись. Упомянутый 00_START не
 Откат — обратный diff этого изменения, включая сборку и подключение PDF v3.
 Первичные Results/C-67/история/рабочая БД не менялись. Следующий шаг — приёмка
 владельца готовых локальных исправлений.
+
+
+## Этап выпуска по поручению «выкладывай на main»
+
+Полномочие: прямой запрос владельца после локального результата `32ecd71`.
+Следующий PATCH от свежего `main=0aadde0` / 2.1.27 — **2.1.28**.
+`branch_push/pr/merge/version_bump=true`, `deploy=test` штатным workflow,
+`artifact_publish=false`; pilot/production/LLM/письма не включены.
+
+- `npm run ready:prepare -- --candidate 2.1.28` — PASS, [лог](evidence/ready.log.gz).
+- `npm run lint:js` — PASS, [лог](evidence/release-lint.log.gz).
+- `node --test tests/frontend/*.test.mjs` — 404 PASS, [лог](evidence/release-frontend.log.gz).
+- Адресный M8/release unit — 45 PASS, [лог](evidence/release-unit.log.gz).
+- `npx playwright test tests/browser/report10-pdf.spec.mjs --reporter=line` со штатным выбором Python — 17 PASS, [лог](evidence/release-browser.log.gz).
+
+Кандидат включает только версию/сборку, поддержку BROWSER_PYTHON в тесте и обновление
+записи передачи поверх проверенного приложения. Предыдущие code-identity/build hashes
+относятся к локальному этапу; текущая версия — в release-identity.json.
+PR/обязательные CI и deploy на этом этапе ожидаются; их итог будет передан владельцу
+по фактическим URL и SHA. Откат — revert squash commit приложения/сборки.
