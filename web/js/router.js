@@ -24,7 +24,6 @@ import {
   adminPromptLabPanel,
   adminMethodologyPanel,
   adminReportsPanel,
-  adminReportDetailPanel,
   aiWelcomePanel,
   prechatPanel,
   interviewPanel,
@@ -56,7 +55,6 @@ export const hideAllPanels = () => {
   }
   adminMethodologyPanel.classList.add('hidden');
   adminReportsPanel.classList.add('hidden');
-  adminReportDetailPanel.classList.add('hidden');
   aiWelcomePanel.classList.add('hidden');
   prechatPanel.classList.add('hidden');
   interviewPanel.classList.add('hidden');
@@ -127,9 +125,6 @@ export const navigateToScreen = (screen) => {
     params.set('session_id', String(state.assessmentSessionId));
   }
 
-  if (state.adminReportDetailSessionId) {
-    params.set('admin_report_session_id', String(state.adminReportDetailSessionId));
-  }
   if (state.assessmentSessionCode) {
     params.set('session_code', state.assessmentSessionCode);
   }
@@ -154,9 +149,6 @@ export const syncUrlState = (screen, options = {}) => {
     params.set('session_id', String(state.assessmentSessionId));
   }
 
-  if (state.adminReportDetailSessionId) {
-    params.set('admin_report_session_id', String(state.adminReportDetailSessionId));
-  }
 
   if (state.assessmentSessionCode) {
     params.set('session_code', state.assessmentSessionCode);

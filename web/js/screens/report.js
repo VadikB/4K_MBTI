@@ -35,10 +35,37 @@ import {
 import { getLevelPercent } from '../utils/competency.js';
 import { readApiResponse } from '../api.js';
 import { hideAllPanels, syncUrlState, navigateToScreen } from '../router.js';
-import { formatAdminChartLabel } from './admin/charts.js';
 import { projectReportRadar, radarPoint, summarizeReportScores } from '../utils/report-radar.js';
 import { openHomePage } from './ai-welcome.js';
 import { openReports } from './reports.js';
+
+const formatAdminChartLabel = (text) => {
+  const rawText = String(text || 'Без названия').trim();
+  const words = rawText.split(/\s+/).filter(Boolean);
+  if (words.length < 2) {
+    return rawText;
+  }
+
+  const lines = [];
+  let currentLine = '';
+  words.forEach((word) => {
+    if (!currentLine) {
+      currentLine = word;
+      return;
+    }
+    if ((currentLine + ' ' + word).length <= 14) {
+      currentLine += ' ' + word;
+      return;
+    }
+    lines.push(currentLine);
+    currentLine = word;
+  });
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  return lines.length > 1 ? lines : rawText;
+};
 
 let reportCompetencyBarChart = null;
 let reportInfoModalCloseTimer = null;
@@ -1315,7 +1342,7 @@ export const openReport = (options = {}) => {
   const identityEpoch = state.identityEpoch;
   const ownerId = state.pendingUser?.id;
   const isCurrent = () => state.reportRequestEpoch === requestEpoch && state.identityEpoch === identityEpoch && state.pendingUser?.id === ownerId && state.currentScreen === 'report';
-  state.reportReturnTarget = returnTarget === 'reports' ? 'reports' : 'home';
+  state.reportReturnTarget = ['reports', 'admin-reports'].includes(returnTarget) ? returnTarget : 'home';
   setCurrentScreen('report');
   syncUrlState('report');
   hideAllPanels();
@@ -1925,6 +1952,10 @@ export const resolveAssessmentSessionIdByCode = async () => {
 };
 
 export const handleReportBack = () => {
+  if (state.reportReturnTarget === 'admin-reports') {
+    void import('./admin/reports.js').then((module) => module.openAdminReports());
+    return;
+  }
   if (state.reportReturnTarget === 'reports') {
     void openReports();
     return;

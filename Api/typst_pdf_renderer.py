@@ -133,51 +133,6 @@ def _render_with_reportlab(payload: dict[str, Any], template_name: str) -> bytes
                 story.append(Paragraph(esc(f"Ранее: {item.get('previous') if item.get('previous') is not None else 'Нет результата'}; "
                                            f"сейчас: {item.get('current') if item.get('current') is not None else 'Нет результата'}"), styles["AgentBody"]))
                 story.append(Paragraph(esc(item.get("reason_text") or "Сопоставимость не подтверждена."), styles["AgentMuted"]))
-    elif template_name == "admin_reports.typ":
-        summary = [
-            ["Всего отчетов", str(payload.get("total_items") or "0")],
-            ["Средний результат", str(payload.get("summary_score_label") or "Нет данных")],
-        ]
-        summary_table = Table(summary, colWidths=[55 * mm, 100 * mm])
-        summary_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
-            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-            ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
-            ("FONTNAME", (0, 0), (-1, -1), font_name),
-            ("FONTSIZE", (0, 0), (-1, -1), 10),
-            ("PADDING", (0, 0), (-1, -1), 6),
-        ]))
-        story.append(summary_table)
-        story.append(Spacer(1, 10))
-        for index, item in enumerate(payload.get("items") or [], start=1):
-            story.append(Paragraph(esc(f"{index}. {item.get('full_name') or 'Без имени'}"), styles["AgentHeading"]))
-            lines = [
-                f"Роль: {item.get('role_name') or 'Не указана'}",
-                f"Группа: {item.get('group_name') or 'Не указана'}",
-                f"Статус: {item.get('status') or 'Не указан'}",
-                f"Результат: {item.get('score_label') or '—'}",
-                f"Дата: {item.get('date_label') or 'Без даты'}",
-            ]
-            for line in lines:
-                story.append(Paragraph(esc(line), styles["AgentBody"]))
-            story.append(Spacer(1, 6))
-    elif template_name == "admin_dialogue.typ":
-        story.append(Paragraph(esc(f"Пользователь: {payload.get('full_name') or 'Без имени'}"), styles["AgentBody"]))
-        story.append(Paragraph(esc(f"Роль: {payload.get('role_name') or 'Не указана'}"), styles["AgentBody"]))
-        story.append(Paragraph(esc(f"Сессия: {payload.get('session_id') or '—'}"), styles["AgentBody"]))
-        story.append(Spacer(1, 8))
-        for case_item in payload.get("case_items") or []:
-            story.append(Paragraph(esc(f"Кейс {case_item.get('case_number') or ''}. {case_item.get('case_title') or 'Кейс без названия'}"), styles["AgentHeading"]))
-            if case_item.get("personalized_context"):
-                story.append(Paragraph(esc(f"Контекст: {case_item.get('personalized_context')}"), styles["AgentBody"]))
-            if case_item.get("personalized_task"):
-                story.append(Paragraph(esc(f"Задача: {case_item.get('personalized_task')}"), styles["AgentBody"]))
-            story.append(Spacer(1, 4))
-            for message in case_item.get("dialogue") or []:
-                role_label = message.get("role_label") or "Участник"
-                message_text = message.get("message_text") or ""
-                story.append(Paragraph(esc(f"{role_label}: {message_text}"), styles["AgentBody"]))
-            story.append(Spacer(1, 8))
     else:
         user = payload.get("user") or {}
         insight = payload.get("insight") or {}
@@ -315,15 +270,3 @@ def render_typst_report(payload: dict[str, Any], template_name: str) -> bytes:
                 return _render_with_reportlab(payload, template_name)
         except TypstRenderError:
             return _render_with_reportlab(payload, template_name)
-
-
-def render_typst_competency_report(payload: dict[str, Any]) -> bytes:
-    return render_typst_report(payload, "competency_report.typ")
-
-
-def render_typst_admin_reports(payload: dict[str, Any]) -> bytes:
-    return render_typst_report(payload, "admin_reports.typ")
-
-
-def render_typst_admin_dialogue(payload: dict[str, Any]) -> bytes:
-    return render_typst_report(payload, "admin_dialogue.typ")

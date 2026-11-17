@@ -59,8 +59,6 @@ export const loadAdminMethodology = async () => {
   }
   return module;
 };
-export const loadAdminReportDetail = () =>
-  loadModule('admin-report-detail', () => import('./entries/admin-report-detail.js'));
 
 export const resetChatScreen = async ({ shouldReset = () => true, preserveAuthFeedback = false } = {}) => {
   const module = await loadChat();
@@ -168,10 +166,4 @@ export const openAdminMethodologyScreen = async () => {
 export const loadAdminMethodologyData = async () => {
   const module = await loadAdminMethodology();
   return module.loadAdminMethodology();
-};
-
-export const openAdminReportDetailScreen = async (sessionId) => {
-  resetLogoutButtonsState();
-  const module = await loadAdminReportDetail();
-  await module.openAdminReportDetail(sessionId);
 };
