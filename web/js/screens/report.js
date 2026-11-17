@@ -1,3 +1,4 @@
+import { bindReportPdf, downloadReportPdf, resetReportDownload, withReportDeadline } from '../utils/report-download.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import {
   reportPanel,
@@ -1392,6 +1393,24 @@ const renderM8Correction = (notice) => {
     <details><summary>Посмотреть, что изменилось</summary><div class="m8-correction-list">${changes}</div></details>`;
 };
 
+export const downloadSelectedReportPdf = () => {
+  const button = document.getElementById('report-download-button');
+  const status = document.getElementById('report-download-status');
+  const reportId = button.dataset.m8ReportId;
+  const access = button.dataset.m8ReportAccess;
+  if (!reportId) {
+    status.textContent = 'PDF доступен после подготовки отчёта.';
+    return;
+  }
+  return downloadReportPdf({ button, status,
+    url: access === 'customer'
+      ? '/users/admin/m8-access/reports/' + encodeURIComponent(reportId) + '/pdf'
+      : '/users/assessment/m8/reports/' + encodeURIComponent(reportId) + '/pdf',
+    filename: `4k-report-${reportId}.pdf`,
+    isCurrent: () => button.dataset.m8ReportId === reportId && button.dataset.m8ReportAccess === access,
+  });
+};
+
 export const openReport = (options = {}) => {
   const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false } = options;
   if (!m8CycleId) {
@@ -1412,28 +1431,43 @@ export const openReport = (options = {}) => {
     m8FreshnessController?.abort();
     m8FreshnessController = new AbortController();
     m8SelectedSkillId = null;
+    m8SelectedCompetencyId = null;
+    m8ChartRenderContext = null;
+    window.clearTimeout(reportInfoModalCloseTimer);
+    reportInfoModalCloseTimer = null;
+    reportInfoModal?.classList.add('hidden');
+    reportInfoModal?.classList.remove('is-open', 'is-closing');
+    reportInfoModal?.setAttribute('aria-hidden', 'true');
+    reportInfoModalBody?.replaceChildren();
+    document.body.classList.remove('report-info-modal-open');
+    document.querySelectorAll('#m8-report-chart-modes button').forEach((button) => {
+      button.disabled = true;
+      button.onclick = null;
+    });
     const legacy = document.getElementById('legacy-report-shell');
     const shell = document.getElementById('m8-report-shell');
     legacy?.classList.add('hidden'); shell?.classList.remove('hidden');
     requestAnimationFrame(() => document.getElementById('m8-report-title')?.focus({ preventScroll: true }));
-    for (const id of ['m8-report-metadata', 'm8-report-tabs', 'm8-report-tab-select', 'm8-report-chart', 'm8-report-chart-note', 'm8-report-skills', 'm8-report-coverage', 'm8-report-limitations', 'm8-report-recommendations', 'm8-report-recommendation-notices']) {
+    for (const id of ['m8-report-detail', 'm8-report-summary', 'm8-report-partial', 'm8-report-update', 'report-download-status', 'm8-report-metadata', 'm8-report-tabs', 'm8-report-tab-select', 'm8-report-chart', 'm8-report-chart-note', 'm8-report-skills', 'm8-report-coverage', 'm8-report-limitations', 'm8-report-recommendations', 'm8-report-recommendation-notices']) {
       document.getElementById(id)?.replaceChildren();
     }
     const comparisonButton = document.getElementById('m8-comparison-open');
-    if (comparisonButton) comparisonButton.disabled = true;
+    if (comparisonButton) { comparisonButton.disabled = true; comparisonButton.onclick = null; }
     const comparisonSelect = document.getElementById('m8-comparison-select');
     if (comparisonSelect) {
       comparisonSelect.disabled = true;
+      comparisonSelect.onchange = null;
       comparisonSelect.innerHTML = '<option value="">Последняя завершённая</option>';
     }
     const comparisonContent = document.getElementById('m8-comparison-content');
     if (comparisonContent) comparisonContent.innerHTML = '<p>Сравнение доступно для завершённых оценок.</p>';
     document.getElementById('m8-report-state').textContent = 'Открываем результат…';
-    document.getElementById('m8-report-summary').textContent = 'Ниже — результаты по вашим ответам, их основания и ограничения.';
+    document.getElementById('m8-report-tab-select').onchange = null;
     document.getElementById('m8-report-partial')?.classList.add('hidden');
     renderM8Correction(null);
     document.getElementById('m8-report-update')?.classList.add('hidden');
     const download = document.getElementById('report-download-button');
+    resetReportDownload(download);
     delete download.dataset.m8ReportId;
     delete download.dataset.m8ReportAccess;
     download.disabled = true;
@@ -1443,13 +1477,17 @@ export const openReport = (options = {}) => {
     if (customerAccess) url.searchParams.set('report_access', 'customer');
     else url.searchParams.delete('report_access');
     window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
-    const load = () => void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId, customerAccess).catch(() => {
+    const load = () => {
       if (!isCurrent()) return;
-      const stateNode = document.getElementById('m8-report-state');
-      if (!stateNode) return;
-      stateNode.innerHTML = 'Не удалось открыть результат. <button class="ghost-button compact-ghost" type="button">Повторить</button>';
-      stateNode.querySelector('button')?.addEventListener('click', load, { once: true });
-    });
+      document.getElementById('m8-report-state').textContent = 'Открываем результат…';
+      void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId, customerAccess).catch(() => {
+        if (!isCurrent()) return;
+        const stateNode = document.getElementById('m8-report-state');
+        if (!stateNode) return;
+        stateNode.innerHTML = 'Не удалось открыть результат. <button class="ghost-button compact-ghost" type="button">Повторить</button>';
+        stateNode.querySelector('button')?.addEventListener('click', load, { once: true });
+      });
+    };
     load();
     return;
   }
@@ -1733,7 +1771,7 @@ const comparisonScore = (value) => value == null ? 'Нет результата'
 
 const comparisonRole = (reference) => reference?.name || reference?.title || reference?.role_name || 'Роль не указана';
 
-const renderM8Comparison = (comparison) => {
+const renderM8Comparison = (comparison, isCurrent) => {
   const node = document.getElementById('m8-comparison-content');
   if (!node) return;
   const allowed = comparison.skills.filter((item) => item.comparability.status === 'allowed');
@@ -1747,12 +1785,17 @@ const renderM8Comparison = (comparison) => {
     `<article><strong>${escapeHtml(item.skill_name)}</strong><span>Предыдущая: ${escapeHtml(comparisonScore(item.previous))}</span><span>Текущая: ${escapeHtml(comparisonScore(item.current))}</span><p>${escapeHtml(comparisonReasonLabels[item.comparability.reason] || 'Сопоставимость не подтверждена.')}</p></article>`
   ).join('')}</div>` : '';
   const pdfQuery = `?previous_report_id=${encodeURIComponent(comparison.previous.report_id)}`;
-  const pdf = `<p><a class="ghost-button compact-ghost" href="/users/assessment/m8/reports/${encodeURIComponent(comparison.current.report_id)}/comparison.pdf${pdfQuery}" download>Скачать сравнение PDF</a></p>`;
+  const pdf = '<div class="report-pdf-action"><button type="button" class="ghost-button compact-ghost">Скачать сравнение PDF</button><span class="report-pdf-status" role="status"></span></div>';
   const scale = `<div class="m8-comparison-scales"><h4>Показатели по навыкам</h4><p>Сравнимые значения показаны с разностью. Остальные — раздельно с причиной.</p>${comparison.skills.map((item) => {
     const bar = (value, label, kind) => `<div class="m8-comparison-scale-line"><span>${label}</span><span class="m8-comparison-track"><span class="${kind}" style="width:${value == null ? 0 : Math.max(0, Math.min(100, Number(value) / 3 * 100))}%"></span></span><strong>${escapeHtml(comparisonScore(value))}</strong></div>`;
     return `<div class="m8-comparison-scale"><strong>${escapeHtml(item.skill_name)}</strong>${bar(item.previous, 'Ранее', 'm8-comparison-past')}${bar(item.current, 'Сейчас', 'm8-comparison-now')}${item.comparability.status !== 'allowed' ? `<small>${escapeHtml(comparisonReasonLabels[item.comparability.reason] || 'Сопоставимость не подтверждена.')}</small>` : ''}</div>`;
   }).join('')}</div>`;
   node.innerHTML = periods + `<p class="m8-comparison-note">Разность расчётных показателей не доказывает развитие навыка и не означает процент роста.</p>` + scale + table + slices + pdf;
+  bindReportPdf(node.querySelector('.report-pdf-action button'), {
+    status: node.querySelector('.report-pdf-status'), isCurrent,
+    url: `/users/assessment/m8/reports/${encodeURIComponent(comparison.current.report_id)}/comparison.pdf${pdfQuery}`,
+    filename: `4k-report-comparison-${comparison.current.report_id}.pdf`,
+  });
 };
 
 const loadM8Comparison = async (reportId, previousReportId = '', isCurrent = () => true) => {
@@ -1769,7 +1812,7 @@ const loadM8Comparison = async (reportId, previousReportId = '', isCurrent = () 
     }
     const comparison = await readApiResponse(response, 'Не удалось загрузить сравнение оценок.');
     if (isCurrent() && String(comparison.current?.report_id) === String(reportId)
-      && String(comparison.previous?.report_id) === String(previousReportId)) renderM8Comparison(comparison);
+      && String(comparison.previous?.report_id) === String(previousReportId)) renderM8Comparison(comparison, isCurrent);
     else if (isCurrent()) node.innerHTML = '<p>Выбранную пару оценок не удалось подтвердить.</p>';
   } catch (_error) {
     if (isCurrent()) node.innerHTML = '<p><strong>Сравнение временно недоступно.</strong> Попробуйте ещё раз.</p>';
@@ -1860,7 +1903,7 @@ const renderM8Skills = (c67, competencyId) => {
     || (c67.descriptive?.status === 'failed' ? '<p>Пояснение временно недоступно. Сохранённый показатель и ограничения показаны выше.</p>' : ''));
   const exact = skill?.score?.value == null ? '' : `<details><summary>Как получен результат</summary><p>Точное значение: ${escapeHtml(String(skill.score.value))}; числитель: ${escapeHtml(String(skill.score.numerator))}; знаменатель: ${escapeHtml(String(skill.score.denominator))}.</p></details>`;
   const reasons = (skill?.presentation?.reasons || []).map((reason) => `<p class="m8-local-limitation">${escapeHtml(reason.message || 'Причина ограничения требует уточнения.')}</p>`).join('');
-  const panel = skill ? `<aside id="m8-skill-detail" class="m8-skill-detail" aria-label="Подробности навыка" tabindex="-1"><button type="button" class="m8-skill-back">← К списку навыков</button><p class="section-label">${escapeHtml(skill.competency_name || 'Навык')}</p><h4>${escapeHtml(skill.skill_name || 'Навык без названия')}</h4>${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}${narrative}<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong><p>${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</p><p>${escapeHtml(skill.completeness || (skill.outcome === 'partial_score' ? 'Результат ограничен частью состава навыка' : 'Полнота отдельно не указана'))}</p></div>${reasons}<p>В этой версии оценки общий уровень навыка не присваивается.</p>${basisMarkup}${exact}</aside>` : '<p>В этой группе нет навыков, включённых в сохранённый результат.</p>';
+  const panel = skill ? `<aside id="m8-skill-detail" class="m8-skill-detail" aria-label="Подробности навыка" tabindex="-1"><button type="button" class="m8-skill-back">← К списку навыков</button><p class="section-label">${escapeHtml(skill.competency_name || 'Навык')}</p><h4>${escapeHtml(skill.skill_name || 'Навык без названия')}</h4>${skill.skill_description ? `<p>${escapeHtml(skill.skill_description)}</p>` : ''}${narrative}<div class="m8-skill-result"><strong>${escapeHtml(formatExactScore(skill.score))}</strong><p>${escapeHtml(skill.presentation?.label || outcomeLabels[skill.outcome] || 'Результат требует проверки')}</p></div>${reasons}${basisMarkup}${exact}</aside>` : '<p>В этой группе нет навыков, включённых в сохранённый результат.</p>';
   skillsNode.innerHTML = `<div class="m8-skill-list">${rows}</div>`;
   const detailNode = document.getElementById('m8-report-detail');
   if (detailNode) {
@@ -1915,24 +1958,26 @@ const setupM8CompetencyNavigation = (c67) => {
 const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAccess = false) => {
   const stateNode = document.getElementById('m8-report-state');
   if (!reportId) {
-  const statusResponse = await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`);
-  const status = await readApiResponse(statusResponse, 'Не удалось загрузить состояние Results.');
+  const status = await withReportDeadline(async (signal) => readApiResponse(
+    await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`, { signal }),
+    'Не удалось загрузить состояние отчёта.'));
   if (!isCurrent()) return;
   if (status.results_status !== 'ready') {
-    stateNode.textContent = status.results_status === 'failed' ? 'Расчёт завершился технической ошибкой.' : 'Сбор закрыт, итоговый расчёт ещё выполняется.';
+    stateNode.textContent = status.results_status === 'failed' ? 'Не удалось подготовить отчёт. Ответы сохранены.' : 'Оценка завершена. Готовим ваш отчёт';
     document.getElementById('m8-report-skills').replaceChildren();
     return;
   }
   if (status.report_status !== 'ready') {
-    stateNode.textContent = 'Results готовы, базовый Report и экспорт ещё готовятся.';
+    stateNode.textContent = status.report_status === 'failed'
+      ? 'Не удалось подготовить отчёт. Ответы сохранены.' : 'Оценка завершена. Готовим ваш отчёт';
     document.getElementById('m8-report-skills').replaceChildren();
     return;
   }
   }
-  const response = await fetch(customerAccess
+  const report = await withReportDeadline(async (signal) => readApiResponse(await fetch(customerAccess
     ? `/users/admin/m8-access/reports/${encodeURIComponent(reportId)}`
-    : reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
-  const report = await readApiResponse(response, 'Не удалось загрузить базовый Report.');
+    : reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`, { signal }),
+  'Не удалось загрузить отчёт.'));
   if (!isCurrent()) return;
   if (
     (!customerAccess && Number(report.owner_user_id) !== Number(ownerId))

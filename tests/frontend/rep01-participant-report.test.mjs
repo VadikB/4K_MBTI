@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises';
 const report = await readFile(new URL('../../web/js/screens/report.js', import.meta.url), 'utf8');
 const wiring = await readFile(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
 const markup = await readFile(new URL('../../web/index.html', import.meta.url), 'utf8');
+const download = await readFile(new URL('../../web/js/utils/report-download.js', import.meta.url), 'utf8');
+const projection = await readFile(new URL('../../Api/m8_report_access.py', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../../web/styles/screens/report.css', import.meta.url), 'utf8');
 
 test('REP01 presents the four M8 outcomes without derived levels or competency scores', () => {
@@ -12,7 +14,7 @@ test('REP01 presents the four M8 outcomes without derived levels or competency s
   assert.match(report, /Результат по части навыка/);
   assert.match(report, /Есть наблюдения без общего балла по навыку/);
   assert.match(report, /Недостаточно оснований для результата/);
-  assert.match(report, /общий уровень навыка не присваивается/);
+  assert.match(projection, /Числовой показатель не определяет общий уровень владения навыком/);
   assert.doesNotMatch(report, /Полный результат со Score|Частный результат со Score|Нет Skill Result/);
 });
 
@@ -38,8 +40,9 @@ test('REP02 presents saved descriptions and explicit non-blocking states without
 test('REP01 keeps exact report binding and handles PDF failure locally', () => {
   assert.match(report, /reportId \? `\/users\/assessment\/m8\/reports/);
   assert.match(report, /String\(report\.id\) !== String\(reportId\)/);
-  assert.match(wiring, /fetch\('\/users\/assessment\/m8\/reports\/'/);
-  assert.match(wiring, /Не удалось скачать PDF\. Попробуйте ещё раз\./);
+  assert.match(wiring, /module\.downloadSelectedReportPdf\(\)/);
+  assert.match(report, /'\/users\/assessment\/m8\/reports\/'/);
+  assert.match(download, /Не удалось скачать PDF\. Попробуйте ещё раз\./);
   assert.match(styles, /@media \(max-width: 720px\)[\s\S]*report-tab-select/);
   assert.match(styles, /min-height:\s*48px/);
 });

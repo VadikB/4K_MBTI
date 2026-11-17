@@ -1,3 +1,4 @@
+import { bindReportPdf } from '../../utils/report-download.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../../state.js';
 import { adminReportsPanel, adminReportsSearch, adminReportsFound, adminReportsList,
   adminReportsPageSummary, adminReportsPageIndicator, adminReportsPrevButton,
@@ -52,11 +53,17 @@ export const renderAdminReports = () => {
         module.openReport({ m8CycleId: item.cycle_id, m8ReportId: item.report_id,
           customerAccess: true, returnTarget: 'admin-reports' });
       });
-      const pdf = document.createElement('a');
+      const pdf = document.createElement('button');
+      pdf.type = 'button';
       pdf.className = 'ghost-button compact-ghost';
       pdf.textContent = 'PDF';
-      pdf.href = '/users/admin/m8-access/reports/' + encodeURIComponent(item.report_id) + '/pdf';
-      actions.append(open, pdf);
+      const status = document.createElement('span');
+      status.className = 'report-pdf-status'; status.setAttribute('role', 'status');
+      bindReportPdf(pdf, { status,
+        url: '/users/admin/m8-access/reports/' + encodeURIComponent(item.report_id) + '/pdf',
+        filename: `4k-report-${item.report_id}.pdf`,
+      });
+      actions.append(open, pdf, status);
     }
     adminReportsList.appendChild(row);
   }
@@ -79,7 +86,7 @@ export const loadAdminReports = async () => {
     program: state.adminReportsProgram || '', status: state.adminReportsStatus || '' });
   if (state.adminReportsOrganizationId) params.set('organization_id', String(state.adminReportsOrganizationId));
   const response = await fetch('/users/admin/m8-access/reports?' + params, { credentials: 'same-origin' });
-  const data = await readApiResponse(response, 'Не удалось загрузить список Report.');
+  const data = await readApiResponse(response, 'Не удалось загрузить список отчётов.');
   if (epoch !== requestEpoch || identityEpoch !== state.identityEpoch || state.currentScreen !== 'admin-reports') return;
   state.adminReports = data;
   state.adminReportsOrganizationId = data.organization_id;

@@ -26,7 +26,8 @@ test('REL01 customer report uses protected read and PDF endpoints', () => {
   assert.match(reports, /\/users\/admin\/m8-access\/reports/);
   assert.match(reports, /customerAccess: true/);
   assert.match(report, /admin\/m8-access\/reports/);
-  assert.match(wiring, /m8ReportAccess === 'customer'/);
+  assert.match(report, /access === 'customer'/);
+  assert.match(wiring, /module\.downloadSelectedReportPdf\(\)/);
   assert.match(report, /report_access.*customer/);
   assert.match(main, /report_access.*customer/);
 });

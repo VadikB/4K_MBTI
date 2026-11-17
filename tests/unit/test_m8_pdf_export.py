@@ -150,3 +150,34 @@ def test_radar_runs_preserve_zero_gaps_and_close_only_complete_series(tmp_path):
     svg = (tmp_path / "radar-0.svg").read_text()
     points = re.search(r'<polyline points="([^"]+)', svg).group(1).split()
     assert len(points) == 4 and points[0] == points[-1]
+
+
+@pytest.mark.parametrize("outcome,value,completeness", [
+    ("full_score", 0, "full"), ("partial_score", 1.5, "partial"),
+    ("result_without_score", None, None), ("no_result", None, None),
+    ("full_score", 0, "partial"),
+])
+def test_public_labels_are_the_same_in_api_and_real_pdf(outcome, value, completeness):
+    from copy import deepcopy
+    from Api.m8_report_access import public_projection
+    from Api.m8_results import render_pdf
+    saved = {"id": "selected", "program_name": "Контрольная программа", "collection_closed_at": "2026-11-17",
+             "c67": {"template_version": "m8-basic-report/1.5.0", "skills": [
+                 {"skill_id": "S", "skill_name": "Контрольный навык", "outcome": outcome,
+                  "score": None if value is None else {"value": value}, "completeness": completeness,
+                  "presentation": {"reasons": [{"message": "Сохранённое ограничение навыка"}]}}],
+                 "limitations": ["Skill Level is not derived from numeric Score", "Неизвестное ограничение"],
+                 "descriptive": {"status": "ready", "summary": [], "claims": []}}}
+    before = deepcopy(saved)
+    view = public_projection(saved)["c67"]
+    reader = PdfReader(BytesIO(render_pdf(saved)))
+    text = "\n".join(page.extract_text() for page in reader.pages)
+    assert view["skills"][0]["presentation"]["label"] in text
+    for message in view["limitations"] + ["Сохранённое ограничение навыка", "Контрольная программа", "2026-11-17"]:
+        assert message in text
+    for technical in ("Skill Level", "Score", "full_score", "partial_score", "Полнота отдельно"):
+        assert technical not in text
+    assert text.count("Числовой показатель не определяет общий уровень владения навыком") == 1
+    assert saved == before
+    if value == 0:
+        assert "0 из 3" in text

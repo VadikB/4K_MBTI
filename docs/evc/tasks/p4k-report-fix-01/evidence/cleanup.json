@@ -1,0 +1,8 @@
+{
+  "scope": "local_synthetic_http_and_offline_tests",
+  "preview_listeners": [],
+  "database_started": false,
+  "llm_calls": 0,
+  "mail_sent": 0,
+  "browser_afterAll": "closed"
+}

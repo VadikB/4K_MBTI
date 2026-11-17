@@ -134,9 +134,73 @@ def _strings(value) -> list[str]:
     return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
 
 
+def present_public_copy(source: dict) -> dict:
+    """Compatible display copy; never changes a saved outcome, score or C-67."""
+    level_explanation = "Числовой показатель не определяет общий уровень владения навыком"
+    replacements = {
+        "Skill Level is not derived from numeric Score": level_explanation,
+        "Полный результат со Score": "Результат по полному составу навыка",
+        "Частный результат со Score": "Результат по части навыка",
+        "Результат без общего Score": "Есть наблюдения без общего балла по навыку",
+        "Нет Skill Result": "Недостаточно оснований для результата",
+        "Results готовы, базовый Report и экспорт ещё готовятся.": "Оценка завершена. Готовим ваш отчёт",
+    }
+
+    def copy(value):
+        if isinstance(value, str):
+            return replacements.get(value, value)
+        if isinstance(value, list):
+            return [copy(item) for item in value]
+        if isinstance(value, dict):
+            result = {key: copy(item) for key, item in value.items()}
+            if isinstance(result.get("limitations"), list):
+                result["limitations"] = [item for index, item in enumerate(result["limitations"])
+                                          if item not in result["limitations"][:index]]
+            return result
+        return deepcopy(value)
+
+    result = copy(source)
+    labels = {
+        "full_score": "Результат по полному составу навыка",
+        "partial_score": "Результат по части навыка",
+        "result_without_score": "Есть наблюдения без общего балла по навыку",
+        "no_result": "Недостаточно оснований для результата",
+    }
+    label_outcomes = {label: outcome for outcome, label in labels.items()}
+    label_outcomes.update({
+        "Полный показатель по навыку": "full_score",
+        "Показатель по части состава навыка": "partial_score",
+        "Есть наблюдения без общего показателя": "result_without_score",
+        "По навыку пока нет обоснованного результата": "no_result",
+    })
+    for skill in result.get("skills") or []:
+        if not isinstance(skill, dict):
+            continue
+        outcome = skill.get("outcome")
+        presentation = skill.get("presentation") or {}
+        conflicts = []
+        if presentation.get("outcome") not in (None, outcome):
+            conflicts.append("presentation.outcome")
+        if presentation.get("label") in label_outcomes and label_outcomes[presentation["label"]] != outcome:
+            conflicts.append("presentation.label")
+        completeness = skill.get("completeness")
+        if completeness is not None and completeness != {"full_score": "full", "partial_score": "partial"}.get(outcome):
+            conflicts.append("completeness")
+        numeric = (skill.get("score") or {}).get("value") is not None
+        if outcome in labels and numeric != (outcome in {"full_score", "partial_score"}):
+            conflicts.append("score")
+        if conflicts:
+            presentation["consistency"] = {"status": "conflict", "fields": conflicts}
+            presentation["label"] = "Сведения о результате требуют проверки. Показаны сохранённые данные."
+        elif not presentation.get("label") or presentation["label"] in {*labels, "full", "partial", "null"}:
+            presentation["label"] = labels.get(outcome, "Результат требует проверки")
+        skill["presentation"] = presentation
+    return result
+
+
 def public_projection(report: dict, *, audience: str = "assessee") -> dict:
     """Project saved C-67 for HTTP without leaking its nested provenance or prompts."""
-    source = report["c67"]
+    source = present_public_copy(report["c67"])
     c67 = _select(source, ("schema_version", "contract", "message_version", "results_id",
                            "results_revision_id", "cycle_id",
                            "report_id", "report_revision_no", "results_revision_no",
@@ -160,6 +224,8 @@ def public_projection(report: dict, *, audience: str = "assessee") -> dict:
             skill["presentation"] = _select(presentation, ("outcome", "label", "remaining_plan_relevant"))
             skill["presentation"]["reasons"] = [_select(item, ("code", "message"))
                 for item in presentation.get("reasons") or []]
+            if presentation.get("consistency"):
+                skill["presentation"]["consistency"] = _select(presentation["consistency"], ("status", "fields"))
         c67["skills"].append(skill)
     c67["competencies"] = []
     for value in source.get("competencies") or []:

@@ -219,7 +219,7 @@ def test_pdf_renderer_is_bound_to_saved_report_template(monkeypatch):
     monkeypatch.setattr(m8_results, "REPORT_TEMPLATE_VERSION", "m8-basic-report/9.9.9")
     assert m8_results.render_pdf(report) == b"pdf"
     payload, template = captured[-1]
-    assert template == "m8_participant_report_v2.typ"
+    assert template == "m8_participant_report_v3.typ"
     assert payload["skills"][0]["outcome"] == "Недостаточно оснований для результата"
     assert payload["skills"][0]["score"] == "—"
     assert payload["descriptive"]["status"] == "failed"
@@ -254,3 +254,48 @@ def test_pdf_reader_rejects_incompatible_saved_model():
                                       "limitations": []}}
     with pytest.raises(TypstRenderError, match="PDF_REPORT_MODEL_UNSUPPORTED"):
         m8_results.render_pdf(report)
+
+
+def test_public_copy_translates_only_known_text_without_mutating_history():
+    from copy import deepcopy
+    from Api.m8_report_access import present_public_copy
+    saved = {"limitations": ["Skill Level is not derived from numeric Score",
+                            "Числовой показатель не определяет общий уровень владения навыком",
+                            "Неизвестное существенное ограничение"],
+             "skills": [{"outcome": "full_score", "completeness": "full", "score": {"value": 0},
+                         "presentation": {"outcome": "full_score", "label": "Полный результат со Score"}}]}
+    before = deepcopy(saved)
+    view = public_projection({"c67": saved})["c67"]
+    assert saved == before
+    assert view["limitations"] == ["Числовой показатель не определяет общий уровень владения навыком",
+                                   "Неизвестное существенное ограничение"]
+    assert view["skills"][0]["score"]["value"] == 0
+    assert view["skills"][0]["presentation"]["label"] == "Результат по полному составу навыка"
+    assert present_public_copy(present_public_copy(saved)) == present_public_copy(saved)
+
+
+def test_conflicting_saved_completeness_keeps_facts_and_exposes_diagnostic():
+    for change, field in [({"completeness": "partial"}, "completeness"),
+                          ({"presentation": {"outcome": "partial_score"}}, "presentation.outcome"),
+                          ({"presentation": {"label": "Показатель по части состава навыка"}}, "presentation.label"),
+                          ({"score": None}, "score")]:
+        value = {"outcome": "full_score", "score": {"value": 0}, **change}
+        view = public_projection({"c67": {"skills": [value]}})["c67"]["skills"][0]
+        assert view["outcome"] == value["outcome"] and view["score"] == value["score"]
+        assert field in view["presentation"]["consistency"]["fields"]
+        assert "требуют проверки" in view["presentation"]["label"]
+
+
+def test_all_historical_outcome_labels_get_compatible_public_copy():
+    from Api.m8_report_access import present_public_copy
+    for outcome, label, score in [
+        ("full_score", "Полный результат со Score", {"value": 0}),
+        ("partial_score", "Частный результат со Score", {"value": 1.5}),
+        ("result_without_score", "Результат без общего Score", None),
+        ("no_result", "Нет Skill Result", None),
+    ]:
+        view = present_public_copy({"skills": [{"outcome": outcome, "score": score,
+                                                "presentation": {"label": label}}]})
+        assert "Score" not in view["skills"][0]["presentation"]["label"]
+        assert "Skill" not in view["skills"][0]["presentation"]["label"]
+        assert view["skills"][0]["outcome"] == outcome

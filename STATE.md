@@ -1,3 +1,17 @@
+# STATE — P4K-REPORT-FIX-01, 17.11.2026
+
+Активная карточка: [P4K-REPORT-FIX-01](docs/evc/tasks/p4k-report-fix-01/TASK.md).
+База `0aadde0` (2.1.27), ветка `codex/p4k-report-fix-01`. Локально исправлены
+F01/F04/F05: очистка выбранного отчёта/контекста графика, единая загрузка PDF с
+ошибкой/повтором и защитой выбора, совместимые публичные подписи API/UI/PDF.
+Results/C-67 и рабочая БД не изменялись; миграции, LLM и письма не использовались.
+[CHECKS и снимки](docs/evc/tasks/p4k-report-fix-01/CHECKS.md).
+`branch_push/pr/merge/deploy/version_bump/artifact_publish=false`.
+Следующий шаг — приёмка владельца; FIX-02 и REPORT-11 не запускались.
+Ниже сохранена история; её полномочия не переносятся на эту задачу.
+
+---
+
 # STATE — P4K-REPORT-09, 17.11.2026
 
 Активная карточка: [P4K-REPORT-09](docs/evc/tasks/p4k-report-09/TASK.md). База `44349d57` (REPORT-08), ветка `codex/p4k-report-09`, кандидат `2.1.24`. Адресная коррекция опубликованного M8 Report подготовлена локально: immutable original, проверенный кандидат, атомарный указатель, защищённая разница и личный экран. Результат, источники, проверки и откат — в [STATE](docs/evc/tasks/p4k-report-09/STATE.md) и [CHECKS](docs/evc/tasks/p4k-report-09/CHECKS.md). Локальные backend/HTTP/frontend/browser и полный integration на изолированной PostgreSQL прошли; PR CI и приёмка владельца впереди. `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. Ниже история прежних карточек; их полномочия не переносятся.

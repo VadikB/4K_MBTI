@@ -1,0 +1,18 @@
+{
+  "base_commit": "0aadde0a496a5c095c70cc94158be3d0f8daea39",
+  "sha256": {
+    "AGENTS.md": "c304a0383bfbf4d04a29e18abc51fbf51c755731bd282128fb3cb09eb2fc515a",
+    "README.md": "cccad511e9746fa01aef25b89f07a0e00b9e728b62a4efac3bcba327d43aa3cd",
+    "CONTRIBUTING.md": "305d39001008a28956010c4ddf29ad4405bd7e08cb8386eb71f49eb60a53d41a",
+    "docs/evc/decision-register.md": "c0346911ecb2aae55f476c61632da50ee23f9b89e43ef3e6c1f160337a583f70",
+    "docs/architecture/product-4k/1.0/context.md": "effebfc639a572593b6171a7a57cfe60db09bba200909d8a4edafb0e7ac98ebb",
+    "docs/architecture/product-4k/registry.md": "b663db7f557fc3de3abd2d9e86b596926274ba4c5e2170047d4a6e5e60c54001",
+    "docs/architecture/product-4k/1.0/updates/2026-10-01/README.md": "ac082bb94aac1b86c61d7e39589d76c886c6703ef3afc07bc8fecf1676a0a26d",
+    "docs/methodology/source-sets/2026-10-01/manifest.json": "f95a390f1257f4adbccf61be59bdcb0b99396501ca34cf117eb0efc10b237db8",
+    "docs/methodology/source-sets/2026-10-01/derived/M8-v1.2.md": "f0272e304f36dc2d58777080b753a5fcc55578d22947e3afbae308b8afb71e0e",
+    "docs/architecture/product-4k/m8-results-report-contract.md": "9e3bf9d803af9dcc26a0a9443b0b7caa643f2ff62264e867a227313777eeafde",
+    "docs/architecture/product-4k/m8-partial-result-contract.md": "b89b4eedda09826e9f9f9ed6f555876f639ea328379dd80a39b1e56b35894fa5",
+    "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/Архитектура/1.0 Доработка Полная/обработка замечаний/путь Отчета/fix2/P4K_REPORT_FIX_01_Technical_2026-11-17.txt": "d1bdd5c1f53970f4e0845dc66d8ab0c988559aae63a631c4d0a633e5ab8f73b4",
+    "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/Архитектура/1.0 Доработка Полная/обработка замечаний/путь Отчета/fix2/P4K_REPORT_FIX_REFERENCE_2026-11-17.zip": "7284dba53d47d45148d82b6c6c562f288b7f6ce5e6d3a48402eccfd43db46007"
+  }
+}
