@@ -1620,7 +1620,8 @@
             <textarea
               id="interview-textarea"
               aria-label="Ваш ответ или вопрос собеседнику"
-              aria-describedby="interview-error"
+              aria-describedby="interview-error interview-draft-status"
+              maxlength="10000"
               placeholder="Введите ответ или вопрос собеседнику..."
               autocomplete="off"
               autocorrect="off"
@@ -1629,6 +1630,8 @@
               data-form-type="other"
               disabled
             ></textarea>
+            <small id="interview-draft-status" class="interview-send-note"></small>
+            <div id="interview-draft-actions" class="interview-draft-actions"></div>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
                 <button id="interview-submit-button" type="button" class="primary-button" disabled><span id="interview-submit-label">Отправить</span></button>

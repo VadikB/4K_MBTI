@@ -1,3 +1,4 @@
+import { createAnswerDrafts, draftSlot } from '../answer-drafts.js';
 import { renderPreparation } from '../preparation-status.js';
 import {
   state,
@@ -86,6 +87,9 @@ const interviewDraftKey = (scope = interviewDraftScope()) => {
   return scope.clarificationId ? `${base}:${scope.ownerId}:${scope.clarificationId}` : base;
 };
 
+let durableDraft = null;
+const productAnswerStorage = () => window.localStorage || window.sessionStorage;
+
 const productInterviewReadbacks = new Map();
 // Keep an already known operation recoverable if browser storage later becomes
 // unreadable. Identity epoch prevents carrying this page cache into a new login.
@@ -108,6 +112,7 @@ const interviewDraftContext = (key) => {
 const interviewDraftSignature = () => `${interviewDraftKey()}:${String(state.pendingUser?.id || '')}`;
 
 const isCurrentInterviewDraftSaved = () => {
+  if (typeof durableDraft !== 'undefined' && durableDraft) return durableDraft.saved();
   const key = interviewDraftKey();
   const revision = interviewTextarea.dataset.draftRevision;
   if (!key || !revision || !interviewTextarea.value) return false;
@@ -178,6 +183,18 @@ export const restoreInterviewActionControls = () => {
 };
 
 const restoreInterviewDraft = () => {
+  if (typeof durableDraft !== 'undefined' && durableDraft) {
+    const snapshot = confirmedProductInterviewSnapshot;
+    if (!state.productAssessmentSituationId || !productInterviewSourceReady(snapshot)) {
+      const pending = readProductInterviewAnswer();
+      if (pending && !pending.accepted) durableDraft.restorePending(pending);
+      else durableDraft.suspend();
+      return;
+    }
+    durableDraft.bind({ ...productInterviewAnswerScope(), slotId: draftSlot(snapshot),
+      expiresAt: snapshot.status?.deadline || snapshot.status?.calendar_deadline });
+    return;
+  }
   const key = interviewDraftKey();
   const signature = interviewDraftSignature();
   if (signature === activeInterviewDraftKey) return;
@@ -209,6 +226,13 @@ const restoreInterviewDraft = () => {
 };
 
 export const clearInterviewDraft = (operation = null) => {
+  if (typeof durableDraft !== 'undefined' && durableDraft && operation?.draftSlotId) {
+    if (operation.ownerId === String(state.pendingUser?.id || '') && operation.identityEpoch === state.identityEpoch) {
+      if (operation.accepted) durableDraft.clearAccepted(operation);
+      else durableDraft.suspend();
+    }
+    return;
+  }
   if (operation && operation.cycleId === state.productCycleId
       && operation.situationId === state.productAssessmentSituationId
       && (operation.ownerId !== String(state.pendingUser?.id || '') || operation.identityEpoch !== state.identityEpoch)) return;
@@ -295,7 +319,8 @@ const readProductInterviewAnswer = (scope = productInterviewAnswerScope()) => {
   if (!scope.cycleId || !scope.situationId) return null;
   const cacheKey = productInterviewRequestKey({ ...scope, identityEpoch: state.identityEpoch });
   try {
-    const raw = window.sessionStorage.getItem(productInterviewAnswerKey(scope));
+    const pendingKey = productInterviewAnswerKey(scope);
+    const raw = productAnswerStorage().getItem(pendingKey) || window.sessionStorage.getItem(pendingKey);
     if (!raw) { productInterviewPendingAnswers.delete(cacheKey); return null; }
     const value = JSON.parse(raw);
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -311,8 +336,15 @@ const readProductInterviewAnswer = (scope = productInterviewAnswerScope()) => {
         || typeof value.accepted !== 'boolean'
         || (value.clarificationId !== null && (typeof value.clarificationId !== 'string' || !uuid.test(value.clarificationId)))
         || value.endpoint !== expectedEndpoint || typeof value.sourcePhase !== 'string') return null;
+    if (value.expiresAt && Date.parse(value.expiresAt) <= Date.now()) {
+      productAnswerStorage().removeItem(pendingKey); window.sessionStorage.removeItem(pendingKey);
+      productInterviewPendingAnswers.delete(cacheKey); return null;
+    }
     const phase = JSON.parse(value.sourcePhase);
     if (!Array.isArray(phase) || phase.length !== 5 || phase.some((part) => part !== null && typeof part !== 'string')) return null;
+    if (productAnswerStorage() !== window.sessionStorage && !productAnswerStorage().getItem(pendingKey)) {
+      productAnswerStorage().setItem(pendingKey, raw); window.sessionStorage.removeItem(pendingKey);
+    }
     const operation = { ...value, identityEpoch: state.identityEpoch, viewGeneration: getAssessmentViewGeneration() };
     productInterviewPendingAnswers.set(cacheKey, operation);
     return operation;
@@ -325,7 +357,7 @@ const readProductInterviewAnswer = (scope = productInterviewAnswerScope()) => {
 const saveProductInterviewAnswer = (operation) => {
   // identityEpoch belongs to this page lifetime; the server operation survives reload.
   const { identityEpoch: _epoch, viewGeneration: _view, ...saved } = operation;
-  window.sessionStorage.setItem(productInterviewAnswerKey(operation), JSON.stringify(saved));
+  productAnswerStorage().setItem(productInterviewAnswerKey(operation), JSON.stringify(saved));
   productInterviewPendingAnswers.set(productInterviewRequestKey(operation), { ...operation });
 };
 
@@ -404,10 +436,10 @@ const applyProductInterviewAnswerStatus = (operation, value, snapshot) => {
   const pending = readProductInterviewAnswer(operation);
   if (!pending || pending.requestId !== operation.requestId || pending.turnId !== operation.turnId) return false;
   if (value.status === 'accepted') {
-    clearInterviewDraft(operation);
+    clearInterviewDraft({ ...operation, accepted: true });
     const completed = productInterviewAnswerResolved(operation, value, snapshot);
     if (completed) {
-      window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+      productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
       return true;
     }
     const changed = pending.status !== 'saved';
@@ -419,15 +451,15 @@ const applyProductInterviewAnswerStatus = (operation, value, snapshot) => {
       && operation.sourcePhase === productInterviewSourcePhase(snapshot)) {
     // A definite first-POST refusal plus exact absent receipt and current AS
     // permits a corrected answer. The original draft remains available.
-    window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+    productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
     return true;
   }
   // An absent receipt is not a rejected write. Only a changed source phase can
   // retire its active slot; the original identity/endpoint remains in session.
   if (!pending.accepted && operation.sourcePhase !== productInterviewSourcePhase(snapshot)) {
-    window.sessionStorage.setItem(productInterviewAnswerKey(operation) + ':resolved:' + operation.requestId,
+    productAnswerStorage().setItem(productInterviewAnswerKey(operation) + ':resolved:' + operation.requestId,
       JSON.stringify({ ...pending, status: 'superseded', resolution: 'absent_in_previous_phase' }));
-    window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+    productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
     clearInterviewDraft(operation);
     return true;
   }
@@ -456,10 +488,10 @@ const recoverProductInterviewAnswer = (operation, snapshot) => {
 const recoverPreviousProductInterviewAnswers = (snapshot, { completedOnly = false } = {}) => {
   const ownerId = String(state.pendingUser?.id || '');
   const prefix = `agent4k.assessmentPending:${snapshot.cycle_id}:`;
-  Object.keys(window.sessionStorage).filter((key) => key.startsWith(prefix) && key.endsWith(':' + ownerId))
+  Object.keys(productAnswerStorage()).filter((key) => key.startsWith(prefix) && key.endsWith(':' + ownerId))
     .forEach((key) => {
       let saved;
-      try { saved = JSON.parse(window.sessionStorage.getItem(key)); } catch (_error) { return; }
+      try { saved = JSON.parse(productAnswerStorage().getItem(key)); } catch (_error) { return; }
       const operation = readProductInterviewAnswer({ cycleId: snapshot.cycle_id, ownerId,
         situationId: saved?.situationId });
       if (!operation || operation.situationId === snapshot.current_situation?.assessment_situation_id) return;
@@ -495,17 +527,17 @@ const reconcileProductInterviewAnswer = (snapshot) => {
   const operation = readProductInterviewAnswer(scope);
   if (!operation) return null;
   if (operation.status === 'prepared' && !productInterviewRequests.has(productInterviewRequestKey(operation))) {
-    window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+    productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
     return null;
   }
   const saved = (snapshot.trace?.turns || []).some((turn) => turn.turn_id === operation.turnId
     && turn.speaker_type === 'assessee' && turn.content_text === operation.text);
   if (!saved) return operation;
-  clearInterviewDraft(operation);
+  clearInterviewDraft({ ...operation, accepted: true });
   // M5 commits the participant Turn before provider processing. Keep a lost
   // receipt recoverable with the same identity while its source phase remains.
   if (operation.accepted) {
-    window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+    productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
     return null;
   }
   operation.status = 'saved';
@@ -571,14 +603,14 @@ const prepareProductInterviewAnswer = (text, draftValue, scope = productIntervie
   }
   let existing = readProductInterviewAnswer(scope);
   if (existing?.status === 'prepared' && existing.text !== text) {
-    window.sessionStorage.removeItem(productInterviewAnswerKey(existing));
+    productAnswerStorage().removeItem(productInterviewAnswerKey(existing));
     existing = null;
   }
   if (existing) {
     if (existing.text !== text) throw new Error('Сначала проверьте сохранение предыдущего ответа кнопкой в сообщении.');
     return existing;
   }
-  if (window.sessionStorage.getItem(productInterviewAnswerKey(scope))) {
+  if (productAnswerStorage().getItem(productInterviewAnswerKey(scope))) {
     throw new Error('Не удалось проверить сохранённую операцию отправки. Обновите историю.');
   }
   if (!isProductInterviewAnswerCurrent(scope)
@@ -590,9 +622,10 @@ const prepareProductInterviewAnswer = (text, draftValue, scope = productIntervie
   const isClarification = clarification?.status === 'ASK' && !clarification.response_outcome;
   const operation = { cycleId: scope.cycleId, situationId: scope.situationId, ownerId: scope.ownerId,
     identityEpoch: scope.identityEpoch, viewGeneration: scope.viewGeneration, text, draftValue,
-    draftRevision, requestId: createOperationId(), turnId: createProductInterviewTurnId(),
+    draftRevision, draftSlotId: typeof durableDraft !== 'undefined' ? durableDraft?.slotId() : null, requestId: createOperationId(), turnId: createProductInterviewTurnId(),
     clarificationId: isClarification ? clarification.id : null,
     sourcePhase: productInterviewSourcePhase(snapshot), status: 'prepared', accepted: false,
+    expiresAt: snapshot.status?.calendar_deadline || snapshot.status?.deadline || null,
     attemptCount: 0,
     endpoint: isClarification
       ? '/users/assessment/m7/clarifications/' + encodeURIComponent(clarification.id) + '/answers'
@@ -638,7 +671,7 @@ export const sendProductInterviewAnswer = async (text, { draftValue = interviewT
     if (productInterviewRequests.get(key) === operation) productInterviewRequests.delete(key);
     if (operation.status === 'prepared') {
       const pending = readProductInterviewAnswer(operation);
-      if (pending?.requestId === operation.requestId) window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+      if (pending?.requestId === operation.requestId) productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
     }
     if (isProductInterviewPresentationCurrent(operation)) {
       // Existing runtime projection restores phase-owned controls, then the
@@ -2361,7 +2394,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
     }
     if (operation.accepted) return { accepted: true, pending: !saved };
     if (!confirmedProductInterviewCanSend || operation.sourcePhase !== productInterviewSourcePhase(snapshot)) {
-      if (operation.status === 'prepared') window.sessionStorage.removeItem(productInterviewAnswerKey(operation));
+      if (operation.status === 'prepared') productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
       return { accepted: saved, pending: operation.status !== 'prepared', blocked: true };
     }
     const expectedEndpoint = operation.clarificationId
@@ -2598,8 +2631,32 @@ export const initInterview = () => {
     pending?.buttons.forEach((button, index) => { button.disabled = pending.disabled[index]; });
     document.getElementById('assessment-entry-error')?.remove();
   });
+  const draftStatus = document.getElementById?.('interview-draft-status');
+  const draftActions = document.getElementById?.('interview-draft-actions');
+  if (draftStatus && draftActions) {
+    durableDraft = createAnswerDrafts({ input: interviewTextarea, status: draftStatus, actions: draftActions,
+      storage: { getItem: (key) => window.localStorage.getItem(key), setItem: (key, value) => window.localStorage.setItem(key, value),
+        removeItem: (key) => window.localStorage.removeItem(key), keys: () => Object.keys(window.localStorage) },
+      current: (scope) => isProductInterviewAnswerCurrent({ ...scope, viewGeneration: getAssessmentViewGeneration() }),
+      request: async (scope, draftWriteData) => {
+        const response = await fetchWithDeadline('/users/assessment/m5/situations/' + encodeURIComponent(scope.situationId) + (draftWriteData?.accepted ? '/draft/accepted' : '/draft'), {
+          method: draftWriteData?.accepted ? 'POST' : draftWriteData ? 'PUT' : 'GET', credentials: 'same-origin', cache: 'no-store',
+          ...(draftWriteData ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draftWriteData) } : {}),
+        });
+        return readApiResponse(response, 'Не удалось сохранить черновик.');
+      }, newRevision: createOperationId });
+    window.addEventListener('online', () => durableDraft.retry());
+    window.addEventListener('focus', () => durableDraft.retry());
+    window.addEventListener('agent4k:before-logout', (event) => {
+      if (event.detail.ownerId === String(state.pendingUser?.id || '')) event.detail.unsynced = durableDraft.unsynced();
+    });
+    window.addEventListener('storage', (event) => durableDraft.storageChanged(event));
+    window.addEventListener('agent4k:assessment-context-cleared', () => durableDraft.stop());
+    window.addEventListener('pagehide', () => { void durableDraft.flush(); });
+  }
   disableTextareaAssistFeatures(interviewTextarea);
   interviewTextarea.addEventListener('input', () => {
+    if (durableDraft) { durableDraft.edit(); return; }
     const key = interviewDraftKey();
     if (!key) return;
     activeInterviewDraftKey = interviewDraftSignature();

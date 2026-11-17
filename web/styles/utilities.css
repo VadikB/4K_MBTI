@@ -692,3 +692,29 @@
 .interview-panel.hidden {
     display: none;
 }
+
+/* POSTW02-05: compact explicit choices beside the existing answer field. */
+.interview-draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.interview-draft-actions:empty,
+#interview-draft-status:empty { display: none; }
+.interview-draft-actions .text-button {
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.interview-draft-actions .text-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from Api.admin_report_dialogue_pdf_service import admin_report_dialogue_pdf_service
 from Api.admin_report_expert_export_service import admin_report_expert_export_service
@@ -7376,6 +7377,67 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
                 result={**result,'interim_processing_request_id':str(queued['id'])}
             connection.commit()
             return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+class AssessmentDraftWrite(BaseModel):
+    slot_id: str = Field(min_length=1, max_length=200)
+    expected_version: int = Field(ge=0)
+    revision: str = Field(min_length=1, max_length=200)
+    text: str = Field(max_length=10000)
+
+
+class AssessmentDraftAccepted(BaseModel):
+    accepted: Literal[True]
+    slot_id: str = Field(min_length=1, max_length=200)
+    revision: str = Field(min_length=1, max_length=200)
+    request_id: str = Field(min_length=1, max_length=200)
+    turn_id: UUID
+    clarification_id: UUID | None = None
+
+
+@router.post('/assessment/m5/situations/{assessment_situation_id}/draft/accepted')
+def clear_owned_accepted_draft(assessment_situation_id: UUID, payload: AssessmentDraftAccepted,
+                              request: Request, response: FastAPIResponse):
+    user = _m5_owned_situation(request, str(assessment_situation_id))
+    from Api import assessment_drafts
+    response.headers['Cache-Control'] = 'no-store'
+    try:
+        with get_connection() as connection:
+            return assessment_drafts.consume(connection, assessment_situation_id=str(assessment_situation_id),
+                                             owner_user_id=int(user.id), **payload.model_dump(mode='json'))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get('/assessment/m5/situations/{assessment_situation_id}/draft')
+def get_owned_answer_draft(assessment_situation_id: UUID, request: Request, response: FastAPIResponse):
+    user = _m5_owned_situation(request, str(assessment_situation_id))
+    from Api import assessment_drafts
+    response.headers['Cache-Control'] = 'no-store'
+    try:
+        with get_connection() as connection:
+            _m7_require_explicit_return(connection, owner_user_id=int(user.id),
+                                        assessment_situation_id=str(assessment_situation_id))
+            return assessment_drafts.read(connection, assessment_situation_id=str(assessment_situation_id),
+                                          owner_user_id=int(user.id))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.put('/assessment/m5/situations/{assessment_situation_id}/draft')
+def save_owned_answer_draft(assessment_situation_id: UUID, payload: AssessmentDraftWrite,
+                           request: Request, response: FastAPIResponse):
+    user = _m5_owned_situation(request, str(assessment_situation_id))
+    from Api import assessment_drafts
+    response.headers['Cache-Control'] = 'no-store'
+    try:
+        with get_connection() as connection:
+            _m7_require_explicit_return(connection, owner_user_id=int(user.id),
+                                        assessment_situation_id=str(assessment_situation_id))
+            return assessment_drafts.save(connection, assessment_situation_id=str(assessment_situation_id),
+                                          owner_user_id=int(user.id), **payload.model_dump())
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 

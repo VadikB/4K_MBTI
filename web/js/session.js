@@ -6,6 +6,7 @@ import { returnToStart } from './router.js';
 import { applyLogoutButtonPendingState, resetLogoutButtonsState } from './logout-ui.js';
 import { authError } from './dom.js';
 import { showError } from './components/errors.js';
+import { clearOwnerDrafts, hasUnconfirmedDrafts } from './answer-drafts.js';
 
 const clearProfileDisplay = () => {
   document.getElementById('profile-avatar-image')?.removeAttribute('src');
@@ -178,6 +179,26 @@ export const loadUserJourneyState = async ({ allowAdmin = false } = {}) => {
 };
 
 export const logoutAndReturnToStart = async (trigger = null) => {
+  const ownerId = String(state.pendingUser?.id || '');
+  const draftState = { ownerId, unsynced: false };
+  window.dispatchEvent(new CustomEvent('agent4k:before-logout', { detail: draftState }));
+  let unsynced = draftState.unsynced;
+  try { unsynced ||= hasUnconfirmedDrafts(ownerId); } catch { unsynced = true; }
+  if (unsynced && !window.confirm('Последние изменения черновика ещё не подтверждены сервером. После выхода локальная копия будет удалена. Скопируйте текст, если он нужен. Выйти?')) return;
+  // Explicit logout removes this owner's local input. Expired sessions preserve
+  // the buffer until this same owner authenticates again.
+  try { clearOwnerDrafts(ownerId); } catch { /* unavailable storage has no reliable copy */ }
+  try {
+    for (const key of Object.keys(window.sessionStorage)) {
+      if (key.startsWith('agent4k.assessmentDraft:')) {
+        const context = JSON.parse(window.sessionStorage.getItem(key + ':context') || 'null');
+        if (context?.ownerId === ownerId) {
+          window.sessionStorage.removeItem(key); window.sessionStorage.removeItem(key + ':context');
+        }
+      }
+      if (key.startsWith('agent4k.assessmentPending:') && key.endsWith(':' + ownerId)) window.sessionStorage.removeItem(key);
+    }
+  } catch { /* local storage may be disabled */ }
   advanceSessionGeneration();
   const restoreButton = applyLogoutButtonPendingState(trigger);
   const startedAt = Date.now();
@@ -207,7 +228,7 @@ export const logoutAndReturnToStart = async (trigger = null) => {
 // Another tab can replace the shared session cookie without changing this tab's memory.
 let checkingVisibleOwner = false;
 const reconcileVisibleOwner = async () => {
-  if (checkingVisibleOwner || !state.pendingUser?.id || !['reports','report','profile'].includes(state.currentScreen)) return;
+  if (checkingVisibleOwner || !state.pendingUser?.id || !['reports','report','profile','interview'].includes(state.currentScreen)) return;
   checkingVisibleOwner = true;
   const ownerId = state.pendingUser.id; const epoch = state.identityEpoch;
   try {

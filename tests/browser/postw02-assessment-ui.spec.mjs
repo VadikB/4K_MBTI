@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { draftSlot } from '../../web/js/answer-drafts.js';
 
 let server, base;
 const evidence = process.env.POSTW02_UI_EVIDENCE || '.test-stand/postw02-ui';
@@ -34,7 +35,7 @@ async function fixture(page) {
   const user = { id: 8, email: 'synthetic@example.test', full_name: 'Участник' };
   const model = { cycle_id: 'synthetic-cycle',
     participant_progress: { planned_total: 8, current_position_no: 3, last_completed_position_no: 2 },
-    status: { collection_status: 'active', remaining_seconds: 7200 },
+    status: { collection_status: 'active', remaining_seconds: 7200, calendar_deadline: '2026-11-20T12:00:00Z' },
     route: { positions: [{ position_no: 3, state: 'in_progress', current_assessment_situation_id: 'synthetic-as' }],
       progress: { total_positions: 8, completed_positions: null } },
     current_situation: { assessment_situation_id: 'synthetic-as', status: 'active', participant_payload: {
@@ -63,6 +64,17 @@ async function fixture(page) {
       collection_status: 'active', allowed_action: 'continue_current', remaining_seconds: 7200,
       progress: { total_positions: 8 },
     } : { cycle_id: model.cycle_id, allowed_action: 'connected' });
+    if (url.endsWith('/draft')) {
+      const slot = draftSlot(model); run.drafts ||= {};
+      const saved = run.drafts[slot] ||= { version: 0, revision: '', text: '' };
+      if (req.method() === 'PUT') {
+        const data = req.postDataJSON();
+        if (data.expected_version !== saved.version) return json({ detail: 'DRAFT_VERSION_CONFLICT' }, 409);
+        Object.assign(saved, { version: saved.version + 1, revision: data.revision, text: data.text });
+      }
+      return json({ ...saved, owner_id: '8', cycle_id: model.cycle_id, assessment_situation_id: 'synthetic-as',
+        slot_id: slot, expires_at: '2026-11-20T12:00:00Z' });
+    }
     if (url.endsWith('/runtime')) return run.offline ? route.abort('failed') : json(model);
     if (url.endsWith('/transitions')) {
       model.current_situation.status = 'scenario_ended'; model.blocking_system_wait = true;

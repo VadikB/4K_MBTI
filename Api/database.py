@@ -3748,6 +3748,8 @@ def ensure_m5_runtime_schema(connection) -> None:
     ensure_return_integration_schema(connection)
     from Api.m7_completion_repository import ensure_schema as ensure_m7_completion_schema
     ensure_m7_completion_schema(connection)
+    from Api.assessment_drafts import ensure_schema as ensure_answer_drafts_schema
+    ensure_answer_drafts_schema(connection)
     from Api.m6_cycle_aggregation_repository import ensure_schema as ensure_m6_cycle_aggregation_schema
     ensure_m6_cycle_aggregation_schema(connection)
     from Api.m8_results import ensure_schema as ensure_m8_results_schema
