@@ -1,0 +1,18 @@
+{
+  "temporary_postgresql": [
+    {
+      "directory": "/tmp/p4k-postw05-pg",
+      "port": 55435,
+      "stopped": true
+    },
+    {
+      "directory": "/tmp/p4k-postw05-utf8",
+      "port": 55436,
+      "stopped": true
+    }
+  ],
+  "browser_fixture_servers": "stopped",
+  "real_llm_calls": 0,
+  "mail": 0,
+  "production_access": false
+}

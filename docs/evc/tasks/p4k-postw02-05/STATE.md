@@ -17,8 +17,12 @@ lint/build/reproducible dist46files/diff. Evidence сохраняется ряд
 NOT_RUN. Следующий зависимый шаг — fetch main, обновить05, адресные регрессии
 03+05/R1/readback/ASK и повторить затронутый набор; не выполнять merge03 здесь.
 
-branch_push/pr — подготовить отдельный draft review после локального минимума;
-фактический remote результат и SHA — DELIVERY.json в родительском outputs и PR.
+branch_push/pr=pending_approval: auto-review отклонил push в VadikB/4K_MBTI,
+поскольку прямой допуск на экспорт кода/тестов/отчёта/PNG не найден. Push/PR не выполнены.
+Автоматическая перепроверка после03 также НЕ создана: auto-review требует прямого
+разрешения на unattended recurring actions. Обходов и повторных попыток не было.
+При новом явном допуске продолжить публикацию/наблюдение в согласованных границах.
+Локальные SHA и артефакты — DELIVERY.json в родительском outputs.
 Ready/version_bump/merge/deploy/artifact_publish=false; ручная приёмка отдельно.
 Рабочие БД, реальные LLM/письма, full assessment и Docker NOT_RUN.
 Временные owned кластеры /tmp/p4k-postw05-pg:55435 и /tmp/p4k-postw05-utf8:55436
