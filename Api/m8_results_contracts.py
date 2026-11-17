@@ -31,3 +31,18 @@ class CreateReportRequest(Record):
     results_revision_id: str
     audience: Literal["assessee", "customer", "methodology_qa"]
     target_profile: TargetProfile | None = None
+
+
+class PrepareReportCorrectionRequest(Record):
+    expected_report_id: str
+    result_revision_id: str
+    kind: Literal["explanation", "calculation"]
+    incident_ref: str = Field(min_length=1, max_length=500)
+    participant_reason: str = Field(min_length=1, max_length=1000)
+    descriptive: dict
+
+
+class PublishReportCorrectionRequest(Record):
+    candidate_id: str
+    expected_report_id: str
+    idempotency_key: str = Field(min_length=1, max_length=200)

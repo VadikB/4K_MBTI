@@ -3752,6 +3752,8 @@ def ensure_m5_runtime_schema(connection) -> None:
     ensure_m6_cycle_aggregation_schema(connection)
     from Api.m8_results import ensure_schema as ensure_m8_results_schema
     ensure_m8_results_schema(connection)
+    from Api.m8_report_corrections import ensure_schema as ensure_m8_report_correction_schema
+    ensure_m8_report_correction_schema(connection)
     from Api.m10_orchestration import ensure_schema as ensure_m10_orchestration_schema
     ensure_m10_orchestration_schema(connection)
 

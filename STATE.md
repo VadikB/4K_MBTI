@@ -1,3 +1,7 @@
+# STATE — P4K-REPORT-09, 17.11.2026
+
+Активная карточка: [P4K-REPORT-09](docs/evc/tasks/p4k-report-09/TASK.md). База `44349d57` (REPORT-08), ветка `codex/p4k-report-09`, кандидат `2.1.24`. Адресная коррекция опубликованного M8 Report подготовлена локально: immutable original, проверенный кандидат, атомарный указатель, защищённая разница и личный экран. Результат, источники, проверки и откат — в [STATE](docs/evc/tasks/p4k-report-09/STATE.md) и [CHECKS](docs/evc/tasks/p4k-report-09/CHECKS.md). Локальные backend/HTTP/frontend/browser и полный integration на изолированной PostgreSQL прошли; PR CI и приёмка владельца впереди. `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. Ниже история прежних карточек; их полномочия не переносятся.
+
 # STATE — P4K-W02-01 / ADD01, 14.11.2026
 
 Активная карточка: [P4K-W02-01](docs/evc/tasks/p4k-w02-01/TASK.md), дополнениеADD01.
