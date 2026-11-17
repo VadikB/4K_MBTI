@@ -1,3 +1,20 @@
+## Текущее состояние CI
+
+Merge заблокирован. Первый CI head496aa25: unit1248PASS, HTTP216PASS,
+integration462PASS/2SKIP; frontend FAIL из-за unpatched picomatch через knip
+([GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)).
+Последний picomatch4.0.7 и knip6.45.1 не устраняют уязвимость. Audit/CI не ослаблены.
+Full verification FAIL: fast340PASS/40SKIP/10FAIL, runtime3 7PASS/1FAIL;
+runtime1/4 и4/4 PASS, runtime2/4 CANCELLED на checkout.
+
+Исправлены readback после ответа с лишним адресатом и повторный Finish в browser
+driver после закрытия другой вкладкой; прежние invitation-assertions обновлены под
+утверждённый QA02 UI. После исправлений локально431 frontend,40 invitation/program
+browser,1ADM28 real и1runtime PASS, lint/build/diffPASS. Radar PASS локально на
+текущем bundle и неизменённом main71a9c53; причина CI-only font FAIL UNKNOWN.
+Кандидат остаётся draft до устранения audit; перед merge обязателен полный CI
+актуального head. Подробности и точные границы: STATE.md/REPORT.md рядом.
+
 ## Основание изменения
 
 QA-02, матрица приглашений rev1.1 от17.11.2026. Задача:

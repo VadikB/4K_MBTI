@@ -3,11 +3,61 @@ import { test } from 'node:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { readExecutionExport, terminalExecutionKnown, destroyOwnedStandIfAdmitted } from '../browser/fixtures/assessment-completion-profile.mjs';
+import { completeStartedAssessment, readExecutionExport, terminalExecutionKnown, destroyOwnedStandIfAdmitted } from '../browser/fixtures/assessment-completion-profile.mjs';
 
 const terminal = { run_id: 'run-1', cycle_id: 'cycle-1', collection_status: 'calculated',
   close_reason: 'route_completed', collection_closed_at: '2026-11-10T10:00:00Z',
   situations: [{ status: 'closed' }], pipeline: { status: 'ready' } };
+
+test('completion readback observes another tab closing the AS before Finish', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'p4k-finish-readback-'));
+  const ended = { cycle_id: 'cycle-1', status: { collection_status: 'active' },
+    current_situation: { assessment_situation_id: 'as-1', status: 'scenario_ended' },
+    finish_availability: { allowed: true }, between_situations: false };
+  const closed = { ...ended, between_situations: true,
+    current_situation: { assessment_situation_id: 'as-1', status: 'closed' } };
+  const snapshots = [ended, ended, ended, closed];
+  const requests = [];
+  const clicks = [];
+  const response = value => ({ ok: () => true, json: async () => value });
+  const page = {
+    acceptanceDialogHandler: true,
+    request: { get: async url => {
+      if (url.endsWith('/runtime')) {
+        assert.ok(snapshots.length, 'unexpected extra runtime read');
+        return response(snapshots.shift());
+      }
+      assert.ok(url.endsWith('/__pytest__/execution-export/cycle-1'));
+      return response({ situations: [{ assessment_situation_id: 'as-1', status: 'closed',
+        session_id: 'session-1', final_handoff_id: 'handoff-1', finalization_status: 'ready' }] });
+    } },
+    locator: selector => { throw new Error(`unexpected duplicate Finish: ${selector}`); },
+    getByRole: (role, options) => {
+      assert.equal(role, 'button');
+      assert.equal(options.name, 'Приступить к следующей ситуации');
+      return { waitFor: async () => {}, click: async () => { clicks.push('next'); } };
+    },
+    waitForResponse: async predicate => {
+      const receipt = { request: () => ({ method: () => 'POST' }),
+        url: () => 'http://fixture.invalid/users/assessment/cycles/cycle-1/next' };
+      assert.equal(predicate(receipt), true, 'only explicit Next is permitted');
+      requests.push('next');
+      return response({ operation_id: 'next-1' });
+    },
+  };
+  try {
+    const result = await completeStartedAssessment({ page, base: 'http://fixture.invalid',
+      cycleId: 'cycle-1', runId: 'run-1', evidenceDir: dir, initialSituationId: 'as-1',
+      stopAfterFirstNext: true,
+      onNextAccepted: async () => ({ ownershipChanged: true, nextSituationId: 'as-2' }) });
+    assert.deepEqual(clicks, ['next']);
+    assert.deepEqual(requests, ['next']);
+    assert.equal(snapshots.length, 0);
+    assert.equal(result.stages[1].assessment_situation_id, 'as-1');
+    assert.equal(result.stages[1].close_status, 'closed');
+    assert.equal(result.next_assessment_situation_id, 'as-2');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
 
 test('cleanup requires a known terminal execution outcome after preparation', () => {
   assert.equal(terminalExecutionKnown(terminal), true);

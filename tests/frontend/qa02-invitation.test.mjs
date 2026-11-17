@@ -59,3 +59,12 @@ test('a contradictory operation or invitation identity cannot confirm this comma
   assert.equal(exactInvitationItems({items:[{email:'a@test',status:'accepted',operation_id:'foreign'}]},['a@test'],[],'owned')[0].status,'uncertain');
   assert.equal(exactInvitationItems({items:[{email:'a@test',status:'accepted',invitation_id:2}]},['a@test'],[{email:'a@test',status:'uncertain',invitation_id:1}],'owned')[0].status,'uncertain');
 });
+
+test('a receipt with a foreign recipient cannot establish new batch facts',()=>{
+  const response={items:[{email:'a@test',status:'accepted'},{email:'foreign@test',status:'accepted'}]};
+  assert.equal(exactInvitationItems(response,['a@test'])[0].status,'uncertain');
+  const saved={email:'a@test',status:'error',reason_code:'provider_recipient'};
+  assert.deepEqual(exactInvitationItems(response,['a@test'],[saved]),[saved]);
+  const partial=exactInvitationItems({items:[{email:'a@test',status:'accepted'}]},['a@test','b@test']);
+  assert.deepEqual(partial.map(item=>item.status),['accepted','uncertain']);
+});

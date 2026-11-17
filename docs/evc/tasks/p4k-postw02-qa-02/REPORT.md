@@ -75,3 +75,26 @@ transport; доставку в почтовый ящик и устранение
 миграции нет. Старый backend читает TEXT envelope как error, прежний UI скрывает
 произвольный error. Переданный старому UI текст может стать общим — это ожидаемая
 потеря детализации при откате. Участников, операции и ссылки не удалять/не пересоздавать.
+# Дополнение выпуска 17.11.2026
+
+PR246: https://github.com/VadikB/4K_MBTI/pull/246, кандидат2.1.29.
+CI head496aa25 подтвердил unit1248, HTTP216 и integration462PASS/2SKIP.
+Первый полный CI неуспешен: frontend блокирует unpatched picomatch
+(https://github.com/advisories/GHSA-fc5q-39xc-vjpf); browser-fast340PASS/40SKIP/10FAIL,
+runtime3 7PASS/1FAIL, runtime1 и4 PASS, runtime2 CANCELLED на checkout.
+
+После диагностики исправлены: принятие неполного batch без обязательного exact
+readback (лишний адресат не доказывает новые факты; безопасная часть неполного
+ответа сохраняется); повторный Finish в тестовом помощнике после закрытия AS другой
+вкладкой. Старые browser-assertions проверяют новый summary и дату в подробностях.
+Локальные результаты исправлений: frontend431PASS, lint/build/diffPASS,
+program-guards+QA0240PASS, controlled real-backend ADM281PASS, runtime1183 1PASS;
+radar1PASS на текущем bundle и1PASS на неизменённом main71a9c53. Renderer не менялся;
+причина CI-only radar-font FAIL остаётся UNKNOWN, без снижения порогов проверки.
+Диагностика зависимости: latest picomatch4.0.7, patched=None; latest knip6.45.1
+сохраняет эту зависимость. Ни audit, ни обязательные CI gates не изменены.
+
+Merge и deploy НЕ выполнены. Исправления сохраняются в диагностическом draft PR;
+после устранения tooling-блокера нужен новый полный CI актуального head.
+Реальные mail/LLM0, TEST не менялся, owned PG55439 остановлен.
+Далее сохранён исходный отчёт локальной реализации до этапа выпуска.

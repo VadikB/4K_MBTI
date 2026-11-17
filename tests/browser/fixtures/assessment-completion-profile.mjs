@@ -246,7 +246,9 @@ export async function completeStartedAssessment({
     }
     if (!collectionClosed(snapshot) && !snapshot.between_situations) {
       snapshot = await runtime(page, base, cycleId);
-      if (!collectionClosed(snapshot)) {
+      // Another tab may have closed this AS after the preceding read. The
+      // fresh boundary must be respected before issuing a second Finish.
+      if (!collectionClosed(snapshot) && !snapshot.between_situations) {
         if (snapshot.current_situation?.assessment_situation_id !== situationId
             || snapshot.finish_availability?.allowed !== true) throw new Error('COMPOSITE_FINISH_NOT_ADMITTED');
         budget.step(situationId);

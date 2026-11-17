@@ -70,11 +70,12 @@ export const safeInvitationItem = (item = {}) => {
 };
 export const exactInvitationItems = (response, emails, previous = [], operationId = null) => {
   const items = Array.isArray(response?.items) ? response.items : [];
+  const scopeMatches = items.every(item => emails.includes(String(item?.email || '').trim().toLowerCase()));
   return emails.map(email => {
     const found = items.filter(item => String(item?.email || '').trim().toLowerCase() === email);
     const savedItem = (Array.isArray(previous) ? previous : []).find(item => item.email === email);
     const saved = savedItem ? safeInvitationItem(savedItem) : null;
-    const identityMatches = found.length === 1 && (!operationId || !found[0].operation_id || found[0].operation_id === operationId) &&
+    const identityMatches = scopeMatches && found.length === 1 && (!operationId || !found[0].operation_id || found[0].operation_id === operationId) &&
       !(saved?.invitation_id && found[0].invitation_id && saved.invitation_id !== found[0].invitation_id);
     const candidate = identityMatches && ['accepted', 'already_registered', 'error', 'queued', 'sending', 'uncertain'].includes(found[0].status) ? safeInvitationItem(found[0]) : null;
     // A missing row cannot erase a known refusal before INSERT or a confirmed acceptance.

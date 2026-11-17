@@ -1,5 +1,33 @@
 # QA-02 — приглашения
 
+## Выпуск: PR246 опубликован, merge заблокирован обязательным CI
+
+PR: https://github.com/VadikB/4K_MBTI/pull/246, кандидат2.1.29.
+Первый CI head496aa25: unit1248PASS, HTTP216PASS, integration462PASS/2SKIP;
+frontend FAIL на npm audit (GHSA-fc5q-39xc-vjpf, picomatch через knip, исправленной
+публикации нет, latest4.0.7; latestknip6.45.1 тоже зависит от picomatch4).
+Full verification FAIL: fast340PASS/40SKIP/10FAIL, runtime3 7PASS/1FAIL,
+runtime1/4 и runtime4/4 PASS; runtime2/4 CANCELLED после зависшего checkout.
+Это фактический неуспех CI, не заменённый локальными результатами.
+
+Исправлены дефект доверия к ответу с лишним адресатом (обязательное чтение той же
+операции, сохранение безопасных фактов частичного ответа) и гонка browser driver:
+после свежего between_situations он больше не повторяет Finish другой вкладки.
+Регрессия driver воспроизводит FAIL до исправления и PASS после; сам сценарий
+runtime1183 PASS адресно. Старые invitation-assertions приведены к утверждённым
+QA02 текстам/summary и сведениям в карточке. Локально после исправлений:
+frontend431PASS, lint/build/diffPASS, program guards+QA0240PASS, ADM28 real1PASS,
+radar1PASS. Radar также PASS на отдельной неизменённой копии main71a9c53;
+renderer не менялся, причина Linux CI-only font failure пока UNKNOWN.
+Реальные mail/LLM0, TEST не менялся; owned PG55439 остановлен.
+
+Следующий шаг: сохранить исправления в этом PR как draft до устранения audit;
+после решения блокера — Ready, полный обязательный CI точного head и только затем
+squash merge/штатный deploy TEST. Вопрос владельцу о расширении области на
+устранение tooling-зависимости задан, ответ ещё не получен. CI, audit и protected
+rules не ослаблялись, bypass/merge/deploy не выполнялись. Прямое разрешение
+публичного QA02 выпуска ниже сохраняется, повторно его запрашивать не требуется.
+
 ## Явное разрешение публичного выпуска
 
 17.11.2026 владелец прямо подтвердил в этом чате:

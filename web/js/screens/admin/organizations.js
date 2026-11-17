@@ -1058,7 +1058,20 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
   };
   let readingPrevious = Boolean(existing);
   let confirmedItems = Array.isArray(existing?.results) ? existing.results.map(safeInvitationItem) : [];
-  const exactItems = (result) => exactInvitationItems(result, emails, confirmedItems, operationId);
+  const exactItems = (result) => {
+    const items = exactInvitationItems(result, emails, confirmedItems, operationId);
+    const complete = Array.isArray(result?.items) && result.items.length === emails.length &&
+      emails.every(email => result.items.filter(item => String(item?.email || '').trim().toLowerCase() === email).length === 1);
+    if (!complete) {
+      // Preserve attributable facts from a partial receipt, then read this same
+      // command. An extra recipient cannot establish any new batch outcome.
+      confirmedItems = items;
+      savePendingInvitationOperation({ requestKey, operationId, organizationId: Number(organizationId),
+        assignmentRef: assessment, emails, createdAt: attemptCreatedAt, results: items }, identityKey);
+      throw new Error('INVITATION_RESPONSE_INCOMPLETE');
+    }
+    return items;
+  };
   const showItems = async (items) => {
     confirmedItems = items;
     const unresolved = items.some((item) => ['unknown', 'pending'].includes(invitationFacts(item).outcome));
