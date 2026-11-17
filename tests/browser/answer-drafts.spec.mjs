@@ -318,7 +318,11 @@ test('UI B/D: focus, long text, reading position, 320px and reduced keyboard vie
   const other=run.drafts[draftSlot(run.model)];other.version++;other.revision='narrow-conflict';other.text='Вариант другого устройства';
   await field.fill('Локальная редакция на 320');await page.clock.runFor(800);
   await expect(status).toContainText('Выберите, с каким текстом');
-  await expect(page.locator('#interview-submit-button')).toBeDisabled();
+  const blocked=page.locator('#interview-submit-button');
+  await expect(blocked).toBeDisabled(); await blocked.hover();
+  await expect(blocked).toHaveCSS('background-color','rgb(214, 226, 229)');
+  await page.mouse.down(); await expect(blocked).toHaveCSS('background-color','rgb(214, 226, 229)');
+  await page.mouse.up();
   for(const choice of await page.locator('#interview-draft-actions button').all()) {
     await choice.scrollIntoViewIfNeeded();const r=await choice.boundingBox();
     expect(r.x).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(320);

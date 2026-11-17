@@ -1,3 +1,22 @@
+# Актуальное дополнение UI — 17.11.2026
+
+Замечания UI выполнены в той же codex/p4k-postw02-05. Подробный результат и A–F:
+[UI_FOLLOWUP.md](UI_FOLLOWUP.md), полноразмерные снимки — evidence/ui-followup.
+Свежий base main44349d5784bf71c14b050cdcca4745eeff5a9ae8 (2.1.23/REPORT_08/PR238)
+интегрирован локально. Verified code head e846c8a60834e348f5369bba957dec9fb1270066.
+PASS: frontend380, browser7 (+addressed disabled scenario1), HTTPdraft7, lint,
+build/rebuild44, diff. A–E PASS; D только viewport emulation, physical NOT_RUN;
+F local PASS/CI NOT_RUN. Guard конфликта теперь закрывает прямой submit и poll.
+Сервер draft/CAS/expiry не менялся; полной backend/SQL матрицы в follow-up не было.
+Полный head/пакет — outputs/p4k-postw02-05-20261117/DELIVERY.json родительского workspace.
+Все temporary fixtures закрыты; DB/Docker/LLM/mail/full Cycle/Prod не запускались.
+
+Read-only GitHub сверка подтвердила отсутствие PR05. Push/PR/CI pending_approval
+сохраняется по прежнему auto-review отказу экспорта состава; новой попытки не было.
+Версия взята из свежего main; своего bump/Ready/merge/deploy нет.
+
+---
+
 # STATE — P4K-POSTW02-05
 
 17.11.2026. Реализация05 и требуемая перепроверка после слияния03 выполнены локально.

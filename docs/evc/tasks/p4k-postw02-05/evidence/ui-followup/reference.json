@@ -1,0 +1,13 @@
+{
+  "project_id": "appgprj_6ad211b93f948191a7bc6106570630ea",
+  "version_number": 10,
+  "source_commit_sha": "e44fa78efb1ec8605b28cf9bc2c2272da2b9122a",
+  "files": {
+    "dist/screen.css": "45ab2cba58605fde9e02df2cd789ee3aaa87d475f84d127a34a5bf35ea96541b",
+    "dist/screen.mjs": "de1f8a86a985cb9dd7b08abe7ddb089350cf5fba8ae79a960f8cae680de0749e",
+    "dist/screen.html": "ebd05639c94fb557882f2ff589af99b9804fc40895b3c3ce468f2771fcae2bd5",
+    "dist/ui-theme.css": "55be728c87dce6546dfecb9116565398b440420d666b0de63f2a8292929bd135",
+    "dist/report.html": "433c4c71db3e98ac88e8765af2001aafff804e97466175cb7d7432be74fec8ba"
+  },
+  "source_dirty": ""
+}

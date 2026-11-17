@@ -1,0 +1,124 @@
+{
+  "base": "44349d5784bf71c14b050cdcca4745eeff5a9ae8",
+  "verified_code_head": "e846c8a60834e348f5369bba957dec9fb1270066",
+  "A": "PASS",
+  "B": "PASS",
+  "C": "PASS",
+  "D": "PASS emulation; physical keyboard NOT_RUN",
+  "E": "PASS 13 existing markup states x3 widths x2 network states",
+  "F": "PASS local: frontend380/browser7/HTTP7/lint/build/dist44/diff; CI NOT_RUN export approval pending",
+  "geometry": {
+    "saved-1440": {
+      "field": {
+        "x": 176,
+        "y": 816,
+        "width": 872,
+        "height": 96,
+        "bottom": 912
+      },
+      "button": {
+        "x": 1064,
+        "y": 862,
+        "width": 200,
+        "height": 50,
+        "bottom": 912
+      },
+      "disabled": false,
+      "disabledReason": "Active runtime; нет pending/Continue/closed; saved/offline draft сам по себе не блокирует отправку"
+    },
+    "offline-1440": {
+      "field": {
+        "x": 176,
+        "y": 816,
+        "width": 872,
+        "height": 96,
+        "bottom": 912
+      },
+      "button": {
+        "x": 1064,
+        "y": 862,
+        "width": 200,
+        "height": 50,
+        "bottom": 912
+      },
+      "disabled": false,
+      "disabledReason": "Active runtime; нет pending/Continue/closed; saved/offline draft сам по себе не блокирует отправку"
+    },
+    "conflict-1440": {
+      "field": {
+        "x": 176,
+        "y": 816,
+        "width": 872,
+        "height": 96,
+        "bottom": 912
+      },
+      "button": {
+        "x": 1064,
+        "y": 862,
+        "width": 200,
+        "height": 50,
+        "bottom": 912
+      },
+      "disabled": true,
+      "disabledReason": "Явный выбор редакции ещё не выполнен"
+    },
+    "saved-390": {
+      "field": {
+        "x": 28,
+        "y": 670.875,
+        "width": 334,
+        "height": 96,
+        "bottom": 766.875
+      },
+      "button": {
+        "x": 28,
+        "y": 806.875,
+        "width": 334,
+        "height": 50,
+        "bottom": 856.875
+      },
+      "disabled": false,
+      "disabledReason": "Active runtime; нет pending/Continue/closed; saved/offline draft сам по себе не блокирует отправку"
+    },
+    "offline-390": {
+      "field": {
+        "x": 28,
+        "y": 670.875,
+        "width": 334,
+        "height": 96,
+        "bottom": 766.875
+      },
+      "button": {
+        "x": 28,
+        "y": 822.875,
+        "width": 334,
+        "height": 50,
+        "bottom": 872.875
+      },
+      "disabled": false,
+      "disabledReason": "Active runtime; нет pending/Continue/closed; saved/offline draft сам по себе не блокирует отправку"
+    },
+    "conflict-390": {
+      "field": {
+        "x": 28,
+        "y": 670.875,
+        "width": 334,
+        "height": 96,
+        "bottom": 766.875
+      },
+      "button": {
+        "x": 28,
+        "y": 942.875,
+        "width": 334,
+        "height": 50,
+        "bottom": 992.875
+      },
+      "disabled": true,
+      "disabledReason": "Явный выбор редакции ещё не выполнен"
+    }
+  },
+  "llm": 0,
+  "mail": 0,
+  "docker": false,
+  "production": "NOT_RUN"
+}
