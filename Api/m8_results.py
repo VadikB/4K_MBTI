@@ -610,6 +610,8 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         LEFT JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
         WHERE """ + owner_scope + """
         ORDER BY COALESCE(c.collection_closed_at,c.created_at) DESC,c.id DESC,
+                 (p.id=(SELECT current.report_id FROM m8_published_reports current
+                        WHERE current.cycle_db_id=c.id)) DESC NULLS LAST,
                  rr.revision_no DESC NULLS LAST,
                  p.revision_no DESC NULLS LAST""", (user_id,)).fetchall()
     cycles = {}
@@ -631,6 +633,11 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             'latest_results_revision_no':row['results_revision_no'],
             'report_id':None, 'revision_no':None, 'created_at':row['cycle_created_at'], 'versions':[],
             'report_processing_status':None})
+        if (row['results_revision_no'] is not None and
+                (item['latest_results_revision_no'] is None or
+                 row['results_revision_no'] > item['latest_results_revision_no'])):
+            item['latest_results_revision_id'] = str(row['results_revision_id'])
+            item['latest_results_revision_no'] = row['results_revision_no']
         if row['report_id']:
             version = {'cycle_id':cid,'report_id':str(row['report_id']), 'revision_no':row['revision_no'],
                 'created_at':row['created_at'],'results_revision_id':str(row['results_revision_id']),
@@ -721,6 +728,11 @@ def _present_report(saved: dict) -> dict:
 
 def read_latest_report(connection, cycle_id: str, audience: str) -> dict:
     cycle = m7_completion._cycle(connection, cycle_id, lock=False)
+    if audience == "assessee":
+        row = connection.execute("SELECT report_id AS id FROM m8_published_reports WHERE cycle_db_id=%s",
+                                 (cycle["id"],)).fetchone()
+        if row:
+            return read_report(connection, row["id"])
     row = connection.execute("""SELECT p.id FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
         JOIN m8_results r ON r.id=rr.results_id WHERE r.cycle_db_id=%s AND p.audience=%s
         ORDER BY rr.revision_no DESC,p.revision_no DESC LIMIT 1""", (cycle["id"], audience)).fetchone()
@@ -730,59 +742,63 @@ def read_latest_report(connection, cycle_id: str, audience: str) -> dict:
 
 
 def render_pdf(report: dict) -> bytes:
-    package = load_report_package(); labels = package["template"]["outcome_labels"]
+    from copy import deepcopy
+    from Api.typst_pdf_renderer import TypstRenderError
     c67 = _present_report(report["c67"])
+    # Explicitly supported saved C-67 readers. Never select a legacy PDF using the
+    # mutable current template constant.
+    if c67.get("template_version") not in {"m8-basic-report/1.4.1", "m8-basic-report/1.5.0"}:
+        raise TypstRenderError("PDF_REPORT_VERSION_UNSUPPORTED")
+    if (not isinstance(c67.get("skills"), list)
+            or not isinstance(c67.get("limitations"), list)
+            or not isinstance(c67.get("descriptive"), dict)
+            or any(not isinstance(skill, dict) or skill.get("outcome") not in {
+                "full_score", "partial_score", "result_without_score", "no_result"}
+                or (skill.get("score") is not None and (
+                    not isinstance(skill.get("score"), dict)
+                    or type(skill["score"].get("value")) not in (int, float)))
+                or not (skill.get("skill_name") or skill.get("skill_id"))
+                for skill in c67["skills"])):
+        raise TypstRenderError("PDF_REPORT_MODEL_UNSUPPORTED")
     participant_labels = {
         "full_score": "Результат по полному составу навыка",
         "partial_score": "Результат по части навыка",
         "result_without_score": "Есть наблюдения без общего балла по навыку",
         "no_result": "Недостаточно оснований для результата",
     }
-    participant_coverage_labels = {
-        "opportunities": "Фактическая возможность наблюдения",
-        "indicator_assessments": "Обоснованные оценки индикаторов",
-        "admissible_contributions": "Допустимые вклады",
-        "components_with_score": "Компоненты с баллом",
-        "complete_components": "Полностью оценённые компоненты",
-    }
-    participant_pdf = c67.get("template_version") in {"m8-basic-report/1.4.1", REPORT_TEMPLATE_VERSION}
     skills = []
     for skill in c67["skills"]:
         score = skill.get("score")
         skills.append({
             "name": skill.get("skill_name") or skill["skill_id"],
             "description": skill.get("skill_description") or "",
-            "outcome": skill.get("presentation", {}).get("label") or (participant_labels if participant_pdf else labels).get(skill["outcome"], "Неизвестный формат результата"),
+            "outcome": (skill.get("presentation") or {}).get("label") or participant_labels.get(skill["outcome"], "Неизвестный формат результата"),
             "reasons": [item.get("message") or "Причина ограничения требует уточнения."
                         for item in (skill.get("presentation") or {}).get("reasons") or []],
-            "score": "—" if score is None else f"{score['numerator']}/{score['denominator']} ({score['value']})",
-            "completeness": skill.get("completeness") or "—",
+            "score": "—" if score is None else f"{score['value']:g}",
+            "partial": skill["outcome"] == "partial_score",
+            "value": None if score is None else score["value"],
+            "competency_id": skill.get("competency_id") or skill.get("competency_name") or "Группа навыков",
             "competency": skill.get("competency_name") or "Группа навыков",
         })
-    coverage = []
-    for scope, cuts in c67["coverage"].items():
-        if not isinstance(cuts, dict):
-            continue
-        for name, cut in cuts.items():
-            if not isinstance(cut, dict) or "ratio" not in cut:
-                continue
-            ratio = "не определено" if cut["ratio"] is None else f"{cut['numerator']}/{cut['denominator']} ({cut['ratio'] * 100:.1f}%)"
-            coverage.append({"scope": scope, "name": participant_coverage_labels.get(name, "Неизвестный разрез покрытия") if participant_pdf else name, "ratio": ratio})
+    radars = []
+    for competency_id in dict.fromkeys(skill["competency_id"] for skill in skills):
+        group = [skill for skill in skills if skill["competency_id"] == competency_id]
+        radars.append({"name": group[0]["competency"], "competency_id": competency_id, "axes": [
+            {"name": skill["name"], "current": skill["value"], "partial": skill["partial"]}
+            for skill in group]})
     payload = {
         "title": ("ТЕСТОВЫЙ РЕЗУЛЬТАТ — 4K" if c67.get("test_result")
                   else "4K — базовый индивидуальный отчёт"),
-        "cycle_id": c67["cycle_id"],
-        "results_revision_no": c67["results_revision_no"],
-        "report_revision_no": report["revision_no"],
+        "program_name": report.get("program_name") or (c67.get("display") or {}).get("program_name"),
+        "closed_at": report.get("collection_closed_at") or (c67.get("collection") or {}).get("closed_at"),
+        "participant_name": report.get("participant_name"),
+        "correction": deepcopy(report.get("correction")),
         "skills": skills,
-        "coverage": coverage,
+        "radars": radars,
         "limitations": c67["limitations"],
         "partial_result": c67.get("partial_result"),
         "processing": c67.get("processing", {"status":"completed","message":"Обработка завершена."}),
         "descriptive": c67.get("descriptive", {"status":"historical", "summary":[], "claims":[]}),
-        "recommendations": c67.get("recommendations", []),
-        "recommendation_notices": c67.get("recommendation_notices", []),
-        "reliability": c67["reliability"].get("status", "not_provided"),
-        "created_at": str(report.get("created_at") or ""),
     }
-    return render_typst_report(payload, "m8_participant_report_v1.typ" if participant_pdf else "m8_basic_report.typ")
+    return render_typst_report(payload, "m8_participant_report_v2.typ")

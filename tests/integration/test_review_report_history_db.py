@@ -29,6 +29,7 @@ def test_history_groups_cycles_and_preserves_all_saved_versions(test_database_ur
         c.execute('CREATE TABLE m8_results(id UUID PRIMARY KEY,cycle_db_id BIGINT)')
         c.execute('CREATE TABLE m8_result_revisions(id UUID PRIMARY KEY,results_id UUID,revision_no INTEGER)')
         c.execute("CREATE TABLE m8_reports(id UUID PRIMARY KEY,result_revision_id UUID,revision_no INTEGER,audience TEXT,c67_json JSONB DEFAULT '{}'::jsonb,created_at TIMESTAMPTZ DEFAULT NOW())")
+        c.execute('CREATE TABLE m8_published_reports(cycle_db_id BIGINT PRIMARY KEY,report_id UUID)')
         expected={}
         for cycle_db_id,owner,scope in [(1,91,'assessment'),(2,91,'assessment'),(3,92,'assessment'),(4,91,'qa')]:
             cycle,results,rr=uuid4(),uuid4(),uuid4()

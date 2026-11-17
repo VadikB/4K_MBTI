@@ -1,0 +1,10 @@
+4ccb9a8fa25595c961b0c5773959e39542e01e02f696821cdfb64372ce10c75f  docs/evc/tasks/p4k-report-10/evidence/comparison-limited.pdf
+b2c20a3224853eef730f5b40bfbebfe4ec6b2bb1db5862c3d21eb41f0dc97edf  docs/evc/tasks/p4k-report-10/evidence/comparison-separate.pdf
+90969d5d3c6f9cbe6dd65d34de751ea42d22b3de1bbf855ab2ddd591b43da17c  docs/evc/tasks/p4k-report-10/evidence/corrected.pdf
+115b00fcd4c29c8590a19438cc180a3dd3f183ae67cb4beee0204bb73dbeb257  docs/evc/tasks/p4k-report-10/evidence/empty.pdf
+b307321bd0f28932f31dbaaf82d7eef7ef0ad7526e0c2b33393864e0d8a2cf3f  docs/evc/tasks/p4k-report-10/evidence/long.pdf
+ecc770ff7e3ec54d389ff1b3688e7a26fb45c4b6d232ee0c1b2d6d39f292a4be  docs/evc/tasks/p4k-report-10/evidence/normal.pdf
+f587ddcc98523587457bb84817224bb25d16f2e3baaa74a8b8fce7d725d3d199  docs/evc/tasks/p4k-report-10/evidence/partial.pdf
+03d2cb4bd187422957777a177da1ad27e0fb065dac95ad24553cc05418988bf5  docs/evc/tasks/p4k-report-10/evidence/radar-full.pdf
+168505e636df53ba90e64f3ef29df8185d3684f40a1846542282c81ce15e5bd3  docs/evc/tasks/p4k-report-10/evidence/radar-gap.pdf
+c5d4604fdc37975818815201845a2008369963e06e225aa0df4d1ea0071fee53  docs/evc/tasks/p4k-report-10/evidence/unscored.pdf

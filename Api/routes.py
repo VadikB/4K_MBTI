@@ -48,8 +48,11 @@ from Api.public_origin import build_public_link
 from Api import questionnaire_sources
 from Api import m8_results
 from Api import m8_report_access
+from Api import m8_report_corrections
 from Api import m8_report_comparison
-from Api.m8_results_contracts import CreateResultsRequest, CreateReportRequest
+from Api.typst_pdf_renderer import TypstRenderError
+from Api.m8_results_contracts import (CreateResultsRequest, CreateReportRequest,
+    PrepareReportCorrectionRequest, PublishReportCorrectionRequest)
 from Api import m10_product_flow, m10_orchestration
 from Api.m10_contracts import ProductCycleStartRequest, ProductCycleActionRequest, ProductNextRequest
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
@@ -8698,6 +8701,36 @@ def create_m8_report(payload: CreateReportRequest, request: Request):
         raise HTTPException(409, detail=str(exc)) from exc
 
 
+@router.post('/admin/m8-report-corrections/candidates', status_code=201)
+def prepare_m8_report_correction(payload: PrepareReportCorrectionRequest, request: Request):
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            prepared = m8_report_corrections.prepare(connection,
+                expected_report_id=payload.expected_report_id, result_revision_id=payload.result_revision_id,
+                kind=payload.kind, incident_ref=payload.incident_ref,
+                participant_reason=payload.participant_reason, descriptive=payload.descriptive,
+                created_by=int(user.id))
+            connection.commit()
+            return prepared
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
+@router.post('/admin/m8-report-corrections', status_code=201)
+def publish_m8_report_correction(payload: PublishReportCorrectionRequest, request: Request):
+    user = _m5_superadmin(request)
+    try:
+        with get_connection() as connection:
+            report = m8_report_corrections.publish(connection,
+                candidate_id=payload.candidate_id, expected_report_id=payload.expected_report_id,
+                key=payload.idempotency_key, created_by=int(user.id))
+            connection.commit()
+            return report
+    except (ValueError, KeyError) as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
 @router.get('/admin/m8-reports/{report_id}')
 def read_admin_m8_report(report_id: UUID, request: Request):
     _m5_superadmin(request)
@@ -8710,9 +8743,11 @@ def read_admin_m8_report(report_id: UUID, request: Request):
 def download_admin_m8_report(report_id: UUID, request: Request):
     _m5_superadmin(request)
     try:
-        with get_connection() as connection: report = m8_results.read_report(connection, str(report_id))
+        with get_connection() as connection:
+            report = m8_results.read_report(connection, str(report_id))
+            report['correction'] = m8_report_corrections.public_notice(connection, report)
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
-    pdf = m8_results.render_pdf(report)
+    pdf = _render_saved_report_pdf(report)
     return Response(content=pdf, media_type='application/pdf',
                     headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
@@ -8825,11 +8860,13 @@ def read_owned_m8_report(cycle_id: UUID, request: Request):
     _m8_owned_cycle(request, str(cycle_id))
     try:
         with get_connection() as connection:
-            return m8_report_access.public_projection(m8_results.read_latest_report(connection, str(cycle_id), 'assessee'))
+            report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
+            return {**m8_report_access.public_projection(report),
+                    "correction": m8_report_corrections.public_notice(connection, report)}
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
 
 
-def _owned_saved_report(request: Request, report_id: UUID):
+def _owned_saved_report(request: Request, report_id: UUID, *, include_correction: bool = False):
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     if user is None:
         raise HTTPException(401, detail='Требуется авторизация')
@@ -8843,14 +8880,18 @@ def _owned_saved_report(request: Request, report_id: UUID):
         if scope['audience'] != 'assessee' or not m8_results.owner_can_read_cycle(connection, str(scope['cycle_id']), user.id):
             raise HTTPException(403, detail='Нет доступа к этому Report.')
         try:
-            return m8_results.read_report(connection, str(report_id))
+            report = m8_results.read_report(connection, str(report_id))
+            if include_correction:
+                report['correction'] = m8_report_corrections.public_notice(connection, report)
+            return report
         except ValueError as exc:
             raise HTTPException(409, detail='Сохранённый Report временно недоступен.') from exc
 
 
 @router.get('/assessment/m8/reports/{report_id}')
 def read_owned_saved_m8_report(report_id: UUID, request: Request):
-    return m8_report_access.public_projection(_owned_saved_report(request, report_id))
+    report = _owned_saved_report(request, report_id, include_correction=True)
+    return {**m8_report_access.public_projection(report), "correction": report['correction']}
 
 
 @router.get('/assessment/m8/reports/{report_id}/comparison')
@@ -8887,7 +8928,10 @@ def compare_owned_saved_m8_report(report_id: UUID, request: Request, previous_re
                 JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
                 WHERE c.owner_user_id=%s AND c.organization_id=%s AND c.id<>%s
                   AND c.collection_closed_at IS NOT NULL AND c.collection_closed_at<%s
-                ORDER BY c.collection_closed_at DESC,c.id DESC,rr.revision_no DESC,p.revision_no DESC LIMIT 1""",
+                ORDER BY c.collection_closed_at DESC,c.id DESC,
+                  (p.id=(SELECT current.report_id FROM m8_published_reports current
+                         WHERE current.cycle_db_id=c.id)) DESC NULLS LAST,
+                  rr.revision_no DESC,p.revision_no DESC LIMIT 1""",
                 (user.id, current_scope['organization_id'], current_scope['cycle_db_id'], current_scope['collection_closed_at'])).fetchone()
         if not previous_scope:
             raise HTTPException(404, detail='PREVIOUS_COMPLETED_REPORT_NOT_FOUND')
@@ -8912,16 +8956,26 @@ def compare_owned_saved_m8_report(report_id: UUID, request: Request, previous_re
 @router.get('/assessment/m8/reports/{report_id}/comparison.pdf')
 def download_owned_m8_report_comparison(report_id: UUID, request: Request, previous_report_id: UUID | None = None):
     comparison = compare_owned_saved_m8_report(report_id, request, previous_report_id)
-    pdf = m8_report_comparison.render_comparison_pdf(comparison)
+    try:
+        pdf = m8_report_comparison.render_comparison_pdf(comparison)
+    except TypstRenderError as exc:
+        raise HTTPException(503, detail='PDF временно недоступен. Повторите скачивание.') from exc
     return Response(content=pdf, media_type='application/pdf', headers={
         'Content-Disposition': f'attachment; filename="4k-report-comparison-{report_id}.pdf"'
     })
 
 
+def _render_saved_report_pdf(report: dict) -> bytes:
+    try:
+        return m8_results.render_pdf(report)
+    except TypstRenderError as exc:
+        raise HTTPException(503, detail='PDF временно недоступен. Повторите скачивание.') from exc
+
+
 @router.get('/assessment/m8/reports/{report_id}/pdf')
 def download_owned_m8_report(report_id: UUID, request: Request):
-    report = _owned_saved_report(request, report_id)
-    pdf = m8_results.render_pdf(report)
+    report = _owned_saved_report(request, report_id, include_correction=True)
+    pdf = _render_saved_report_pdf(report)
     return Response(content=pdf, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 
@@ -8934,12 +8988,30 @@ def _customer_saved_report(request: Request, report_id: UUID, *, channel: str = 
             raise HTTPException(403, detail='Готовый Report недоступен текущему пользователю.')
         try:
             saved = m8_results.read_report(connection, str(report_id))
-            report = m8_report_access.customer_projection(saved) if project else saved
+            notice = m8_report_corrections.public_notice(connection, saved)
+            report = ({**m8_report_access.customer_projection(saved),
+                       "correction": notice} if project else {**saved, "correction": notice})
             m8_report_access.record_access(connection, report_id=str(report_id), user_id=int(user.id), channel=channel)
             connection.commit()
             return report
         except ValueError as exc:
             raise HTTPException(409, detail='Сохранённый Report временно недоступен.') from exc
+
+
+@router.get('/admin/m8-access/cycles/{cycle_id}/reports/latest')
+def current_customer_m8_report(cycle_id: UUID, request: Request):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    if user is None:
+        raise HTTPException(401, detail='Требуется авторизация')
+    with get_connection() as connection:
+        cycle = connection.execute('SELECT id FROM m5_cycles WHERE cycle_id=%s', (cycle_id,)).fetchone()
+        if not cycle:
+            raise HTTPException(404, detail='M8_REPORT_NOT_FOUND')
+        report_id = m8_report_corrections.current_report_id(connection, cycle['id'])
+        if not report_id or not m8_report_access.customer_can_read_report(
+            connection, report_id=report_id, user_id=int(user.id)):
+            raise HTTPException(403, detail='Готовый Report недоступен текущему пользователю.')
+        return {'id': report_id}
 
 
 @router.get('/admin/m8-access/reports')
@@ -8970,7 +9042,7 @@ def read_customer_m8_report(report_id: UUID, request: Request):
 @router.get('/admin/m8-access/reports/{report_id}/pdf')
 def download_customer_m8_report(report_id: UUID, request: Request):
     report = _customer_saved_report(request, report_id, channel='pdf', project=False)
-    return Response(content=m8_results.render_pdf(report), media_type='application/pdf',
+    return Response(content=_render_saved_report_pdf(report), media_type='application/pdf',
                     headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 

@@ -28,6 +28,7 @@ def test_customer_direct_report_and_pdf_recheck_access(monkeypatch):
     monkeypatch.setattr(routes.m8_results, "read_report", lambda *_: report)
     monkeypatch.setattr(routes.m8_report_access, "customer_projection",
                         lambda value: {**value, "audience": "customer"})
+    monkeypatch.setattr(routes.m8_report_corrections, "public_notice", lambda *_args: None)
     monkeypatch.setattr(routes.m8_report_access, "record_access", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(routes.m8_results, "render_pdf", lambda value: b"%PDF-synthetic")
     app = FastAPI(); app.include_router(routes.router)
