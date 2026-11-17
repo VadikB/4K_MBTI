@@ -1,0 +1,80 @@
+{
+  "package": "@ryotsu/picomatch",
+  "version": "4.0.7-a",
+  "gitHead": "3ab5a7627d480259e3d9ca67fbc14c125d374f0e",
+  "dist": {
+    "shasum": "763d75e0791949c59f35fc77c20848c986a0f40f",
+    "tarball": "https://registry.npmjs.org/@ryotsu/picomatch/-/picomatch-4.0.7-a.tgz",
+    "fileCount": 10,
+    "integrity": "sha512-JroBFEmaejC7szGSfqOhF1QZHLKvX2wTA1+fWyfkpy3BjzdQKNPLKa2FtgeKVUDy5/UPUNkXEeCHJ5ZRBMLTVA==",
+    "signatures": [
+      {
+        "sig": "MEUCIHe0Bk+8racIFReNjvjW7eDq3lIKxGIPIMpBGYBr+iKdAiEAi2Id/gh149E1XVYk2E2u6e9mCsNaIo05C0OeK2WXI0A=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "sig": "MEUCIBPQKcniGm/S0rihv2nD51mcCBEI3cMKWmuXY48jpZwQAiEAgNtWsl3z2rgSa6lxNiI6ufY8t5QsQOvrsUatLxxQsJY=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@ryotsu%2fpicomatch@4.0.7-a",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 69152
+  },
+  "files": [
+    {
+      "file": "LICENSE",
+      "sha256": "d0cd141b0c322fded5dfad1d4645bb2fedfc05b7321fe1009469638190d59ef9",
+      "upstream_identical": true
+    },
+    {
+      "file": "README.md",
+      "sha256": "dbfcccb75df9360390f29d12c6ace93f9db3c6cd6b505158c11bdee572c1c4f2",
+      "upstream_identical": false
+    },
+    {
+      "file": "index.js",
+      "sha256": "02ae26406508e28f9ba0865be16cf77f0b33de6c4d4d49c212c4176df1d5625a",
+      "upstream_identical": true
+    },
+    {
+      "file": "lib/constants.js",
+      "sha256": "cdcb0716c3c7137f34fbec4fe29613de0aaa0a7de01505601ef3a88a5ba05fb0",
+      "upstream_identical": false
+    },
+    {
+      "file": "lib/parse.js",
+      "sha256": "a59b25c67cce014f5226836f8391cb1f323dc76224dc82b85c6826d10b33922a",
+      "upstream_identical": false
+    },
+    {
+      "file": "lib/picomatch.js",
+      "sha256": "fdd249d7ffff853f3bb1c77eafc8baa1a437bea85a94c35877b83c6a40d9ca94",
+      "upstream_identical": true
+    },
+    {
+      "file": "lib/scan.js",
+      "sha256": "6457a1764e5c2e543cc3a0c00ce12ebb3764097628868198370b64d4e642aaae",
+      "upstream_identical": true
+    },
+    {
+      "file": "lib/utils.js",
+      "sha256": "f04604f70cd1a3f6ace80b84766468674ff38b4bb83818d2ef1d81fc6355f935",
+      "upstream_identical": true
+    },
+    {
+      "file": "package.json",
+      "sha256": "6a17af861b7ade307d1cc64a389823d3ce0307d78b80eb38f9e110bacac999fc",
+      "upstream_identical": false
+    },
+    {
+      "file": "posix.js",
+      "sha256": "5695ff5dfcd5a338a40630bd506056f2950bcb08fe1cc068519cbbfe60add480",
+      "upstream_identical": true
+    }
+  ]
+}

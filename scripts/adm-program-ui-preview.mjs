@@ -7,7 +7,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-export async function startAdminProgramPreview({ root = process.cwd(), port = 18944 } = {}) {
+export async function startAdminProgramPreview({ root = process.cwd(), port = 18944, adapter = null } = {}) {
   const sourcePaths = ['web/index.html', 'web/js/screens/admin/organizations.js', 'web/js/wiring.js',
     'web/js/entries/admin-organizations.js', 'web/styles/screens/admin-organizations.css',
     'web/js/config.js', ...(await fs.readdir(path.join(root, 'web/dist'))).map((name) => 'web/dist/' + name)];
@@ -25,6 +25,7 @@ export async function startAdminProgramPreview({ root = process.cwd(), port = 18
   const requests = [];
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://127.0.0.1:' + port);
+    if (adapter && await adapter({ request, response, url, identity })) return;
     const json = (body, status = 200) => { response.writeHead(status, { 'Content-Type': 'application/json' }); response.end(JSON.stringify(body)); };
     if (url.pathname === '/__preview/identity') return json(identity);
     if (url.pathname === '/__preview/requests') return json(requests);

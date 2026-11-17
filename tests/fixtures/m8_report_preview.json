@@ -1,0 +1,241 @@
+{
+  "synthetic": true,
+  "source": "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json",
+  "source_sha256": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+  "skills": [
+    {
+      "skill_id": "K1.1",
+      "skill_code": "K1.1",
+      "skill_name": "Ориентация и проектирование коммуникации",
+      "skill_description": "Ориентация и проектирование коммуникации",
+      "competency_id": "K1",
+      "competency_name": "Коммуникация",
+      "required_indicator_ids": [
+        "K1.I01",
+        "K1.I02",
+        "K1.I03",
+        "K1.I04",
+        "K1.I05"
+      ]
+    },
+    {
+      "skill_id": "K1.2",
+      "skill_code": "K1.2",
+      "skill_name": "Передача смысла",
+      "skill_description": "Передача смысла",
+      "competency_id": "K1",
+      "competency_name": "Коммуникация",
+      "required_indicator_ids": [
+        "K1.I06",
+        "K1.I07",
+        "K1.I08",
+        "K1.I09",
+        "K1.I10",
+        "K1.I11"
+      ]
+    },
+    {
+      "skill_id": "K1.3",
+      "skill_code": "K1.3",
+      "skill_name": "Слушание, реконструкция и верификация смысла другого",
+      "skill_description": "Слушание, реконструкция и верификация смысла другого",
+      "competency_id": "K1",
+      "competency_name": "Коммуникация",
+      "required_indicator_ids": [
+        "K1.I12",
+        "K1.I13",
+        "K1.I14"
+      ]
+    },
+    {
+      "skill_id": "K1.4",
+      "skill_code": "K1.4",
+      "skill_name": "Согласование смыслов и позиций",
+      "skill_description": "Согласование смыслов и позиций",
+      "competency_id": "K1",
+      "competency_name": "Коммуникация",
+      "required_indicator_ids": [
+        "K1.I15",
+        "K1.I16",
+        "K1.I17"
+      ]
+    },
+    {
+      "skill_id": "K2.1",
+      "skill_code": "K2.1",
+      "skill_name": "Организация совместной работы",
+      "skill_description": "Организация совместной работы",
+      "competency_id": "K2",
+      "competency_name": "Командная работа",
+      "required_indicator_ids": [
+        "K2.I01",
+        "K2.I02",
+        "K2.I03",
+        "K2.I04",
+        "K2.I05",
+        "K2.I06"
+      ]
+    },
+    {
+      "skill_id": "K2.2",
+      "skill_code": "K2.2",
+      "skill_name": "Координация совместных действий",
+      "skill_description": "Координация совместных действий",
+      "competency_id": "K2",
+      "competency_name": "Командная работа",
+      "required_indicator_ids": [
+        "K2.I07",
+        "K2.I08",
+        "K2.I09"
+      ]
+    },
+    {
+      "skill_id": "K2.3",
+      "skill_code": "K2.3",
+      "skill_name": "Поддержание продуктивного командного взаимодействия",
+      "skill_description": "Поддержание продуктивного командного взаимодействия",
+      "competency_id": "K2",
+      "competency_name": "Командная работа",
+      "required_indicator_ids": [
+        "K2.I10",
+        "K2.I11",
+        "K2.I12",
+        "K2.I13",
+        "K2.I14"
+      ]
+    },
+    {
+      "skill_id": "K3.1",
+      "skill_code": "K3.1",
+      "skill_name": "Исследование пространства возможностей",
+      "skill_description": "Исследование пространства возможностей",
+      "competency_id": "K3",
+      "competency_name": "Креативность",
+      "required_indicator_ids": [
+        "K3.I01",
+        "K3.I02",
+        "K3.I03"
+      ]
+    },
+    {
+      "skill_id": "K3.2",
+      "skill_code": "K3.2",
+      "skill_name": "Создание новых идей и решений",
+      "skill_description": "Создание новых идей и решений",
+      "competency_id": "K3",
+      "competency_name": "Креативность",
+      "required_indicator_ids": [
+        "K3.I04",
+        "K3.I05",
+        "K3.I06",
+        "K3.I07",
+        "K3.I08"
+      ]
+    },
+    {
+      "skill_id": "K3.3",
+      "skill_code": "K3.3",
+      "skill_name": "Развитие и доведение нового решения",
+      "skill_description": "Развитие и доведение нового решения",
+      "competency_id": "K3",
+      "competency_name": "Креативность",
+      "required_indicator_ids": [
+        "K3.I09",
+        "K3.I10",
+        "K3.I11",
+        "K3.I12"
+      ]
+    },
+    {
+      "skill_id": "K4.1",
+      "skill_code": "K4.1",
+      "skill_name": "Анализ и оценка информации",
+      "skill_description": "Анализ и оценка информации",
+      "competency_id": "K4",
+      "competency_name": "Критическое мышление",
+      "required_indicator_ids": [
+        "K4.I01",
+        "K4.I02",
+        "K4.I03",
+        "K4.I04",
+        "K4.I05",
+        "K4.I06"
+      ]
+    },
+    {
+      "skill_id": "K4.2",
+      "skill_code": "K4.2",
+      "skill_name": "Постановка и анализ проблемы",
+      "skill_description": "Постановка и анализ проблемы",
+      "competency_id": "K4",
+      "competency_name": "Критическое мышление",
+      "required_indicator_ids": [
+        "K4.I07",
+        "K4.I08",
+        "K4.I09",
+        "K4.I10",
+        "K4.I11"
+      ]
+    },
+    {
+      "skill_id": "K4.3",
+      "skill_code": "K4.3",
+      "skill_name": "Рассуждение, аргументация и проверка выводов",
+      "skill_description": "Рассуждение, аргументация и проверка выводов",
+      "competency_id": "K4",
+      "competency_name": "Критическое мышление",
+      "required_indicator_ids": [
+        "K4.I12",
+        "K4.I13",
+        "K4.I14"
+      ]
+    },
+    {
+      "skill_id": "K4.4",
+      "skill_code": "K4.4",
+      "skill_name": "Принятие решений",
+      "skill_description": "Принятие решений",
+      "competency_id": "K4",
+      "competency_name": "Критическое мышление",
+      "required_indicator_ids": [
+        "K4.I15",
+        "K4.I16",
+        "K4.I17",
+        "K4.I18"
+      ]
+    }
+  ],
+  "slots": {
+    "A": "K1.1",
+    "B": "K1.2",
+    "C": "K1.3",
+    "D": "K1.4",
+    "E": "K2.1"
+  },
+  "examples": {
+    "P01": {
+      "current": "full"
+    },
+    "P02": {
+      "current": "outcomes"
+    },
+    "P03": {
+      "current": "normal-current",
+      "previous": "normal-previous"
+    },
+    "P04": {
+      "current": "partial-current",
+      "previous": "partial-previous"
+    },
+    "P05": {
+      "current": "mixed-current",
+      "previous": "mixed-previous",
+      "alternative": "role-previous"
+    },
+    "P06": {
+      "current": "error-a",
+      "failed": "error-b",
+      "previous": "normal-previous"
+    }
+  }
+}

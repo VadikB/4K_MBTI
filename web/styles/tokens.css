@@ -117,4 +117,5 @@
     --participant-avatar-surface: #f0f0f0;
     --participant-status-surface: #fafafa;
     --participant-footer-text: rgb(100 116 139 / 60%);
+    --participant-secondary-text: #64748b;
 }

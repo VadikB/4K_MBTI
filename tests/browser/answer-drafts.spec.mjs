@@ -360,8 +360,8 @@ test('UI E: shared product identity in existing header markup at 1440/390/320', 
           expect(brand.weight).toBe('700');expect(brand.font).toContain('Onest');
           expect(['none','normal']).toContain(brand.before);expect(['none','normal']).toContain(brand.after);
         }
-        if(scene==='report-panel') {expect(brands).toHaveLength(0);await expect(page.locator('#report-panel .dashboard-brand')).toHaveText('Результат оценки');}
-        else expect(brands.length).toBeGreaterThan(0);
+        expect(brands.length).toBeGreaterThan(0);
+        if(scene==='report-panel') await expect(page.locator('#report-panel [data-app-header]')).toBeVisible();
         results.push({width,scene,offline,brands});
       }
     }
@@ -369,5 +369,5 @@ test('UI E: shared product identity in existing header markup at 1440/390/320', 
   expect(await page.locator('.dashboard-topbar-actions,.interview-topbar-actions').allTextContents()).toEqual(nav);
   await context.setOffline(false);
   await fs.writeFile(path.join(evidence,'headers.json'),JSON.stringify({results,navPreserved:true,
-    report:'Existing report heading is Результат оценки; no product brand or decorative dot was added'},null,2));
+    report:'FIX-02 uses the shared POSTW02 product header; product identity is preserved offline and at all widths'},null,2));
 });

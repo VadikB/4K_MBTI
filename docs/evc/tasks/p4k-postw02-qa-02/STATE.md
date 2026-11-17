@@ -1,5 +1,30 @@
 # QA-02 — приглашения
 
+## Продолжение выпуска: актуальный main и кандидат2.1.30
+
+17.11.2026 владелец прямо поручил продолжить существующий PR246, влить свежий
+origin/main, сохранить QA02 и решение picomatch из245, разрешить dist пересборкой,
+подготовить следующий PATCH, проверить audit/browser, Ready/обязательный CI/review
+и завершить ранее разрешённое слияние. Полномочия публичного QA02 выпуска,
+branch_push/pr/version_bump/Ready/merge/deploy=test сохраняются;
+artifact_publish/pilot/production=false, реальные mail/LLM0.
+
+Свежая база3be503d15f06152a87041e28695dc31754bde34b, main2.1.29,
+целевой кандидат2.1.30. Прочитаны STATE/CONTRIBUTING/review-checklist,
+CONTRIBUTING-MERGE-AUTH-01, PR245 и DEPS.md, тесты dependency/CVE/Knip,
+изменения browser ожиданий радара и серверные protected rules.
+Решение245: exact npm override picomatch→@ryotsu/picomatch4.0.7-a, оба lock,
+Knip/lint:dead и audit --audit-level=high сохраняются. Это уже принятое владельцем
+ограниченное решение, не новое исключение из audit.
+
+Merge origin/main в собственную ветку: конфликты только generated web/dist
+(60 путей), исходники объединились автоматически. Dist разрешается штатной сборкой
+объединённых исходников. Локальный node_modules отделён от соседнего worktree.
+Далее: commit интеграции, canonical ready:prepare2.1.30, audit/frontend/browser
+приглашений/ADM28/runtime/радара, review объединённого diff, новый commit/push,
+Ready и gates точного head перед squash merge. Прежние неуспешные попытки ниже —
+история, не актуальный блокер зависимости после интеграции245.
+
 ## Выпуск: PR246 опубликован, merge заблокирован обязательным CI
 
 PR: https://github.com/VadikB/4K_MBTI/pull/246, кандидат2.1.29.

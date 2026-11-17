@@ -152,3 +152,8 @@
     color: var(--text-strong);
     font-weight: var(--fw-bold);
 }
+
+.reports-panel .reports-shell { max-width: 1120px; margin-inline: auto; }
+.reports-panel .reports-howto-hint,
+.reports-panel .reports-history-card,
+.reports-panel .cycle-report { border: 1px solid var(--participant-border); border-radius: var(--radius-sm); background: var(--panel); box-shadow: none; }
