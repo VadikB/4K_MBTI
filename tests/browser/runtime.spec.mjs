@@ -98,7 +98,7 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  const assessmentAction=page.locator('#assessment-action-button').filter({visible:true});
  const welcomeAction=page.locator('#start-first-assessment').filter({visible:true});
  const dashboard=page.locator('#dashboard-panel').filter({visible:true});
- const completedDashboardAction=page.getByRole('button',{name:'В личный кабинет',exact:true}).filter({visible:true});
+ const completedDashboardAction=page.locator('#processing-panel').getByRole('button',{name:'Мои оценки',exact:true}).filter({visible:true});
  let routeReady=continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction);
  if(allowDashboard)routeReady=routeReady.or(dashboard).or(completedDashboardAction);
  await expect(routeReady.first()).toBeVisible({timeout:15000});
@@ -388,7 +388,7 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  await page.unroute(journeyPattern);
  await page.route(journeyPattern,route=>route.abort());
  await page.route(detailPattern,route=>route.abort());
- await page.getByRole('button',{name:'Проверить готовность'}).click();
+ await page.locator('#processing-panel').getByRole('button',{name:'Проверить состояние',exact:true}).click();
  await expect(page.locator('#processing-outcome-notice')).toContainText('Не удалось проверить готовность');
  await page.screenshot({path:path.join(stand.dir,'outcome-offline-390.png'),fullPage:true});
  await page.setViewportSize({width:1440,height:1000});

@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import psycopg
 import pytest
+from tests.preparation_assertions import assert_queued_operation
 from psycopg.rows import dict_row
 
 from Api.database import ensure_m5_runtime_schema, ensure_role_profile_schema, ensure_assessment_context_schema
@@ -890,7 +891,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         status_path = f"/users/assessment/cycles/preparation/{second_operation}"
         accepted = http.post(next_path, json={"idempotency_key": second_operation})
         assert accepted.status_code == 201, accepted.text
-        assert accepted.json() == {"operation_id": second_operation, "status": "queued"}
+        assert_queued_operation(accepted.json(), second_operation, "next")
         assert http.get(status_path).json()["status"] == "queued"
         claimed = queue._claim()
         assert claimed and claimed["operation_id"] == second_operation

@@ -282,7 +282,7 @@ def test_legacy_completed_operation_keeps_exact_cycle_readback_until_reassignmen
     from Api import routes
     factory, cycle_id, _, _ = pilot_db
     with factory() as c:
-        for column in ('attempts INTEGER DEFAULT 0', 'error_code TEXT', 'error_message TEXT',
+        for column in ('attempts INTEGER DEFAULT 0', 'attempt_token UUID', 'error_code TEXT', 'error_message TEXT',
                        'updated_at TIMESTAMP DEFAULT NOW()', 'completed_at TIMESTAMP'):
             c.execute('ALTER TABLE product_cycle_preparation_operations ADD COLUMN ' + column)
         c.execute("UPDATE product_cycle_preparation_operations SET request_json=request_json-'assignment_id' WHERE operation_id='synthetic'")
