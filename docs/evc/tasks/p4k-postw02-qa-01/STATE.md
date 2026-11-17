@@ -29,7 +29,7 @@ Downloads закрыт macOS. Их прочтение не заявляется.
 приёмка production bundle с управляемым API. Один worker, retries0, run≤300s,
 шаг/HTTP≤20s, real LLM/mail0, synthetic данные. Собственный ephemeral HTTP server,
 без БД/Docker/фонового preview, teardown в afterAll. CI имеет штатный профиль.
-branch_push=true/pr=true в пределах принятого задания с одним PR;
+branch_push/pr=pending_approval: см. результат auto-review ниже;
 merge/deploy/version_bump/artifact_publish=false. Будет draft PR: текущий процесс
 требует отдельного номера перед Ready, поручение merge/номер отсутствует.
 
@@ -38,8 +38,16 @@ merge/deploy/version_bump/artifact_publish=false. Будет draft PR: теку�
 404frontend/53targeted/6browser PASS, lint/build44/dist/diff PASS; оба дефекта
 подтверждены failing регрессиями на base. Подробности и AC-A1–B4/R1 — REPORT.md.
 Owned HTTP listeners закрыты, lsof подтвердил отсутствие; БД/LLM/mail/Docker0.
-Сейчас — передача одного draft PR и наблюдение его CI; URL/head/итог CI будут в
-передаче чата и outputs/p4k-postw02-qa-01-20261117/DELIVERY.json родительской папки.
+Сейчас — локальная передача кандидата. Auto-review 17.11 отклонил команду fetch/
+push ветки в публичный VadikB/4K_MBTI: «пользователь не дал явного разрешения на
+экспорт этого конкретного содержимого в публичное назначение» (код, тесты,
+PNG/evidence). Команда не запускалась; обходов/повторных push нет. Read-only gh
+ранее подтвердил [] PR данной ветки. Один PR и CI ожидают прямого разрешения
+этой публикации. Требование файла об одном PR само по себе не заменило допуск.
+Финальный local head/пакет — передача чата и
+outputs/p4k-postw02-qa-01-20261117/DELIVERY.json родительской папки.
 Отдельный limitation: два дополнительных внешних источника остаются недоступными
 для чтения; их соответствие не заявляется. Незакрытого технического AC нет.
+После нового разрешения: один push своей ветки, один draft PR, attach_artifact,
+наблюдение CI точного head. Повтор проверенного кода без новой причины не нужен.
 Review/номер кандидата/Ready/merge владельца отдельно, TEST/Prod не менялись.
