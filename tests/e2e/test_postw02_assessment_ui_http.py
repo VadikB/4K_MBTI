@@ -96,3 +96,29 @@ def test_unpresented_or_untrusted_position_stays_unknown_and_blocking_wait_is_se
     value = client.get(url).json()
     assert value['participant_progress']['planned_total'] is None
     assert value['route']['progress']['total_positions'] is None
+
+
+def test_paused_between_situations_with_false_blocking_is_a_successful_known_time_read(runtime, monkeypatch):
+    client, db, cycle, _position, _saved, _queries = runtime
+    cycle['status'] = 'paused'
+    db.blocking = False
+    # Retain the production HTTP route and production runtime projection.
+    execute = db.execute
+    def closed_as(sql, params=()):
+        result = execute(sql, params)
+        if 'FROM m5_assessment_situations WHERE cycle_db_id' in sql or 'p.state IN(' in sql:
+            for row in result.rows:
+                row['status'] = 'closed'
+        return result
+    monkeypatch.setattr(db, 'execute', closed_as)
+    monkeypatch.setattr(m10_product_flow.m7_completion, 'read_status', lambda *_: {
+        'collection_status': 'paused', 'remaining_seconds': 123,
+    })
+    monkeypatch.setattr(m10_product_flow, '_next_operation', lambda *_: None)
+    response = client.get(f'/users/assessment/cycles/{cycle["cycle_id"]}/runtime')
+    assert response.status_code == 200, response.text
+    value = response.json()
+    assert value['between_situations'] is True
+    assert value['current_situation'] is None
+    assert value['status'] == {'collection_status': 'paused', 'remaining_seconds': 123}
+    assert value['blocking_system_wait'] is False

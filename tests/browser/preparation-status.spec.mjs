@@ -156,7 +156,7 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
   await expect(page.locator('#interview-panel')).toContainText('Ситуация 2 завершена');
   await expect(page.locator('#interview-section-title')).toBeVisible();
   await expect(page.locator('#interview-profile-button')).toBeVisible();
-  await expect(page.locator('#interview-panel')).toContainText('Во время подготовки время на выполнение не расходуется');
+  await expect(page.locator('#interview-panel')).toContainText('Время на ответы сейчас не расходуется');
   await snap(page,'next-preparation',width);
   await details(page,nextRoot,'next-preparation',width);
   runtimeReadError=true;

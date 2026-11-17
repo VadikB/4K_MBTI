@@ -20,8 +20,7 @@ test('E01 names assessment positions as situations and separates sending from co
 
 test('E01 keeps the absolute deadline outside assessment and marks only server-confirmed pauses', () => {
   assert.doesNotMatch(interview, /Календарный срок:/);
-  assert.match(interview, /snapshot\.between_situations[\s\S]*snapshot\.blocking_system_wait === true[\s\S]*classList\.toggle\('is-paused', blockingWait\)/);
-  assert.match(interview, /classList\.toggle\('is-paused', suspended \|\| snapshot\.blocking_system_wait === true\)/);
+  // Pause behavior (including authorized_pause + false) is exercised by qa03-runtime.test.mjs.
   assert.match(interview, /Пауза · /);
 });
 

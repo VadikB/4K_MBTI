@@ -61,7 +61,7 @@ test('F09 lost Next response and reload check the saved operation without a seco
   const snapshot = { ...h.snapshot(), current_situation: null, between_situations: true };
   h.subject.renderProductRuntime(snapshot);
   const card = h.messages.children.find((item) => item.className === 'interview-return-card');
-  const button = card.children.find((item) => item.className === 'primary-button');
+  const button = card.children.find((item) => item.className.split(' ').includes('primary-button'));
   h.setFetch(async (_url, options) => {
     if (options?.method === 'POST') throw new TypeError('lost response');
     return json({ operation_id: JSON.parse(h.storage.get(commandKey('next', 'between'))).operationId,
@@ -79,7 +79,7 @@ test('F09 lost Next response and reload check the saved operation without a seco
   assert.ok(h.fetchCalls.some(([url]) => String(url).includes('/cycles/preparation/' + saved.operationId)));
   h.subject.renderProductRuntime(snapshot);
   const restored = h.messages.children.find((item) => item.className === 'interview-return-card');
-  assert.equal(restored.children.find((item) => item.className === 'primary-button').textContent, 'Проверить состояние');
+  assert.equal(restored.children.find((item) => item.className.split(' ').includes('primary-button')).textContent, 'Проверить состояние');
 });
 
 test('F09 server-opened next AS retires the old between-situations command', () => {
@@ -92,7 +92,7 @@ test('F09 server-opened next AS retires the old between-situations command', () 
   assert.equal(h.storage.has(commandKey('next', 'between')), false);
   h.subject.renderProductRuntime(between);
   const card = h.messages.children.find((item) => item.className === 'interview-return-card');
-  assert.equal(card.children.find((item) => item.className === 'primary-button').textContent,
+  assert.equal(card.children.find((item) => item.className.split(' ').includes('primary-button')).textContent,
     'Приступить к следующей ситуации');
 });
 
@@ -101,7 +101,7 @@ test('F09 known Next refusal makes the next click a readback rather than a new P
   const between = { ...h.snapshot(), current_situation: null, between_situations: true };
   h.subject.renderProductRuntime(between);
   const card = h.messages.children.find((item) => item.className === 'interview-return-card');
-  const button = card.children.find((item) => item.className === 'primary-button');
+  const button = card.children.find((item) => item.className.split(' ').includes('primary-button'));
   h.setFetch(async (url, options) => {
     if (options?.method === 'POST') return json({ detail: 'M7_COLLECTION_CLOSED' }, 409);
     if (String(url).endsWith('/return-state')) return json({ cycle_id: 'cycle-a', allowed_action: 'none' });

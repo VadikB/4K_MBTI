@@ -51,7 +51,7 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     interviewPanel: { classList: { contains: () => true } },
     openProcessing: () => effects.push('openProcessing'),
   });
-  vm.runInContext(`let productRuntimePollGeneration = 7; let productRuntimeMutationGeneration = 0; let productRuntimeReadSerial = 0;
+  vm.runInContext(`let productRuntimePollGeneration = 7; let productRuntimeMutationGeneration = 0; let productRuntimeReadSerial = 0; let productRuntimeRead = null;
     let returnPresenceCycleId = null;
     const olderProductRuntimeSnapshot = () => false;
     let confirmedProductInterviewSnapshot = null;
@@ -59,6 +59,7 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     ${runtimeSource}
     globalThis.subject = { loadProductRuntime, loadReturnState,
       advanceGeneration: () => { productRuntimePollGeneration += 1; },
+      advanceMutation: () => { productRuntimeMutationGeneration += 1; },
       advanceViewGeneration: advanceAssessmentViewGeneration };`, context);
   return { state, context, requested: requested.promise, resolve: response.resolve, reject: response.reject,
     renders, cards, effects, subject: context.subject };
@@ -154,21 +155,18 @@ test('P3-A+3B delayed return-state cannot replace a newer AS card', async () => 
   assert.equal(h.cards.length, 0);
 });
 
-test('04 newer read wins over a late runtime response for the same unchanged AS', async () => {
-  const h=harness();
-  const first=deferred(),second=deferred();let count=0;
-  h.context.fetchWithDeadline=()=> (++count===1?first:second).promise;
-  const old=h.subject.loadProductRuntime();
-  await new Promise(resolve=>setImmediate(resolve));
-  const recent=h.subject.loadProductRuntime();
-  await new Promise(resolve=>setImmediate(resolve));
-  const newer={...snapshot(),preparation_operation:{status:'failed'}};
-  second.resolve({syntheticPayload:newer});
-  assert.equal(await recent,newer);
-  first.resolve({syntheticPayload:{...snapshot(),preparation_operation:{status:'running'}}});
-  assert.equal(await old,null);
-  assert.equal(h.renders.length,1);
-  assert.equal(h.renders[0].preparation_operation.status,'failed');
+test('QA03 same-context reads share one pending GET and both receive its confirmed result', async () => {
+  const h = harness(); const first = deferred(); let count = 0;
+  h.context.fetchWithDeadline = () => { count++; return first.promise; };
+  const old = h.subject.loadProductRuntime();
+  await new Promise(resolve => setImmediate(resolve));
+  const recent = h.subject.loadProductRuntime();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(count, 1);
+  const newer = { ...snapshot(), preparation_operation: { status: 'failed' } };
+  first.resolve({ syntheticPayload: newer });
+  assert.equal(await recent, newer); assert.equal(await old, newer);
+  assert.equal(h.renders.length, 1);
 });
 
 test('04 late return-state read cannot replace a newer runtime with an old pause card', async () => {
@@ -177,6 +175,7 @@ test('04 late return-state read cannot replace a newer runtime with an old pause
   h.context.fetchWithDeadline=()=>reads[count++].promise;
   const old=h.subject.loadProductRuntime();
   await new Promise(resolve=>setImmediate(resolve));
+  h.subject.advanceMutation(); // A command supersedes an earlier read; another poll alone coalesces.
   const recent=h.subject.loadProductRuntime();
   await new Promise(resolve=>setImmediate(resolve));
   reads[1].resolve({status:200,syntheticPayload:{cycle_id:'cycle-A',allowed_action:'connected'}});
