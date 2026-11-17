@@ -1,0 +1,11 @@
+{
+  "owned_root": "/private/tmp/p4k-qa03-pg-20261117-01",
+  "database": "p4k_qa03_pytest_20261117",
+  "port": 55823,
+  "schemas_remaining": 0,
+  "database_dropped": true,
+  "postgres_stopped": true,
+  "port_closed": true,
+  "llm": 0,
+  "mail": 0
+}

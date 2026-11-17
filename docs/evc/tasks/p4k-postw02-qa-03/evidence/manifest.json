@@ -1,0 +1,17 @@
+{
+  "base_sha": "71a9c535cee4aea094d2b49c2b73f39e22f99bbe",
+  "code_sha": "8b3ca49d9398366b42ffea736dfeab885712fa93",
+  "task_source": {
+    "name": "QA03_Runtime_Next_and_Time.md",
+    "revision": "1.1",
+    "sha256": "0078024bfc204b6359f10ffe916f2c85ed46832e1e43a7111a77d17981c3df53"
+  },
+  "tested_files": {
+    "web/js/screens/interview.js": "ac0f2b0aa81c8313f3b284a5e3a00d9be4b08b4b77e11fbabd834eb0878fea86",
+    "tests/frontend/qa03-runtime.test.mjs": "bae3d6bc1bd94d9eb54c5bd1ddb0fa3be79923bc0bbf55db2c78adef6371d71f",
+    "tests/browser/qa03-runtime.spec.mjs": "2022b5bbb60b78aa23293fe76ad50ecb107e6ff30b1245b069ae45367ad004c8",
+    "tests/e2e/test_postw02_assessment_ui_http.py": "71a31e1383769cf260fb3a8f8783c35900c3bab5a19c290e8cc386a321d0f970",
+    "tests/integration/test_qa03_time_intervals_db.py": "5c47407ad0d06e51046f167bc0956a9f124727c3293cfcb8b1ad7b45df2897e0"
+  },
+  "compatibility_screenshots_local_archive": "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/outputs/p4k-qa03-runtime-20261117/compatibility"
+}

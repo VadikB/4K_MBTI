@@ -1,3 +1,19 @@
+# STATE — P4K-POSTW02-QA-03, 17.11.2026
+
+Локальная [QA-03](docs/evc/tasks/p4k-postw02-qa-03/TASK.md) завершена в
+`codex/p4k-postw02-qa-03`, база/main71a9c53 /2.1.28.
+Код/tests/dist `8b3ca49d9398366b42ffea736dfeab885712fa93`; отчёт и доказательства —
+[REPORT](docs/evc/tasks/p4k-postw02-qa-03/REPORT.md),
+[STATE](docs/evc/tasks/p4k-postw02-qa-03/STATE.md).
+Runtime single-flight, восстановление текущей Next-кнопки и подтверждённое время
+проверены: frontend431/HTTP3/ownedDB3/browser12 +lint/build45/diff PASS.
+Рабочие данные/API/методология неизменны; свои ресурсы остановлены.
+Публикация/PR/merge/deploy/version_bump/artifact_publish=false, CI NOT_RUN.
+Следующий этап — приёмка владельцем. QA-04 не запускалась.
+Ниже история прежних задач; её полномочия сюда не переносятся.
+
+---
+
 # STATE — P4K-REPORT-FIX-01, 17.11.2026
 
 Активная карточка: [P4K-REPORT-FIX-01](docs/evc/tasks/p4k-report-fix-01/TASK.md).
