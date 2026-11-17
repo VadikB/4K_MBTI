@@ -187,3 +187,86 @@ test('05 UI explicit remote choice changes only the draft and reports conflict r
   assert.equal(one.calls.filter(Boolean).length,writes);
   assert.match(one.status.textContent,/Ответ ещё не отправлен/);
 });
+
+const deferredChoice = async () => {
+  let delay = false; const pending = [];
+  const remote = { owner_id: '8', cycle_id: 'cycle', assessment_situation_id: 'as', slot_id: scope.slotId,
+    version: 0, revision: '', text: '', expires_at: scope.expiresAt };
+  const one = fixture({ request: data => {
+    if (data) throw Object.assign(new Error('conflict'), { status: 409 });
+    if (delay) return new Promise((ok, fail) => { pending.push({ ok, fail }); });
+    return { ...remote };
+  } });
+  await tick(); one.edit('local');
+  Object.assign(remote, { text: 'remote', version: 1, revision: 'remote-1' });
+  await one.draft.flush(); delay = true;
+  return { ...one, remote, resolve: value => pending.shift().ok(value || { ...remote }), reject: () => pending.shift().fail(Error('offline')) };
+};
+
+for (const text of ['Новый текст после выбора', 'local']) test(`QA A1 late choice preserves new revision: ${text}`, async () => {
+  const one = await deferredChoice(); const pending = one.actions.children[1].click();
+  one.edit(text); const revision = one.draft.revision();
+  one.resolve(); await pending;
+  assert.equal(one.input.value, text);
+  const record = JSON.parse(one.storage[Object.keys(one.storage)[0]]);
+  assert.equal(record.text, text); assert.equal(record.revision, revision); assert.equal(record.confirmed, false);
+  assert.equal(one.draft.conflicted(), true); assert.match(one.status.textContent, /Вы изменили текст/);
+  assert.ok(one.actions.children.every(b => !b.disabled));
+  const restored = fixture({ storage: one.storage, remote: one.remote }); await tick();
+  assert.equal(restored.input.value, text); assert.equal(restored.draft.conflicted(), true);
+});
+
+test('QA A3 a choice locks every alternative, rejects duplicate/stale clicks and recovers after failure', async () => {
+  const one = await deferredChoice(); const [local, remote] = one.actions.children;
+  const before = one.calls.length, pending = remote.click();
+  assert.ok(one.actions.children.every(b => b.disabled));
+  await local.click(); await remote.click();
+  assert.equal(one.calls.length, before + 1);
+  one.reject(); await pending;
+  assert.ok(one.actions.children.every(b => !b.disabled));
+  const next = one.actions.children[1].click();
+  await local.click(); assert.equal(one.calls.length, before + 2);
+  one.resolve(); await next; assert.equal(one.input.value, 'remote');
+  assert.equal(one.draft.conflicted(), false);
+});
+
+for (const change of ['stop', 'suspend', 'identity', 'ownerId', 'cycleId', 'situationId', 'slotId', 'logout']) {
+  test(`QA A3 late choice fenced after ${change}`, async () => {
+    const one = await deferredChoice(); const pending = one.actions.children[1].click();
+    if (change === 'identity') one.invalidate();
+    else if (change === 'logout') {
+      const key = Object.keys(one.storage)[0]; one.storage.removeItem(key);
+      one.draft.storageChanged({ key, newValue: null });
+    } else if (['stop', 'suspend'].includes(change)) one.draft[change]();
+    else one.draft.bind({ ...scope, [change]: 'new-context' });
+    const before = { text: one.input.value, storage: JSON.stringify(one.storage) };
+    one.resolve(); await pending;
+    assert.equal(one.input.value, before.text); assert.equal(JSON.stringify(one.storage), before.storage);
+  });
+}
+
+test('QA A3 sibling durable edit during choice is not overwritten', async () => {
+  const one = await deferredChoice(); const pending = one.actions.children[1].click();
+  const key = Object.keys(one.storage)[0]; const sibling = { ...JSON.parse(one.storage[key]), text: 'sibling', revision: 'sibling-revision' };
+  one.storage.setItem(key, JSON.stringify(sibling)); one.draft.storageChanged({ key, newValue: one.storage[key] });
+  one.resolve(); await pending;
+  assert.equal(one.input.value, 'local'); assert.equal(one.storage[key], JSON.stringify(sibling));
+  assert.equal(one.draft.conflicted(), true);
+});
+
+for (const field of ['owner_id', 'cycle_id', 'assessment_situation_id', 'slot_id']) test(`QA A3 mismatched read ${field} leaves retry available`, async () => {
+  const one = await deferredChoice(); const pending = one.actions.children[1].click();
+  one.resolve({ ...one.remote, [field]: 'foreign' }); await pending;
+  assert.equal(one.input.value, 'local'); assert.equal(one.draft.conflicted(), true);
+  assert.ok(one.actions.children.every(b => !b.disabled));
+});
+
+test('QA A3 suspend/resume fences the old choice and restores actions', async () => {
+  const one = await deferredChoice(); const old = one.actions.children[1].click();
+  one.draft.suspend(); one.draft.bind({ ...scope });
+  assert.ok(one.actions.children.every(b => !b.disabled));
+  const next = one.actions.children[1].click();
+  one.resolve({ ...one.remote, text: 'obsolete' }); await old;
+  assert.equal(one.input.value, 'local');
+  one.resolve(); await next; assert.equal(one.input.value, 'remote');
+});
