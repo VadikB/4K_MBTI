@@ -3,7 +3,9 @@
 База итогового прогона: `fffd501a51cae673a4e0ee87ec5d6cbc83069e21` (main,
 2.1.26). Предыдущая база `02596d7` была заменена после #241; её результаты
 сохранены как диагностика. `PASS` означает только указанную синтетическую проверку.
-Итоговый head и CI фиксируются после создания PR.
+PR #242, первый head `b769055478df0e8fba9a637e2bf65af0fea8a0fe`.
+Его обязательный CI выявил описанный ниже дефект S05. Владелец согласовал
+PATCH 2.1.27; итоговый CI относится к следующему head после push.
 
 | Сценарий | Источник | Первичное доказательство | Результат на `fffd501a` | Граница |
 | --- | --- | --- | --- | --- |
@@ -49,10 +51,35 @@
 
 Для пилота нужны живые содержательные источники и отдельная приёмка, а также
 решение по частичным строкам матрицы. Откат PR — revert test/docs; собственная
-БД уничтожается после остановки сервиса. Runtime и опубликованные артефакты
-не менялись.
+БД уничтожается после остановки сервиса. В первом опубликованном head runtime
+и предметные артефакты не менялись; локальная CSS-правка описана ниже.
 
-Review по `docs/evc/review-checklist.md`: новые пути только `tests/` и
-`docs/evc/tasks/p4k-report-11/`; API/схема/runtime/версия не изменены,
+## Сбой CI и адресная регрессия
+
+На `b7690554` jobs `CI / frontend`, `CI / pytest`, четыре runtime browser lanes
+и integration — PASS; `Full verification / browser (fast)` — FAIL, поэтому
+обязательный `full-verification` — FAIL. Лог job
+`https://github.com/VadikB/4K_MBTI/actions/runs/44101667980/job/134103008056?pr=242`
+показывает `QA19-04`: на Linux SVG подписи `13.8927 px` при ожидаемых `>=14`,
+деления `11.8819 px` при ожидаемых `>=12`, overflow=false. Правило и CSS
+`15.2px`/`13px` существовали в `main` `fffd501a`, PR их не менял. Сбой относится
+к S05 и выявляет действительную потерю читаемости при масштабе SVG.
+
+Минимальная правка `web/styles/screens/report.css`:
+подписи `16px`, деления `13.5px`. При наблюдавшемся Linux scale ≈0.914 это
+даёт ≈14.62/12.34 px. `QA19-04`, REPORT-05 и REPORT-11: `5 passed`,
+frontend radar/report: `9 passed`, `npm run build:web`: PASS. После согласования
+владельцем `version_bump=true`, `npm run ready:prepare -- --candidate 2.1.27`
+PASS; на 2.1.27 те же адресные browser `5 passed` (`radar-fix-targeted.log`).
+`saved-bridge-1440.png` и `saved-bridge-390.png` обновлены; 390 просмотрен
+визуально. Полный Linux CI после исправления — `NOT_RUN` до push.
+Откат продуктовой правки — revert CSS, версии и сборки; merge/deploy отдельно.
+
+Review по `docs/evc/review-checklist.md` первого коммита: новые пути только `tests/` и
+`docs/evc/tasks/p4k-report-11/`; API/схема/runtime/версия в нём не изменены,
 данные синтетические, внешние вызовы выключены. `git diff --cached --check`
 PASS после удаления trailing whitespace из исходного диагностического лога.
+Review PATCH: `report.css` меняет только 2 размера текста; `pyproject.toml`,
+`uv.lock`, `web/js/config.js`, `web/index.html` и `web/dist` — согласованный
+механический выпуск 2.1.27. `npm run lint:js`, `npm run build:web`,
+`git diff --check` PASS; API/БД/предметные артефакты не меняются.
