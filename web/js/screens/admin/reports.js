@@ -1,416 +1,146 @@
 import { state, persistAssessmentContext, setCurrentScreen } from '../../state.js';
-import {
-  adminReportsPanel,
-  adminReportsTitle,
-  adminReportsSubtitle,
-  adminReportsSearch,
-  adminReportsPdfButton,
-  adminReportsFound,
-  adminReportsList,
-  adminReportsSummaryScore,
-  adminReportsPageSummary,
-  adminReportsPageIndicator,
-  adminReportsPrevButton,
-  adminReportsNextButton,
-  adminReportsExpertGroupButton,
-  adminReportsGroupDialog,
-  adminReportsGroupDialogClose,
-  adminReportsGroupDialogList,
-  adminReportsGroupDialogSummary,
-  adminReportsGroupDialogExport,
-  adminReportDownloadDialog,
-  adminReportDownloadDialogTitle,
-  adminReportDownloadDialogSummary,
-  adminReportDownloadDialogList,
-  adminReportsBackButton,
-} from '../../dom.js';
-import { ADMIN_REPORTS_PAGE_SIZE } from '../../config.js';
-import { escapeHtml, sanitizeDisplayRole, sanitizeDisplayMetaText, buildInitials, formatAdminReportDate } from '../../utils/format.js';
+import { adminReportsPanel, adminReportsSearch, adminReportsFound, adminReportsList,
+  adminReportsPageSummary, adminReportsPageIndicator, adminReportsPrevButton,
+  adminReportsNextButton } from '../../dom.js';
+import { escapeHtml } from '../../utils/format.js';
 import { readApiResponse } from '../../api.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
-import { getAdminStatusBadgeLabel } from './skill-radar.js';
-import { openAdminReportDetail } from './report-detail.js';
-export const getFilteredAdminReports = () => {
-  const items = Array.isArray(state.adminReports?.items) ? state.adminReports.items : [];
-  const query = String(state.adminReportsSearch || '')
-    .trim()
-    .toLowerCase();
-  if (!query) {
-    return items;
-  }
-  return items.filter((item) => {
-    const haystack = [
-      item.full_name,
-      item.group_name,
-      item.role_name,
-      item.status,
-      item.phone,
-      String(item.user_id),
-      String(item.session_id),
-    ]
-      .join(' ')
-      .toLowerCase();
-    return haystack.includes(query);
-  });
-};
 
-const openReportDownloadDialog = (userId) => {
-  if (!adminReportDownloadDialog || !adminReportDownloadDialogList) {
-    return;
-  }
-  const userReports = (Array.isArray(state.adminReports?.items) ? state.adminReports.items : [])
-    .filter((item) => Number(item.user_id) === Number(userId))
-    .sort((left, right) => {
-      const leftDate = new Date(left.finished_at || left.started_at || 0).getTime();
-      const rightDate = new Date(right.finished_at || right.started_at || 0).getTime();
-      return rightDate - leftDate || Number(right.session_id) - Number(left.session_id);
-    });
-  const userName = userReports[0]?.full_name || 'Пользователь';
-  adminReportDownloadDialogTitle.textContent = 'Выберите отчет — ' + userName;
-  adminReportDownloadDialogSummary.textContent =
-    'Доступно отчетов: ' + userReports.length + '. Выберите прохождение по дате.';
-  adminReportDownloadDialogList.innerHTML = userReports
-    .map((item) => {
-      const scoreLabel = typeof item.score_percent === 'number' ? item.score_percent + '%' : 'Без оценки';
-      const disabled = item.status !== 'Завершено';
-      return (
-        '<div class="admin-report-download-option">' +
-        '<div class="admin-prompt-lab-case-option-copy">' +
-        '<strong>' + escapeHtml(formatAdminReportDate(item)) + '</strong>' +
-        '<small>' + escapeHtml(item.status) + ' · ' + escapeHtml(scoreLabel) + ' · сессия ' + Number(item.session_id) + '</small>' +
-        '</div>' +
-        '<button class="ghost-button compact-ghost admin-report-download-choice" type="button" data-session-id="' +
-        Number(item.session_id) +
-        '" data-user-id="' +
-        Number(item.user_id) +
-        '"' +
-        (disabled ? ' disabled title="Отчет станет доступен после завершения"' : '') +
-        '>Скачать PDF</button>' +
-        '</div>'
-      );
-    })
-    .join('');
-  adminReportDownloadDialogList.querySelectorAll('.admin-report-download-choice').forEach((button) => {
-    button.addEventListener('click', () => {
-      const selectedUserId = Number(button.dataset.userId);
-      const sessionId = Number(button.dataset.sessionId);
-      window.location.href = '/users/' + selectedUserId + '/assessment/' + sessionId + '/report.pdf';
-    });
-  });
-  adminReportDownloadDialog.showModal();
-};
+const organization = document.getElementById('admin-reports-organization');
+const program = document.getElementById('admin-reports-program');
+const status = document.getElementById('admin-reports-status');
+const clear = document.getElementById('admin-reports-clear');
+const PAGE_SIZE = 12;
+let requestEpoch = 0;
+let searchTimer;
+
+const dateLabel = (value) => value ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' }).format(new Date(value)) : '—';
+const statusLabels = { preparing: 'Готовится', ready: 'Готов', failed: 'Не удалось подготовить' };
+const option = (value, label, selected) => '<option value="' + escapeHtml(value) + '"' +
+  (String(value) === String(selected) ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
 
 export const renderAdminReports = () => {
-  const reports = state.adminReports;
-  if (!reports) {
-    return;
-  }
-
-  adminReportsTitle.textContent = reports.title || 'Отдельные отчеты';
-  adminReportsSubtitle.textContent =
-    reports.subtitle || 'Управление и анализ индивидуальных результатов тестирования персонала.';
-  if (adminReportsSearch) {
-    adminReportsSearch.value = state.adminReportsSearch || '';
-  }
-
-  const filteredItems = getFilteredAdminReports();
-  const accessibleM8 = Array.isArray(reports.m8_accessible_reports) ? reports.m8_accessible_reports : [];
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ADMIN_REPORTS_PAGE_SIZE));
-  if (state.adminReportsPage > totalPages) {
-    state.adminReportsPage = totalPages;
-  }
-  if (state.adminReportsPage < 1) {
-    state.adminReportsPage = 1;
-  }
-  const pageStart = (state.adminReportsPage - 1) * ADMIN_REPORTS_PAGE_SIZE;
-  const pageItems = filteredItems.slice(pageStart, pageStart + ADMIN_REPORTS_PAGE_SIZE);
-  adminReportsFound.textContent = 'Найдено: ' + (filteredItems.length + accessibleM8.length);
-  const selectedIds = new Set((state.adminReportsSelectedSessionIds || []).map((value) => Number(value)));
-
-  const scoreValues = filteredItems.map((item) => item.score_percent).filter((value) => typeof value === 'number');
-  adminReportsSummaryScore.textContent = scoreValues.length
-    ? Math.round((scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length) * 10) / 10 + '%'
-    : '—';
-
+  const data = state.adminReports;
+  if (!data) return;
+  adminReportsSearch.value = state.adminReportsSearch || '';
+  organization.innerHTML = (data.organizations || []).map((item) => option(item.id, item.name, data.organization_id)).join('');
+  program.innerHTML = option('', 'Все программы', state.adminReportsProgram || '') +
+    (data.programs || []).map((item) => option(item, item, state.adminReportsProgram)).join('');
+  status.value = state.adminReportsStatus || '';
+  adminReportsFound.textContent = 'Найдено: ' + data.total;
   adminReportsList.innerHTML = '';
-  accessibleM8.forEach((item) => {
+  for (const item of data.items || []) {
     const row = document.createElement('article');
     row.className = 'admin-report-row admin-report-row--m8';
-    row.tabIndex = 0;
-    row.setAttribute('role', 'button');
-    row.innerHTML = '<div class="admin-report-cell admin-report-user"><div class="admin-report-copy"><strong>' +
-      escapeHtml(item.full_name || item.email || 'Участник') + '</strong><span>Индивидуальный результат 4К</span></div></div>' +
-      '<div class="admin-report-cell admin-report-status"><span class="admin-status-pill done">Готов и доступен</span></div>' +
-      '<div class="admin-report-cell admin-report-date">Версия ' + Number(item.revision_no) + '</div>' +
-      '<div class="admin-report-cell admin-report-download-action"><button class="ghost-button compact-ghost" type="button">Открыть</button></div>';
-    const open = async () => {
-      const module = await import('../report.js');
-      module.openReport({ m8CycleId: item.cycle_id, m8ReportId: item.report_id, customerAccess: true });
-    };
-    row.addEventListener('click', () => { void open(); });
-    row.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); void open(); }
-    });
+    const ready = item.status === 'ready' && item.report_id;
+    row.innerHTML = '<div class="admin-report-cell admin-report-user"><strong>' +
+      escapeHtml(item.full_name || 'Участник') + '</strong></div>' +
+      '<div class="admin-report-cell">' + escapeHtml(item.program_name || '—') + '</div>' +
+      '<div class="admin-report-cell admin-report-date">' + escapeHtml(dateLabel(item.collection_closed_at)) + '</div>' +
+      '<div class="admin-report-cell admin-report-status"><span class="admin-status-pill ' +
+      (item.status === 'ready' ? 'done' : item.status === 'failed' ? 'draft' : 'active') + '">' +
+      statusLabels[item.status] + '</span></div>' +
+      '<div class="admin-report-cell admin-report-download-action"></div>';
+    if (ready) {
+      const actions = row.lastElementChild;
+      const open = document.createElement('button');
+      open.className = 'ghost-button compact-ghost';
+      open.type = 'button';
+      open.textContent = 'Открыть';
+      open.addEventListener('click', async () => {
+        const module = await import('../report.js');
+        module.openReport({ m8CycleId: item.cycle_id, m8ReportId: item.report_id,
+          customerAccess: true, returnTarget: 'admin-reports' });
+      });
+      const pdf = document.createElement('a');
+      pdf.className = 'ghost-button compact-ghost';
+      pdf.textContent = 'PDF';
+      pdf.href = '/users/admin/m8-access/reports/' + encodeURIComponent(item.report_id) + '/pdf';
+      actions.append(open, pdf);
+    }
     adminReportsList.appendChild(row);
-  });
-  if (!filteredItems.length && !accessibleM8.length) {
-    adminReportsList.innerHTML = '<p class="report-empty-state">По текущему фильтру отчеты не найдены.</p>';
-    if (adminReportsPageSummary) {
-      adminReportsPageSummary.textContent = 'Показано 0 из 0 отчетов';
-    }
-    if (adminReportsPageIndicator) {
-      adminReportsPageIndicator.textContent = '0 / 0';
-    }
-    if (adminReportsPrevButton) {
-      adminReportsPrevButton.disabled = true;
-    }
-    if (adminReportsNextButton) {
-      adminReportsNextButton.disabled = true;
-    }
-    return;
   }
-
-  pageItems.forEach((item) => {
-    const row = document.createElement('article');
-    row.className = 'admin-report-row';
-    row.tabIndex = 0;
-    row.setAttribute('role', 'button');
-    const scorePercent = typeof item.score_percent === 'number' ? item.score_percent : 0;
-    const scoreLabel = typeof item.score_percent === 'number' ? item.score_percent + '%' : '—';
-    const groupName = sanitizeDisplayMetaText(item.group_name || '') || 'Не указана';
-    const roleName = sanitizeDisplayRole(item.role_name || '') || 'Роль не указана';
-    const isCompleted = item.status === 'Завершено';
-    const checked = selectedIds.has(Number(item.session_id));
-    row.innerHTML =
-      '<div class="admin-report-cell admin-report-select-cell">' +
-      '<label class="admin-report-select-toggle' +
-      (isCompleted ? '' : ' is-disabled') +
-      '">' +
-      '<input class="admin-report-select-checkbox" type="checkbox" name="session_ids" form="admin-reports-expert-group-form" value="' +
-      Number(item.session_id) +
-      '" ' +
-      (checked ? 'checked ' : '') +
-      (isCompleted ? '' : 'disabled ') +
-      'aria-label="Выбрать отчет по сессии ' +
-      item.session_id +
-      '">' +
-      '</label>' +
-      '</div>' +
-      '<div class="admin-report-cell admin-report-user">' +
-      '<div class="admin-report-copy">' +
-      '<strong>' +
-      item.full_name +
-      '</strong>' +
-      '<span>ID ' +
-      item.user_id +
-      '</span>' +
-      '</div>' +
-      '</div>' +
-      '<div class="admin-report-cell admin-report-group">' +
-      '<strong>' +
-      groupName +
-      '</strong>' +
-      '<span>' +
-      roleName +
-      '</span>' +
-      '</div>' +
-      '<div class="admin-report-cell admin-report-status">' +
-      '<span class="admin-status-pill ' +
-      (item.status === 'Завершено' ? 'done' : item.status === 'В процессе' ? 'active' : 'draft') +
-      '">' +
-      item.status +
-      '</span>' +
-      '</div>' +
-      '<div class="admin-report-cell admin-report-score">' +
-      '<strong>' +
-      scoreLabel +
-      '</strong>' +
-      '<div class="admin-report-score-track"><span style="width:' +
-      scorePercent +
-      '%"></span></div>' +
-      '</div>' +
-      '<div class="admin-report-cell admin-report-date">' +
-      formatAdminReportDate(item) +
-      '</div>' +
-      '<div class="admin-report-cell admin-report-download-action">' +
-      '<button class="ghost-button compact-ghost admin-report-download-button" type="button" aria-label="Скачать PDF отчета по сессии ' +
-      item.session_id +
-      '">Скачать</button>' +
-      '</div>';
-    const openDetail = () => {
-      void openAdminReportDetail(item.session_id);
-    };
-    const reportDownloadButton = row.querySelector('.admin-report-download-button');
-    const selectCheckbox = row.querySelector('.admin-report-select-checkbox');
-    const selectToggle = row.querySelector('.admin-report-select-toggle');
-    if (selectToggle) {
-      selectToggle.addEventListener('click', (event) => {
-        event.stopPropagation();
-      });
-    }
-    if (selectCheckbox) {
-      selectCheckbox.addEventListener('click', (event) => {
-        event.stopPropagation();
-      });
-      selectCheckbox.addEventListener('change', (event) => {
-        event.stopPropagation();
-        const sessionId = Number(item.session_id);
-        const current = new Set((state.adminReportsSelectedSessionIds || []).map((value) => Number(value)));
-        if (event.target.checked) {
-          current.add(sessionId);
-        } else {
-          current.delete(sessionId);
-        }
-        state.adminReportsSelectedSessionIds = Array.from(current);
-        renderAdminReports();
-      });
-    }
-    if (reportDownloadButton) {
-      reportDownloadButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openReportDownloadDialog(item.user_id);
-      });
-    }
-    row.addEventListener('click', openDetail);
-    row.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        openDetail();
-      }
-    });
-    adminReportsList.appendChild(row);
-  });
-
-  if (adminReportsPageSummary) {
-    const shown = accessibleM8.length + pageItems.length;
-    adminReportsPageSummary.textContent = 'Показано ' + shown + ' из ' +
-      (accessibleM8.length + filteredItems.length) + ' отчетов';
+  if (!data.items?.length) {
+    adminReportsList.innerHTML = '<p class="report-empty-state">По текущим фильтрам закрытые оценки не найдены.</p>';
   }
-  if (adminReportsPageIndicator) {
-    adminReportsPageIndicator.textContent = state.adminReportsPage + ' / ' + totalPages;
-  }
-  if (adminReportsPrevButton) {
-    adminReportsPrevButton.disabled = state.adminReportsPage <= 1;
-  }
-  if (adminReportsNextButton) {
-    adminReportsNextButton.disabled = state.adminReportsPage >= totalPages;
-  }
-  if (adminReportsExpertGroupButton) {
-    const completedCount = filteredItems.filter((item) => item.status === 'Завершено').length;
-    const selectedCompletedCount = filteredItems.filter(
-      (item) => item.status === 'Завершено' && selectedIds.has(Number(item.session_id)),
-    ).length;
-    adminReportsExpertGroupButton.disabled = completedCount <= 0;
-    adminReportsExpertGroupButton.textContent =
-      selectedCompletedCount > 0 ? 'Выгрузить ассесменты (' + selectedCompletedCount + ')' : 'Выгрузить ассесменты';
-  }
+  const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+  const shown = Math.min(data.total, (data.page - 1) * PAGE_SIZE + data.items.length);
+  adminReportsPageSummary.textContent = 'Показано ' + shown + ' из ' + data.total;
+  adminReportsPageIndicator.textContent = data.page + ' / ' + totalPages;
+  adminReportsPrevButton.disabled = data.page <= 1;
+  adminReportsNextButton.disabled = data.page >= totalPages;
 };
 
 export const loadAdminReports = async () => {
-  const [response, accessResponse] = await Promise.all([
-    fetch('/users/admin/reports', { credentials: 'same-origin' }),
-    fetch('/users/admin/m8-access/reports', { credentials: 'same-origin' }),
-  ]);
-  const data = await readApiResponse(response, 'Не удалось загрузить подробные отчеты.');
-  const access = await readApiResponse(accessResponse, 'Не удалось загрузить доступные индивидуальные результаты.');
-  data.m8_accessible_reports = Array.isArray(access.items) ? access.items : [];
+  const epoch = ++requestEpoch;
+  const identityEpoch = state.identityEpoch;
+  const params = new URLSearchParams({ page: String(state.adminReportsPage || 1),
+    page_size: String(PAGE_SIZE), query: state.adminReportsSearch || '',
+    program: state.adminReportsProgram || '', status: state.adminReportsStatus || '' });
+  if (state.adminReportsOrganizationId) params.set('organization_id', String(state.adminReportsOrganizationId));
+  const response = await fetch('/users/admin/m8-access/reports?' + params, { credentials: 'same-origin' });
+  const data = await readApiResponse(response, 'Не удалось загрузить список Report.');
+  if (epoch !== requestEpoch || identityEpoch !== state.identityEpoch || state.currentScreen !== 'admin-reports') return;
   state.adminReports = data;
-  const allowedSessionIds = new Set(
-    (Array.isArray(data?.items) ? data.items : [])
-      .filter((item) => item.status === 'Завершено')
-      .map((item) => Number(item.session_id))
-      .filter((value) => Number.isFinite(value) && value > 0),
-  );
-  state.adminReportsSelectedSessionIds = (state.adminReportsSelectedSessionIds || [])
-    .map((value) => Number(value))
-    .filter((value) => allowedSessionIds.has(value));
-  state.adminReportsPage = 1;
+  state.adminReportsOrganizationId = data.organization_id;
   persistAssessmentContext();
-};
-
-export const renderAdminReportsGroupDialog = () => {
-  if (!adminReportsGroupDialogList || !adminReportsGroupDialogSummary) {
-    return;
-  }
-  const completedItems = getFilteredAdminReports().filter((item) => item.status === 'Завершено');
-  const selectedIds = new Set((state.adminReportsSelectedSessionIds || []).map((value) => Number(value)));
-  if (!completedItems.length) {
-    adminReportsGroupDialogSummary.textContent = 'По текущему фильтру нет завершенных ассессментов для выгрузки.';
-    adminReportsGroupDialogList.innerHTML = '<p class="report-empty-state">Нет завершенных ассессментов.</p>';
-    if (adminReportsGroupDialogExport) {
-      adminReportsGroupDialogExport.disabled = true;
-    }
-    return;
-  }
-  const selectedCount = completedItems.filter((item) => selectedIds.has(Number(item.session_id))).length;
-  adminReportsGroupDialogSummary.textContent =
-    selectedCount > 0 ? 'Выбрано для выгрузки: ' + selectedCount : 'Выберите завершенные ассессменты для выгрузки.';
-  adminReportsGroupDialogList.innerHTML = completedItems
-    .map((item) => {
-      const checked = selectedIds.has(Number(item.session_id));
-      const groupName = sanitizeDisplayMetaText(item.group_name || '') || 'Не указана';
-      const roleName = sanitizeDisplayRole(item.role_name || '') || 'Роль не указана';
-      const scoreLabel = typeof item.score_percent === 'number' ? item.score_percent + '%' : '—';
-      return (
-        '<label class="admin-prompt-lab-case-option">' +
-        '<input type="checkbox" value="' +
-        Number(item.session_id) +
-        '"' +
-        (checked ? ' checked' : '') +
-        '>' +
-        '<span class="admin-prompt-lab-case-option-copy">' +
-        '<strong>' +
-        escapeHtml(item.full_name || '') +
-        ' · ID ' +
-        escapeHtml(item.user_id) +
-        '</strong>' +
-        '<small>' +
-        escapeHtml(groupName) +
-        ' · ' +
-        escapeHtml(roleName) +
-        ' · ' +
-        escapeHtml(scoreLabel) +
-        ' · ' +
-        escapeHtml(formatAdminReportDate(item)) +
-        '</small>' +
-        '</span>' +
-        '</label>'
-      );
-    })
-    .join('');
-  if (adminReportsGroupDialogExport) {
-    adminReportsGroupDialogExport.disabled = selectedCount <= 0;
-  }
-};
-
-export const syncAdminReportsSelectionFromDialog = () => {
-  if (!adminReportsGroupDialogList) {
-    return;
-  }
-  state.adminReportsSelectedSessionIds = Array.from(
-    adminReportsGroupDialogList.querySelectorAll('input[type="checkbox"]:checked'),
-  )
-    .map((node) => Number(node.value || 0))
-    .filter((value) => Number.isFinite(value) && value > 0);
   renderAdminReports();
-  renderAdminReportsGroupDialog();
 };
 
+const refresh = () => {
+  const epoch = requestEpoch + 1;
+  adminReportsList.innerHTML = '<p class="report-empty-state">Загружаем закрытые оценки...</p>';
+  void loadAdminReports().catch((error) => {
+    if (requestEpoch !== epoch || state.currentScreen !== 'admin-reports') return;
+    adminReportsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
+  });
+};
+
+export const changeAdminReportsPage = (direction) => {
+  state.adminReportsPage = Math.max(1, (state.adminReportsPage || 1) + direction);
+  persistAssessmentContext();
+  refresh();
+};
 
 export const openAdminReports = async () => {
   setCurrentScreen('admin-reports');
-  persistAssessmentContext();
   syncUrlState('admin-reports');
   hideAllPanels();
   adminReportsPanel.classList.remove('hidden');
-  adminReportsList.innerHTML = '<p class="report-empty-state">Загружаем подробные отчеты...</p>';
-  try {
-    if (!state.adminReports) {
-      await loadAdminReports();
-    }
-    renderAdminReports();
-  } catch (error) {
-    adminReportsList.innerHTML = '<p class="report-empty-state">' + error.message + '</p>';
-  }
+  refresh();
 };
+
+adminReportsSearch?.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  state.adminReportsSearch = adminReportsSearch.value;
+  state.adminReportsPage = 1;
+  searchTimer = setTimeout(refresh, 250);
+});
+organization?.addEventListener('change', () => {
+  state.adminReportsOrganizationId = Number(organization.value);
+  state.adminReportsProgram = '';
+  state.adminReportsPage = 1;
+  state.adminReports = null;
+  persistAssessmentContext();
+  refresh();
+});
+program?.addEventListener('change', () => {
+  state.adminReportsProgram = program.value;
+  state.adminReportsPage = 1;
+  persistAssessmentContext();
+  refresh();
+});
+status?.addEventListener('change', () => {
+  state.adminReportsStatus = status.value;
+  state.adminReportsPage = 1;
+  persistAssessmentContext();
+  refresh();
+});
+clear?.addEventListener('click', () => {
+  state.adminReportsSearch = '';
+  state.adminReportsProgram = '';
+  state.adminReportsStatus = '';
+  state.adminReportsPage = 1;
+  persistAssessmentContext();
+  refresh();
+});

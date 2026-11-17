@@ -46,7 +46,6 @@ import {
   loadAdminReportsData,
   openAdminMethodologyScreen,
   loadAdminMethodologyData,
-  openAdminReportDetailScreen,
   loadDashboard,
 } from './screen-loaders.js';
 
@@ -231,6 +230,7 @@ const bootApp = async () => {
         m8CycleId: params.get('cycle_id'),
         m8ReportId: params.get('report_id'),
         customerAccess: true,
+        returnTarget: 'admin-reports',
       });
       return;
     }
@@ -258,10 +258,6 @@ const bootApp = async () => {
         console.error('Failed to restore admin methodology', error);
       }
       void openAdminMethodologyScreen();
-      return;
-    }
-    if (state.currentScreen === 'admin-report-detail' && state.isAdmin && state.adminReportDetailSessionId) {
-      void openAdminReportDetailScreen(state.adminReportDetailSessionId);
       return;
     }
     if (state.currentScreen === 'admin' && state.isAdmin) {

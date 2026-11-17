@@ -40,7 +40,8 @@ def test_admin_dashboard_uses_modern_cycles_and_has_honest_empty_skills():
         "Прохождение оценки": ("Завершено 2 из 3", "За всё время"),
     }
     assert dashboard.competency_average == []
-    assert dashboard.insights[0].title == "Сводная оценка навыков пока недоступна"
+    assert dashboard.insights == []
+    assert dashboard.activity_points == []
     combined_sql = "\n".join(sql for sql, _params in connection.sql)
     assert "m5_cycles" in combined_sql
     assert "m8_reports" in combined_sql

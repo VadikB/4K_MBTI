@@ -1,0 +1,200 @@
+[
+  {
+    "url": "/users/version",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/session/restore",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/8/journey-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m5/situations/synthetic-as/draft",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m5/situations/synthetic-as/transitions",
+    "method": "POST",
+    "body": {
+      "action": "scenario_end",
+      "reason": "user_finished_case",
+      "request_id": "f0ea4836-70b8-4c44-b0b6-e67724a89452"
+    }
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m5/situations/synthetic-as/draft",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/version",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/8/session-bootstrap",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/8/journey-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-continue",
+    "method": "POST",
+    "body": {
+      "position_no": 3,
+      "expected_assessment_situation_id": "synthetic-as",
+      "expected_state": "scenario_ended",
+      "idempotency_key": "9e7a39e2-6e67-4b7d-9504-a88904ea78e4",
+      "generation_operation_id": null
+    }
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/presence",
+    "method": "POST",
+    "body": {
+      "client_id": "61d4d144-40d2-44be-86b6-4574894ec7b6",
+      "expected_assessment_situation_id": "synthetic-as"
+    }
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m5/situations/synthetic-as/draft",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/version",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/8/session-bootstrap",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/8/journey-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/cycles/synthetic-cycle/runtime",
+    "method": "GET",
+    "body": null
+  },
+  {
+    "url": "/users/assessment/m7/cycles/synthetic-cycle/return-state",
+    "method": "GET",
+    "body": null
+  }
+]

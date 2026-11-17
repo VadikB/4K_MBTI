@@ -1,0 +1,26 @@
+{
+  "viewport": 1440,
+  "scrollWidth": 1440,
+  "input": {
+    "x": 160,
+    "y": 897,
+    "width": 1120,
+    "height": 204,
+    "bottom": 1101
+  },
+  "messages": {
+    "x": 160,
+    "y": 169,
+    "width": 1120,
+    "height": 580,
+    "bottom": 749
+  },
+  "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+  "feedbackColor": "rgb(34, 44, 48)",
+  "visibleControls": [
+    "Мои оценки",
+    "👤\n              Выйти",
+    "Проверить состояние",
+    "Отправить"
+  ]
+}

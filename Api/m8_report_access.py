@@ -30,7 +30,9 @@ def customer_can_read_report(connection, *, report_id: str, user_id: int) -> boo
         JOIN organization_memberships membership ON membership.organization_id=cycle.organization_id
             AND membership.user_id=%s AND membership.role='admin'
         JOIN organizations organization ON organization.id=cycle.organization_id AND organization.is_active=TRUE
-        WHERE p.id=%s AND p.audience='assessee'""",
+        WHERE p.id=%s AND p.audience='assessee' AND p.status IN ('ready','limited','no_result')
+          AND cycle.collection_closed_at IS NOT NULL
+          AND COALESCE(p.c67_json->'processing'->>'status','') <> 'failed'""",
         (user_id, UUID(str(report_id)))).fetchone()
     return bool(row)
 
@@ -42,23 +44,80 @@ def record_access(connection, *, report_id: str, user_id: int, channel: str) -> 
         VALUES(%s,%s,%s,%s)""", (UUID(str(report_id)), user_id, channel, ACCESS_CONTRACT_VERSION))
 
 
-def list_customer_reports(connection, *, user_id: int) -> list[dict]:
-    rows = connection.execute("""SELECT DISTINCT ON (r.cycle_db_id)
-        p.id AS report_id,p.revision_no,p.created_at,c.cycle_id,c.owner_user_id,
-        c.started_at,c.collection_closed_at,
-        COALESCE(p.c67_json->'display'->>'program_name',c.display_snapshot_json->>'program_name') AS program_name,
-        to_jsonb(u)->>'full_name' AS full_name,rr.revision_no AS results_revision_no
-        FROM m5_cycles c
-        JOIN organization_memberships membership ON membership.organization_id=c.organization_id
-            AND membership.user_id=%s AND membership.role='admin'
-        JOIN organizations organization ON organization.id=c.organization_id AND organization.is_active=TRUE
+def page_customer_reports(connection, *, user_id: int, organization_id: int | None = None,
+                          query: str = "", program: str = "", status: str = "",
+                          page: int = 1, page_size: int = 12) -> dict:
+    """Closed assessment Cycles in one authorized organization; one row per Cycle."""
+    if status not in {"", "preparing", "ready", "failed"}:
+        raise ValueError("REPORT_STATUS_INVALID")
+    organizations = [dict(row) for row in connection.execute("""SELECT organization.id,organization.name
+        FROM organizations organization JOIN organization_memberships membership
+          ON membership.organization_id=organization.id
+        WHERE membership.user_id=%s AND membership.role='admin' AND organization.is_active=TRUE
+        ORDER BY organization.name,organization.id""", (user_id,)).fetchall()]
+    allowed = {int(item["id"]) for item in organizations}
+    selected = organization_id if organization_id is not None else (int(organizations[0]["id"]) if organizations else None)
+    if selected is not None and selected not in allowed:
+        raise PermissionError("REPORT_ORGANIZATION_FORBIDDEN")
+    if selected is None:
+        return {"items": [], "total": 0, "page": page, "page_size": page_size,
+                "organization_id": None, "organizations": organizations, "programs": []}
+
+    base = """FROM m5_cycles c
         JOIN users u ON u.id=c.owner_user_id
-        JOIN m8_results r ON r.cycle_db_id=c.id
-        JOIN m8_result_revisions rr ON rr.results_id=r.id
-        JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
-        ORDER BY r.cycle_db_id,rr.revision_no DESC,p.revision_no DESC""", (user_id,)).fetchall()
-    return [{key: (str(value) if key in {"report_id", "cycle_id"} else value)
-             for key, value in dict(row).items()} for row in rows]
+        JOIN organization_memberships membership ON membership.organization_id=c.organization_id
+          AND membership.user_id=%s AND membership.role='admin'
+        JOIN organizations organization ON organization.id=c.organization_id AND organization.is_active=TRUE
+        LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=c.id
+        LEFT JOIN LATERAL (
+          SELECT p.id,p.status,p.c67_json
+          FROM m8_results r JOIN m8_result_revisions rr ON rr.results_id=r.id
+            JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
+          WHERE r.cycle_db_id=c.id
+          ORDER BY rr.revision_no DESC,p.revision_no DESC LIMIT 1
+        ) report ON TRUE
+        WHERE c.organization_id=%s AND c.usage_scope='assessment' AND c.collection_closed_at IS NOT NULL"""
+    program_expr = "COALESCE(report.c67_json->'display'->>'program_name',c.display_snapshot_json->>'program_name','')"
+    name_expr = "COALESCE(to_jsonb(u)->>'full_name','')"
+    status_expr = """CASE WHEN report.id IS NOT NULL AND report.status IN ('ready','limited','no_result') AND
+            COALESCE(report.c67_json->'processing'->>'status','') <> 'failed'
+          THEN 'ready' WHEN pipeline.status='failed' OR c.status='failed'
+            OR report.c67_json->'processing'->>'status'='failed'
+          THEN 'failed' ELSE 'preparing' END"""
+    source = f"SELECT c.id,c.cycle_id,c.collection_closed_at,{name_expr} AS full_name,\n" \
+        f"{program_expr} AS program_name,{status_expr} AS status,\n" \
+        "report.id AS report_id " + base
+    programs = [row["program_name"] for row in connection.execute(
+        f"SELECT DISTINCT program_name FROM ({source}) cycles WHERE program_name<>'' ORDER BY program_name",
+        (user_id, selected)).fetchall()]
+    conditions = []
+    params: list = [user_id, selected]
+    if query.strip():
+        conditions.append("full_name ILIKE %s")
+        params.append("%" + query.strip() + "%")
+    if program:
+        conditions.append("program_name=%s")
+        params.append(program)
+    if status:
+        conditions.append("status=%s")
+        params.append(status)
+    filtered = f"FROM ({source}) cycles" + (" WHERE " + " AND ".join(conditions) if conditions else "")
+    total = int(connection.execute("SELECT COUNT(*) AS total " + filtered, tuple(params)).fetchone()["total"])
+    rows = connection.execute("SELECT * " + filtered +
+        " ORDER BY collection_closed_at DESC,id DESC LIMIT %s OFFSET %s",
+        (*params, page_size, (page - 1) * page_size)).fetchall()
+    items = []
+    for row in rows:
+        item = dict(row)
+        item.pop("id")
+        for key in ("cycle_id", "report_id"):
+            if item[key] is not None:
+                item[key] = str(item[key])
+        if item["status"] != "ready":
+            item["report_id"] = None
+        items.append(item)
+    return {"items": items, "total": total, "page": page, "page_size": page_size,
+            "organization_id": selected, "organizations": organizations, "programs": programs}
 
 
 def _select(value, fields: tuple[str, ...]) -> dict:

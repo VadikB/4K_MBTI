@@ -26,48 +26,6 @@ export const buildInitials = (fullName) => {
     .join('');
 };
 
-export const formatDateTimeLocalValue = (value) => {
-  if (!value) {
-    return '';
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  const pad = (num) => String(num).padStart(2, '0');
-  return (
-    date.getFullYear() +
-    '-' +
-    pad(date.getMonth() + 1) +
-    '-' +
-    pad(date.getDate()) +
-    'T' +
-    pad(date.getHours()) +
-    ':' +
-    pad(date.getMinutes())
-  );
-};
-
-export const formatDateInputValue = (value) => {
-  if (!value) {
-    return '';
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  const pad = (num) => String(num).padStart(2, '0');
-  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
-};
-
-export const normalizeExpertAssessmentDateForApi = (value) => {
-  const normalized = String(value || '').trim();
-  if (!normalized) {
-    return null;
-  }
-  return normalized + 'T00:00:00';
-};
-
 export const getSignupFirstName = (fullName, fallback = 'Пользователь') => {
   const parts = String(fullName || '')
     .trim()
@@ -233,29 +191,9 @@ export const formatProfileDate = (value) => {
   });
 };
 
-export const formatAdminReportDate = (item) => {
-  const value = item.finished_at || item.started_at;
-  if (!value) {
-    return 'Без даты';
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return 'Без даты';
-  }
-  return date.toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
-
 export const parseJsonArrayField = (value) => {
-  if (!value) {
-    return [];
-  }
-  if (Array.isArray(value)) {
-    return value;
-  }
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? parsed : [];

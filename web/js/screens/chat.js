@@ -45,12 +45,7 @@ import { addMessage, showAgentTyping, hideAgentTyping } from '../components/chat
 import { showError } from '../components/errors.js';
 import { hideLoader, showLoader, startLoaderProgressPolling } from '../utils/loader.js';
 import { hideAllPanels, syncUrlState, returnToStart } from '../router.js';
-import {
-  destroyAdminCompetencyBarChart,
-  destroyAdminActivityBarChart,
-} from './admin/charts.js';
 import { destroyReportCompetencyBarChart } from './report.js';
-import { destroyAdminSkillRadarChart } from './admin/skill-radar.js';
 import { beginAssessmentPreparation, stopAssessmentPreparationPolling } from './assessment.js';
 import { openDashboard } from './dashboard.js';
 import { openOnboardingScreen } from '../screen-loaders.js';
@@ -204,12 +199,11 @@ export const resetChat = ({ preserveAuthFeedback = false } = {}) => {
   state.isAdmin = false;
   state.adminDashboard = null;
   state.adminReports = null;
-  state.adminReportDetail = null;
-  state.adminReportDetailSessionId = null;
-  state.adminReportDetailSkillAssessments = [];
-  state.adminReportDetailSkillAssessmentsLoading = false;
   state.adminReportsSearch = '';
   state.adminReportsPage = 1;
+  state.adminReportsOrganizationId = null;
+  state.adminReportsProgram = '';
+  state.adminReportsStatus = '';
   state.pendingRoleOptions = [];
   state.pendingActionOptions = [];
   state.pendingConsentTitle = null;
@@ -232,10 +226,7 @@ export const resetChat = ({ preserveAuthFeedback = false } = {}) => {
   state.processingStepIndex = 0;
   state.processingAgents = buildProcessingAgentsState();
   state.assessmentSessionId = null;
-  destroyAdminCompetencyBarChart();
-  destroyAdminActivityBarChart();
   destroyReportCompetencyBarChart();
-  destroyAdminSkillRadarChart();
   state.skillAssessments = [];
   state.reportCompetencyTab = 'Коммуникация';
   state.processingAnimationDone = false;

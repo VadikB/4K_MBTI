@@ -40,21 +40,11 @@ export const state = {
   adminMethodologySearch: '',
   adminMethodologyTab: 'library',
   adminReports: null,
-  adminReportDetail: null,
-  adminReportDetailSessionId: null,
-  adminReportDetailSkillAssessments: [],
-  adminReportDetailSkillAssessmentsLoading: false,
-  adminReportDetailExpertCommentEditing: false,
-  adminReportDetailExpertCommentOriginal: '',
-  adminReportDetailExpertCommentDirty: false,
-  adminReportDetailExpertMetaOriginal: {
-    expert_name: '',
-    expert_contacts: '',
-    expert_assessed_at: '',
-  },
   adminReportsSearch: '',
   adminReportsPage: 1,
-  adminReportsSelectedSessionIds: [],
+  adminReportsOrganizationId: null,
+  adminReportsProgram: '',
+  adminReportsStatus: '',
   adminPeriodKey: '30d',
   pendingRoleOptions: [],
   pendingNoChangesQuickReply: false,
@@ -131,11 +121,11 @@ export const STORAGE_KEYS = {
   adminMethodologyDetailCode: 'agent4k.adminMethodologyDetailCode',
   adminMethodologySearch: 'agent4k.adminMethodologySearch',
   adminMethodologyTab: 'agent4k.adminMethodologyTab',
-  adminReports: 'agent4k.adminReports',
-  adminReportDetail: 'agent4k.adminReportDetail',
-  adminReportDetailSessionId: 'agent4k.adminReportDetailSessionId',
   adminReportsSearch: 'agent4k.adminReportsSearch',
   adminReportsPage: 'agent4k.adminReportsPage',
+  adminReportsOrganizationId: 'agent4k.adminReportsOrganizationId',
+  adminReportsProgram: 'agent4k.adminReportsProgram',
+  adminReportsStatus: 'agent4k.adminReportsStatus',
   adminPeriodKey: 'agent4k.adminPeriodKey',
   pendingRoleOptions: 'agent4k.pendingRoleOptions',
   pendingNoChangesQuickReply: 'agent4k.pendingNoChangesQuickReply',
@@ -242,15 +232,9 @@ export const persistAssessmentContext = () => {
   if (state.adminMethodologyDetailCode) {
     safeStorage.setItem(STORAGE_KEYS.adminMethodologyDetailCode, state.adminMethodologyDetailCode);
   }
-  if (state.adminReports) {
-    safeStorage.setItem(STORAGE_KEYS.adminReports, JSON.stringify(state.adminReports));
-  }
-  if (state.adminReportDetail) {
-    safeStorage.setItem(STORAGE_KEYS.adminReportDetail, JSON.stringify(state.adminReportDetail));
-  }
-  if (state.adminReportDetailSessionId) {
-    safeStorage.setItem(STORAGE_KEYS.adminReportDetailSessionId, String(state.adminReportDetailSessionId));
-  }
+  safeStorage.removeItem('agent4k.adminReports');
+  safeStorage.removeItem('agent4k.adminReportDetail');
+  safeStorage.removeItem('agent4k.adminReportDetailSessionId');
   if (state.adminPeriodKey) {
     safeStorage.setItem(STORAGE_KEYS.adminPeriodKey, state.adminPeriodKey);
   }
@@ -264,6 +248,9 @@ export const persistAssessmentContext = () => {
   );
   safeStorage.setItem(STORAGE_KEYS.adminReportsSearch, state.adminReportsSearch || '');
   safeStorage.setItem(STORAGE_KEYS.adminReportsPage, String(state.adminReportsPage || 1));
+  safeStorage.setItem(STORAGE_KEYS.adminReportsOrganizationId, String(state.adminReportsOrganizationId || ''));
+  safeStorage.setItem(STORAGE_KEYS.adminReportsProgram, state.adminReportsProgram || '');
+  safeStorage.setItem(STORAGE_KEYS.adminReportsStatus, state.adminReportsStatus || '');
   const persistNullable = (key, value) => {
     if (value === null || value === undefined || value === '') safeStorage.removeItem(key);
     else safeStorage.setItem(key, String(value));
@@ -307,15 +294,18 @@ export const restoreAssessmentContext = () => {
     const storedAdminMethodologyDetailCode = safeStorage.getItem(STORAGE_KEYS.adminMethodologyDetailCode);
     const storedAdminMethodologySearch = safeStorage.getItem(STORAGE_KEYS.adminMethodologySearch);
     const storedAdminMethodologyTab = safeStorage.getItem(STORAGE_KEYS.adminMethodologyTab);
-    const storedAdminReports = safeStorage.getItem(STORAGE_KEYS.adminReports);
-    const storedAdminReportDetail = safeStorage.getItem(STORAGE_KEYS.adminReportDetail);
-    const storedAdminReportDetailSessionId = safeStorage.getItem(STORAGE_KEYS.adminReportDetailSessionId);
+    safeStorage.removeItem('agent4k.adminReports');
+    safeStorage.removeItem('agent4k.adminReportDetail');
+    safeStorage.removeItem('agent4k.adminReportDetailSessionId');
     const storedAdminPeriodKey = safeStorage.getItem(STORAGE_KEYS.adminPeriodKey);
     const storedPendingRoleOptions = safeStorage.getItem(STORAGE_KEYS.pendingRoleOptions);
     const storedPendingNoChangesQuickReply = safeStorage.getItem(STORAGE_KEYS.pendingNoChangesQuickReply);
     const storedResumeAssessmentAfterProfileCompletion = safeStorage.getItem(STORAGE_KEYS.resumeAssessmentAfterProfileCompletion);
     const storedAdminReportsSearch = safeStorage.getItem(STORAGE_KEYS.adminReportsSearch);
     const storedAdminReportsPage = safeStorage.getItem(STORAGE_KEYS.adminReportsPage);
+    const storedAdminReportsOrganizationId = safeStorage.getItem(STORAGE_KEYS.adminReportsOrganizationId);
+    const storedAdminReportsProgram = safeStorage.getItem(STORAGE_KEYS.adminReportsProgram);
+    const storedAdminReportsStatus = safeStorage.getItem(STORAGE_KEYS.adminReportsStatus);
     const storedSessionCode = safeStorage.getItem(STORAGE_KEYS.assessmentSessionCode);
     const storedRuntimeKind = safeStorage.getItem(STORAGE_KEYS.assessmentRuntimeKind);
     const storedProductCycleId = safeStorage.getItem(STORAGE_KEYS.productCycleId);
@@ -367,15 +357,6 @@ export const restoreAssessmentContext = () => {
     if (storedAdminMethodologyTab) {
       state.adminMethodologyTab = storedAdminMethodologyTab;
     }
-    if (storedAdminReports) {
-      state.adminReports = JSON.parse(storedAdminReports);
-    }
-    if (storedAdminReportDetail) {
-      state.adminReportDetail = JSON.parse(storedAdminReportDetail);
-    }
-    if (storedAdminReportDetailSessionId) {
-      state.adminReportDetailSessionId = Number(storedAdminReportDetailSessionId);
-    }
     if (storedAdminPeriodKey) {
       state.adminPeriodKey = storedAdminPeriodKey;
     }
@@ -394,6 +375,9 @@ export const restoreAssessmentContext = () => {
     if (storedAdminReportsPage) {
       state.adminReportsPage = Number(storedAdminReportsPage) || 1;
     }
+    state.adminReportsOrganizationId = Number(storedAdminReportsOrganizationId) || null;
+    state.adminReportsProgram = storedAdminReportsProgram || '';
+    state.adminReportsStatus = storedAdminReportsStatus || '';
     if (storedSessionId) {
       state.assessmentSessionId = Number(storedSessionId);
     }
@@ -474,7 +458,6 @@ export const clearAssessmentContext = () => {
 export const restoreAssessmentContextFromParams = (params) => {
   const userId = params.get('user_id');
   const sessionId = params.get('session_id');
-  const adminReportSessionId = params.get('admin_report_session_id');
   const sessionCode = params.get('session_code');
   const totalCases = params.get('total_cases');
   const fullName = params.get('full_name');
@@ -492,10 +475,6 @@ export const restoreAssessmentContextFromParams = (params) => {
 
   if (sessionId) {
     state.assessmentSessionId = Number(sessionId);
-  }
-
-  if (adminReportSessionId) {
-    state.adminReportDetailSessionId = Number(adminReportSessionId);
   }
 
   if (sessionCode) {
