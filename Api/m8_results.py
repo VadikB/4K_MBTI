@@ -609,7 +609,8 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         LEFT JOIN m8_result_revisions rr ON rr.results_id=r.id
         LEFT JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
         WHERE """ + owner_scope + """
-        ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC NULLS LAST,
+        ORDER BY COALESCE(c.collection_closed_at,c.created_at) DESC,c.id DESC,
+                 rr.revision_no DESC NULLS LAST,
                  p.revision_no DESC NULLS LAST""", (user_id,)).fetchall()
     cycles = {}
     for row in rows:

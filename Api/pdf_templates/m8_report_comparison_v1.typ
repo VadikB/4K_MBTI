@@ -6,10 +6,10 @@
 #set par(leading: 0.7em, spacing: 0.8em)
 
 = Сравнение оценок 4К
-Предыдущая оценка: #data.previous.closed_at \
-Текущая оценка: #data.current.closed_at
+Предыдущее прохождение: #if data.previous.program_name == none [Оценка 4К] else [#data.previous.program_name] · #data.previous.closed_at \
+Текущее прохождение: #if data.current.program_name == none [Оценка 4К] else [#data.current.program_name] · #data.current.closed_at
 
-Числовая разница показана только там, где сервер подтвердил сопоставимость двух сохранённых результатов.
+Числовая разность показана только там, где подтверждена сопоставимость двух сохранённых результатов. Она не означает процент роста или доказанное развитие навыка.
 
 #if data.comparable.len() > 0 [
   == Сопоставимые навыки

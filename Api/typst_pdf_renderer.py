@@ -109,7 +109,31 @@ def _render_with_reportlab(payload: dict[str, Any], template_name: str) -> bytes
         story.append(Paragraph(esc(subtitle), styles["AgentMuted"]))
         story.append(Spacer(1, 4))
 
-    if template_name == "admin_reports.typ":
+    if template_name == "m8_report_comparison_v1.typ":
+        previous, current = payload["previous"], payload["current"]
+        for label, item in (("Предыдущее прохождение", previous), ("Текущее прохождение", current)):
+            story.append(Paragraph(esc(f"{label}: {item.get('program_name') or 'Оценка 4К'} · {item.get('closed_at') or 'Дата не указана'}"), styles["AgentBody"]))
+        story.append(Paragraph("Разность расчётных показателей не доказывает развитие навыка и не означает процент роста.", styles["AgentMuted"]))
+        if payload.get("comparable"):
+            story.append(Paragraph("Сопоставимые показатели", styles["AgentHeading"]))
+            rows = [["Навык", "Ранее", "Сейчас", "Разность"]]
+            rows += [[esc(item.get("skill_name")), str(item.get("previous")), str(item.get("current")), str(item.get("difference"))]
+                     for item in payload["comparable"]]
+            table = Table(rows, colWidths=[73 * mm, 25 * mm, 25 * mm, 25 * mm], repeatRows=1)
+            table.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                       ("LINEBELOW", (0, 0), (-1, 0), 0.5, colors.HexColor("#D6E2E5")),
+                                       ("FONTNAME", (0, 0), (-1, -1), font_name),
+                                       ("FONTSIZE", (0, 0), (-1, -1), 9),
+                                       ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]))
+            story.append(table)
+        if payload.get("separate"):
+            story.append(Paragraph("Раздельные показатели", styles["AgentHeading"]))
+            for item in payload["separate"]:
+                story.append(Paragraph(esc(item.get("skill_name")), styles["AgentBody"]))
+                story.append(Paragraph(esc(f"Ранее: {item.get('previous') if item.get('previous') is not None else 'Нет результата'}; "
+                                           f"сейчас: {item.get('current') if item.get('current') is not None else 'Нет результата'}"), styles["AgentBody"]))
+                story.append(Paragraph(esc(item.get("reason_text") or "Сопоставимость не подтверждена."), styles["AgentMuted"]))
+    elif template_name == "admin_reports.typ":
         summary = [
             ["Всего отчетов", str(payload.get("total_items") or "0")],
             ["Средний результат", str(payload.get("summary_score_label") or "Нет данных")],

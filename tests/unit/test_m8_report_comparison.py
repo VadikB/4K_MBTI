@@ -12,6 +12,7 @@ def report(cycle, report_id, score=2.25, *, role="role-1", outcome="full_score",
         "skill_id": "K1.S1", "skill_code": "K1.S1", "skill_name": "Навык",
         "skill_description": "Описание", "competency_id": "K1",
         "components": ["C1"], "indicators": ["I1"], "outcome": outcome,
+        "presentation": {"required_indicator_ids": ["I1"], "included_indicator_ids": ["I1"]},
         "score": None if score is None else {"value": score, "numerator": score, "denominator": 1},
     }
     return {
@@ -21,7 +22,7 @@ def report(cycle, report_id, score=2.25, *, role="role-1", outcome="full_score",
             "role_ref": {"id": role, "checksum": "role-checksum"},
             "profile_ref": {"id": "profile", "checksum": "profile-checksum"},
             "target_profile": {"requirements": [{"skill_id": "K1.S1", "value": 2}]},
-            "provenance": {"composition_checksum": f"integrity-{cycle}", "sources": {"m2": "v1"}, "algorithm": {"m6": "v1"},
+            "provenance": {"composition_checksum": f"integrity-{cycle}", "sources": {"M2": "v1", "M6": "v1"}, "algorithm": {"version": "v1", "rules_hash": "rules-v1"},
                            "comparison_evidence": {
                                "contract_version": "m8-comparison-evidence/1.0.0",
                                "semantic_composition": {"full_target_set_checksum": "semantic-m2"},
@@ -47,10 +48,11 @@ def test_proven_pair_returns_exact_delta_and_preserves_zero():
     ("mutate", "status", "reason"),
     [
         (lambda value: value["c67"].update(role_ref={"id": "role-2", "checksum": "other"}), "not_allowed", "different_role"),
-        (lambda value: value["c67"]["provenance"]["comparison_evidence"].update(semantic_composition={"full_target_set_checksum": "other"}), "not_confirmed", "m2_composition_not_confirmed"),
-        (lambda value: value["c67"]["provenance"].update(algorithm={"m6": "v2"}), "not_confirmed", "m6_rules_not_confirmed"),
+        (lambda value: value["c67"].update(role_ref={"id": "role-2", "name": "Та же роль"}), "not_confirmed", "role_snapshot_missing"),
+        (lambda value: value["c67"]["skills"][0]["presentation"].update(required_indicator_ids=["I2"]), "not_confirmed", "skill_composition_changed"),
+        (lambda value: value["c67"]["provenance"].update(algorithm={"version": "v2", "rules_hash": "rules-v2"}), "not_confirmed", "m6_rules_not_confirmed"),
         (lambda value: value["c67"].update(profile_ref={"id": "profile-2", "checksum": "other"}), "not_confirmed", "assessment_context_not_confirmed"),
-        (lambda value: value["c67"]["skills"][0].update(outcome="partial_score"), "not_allowed", "full_score_required"),
+        (lambda value: value["c67"]["skills"][0].update(outcome="partial_score"), "not_allowed", "score_completeness_changed"),
         (lambda value: value["c67"]["skills"][0].update(score=None), "not_allowed", "numeric_score_missing"),
     ],
 )
@@ -101,19 +103,94 @@ def test_missing_saved_condition_is_not_equal_to_another_missing_condition():
 def test_non_full_outcomes_remain_separate(outcome):
     row = compare_reports(report("current", "r2", outcome=outcome), report("previous", "r1"))["skills"][0]
     assert row["difference"] is None
-    assert row["comparability"] == {"status": "not_allowed", "reason": "full_score_required"}
+    assert row["comparability"] == {"status": "not_allowed", "reason":
+                                   "score_completeness_changed" if outcome == "partial_score" else "full_score_required"}
 
 
 def test_incomplete_cycle_uses_saved_skill_relevance_not_global_prohibition():
     current = report("current", "r2", 2.0)
     previous = report("previous", "r1", 1.0)
     current["c67"]["partial_result"] = {"is_incomplete": True}
-    current["c67"]["skills"][0]["presentation"] = {"remaining_plan_relevant": False}
+    current["c67"]["skills"][0]["presentation"]["remaining_plan_relevant"] = False
     allowed = compare_reports(current, previous)["skills"][0]
     assert allowed["comparability"]["status"] == "allowed"
     current["c67"]["skills"][0]["presentation"]["remaining_plan_relevant"] = None
     unknown = compare_reports(current, previous)["skills"][0]
-    assert unknown["comparability"] == {"status": "not_confirmed", "reason": "partial_cycle"}
+    assert unknown["comparability"] == {"status": "allowed", "reason": None}
+
+
+def test_optional_target_and_different_technical_profile_ids_do_not_block_actual_scores():
+    current = report("current", "r2", 2.25)
+    previous = report("previous", "r1", 1.75)
+    current["c67"]["target_profile"] = previous["c67"]["target_profile"] = None
+    previous["c67"]["profile_ref"]["id"] = "other-db-row"
+    previous["c67"]["role_ref"]["id"] = "other-role-row"
+    assert compare_reports(current, previous)["skills"][0]["difference"] == 0.5
+
+
+def test_partial_scores_require_same_confirmed_included_composition():
+    current = report("current", "r2", 2.0, outcome="partial_score")
+    previous = report("previous", "r1", 1.0, outcome="partial_score")
+    for value in (current, previous):
+        value["c67"]["skills"][0]["presentation"].update(
+            required_indicator_ids=["I1", "I2", "I3"], included_indicator_ids=["I1", "I2"])
+    assert compare_reports(current, previous)["skills"][0]["difference"] == 1.0
+    previous["c67"]["skills"][0]["presentation"]["included_indicator_ids"] = ["I1", "I3"]
+    row = compare_reports(current, previous)["skills"][0]
+    assert row["difference"] is None
+    assert row["comparability"]["reason"] == "skill_composition_changed"
+
+
+def test_incomplete_two_of_three_cycle_keeps_a_complete_skill_comparable():
+    current = report("current", "r2", 2.0)
+    previous = report("previous", "r1", 1.0)
+    for value in (current, previous):
+        other = deepcopy(value["c67"]["skills"][0])
+        other.update(skill_id="K1.S2", skill_code="K1.S2", skill_name="Второй навык",
+                     outcome="partial_score", score={"value": 2, "numerator": 2, "denominator": 1},
+                     presentation={"required_indicator_ids": ["I2", "I3", "I4"],
+                                   "included_indicator_ids": ["I2", "I3"]})
+        value["c67"]["skills"].append(other)
+    current["c67"]["partial_result"] = {"is_incomplete": True, "progress": {"completed": 2, "planned": 3}}
+    previous["c67"]["skills"][1]["presentation"]["included_indicator_ids"] = ["I2", "I4"]
+    rows = compare_reports(current, previous)["skills"]
+    assert rows[0]["difference"] == 1.0
+    assert rows[1]["difference"] is None
+    assert rows[1]["comparability"]["reason"] == "skill_composition_changed"
+
+
+def test_missing_mandatory_context_and_equal_numbers_do_not_confirm_comparability():
+    current = report("current", "r2", 0)
+    previous = report("previous", "r1", 0)
+    current["c67"]["profile_ref"] = previous["c67"]["profile_ref"] = {"id": "same"}
+    row = compare_reports(current, previous)["skills"][0]
+    assert row["previous"] == row["current"] == 0.0
+    assert row["difference"] is None
+    assert row["comparability"]["reason"] == "assessment_context_not_confirmed"
+    current["c67"]["profile_ref"] = previous["c67"]["profile_ref"] = {"checksum": "known"}
+    current["c67"]["provenance"]["algorithm"] = previous["c67"]["provenance"]["algorithm"] = {}
+    row = compare_reports(current, previous)["skills"][0]
+    assert row["difference"] is None
+    assert row["comparability"]["reason"] == "m6_rules_not_confirmed"
+
+
+def test_new_m2_version_with_same_name_is_not_semantically_mapped():
+    current = report("current", "r2", 2.0)
+    previous = report("previous", "r1", 2.0)
+    previous["c67"]["provenance"]["sources"] = {"M2": "v2", "M6": "v1"}
+    row = compare_reports(current, previous)["skills"][0]
+    assert row["difference"] is None
+    assert row["comparability"]["reason"] == "m2_sources_not_confirmed"
+
+
+def test_skill_only_in_previous_cycle_remains_visible_without_delta():
+    current = report("current", "r2", 2.0)
+    previous = report("previous", "r1", 1.0)
+    previous["c67"]["skills"][0].update(skill_id="K1.old", skill_code="K1.old", skill_name="Старый навык")
+    rows = compare_reports(current, previous)["skills"]
+    assert len(rows) == 2
+    assert rows[1]["previous"] == 1.0 and rows[1]["current"] is None
+    assert rows[1]["comparability"]["reason"] == "skill_absent_in_current_cycle"
 
 
 def test_comparison_pdf_uses_exact_projection_and_server_renderer(monkeypatch):

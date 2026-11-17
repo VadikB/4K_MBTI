@@ -2915,24 +2915,31 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   } };
   const comparison = {
     mode: 'mixed',
-    current: { cycle_id: 'cycle-rad01', report_id: 'report-rad01', report_revision_no: 1, results_revision_id: 'rr2', created_at: '2026-10-17T12:00:00Z', closed_at: '2026-10-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
-    previous: { cycle_id: 'cycle-previous', report_id: 'report-previous', report_revision_no: 1, results_revision_id: 'rr1', created_at: '2026-09-17T12:00:00Z', closed_at: '2026-09-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
+    current: { cycle_id: 'cycle-rad01', report_id: 'report-rad01', report_revision_no: 1, results_revision_id: 'rr2', program_name: 'Программа сейчас', created_at: '2026-10-17T12:00:00Z', closed_at: '2026-10-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
+    previous: { cycle_id: 'cycle-previous', report_id: 'report-previous', report_revision_no: 1, results_revision_id: 'rr1', program_name: 'Программа ранее', created_at: '2026-09-17T12:00:00Z', closed_at: '2026-09-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
     skills: [
       { skill_id: 'K1.1', skill_name: 'Понимание собеседника', previous: 1.75, current: 2.25, difference: 0.5, comparability: { status: 'allowed', reason: null } },
       { skill_id: 'K1.2', skill_name: 'Ясность сообщения', previous: null, current: 2.25, difference: null, comparability: { status: 'not_allowed', reason: 'full_score_required' } },
     ],
   };
-  await page.route('**/users/**', (route) => {
+  await page.route('**/users/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return fulfillJson(route, { version: 'rad01-test' });
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, dashboard });
     if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_dashboard', profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'report_ready' } });
     if (pathname === '/users/assessment/m8/reports/report-rad01') return fulfillJson(route, report);
     if (pathname === '/users/assessment/m8/history') return fulfillJson(route, { cycles: [
-      { cycle_id: 'cycle-rad01', report_id: 'report-rad01', collection_closed_at: '2026-10-17T11:00:00Z' },
-      { cycle_id: 'cycle-previous', report_id: 'report-previous', collection_closed_at: '2026-09-17T11:00:00Z' },
+      { cycle_id: 'cycle-rad01', report_id: 'report-rad01', program_name: 'Программа сейчас', collection_closed_at: '2026-10-17T11:00:00Z' },
+      { cycle_id: 'cycle-previous', report_id: 'report-previous', program_name: 'Программа ранее', collection_closed_at: '2026-09-17T11:00:00Z' },
+      { cycle_id: 'cycle-other', report_id: 'report-other', program_name: 'Другая программа', collection_closed_at: '2026-08-17T11:00:00Z' },
     ] });
-    if (pathname === '/users/assessment/m8/reports/report-rad01/comparison') return fulfillJson(route, comparison);
+    if (pathname === '/users/assessment/m8/reports/report-rad01/comparison') {
+      if (new URL(route.request().url()).searchParams.get('previous_report_id') === 'report-other') {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        return fulfillJson(route, { ...comparison, previous: { ...comparison.previous, report_id: 'report-other', program_name: 'Другая программа' } });
+      }
+      return fulfillJson(route, comparison);
+    }
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
@@ -2954,8 +2961,57 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('#m8-report-chart-note')).toContainText('Пропуски оставлены открытыми');
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
   await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-periods')).toContainText('Программа ранее');
+  await expect(page.locator('.m8-comparison-periods')).toContainText('Программа сейчас');
+  await expect(page.locator('.m8-comparison-scales .m8-comparison-scale')).toHaveCount(2);
   await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
   await expect(page.getByRole('link', { name: 'Скачать сравнение PDF' })).toHaveAttribute('href', /report-previous/);
+  await page.locator('#m8-comparison-select').selectOption('report-other');
+  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await page.locator('#m8-comparison-select').selectOption('report-previous');
+  await page.waitForTimeout(300);
+  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.getByRole('link', { name: 'Скачать сравнение PDF' })).toHaveAttribute('href', /report-previous/);
+  const comparisonEvidence = path.join(root, 'docs/evc/tasks/p4k-report-07/evidence');
+  await fs.mkdir(comparisonEvidence, { recursive: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-1440.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-390.png') });
+  await page.setViewportSize({ width: 320, height: 700 });
+  const comparisonGeometry = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(comparisonGeometry.scroll).toBe(comparisonGeometry.viewport);
+  // 683 CSS px is the available layout width at 200% zoom on a 1366 px display.
+  await page.setViewportSize({ width: 683, height: 900 });
+  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  const zoomGeometry = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth,
+    contentRight: document.querySelector('#m8-comparison-content').getBoundingClientRect().right,
+  }));
+  expect(zoomGeometry.scroll).toBe(zoomGeometry.viewport);
+  expect(zoomGeometry.contentRight).toBeLessThanOrEqual(zoomGeometry.viewport);
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-200pct-equivalent.png') });
+  let comparisonVariant = { ...comparison, skills: [comparison.skills[0]] };
+  await page.route('**/users/assessment/m8/reports/report-rad01/comparison*', (route) => fulfillJson(route, comparisonVariant));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-1440.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-390.png') });
+  comparisonVariant = { ...comparison,
+    previous: { ...comparison.previous, role_ref: { name: 'Другая роль' } },
+    skills: comparison.skills.map((item) => ({ ...item, difference: null,
+      comparability: { status: 'not_allowed', reason: 'different_role' } })) };
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-slices')).toContainText('Роли в оценках различаются');
+  await expect(page.locator('.m8-comparison-table')).toHaveCount(0);
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-390.png') });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-1440.png') });
   await page.getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-score-bars')).toBeVisible();
   await page.setViewportSize({ width: 360, height: 760 });

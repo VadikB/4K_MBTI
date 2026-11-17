@@ -31,7 +31,6 @@ import { activateOrganizationInvitation, handleAuthActionToken, initWiring, veri
 import {
   openProcessingScreen,
   openReportScreen,
-  loadSkillAssessmentsForReport,
   openOnboardingScreen,
   openWelcomeScreenLazy,
   openPrechatScreen,
@@ -278,31 +277,26 @@ const bootApp = async () => {
     }
     if (!state.isAdmin) {
       try {
-        const requestedM8CycleId = screen === 'report' ? params.get('cycle_id') : null;
-        const requestedLegacyReportSessionId = screen === 'report' && !requestedM8CycleId
-          ? Number(params.get('session_id') || state.assessmentSessionId) || null : null;
+        if (screen === 'report' && params.get('cycle_id')) {
+          await openReportScreen({
+            m8CycleId: params.get('cycle_id'), m8ReportId: params.get('report_id'),
+            returnTarget: params.get('report_id') ? 'reports' : 'home',
+          });
+          return;
+        }
+        if (screen === 'report') {
+          await openReportsScreen();
+          const notice = document.createElement('p');
+          notice.className = 'report-empty-state';
+          notice.setAttribute('role', 'status');
+          notice.textContent = 'Старая ссылка не указывает на прохождение. Выберите отчёт по программе и дате.';
+          document.getElementById('profile-history-list')?.prepend(notice);
+          return;
+        }
         const journey = await loadUserJourneyState();
         applyJourneyAssessmentContext(journey);
         if (journey?.next_action === 'wait_for_acquaintance_data') {
           openAcquaintanceWaiting(journey.acquaintance?.readiness);
-          return;
-        }
-        if (requestedLegacyReportSessionId) {
-          state.assessmentSessionId = requestedLegacyReportSessionId;
-          await loadSkillAssessmentsForReport();
-          await openReportScreen();
-          return;
-        }
-        if (
-          screen === 'report'
-          && !requestedLegacyReportSessionId
-          && (requestedM8CycleId || (journey?.report_status === 'ready' && state.productCycleId))
-        ) {
-          await openReportScreen({
-            m8CycleId: requestedM8CycleId || state.productCycleId,
-            m8ReportId: params.get('report_id'),
-            returnTarget: params.get('report_id') ? 'reports' : 'home',
-          });
           return;
         }
         if (journey?.next_action === 'complete_profile') {
@@ -334,18 +328,6 @@ const bootApp = async () => {
           return;
         }
         if (journey?.next_action === 'show_dashboard') {
-          if (screen === 'report') {
-            const m8CycleId = params.get('cycle_id');
-            if (m8CycleId) {
-              await openReportScreen({ m8CycleId, m8ReportId: params.get('report_id'), returnTarget: params.get('report_id') ? 'reports' : 'home' });
-              return;
-            }
-            if (state.assessmentSessionId) {
-              await loadSkillAssessmentsForReport();
-              await openReportScreen();
-              return;
-            }
-          }
           if (state.currentScreen === 'profile') {
             await openProfileScreen();
             return;

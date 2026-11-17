@@ -1,4 +1,4 @@
-import { state, persistAssessmentContext, clearAssessmentStorage, setCurrentScreen } from '../state.js';
+import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import {
   reportPanel,
   reportOverallScore,
@@ -1307,6 +1307,10 @@ export const renderReport = () => {
 
 export const openReport = (options = {}) => {
   const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false } = options;
+  if (!m8CycleId) {
+    void openReports();
+    return;
+  }
   const requestEpoch = ++state.reportRequestEpoch;
   const identityEpoch = state.identityEpoch;
   const ownerId = state.pendingUser?.id;
@@ -1358,21 +1362,6 @@ export const openReport = (options = {}) => {
     load();
     return;
   }
-  const legacyUrl = new URL(window.location.href);
-  legacyUrl.searchParams.delete('cycle_id');
-  legacyUrl.searchParams.delete('report_id');
-  legacyUrl.searchParams.delete('report_access');
-  window.history.replaceState({}, '', legacyUrl.pathname + '?' + legacyUrl.searchParams.toString());
-  const downloadButton = document.getElementById('report-download-button');
-  if (downloadButton) {
-    delete downloadButton.dataset.m8ReportId;
-    delete downloadButton.dataset.m8ReportAccess;
-    downloadButton.disabled = !state.pendingUser?.id || !state.assessmentSessionId;
-  }
-  document.getElementById('m8-report-shell')?.classList.add('hidden');
-  document.getElementById('legacy-report-shell')?.classList.remove('hidden');
-  renderReport();
-  clearAssessmentStorage();
 };
 
 const outcomeLabels = {
@@ -1643,6 +1632,10 @@ const comparisonReasonLabels = {
   numeric_score_missing: 'В одном из срезов нет числового результата.',
   skill_definition_not_confirmed: 'Совпадение определения навыка не подтверждено.',
   skill_absent_in_previous_cycle: 'В предыдущей оценке навык отсутствует.',
+  skill_absent_in_current_cycle: 'В текущей оценке навык отсутствует.',
+  skill_composition_not_confirmed: 'Состав показателя по навыку не подтверждён.',
+  skill_composition_changed: 'Обязательный или включённый состав показателя изменился.',
+  score_completeness_changed: 'Полный и частичный результаты не являются одним показателем.',
 };
 
 const comparisonScore = (value) => value == null ? 'Нет результата' : String(value);
@@ -1654,8 +1647,8 @@ const renderM8Comparison = (comparison) => {
   if (!node) return;
   const allowed = comparison.skills.filter((item) => item.comparability.status === 'allowed');
   const separate = comparison.skills.filter((item) => item.comparability.status !== 'allowed');
-  const periods = `<dl class="m8-comparison-periods"><div><dt>Предыдущая оценка</dt><dd>${escapeHtml(formatParticipantDate(comparison.previous.closed_at || comparison.previous.created_at))}</dd><dd>${escapeHtml(comparisonRole(comparison.previous.role_ref))}</dd></div>` +
-    `<div><dt>Текущая оценка</dt><dd>${escapeHtml(formatParticipantDate(comparison.current.closed_at || comparison.current.created_at))}</dd><dd>${escapeHtml(comparisonRole(comparison.current.role_ref))}</dd></div></dl>`;
+  const periods = `<dl class="m8-comparison-periods"><div><dt>Предыдущее прохождение</dt><dd>${escapeHtml(comparison.previous.program_name || 'Оценка 4К')}</dd><dd>${escapeHtml(formatParticipantDate(comparison.previous.closed_at || comparison.previous.created_at))}</dd><dd>${escapeHtml(comparisonRole(comparison.previous.role_ref))}</dd></div>` +
+    `<div><dt>Текущее прохождение</dt><dd>${escapeHtml(comparison.current.program_name || 'Оценка 4К')}</dd><dd>${escapeHtml(formatParticipantDate(comparison.current.closed_at || comparison.current.created_at))}</dd><dd>${escapeHtml(comparisonRole(comparison.current.role_ref))}</dd></div></dl>`;
   const table = allowed.length ? `<div class="m8-comparison-table-wrap"><table class="m8-comparison-table"><thead><tr><th>Навык</th><th>Предыдущая</th><th>Текущая</th><th>Разница</th></tr></thead><tbody>${allowed.map((item) =>
     `<tr><th>${escapeHtml(item.skill_name)}</th><td>${escapeHtml(comparisonScore(item.previous))}</td><td>${escapeHtml(comparisonScore(item.current))}</td><td>${escapeHtml(String(item.difference))}</td></tr>`
   ).join('')}</tbody></table></div>` : '';
@@ -1664,7 +1657,11 @@ const renderM8Comparison = (comparison) => {
   ).join('')}</div>` : '';
   const pdfQuery = `?previous_report_id=${encodeURIComponent(comparison.previous.report_id)}`;
   const pdf = `<p><a class="ghost-button compact-ghost" href="/users/assessment/m8/reports/${encodeURIComponent(comparison.current.report_id)}/comparison.pdf${pdfQuery}" download>Скачать сравнение PDF</a></p>`;
-  node.innerHTML = periods + table + slices + pdf;
+  const scale = `<div class="m8-comparison-scales"><h4>Показатели по навыкам</h4><p>Сравнимые значения показаны с разностью. Остальные — раздельно с причиной.</p>${comparison.skills.map((item) => {
+    const bar = (value, label, kind) => `<div class="m8-comparison-scale-line"><span>${label}</span><span class="m8-comparison-track"><span class="${kind}" style="width:${value == null ? 0 : Math.max(0, Math.min(100, Number(value) / 3 * 100))}%"></span></span><strong>${escapeHtml(comparisonScore(value))}</strong></div>`;
+    return `<div class="m8-comparison-scale"><strong>${escapeHtml(item.skill_name)}</strong>${bar(item.previous, 'Ранее', 'm8-comparison-past')}${bar(item.current, 'Сейчас', 'm8-comparison-now')}${item.comparability.status !== 'allowed' ? `<small>${escapeHtml(comparisonReasonLabels[item.comparability.reason] || 'Сопоставимость не подтверждена.')}</small>` : ''}</div>`;
+  }).join('')}</div>`;
+  node.innerHTML = periods + `<p class="m8-comparison-note">Разность расчётных показателей не доказывает развитие навыка и не означает процент роста.</p>` + scale + table + slices + pdf;
 };
 
 const loadM8Comparison = async (reportId, previousReportId = '', isCurrent = () => true) => {
@@ -1680,7 +1677,9 @@ const loadM8Comparison = async (reportId, previousReportId = '', isCurrent = () 
       return;
     }
     const comparison = await readApiResponse(response, 'Не удалось загрузить сравнение оценок.');
-    if (isCurrent()) renderM8Comparison(comparison);
+    if (isCurrent() && String(comparison.current?.report_id) === String(reportId)
+      && String(comparison.previous?.report_id) === String(previousReportId)) renderM8Comparison(comparison);
+    else if (isCurrent()) node.innerHTML = '<p>Выбранную пару оценок не удалось подтвердить.</p>';
   } catch (_error) {
     if (isCurrent()) node.innerHTML = '<p><strong>Сравнение временно недоступно.</strong> Попробуйте ещё раз.</p>';
   }
@@ -1693,17 +1692,29 @@ const setupM8ComparisonOptions = async (cycleId, reportId, isCurrent) => {
   try {
     const history = await readApiResponse(await fetch('/users/assessment/m8/history'), 'Не удалось загрузить историю оценок.');
     if (!isCurrent()) return;
-    const currentIndex = history.cycles.findIndex((item) => String(item.cycle_id) === String(cycleId));
-    const candidates = currentIndex < 0 ? [] : history.cycles.slice(currentIndex + 1).filter((item) => item.report_id && item.collection_closed_at);
-    select.innerHTML = candidates.map((item) => `<option value="${escapeHtml(item.report_id)}">${escapeHtml(formatParticipantDate(item.collection_closed_at || item.created_at))}</option>`).join('') || '<option value="">Предыдущих завершённых оценок нет</option>';
-    select.disabled = candidates.length < 2;
+    const current = history.cycles.find((item) => String(item.cycle_id) === String(cycleId));
+    const candidates = history.cycles.filter((item) => String(item.cycle_id) !== String(cycleId)
+      && item.report_id && item.collection_closed_at && item.status !== 'failed'
+      && current?.collection_closed_at && new Date(item.collection_closed_at) < new Date(current.collection_closed_at));
+    select.innerHTML = candidates.map((item) => `<option value="${escapeHtml(item.report_id)}">${escapeHtml(item.program_name || 'Оценка 4К')} · ${escapeHtml(formatParticipantDate(item.collection_closed_at))}</option>`).join('') || '<option value="">Других завершённых оценок нет</option>';
+    select.disabled = candidates.length === 0;
   } catch (_error) {
     if (!isCurrent()) return;
     select.innerHTML = '<option value="">Последняя завершённая</option>';
     select.disabled = true;
   }
-  button.disabled = false;
-  button.onclick = () => void loadM8Comparison(reportId, select.value, isCurrent);
+  button.disabled = select.disabled;
+  let selectionEpoch = 0;
+  select.onchange = () => {
+    selectionEpoch += 1;
+    const content = document.getElementById('m8-comparison-content');
+    if (content) content.innerHTML = '<p>Выберите «Сравнить оценки», чтобы открыть эту пару.</p>';
+  };
+  button.onclick = () => {
+    const selectedId = select.value;
+    const epoch = ++selectionEpoch;
+    void loadM8Comparison(reportId, selectedId, () => isCurrent() && epoch === selectionEpoch && select.value === selectedId);
+  };
 };
 
 const buildSkillNarrative = (claims) => [
