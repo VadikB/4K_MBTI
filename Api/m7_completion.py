@@ -214,10 +214,12 @@ def _create_c46(connection,cycle):
         (rid,cycle['id'],composition_checksum,json.dumps(payload,ensure_ascii=False),digest))
     return repo.read_c46(connection,cycle['id'])
 
-def complete(connection,*,cycle_id,key,action,reason,initiated_by):
+def complete(connection,*,cycle_id,key,action,reason,initiated_by,participant_command=False):
     cycle=_cycle(connection,cycle_id);request={'action':action,'reason':reason};request_checksum=checksum(request)
     prior=repo.existing(connection,cycle['id'],key,request_checksum)
     if prior:return prior
+    if participant_command and action=='interrupt_for_continuation':
+        raise ValueError('M7_PARTICIPANT_MANUAL_CONTROL_NOT_ALLOWED')
     if cycle['status'] in TERMINAL_CYCLE:raise ValueError('M7_COLLECTION_CLOSED')
     if action not in {'complete','final_refusal','interrupt_for_continuation','time_limit'}:raise ValueError('M7_COMPLETION_ACTION_INVALID')
     effective_at=datetime.now(timezone.utc);limit_kind=None
@@ -283,17 +285,86 @@ def create_additional_session(connection,*,cycle_id,intent_id,key,created_by):
     connection.execute('INSERT INTO m7_additional_session_keys VALUES(%s,%s,%s,%s)',(cycle['id'],key,request_checksum,session['id']))
     return session
 
-def control(connection,*,cycle_id,key,action,reason,initiated_by):
+def assert_participant_resume(connection, *, cycle, session, situation, resume_session):
+    """Recover a persisted pause; a client reason never grants a new pause.
+
+    Caller holds the Cycle lock. Session recovery uses its saved command and
+    interval; AS-only recovery uses its saved transition. Return policy remains
+    a separate check and is never treated as permission to resume.
+    """
+    denied = 'M7_PARTICIPANT_RESUME_NOT_ALLOWED'
+    expected = 'paused' if resume_session else 'active'
+    if (not session or not situation or cycle['status'] != expected
+            or session['status'] != expected
+            or situation['status'] not in ({'paused', 'scenario_ended'} if resume_session else {'paused'})):
+        raise ValueError(denied)
+    current = connection.execute("""SELECT 1 FROM m7_route_positions
+        WHERE cycle_db_id=%s AND current_as_db_id=%s AND state='in_progress'""",
+        (cycle['id'], situation['id'])).fetchone()
+    if not current:
+        raise ValueError(denied)
+    if _effective_limit(connection,cycle) != (None,None):
+        raise ValueError('M7_TIME_LIMIT_REACHED')
+    from Api.m7_return_integration import reconcile_presence
+    if reconcile_presence(connection, cycle_id=str(cycle['cycle_id']), owner_user_id=int(cycle['owner_user_id'])):
+        raise ValueError('M7_RETURN_EXPLICIT_CONTINUE_REQUIRED')
+    intervals = connection.execute("""SELECT interval_type,reason FROM m5_cycle_time_intervals
+        WHERE cycle_db_id=%s AND session_db_id=%s AND ended_at IS NULL""",
+        (cycle['id'], session['id'])).fetchall()
+    if resume_session:
+        if len(intervals) != 1 or intervals[0]['interval_type'] != 'authorized_pause':
+            raise ValueError(denied)
+        pause_reason = intervals[0]['reason']
+        command = connection.execute("""SELECT request_checksum,result_json FROM m7_completion_commands
+            WHERE cycle_db_id=%s AND result_json->>'action'='pause'
+              AND result_json->>'session_id'=%s ORDER BY created_at DESC LIMIT 1""",
+            (cycle['id'], str(session['session_id']))).fetchone()
+        expected_as = str(situation['assessment_situation_id']) if situation['status']=='paused' else None
+        if (not command or command['request_checksum'] != checksum({'action':'pause','reason':pause_reason})
+                or command['result_json'].get('assessment_situation_id') != expected_as):
+            raise ValueError(denied)
+    else:
+        if len(intervals) != 1 or intervals[0]['interval_type'] != 'collecting':
+            raise ValueError(denied)
+        pause_reason = None
+    if situation['status']=='paused':
+        event = connection.execute("""SELECT event_type,cause_json FROM m5_scenario_events
+            WHERE assessment_situation_db_id=%s AND event_type IN
+              ('interaction_paused','interaction_resumed','interaction_terminated','assessment_situation_closed')
+            ORDER BY sequence_no DESC LIMIT 1""", (situation['id'],)).fetchone()
+        if (not event or event['event_type'] != 'interaction_paused'
+                or event['cause_json'].get('from') != 'active'
+                or event['cause_json'].get('to') != 'paused'
+                or not event['cause_json'].get('reason')
+                or (resume_session and event['cause_json']['reason'] != pause_reason)):
+            raise ValueError(denied)
+        pause_reason = event['cause_json']['reason']
+    if pause_reason == 'between_situations':
+        raise ValueError(denied)
+
+
+def control(connection,*,cycle_id,key,action,reason,initiated_by,participant_command=False):
     from Api.m5_cycle_runtime import transition_session
     cycle=_cycle(connection,cycle_id);request_checksum=checksum({'action':action,'reason':reason})
     prior=repo.existing(connection,cycle['id'],key,request_checksum)
     if prior:return prior
+    if participant_command and action=='pause':
+        raise ValueError('M7_PARTICIPANT_MANUAL_CONTROL_NOT_ALLOWED')
     if cycle['status'] in TERMINAL_CYCLE:raise ValueError('M7_COLLECTION_CLOSED')
     if action=='resume' and _effective_limit(connection,cycle)!=(None,None):
-        return complete(connection,cycle_id=cycle_id,key=f'{key}:expiry',action='time_limit',reason='resume_after_limit',initiated_by=initiated_by)
+        # Expiry closes collection; it does not grant permission to resume.
+        result=complete(connection,cycle_id=cycle_id,key=f'{key}:expiry',action='time_limit',reason='resume_after_limit',initiated_by=initiated_by)
+        connection.execute('INSERT INTO m7_completion_commands VALUES(%s,%s,%s,%s::jsonb,NOW())',
+            (cycle['id'],key,request_checksum,json.dumps(result)))
+        return result
     session=connection.execute('SELECT * FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal DESC LIMIT 1 FOR UPDATE',(cycle['id'],)).fetchone()
     if not session:raise ValueError('M7_SESSION_NOT_FOUND')
     open_as=connection.execute("SELECT * FROM m5_assessment_situations WHERE session_db_id=%s AND status IN('active','paused') ORDER BY id DESC LIMIT 1 FOR UPDATE",(session['id'],)).fetchone()
+    if participant_command:
+        recovery_as = open_as or connection.execute("""SELECT * FROM m5_assessment_situations
+            WHERE session_db_id=%s AND status='scenario_ended' ORDER BY id DESC LIMIT 1 FOR UPDATE""",
+            (session['id'],)).fetchone()
+        assert_participant_resume(connection,cycle=cycle,session=session,situation=recovery_as,resume_session=True)
     if open_as:
         m5_scenario_runtime.transition(connection,assessment_situation_id=str(open_as['assessment_situation_id']),action=action,reason=reason,request_id=f'{key}:{action}')
     saved=transition_session(connection,session_id=str(session['session_id']),action=action,reason=reason)
