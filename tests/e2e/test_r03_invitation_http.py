@@ -37,6 +37,8 @@ class _InvitationConnection:
         self.rows: list[dict] = []
 
     def execute(self, query, params=()):
+        if '/* invitation-command */' in query:
+            return _Result(many=[row for row in self.rows if row['organization_id'] == params[0] and row['request_id'] == params[1]])
         if "JOIN user_platform_roles assignment" in query:
             return _Result(one=None)
         if "FROM organization_memberships om" in query:
@@ -66,7 +68,7 @@ class _InvitationConnection:
                 "created_by_user_id": params[3],
                 "assignment_ref": params[6],
                 "delivery_status": "queued",
-                "delivery_error": None,
+                "delivery_error": params[7],
                 "used_at": None,
                 "revoked_at": None,
                 "name": "Organization A",
@@ -94,7 +96,8 @@ class _InvitationConnection:
         if "WHERE id = %s FOR UPDATE" in query:
             return _Result(one=next(row for row in self.rows if row["id"] == params[0]))
         if "SET delivery_status = 'accepted'" in query:
-            row = next(row for row in self.rows if row["id"] == params[0])
+            row = next(row for row in self.rows if row["id"] == params[-1])
+            row["delivery_error"] = params[0]
             if row["used_at"] is not None or row["revoked_at"] is not None or row["expires_at"] <= _utcnow():
                 return _Result(one=None)
             row["delivery_status"] = "accepted"
@@ -102,6 +105,10 @@ class _InvitationConnection:
         if "SET delivery_status = 'sending'" in query:
             row = next(row for row in self.rows if row["id"] == params[0])
             row["delivery_status"] = "sending"
+            return _Result(one=row)
+        if "SET delivery_error = %s" in query:
+            row = next(row for row in self.rows if row['id'] == params[1])
+            row['delivery_error'] = params[0]
             return _Result(one=row)
         if "SET delivery_status = 'error'" in query:
             row = next(row for row in self.rows if row["id"] == params[1])
@@ -423,7 +430,7 @@ def test_personal_invitation_rejects_legacy_operation_without_reconstructable_to
 
     assert response.status_code == 200
     assert response.json()["items"][0]["status"] == "error"
-    assert "безопасно восстановлена" in response.json()["items"][0]["error"]
+    assert response.json()["items"][0]["reason_code"] == "operation_mismatch"
     assert sent == []
 
 

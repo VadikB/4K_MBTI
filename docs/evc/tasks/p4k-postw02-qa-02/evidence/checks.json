@@ -1,0 +1,55 @@
+{
+  "frontend": {
+    "passed": 429,
+    "log_sha256": "eb0b9147ad244843eed442256c167acedb53f1de68be820b822871b064149d14",
+    "summary": "  ...\n1..429\n# tests 429\n# suites 0\n# pass 429\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1530.705"
+  },
+  "backend": {
+    "passed": 1247,
+    "log_sha256": "01c1fea52373125b3e688376fdccfe624033d61a41c0331ad392b53264792d9d",
+    "summary": "tests/unit/test_resumable_connection.py ...                              [ 94%]\ntests/unit/test_sls06_review_package.py ...                              [ 94%]\ntests/unit/test_snapshot_integrity.py .......                            [ 95%]\ntests/unit/test_synthetic_limits.py ...................                  [ 96%]\ntests/unit/test_test_deploy_bootstrap.py ..................              [ 98%]\ntests/unit/test_test_stand.py ............                               [ 99%]\ntests/unit/test_universal_indicator_evaluator.py ....                    [ 99%]\ntests/unit/test_user_journey.py ......                                   [100%]\n\n==================== 1247 passed, 684 deselected in 40.12s ====================="
+  },
+  "http": {
+    "passed": 216,
+    "log_sha256": "6f6d550f81d62de8771a9fcaffa4d10ea9d8cae55e0543e1057b1aaa813c1a16",
+    "summary": "tests/e2e/test_postw02_assessment_ui_http.py ..                          [ 68%]\ntests/e2e/test_postw02_dashboard_http.py .......................         [ 78%]\ntests/e2e/test_postw02_participant_commands_http.py ..........           [ 83%]\ntests/e2e/test_preparation_observation_http.py .                         [ 83%]\ntests/e2e/test_program01_invitation_revoke_http.py ....                  [ 85%]\ntests/e2e/test_qa02_invitation_http.py ...............                   [ 92%]\ntests/e2e/test_review_profile_http.py ..........                         [ 97%]\ntests/e2e/test_ux_fix20_04_admin_readiness_http.py ......                [100%]\n\n===================== 216 passed, 15 deselected in 16.89s ======================"
+  },
+  "controlled": {
+    "passed": 61,
+    "log_sha256": "f357d19f4baf5568de0ebb98be9d1783a2d652a2b263a6e368cafe6edceb2109",
+    "summary": ".............................................................            [100%]\n61 passed in 4.37s"
+  },
+  "integration_targeted": {
+    "passed": 28,
+    "log_sha256": "17657640cb715dcf3b111d6ccc6d3f8130d9201639e7cedb016fee5311a3a178",
+    "summary": "............................                                             [100%]\n28 passed in 16.44s"
+  },
+  "browser": {
+    "passed": 15,
+    "log_sha256": "1da97e4341d9fc43a54e144575680ffa13b83512bf462bb2da3453eec2370cf8",
+    "summary": "  ✓   8 tests/browser/auth-r03.spec.mjs:2580:1 › R03 personal invitation has priority and exposes an explicit account choice (147ms)\n  ✓   9 tests/browser/auth-r03.spec.mjs:3380:1 › R03 queued batch is not reported as provider accepted (402ms)\n  ✓  10 tests/browser/auth-r03.spec.mjs:3390:1 › R03 network retry reuses invitation operation id (603ms)\n  ✓  11 tests/browser/qa02-invitations.spec.mjs:57:35 › QA02 details and common failure at 1440 (1.2s)\n  ✓  12 tests/browser/qa02-invitations.spec.mjs:57:35 › QA02 details and common failure at 390 (1.0s)\n  ✓  13 tests/browser/qa02-invitations.spec.mjs:57:35 › QA02 details and common failure at 320 (1.0s)\n  ✓  14 tests/browser/qa02-invitations.spec.mjs:89:1 › QA02 mixed lost response recovers the same command without duplicate (655ms)\n  ✓  15 tests/browser/qa02-invitations.spec.mjs:101:1 › QA02 late detail response never updates another participant card (569ms)\n\n  15 passed (10.2s)"
+  },
+  "integration_full": {
+    "passed": 459,
+    "skipped": 2,
+    "failed": 1,
+    "failure": "test_adm1c_status_history_db.py::test_exact_assignment_readback_requires_committed_operation: fixture missing existing column created_at",
+    "followup": "fixture repaired; targeted28PASS; no whole-run retry"
+  },
+  "resources": {
+    "owned_postgres": "/private/tmp/p4k-qa02-pg",
+    "port": 55439,
+    "running": false,
+    "pg_ctl_status_exit": 3,
+    "pg_isready_exit": 2,
+    "browser_listening": false,
+    "real_mail": 0,
+    "real_llm": 0,
+    "test_environment_changed": false
+  },
+  "lint_build_diff": {
+    "lint": "PASS",
+    "build": "PASS",
+    "diff": "PASS"
+  }
+}
