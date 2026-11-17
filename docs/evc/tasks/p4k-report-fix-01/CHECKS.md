@@ -105,3 +105,12 @@ frontend/pytest PASS, PostgreSQL integration PASS. Runtime lanes 1/3/4 выяв�
 Runtime требует изолированного PostgreSQL; его повтор выполняет полный CI нового
 head. Приложение и кандидат 2.1.28 не изменились; исходные ошибочные ожидания
 не возвращались в UI ради тестов. CI gates не обходятся.
+
+
+Второй CI head `1c7a685`: frontend/pytest, PostgreSQL integration и все четыре
+runtime lanes PASS. Fast browser завершился с 344 PASS и одним старым ожиданием
+`link.href` в RAD01 (`auth-r03.spec.mjs`). Оно заменено проверкой фактического
+запроса общей PDF-кнопки: current ID в пути, previous ID в query, ошибка на месте.
+Локально полный RAD01 со всеми последующими проверками — **1 PASS**,
+[лог](evidence/ci-followup-rad01.log.gz). Изменены только тест и эта запись;
+повтор обязательного CI выполняется для нового head. Параметры выпуска 2.1.28 прежние.

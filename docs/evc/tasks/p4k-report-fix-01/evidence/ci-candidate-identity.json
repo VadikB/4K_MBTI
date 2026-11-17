@@ -1,11 +1,12 @@
 {
-  "release": "2.1.28",
-  "base": "0aadde0",
+  "base_commit": "0aadde0",
+  "version": "2.1.28",
   "files_sha256": {
     "Api/m8_report_access.py": "ac439436eb12bc638233e6f3dbb2a688a0d3c225761bbd6c8919a189cb87d958",
     "Api/m8_results.py": "e38f19dc43cc804d2a860e0cdc0a3a277fc1a88d299b95a74ce68c88a394e298",
     "Api/pdf_templates/m8_participant_report_v3.typ": "c0bca239ae0a9073e777ea0ebb3d2cfb24e78bfa48f8bfed9fb322679eec859d",
     "Api/typst_pdf_renderer.py": "69e4935c096b2c3d529a6ffaf16237cd256153d2fb1ca5ebeb186da1f6ba3fa2",
+    "tests/browser/auth-r03.spec.mjs": "cce3f6a0aecb7b17f1211483eb065f7556378ab41f4399e59c3d6de16a691b00",
     "tests/browser/report04-personal.spec.mjs": "41a0eb527ece40c2ef275b8785e7a066c66c9254074e0986f5802f6735f58d8f",
     "tests/browser/report05-radar.spec.mjs": "a1333894fa73a16aac17b0e229ddb4bf838ae747015c48113fa7e78c7ac28ff2",
     "tests/browser/report10-pdf.spec.mjs": "2834a2c2bdda8f2776608a55485784dd9c85e585fd7d3a7011b5fd7d72584707",
