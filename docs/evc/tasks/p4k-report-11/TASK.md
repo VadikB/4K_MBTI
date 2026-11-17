@@ -85,5 +85,9 @@ PATCH, поэтому прежний `version_bump=false` не даёт прав
 согласовал назначение PATCH 2.1.27 и обновление PR #242, сохранив merge/deploy
 отдельным решением. Итоговые флаги этого шага: `branch_push=true`, `pr=true`,
 `version_bump=true`, `merge=false`, `deploy=false`, `artifact_publish=false`.
-`npm run ready:prepare -- --candidate 2.1.27` прошёл; после commit/push
-требуется полный CI нового head.
+`npm run ready:prepare -- --candidate 2.1.27` прошёл; CI head `364aaf9a`
+дал 9/9 PASS. Позже PR #243 продвинул `main` до `0aadde0a` и занял 2.1.27.
+Владелец прямо разрешил новый PATCH 2.1.28 и обновление PR #242, сохранив
+merge/deploy отдельным решением. Ветка интегрирована со свежим `main` через
+`f188dd8f`, конфликт generated `web/dist` решён пересборкой; release preflight
+2.1.28 PASS. Для нового head обязателен повторный CI.

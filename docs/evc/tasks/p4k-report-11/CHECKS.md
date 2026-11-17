@@ -5,7 +5,9 @@
 сохранены как диагностика. `PASS` означает только указанную синтетическую проверку.
 PR #242, первый head `b769055478df0e8fba9a637e2bf65af0fea8a0fe`.
 Его обязательный CI выявил описанный ниже дефект S05. Владелец согласовал
-PATCH 2.1.27; итоговый CI относится к следующему head после push.
+PATCH 2.1.27. Head `364aaf9a` получил 9/9 PASS в CI. Затем `main`
+продвинулся до `0aadde0a` (2.1.27); владелец разрешил 2.1.28 и повторную
+проверку обновлённого PR. Эти результаты не переносятся на новый head.
 
 | Сценарий | Источник | Первичное доказательство | Результат на `fffd501a` | Граница |
 | --- | --- | --- | --- | --- |
@@ -72,7 +74,15 @@ frontend radar/report: `9 passed`, `npm run build:web`: PASS. После сог�
 владельцем `version_bump=true`, `npm run ready:prepare -- --candidate 2.1.27`
 PASS; на 2.1.27 те же адресные browser `5 passed` (`radar-fix-targeted.log`).
 `saved-bridge-1440.png` и `saved-bridge-390.png` обновлены; 390 просмотрен
-визуально. Полный Linux CI после исправления — `NOT_RUN` до push.
+визуально. Head `364aaf9a` на базе `fffd501a` прошёл полный Linux CI:
+9 успешных checks, `deploy-test` на PR ожидаемо skipped. После интеграции
+`main` через `f188dd8f` конфликтовал только собранный `web/dist`; он
+пересобран из объединённых исходников. `ready:prepare -- --candidate 2.1.28`,
+`npm run lint:js`, frontend `404 passed`, адресный browser REPORT-05/11 и
+POSTW02-QA `8 passed`, `git diff --check` — PASS. Обязательный CI нового head
+ещё не запускался; прежний PASS не является доказательством для новой базы.
+Новый `saved-bridge-390.png` просмотрен: отчёт и футер 2.1.28 доступны, overflow
+не обнаружен; синтетические английские фразы остаются указанной границей S03.
 Откат продуктовой правки — revert CSS, версии и сборки; merge/deploy отдельно.
 
 Review по `docs/evc/review-checklist.md` первого коммита: новые пути только `tests/` и
