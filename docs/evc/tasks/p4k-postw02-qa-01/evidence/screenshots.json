@@ -1,0 +1,30 @@
+{
+  "tested_sha": "46212e0a58e2a049a9144a1fcfcbcb0f9ff7c7c9",
+  "data": "synthetic controlled API",
+  "screenshots": [
+    {
+      "file": "evidence/browser/dashboard-refreshed-1440.png",
+      "width": 1440,
+      "height": 1517,
+      "sha256": "667237914ea57a35277e7f98ae4d4f2b39d356afb3cff52f46b8a62b2b17c05f"
+    },
+    {
+      "file": "evidence/browser/dashboard-refreshed-390.png",
+      "width": 390,
+      "height": 2296,
+      "sha256": "65880b1cc43d5adda3841e71b8231fdcadac11b4e773d639345ce2533c617b1c"
+    },
+    {
+      "file": "evidence/browser/draft-new-text-1440.png",
+      "width": 1440,
+      "height": 1152,
+      "sha256": "42f8a7712ccb83258cc4e8e9bd353272867205c1d566573f05112f33b08d558a"
+    },
+    {
+      "file": "evidence/browser/draft-new-text-390.png",
+      "width": 390,
+      "height": 1083,
+      "sha256": "399b665de5c0c9c476efe862d7731d636eb54d8d7fefae0177e7c925119711a8"
+    }
+  ]
+}

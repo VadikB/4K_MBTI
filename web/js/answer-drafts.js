@@ -41,6 +41,10 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
   let active = null, timer = null, maxTimer = null;
   const cancelTimers = () => { timers.clearTimeout(timer); timers.clearTimeout(maxTimer); timer = maxTimer = null; };
   const valid = (entry) => entry === active && current(entry.scope);
+  const editable = (entry) => valid(entry) && !entry.stopped && !entry.suspended;
+  const storedRevision = (entry) => {
+    try { return JSON.parse(storage.getItem(entry.key))?.revision; } catch { return undefined; }
+  };
   const message = (entry, text) => { if (valid(entry)) status.textContent = text; };
   const persist = (entry) => {
     try { storage.setItem(entry.key, JSON.stringify(entry.record)); entry.local = true; }
@@ -55,14 +59,25 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
     onConflictChange(true);
     message(entry, 'В другой вкладке или на другом устройстве сохранён другой вариант черновика. Выберите, с каким текстом продолжить');
     actions.replaceChildren();
+    const generation = entry.choiceGeneration = (entry.choiceGeneration || 0) + 1;
     for (const [label, keepLocal] of [['Оставить текст из этой вкладки', true], ['Использовать другой сохранённый вариант', false]]) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'text-button';
       button.textContent = label;
+      button.disabled = Boolean(entry.choice);
       button.addEventListener('click', async () => {
-        button.disabled = true;
+        if (!editable(entry) || entry.choice || entry.choiceGeneration !== generation) return;
+        const choice = { revision: entry.record.revision, storedRevision: storedRevision(entry) };
+        entry.choice = choice;
+        for (const action of actions.children) action.disabled = true;
         try {
           const remote = await request(entry.scope, null);
-          if (!valid(entry) || remote.slot_id !== entry.scope.slotId) return;
+          if (!editable(entry) || entry.choice !== choice) return;
+          if (remote.slot_id !== entry.scope.slotId || remote.owner_id !== entry.scope.ownerId
+              || remote.cycle_id !== entry.scope.cycleId || remote.assessment_situation_id !== entry.scope.situationId) throw new Error('DRAFT_SCOPE_MISMATCH');
+          if (entry.record.revision !== choice.revision || storedRevision(entry) !== choice.storedRevision) {
+            entry.choiceChanged = true;
+            return;
+          }
           entry.record.baseVersion = remote.version; entry.record.baseRevision = remote.revision;
           if (!keepLocal) {
             input.value = remote.text; entry.record.text = remote.text;
@@ -72,13 +87,24 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
           entry.conflict = false; entry.ready = true; onConflictChange(false);
           persist(entry); actions.replaceChildren(); input.dataset.draftRevision = entry.record.revision;
           if (keepLocal) await flush(); else message(entry, 'Черновик восстановлен. Ответ ещё не отправлен');
-        } catch { if (valid(entry)) { button.disabled = false; conflict(entry); } }
+        } catch { /* keep the conflict and all local alternatives available for retry */ }
+        finally {
+          if (entry.choice === choice) {
+            entry.choice = null;
+            if (editable(entry) && entry.conflict) {
+              conflict(entry);
+              if (entry.choiceChanged) message(entry, 'Вы изменили текст. Выберите, какой вариант сохранить');
+            }
+          }
+        }
       }); actions.append(button);
     }
     for (const alternative of entry.record.alternatives || []) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'text-button';
       button.textContent = 'Восстановить текст другой вкладки';
+      button.disabled = Boolean(entry.choice);
       button.addEventListener('click', () => {
+        if (!editable(entry) || entry.choice || entry.choiceGeneration !== generation) return;
         const previous = { text: entry.record.text, revision: entry.record.revision };
         input.value = alternative.text; entry.record.text = alternative.text; entry.record.revision = newRevision();
         input.dataset.draftRevision = entry.record.revision;
@@ -120,7 +146,13 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
   const bind = (scope, { readOnly = false, fallbackText = '', fallbackRevision = '' } = {}) => {
     try { pruneExpiredDrafts(storage); } catch { /* remote remains available */ }
     const key = PREFIX + scope.ownerId + ':' + scope.cycleId + ':' + scope.situationId + ':' + scope.slotId;
-    if (active?.key === key && active.scope.identityEpoch === scope.identityEpoch) { active.suspended = readOnly; return; }
+    if (active?.key === key && active.scope.identityEpoch === scope.identityEpoch) {
+      const resumed = active.suspended && !readOnly;
+      active.suspended = readOnly;
+      if (readOnly) active.choice = null;
+      if (active.conflict && resumed) conflict(active);
+      return;
+    }
     cancelTimers(); input.value = ''; input.dataset.draftRevision = ''; status.textContent = ''; actions.replaceChildren();
     const entry = { scope, key, ready: false, local: false, record: {
       text: '', revision: '', baseVersion: null, baseRevision: '', confirmed: true } }; active = entry;
@@ -233,7 +265,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
   return { bind, edit, flush, clearAccepted, stop, retry, storageChanged,
     restorePending: (operation) => bind({ ...operation, slotId: operation.draftSlotId || 'pending:' + operation.requestId },
       { readOnly: true, fallbackText: operation.draftValue, fallbackRevision: operation.draftRevision || operation.requestId }),
-    suspend: () => { cancelTimers(); if (active) { active.suspended = true;
+    suspend: () => { cancelTimers(); if (active) { active.suspended = true; active.choice = null;
       if (active.record.text) message(active, 'Прежний черновик. Отправка сейчас недоступна; текст можно скопировать'); } },
     saved: () => Boolean(active && valid(active) && (active.local || (active.ready && active.record.confirmed))),
     unsynced: () => Boolean(active && !active.record.confirmed),

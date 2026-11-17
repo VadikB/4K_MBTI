@@ -1,0 +1,14 @@
+[
+  {
+    "command": "npm run lint:js",
+    "exit_code": 0
+  },
+  {
+    "command": "node --test tests/frontend/*.test.mjs",
+    "exit_code": 0
+  },
+  {
+    "command": "python3.12 scripts/check_release_version.py --base-ref origin/main",
+    "exit_code": 0
+  }
+]

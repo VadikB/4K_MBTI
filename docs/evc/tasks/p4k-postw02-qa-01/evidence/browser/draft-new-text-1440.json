@@ -1,0 +1,15 @@
+{
+  "local": [
+    {
+      "text": "Новый текст после выбора\nСинтетический материал участника",
+      "revision": "62b5629d-6e97-4c6b-a940-b1acf9bdd77b",
+      "baseVersion": 0,
+      "baseRevision": "",
+      "confirmed": false,
+      "expiresAt": 1795176000000,
+      "editorId": "3e35cdb1-09b3-43ed-acec-b28605a3bb0e"
+    }
+  ],
+  "posts": 0,
+  "delayedRead": true
+}

@@ -100,7 +100,11 @@ export const renderPreparation = (container, model, options = {}) => {
   for (const [key, value] of Object.entries({ duration: view.duration, kind: kinds[model.kind] || 'Подготовка',
     'detail-stage': [model.stage_label, model.explanation].filter(Boolean).join('. '),
     reference: model.reference, freshness: date(model.read_at), started: date(model.started_at),
-    changed: date(model.last_progress_at || model.stage_started_at) })) root.querySelector(`[data-preparation-${key}]`).textContent = value;
+    changed: date(model.last_progress_at || model.stage_started_at) })) {
+    const field = root.querySelector(`[data-preparation-${key}]`);
+    // Preserve a selection in unchanged details while refreshing other facts.
+    if (field.textContent !== value) field.textContent = value;
+  }
   watchClock(root, model, options);
   root.querySelector('[data-preparation-copy]').onclick = async () => {
     try {
