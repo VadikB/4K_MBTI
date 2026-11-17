@@ -1,5 +1,17 @@
 # STATE — POSTW02-03
 
+Активный этап 17.11.2026: прямое поручение владельца «выполни слияние».
+RELEASE.md фиксирует допуск PATCH/Ready/CI/merge и автоматический test deploy.
+PR #231; свежая база 4170fc0d / 2.1.21 объединена без конфликтов, кандидат 2.1.22.
+Временная рабочая копия /private/tmp/p4k-postw02-03-release-20261117; общий Git
+в GoogleDrive недоступен по таймауту packed-refs, прежние файлы не изменяются.
+Локально: адресные54, backend1183, HTTP189, frontend12, lint/build/release gate
+и diff PASS. Кандидат2.1.22 подготовлен. Текущий шаг: commit/push, Ready и полный
+CI перед squash merge. Полные DB/browser проверки ещё ожидаются в CI.
+Финальные статусы — outputs/p4k-postw02-03-20261117/DELIVERY.json вне Git.
+
+История draft-этапа (прежние ограничения/блокеры заменены новым поручением):
+
 Base origin/main99d2251/2.1.16; ветка codex/p4k-postw02-03.
 Код, HTTP/unit regressions и отчёт готовы. Флаги push/pr=true;
 Ready/bump/merge/deploy/publish=false. TASK.md и REPORT.md фиксируют источники,
