@@ -183,6 +183,14 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
             assert 'validator_trace' not in detail.text and 'profile_ref' not in detail.text
             assert detail.json()['c67']['contract'] == 'C-67'
             assert client.get(own + '/pdf').status_code == 200
+            from Api.typst_pdf_renderer import TypstRenderError
+            monkeypatch.setattr(routes.m8_results, 'render_pdf',
+                                lambda *_: (_ for _ in ()).throw(TypstRenderError('PDF_RENDER_TIMEOUT')))
+            failed_pdf = client.get(own + '/pdf')
+            assert failed_pdf.status_code == 503
+            assert 'Повторите скачивание' in failed_pdf.json()['detail']
+            monkeypatch.setattr(routes.m8_results, 'render_pdf', lambda *_: b'%PDF-synthetic')
+            assert client.get(own + '/pdf').status_code == 200
             comparison = own + '/comparison'
             assert client.get(comparison, params={'previous_report_id': str(previous_report)}).status_code == 200
             auto = client.get(comparison)

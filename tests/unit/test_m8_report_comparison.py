@@ -198,5 +198,5 @@ def test_comparison_pdf_uses_exact_projection_and_server_renderer(monkeypatch):
     monkeypatch.setattr("Api.typst_pdf_renderer.render_typst_report", lambda payload, template: captured.append((payload, template)) or b"%PDF")
     comparison = compare_reports(report("current", "r2", 2.25), report("previous", "r1", 1.75))
     assert m8_report_comparison.render_comparison_pdf(comparison) == b"%PDF"
-    assert captured[0][1] == "m8_report_comparison_v1.typ"
+    assert captured[0][1] == "m8_report_comparison_v2.typ"
     assert captured[0][0]["comparable"][0]["difference"] == 0.5
