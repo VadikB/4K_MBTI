@@ -94,6 +94,8 @@ const sharedParticipantColors = {
 const participantFollowUpTokens = {
   '--participant-avatar-surface': '#f0f0f0', '--participant-status-surface': '#fafafa',
   '--participant-footer-text': 'rgb(100 116 139 / 60%)',
+  // REPORT-FIX-02 UI_BASELINE v1.1: saved previous series / secondary text.
+  '--participant-secondary-text': '#64748b',
 };
 test('UI03 prevents local six-digit hex colors outside the owner palette', () => {
   for (const file of [...cssFiles, ...collectFiles('web/js', '.js')]) {
