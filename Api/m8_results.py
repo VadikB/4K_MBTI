@@ -742,59 +742,63 @@ def read_latest_report(connection, cycle_id: str, audience: str) -> dict:
 
 
 def render_pdf(report: dict) -> bytes:
-    package = load_report_package(); labels = package["template"]["outcome_labels"]
+    from copy import deepcopy
+    from Api.typst_pdf_renderer import TypstRenderError
     c67 = _present_report(report["c67"])
+    # Explicitly supported saved C-67 readers. Never select a legacy PDF using the
+    # mutable current template constant.
+    if c67.get("template_version") not in {"m8-basic-report/1.4.1", "m8-basic-report/1.5.0"}:
+        raise TypstRenderError("PDF_REPORT_VERSION_UNSUPPORTED")
+    if (not isinstance(c67.get("skills"), list)
+            or not isinstance(c67.get("limitations"), list)
+            or not isinstance(c67.get("descriptive"), dict)
+            or any(not isinstance(skill, dict) or skill.get("outcome") not in {
+                "full_score", "partial_score", "result_without_score", "no_result"}
+                or (skill.get("score") is not None and (
+                    not isinstance(skill.get("score"), dict)
+                    or type(skill["score"].get("value")) not in (int, float)))
+                or not (skill.get("skill_name") or skill.get("skill_id"))
+                for skill in c67["skills"])):
+        raise TypstRenderError("PDF_REPORT_MODEL_UNSUPPORTED")
     participant_labels = {
         "full_score": "Результат по полному составу навыка",
         "partial_score": "Результат по части навыка",
         "result_without_score": "Есть наблюдения без общего балла по навыку",
         "no_result": "Недостаточно оснований для результата",
     }
-    participant_coverage_labels = {
-        "opportunities": "Фактическая возможность наблюдения",
-        "indicator_assessments": "Обоснованные оценки индикаторов",
-        "admissible_contributions": "Допустимые вклады",
-        "components_with_score": "Компоненты с баллом",
-        "complete_components": "Полностью оценённые компоненты",
-    }
-    participant_pdf = c67.get("template_version") in {"m8-basic-report/1.4.1", REPORT_TEMPLATE_VERSION}
     skills = []
     for skill in c67["skills"]:
         score = skill.get("score")
         skills.append({
             "name": skill.get("skill_name") or skill["skill_id"],
             "description": skill.get("skill_description") or "",
-            "outcome": skill.get("presentation", {}).get("label") or (participant_labels if participant_pdf else labels).get(skill["outcome"], "Неизвестный формат результата"),
+            "outcome": (skill.get("presentation") or {}).get("label") or participant_labels.get(skill["outcome"], "Неизвестный формат результата"),
             "reasons": [item.get("message") or "Причина ограничения требует уточнения."
                         for item in (skill.get("presentation") or {}).get("reasons") or []],
-            "score": "—" if score is None else f"{score['numerator']}/{score['denominator']} ({score['value']})",
-            "completeness": skill.get("completeness") or "—",
+            "score": "—" if score is None else f"{score['value']:g}",
+            "partial": skill["outcome"] == "partial_score",
+            "value": None if score is None else score["value"],
+            "competency_id": skill.get("competency_id") or skill.get("competency_name") or "Группа навыков",
             "competency": skill.get("competency_name") or "Группа навыков",
         })
-    coverage = []
-    for scope, cuts in c67["coverage"].items():
-        if not isinstance(cuts, dict):
-            continue
-        for name, cut in cuts.items():
-            if not isinstance(cut, dict) or "ratio" not in cut:
-                continue
-            ratio = "не определено" if cut["ratio"] is None else f"{cut['numerator']}/{cut['denominator']} ({cut['ratio'] * 100:.1f}%)"
-            coverage.append({"scope": scope, "name": participant_coverage_labels.get(name, "Неизвестный разрез покрытия") if participant_pdf else name, "ratio": ratio})
+    radars = []
+    for competency_id in dict.fromkeys(skill["competency_id"] for skill in skills):
+        group = [skill for skill in skills if skill["competency_id"] == competency_id]
+        radars.append({"name": group[0]["competency"], "competency_id": competency_id, "axes": [
+            {"name": skill["name"], "current": skill["value"], "partial": skill["partial"]}
+            for skill in group]})
     payload = {
         "title": ("ТЕСТОВЫЙ РЕЗУЛЬТАТ — 4K" if c67.get("test_result")
                   else "4K — базовый индивидуальный отчёт"),
-        "cycle_id": c67["cycle_id"],
-        "results_revision_no": c67["results_revision_no"],
-        "report_revision_no": report["revision_no"],
+        "program_name": report.get("program_name") or (c67.get("display") or {}).get("program_name"),
+        "closed_at": report.get("collection_closed_at") or (c67.get("collection") or {}).get("closed_at"),
+        "participant_name": report.get("participant_name"),
+        "correction": deepcopy(report.get("correction")),
         "skills": skills,
-        "coverage": coverage,
+        "radars": radars,
         "limitations": c67["limitations"],
         "partial_result": c67.get("partial_result"),
         "processing": c67.get("processing", {"status":"completed","message":"Обработка завершена."}),
         "descriptive": c67.get("descriptive", {"status":"historical", "summary":[], "claims":[]}),
-        "recommendations": c67.get("recommendations", []),
-        "recommendation_notices": c67.get("recommendation_notices", []),
-        "reliability": c67["reliability"].get("status", "not_provided"),
-        "created_at": str(report.get("created_at") or ""),
     }
-    return render_typst_report(payload, "m8_participant_report_v1.typ" if participant_pdf else "m8_basic_report.typ")
+    return render_typst_report(payload, "m8_participant_report_v2.typ")

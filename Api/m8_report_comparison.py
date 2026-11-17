@@ -200,14 +200,18 @@ def render_comparison_pdf(comparison: dict[str, Any]) -> bytes:
     """Render the exact selected pair with the existing server PDF pipeline."""
     from Api.typst_pdf_renderer import render_typst_report
 
+    comparable = [row for row in comparison["skills"] if row["comparability"]["status"] == "allowed"]
     payload = {
         "title": "Сравнение оценок 4К",
         "mode": comparison["mode"],
         "current": comparison["current"],
         "previous": comparison["previous"],
-        "comparable": [row for row in comparison["skills"] if row["comparability"]["status"] == "allowed"],
+        "comparable": comparable,
+        "radars": [{"name": "Сопоставимые навыки", "axes": [
+            {"name": row["skill_name"], "current": row["current"], "previous": row["previous"]}
+            for row in comparable]}] if comparable else [],
         "separate": [{**row, "reason_text": REASON_LABELS.get(
             row["comparability"]["reason"], "Сопоставимость не подтверждена."
         )} for row in comparison["skills"] if row["comparability"]["status"] != "allowed"],
     }
-    return render_typst_report(payload, "m8_report_comparison_v1.typ")
+    return render_typst_report(payload, "m8_report_comparison_v2.typ")

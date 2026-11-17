@@ -49,6 +49,7 @@ from Api import m8_results
 from Api import m8_report_access
 from Api import m8_report_corrections
 from Api import m8_report_comparison
+from Api.typst_pdf_renderer import TypstRenderError
 from Api.m8_results_contracts import (CreateResultsRequest, CreateReportRequest,
     PrepareReportCorrectionRequest, PublishReportCorrectionRequest)
 from Api import m10_product_flow, m10_orchestration
@@ -8680,9 +8681,11 @@ def read_admin_m8_report(report_id: UUID, request: Request):
 def download_admin_m8_report(report_id: UUID, request: Request):
     _m5_superadmin(request)
     try:
-        with get_connection() as connection: report = m8_results.read_report(connection, str(report_id))
+        with get_connection() as connection:
+            report = m8_results.read_report(connection, str(report_id))
+            report['correction'] = m8_report_corrections.public_notice(connection, report)
     except ValueError as exc: raise HTTPException(404, detail=str(exc)) from exc
-    pdf = m8_results.render_pdf(report)
+    pdf = _render_saved_report_pdf(report)
     return Response(content=pdf, media_type='application/pdf',
                     headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
@@ -8891,16 +8894,26 @@ def compare_owned_saved_m8_report(report_id: UUID, request: Request, previous_re
 @router.get('/assessment/m8/reports/{report_id}/comparison.pdf')
 def download_owned_m8_report_comparison(report_id: UUID, request: Request, previous_report_id: UUID | None = None):
     comparison = compare_owned_saved_m8_report(report_id, request, previous_report_id)
-    pdf = m8_report_comparison.render_comparison_pdf(comparison)
+    try:
+        pdf = m8_report_comparison.render_comparison_pdf(comparison)
+    except TypstRenderError as exc:
+        raise HTTPException(503, detail='PDF временно недоступен. Повторите скачивание.') from exc
     return Response(content=pdf, media_type='application/pdf', headers={
         'Content-Disposition': f'attachment; filename="4k-report-comparison-{report_id}.pdf"'
     })
 
 
+def _render_saved_report_pdf(report: dict) -> bytes:
+    try:
+        return m8_results.render_pdf(report)
+    except TypstRenderError as exc:
+        raise HTTPException(503, detail='PDF временно недоступен. Повторите скачивание.') from exc
+
+
 @router.get('/assessment/m8/reports/{report_id}/pdf')
 def download_owned_m8_report(report_id: UUID, request: Request):
-    report = _owned_saved_report(request, report_id)
-    pdf = m8_results.render_pdf(report)
+    report = _owned_saved_report(request, report_id, include_correction=True)
+    pdf = _render_saved_report_pdf(report)
     return Response(content=pdf, media_type='application/pdf', headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 
@@ -8913,8 +8926,9 @@ def _customer_saved_report(request: Request, report_id: UUID, *, channel: str = 
             raise HTTPException(403, detail='Готовый Report недоступен текущему пользователю.')
         try:
             saved = m8_results.read_report(connection, str(report_id))
+            notice = m8_report_corrections.public_notice(connection, saved)
             report = ({**m8_report_access.customer_projection(saved),
-                       "correction": m8_report_corrections.public_notice(connection, saved)} if project else saved)
+                       "correction": notice} if project else {**saved, "correction": notice})
             m8_report_access.record_access(connection, report_id=str(report_id), user_id=int(user.id), channel=channel)
             connection.commit()
             return report
@@ -8966,7 +8980,7 @@ def read_customer_m8_report(report_id: UUID, request: Request):
 @router.get('/admin/m8-access/reports/{report_id}/pdf')
 def download_customer_m8_report(report_id: UUID, request: Request):
     report = _customer_saved_report(request, report_id, channel='pdf', project=False)
-    return Response(content=m8_results.render_pdf(report), media_type='application/pdf',
+    return Response(content=_render_saved_report_pdf(report), media_type='application/pdf',
                     headers={'Content-Disposition': f'attachment; filename="4k-report-{report_id}.pdf"'})
 
 

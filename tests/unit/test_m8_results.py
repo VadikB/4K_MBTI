@@ -210,13 +210,47 @@ def test_pdf_renderer_is_bound_to_saved_report_template(monkeypatch):
     report = {"revision_no": 2, "created_at": "2026-10-17T10:00:00Z", "c67": base}
 
     report["c67"]["template_version"] = "m8-basic-report/1.2.0"
-    assert m8_results.render_pdf(report) == b"pdf"
-    assert captured[-1][1] == "m8_basic_report.typ"
+    from Api.typst_pdf_renderer import TypstRenderError
+    import pytest
+    with pytest.raises(TypstRenderError, match="PDF_REPORT_VERSION_UNSUPPORTED"):
+        m8_results.render_pdf(report)
 
-    report["c67"]["template_version"] = m8_results.REPORT_TEMPLATE_VERSION
+    report["c67"]["template_version"] = "m8-basic-report/1.4.1"
+    monkeypatch.setattr(m8_results, "REPORT_TEMPLATE_VERSION", "m8-basic-report/9.9.9")
     assert m8_results.render_pdf(report) == b"pdf"
     payload, template = captured[-1]
-    assert template == "m8_participant_report_v1.typ"
+    assert template == "m8_participant_report_v2.typ"
     assert payload["skills"][0]["outcome"] == "Недостаточно оснований для результата"
     assert payload["skills"][0]["score"] == "—"
     assert payload["descriptive"]["status"] == "failed"
+    assert payload["radars"][0]["axes"][0]["current"] is None
+
+
+def test_pdf_projection_pins_selected_c67_during_render(monkeypatch):
+    base = _report_content(results(score={"value": 0.0, "numerator": 0, "denominator": 1}), "assessee", None)
+    base.update({"results_revision_no": 1, "report_id": "selected", "test_result": False,
+                 "template_version": "m8-basic-report/1.5.0"})
+    report = {"id": "selected", "revision_no": 1, "c67": base,
+              "correction": {"created_at": "2026-11-17", "reason": "Уточнено объяснение"}}
+    seen = []
+
+    def render(payload, template):
+        base["skills"][0]["score"]["value"] = 3.0
+        report["correction"]["reason"] = "Позднее изменение"
+        seen.append(payload)
+        return b"%PDF"
+
+    monkeypatch.setattr(m8_results, "render_typst_report", render)
+    assert m8_results.render_pdf(report) == b"%PDF"
+    assert seen[0]["radars"][0]["axes"][0]["current"] == 0
+    assert seen[0]["correction"]["reason"] == "Уточнено объяснение"
+
+
+def test_pdf_reader_rejects_incompatible_saved_model():
+    from Api.typst_pdf_renderer import TypstRenderError
+    import pytest
+    report = {"revision_no": 1, "c67": {"template_version": "m8-basic-report/1.4.1",
+                                      "skills": [{"skill_id": "S1", "outcome": "full_score", "score": {}}],
+                                      "limitations": []}}
+    with pytest.raises(TypstRenderError, match="PDF_REPORT_MODEL_UNSUPPORTED"):
+        m8_results.render_pdf(report)

@@ -97,4 +97,5 @@ def test_four_saved_outcomes_and_ai_independent_read(database,monkeypatch,mode,l
         assert projected['skill_name'] in text
         assert projected['presentation']['label'] in text
         if score == 0:
-            assert '0/1 (0.0)' in text
+            assert '0 из 3' in text
+            assert '0%' not in text
