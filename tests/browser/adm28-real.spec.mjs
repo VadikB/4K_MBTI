@@ -41,9 +41,8 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     await page.getByRole('button', { name: 'К сводке', exact: true }).click();
     await expect(page.locator('#admin-panel')).toBeVisible();
-    await expect(page.locator('#admin-insights-grid')).toContainText('Сводная оценка навыков пока недоступна');
-    await expect(page.locator('#admin-insights-grid')).not.toContainText('Наиболее слабый контур');
-    await expect(page.locator('#admin-insights-grid')).not.toContainText('Лучшая группа');
+    await expect(page.locator('#admin-metrics-grid .admin-metric-card')).toHaveCount(2);
+    await expect(page.locator('#admin-insights-grid')).toHaveCount(0);
     await page.locator('#admin-open-organizations-button').click();
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     const card = page.locator('.admin-organization-card');
