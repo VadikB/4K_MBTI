@@ -1,0 +1,24 @@
+{
+  "run_id": "report11-20261117-02596d7",
+  "tested_base_sha": "fffd501a51cae673a4e0ee87ec5d6cbc83069e21",
+  "postgresql": {
+    "major": 15,
+    "pid": 4029,
+    "bind": "127.0.0.1",
+    "port": 55441,
+    "database": "p4k_report11_pytest",
+    "synthetic_only": true,
+    "stop_command": "pg_ctl -D /private/tmp/p4k-report11-20261117/pg -m fast stop",
+    "stop_result": "server stopped",
+    "post_stop_listener_count": 0,
+    "post_stop_log": "database system is shut down",
+    "data_directory_retained_diagnostic": true
+  },
+  "workers": 1,
+  "retries": 0,
+  "paid_llm_calls": 0,
+  "emails_sent": 0,
+  "owned_process_registries_remaining": 0,
+  "preview_listener_remaining": 0,
+  "restart_queue_remaining": 0
+}

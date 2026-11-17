@@ -1056,6 +1056,125 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
         assert connection.execute("SELECT count(*) AS n FROM m8_results").fetchone()["n"]==1
 
 
+def test_report11_http_close_reaches_saved_report_history_and_pdf(product_db, monkeypatch, tmp_path):
+    """Seed only valid pre-close material; exercise the real HTTP/SQL boundary."""
+    from io import BytesIO
+    from pypdf import PdfReader
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+
+    factory = product_db
+    with factory() as connection:
+        started = start_or_resume(connection, user_id=99, key="report11-start")
+        cycle_id = str(started["plan"]["cycle_id"])
+        as_id = str(started["decision"]["assessment_situation_id"])
+        _add_turn(connection, as_id, "Синтетический ответ перед закрытием", "report11-seeded-turn")
+        assert connection.execute("SELECT count(*) AS n FROM m5_dialogue_turns").fetchone()["n"] == 1
+        assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 0
+        connection.commit()
+
+    monkeypatch.setattr(routes, "get_connection", factory)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
+                        lambda token: SimpleNamespace(id=99) if token == "report11-owner" else None)
+    app = FastAPI()
+    app.include_router(routes.router)
+    close_path = f"/users/assessment/m7/cycles/{cycle_id}/completion"
+    with TestClient(app) as http:
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "report11-owner")
+        request = {"action": "complete", "reason": "plan_finished", "idempotency_key": "report11-close"}
+        close = http.post(close_path, json=request)
+        assert close.status_code == 200, close.text
+        assert http.post(close_path, json=request).status_code == 200
+
+    class GatewayBudget:
+        enabled = True
+        calls = 0
+        contracts = []
+
+        def __init__(self, delegate):
+            self.delegate = delegate
+
+        def chat(self, messages, **kwargs):
+            GatewayBudget.calls += 1
+            GatewayBudget.contracts.append(json.loads(messages[1]["content"]).get("contract_version"))
+            assert GatewayBudget.calls <= 30, f"REPORT11_GATEWAY_BUDGET_EXCEEDED:{GatewayBudget.calls}"
+            return self.delegate.chat(messages, **kwargs)
+
+    rounds = 0
+    while rounds < 20:
+        rounds += 1
+        changed = m10_orchestration.advance_once(connection_factory=factory,
+                                                  gateway=GatewayBudget(RecordedAdmissionGateway()))
+        with factory() as connection:
+            evidence = connection.execute(
+                "SELECT id FROM m6_processing_requests WHERE status='queued' LIMIT 1").fetchone()
+            assessment = connection.execute(
+                "SELECT id FROM m6_assessment_requests WHERE status='queued' LIMIT 1").fetchone()
+            pipeline = connection.execute("SELECT status,stage,error_code FROM m10_pipeline_runs").fetchone()
+        if evidence:
+            run_evidence(evidence["id"], connection_factory=factory,
+                         gateway=GatewayBudget(EvidenceGateway()))
+        elif assessment:
+            run_assessment(assessment["id"], connection_factory=factory,
+                           gateway=GatewayBudget(AssessmentGateway()))
+        elif pipeline and (pipeline["status"], pipeline["stage"]) == ("ready", "report_ready"):
+            break
+        else:
+            assert changed, (pipeline, GatewayBudget.calls, GatewayBudget.contracts)
+    else:
+        pytest.fail("REPORT11_PIPELINE_STEP_BUDGET_EXCEEDED")
+
+    with factory() as connection:
+        refs = connection.execute("""SELECT c.cycle_id, r.id AS results_id,
+                   rr.id AS results_revision_id, p.id AS report_id
+            FROM m5_cycles c JOIN m8_results r ON r.cycle_db_id=c.id
+            JOIN m8_result_revisions rr ON rr.results_id=r.id
+            JOIN m8_reports p ON p.result_revision_id=rr.id
+            WHERE c.cycle_id=%s AND p.audience='assessee'""", (cycle_id,)).fetchall()
+        assert len(refs) == 1
+        ref = refs[0]
+        assert connection.execute("SELECT count(*) AS n FROM m5_dialogue_turns").fetchone()["n"] == 1
+        before = {table: connection.execute(f"SELECT count(*) AS n FROM {table}").fetchone()["n"]
+                  for table in ("m6_cycle_calculations", "m8_results", "m8_result_revisions", "m8_reports")}
+        assert before == {"m6_cycle_calculations": 1, "m8_results": 1,
+                          "m8_result_revisions": 1, "m8_reports": 1}
+
+    with TestClient(app) as http:
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "report11-owner")
+        history = http.get("/users/assessment/m8/history")
+        assert history.status_code == 200, history.text
+        cards = [row for row in history.json()["cycles"] if row["cycle_id"] == cycle_id]
+        assert len(cards) == 1 and cards[0]["report_id"] == str(ref["report_id"])
+        latest = http.get(f"/users/assessment/m8/cycles/{cycle_id}/reports/latest")
+        selected = http.get(f"/users/assessment/m8/reports/{ref['report_id']}")
+        pdf = http.get(f"/users/assessment/m8/reports/{ref['report_id']}/pdf")
+        assert latest.status_code == selected.status_code == pdf.status_code == 200
+        assert latest.json()["id"] == selected.json()["id"] == str(ref["report_id"])
+        assert selected.json()["program_name"] == "Synthetic configuration"
+        assert pdf.content.startswith(b"%PDF")
+        pdf_text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+        assert "Synthetic configuration" in pdf_text
+        assert "0 из 3" in pdf_text
+
+    with factory() as connection:
+        after = {table: connection.execute(f"SELECT count(*) AS n FROM {table}").fetchone()["n"]
+                 for table in before}
+        assert after == before
+    receipt = {
+        "cycle_id": str(ref["cycle_id"]), "results_id": str(ref["results_id"]),
+        "results_revision_id": str(ref["results_revision_id"]),
+        "report_id": str(ref["report_id"]), "gateway_calls": GatewayBudget.calls,
+        "pipeline_rounds": rounds, "pdf_pages": len(PdfReader(BytesIO(pdf.content)).pages),
+        "saved_counts_after_read": after,
+    }
+    (tmp_path / "report11-selected.json").write_text(json.dumps(selected.json(), ensure_ascii=False, indent=2) + "\n")
+    (tmp_path / "report11-history.json").write_text(json.dumps(history.json(), ensure_ascii=False, indent=2) + "\n")
+    (tmp_path / "report11-bridge.pdf").write_bytes(pdf.content)
+    (tmp_path / "report11-bridge-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    print("REPORT11_BRIDGE_RECEIPT=" + json.dumps(receipt, sort_keys=True))
+
+
 def test_admission_processing_failure_is_limited_and_recovery_is_new_revision(product_db):
     from Api.m8_results import list_owned_cycles
     factory=product_db

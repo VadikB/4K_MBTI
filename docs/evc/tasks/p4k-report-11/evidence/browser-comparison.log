@@ -1,0 +1,9 @@
+
+Running 1 test using 1 worker
+
+(node:4611) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] tests/browser/auth-r03.spec.mjs:2893:1 › RAD01 renders saved scores, gaps and mobile competency view
+  1 passed (6.3s)

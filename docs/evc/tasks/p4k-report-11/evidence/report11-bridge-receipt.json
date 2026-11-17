@@ -1,0 +1,15 @@
+{
+  "cycle_id": "b76b5faf-2d8e-4cc5-bafb-624e4c9883f2",
+  "results_id": "0c1c13c7-93ea-4156-b27b-705c8d61709c",
+  "results_revision_id": "59130c7e-0668-4cf2-bd7c-ffc3eaa6f4a6",
+  "report_id": "fcb0fe39-526a-4df1-9cca-21ad659bd5f1",
+  "gateway_calls": 22,
+  "pipeline_rounds": 3,
+  "pdf_pages": 6,
+  "saved_counts_after_read": {
+    "m6_cycle_calculations": 1,
+    "m8_results": 1,
+    "m8_result_revisions": 1,
+    "m8_reports": 1
+  }
+}

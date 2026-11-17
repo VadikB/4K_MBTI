@@ -1,0 +1,736 @@
+{
+  "id": "fcb0fe39-526a-4df1-9cca-21ad659bd5f1",
+  "revision_no": 1,
+  "status": "ready",
+  "cycle_id": "b76b5faf-2d8e-4cc5-bafb-624e4c9883f2",
+  "owner_user_id": 99,
+  "created_at": "2026-11-17T17:07:27.956905+03:00",
+  "results_revision_id": "59130c7e-0668-4cf2-bd7c-ffc3eaa6f4a6",
+  "program_name": "Synthetic configuration",
+  "collection_closed_at": "2026-11-17T17:07:25.075671+03:00",
+  "audience": "assessee",
+  "c67": {
+    "schema_version": 1,
+    "contract": "C-67",
+    "message_version": "1.1",
+    "results_id": "0c1c13c7-93ea-4156-b27b-705c8d61709c",
+    "results_revision_id": "59130c7e-0668-4cf2-bd7c-ffc3eaa6f4a6",
+    "cycle_id": "b76b5faf-2d8e-4cc5-bafb-624e4c9883f2",
+    "report_id": "fcb0fe39-526a-4df1-9cca-21ad659bd5f1",
+    "report_revision_no": 1,
+    "results_revision_no": 1,
+    "template_version": "m8-basic-report/1.5.0",
+    "audience": "assessee",
+    "disclosure": "personal",
+    "report_mechanism": {
+      "id": "m8_basic_report",
+      "version": "1.5.0"
+    },
+    "limitations": [
+      "K1.I13: Synthetic transport fixture, not GC",
+      "K1.I16: Synthetic transport fixture, not GC",
+      "K1.I17: Synthetic transport fixture, not GC",
+      "K2.I07: Synthetic transport fixture, not GC",
+      "K2.I08: Synthetic transport fixture, not GC",
+      "K4.I05: Synthetic transport fixture, not GC",
+      "K4.I10: Synthetic transport fixture, not GC",
+      "K4.I17: Synthetic transport fixture, not GC",
+      "K4.I18: Synthetic transport fixture, not GC",
+      "Skill Level is not derived from numeric Score",
+      "Не все предусмотренные планом ситуации были предъявлены и завершены.",
+      "Для части целей не возникло достаточной возможности наблюдения или данных."
+    ],
+    "skills": [
+      {
+        "skill_id": "K1.1",
+        "skill_name": "Ориентация и проектирование коммуникации",
+        "skill_description": "Сформировать достаточное представление о коммуникативной ситуации и на его основе выбрать способ коммуникативного действия.",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K1.2",
+        "skill_name": "Передача смысла",
+        "skill_description": "Сформировать, закодировать и передать сообщение таким образом, чтобы конкретный адресат в заданном контексте мог восстановить существенный для коммуникативной задачи смысл с приемлемым риском искажения.",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K1.3",
+        "skill_name": "Слушание, реконструкция и верификация смысла другого",
+        "skill_description": "Восстанавливать существенный смысл сообщения другого и проверять корректность собственного понимания.",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "outcome": "partial_score",
+        "score": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "partial_score",
+          "label": "Показатель по части состава навыка",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "partial_composition",
+              "message": "Показатель рассчитан по доступной части состава навыка."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K1.4",
+        "skill_name": "Согласование смыслов и позиций",
+        "skill_description": "Формировать общее смысловое основание взаимодействия, делать явными существенные расхождения и переводить их в состояние, позволяющее продолжать взаимодействие.",
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "outcome": "partial_score",
+        "score": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "partial_score",
+          "label": "Показатель по части состава навыка",
+          "remaining_plan_relevant": true,
+          "reasons": [
+            {
+              "code": "partial_composition",
+              "message": "Показатель рассчитан по доступной части состава навыка."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K2.1",
+        "skill_name": "Организация совместной работы",
+        "skill_description": "Задать устройство совместной деятельности, необходимое для достижения общего результата.",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K2.2",
+        "skill_name": "Координация совместных действий",
+        "skill_description": "Обеспечивать согласованность взаимозависимых действий участников в ходе совместной работы.",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "outcome": "partial_score",
+        "score": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "partial_score",
+          "label": "Показатель по части состава навыка",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "partial_composition",
+              "message": "Показатель рассчитан по доступной части состава навыка."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K2.3",
+        "skill_name": "Поддержание продуктивного командного взаимодействия",
+        "skill_description": "Поддерживать способность участников вносить необходимый вклад и продолжать совместную работу при различиях возможностей, затруднениях и конфликтах.",
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": true,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K3.1",
+        "skill_name": "Исследование пространства возможностей",
+        "skill_description": "Сохранять и расширять пространство возможных интерпретаций и направлений поиска, не фиксируя решение преждевременно и изменяя рамку рассмотрения задачи, когда исходная рамка ограничивает поиск.",
+        "competency_id": "K3",
+        "competency_name": "Креативность",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": true,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K3.2",
+        "skill_name": "Создание новых идей и решений",
+        "skill_description": "Создавать и преобразовывать содержательно различные варианты решения через развитие нетипичных направлений, варьирование, создание содержательно различных способов достижения результата, новые сочетания и переносы между контекстами.",
+        "competency_id": "K3",
+        "competency_name": "Креативность",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": true,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K3.3",
+        "skill_name": "Развитие и доведение нового решения",
+        "skill_description": "Преобразовывать перспективную идею в конкретное проверяемое решение, получать данные о его работе, изменять его на основании этих данных и интегрировать развитые элементы в целостную применимую форму.",
+        "competency_id": "K3",
+        "competency_name": "Креативность",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": true,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K4.1",
+        "skill_name": "Анализ и оценка информации",
+        "skill_description": "Выделять существенную для рассматриваемого вопроса информацию, различать статус утверждений, оценивать достоверность и актуальность сведений, сопоставлять их между собой и выявлять существенные информационные пробелы.",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "outcome": "partial_score",
+        "score": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "partial_score",
+          "label": "Показатель по части состава навыка",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "partial_composition",
+              "message": "Показатель рассчитан по доступной части состава навыка."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K4.2",
+        "skill_name": "Постановка и анализ проблемы",
+        "skill_description": "Выявлять и формулировать предмет проблемы, определять её предметные и понятийные границы и существенные условия, выявлять существенные факторы, проверять причинные связи и анализировать систему зависимостей и динамику проблемы.",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "outcome": "partial_score",
+        "score": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "partial_score",
+          "label": "Показатель по части состава навыка",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "partial_composition",
+              "message": "Показатель рассчитан по доступной части состава навыка."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K4.3",
+        "skill_name": "Рассуждение, аргументация и проверка выводов",
+        "skill_description": "Выявлять существенные предпосылки и допущения, проверять связность, внутреннюю непротиворечивость и понятийную согласованность рассуждения и формировать итоговый вывод на релевантных и достаточных основаниях.",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "outcome": "no_result",
+        "score": null,
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "no_result",
+          "label": "По навыку пока нет обоснованного результата",
+          "remaining_plan_relevant": true,
+          "reasons": [
+            {
+              "code": "no_justified_result",
+              "message": "По этому навыку не получено достаточно обоснованных наблюдений для вывода."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      },
+      {
+        "skill_id": "K4.4",
+        "skill_name": "Принятие решений",
+        "skill_description": "Формировать рамку выбора, сравнивать альтернативы по существенным критериям и ограничениям, оценивать значимые риски и последствия альтернатив и делать обоснованный выбор.",
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "outcome": "partial_score",
+        "score": {
+          "value": 0.0,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "comparison": {
+          "status": "NO_TARGET_REQUIREMENT"
+        },
+        "limitations": [],
+        "presentation": {
+          "outcome": "partial_score",
+          "label": "Показатель по части состава навыка",
+          "remaining_plan_relevant": false,
+          "reasons": [
+            {
+              "code": "partial_composition",
+              "message": "Показатель рассчитан по доступной части состава навыка."
+            },
+            {
+              "code": "NO_JUSTIFIED_FINAL_IA",
+              "message": "По части запланированных признаков нет обоснованной итоговой оценки."
+            }
+          ]
+        }
+      }
+    ],
+    "competencies": [
+      {
+        "competency_id": "K1",
+        "competency_name": "Коммуникация",
+        "skill_ids": [
+          "K1.1",
+          "K1.2",
+          "K1.3",
+          "K1.4"
+        ],
+        "score": null
+      },
+      {
+        "competency_id": "K2",
+        "competency_name": "Командная работа",
+        "skill_ids": [
+          "K2.1",
+          "K2.2",
+          "K2.3"
+        ],
+        "score": null
+      },
+      {
+        "competency_id": "K3",
+        "competency_name": "Креативность",
+        "skill_ids": [
+          "K3.1",
+          "K3.2",
+          "K3.3"
+        ],
+        "score": null
+      },
+      {
+        "competency_id": "K4",
+        "competency_name": "Критическое мышление",
+        "skill_ids": [
+          "K4.1",
+          "K4.2",
+          "K4.3",
+          "K4.4"
+        ],
+        "score": null
+      }
+    ],
+    "coverage": {
+      "full_m2": {
+        "opportunities": {
+          "numerator": 9,
+          "denominator": 61,
+          "ratio": 0.14754098360655737
+        },
+        "complete_components": {
+          "numerator": 3,
+          "denominator": 35,
+          "ratio": 0.08571428571428572
+        },
+        "components_with_score": {
+          "numerator": 7,
+          "denominator": 35,
+          "ratio": 0.2
+        },
+        "indicator_assessments": {
+          "numerator": 9,
+          "denominator": 61,
+          "ratio": 0.14754098360655737
+        },
+        "admissible_contributions": {
+          "numerator": 9,
+          "denominator": 61,
+          "ratio": 0.14754098360655737
+        }
+      },
+      "cycle_plan": {
+        "opportunities": {
+          "numerator": 9,
+          "denominator": 61,
+          "ratio": 0.14754098360655737
+        },
+        "complete_components": {
+          "numerator": 3,
+          "denominator": 35,
+          "ratio": 0.08571428571428572
+        },
+        "components_with_score": {
+          "numerator": 7,
+          "denominator": 35,
+          "ratio": 0.2
+        },
+        "indicator_assessments": {
+          "numerator": 9,
+          "denominator": 61,
+          "ratio": 0.14754098360655737
+        },
+        "admissible_contributions": {
+          "numerator": 9,
+          "denominator": 61,
+          "ratio": 0.14754098360655737
+        }
+      }
+    },
+    "coverage_context": {
+      "contract_version": "m8-coverage-context/1.0.0",
+      "not_a_score": true,
+      "catalog_possibility": {
+        "numerator": 17,
+        "denominator": 61,
+        "ratio": 0.2786885245901639
+      },
+      "cycle_plan": {
+        "numerator": 61,
+        "denominator": 61,
+        "ratio": 1.0
+      }
+    },
+    "reliability": {
+      "status": "not_verified"
+    },
+    "confidence": {
+      "kind": "qualitative"
+    },
+    "time": {
+      "started_at": "2026-11-17T17:07:24.512059+03:00",
+      "budget_seconds": 3600,
+      "calendar_window_seconds": 259200
+    },
+    "collection": {
+      "closed_at": "2026-11-17T17:07:25.075671+03:00",
+      "reason": "plan_finished"
+    },
+    "sessions": [
+      {
+        "started_at": "2026-11-17T17:07:24.512059+03:00",
+        "ended_at": "2026-11-17T17:07:25.075671+03:00"
+      }
+    ],
+    "partial_result": {
+      "contract_version": "m8-partial-result/1.1.0",
+      "is_incomplete": true,
+      "plan_completed": false,
+      "plan_scope_limited": false,
+      "observation_limited": true,
+      "context_limited": false,
+      "source_limited": true,
+      "technical_failure": false,
+      "close_reason": "plan_finished",
+      "progress": {
+        "completed": 1,
+        "planned": 2,
+        "presented": 1,
+        "interrupted": 0,
+        "not_presented": 1
+      },
+      "messages": {
+        "title": "Оценка не завершена полностью",
+        "confirmed": "Показаны только подтверждённые результаты по фактически принятому материалу.",
+        "not_inferred": "Общий уровень компетенции и результаты по непокрытым элементам не выводятся."
+      },
+      "limitation_reasons": [
+        {
+          "code": "collection_incomplete",
+          "message": "Не все предусмотренные планом ситуации были предъявлены и завершены."
+        },
+        {
+          "code": "observation_missing",
+          "message": "Для части целей не возникло достаточной возможности наблюдения или данных."
+        }
+      ]
+    },
+    "processing": {
+      "status": "completed",
+      "message": "Обработка завершена."
+    },
+    "descriptive": {
+      "status": "ready",
+      "summary": [
+        "Observed nonperformance in the accepted closed turn",
+        "Observed nonperformance in the accepted closed turn",
+        "Observed nonperformance in the accepted closed turn",
+        "Observed nonperformance in the accepted closed turn"
+      ],
+      "claims": [
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K1.3"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K1.4"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K1.4"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K2.2"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K2.2"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K4.1"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K4.2"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K4.4"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        },
+        {
+          "kind": "observation",
+          "text": "Observed nonperformance in the accepted closed turn",
+          "skill_ids": [
+            "K4.4"
+          ],
+          "limitations": [
+            "technical fixture; not GC"
+          ]
+        }
+      ]
+    }
+  },
+  "correction": null
+}

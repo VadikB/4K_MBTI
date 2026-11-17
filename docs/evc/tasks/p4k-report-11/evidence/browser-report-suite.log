@@ -1,0 +1,22 @@
+
+Running 14 tests using 1 worker
+
+(node:4430) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/14] tests/browser/report03-outcomes.spec.mjs:28:1 › REPORT-03 completed short program shows scope and numeric zero without machine codes
+[2/14] tests/browser/report03-outcomes.spec.mjs:58:1 › REPORT-03 incomplete plan preserves scored and unscored skill outcomes
+[3/14] tests/browser/report04-personal.spec.mjs:52:1 › REPORT-04 saved report shows historical header and one selected skill panel
+[4/14] tests/browser/report04-personal.spec.mjs:96:1 › REPORT-04 ignores a late response and late history for the old report
+[5/14] tests/browser/report04-personal.spec.mjs:123:1 › REPORT-04 missing historical title and failed explanation keep the saved facts
+[6/14] tests/browser/report05-radar.spec.mjs:63:1 › REPORT-05 modes and selection use one saved skill and adjacent detail
+[7/14] tests/browser/report05-radar.spec.mjs:99:1 › REPORT-05 mobile overview, directions, resize and keyboard keep every skill
+[8/14] tests/browser/report05-radar.spec.mjs:126:1 › REPORT-05 all missing and one score retain explanations without synthetic geometry
+[9/14] tests/browser/report06-history.spec.mjs:24:1 › REPORT-06 one card per Cycle, pages, exact report and return context
+[10/14] tests/browser/report06-history.spec.mjs:84:1 › REPORT-06 history read error is not an empty result
+[11/14] tests/browser/report06-history.spec.mjs:106:1 › REPORT-06 direct link and reload keep the selected Cycle after membership removal
+[12/14] tests/browser/report08-admin.spec.mjs:24:1 › REPORT-08 filters, server pages, exact report, return and organization switch
+[13/14] tests/browser/report09-correction.spec.mjs:43:1 › REPORT-09 keeps old view stable, offers current and shows changed places at 1440/390
+[14/14] tests/browser/report10-pdf.spec.mjs:22:1 › REPORT-10 participant and customer download the selected PDF and retry a render error
+  14 passed (19.1s)
