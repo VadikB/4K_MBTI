@@ -3683,8 +3683,20 @@ test('P3-B reads server state after a lost Continue response without a second co
 
 test('E01 renders accepted active assessment copy, colors and AS-scoped draft', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
+  const deadline = new Date(Date.now()+86400000).toISOString();
+  const draft = {version:0,revision:'',text:''};
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
+    if (pathname === '/users/assessment/m5/situations/as-e01/draft') {
+      const request=route.request();
+      if(request.method()==='PUT') {
+        const data=request.postDataJSON();
+        expect(data.expected_version).toBe(draft.version);
+        Object.assign(draft,{version:draft.version+1,revision:data.revision,text:data.text});
+      } else expect(request.method()).toBe('GET');
+      return fulfillJson(route,{...draft,owner_id:'8',cycle_id:'cycle-e01',assessment_situation_id:'as-e01',
+        slot_id:'dialogue:turn-person',expires_at:deadline});
+    }
     if (pathname === '/users/version') return fulfillJson(route, { version: 'e01-test' });
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, is_admin: false, dashboard: {} });
     if (pathname === '/users/8/session-bootstrap') return fulfillJson(route, { user, is_admin: false, dashboard: {} });
@@ -3696,7 +3708,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
       return fulfillJson(route, { detail: 'M7_RETURN_POLICY_NOT_SNAPSHOTTED' }, 409);
     }
     if (pathname === '/users/assessment/cycles/cycle-e01/runtime') return fulfillJson(route, {
-      cycle_id: 'cycle-e01', status: { collection_status: 'active', remaining_seconds: 2700 },
+      cycle_id: 'cycle-e01', status: { collection_status: 'active', remaining_seconds: 2700, deadline },
       return_policy_enabled: false,
       route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'as-e01' }],
         progress: { total_positions: 3, completed_positions: 0 } },

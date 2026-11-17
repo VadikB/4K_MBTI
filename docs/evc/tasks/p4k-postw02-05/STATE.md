@@ -1,3 +1,13 @@
+# PR241 / candidate2.1.26 — CI regression fix
+
+Первая полная проверка выявила3 queue-fixture SQL failures и4 browser regressions.
+Причины и адресные исправления — конец UI_FOLLOWUP.md. Повторные local:
+frontend380/browser4+7/SQL14 на пустой БД PASS, preflight2.1.26 PASS.
+Текущие PNG обновлены. Новый head публикуется в том же PR241 для полного CI;
+основные production guards/схема/cleanup не менялись. Merge ожидает зелёного CI.
+
+---
+
 # Выпуск05 разрешён — 17.11.2026
 
 Прямое поручение владельца: «Хорошо, сливай на main». На его основании и по

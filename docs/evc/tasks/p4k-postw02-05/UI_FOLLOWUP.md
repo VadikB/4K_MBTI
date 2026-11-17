@@ -128,3 +128,30 @@ tests/frontend/{answer-drafts,postw02-assessment-ui}.test.mjs. Дополнит�
 в UI-follow-up нет. Полный task05 не слит, локальный bundle содержит исходный base
 и всю ветку; исходные7299920 и458b698 сохранены в истории. Не откатывать main/REPORT_08
 ради отката оформления. Ручная приёмка и CI перед слиянием остаются отдельными.
+
+
+### Подготовка к разрешённому merge и регрессии полного CI
+
+Поручение владельца «Хорошо, сливай на main» разрешило push, PR/Ready, следующий
+PATCH и штатный deploy на test. Создан PR241; base02596d7/2.1.25, candidate2.1.26.
+Первый полный CI на4c26656: frontend/pytest и четыре runtime-shard PASS; integration
+и fast-browser FAIL. Ошибки исправлены без ослабления production guards:
+
+- Изолированный queue fixture создавал только таблицу очереди; новый maintenance
+  требует draft expiry table. Fixture теперь создаёт минимальный expiry-контракт,
+  только если таблицы ещё нет, и удаляет только свою таблицу при teardown.
+  Существующая полная runtime-таблица не заменяется. Production schema/cleanup прежние.
+- W02 readiness mock не знал GET draft и бросал unexpected-request exception.
+  Добавлен точный owner/Cycle/AS/slot read-only projection; проверяется метод GET.
+- E01 draft fixture теперь возвращает настоящий контракт чтения/записи с CAS и
+  deadline. Reload по-прежнему обязан восстановить введённый текст.
+- Общий бренд сохраняет20/18px и700; desktop line-height24px сохраняет принятую
+  геометрию auth. Кнопка отправки48px (padding11 + border1 + text24), соответствует
+  min48 эталона и прежнему E01; нормальные/disabled токены прежние.
+
+Локально после исправления: четыре ранее упавших browser-теста PASS; queue+draft
+SQL14 PASS как на существующем test-контуре, так и на заново созданной пустой
+изолированной test-БД. Новая БД удалена, native PostgreSQL остановлен. Frontend380
+PASS, UI05/02 PASS7. Native PNG/JSON перезаписаны окончательными размерами кандидата;
+повторный UI05 PASS4. Логи: ci-regressions/ci-clean-sql/ci-ui-final.log.gz.
+Полный CI повторяется для нового head в том же PR; merge разрешён только после PASS.

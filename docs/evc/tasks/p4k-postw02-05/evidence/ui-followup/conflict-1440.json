@@ -10,9 +10,9 @@
   },
   "button": {
     "x": 1064,
-    "y": 862,
+    "y": 864,
     "width": 200,
-    "height": 50,
+    "height": 48,
     "bottom": 912
   },
   "fieldStyle": {
@@ -41,7 +41,7 @@
     "outlineColor": "rgb(104, 119, 124)",
     "outlineOffset": "0px",
     "resize": "none",
-    "padding": "12px 16px",
+    "padding": "11px 16px",
     "fontSize": "16px",
     "lineHeight": "24px",
     "minHeight": "48px",

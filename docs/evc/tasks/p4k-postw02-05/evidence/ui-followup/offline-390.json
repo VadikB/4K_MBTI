@@ -12,8 +12,8 @@
     "x": 28,
     "y": 822.875,
     "width": 334,
-    "height": 50,
-    "bottom": 872.875
+    "height": 48,
+    "bottom": 870.875
   },
   "fieldStyle": {
     "backgroundColor": "rgb(255, 255, 255)",
@@ -41,7 +41,7 @@
     "outlineColor": "rgb(34, 44, 48)",
     "outlineOffset": "0px",
     "resize": "none",
-    "padding": "12px 16px",
+    "padding": "11px 16px",
     "fontSize": "16px",
     "lineHeight": "24px",
     "minHeight": "48px",

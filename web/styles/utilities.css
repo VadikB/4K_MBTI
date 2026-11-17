@@ -619,7 +619,7 @@
 /* Product identity only; role headings retain their existing typography/navigation. */
 .shell .panel .product-brand,
 .shell > .auth-header .product-brand {
-    font: 700 20px/28px var(--font-heading);
+    font: 700 20px/24px var(--font-heading);
     letter-spacing: -0.4px;
 }
 @media (max-width: 900px) {
