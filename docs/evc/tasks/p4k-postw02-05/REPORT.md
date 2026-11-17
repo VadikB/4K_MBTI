@@ -1,11 +1,13 @@
 # P4K-POSTW02-05 — результат и границы проверки
 
-17.11.2026. Локальная реализация на свежем main
-4170fc0d358708ab55e74264b666ef8a02c544ed / 2.1.21, отдельная ветка
-codex/p4k-postw02-05. Изменения04 в базе сохранены. PR03/231 на последней
-сверке OPEN, полный CI выполняется; проверка на main после03 пока NOT_RUN.
-Источники, прямое поручение, этапы и полномочия — PLAN.md; эта поставка не
-меняет статусы источников, CURRENT, методологию, snapshots и отправленные ответы.
+17.11.2026. Задание03/PR231 слито в main; итоговая05 перебазирована на
+c05fe745ca48424796ad38886ee9e03d67d0bd69 / 2.1.22. Ветка codex/p4k-postw02-05.
+Проверенный код: f9b3bf4da0c1797ebbe2deef8ec776335cf10d23; финальный head с отчётом —
+в DELIVERY.json родительского outputs. Исходная база4170fc0/2.1.21 и её evidence
+сохранены как история. Объединение исходников прошло без конфликтов; конфликтующие
+хешированные dist-файлы пересобраны из сочетания03+05. Обязательная перепроверка
+после03 выполнена, детали ниже. 04 сохранено. Sources/прямое поручение/план — PLAN.md;
+статусы источников, CURRENT, методология, snapshots и отправленные ответы неизменны.
 
 ## Изменение поведения
 
@@ -78,7 +80,7 @@ request_id, turn_id, endpoint, исходную область и revision. Ва
 | Проверка | Результат и доказательство |
 | --- | --- |
 | 05A точный raw, новая вкладка/сервер, без отправки | PASS: browser1440/390 + отдельный context; PostgreSQL counts не меняют material/operations/time |
-| 05B немедленное закрытие до debounce, offline/storage/maxWait | PASS: browser + frontend13tests; DOM сохраняется при двух отказах/reconnect |
+| 05B немедленное закрытие до debounce, offline/storage/maxWait | PASS: browser + frontend14tests; DOM сохраняется при двух отказах/reconnect |
 | 05C CAS/две вкладки/delete/другой владелец/новый ASK | PASS: реальные2вкладки browser, раздельные storage, SQL competing writers/current C54; локальные альтернативы сохраняются |
 | 05D accepted clear/unknown+close/readback/без дубля | PASS: browser один POST и один новый Turn; SQL exactclear/replay, frontend поздний ACK/равный text/newrevision |
 | 05E R1/deadline/closed/paused/account/logout | PASS в адресных HTTP/SQL/frontend; чужое owner чтение403, R1 guard не Continue; реальная ручная приёмка NOT_RUN |
@@ -86,16 +88,16 @@ request_id, turn_id, endpoint, исходную область и revision. Ва
 
 Совокупность, а не один storage/unit test:
 
-- node --test tests/frontend/*.test.mjs — PASS377; новые draft tests13.
-- npm run test:backend — PASS1150; перед финальным отчётом переиспользуется для
-  неизменённых прежних Python-путей, новый сервис дополнительно покрыт SQL/HTTP.
-- npm run test:backend:http — PASS186 (включая7новых HTTP).
-- PostgreSQL subset — PASS57 (новые draft8, readback1, M7clarification33,
-  presence7, bootstrap3, observation5); точный список файлов в postgresql.log.gz.
+- node --test tests/frontend/*.test.mjs — PASS378; новые draft tests14.
+- npm run test:backend — PASS1193 после обновления базы03; новый сервис дополнительно покрыт SQL/HTTP.
+- npm run test:backend:http — PASS196 (включая7новых draft HTTP и новые03).
+- PostgreSQL — PASS57 (draft8, readback1, M7clarification33, presence7, bootstrap3,
+  observation5) и PASS38 дополнительных проверок03 participant commands/first deadline;
+  всего95. Точные файлы/логи — evidence/after03/{postgresql,commands}.log.gz.
 - Browser bundled fixtures — PASS5 (новые1440/390 и3регрессии существующего интервью).
-- lint/build/reproducible dist/git diff --check — PASS. Dist hashes — evidence/dist.json.
+- lint/build/reproducible dist/git diff --check — PASS. Итоговые dist hashes — evidence/after03/dist.json.
 
-Журналы — evidence/*.log.gz. Исправленные промежуточные ошибки: sandbox запрет ps/
+Итоговые журналы03+05 — evidence/after03/*.log.gz; исходные — evidence/*.log.gz. Исправленные промежуточные ошибки: sandbox запрет ps/
 локального listener; SQL_ASCII системного шаблона первого временного кластера;
 отсутствовавший новый API в старом browserfixture; unknown-processing reload и
 единственная DOMкопия при offline-reconnect. Итоговые результаты приведены выше;
@@ -123,7 +125,13 @@ draft не расширяет доступ отчётов/администрат
 LU04.2–04.7), session logout, maintenance и frontend presentation. PM05–07 не
 получают draft; новые предметные LU/Component и самостоятельный сервис не вводятся.
 
-Следующий шаг: после merge03 обновить базу и повторить соответствующие регрессии;
-для Ready нужен согласованный release номер и полный CI точного head. PR/CI,
+Перепроверка после merge03 выполнена. Следующий шаг — разрешённая передача одного
+draft PR; для Ready нужны согласованный release номер и полный CI точного head. PR/CI,
 человеческая приёмка, merge/deploy и готовность на реальной среде не подменяются
 локальными PASS. Точные финальные SHA передаются в PR/DELIVERY.json вне самоссылки.
+
+Публикация НЕ выполнена: автоматическая проверка отклонила push кода/тестов/отчёта/
+PNG в VadikB/4K_MBTI из-за отсутствия прямого разрешения на этот экспорт. Обходов не
+было. Запланированное продолжение также было отклонено; оно не создано и больше
+не требуется:03 слит, совместная проверка выполнена в этом же запуске. Merge/deploy
+не выполнялись. Оба временных PostgreSQL и localhost fixtures остановлены.
