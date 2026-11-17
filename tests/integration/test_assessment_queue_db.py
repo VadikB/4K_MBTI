@@ -20,6 +20,14 @@ from Api.schemas import AssessmentStartResponse, UserResponse
 @pytest.fixture
 def queue_database(test_database_url, monkeypatch):
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        # This fixture owns a minimal queue schema, rather than bootstrapping
+        # the assessment runtime. Include the expiry-cleanup dependency used by
+        # maintenance; retain a pre-existing full runtime table when present.
+        owns_draft_table = connection.execute(
+            "SELECT to_regclass('assessment_answer_drafts') IS NULL AS absent"
+        ).fetchone()["absent"]
+        if owns_draft_table:
+            connection.execute("CREATE TABLE assessment_answer_drafts (expires_at TIMESTAMPTZ NOT NULL)")
         connection.execute("DROP TABLE IF EXISTS assessment_preparation_jobs")
         connection.execute(
             """
@@ -83,6 +91,8 @@ def queue_database(test_database_url, monkeypatch):
 
     with psycopg.connect(test_database_url) as connection:
         connection.execute("DROP TABLE IF EXISTS assessment_preparation_jobs")
+        if owns_draft_table:
+            connection.execute("DROP TABLE assessment_answer_drafts")
 
 
 def make_test_user() -> UserResponse:

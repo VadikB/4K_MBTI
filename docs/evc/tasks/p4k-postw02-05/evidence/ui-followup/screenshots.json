@@ -1,0 +1,62 @@
+[
+  {
+    "file": "conflict-1440.png",
+    "width": 1440,
+    "height": 1152,
+    "sha256": "f04b50ff1dbeb23e9e9d1812e95f41c8e688e86b43384077f27e2009905408b6"
+  },
+  {
+    "file": "conflict-390.png",
+    "width": 390,
+    "height": 1115,
+    "sha256": "1f02dbe94b7ed32f6ffbefaedee3500de60564c582395d08f662f0e64dc25360"
+  },
+  {
+    "file": "keyboard-emulated-320-360.png",
+    "width": 320,
+    "height": 759,
+    "sha256": "7e20a8d3068d08d580006e57290bd2a3f05c027bda8d6f6190da5f9aee441442"
+  },
+  {
+    "file": "keyboard-emulated-320-700.png",
+    "width": 320,
+    "height": 936,
+    "sha256": "bf46a6d3ba18db9104b5d1a668b382560ada9dd0be1f847419944fa7faf59a19"
+  },
+  {
+    "file": "keyboard-emulated-390-390.png",
+    "width": 390,
+    "height": 743,
+    "sha256": "2edb5c183513cc53b1c28202c2de1b82be60a92e44b9e965f027c88b2d3fb6ee"
+  },
+  {
+    "file": "latest-turn-390.png",
+    "width": 390,
+    "height": 979,
+    "sha256": "88d18180409080d36c95deea4f22715e9c20370c51b383c7f63d4be01dbb0021"
+  },
+  {
+    "file": "offline-1440.png",
+    "width": 1440,
+    "height": 1100,
+    "sha256": "9aacc048408e4cb0e8096e222e9c45a918ecba4202856f3c8a0053775548b06a"
+  },
+  {
+    "file": "offline-390.png",
+    "width": 390,
+    "height": 995,
+    "sha256": "b7cff47b7c3b8176c3fdaac0952fefc8d16129186ce1d9c9e750a96e36e3b0e7"
+  },
+  {
+    "file": "saved-1440.png",
+    "width": 1440,
+    "height": 1100,
+    "sha256": "f5a7b7111f730cc8a3326a6f1c642a68e6eecec4b2be95b396f5de38f736ebd6"
+  },
+  {
+    "file": "saved-390.png",
+    "width": 390,
+    "height": 979,
+    "sha256": "e5d2f255d3c24cca1140972076575cc77b2c6da0562339700045fe6c90d6c918"
+  }
+]

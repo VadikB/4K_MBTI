@@ -1,0 +1,27 @@
+{
+  "viewport": 390,
+  "scrollWidth": 390,
+  "input": {
+    "x": 16,
+    "y": 626.875,
+    "width": 358,
+    "height": 242,
+    "bottom": 868.875
+  },
+  "messages": {
+    "x": 16,
+    "y": 172,
+    "width": 358,
+    "height": 438.875,
+    "bottom": 610.875
+  },
+  "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+  "feedbackColor": "rgb(180, 35, 24)",
+  "visibleControls": [
+    "Мои оценки",
+    "👤\n              Выйти",
+    "",
+    "Отправить",
+    "Завершить ситуацию"
+  ]
+}

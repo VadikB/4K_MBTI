@@ -91,6 +91,11 @@ async function fixture(page, scene = 'ready') {
       if (scene === 'start-access') { m.readiness.status = 'waiting_for_assignment'; return json(route, { detail: 'ASSIGNMENT_CANCELLED' }, 403); }
       return scene === 'start-unknown' ? json(route, {}, 503) : json(route, runtime(active));
     }
+    if (pathname === '/users/assessment/m5/situations/w02-first-as/draft') {
+      expect(req.method()).toBe('GET');
+      return json(route, {owner_id:'8',cycle_id:'w02-cycle',assessment_situation_id:'w02-first-as',
+        slot_id:'dialogue:start',version:0,revision:'',text:'',expires_at:new Date(Date.now()+86400000).toISOString()});
+    }
     if (pathname.includes('/return-state')) return json(route, { detail: 'M7_RETURN_CURRENT_POSITION_NOT_FOUND' }, 409);
     if (pathname === '/users/auth/logout' || pathname === '/users/logout') return json(route, {});
     if (pathname === '/users/version') return json(route, { version: 'w02-controlled' });

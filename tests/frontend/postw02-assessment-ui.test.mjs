@@ -139,3 +139,16 @@ test('interrupted recovery after a lost additional-session receipt reuses its co
   assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
   assert.equal(h.fetchCalls.some(([url]) => String(url).endsWith('/additional-sessions')), false);
 });
+
+
+test('05 UI unresolved draft conflict blocks direct send and remains blocked after runtime refresh', async () => {
+  const h = createInterviewHarness();
+  h.subject.renderProductRuntime(h.snapshot(2));
+  h.context.draftSlot = () => 'dialogue:fixture';
+  vm.runInContext('durableDraft = { conflicted: () => true, bind() {}, saved: () => true }', h.context);
+  const result = await h.subject.sendProductInterviewAnswer('Не выбранная редакция');
+  assert.equal(result.accepted, false); assert.equal(h.fetchCalls.length, 0);
+  assert.match(h.errors.at(-1), /Выберите, с каким текстом/);
+  h.subject.renderProductRuntime(h.snapshot(2));
+  assert.equal(h.context.interviewSubmitButton.disabled, true);
+});

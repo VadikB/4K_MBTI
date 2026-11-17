@@ -3,36 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>4K Ассистент</title>
+  <title>4К Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.25">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.25">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.26">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.26">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
   <link rel="manifest" href="/favicons/site.webmanifest">
-  <link rel="stylesheet" href="/web/styles/preparation-status.css?v=2.1.25">
+  <link rel="stylesheet" href="/web/styles/preparation-status.css?v=2.1.26">
 </head>
 <body>
   <div id="app-loader" class="app-loader hidden" aria-live="polite">
@@ -54,9 +54,9 @@
   </div>
   <main class="shell">
     <header class="auth-header" aria-label="4К Ассистент">
-      <span class="auth-header-brand">4К Ассистент</span>
+      <span class="auth-header-brand product-brand">4К Ассистент</span>
       <span class="auth-waiting-section">Оценка</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.25</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.26</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -160,7 +160,7 @@
     <section class="panel onboarding-panel hidden" id="onboarding-panel">
       <div class="onboarding-shell">
         <div class="onboarding-topbar">
-          <button id="onboarding-home" type="button" class="brand dashboard-brand">4К Ассистент</button>
+          <button id="onboarding-home" type="button" class="brand dashboard-brand product-brand">4К Ассистент</button>
           <button id="onboarding-step-back" type="button" class="step-badge-back" aria-label="Назад" hidden></button>
           <span class="onboarding-section-label" id="step-badge-label">Знакомство</span>
           <button id="onboarding-dashboard" type="button" class="text-link" hidden>Мои оценки</button>
@@ -199,7 +199,7 @@
 
     <section class="panel dashboard-panel hidden" id="dashboard-panel">
       <header class="dashboard-topbar app-header app-header--participant" data-app-header>
-        <button class="brand dashboard-brand" type="button" data-header-home>4K Ассистент</button>
+        <button class="brand dashboard-brand product-brand" type="button" data-header-home>4К Ассистент</button>
         <nav class="app-header-navigation" aria-label="Разделы аккаунта">
           <button id="dashboard-cabinet-button" class="app-header-navigation-current" type="button" aria-current="page" data-header-home>Мои оценки</button>
         </nav>
@@ -261,7 +261,7 @@
 
     <section class="panel ai-welcome-panel hidden" id="ai-welcome-panel">
       <div class="dashboard-topbar">
-        <div class="brand dashboard-brand">4K Ассистент</div>
+        <div class="brand dashboard-brand product-brand">4К Ассистент</div>
         <div class="dashboard-topbar-actions">
           <button class="icon-button" type="button" aria-label="Уведомления">⌁</button>
           <button id="welcome-profile-button" class="topbar-profile-button" type="button">Профиль</button>
@@ -333,7 +333,7 @@
 
     <section class="panel admin-panel hidden" id="admin-panel">
       <div class="dashboard-topbar">
-        <div class="brand dashboard-brand">4K Ассистент</div>
+        <div class="brand dashboard-brand product-brand">4К Ассистент</div>
         <div class="dashboard-topbar-actions">
           <div class="user-menu">
             <div class="topbar-user-chip" tabindex="0" aria-haspopup="true" aria-label="Меню администратора">
@@ -413,7 +413,7 @@
 
     <section class="panel admin-organizations-panel hidden" id="admin-organizations-panel">
       <header class="org-admin-product-header">
-        <div class="brand">4К Ассистент</div>
+        <div class="brand product-brand">4К Ассистент</div>
         <nav class="admin-account-navigation" aria-label="Разделы аккаунта">
           <button class="admin-account-navigation-item current" type="button" data-admin-area="management" aria-current="page">Управление</button>
           <button class="admin-account-navigation-item" type="button" data-admin-area="assessment">Моя оценка</button>
@@ -474,7 +474,7 @@
 
     <section class="panel admin-assessment-empty-panel hidden" id="admin-assessment-empty-panel">
       <header class="org-admin-product-header">
-        <div class="brand">4К Ассистент</div>
+        <div class="brand product-brand">4К Ассистент</div>
         <nav class="admin-account-navigation" aria-label="Разделы аккаунта">
           <button class="admin-account-navigation-item" type="button" data-admin-area="management">Управление</button>
           <button class="admin-account-navigation-item current" type="button" data-admin-area="assessment" aria-current="page">Моя оценка</button>
@@ -1195,7 +1195,7 @@
     <section class="panel prechat-panel hidden" id="prechat-panel">
       <div class="prechat-shell">
         <div class="prechat-topbar">
-          <div class="brand centered-brand">4K Ассистент</div>
+          <div class="brand centered-brand product-brand">4К Ассистент</div>
           <button
             id="prechat-exit-button"
             class="topbar-exit-button"
@@ -1249,7 +1249,7 @@
       <div class="interview-topbar">
         <div class="interview-topbar-head">
           <div class="interview-title-row">
-            <strong id="interview-section-title">4К Ассистент</strong>
+            <strong id="interview-section-title" class="product-brand">4К Ассистент</strong>
           </div>
           <div class="interview-topbar-actions">
             <button id="interview-profile-button" type="button" class="ghost-button compact-ghost">Мои оценки</button>
@@ -1267,7 +1267,7 @@
             <div class="interview-case-heading">
               <h1 id="interview-case-badge" class="interview-case-badge">Прогресс уточняется</h1>
               <h3 id="interview-case-title" class="hidden">Оценочная ситуация</h3>
-              <span id="interview-timer-badge" class="interview-timer-badge">Время уточняется</span>
+              <div class="interview-timer"><span class="interview-timer-caption">Осталось на ответы</span><span id="interview-timer-badge" class="interview-timer-badge">Время уточняется</span></div>
             </div>
             <p id="interview-case-status">Ожидается запуск интервью</p>
           </div>
@@ -1291,7 +1291,8 @@
             <textarea
               id="interview-textarea"
               aria-label="Ваш ответ или вопрос собеседнику"
-              aria-describedby="interview-error"
+              aria-describedby="interview-error interview-draft-status"
+              maxlength="10000"
               placeholder="Введите ответ или вопрос собеседнику..."
               autocomplete="off"
               autocorrect="off"
@@ -1300,6 +1301,8 @@
               data-form-type="other"
               disabled
             ></textarea>
+            <small id="interview-draft-status" class="interview-send-note" role="status" aria-live="polite"></small>
+            <div id="interview-draft-actions" class="interview-draft-actions"></div>
             <div class="interview-form-footer">
               <div class="interview-action-buttons">
                 <button id="interview-submit-button" type="button" class="primary-button" disabled><span id="interview-submit-label">Отправить</span></button>
@@ -1440,7 +1443,7 @@
 
     <section class="panel processing-panel hidden" id="processing-panel">
       <div class="processing-topbar">
-        <span class="brand processing-brand">4К Ассистент</span>
+        <span class="brand processing-brand product-brand">4К Ассистент</span>
       </div>
 
       <div class="processing-shell">
@@ -1654,7 +1657,7 @@
     <section class="panel chat-panel hidden" id="chat-panel">
       <div class="chat-header">
         <div>
-          <div class="brand">4K Ассистент</div>
+          <div class="brand product-brand">4К Ассистент</div>
           <h2>Агент профиля сотрудника</h2>
         </div>
         <button id="restart-button" class="topbar-exit-button" type="button">
@@ -1681,7 +1684,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.1.25</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.1.26</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -1697,6 +1700,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.25"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.26"></script>
 </body>
 </html>

@@ -232,6 +232,7 @@ class AssessmentPreparationQueue:
             lease_seconds = max(30, settings.assessment_queue_lease_timeout_seconds)
             retention_hours = max(1, settings.assessment_queue_retention_hours)
             with get_connection() as connection:
+                connection.execute('DELETE FROM assessment_answer_drafts WHERE expires_at <= clock_timestamp()')
                 connection.execute(
                     """
                     UPDATE assessment_preparation_jobs
