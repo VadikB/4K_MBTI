@@ -113,7 +113,6 @@ textarea {
 .admin-organizations-panel .primary-button,
 .admin-methodology-panel .primary-button,
 .admin-reports-panel .primary-button,
-.admin-report-detail-panel .primary-button,
 .admin-prompt-lab-panel .primary-button {
     background: var(--admin-primary);
     color: var(--admin-primary-text);
@@ -124,7 +123,6 @@ textarea {
 .admin-organizations-panel .primary-button:hover:not(:disabled),
 .admin-methodology-panel .primary-button:hover:not(:disabled),
 .admin-reports-panel .primary-button:hover:not(:disabled),
-.admin-report-detail-panel .primary-button:hover:not(:disabled),
 .admin-prompt-lab-panel .primary-button:hover:not(:disabled) {
     background: var(--admin-primary-hover);
 }

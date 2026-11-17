@@ -10,26 +10,12 @@ import {
   adminOpenOrganizationsButton,
   adminOpenRegressionTestsButton,
   adminOpenPromptLabButton,
-  adminActivityTitle,
   adminMetricsGrid,
-  adminInsightsGrid,
 } from '../../dom.js';
 import { sanitizeDisplayRole, buildInitials } from '../../utils/format.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { readApiResponse } from '../../api.js';
-import {
-  renderAdminCompetencyBarChart,
-  renderAdminActivityBarChart,
-} from './charts.js';
 import { loadUserJourneyState } from '../../session.js';
-
-const renderAdminSection = (sectionName, render) => {
-  try {
-    render();
-  } catch (error) {
-    console.error('Failed to render admin dashboard section:', sectionName, error);
-  }
-};
 
 export const renderAdminDashboard = () => {
   const adminDashboard = state.adminDashboard;
@@ -43,7 +29,6 @@ export const renderAdminDashboard = () => {
   adminUserRole.textContent = adminPosition;
   adminAvatar.textContent = buildInitials(user.full_name || 'Администратор системы');
   adminTitle.textContent = adminDashboard.title || 'Сводный отчет';
-  adminActivityTitle.innerHTML = 'Количество завершенных ассессментов за период';
   const isSuperadmin = Boolean(adminDashboard.is_superadmin);
   if (adminStartAssessmentButton) {
     adminStartAssessmentButton.classList.toggle('hidden', !isSuperadmin);
@@ -74,21 +59,7 @@ export const renderAdminDashboard = () => {
     adminMetricsGrid.appendChild(card);
   });
 
-  renderAdminSection('competency chart', () => {
-    renderAdminCompetencyBarChart(adminDashboard.competency_average || []);
-  });
 
-  adminInsightsGrid.innerHTML = '';
-  (adminDashboard.insights || []).forEach((item) => {
-    const card = document.createElement('article');
-    card.className = 'card card--inset admin-insight-card';
-    card.innerHTML = '<strong>' + item.title + '</strong><p>' + item.description + '</p>';
-    adminInsightsGrid.appendChild(card);
-  });
-
-  renderAdminSection('activity chart', () => {
-    renderAdminActivityBarChart(adminDashboard);
-  });
 };
 
 export const loadAdminDashboard = async (periodKey = state.adminPeriodKey || '30d') => {

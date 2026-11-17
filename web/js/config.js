@@ -1,4 +1,4 @@
-export const APP_RELEASE = "2.1.20";
+export const APP_RELEASE = "2.1.21";
 export const ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED =
     window.__APP_CONFIG__?.assessmentExternalAnswerTransferEnabled === true;
 export const PROFILE_NO_CHANGES_LABEL = "Профиль актуален";
@@ -8,7 +8,6 @@ export const DUTIES_DETAIL_EXAMPLE =
 
 export const ADMIN_EMAIL = "admin@agent4k.local";
 export const PROFILE_HISTORY_PAGE_SIZE = 10;
-export const ADMIN_REPORTS_PAGE_SIZE = 10;
 export const ADMIN_METHODOLOGY_RISK_PAGE_SIZE = 10;
 export const ADMIN_METHODOLOGY_CASES_PAGE_SIZE = 10;
 
@@ -147,35 +146,6 @@ export const levelThresholds = [
     { code: "L2", value: levelPercentMap.L2 },
     { code: "L3", value: levelPercentMap.L3 },
 ];
-
-export const competencyPalette = {
-    Коммуникация: {
-        stroke: "#18b8c6",
-        fill: "rgba(24, 184, 198, 0.1)",
-        chartFill: "#18b8c6",
-    },
-    "Командная работа": {
-        stroke: "#83dce3",
-        fill: "rgba(131, 220, 227, 0.1)",
-        chartFill: "#83dce3",
-    },
-    Креативность: {
-        stroke: "#ff563d",
-        fill: "rgba(255, 86, 61, 0.11)",
-        chartFill: "#ff563d",
-    },
-    "Критическое мышление": {
-        stroke: "#18b8c6",
-        fill: "rgba(24, 184, 198, 0.11)",
-        chartFill: "#18b8c6",
-    },
-};
-
-export const fallbackCompetencyPalette = {
-    stroke: "#68777c",
-    fill: "rgba(104, 119, 124, 0.08)",
-    chartFill: "#68777c",
-};
 
 export const onboardingSteps = [
     {

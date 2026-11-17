@@ -20,9 +20,6 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
 from fastapi.responses import Response
 
-from Api.admin_report_dialogue_pdf_service import admin_report_dialogue_pdf_service
-from Api.admin_report_expert_export_service import admin_report_expert_export_service
-from Api.admin_reports_pdf_service import admin_reports_pdf_service
 from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
 from Api.config import settings
@@ -73,7 +70,6 @@ from Api.platform_access import require_platform_permission
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
 from Api.database import get_case_methodology_versions
-from Api.pdf_report_service import pdf_report_service
 from Api.progress_service import operation_progress_service
 from Api.org_access import (
     AdminScope,
@@ -125,7 +121,6 @@ from Api.user_journey import (
 M3_ROLE_PACKAGE_DIR = Path(__file__).resolve().parents[1] / "assessment_definitions" / "role_profiles" / "competencies_4k" / "1.1"
 from Api.schemas import (
     AdminDashboard,
-    AdminDetailedReportItem,
     AdminMethodologyCaseDetailResponse,
     AdminMethodologyCaseUpdateRequest,
     AdminMethodologyBranchItem,
@@ -143,14 +138,9 @@ from Api.schemas import (
     AdminMethodologyResponse,
     AdminMethodologySkillOption,
     AdminMethodologySkillSignalItem,
-    AdminReportDetailResponse,
     AdminShadowComparisonResponse,
     AdminShadowBatchRequest,
     AdminShadowBatchResponse,
-    AdminDetailedReportsResponse,
-    AdminExpertCommentUpdateRequest,
-    AdminExpertGroupExportRequest,
-    AdminInsightCard,
     AdminMetricCard,
     AdminOrganizationImportResult,
     AdminOrganizationAdminRequest,
@@ -283,29 +273,6 @@ ADMIN_ROLE_CODE = "admin"
 ADMIN_ROLE_NAME = "Администратор"
 ADMIN_FULL_NAME = "Администратор системы"
 ADMIN_EMAIL = LOCAL_SUPERADMIN_EMAIL
-ADMIN_PERIODS = {
-    "7d": {"days": 7, "bucket": "day", "label": "Последние 7 дней"},
-    "14d": {"days": 14, "bucket": "day", "label": "Последние 14 дней"},
-    "30d": {"days": 30, "bucket": "day", "label": "Последние 30 дней"},
-    "90d": {"days": 90, "bucket": "month", "label": "Последние 3 месяца"},
-    "180d": {"days": 180, "bucket": "month", "label": "Последние 6 месяцев"},
-    "365d": {"days": 365, "bucket": "month", "label": "Последние 12 месяцев"},
-}
-MONTH_LABELS_RU = {
-    1: "янв",
-    2: "фев",
-    3: "мар",
-    4: "апр",
-    5: "май",
-    6: "июн",
-    7: "июл",
-    8: "авг",
-    9: "сен",
-    10: "окт",
-    11: "ноя",
-    12: "дек",
-}
-
 
 @router.get("/version", response_model=AppVersionResponse, response_model_exclude_none=True)
 def get_application_version() -> AppVersionResponse:
@@ -2003,60 +1970,6 @@ def _csv_value(row: dict[str, str], *names: str) -> str | None:
     return None
 
 
-def _build_activity_series(connection, scope: AdminScope, period_key: str) -> tuple[list[str], list[int], int, str]:
-    period = ADMIN_PERIODS.get(period_key, ADMIN_PERIODS["30d"])
-    bucket = period["bucket"]
-    days = int(period["days"])
-    period_label = str(period["label"])
-    organization_filter = "" if scope.is_superadmin else " AND cycle.organization_id=ANY(%s)"
-    organization_params: tuple = () if scope.is_superadmin else (list(scope.organization_ids),)
-    if bucket == "day":
-        rows = connection.execute(
-            f"""WITH axis AS (
-                    SELECT generate_series(CURRENT_DATE-(%s::int-1)*INTERVAL '1 day',CURRENT_DATE,
-                                           INTERVAL '1 day') AS bucket_start),
-                  stats AS (
-                    SELECT DATE_TRUNC('day',cycle.collection_closed_at) AS bucket_start,
-                           COUNT(*)::int AS cycle_count
-                    FROM m5_cycles cycle
-                    WHERE cycle.usage_scope='assessment' AND cycle.started_at IS NOT NULL
-                      AND cycle.collection_closed_at>=CURRENT_DATE-(%s::int-1)*INTERVAL '1 day'
-                      {organization_filter}
-                    GROUP BY DATE_TRUNC('day',cycle.collection_closed_at))
-                SELECT TO_CHAR(axis.bucket_start,'DD.MM') AS bucket_label,
-                       COALESCE(stats.cycle_count,0)::int AS session_count
-                FROM axis LEFT JOIN stats ON stats.bucket_start=axis.bucket_start
-                ORDER BY axis.bucket_start""",
-            (days, days, *organization_params),
-        ).fetchall()
-    else:
-        month_count = max(1, round(days / 30))
-        rows = connection.execute(
-            f"""WITH axis AS (
-                    SELECT generate_series(DATE_TRUNC('month',CURRENT_DATE)-(%s::int-1)*INTERVAL '1 month',
-                                           DATE_TRUNC('month',CURRENT_DATE),INTERVAL '1 month') AS bucket_start),
-                  stats AS (
-                    SELECT DATE_TRUNC('month',cycle.collection_closed_at) AS bucket_start,
-                           COUNT(*)::int AS cycle_count
-                    FROM m5_cycles cycle
-                    WHERE cycle.usage_scope='assessment' AND cycle.started_at IS NOT NULL
-                      AND cycle.collection_closed_at>=DATE_TRUNC('month',CURRENT_DATE)-(%s::int-1)*INTERVAL '1 month'
-                      {organization_filter}
-                    GROUP BY DATE_TRUNC('month',cycle.collection_closed_at))
-                SELECT axis.bucket_start,TO_CHAR(axis.bucket_start,'MM.YY') AS bucket_label,
-                       COALESCE(stats.cycle_count,0)::int AS session_count
-                FROM axis LEFT JOIN stats ON stats.bucket_start=axis.bucket_start
-                ORDER BY axis.bucket_start""",
-            (month_count, month_count, *organization_params),
-        ).fetchall()
-        rows = [{"bucket_label": MONTH_LABELS_RU.get(row["bucket_start"].month, str(row["bucket_label"])),
-                 "session_count": row["session_count"]} for row in rows]
-    labels = [str(row["bucket_label"]) for row in rows]
-    points = [int(row["session_count"] or 0) for row in rows]
-    return labels, points, max(points) if points and max(points) > 0 else 1, period_label
-
-
-
 def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d") -> AdminDashboard:
     organization_filter = "" if scope.is_superadmin else " AND cycle.organization_id=ANY(%s)"
     organization_params: tuple = () if scope.is_superadmin else (list(scope.organization_ids),)
@@ -2084,8 +1997,6 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
     started = int(cycle_counts["started"] or 0)
     closed = int(cycle_counts["closed"] or 0)
     ready = int(report_counts["ready"] or 0)
-    activity_labels, activity_points, activity_axis_max, activity_period_label = _build_activity_series(
-        connection, scope, period_key)
     return AdminDashboard(
         title="Сводный отчет",
         subtitle="Современные оценки организации и готовность результатов.",
@@ -2096,419 +2007,14 @@ def _build_admin_dashboard(connection, scope: AdminScope, period_key: str = "30d
                 if started else "Оценки ещё не начинались"), delta="За всё время"),
         ],
         competency_average=[],
-        insights=[AdminInsightCard(title="Сводная оценка навыков пока недоступна",
-            description="Диаграмма появится, когда современный контур предоставит допустимую сводку навыков.")],
-        activity_points=activity_points,
-        activity_labels=activity_labels,
-        activity_axis_max=activity_axis_max,
-        activity_period_key=period_key if period_key in ADMIN_PERIODS else "30d",
-        activity_period_label=activity_period_label,
+        insights=[],
+        activity_points=[],
+        activity_labels=[],
+        activity_axis_max=1,
+        activity_period_key="30d",
+        activity_period_label="",
     )
 
-
-
-def _build_admin_reports(connection, scope: AdminScope) -> AdminDetailedReportsResponse:
-    scope_sql, scope_params = admin_scope_sql(scope)
-    rows = connection.execute(
-        f"""
-        SELECT
-            us.id AS session_id,
-            us.user_id,
-            u.full_name,
-            u.phone,
-            COALESCE(NULLIF(TRIM(u.company_industry), ''), 'Не указана') AS group_name,
-            COALESCE(NULLIF(TRIM(u.job_description), ''), 'Не указана') AS role_name,
-            us.status,
-            us.expert_comment,
-            score_stats.overall_score_percent,
-            us.started_at,
-            us.finished_at
-        FROM user_sessions us
-        JOIN users u ON u.id = us.user_id
-        LEFT JOIN (
-            SELECT
-                session_id,
-                ROUND(AVG(COALESCE(alw.percent_value, 0)))::int AS overall_score_percent
-                FROM session_skill_assessments ssa
-                LEFT JOIN assessment_level_weights alw ON alw.level_code = ssa.assessed_level_code
-                GROUP BY ssa.session_id
-        ) AS score_stats ON score_stats.session_id = us.id
-        WHERE us.assessment_code = 'competencies_4k'
-          AND LOWER(COALESCE(u.email, '')) <> %s
-          {scope_sql}
-        ORDER BY COALESCE(us.finished_at, us.started_at) DESC NULLS LAST, us.id DESC
-        """,
-        (ADMIN_EMAIL.lower(), *scope_params),
-    ).fetchall()
-
-    items = []
-    for row in rows:
-        items.append(
-            AdminDetailedReportItem(
-                session_id=int(row["session_id"]),
-                user_id=int(row["user_id"]),
-                full_name=row["full_name"] or "Без имени",
-                phone=row["phone"],
-                group_name=row["group_name"],
-                role_name=row["role_name"],
-                status="Завершено" if row["status"] == "completed" else "В процессе" if row["status"] == "active" else "Черновик",
-                score_percent=int(row["overall_score_percent"]) if row["overall_score_percent"] is not None else None,
-                started_at=row["started_at"],
-                finished_at=row["finished_at"],
-            )
-        )
-
-    score_values = [item.score_percent for item in items if item.score_percent is not None]
-    return AdminDetailedReportsResponse(
-        title="Отдельные отчеты",
-        subtitle="Управление и анализ индивидуальных результатов тестирования персонала.",
-        total_items=len(items),
-        summary_score_percent=round(sum(score_values) / len(score_values), 1) if score_values else None,
-        items=items,
-    )
-
-
-def _build_admin_report_detail(connection, session_id: int, scope: AdminScope) -> AdminReportDetailResponse:
-    scope_sql, scope_params = admin_scope_sql(scope)
-    session_row = connection.execute(
-        f"""
-        SELECT
-            us.id AS session_id,
-            us.user_id,
-            us.status,
-            us.started_at,
-            us.finished_at,
-            us.expert_comment,
-            us.expert_name,
-            us.expert_contacts,
-            us.expert_assessed_at,
-            u.full_name,
-            u.phone,
-            u.telegram,
-            COALESCE(NULLIF(TRIM(u.company_industry), ''), 'Не указана') AS group_name,
-            COALESCE(NULLIF(TRIM(u.job_description), ''), 'Не указана') AS role_name,
-            p.raw_position,
-            p.raw_duties,
-            p.normalized_duties,
-            p.user_domain,
-            p.user_processes,
-            p.user_tasks,
-            p.user_stakeholders,
-            p.user_constraints
-        FROM user_sessions us
-        JOIN users u ON u.id = us.user_id
-        LEFT JOIN LATERAL (
-            SELECT
-                urp.raw_position,
-                urp.raw_duties,
-                urp.normalized_duties,
-                urp.user_domain,
-                urp.user_processes,
-                urp.user_tasks,
-                urp.user_stakeholders,
-                urp.user_constraints
-            FROM user_role_profiles urp
-            WHERE urp.user_id = u.id
-            ORDER BY
-                CASE WHEN urp.id = u.active_profile_id THEN 0 ELSE 1 END,
-                urp.profile_version DESC NULLS LAST,
-                urp.id DESC
-            LIMIT 1
-        ) p ON TRUE
-        WHERE us.id = %s
-          AND us.assessment_code = 'competencies_4k'
-          AND LOWER(COALESCE(u.email, '')) <> %s
-          {scope_sql}
-        LIMIT 1
-        """,
-        (session_id, ADMIN_EMAIL.lower(), *scope_params),
-    ).fetchone()
-    if session_row is None:
-        raise HTTPException(status_code=404, detail="Assessment report not found")
-
-    skill_rows = connection.execute(
-        """
-        SELECT
-            competency_name,
-            skill_name,
-            assessed_level_code,
-            assessed_level_name,
-            rationale,
-            evidence_excerpt,
-            red_flags,
-            found_evidence,
-            block_coverage_percent,
-            (
-                SELECT ROUND(AVG(scsa.artifact_compliance_percent))::int
-                FROM session_case_skill_analysis scsa
-                WHERE scsa.session_id = session_skill_assessments.session_id
-                  AND scsa.user_id = session_skill_assessments.user_id
-                  AND scsa.skill_id = session_skill_assessments.skill_id
-                  AND scsa.artifact_compliance_percent IS NOT NULL
-            ) AS artifact_compliance_percent
-        FROM session_skill_assessments
-        WHERE session_id = %s
-        ORDER BY competency_name ASC, skill_name ASC
-        """,
-        (session_id,),
-    ).fetchall()
-
-    grouped: dict[str, list[dict]] = {}
-    level_map = get_level_percent_map(connection)
-    for row in skill_rows:
-        competency = row["competency_name"] or "Без категории"
-        grouped.setdefault(competency, []).append(dict(row))
-
-    competency_average: list[dict[str, str | int]] = []
-    for competency_name, skills in grouped.items():
-        avg_percent = round(sum(level_map.get(skill["assessed_level_code"], 0) for skill in skills) / len(skills))
-        evidence_hits = sum(1 for skill in skills if _parse_json_array_field(skill["found_evidence"]))
-        block_values = [float(skill["block_coverage_percent"]) for skill in skills if skill["block_coverage_percent"] is not None]
-        artifact_values = [float(skill["artifact_compliance_percent"]) for skill in skills if skill["artifact_compliance_percent"] is not None]
-        red_flag_total = sum(len(_parse_json_array_field(skill["red_flags"])) for skill in skills)
-        competency_average.append(
-            {
-                "name": competency_name,
-                "value": avg_percent,
-                "evidence_hit_rate": round(evidence_hits / len(skills), 2),
-                "avg_block_coverage": round(sum(block_values) / len(block_values), 2) if block_values else 0,
-                "avg_artifact_compliance": round(sum(artifact_values) / len(artifact_values), 2) if artifact_values else 0,
-                "avg_red_flag_count": round(red_flag_total / len(skills), 2),
-            }
-        )
-    competency_average.sort(key=lambda item: str(item["name"]))
-
-    if not competency_average:
-        competency_average = [
-            {"name": "Коммуникация", "value": 0},
-            {"name": "Командная работа", "value": 0},
-            {"name": "Креативность", "value": 0},
-            {"name": "Критическое мышление", "value": 0},
-        ]
-
-    score_values = [int(item["value"]) for item in competency_average if isinstance(item["value"], int)]
-    score_percent = round(sum(score_values) / len(score_values)) if score_values else None
-    interpretation = _build_report_interpretation_payload(skill_rows, competency_average)
-
-    strongest_item, has_confident_strongest = _select_strongest_competency(competency_average)
-    strengths: list[str] = []
-    if strongest_item and has_confident_strongest:
-        strengths.append(
-            f"Наиболее устойчиво проявлена компетенция «{strongest_item['name']}»: средний показатель составил {strongest_item['value']}%."
-        )
-    if interpretation.get("response_pattern"):
-        strengths.append(str(interpretation["response_pattern"]))
-    if not strengths:
-        strengths = ["Выраженная сильная сторона пока не выделена: для этого нужны более устойчивые сигналы по сессии."]
-    growth_areas = interpretation["growth_areas"]
-
-    quotes: list[str] = []
-    seen_quotes: set[str] = set()
-    for row in skill_rows:
-        excerpt = (row["evidence_excerpt"] or "").strip()
-        candidate = ""
-        if excerpt:
-            candidate = excerpt
-        elif row["rationale"]:
-            candidate = str(row["rationale"]).strip()
-        normalized_candidate = " ".join(candidate.split()).lower()
-        if (
-            candidate
-            and normalized_candidate
-            and normalized_candidate not in seen_quotes
-            and _is_meaningful_quote_candidate(candidate)
-        ):
-            seen_quotes.add(normalized_candidate)
-            quotes.append(candidate)
-        if len(quotes) >= 3:
-            break
-
-    case_rows = connection.execute(
-        """
-        SELECT
-            sc.id AS session_case_id,
-            sc.status,
-            sc.started_at,
-            sc.completed_at AS finished_at,
-            sc.case_registry_id,
-            cr.case_id_code,
-            COALESCE(cr.title, 'Кейс без названия') AS case_title,
-            ct.intro_context,
-            ct.task_for_user,
-            ct.constraints_text,
-            sp.user_prompt,
-            sp.final_prompt_text
-        FROM session_cases sc
-        LEFT JOIN cases_registry cr ON cr.id = sc.case_registry_id
-        LEFT JOIN case_texts ct ON ct.cases_registry_id = cr.id
-        LEFT JOIN LATERAL (
-            SELECT user_prompt, final_prompt_text
-            FROM session_prompts
-            WHERE session_case_id = sc.id
-              AND prompt_type = 'case_dialog'
-            ORDER BY id DESC
-            LIMIT 1
-        ) sp ON TRUE
-        WHERE sc.session_id = %s
-        ORDER BY sc.id ASC
-        """,
-        (session_id,),
-    ).fetchall()
-
-    dialogue_rows = connection.execute(
-        """
-        SELECT
-            session_case_id,
-            role,
-            message_text
-        FROM session_case_messages
-        WHERE session_id = %s
-        ORDER BY session_case_id ASC, id ASC
-        """,
-        (session_id,),
-    ).fetchall()
-
-    analysis_rows = connection.execute(
-        """
-        SELECT
-            scsa.session_case_id,
-            s.skill_name,
-            scsa.competency_name,
-            ssa.assessed_level_code,
-            ssa.assessed_level_name,
-            scsa.artifact_compliance_percent,
-            scsa.block_coverage_percent,
-            scsa.red_flags,
-            scsa.found_evidence,
-            scsa.evidence_excerpt
-        FROM session_case_skill_analysis scsa
-        JOIN skills s ON s.id = scsa.skill_id
-        LEFT JOIN session_skill_assessments ssa
-          ON ssa.session_id = scsa.session_id
-         AND ssa.user_id = scsa.user_id
-         AND ssa.skill_id = scsa.skill_id
-        WHERE scsa.session_id = %s
-        ORDER BY scsa.session_case_id ASC, scsa.competency_name ASC, s.skill_name ASC
-        """,
-        (session_id,),
-    ).fetchall()
-
-    dialogue_by_case: dict[int, list[dict]] = {}
-    for row in dialogue_rows:
-        dialogue_by_case.setdefault(int(row["session_case_id"]), []).append(
-            {
-                "role": row["role"] or "assistant",
-                "message_text": row["message_text"] or "",
-            }
-        )
-
-    analysis_by_case: dict[int, list[dict]] = {}
-    for row in analysis_rows:
-        analysis_by_case.setdefault(int(row["session_case_id"]), []).append(
-            {
-                "skill_name": row["skill_name"] or "Навык",
-                "competency_name": row["competency_name"] or "Без категории",
-                "assessed_level_code": row["assessed_level_code"],
-                "assessed_level_name": row["assessed_level_name"],
-                "artifact_compliance_percent": row["artifact_compliance_percent"],
-                "block_coverage_percent": row["block_coverage_percent"],
-                "red_flags": _parse_json_array_field(row["red_flags"]),
-                "found_evidence": _normalize_found_evidence_items(row["found_evidence"]),
-                "evidence_excerpt": row["evidence_excerpt"],
-            }
-        )
-
-    def _extract_prompt_parts(user_prompt: str | None) -> tuple[str | None, str | None]:
-        prompt_text = str(user_prompt or "").strip()
-        if not prompt_text:
-            return None, None
-        context_match = re.search(
-            r"Personalized case context:\s*(.*?)(?:\nPersonalized task:|\Z)",
-            prompt_text,
-            flags=re.DOTALL,
-        )
-        task_match = re.search(r"Personalized task:\s*(.*)\Z", prompt_text, flags=re.DOTALL)
-        context_text = context_match.group(1).strip() if context_match else None
-        task_text = task_match.group(1).strip() if task_match else None
-        if context_text or task_text:
-            return context_text or None, task_text or None
-        structured_match = re.search(
-            r"^(.*?)(?:\n\s*\n)?Что нужно сделать:\s*(.*)\Z",
-            prompt_text,
-            flags=re.DOTALL,
-        )
-        if structured_match:
-            context_text = structured_match.group(1).strip()
-            task_text = structured_match.group(2).strip()
-            return context_text or None, task_text or None
-        if "\n\n" in prompt_text:
-            context_text, task_text = prompt_text.rsplit("\n\n", 1)
-            return context_text.strip() or None, task_text.strip() or None
-        return prompt_text, None
-
-    case_items: list[dict] = []
-    for index, row in enumerate(case_rows, start=1):
-        personalized_context, personalized_task = _extract_prompt_parts(row["user_prompt"])
-        fallback_context = str(row["intro_context"] or "").strip() or None
-        fallback_task = str(row["task_for_user"] or "").strip() or None
-        constraints_text = str(row["constraints_text"] or "").strip() or None
-        final_context = personalized_context or fallback_context
-        if constraints_text and final_context:
-            final_context = final_context + "\n\nОграничения:\n" + constraints_text
-        elif constraints_text and not final_context:
-            final_context = "Ограничения:\n" + constraints_text
-        case_items.append(
-            {
-                "session_case_id": int(row["session_case_id"]),
-                "case_number": index,
-                "case_title": row["case_title"] or "Кейс без названия",
-                "case_id_code": row["case_id_code"],
-                "status": row["status"] or "unknown",
-                "started_at": row["started_at"],
-                "finished_at": row["finished_at"],
-                "personalized_context": final_context,
-                "personalized_task": personalized_task or fallback_task,
-                "prompt_text": row["final_prompt_text"],
-                "dialogue": dialogue_by_case.get(int(row["session_case_id"]), []),
-                "skill_results": analysis_by_case.get(int(row["session_case_id"]), []),
-            }
-        )
-
-    return AdminReportDetailResponse(
-        session_id=int(session_row["session_id"]),
-        user_id=int(session_row["user_id"]),
-        full_name=session_row["full_name"] or "Без имени",
-        phone=(str(session_row["phone"]).strip() if session_row["phone"] else None),
-        telegram=(str(session_row["telegram"]).strip() if session_row["telegram"] else None),
-        role_name=session_row["role_name"],
-        group_name=session_row["group_name"],
-        status="Завершено" if session_row["status"] == "completed" else "В процессе" if session_row["status"] == "active" else "Черновик",
-        score_percent=score_percent,
-        report_date=session_row["finished_at"] or session_row["started_at"],
-        competency_average=competency_average,
-        insight_title=interpretation["insight_title"],
-        insight_text=interpretation["insight_text"],
-        basis_items=interpretation["basis_items"],
-        response_pattern=interpretation["response_pattern"],
-        expert_comment=(str(session_row["expert_comment"]).strip() if session_row["status"] == "completed" and session_row["expert_comment"] else None),
-        expert_name=(str(session_row["expert_name"]).strip() if session_row["status"] == "completed" and session_row["expert_name"] else None),
-        expert_contacts=(str(session_row["expert_contacts"]).strip() if session_row["status"] == "completed" and session_row["expert_contacts"] else None),
-        expert_assessed_at=(session_row["expert_assessed_at"] if session_row["status"] == "completed" else None),
-        can_edit_expert_comment=session_row["status"] == "completed",
-        strengths=strengths,
-        growth_areas=growth_areas,
-        quotes=quotes,
-        profile_summary={
-            "position": (session_row["raw_position"] or session_row["role_name"] or "").strip() or None,
-            "duties": (session_row["normalized_duties"] or session_row["raw_duties"] or "").strip() or None,
-            "domain": (session_row["user_domain"] or session_row["group_name"] or "").strip() or None,
-            "processes": _parse_json_array_field(session_row["user_processes"]),
-            "tasks": _parse_json_array_field(session_row["user_tasks"]),
-            "stakeholders": _parse_json_array_field(session_row["user_stakeholders"]),
-            "constraints": _parse_json_array_field(session_row["user_constraints"]),
-        },
-        case_items=case_items,
-    )
 
 
 def _build_admin_methodology(connection) -> AdminMethodologyResponse:
@@ -6023,321 +5529,14 @@ def confirm_admin_organization_questionnaire(
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
-@router.get("/admin/reports", response_model=AdminDetailedReportsResponse)
-def get_admin_reports(request: Request) -> AdminDetailedReportsResponse:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
+@router.api_route('/admin/reports', methods=['GET', 'POST', 'PATCH'])
+@router.api_route('/admin/reports.pdf', methods=['GET'])
+@router.api_route('/admin/reports/{legacy_path:path}', methods=['GET', 'POST', 'PATCH'])
+def retired_admin_reports(request: Request, legacy_path: str = ''):
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        return _build_admin_reports(connection, scope)
-
-
-@router.get("/admin/reports/{session_id}", response_model=AdminReportDetailResponse)
-def get_admin_report_detail(session_id: int, request: Request) -> AdminReportDetailResponse:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        return _build_admin_report_detail(connection, session_id, scope)
-
-
-@router.patch("/admin/reports/{session_id}/expert-comment", response_model=AdminReportDetailResponse)
-def update_admin_report_expert_comment(session_id: int, payload: AdminExpertCommentUpdateRequest, request: Request) -> AdminReportDetailResponse:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    normalized_comment = str(payload.expert_comment or "").strip() or None
-    normalized_expert_name = str(payload.expert_name or "").strip() or None
-    normalized_expert_contacts = str(payload.expert_contacts or "").strip() or None
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        scope_sql, scope_params = admin_scope_sql(scope)
-        session_row = connection.execute(
-            f"""
-            SELECT id, status
-            FROM user_sessions us
-            JOIN users u ON u.id = us.user_id
-            WHERE us.id = %s
-              AND us.assessment_code = 'competencies_4k'
-              {scope_sql}
-            LIMIT 1
-            """,
-            (session_id, *scope_params),
-        ).fetchone()
-        if session_row is None:
-            raise HTTPException(status_code=404, detail="Assessment report not found")
-        if session_row["status"] != "completed":
-            raise HTTPException(status_code=409, detail="Expert comment is available only for completed assessments")
-
-        connection.execute(
-            """
-            UPDATE user_sessions
-            SET expert_comment = %s,
-                expert_name = %s,
-                expert_contacts = %s,
-                expert_assessed_at = %s,
-                expert_comment_updated_at = %s
-            WHERE id = %s
-            """,
-            (
-                normalized_comment,
-                normalized_expert_name,
-                normalized_expert_contacts,
-                payload.expert_assessed_at,
-                datetime.utcnow(),
-                session_id,
-            ),
-        )
-        connection.commit()
-        return _build_admin_report_detail(connection, session_id, scope)
-
-
-@router.get("/admin/reports/{session_id}/dialogue.pdf")
-def download_admin_report_dialogue_pdf(session_id: int, request: Request) -> Response:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        try:
-            detail = _build_admin_report_detail(connection, session_id, scope)
-            filename, pdf_bytes = admin_report_dialogue_pdf_service.build_pdf(detail)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": (
-                "attachment; "
-                f'filename="{filename}"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
-
-
-@router.get("/admin/reports/{session_id}/expert.xls")
-def download_admin_report_expert_excel(session_id: int, request: Request) -> Response:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        detail = _build_admin_report_detail(connection, session_id, scope)
-        filename, excel_bytes = admin_report_expert_export_service.build_excel(detail)
-
-    return Response(
-        content=excel_bytes,
-        media_type="application/vnd.ms-excel",
-        headers={
-            "Content-Disposition": (
-                "attachment; "
-                f'filename="{filename}"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
-
-
-@router.get("/admin/reports/{session_id}/expert.pdf")
-def download_admin_report_expert_pdf(session_id: int, request: Request) -> Response:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        try:
-            detail = _build_admin_report_detail(connection, session_id, scope)
-            filename, pdf_bytes = admin_report_expert_export_service.build_pdf(detail)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": (
-                "attachment; "
-                f'filename="{filename}"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
-
-
-@router.post("/admin/reports/expert-group.zip")
-def download_admin_reports_expert_group_zip(payload: AdminExpertGroupExportRequest, request: Request) -> Response:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    session_ids = [int(session_id) for session_id in payload.session_ids if int(session_id) > 0]
-    if not session_ids:
-        raise HTTPException(status_code=400, detail="No assessment sessions selected")
-
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        scope_sql, scope_params = admin_scope_sql(scope)
-
-        session_rows = connection.execute(
-            f"""
-            SELECT us.id
-            FROM user_sessions us
-            JOIN users u ON u.id = us.user_id
-            WHERE us.assessment_code = 'competencies_4k'
-              AND us.status = 'completed'
-              AND us.id = ANY(%s)
-              AND LOWER(COALESCE(u.email, '')) <> %s
-              {scope_sql}
-            ORDER BY us.finished_at DESC NULLS LAST, us.id DESC
-            """,
-            (session_ids, ADMIN_EMAIL.lower(), *scope_params),
-        ).fetchall()
-        completed_session_ids = [int(row["id"]) for row in session_rows]
-        if not completed_session_ids:
-            raise HTTPException(status_code=400, detail="No completed assessments found in selection")
-
-        details = [_build_admin_report_detail(connection, session_id, scope) for session_id in completed_session_ids]
-        filename, zip_bytes = admin_report_expert_export_service.build_group_pdf_bundle(details)
-
-    return Response(
-        content=zip_bytes,
-        media_type="application/zip",
-        headers={
-            "Content-Disposition": (
-                "attachment; "
-                f'filename="{filename}"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
-
-
-@router.get("/admin/reports/export/expert-group.zip")
-def download_admin_reports_expert_group_zip_get(request: Request) -> Response:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    raw_parts: list[str] = []
-    for raw_value in request.query_params.getlist("session_ids"):
-        if raw_value is None:
-            continue
-        raw_parts.extend(part.strip() for part in str(raw_value).split(","))
-    normalized_session_ids: list[int] = []
-    for part in raw_parts:
-        if not part:
-            continue
-        if not part.isdigit():
-            continue
-        value = int(part)
-        if value > 0:
-            normalized_session_ids.append(value)
-    if not normalized_session_ids:
-        raise HTTPException(status_code=400, detail="No assessment sessions selected")
-
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        scope_sql, scope_params = admin_scope_sql(scope)
-
-        session_rows = connection.execute(
-            f"""
-            SELECT us.id
-            FROM user_sessions us
-            JOIN users u ON u.id = us.user_id
-            WHERE us.assessment_code = 'competencies_4k'
-              AND us.status = 'completed'
-              AND us.id = ANY(%s)
-              AND LOWER(COALESCE(u.email, '')) <> %s
-              {scope_sql}
-            ORDER BY us.finished_at DESC NULLS LAST, us.id DESC
-            """,
-            (normalized_session_ids, ADMIN_EMAIL.lower(), *scope_params),
-        ).fetchall()
-        completed_session_ids = [int(row["id"]) for row in session_rows]
-        if not completed_session_ids:
-            raise HTTPException(status_code=400, detail="No completed assessments found in selection")
-
-        details = [_build_admin_report_detail(connection, session_id, scope) for session_id in completed_session_ids]
-        filename, zip_bytes = admin_report_expert_export_service.build_group_pdf_bundle(details)
-
-    return Response(
-        content=zip_bytes,
-        media_type="application/zip",
-        headers={
-            "Content-Disposition": (
-                "attachment; "
-                f'filename="{filename}"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
-
-
-@router.get("/admin/reports/{session_id}/cases/{session_case_id}/dialogue.pdf")
-def download_admin_report_case_dialogue_pdf(session_id: int, session_case_id: int, request: Request) -> Response:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        try:
-            detail = _build_admin_report_detail(connection, session_id, scope)
-            case_item = next((item for item in detail.case_items if int(item.session_case_id) == int(session_case_id)), None)
-            if case_item is None:
-                raise HTTPException(status_code=404, detail="Case dialogue not found")
-            filename, pdf_bytes = admin_report_dialogue_pdf_service.build_case_pdf(detail, case_item)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": (
-                "attachment; "
-                f'filename="{filename}"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
-
-
-@router.get("/admin/reports.pdf")
-def download_admin_reports_pdf(request: Request) -> Response:
-    token = request.cookies.get(SESSION_COOKIE_NAME)
-    user = web_session_service.get_user_by_token(token)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Admin session not found")
-    with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        try:
-            filename, pdf_bytes = admin_reports_pdf_service.build_pdf(_build_admin_reports(connection, scope))
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": (
-                'attachment; '
-                'filename="admin_detailed_reports.pdf"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
+        raise HTTPException(401, detail='Требуется авторизация')
+    raise HTTPException(410, detail='Старый маршрут отчётов закрыт. Откройте список индивидуальных Report.')
 
 
 def _normalize_admin_case_role_ids(raw_role_ids: list[int], available_role_ids: set[int]) -> list[int]:
@@ -9234,47 +8433,10 @@ def get_session_case_structured_analysis(
     return [SessionCaseStructuredAnalysisResponse(**dict(row)) for row in rows]
 
 
-@router.get("/{user_id}/assessment/{session_id}/report.pdf")
-def download_skill_assessment_pdf(user_id: int, session_id: int, request: Request) -> Response:
+@router.get('/{user_id}/assessment/{session_id}/report.pdf')
+def retired_skill_assessment_pdf(user_id: int, session_id: int, request: Request):
     _require_matching_session_user(request, user_id)
-    with get_connection() as connection:
-        user_row = connection.execute(
-            "SELECT id FROM users WHERE id = %s",
-            (user_id,),
-        ).fetchone()
-        if user_row is None:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        session_row = connection.execute(
-            """
-            SELECT id
-            FROM user_sessions
-            WHERE id = %s
-              AND user_id = %s
-            """,
-            (session_id, user_id),
-        ).fetchone()
-        if session_row is None:
-            raise HTTPException(status_code=404, detail="Assessment session not found")
-
-        try:
-            filename, pdf_bytes = pdf_report_service.build_pdf(connection, user_id, session_id)
-        except FileNotFoundError as exc:
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": (
-                'attachment; '
-                'filename="competency_profile.pdf"; '
-                f"filename*=UTF-8''{quote(filename)}"
-            ),
-        },
-    )
+    raise HTTPException(410, detail='Старый PDF отчёта закрыт. Используйте сохранённый M8 Report.')
 
 
 # PM-05: restricted QA evidence processing. Never produces IA or a user report.
@@ -9682,12 +8844,23 @@ def _customer_saved_report(request: Request, report_id: UUID, *, channel: str = 
 
 
 @router.get('/admin/m8-access/reports')
-def list_customer_m8_reports(request: Request):
+def list_customer_m8_reports(request: Request, organization_id: int | None = None,
+                             query: str = '', program: str = '', status: str = '',
+                             page: int = 1, page_size: int = 12):
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     if user is None:
         raise HTTPException(401, detail='Требуется авторизация')
+    if page < 1 or page_size < 1 or page_size > 50 or len(query) > 200 or len(program) > 200:
+        raise HTTPException(422, detail='Некорректные параметры списка Report.')
     with get_connection() as connection:
-        return {'items': m8_report_access.list_customer_reports(connection, user_id=int(user.id))}
+        try:
+            return m8_report_access.page_customer_reports(connection, user_id=int(user.id),
+                organization_id=organization_id, query=query, program=program, status=status,
+                page=page, page_size=page_size)
+        except PermissionError as exc:
+            raise HTTPException(403, detail='Организация недоступна.') from exc
+        except ValueError as exc:
+            raise HTTPException(422, detail='Некорректный статус Report.') from exc
 
 
 @router.get('/admin/m8-access/reports/{report_id}')

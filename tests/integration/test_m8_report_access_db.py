@@ -45,7 +45,7 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         schema_name = _schema(connection)
         connection.execute('CREATE TABLE users(id bigint PRIMARY KEY,full_name text,email text)')
-        connection.execute('CREATE TABLE organizations(id bigint PRIMARY KEY,is_active boolean)')
+        connection.execute('CREATE TABLE organizations(id bigint PRIMARY KEY,name text,is_active boolean)')
         connection.execute('CREATE TABLE organization_memberships(organization_id bigint,user_id bigint,role text)')
         connection.execute('CREATE TABLE assessment_configurations(id bigint PRIMARY KEY,name text)')
         connection.execute('CREATE TABLE assessment_personalized_profiles(id bigint PRIMARY KEY,assessment_configuration_id bigint)')
@@ -57,12 +57,12 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         connection.execute('CREATE TABLE m8_results(id uuid PRIMARY KEY,cycle_db_id bigint)')
         connection.execute('CREATE TABLE m8_result_revisions(id uuid PRIMARY KEY,results_id uuid,revision_no integer)')
         connection.execute('''CREATE TABLE m8_reports(id uuid PRIMARY KEY,result_revision_id uuid,revision_no integer,
-            audience text,created_at timestamptz DEFAULT now(),c67_json jsonb)''')
+            audience text,status text DEFAULT 'ready',created_at timestamptz DEFAULT now(),c67_json jsonb)''')
         m8_report_access.ensure_schema(connection)
         connection.execute("INSERT INTO users VALUES(10,'Участник','owner@example.test'),(11,'Другой','other@example.test'),"
                            "(20,'Админ','admin@example.test'),(21,'Новый','new@example.test'),"
                            "(22,'Снятый','removed@example.test'),(23,'Чужой','foreign@example.test')")
-        connection.execute('INSERT INTO organizations VALUES(1,true),(2,true)')
+        connection.execute("INSERT INTO organizations VALUES(1,'Организация A',true),(2,'Организация B',true)")
         connection.execute("INSERT INTO organization_memberships VALUES(1,10,'member'),(1,20,'admin'),"
                            "(1,22,'admin'),(2,23,'admin')")
         connection.execute("INSERT INTO assessment_configurations VALUES(1,'Программа A')")
@@ -131,7 +131,26 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=22)
         assert not m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=23)
         assert m8_report_access.customer_can_read_report(connection, report_id=str(report_id), user_id=21)
-        assert m8_report_access.list_customer_reports(connection, user_id=21)[0]['program_name'] == 'Программа A'
+        pending_cycle, failed_cycle = uuid4(), uuid4()
+        connection.execute("""INSERT INTO m5_cycles(id,cycle_id,owner_user_id,organization_id,
+            personalized_profile_id,usage_scope,status,display_snapshot_json,collection_closed_at)
+            VALUES(4,%s,11,1,500,'assessment','calculation_pending',
+              '{"program_name":"Программа B"}'::jsonb,now()-interval '4 days'),
+              (5,%s,11,1,500,'assessment','failed',
+              '{"program_name":"Программа B"}'::jsonb,now()-interval '5 days')""",
+            (pending_cycle, failed_cycle))
+        page = m8_report_access.page_customer_reports(connection, user_id=21)
+        assert page['total'] == 4 and page['items'][0]['program_name'] == 'Программа A'
+        assert page['items'][0]['report_id'] == str(correction_report_id)
+        assert len(page['items']) == 4 and page['organization_id'] == 1
+        assert m8_report_access.page_customer_reports(connection, user_id=21, page_size=1, page=2)['items'][0]['cycle_id'] == str(previous_cycle)
+        assert m8_report_access.page_customer_reports(connection, user_id=21, program='Программа B')['total'] == 3
+        assert m8_report_access.page_customer_reports(connection, user_id=21, status='preparing')['items'][0]['report_id'] is None
+        assert m8_report_access.page_customer_reports(connection, user_id=21, status='failed')['items'][0]['cycle_id'] == str(failed_cycle)
+        assert m8_report_access.page_customer_reports(connection, user_id=21, query='Другой')['total'] == 2
+        assert m8_report_access.page_customer_reports(connection, user_id=21, query='несуществующий')['total'] == 0
+        with pytest.raises(PermissionError):
+            m8_report_access.page_customer_reports(connection, user_id=21, organization_id=2)
 
         @contextmanager
         def get_connection():

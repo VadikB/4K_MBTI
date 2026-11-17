@@ -62,28 +62,9 @@ import {
   adminOrganizationCreateForm,
   adminOrganizationSelect,
   adminOrganizationsList,
-  adminPeriodSelect,
   adminReportsBackButton,
-  adminReportsSearch,
   adminReportsPrevButton,
   adminReportsNextButton,
-  adminReportsPdfButton,
-  adminReportsExpertGroupButton,
-  adminReportsGroupDialog,
-  adminReportsGroupDialogList,
-  adminReportsGroupDialogExport,
-  adminReportDetailBackButton,
-  adminReportDetailPdfButton,
-  adminReportDetailExpertPdfButton,
-  adminReportDetailDialoguesPdfButton,
-  adminReportDetailExpertComment,
-  adminReportDetailExpertCommentEdit,
-  adminReportDetailExpertCommentCancel,
-  adminReportDetailExpertCommentSave,
-  adminReportDetailExpertCommentStatus,
-  adminReportDetailExpertName,
-  adminReportDetailExpertContacts,
-  adminReportDetailExpertAssessedAt,
   adminPromptLabBackButton,
   adminPromptLabTabCasesButton,
   adminPromptLabTabDialogButton,
@@ -254,7 +235,6 @@ import {
   loadAdminPromptLab,
   loadAdminReports,
   loadAdminMethodology,
-  loadAdminReportDetail,
   openOnboardingScreen,
 } from './screen-loaders.js';
 import { ASSESSMENT_EXTERNAL_ANSWER_TRANSFER_ENABLED } from './config.js';
@@ -274,13 +254,7 @@ const isEditableKeyboardTarget = (target) => {
 };
 
 const changeAdminReportsPage = (direction) => {
-  const nextPage = Math.max(1, (state.adminReportsPage || 1) + direction);
-  if (nextPage === state.adminReportsPage) {
-    return;
-  }
-  state.adminReportsPage = nextPage;
-  persistAssessmentContext();
-  withScreen(loadAdminReports, (module) => module.renderAdminReports());
+  withScreen(loadAdminReports, (module) => module.changeAdminReportsPage(direction));
 };
 
 const setAuthStatus = (message = '', { isError = false } = {}) => {
@@ -1519,22 +1493,6 @@ if (adminOpenMethodologyButton) {
   });
 }
 
-if (adminPeriodSelect) {
-  adminPeriodSelect.addEventListener('change', () => {
-    const nextPeriod = adminPeriodSelect.value || '30d';
-    void (async () => {
-      try {
-        state.adminPeriodKey = nextPeriod;
-        const module = await loadAdminDashboard();
-        await module.loadAdminDashboard(nextPeriod);
-        module.renderAdminDashboard();
-      } catch (error) {
-        console.error('Failed to refresh admin dashboard', error);
-      }
-    })();
-  });
-}
-
 if (adminReportsBackButton) {
   adminReportsBackButton.addEventListener('click', () => {
     withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
@@ -2531,15 +2489,6 @@ if (adminMethodologyTabPassports) {
   });
 }
 
-if (adminReportsSearch) {
-  adminReportsSearch.addEventListener('input', () => {
-    state.adminReportsSearch = adminReportsSearch.value || '';
-    state.adminReportsPage = 1;
-    persistAssessmentContext();
-    withScreen(loadAdminReports, (module) => module.renderAdminReports());
-  });
-}
-
 if (adminReportsPrevButton) {
   adminReportsPrevButton.addEventListener('click', () => {
     changeAdminReportsPage(-1);
@@ -2572,158 +2521,6 @@ document.addEventListener('keydown', (event) => {
     changeAdminReportsPage(1);
   }
 });
-
-if (adminReportsPdfButton) {
-  adminReportsPdfButton.addEventListener('click', () => {
-    window.location.href = '/users/admin/reports.pdf';
-  });
-}
-
-if (adminReportsExpertGroupButton) {
-  adminReportsExpertGroupButton.addEventListener('click', () => {
-    withScreen(loadAdminReports, (module) => {
-      module.renderAdminReportsGroupDialog();
-      adminReportsGroupDialog?.showModal();
-    });
-  });
-}
-
-if (adminReportsGroupDialogList) {
-  adminReportsGroupDialogList.addEventListener('change', () => {
-    withScreen(loadAdminReports, (module) => module.syncAdminReportsSelectionFromDialog());
-  });
-}
-
-if (adminReportsGroupDialogExport) {
-  adminReportsGroupDialogExport.addEventListener('click', () => {
-    const sessionIds = (state.adminReportsSelectedSessionIds || [])
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value) && value > 0);
-    if (!sessionIds.length) {
-      return;
-    }
-    const query = sessionIds.map((value) => 'session_ids=' + encodeURIComponent(String(value))).join('&');
-    adminReportsGroupDialog?.close();
-    window.location.href = '/users/admin/reports/export/expert-group.zip?' + query;
-  });
-}
-
-if (adminReportDetailBackButton) {
-  adminReportDetailBackButton.addEventListener('click', () => {
-    withScreen(loadAdminReports, (module) => module.openAdminReports());
-  });
-}
-
-if (adminReportDetailPdfButton) {
-  adminReportDetailPdfButton.addEventListener('click', () => {
-    if (!state.adminReportDetail?.user_id || !state.adminReportDetail?.session_id) {
-      return;
-    }
-    window.location.href =
-      '/users/' + state.adminReportDetail.user_id + '/assessment/' + state.adminReportDetail.session_id + '/report.pdf';
-  });
-}
-
-if (adminReportDetailExpertPdfButton) {
-  adminReportDetailExpertPdfButton.addEventListener('click', () => {
-    if (!state.adminReportDetail?.session_id) {
-      return;
-    }
-    window.location.href = '/users/admin/reports/' + state.adminReportDetail.session_id + '/expert.pdf';
-  });
-}
-
-if (adminReportDetailDialoguesPdfButton) {
-  adminReportDetailDialoguesPdfButton.addEventListener('click', () => {
-    if (!state.adminReportDetail?.session_id) {
-      return;
-    }
-    window.location.href = '/users/admin/reports/' + state.adminReportDetail.session_id + '/dialogue.pdf';
-  });
-}
-
-if (adminReportDetailExpertCommentSave) {
-  adminReportDetailExpertCommentSave.addEventListener('click', () => {
-    withScreen(loadAdminReportDetail, (module) => module.saveAdminReportExpertComment());
-  });
-}
-
-if (adminReportDetailExpertCommentEdit) {
-  adminReportDetailExpertCommentEdit.addEventListener('click', () => {
-    withScreen(loadAdminReportDetail, (module) => module.enableAdminReportExpertCommentEditing());
-  });
-}
-
-if (adminReportDetailExpertCommentCancel) {
-  adminReportDetailExpertCommentCancel.addEventListener('click', () => {
-    withScreen(loadAdminReportDetail, (module) => module.cancelAdminReportExpertCommentEditing());
-  });
-}
-
-if (adminReportDetailExpertComment) {
-  adminReportDetailExpertComment.addEventListener('input', () => {
-    if (!state.adminReportDetailExpertCommentEditing) {
-      return;
-    }
-    withScreen(loadAdminReportDetail, (module) => {
-      module.updateAdminExpertCommentDirtyState();
-      if (adminReportDetailExpertCommentStatus) {
-        adminReportDetailExpertCommentStatus.textContent = state.adminReportDetailExpertCommentDirty
-          ? 'Изменения не сохранены.'
-          : '';
-      }
-    });
-  });
-}
-
-
-if (adminReportDetailExpertName) {
-  adminReportDetailExpertName.addEventListener('input', () => {
-    if (!state.adminReportDetailExpertCommentEditing) {
-      return;
-    }
-    withScreen(loadAdminReportDetail, (module) => {
-      module.updateAdminExpertCommentDirtyState();
-      if (adminReportDetailExpertCommentStatus) {
-        adminReportDetailExpertCommentStatus.textContent = state.adminReportDetailExpertCommentDirty
-          ? 'Изменения не сохранены.'
-          : '';
-      }
-    });
-  });
-}
-
-if (adminReportDetailExpertContacts) {
-  adminReportDetailExpertContacts.addEventListener('input', () => {
-    if (!state.adminReportDetailExpertCommentEditing) {
-      return;
-    }
-    withScreen(loadAdminReportDetail, (module) => {
-      module.updateAdminExpertCommentDirtyState();
-      if (adminReportDetailExpertCommentStatus) {
-        adminReportDetailExpertCommentStatus.textContent = state.adminReportDetailExpertCommentDirty
-          ? 'Изменения не сохранены.'
-          : '';
-      }
-    });
-  });
-}
-
-if (adminReportDetailExpertAssessedAt) {
-  adminReportDetailExpertAssessedAt.addEventListener('input', () => {
-    if (!state.adminReportDetailExpertCommentEditing) {
-      return;
-    }
-    withScreen(loadAdminReportDetail, (module) => {
-      module.updateAdminExpertCommentDirtyState();
-      if (adminReportDetailExpertCommentStatus) {
-        adminReportDetailExpertCommentStatus.textContent = state.adminReportDetailExpertCommentDirty
-          ? 'Изменения не сохранены.'
-          : '';
-      }
-    });
-  });
-}
 
 dashboardProfileButton.addEventListener('click', () => {
   withScreen(loadProfile, (module) => module.openProfile());
@@ -3309,10 +3106,8 @@ reportDownloadButton.addEventListener('click', async () => {
     }
     return;
   }
-  if (!state.pendingUser?.id || !state.assessmentSessionId) {
-    return;
-  }
-  window.location.href = '/users/' + state.pendingUser.id + '/assessment/' + state.assessmentSessionId + '/report.pdf';
+  const status = document.getElementById('report-download-status');
+  if (status) status.textContent = 'PDF доступен после подготовки сохранённого Report.';
 });
 
 };

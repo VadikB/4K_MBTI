@@ -892,27 +892,6 @@ class AdminShadowBatchResponse(BaseModel):
     targets: list[AdminShadowBatchTarget]
 
 
-class AdminDetailedReportItem(BaseModel):
-    session_id: int
-    user_id: int
-    full_name: str
-    phone: str | None = None
-    group_name: str
-    role_name: str
-    status: str
-    score_percent: int | None = None
-    started_at: datetime | None = None
-    finished_at: datetime | None = None
-
-
-class AdminDetailedReportsResponse(BaseModel):
-    title: str
-    subtitle: str
-    total_items: int
-    summary_score_percent: float | None = None
-    items: list[AdminDetailedReportItem]
-
-
 class AdminRegressionTestStep(BaseModel):
     name: str
     status: str
@@ -1104,76 +1083,6 @@ class QuestionnairePreviewRequest(BaseModel):
 
 class QuestionnaireConfirmRequest(BaseModel):
     pass
-
-
-class AdminReportCaseMessage(BaseModel):
-    role: str
-    message_text: str
-
-
-class AdminReportCaseSkillResult(BaseModel):
-    skill_name: str
-    competency_name: str
-    assessed_level_code: str | None = None
-    assessed_level_name: str | None = None
-    artifact_compliance_percent: int | None = None
-    block_coverage_percent: int | None = None
-    red_flags: list[str] = []
-    found_evidence: list[str] = []
-    evidence_excerpt: str | None = None
-
-
-class AdminReportCaseItem(BaseModel):
-    session_case_id: int
-    case_number: int
-    case_title: str
-    case_id_code: str | None = None
-    status: str
-    started_at: datetime | None = None
-    finished_at: datetime | None = None
-    personalized_context: str | None = None
-    personalized_task: str | None = None
-    prompt_text: str | None = None
-    dialogue: list[AdminReportCaseMessage] = []
-    skill_results: list[AdminReportCaseSkillResult] = []
-
-
-class AdminReportProfileSummary(BaseModel):
-    position: str | None = None
-    duties: str | None = None
-    domain: str | None = None
-    processes: list[str] = []
-    tasks: list[str] = []
-    stakeholders: list[str] = []
-    constraints: list[str] = []
-
-
-class AdminReportDetailResponse(BaseModel):
-    session_id: int
-    user_id: int
-    full_name: str
-    phone: str | None = None
-    telegram: str | None = None
-    role_name: str
-    group_name: str
-    status: str
-    score_percent: int | None = None
-    report_date: datetime | None = None
-    competency_average: list[dict[str, str | int | float]]
-    insight_title: str | None = None
-    insight_text: str | None = None
-    basis_items: list[str] = []
-    response_pattern: str | None = None
-    expert_comment: str | None = None
-    expert_name: str | None = None
-    expert_contacts: str | None = None
-    expert_assessed_at: datetime | None = None
-    can_edit_expert_comment: bool = False
-    strengths: list[str]
-    growth_areas: list[str]
-    quotes: list[str]
-    profile_summary: AdminReportProfileSummary | None = None
-    case_items: list[AdminReportCaseItem] = []
 
 
 class UserDashboard(BaseModel):
@@ -1475,17 +1384,6 @@ class UserAssessmentHistoryItem(BaseModel):
     progress_percent: int
     overall_score_percent: int | None = None
     expert_comment: str | None = None
-
-
-class AdminExpertCommentUpdateRequest(BaseModel):
-    expert_comment: str | None = None
-    expert_name: str | None = None
-    expert_contacts: str | None = None
-    expert_assessed_at: datetime | None = None
-
-
-class AdminExpertGroupExportRequest(BaseModel):
-    session_ids: list[int] = Field(default_factory=list)
 
 
 class M8HistoryResponse(BaseModel):
