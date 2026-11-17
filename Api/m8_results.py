@@ -234,6 +234,9 @@ def _coverage_context(c46: dict, c56: dict) -> dict:
 
 def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: dict | None,
                    profile_snapshot: dict | None, report_template: dict | None = None) -> dict:
+    display_snapshot = cycle.get("display_snapshot_json")
+    if display_snapshot is not None and checksum(display_snapshot) != cycle.get("display_snapshot_checksum"):
+        raise ValueError("CHECKSUM_MISMATCH")
     c56 = calculation["c56"]
     if c56.get("contract") != "C-56" or c56.get("readiness") != "ready_for_pm06":
         raise ValueError("M8_INPUT_NOT_READY")
@@ -288,6 +291,7 @@ def _build_payload(cycle: dict, c46: dict, calculation: dict, target_profile: di
         "schema_version": 1, "results_version": RESULTS_VERSION, "cycle_id": str(cycle["cycle_id"]),
         "subject_user_id": cycle["owner_user_id"], "profile_ref": cycle["profile_ref_json"],
         "personalized_profile_snapshot": profile_snapshot,
+        "display_snapshot": display_snapshot,
         "role_ref": cycle["selected_role_ref_json"], "composition": c56["composition"],
         "composition_checksum": c56["composition_checksum"], "calculation_ref": c56["calculation_ref"],
         "c46_ref": {"id": str(c46["id"]), "revision_no": c46["revision_no"], "checksum": c46["payload_checksum"]},
@@ -449,6 +453,7 @@ def _report_content(results: dict, audience: str, target_profile: dict | None, *
             "results_id": results["id"], "results_revision_id": results["revision_id"],
             "results_revision_no": results["revision_no"], "cycle_id": results["cycle_id"], "audience": audience,
             "disclosure": detail, "profile_ref": payload["profile_ref"], "role_ref": payload["role_ref"],
+            "display": payload.get("display_snapshot"),
             "goal": payload["goal"], "time": payload["time"], "collection": payload["collection"],
             "sessions": payload["sessions"], "assessment_situations": payload["assessment_situations"],
             "skills": skills, "competencies": payload["competencies"], "coverage": payload["coverage"],
@@ -592,21 +597,20 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
     owner_scope = OWNER_CYCLE_SCOPE.replace("c.usage_scope='assessment'", sql_scope("c"))
     rows = connection.execute("""SELECT c.cycle_id,c.status AS cycle_status,
         c.created_at AS cycle_created_at,c.started_at,c.collection_closed_at,
-        configuration.name AS program_name,
+        COALESCE(p.c67_json->'display'->>'program_name',c.display_snapshot_json->>'program_name') AS program_name,
         pipeline.status AS processing_status,pipeline.stage AS processing_stage,
         (to_jsonb(pipeline)->>'error_code') AS processing_error,
         rr.id AS results_revision_id,rr.revision_no AS results_revision_no,
         p.id AS report_id,p.revision_no,p.created_at,
         to_jsonb(p)->'c67_json'->'processing'->>'status' AS report_processing_status
         FROM m5_cycles c
-        LEFT JOIN assessment_personalized_profiles profile ON profile.id=c.personalized_profile_id
-        LEFT JOIN assessment_configurations configuration ON configuration.id=profile.assessment_configuration_id
         LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=c.id
         LEFT JOIN m8_results r ON r.cycle_db_id=c.id
         LEFT JOIN m8_result_revisions rr ON rr.results_id=r.id
         LEFT JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
         WHERE """ + owner_scope + """
-        ORDER BY c.created_at DESC,c.id DESC,rr.revision_no DESC NULLS LAST,
+        ORDER BY COALESCE(c.collection_closed_at,c.created_at) DESC,c.id DESC,
+                 rr.revision_no DESC NULLS LAST,
                  p.revision_no DESC NULLS LAST""", (user_id,)).fetchall()
     cycles = {}
     for row in rows:
@@ -651,12 +655,10 @@ def list_owned_reports(connection, user_id: int) -> list[dict]:
 
 def read_report(connection, report_id) -> dict:
     row = connection.execute("""SELECT p.*,r.payload_json AS results_payload,x.cycle_db_id,c.cycle_id,c.owner_user_id,
-        configuration.name AS program_name,c.collection_closed_at,
+        c.collection_closed_at,
         to_jsonb(participant)->>'full_name' AS participant_name
         FROM m8_reports p JOIN m8_result_revisions r ON r.id=p.result_revision_id
         JOIN m8_results x ON x.id=r.results_id JOIN m5_cycles c ON c.id=x.cycle_db_id
-        LEFT JOIN assessment_personalized_profiles profile ON profile.id=c.personalized_profile_id
-        LEFT JOIN assessment_configurations configuration ON configuration.id=profile.assessment_configuration_id
         LEFT JOIN users participant ON participant.id=c.owner_user_id
         WHERE p.id=%s""",
         (UUID(str(report_id)),)).fetchone()
@@ -681,7 +683,8 @@ def read_report(connection, report_id) -> dict:
     return {"id": str(row["id"]), "revision_no": row["revision_no"], "audience": row["audience"],
             "status": row["status"], "cycle_id": str(row["cycle_id"]), "owner_user_id": row["owner_user_id"],
             "results_revision_id": str(row["result_revision_id"]), "created_at": row["created_at"],
-            "program_name": row.get("program_name"), "collection_closed_at": row.get("collection_closed_at"),
+            "program_name": (row["c67_json"].get("display") or {}).get("program_name"),
+            "collection_closed_at": row.get("collection_closed_at"),
             "participant_name": row.get("participant_name"),
             "c67": presented}
 

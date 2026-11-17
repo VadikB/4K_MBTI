@@ -41,6 +41,7 @@ class ReadOnlyStorage:
         self.statements.append((sql, params))
         assert sql.strip().startswith('SELECT'), sql
         assert 'FOR UPDATE' not in sql and 'FOR SHARE' not in sql
+        if 'FROM m10_pipeline_runs p' in sql or 'to_regclass' in sql or 'FROM preparation_observations' in sql: return Result([])
         if 'FROM users u' in sql: return Result([{'id': 8}])
         if 'COUNT(position.id)' in sql:
             assert params[0] == 8
@@ -107,6 +108,17 @@ def test_full_plan_eight_not_materialized_one_and_read_entry_has_no_writes(cabin
         assert card['action'] == 'open_readiness'
     assert db.cycle['started_at'] is None
     assert len(db.positions) == 1
+
+
+def test_closed_cycle_card_uses_saved_program_name(cabinet):
+    _client, db, _model, _admission, _returning, history = cabinet
+    db.cycle.update(status='calculated', collection_closed_at=datetime(2026, 11, 15, tzinfo=timezone.utc),
+                    assessment_title='Current renamed program')
+    history.append({'cycle_id': db.cycle_id, 'program_name': 'Saved program at completion',
+                    'status': 'report_ready', 'report_id': str(uuid4())})
+    card = dashboard(cabinet)['completed_assessments'][0]
+    assert card['title'] == 'Saved program at completion'
+    assert card['action'] == 'open_report'
 
 
 def test_presented_three_of_eight_is_independent_of_completed_and_catalogue(cabinet):

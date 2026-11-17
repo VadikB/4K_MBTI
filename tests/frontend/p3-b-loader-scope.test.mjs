@@ -13,7 +13,7 @@ const section = (start, end) => {
   return source.slice(from, to).replace(/^export const /, 'const ');
 };
 const runtimeSource = section('export const loadProductRuntime =', '\nconst waitForProductClarification =');
-const returnSource = section('const loadReturnState =', '\nexport const loadProductRuntime =');
+const returnSource = section('const loadReturnState =', '\nlet productRuntimeReadSerial =');
 
 const deferred = () => {
   let resolve, reject;
@@ -51,7 +51,7 @@ const harness = ({ actualReturnState = false, presence = null } = {}) => {
     interviewPanel: { classList: { contains: () => true } },
     openProcessing: () => effects.push('openProcessing'),
   });
-  vm.runInContext(`let productRuntimePollGeneration = 7; let productRuntimeMutationGeneration = 0;
+  vm.runInContext(`let productRuntimePollGeneration = 7; let productRuntimeMutationGeneration = 0; let productRuntimeReadSerial = 0;
     let returnPresenceCycleId = null;
     const olderProductRuntimeSnapshot = () => false;
     let confirmedProductInterviewSnapshot = null;
@@ -152,4 +152,39 @@ test('P3-A+3B delayed return-state cannot replace a newer AS card', async () => 
   h.resolve({ syntheticPayload: { cycle_id: 'cycle-A', allowed_action: 'continue_current' } });
   assert.equal(await loading, false);
   assert.equal(h.cards.length, 0);
+});
+
+test('04 newer read wins over a late runtime response for the same unchanged AS', async () => {
+  const h=harness();
+  const first=deferred(),second=deferred();let count=0;
+  h.context.fetchWithDeadline=()=> (++count===1?first:second).promise;
+  const old=h.subject.loadProductRuntime();
+  await new Promise(resolve=>setImmediate(resolve));
+  const recent=h.subject.loadProductRuntime();
+  await new Promise(resolve=>setImmediate(resolve));
+  const newer={...snapshot(),preparation_operation:{status:'failed'}};
+  second.resolve({syntheticPayload:newer});
+  assert.equal(await recent,newer);
+  first.resolve({syntheticPayload:{...snapshot(),preparation_operation:{status:'running'}}});
+  assert.equal(await old,null);
+  assert.equal(h.renders.length,1);
+  assert.equal(h.renders[0].preparation_operation.status,'failed');
+});
+
+test('04 late return-state read cannot replace a newer runtime with an old pause card', async () => {
+  const h=harness({actualReturnState:true});
+  const reads=[deferred(),deferred(),deferred()];let count=0;
+  h.context.fetchWithDeadline=()=>reads[count++].promise;
+  const old=h.subject.loadProductRuntime();
+  await new Promise(resolve=>setImmediate(resolve));
+  const recent=h.subject.loadProductRuntime();
+  await new Promise(resolve=>setImmediate(resolve));
+  reads[1].resolve({status:200,syntheticPayload:{cycle_id:'cycle-A',allowed_action:'connected'}});
+  await new Promise(resolve=>setImmediate(resolve));
+  reads[2].resolve({syntheticPayload:snapshot()});
+  await recent;
+  reads[0].resolve({status:200,syntheticPayload:{cycle_id:'cycle-A',allowed_action:'continue_current'}});
+  assert.equal(await old,null);
+  assert.equal(h.cards.length,0);
+  assert.equal(h.renders.length,1);
 });

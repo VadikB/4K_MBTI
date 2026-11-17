@@ -6,6 +6,7 @@ from pathlib import Path
 from Api import m7_cycle_planner, participant_profile
 from Api import m5_scenario_runtime, m7_completion
 from Api import qa_orchestration
+from Api import preparation_observation as observation
 
 CASE_PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/cases/competencies_4k/1.1"
 
@@ -84,6 +85,7 @@ def present_prepared_next(connection, *, result: dict) -> dict:
 
 def _prepare_next(connection, *, plan: dict, user_id: int, key: str, defer_as: bool = False) -> dict:
     """Prepare an admitted AS without presenting it or starting M7 time."""
+    observation.materials()
     decision = m7_cycle_planner.choose_next(
         connection, cycle_id=str(plan["cycle_id"]), expected_plan_revision_id=str(plan["revision_id"]),
         key=key, created_by=user_id, policy=_policy(connection, cycle_id=str(plan["cycle_id"])),
@@ -132,6 +134,7 @@ def prepare(connection, *, user_id: int, key: str,
         return {"resumed": True, "plan": current,
                 "decision": current["decisions"][-1] if current["decisions"] else None,
                 "presentation": None}
+    observation.progress('plan')
     plan = m7_cycle_planner.create_plan(
         connection, personalized_profile_id=profile_id,
         selected_skills=selected_skills or ["K1", "K2", "K3", "K4"],
@@ -245,6 +248,7 @@ def start_or_resume(connection, *, user_id: int, key: str,
                 "presentation": dict(open_as) if open_as else None}
     profile_id = _owned_profile(connection, user_id, profile_id)
     with connection.transaction():
+        observation.progress('plan')
         plan = m7_cycle_planner.create_plan(
             connection, personalized_profile_id=profile_id,
             selected_skills=selected_skills or ["K1", "K2", "K3", "K4"],
@@ -418,7 +422,10 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
                     for item in position["history"]}
     visible_situations = [x for x in situations
                           if not route["positions"] or str(x["assessment_situation_id"]) in attached_ids]
+    report_preparation = observation.report_status(connection, cycle_id) if status['collection_status'] in {
+        'collection_closed', 'calculation_pending', 'calculated', 'failed'} else None
     return {
+        "report_preparation": report_preparation,
         "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": participant_plan(plan), "status": status,
         "between_situations": between_situations, "participant_progress": participant_progress,
         "return_policy_enabled": bool(plan.get("plan", {}).get("return_policy_snapshot")),

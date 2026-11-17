@@ -138,3 +138,22 @@ def test_report_action_requires_exact_authorized_report():
     assert allowed["action"] == "open_report"
     assert allowed["report_id"] == "33333333-3333-4333-8333-333333333333"
     assert allowed["report_access"] == "customer"
+
+
+def test_observation_stays_with_the_same_org_member_assignment_and_newest_generation():
+    stages = {}
+    selected = _project_admin_assessment_stage(row(
+        assignment_id=91, preparation_status='running', preparation_operation_id='selected-operation',
+        preparation={'reference': 'selected-number', 'stage_label': 'Проверяем материалы ситуации'}))
+    old = _project_admin_assessment_stage(row(assignment_id=40, assignment_status='revoked',
+        preparation={'reference': 'old-number'}))
+    foreign = _project_admin_assessment_stage(row(assignment_id=99, preparation={'reference': 'foreign-number'}))
+    _remember_newest_assessment_stage(stages, (3, 28), 'program-a', selected)
+    _remember_newest_assessment_stage(stages, (3, 28), 'program-a', old)
+    _remember_newest_assessment_stage(stages, (4, 28), 'program-a', foreign)
+    _remember_newest_assessment_stage(stages, (3, 29), 'program-a', foreign)
+    _remember_newest_assessment_stage(stages, (3, 28), 'program-b', foreign)
+    assert stages[(3, 28)]['program-a']['preparation']['reference'] == 'selected-number'
+    assert stages[(3, 28)]['program-a']['assignment_id'] == 91
+    assert stages.get((3, 30), {}).get('program-a') is None
+    assert stages[(4, 28)]['program-a']['preparation']['reference'] == 'foreign-number'

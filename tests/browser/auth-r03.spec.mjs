@@ -2915,24 +2915,31 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   } };
   const comparison = {
     mode: 'mixed',
-    current: { cycle_id: 'cycle-rad01', report_id: 'report-rad01', report_revision_no: 1, results_revision_id: 'rr2', created_at: '2026-10-17T12:00:00Z', closed_at: '2026-10-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
-    previous: { cycle_id: 'cycle-previous', report_id: 'report-previous', report_revision_no: 1, results_revision_id: 'rr1', created_at: '2026-09-17T12:00:00Z', closed_at: '2026-09-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
+    current: { cycle_id: 'cycle-rad01', report_id: 'report-rad01', report_revision_no: 1, results_revision_id: 'rr2', program_name: 'Программа сейчас', created_at: '2026-10-17T12:00:00Z', closed_at: '2026-10-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
+    previous: { cycle_id: 'cycle-previous', report_id: 'report-previous', report_revision_no: 1, results_revision_id: 'rr1', program_name: 'Программа ранее', created_at: '2026-09-17T12:00:00Z', closed_at: '2026-09-17T11:00:00Z', role_ref: { name: 'Product Lead' } },
     skills: [
       { skill_id: 'K1.1', skill_name: 'Понимание собеседника', previous: 1.75, current: 2.25, difference: 0.5, comparability: { status: 'allowed', reason: null } },
       { skill_id: 'K1.2', skill_name: 'Ясность сообщения', previous: null, current: 2.25, difference: null, comparability: { status: 'not_allowed', reason: 'full_score_required' } },
     ],
   };
-  await page.route('**/users/**', (route) => {
+  await page.route('**/users/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return fulfillJson(route, { version: 'rad01-test' });
     if (pathname === '/users/session/restore') return fulfillJson(route, { authenticated: true, user, dashboard });
     if (pathname === '/users/8/journey-state') return fulfillJson(route, { next_action: 'show_dashboard', profile: { status: 'complete' }, onboarding: { status: 'completed' }, assessment: { status: 'report_ready' } });
     if (pathname === '/users/assessment/m8/reports/report-rad01') return fulfillJson(route, report);
     if (pathname === '/users/assessment/m8/history') return fulfillJson(route, { cycles: [
-      { cycle_id: 'cycle-rad01', report_id: 'report-rad01', collection_closed_at: '2026-10-17T11:00:00Z' },
-      { cycle_id: 'cycle-previous', report_id: 'report-previous', collection_closed_at: '2026-09-17T11:00:00Z' },
+      { cycle_id: 'cycle-rad01', report_id: 'report-rad01', program_name: 'Программа сейчас', collection_closed_at: '2026-10-17T11:00:00Z' },
+      { cycle_id: 'cycle-previous', report_id: 'report-previous', program_name: 'Программа ранее', collection_closed_at: '2026-09-17T11:00:00Z' },
+      { cycle_id: 'cycle-other', report_id: 'report-other', program_name: 'Другая программа', collection_closed_at: '2026-08-17T11:00:00Z' },
     ] });
-    if (pathname === '/users/assessment/m8/reports/report-rad01/comparison') return fulfillJson(route, comparison);
+    if (pathname === '/users/assessment/m8/reports/report-rad01/comparison') {
+      if (new URL(route.request().url()).searchParams.get('previous_report_id') === 'report-other') {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        return fulfillJson(route, { ...comparison, previous: { ...comparison.previous, report_id: 'report-other', program_name: 'Другая программа' } });
+      }
+      return fulfillJson(route, comparison);
+    }
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
@@ -2949,18 +2956,69 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('.m8-radar-label').filter({ hasText: 'Понимание' })).toContainText('собеседника');
   await expect(page.locator('.m8-radar-point')).toHaveCount(2);
   await expect(page.locator('.m8-radar-point.is-partial')).toHaveCount(1);
-  await expect(page.locator('#m8-report-skills')).toContainText('По части проявлений');
+  await expect(page.locator('#m8-report-skills .m8-skill-row')).toHaveCount(skills.length);
+  await expect(page.locator('#m8-report-skills')).toContainText('Результат по части навыка');
   await expect(page.locator('#m8-report-chart-note')).toContainText('Пропуски оставлены открытыми');
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
   await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-periods')).toContainText('Программа ранее');
+  await expect(page.locator('.m8-comparison-periods')).toContainText('Программа сейчас');
+  await expect(page.locator('.m8-comparison-scales .m8-comparison-scale')).toHaveCount(2);
   await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
   await expect(page.getByRole('link', { name: 'Скачать сравнение PDF' })).toHaveAttribute('href', /report-previous/);
+  await page.locator('#m8-comparison-select').selectOption('report-other');
+  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await page.locator('#m8-comparison-select').selectOption('report-previous');
+  await page.waitForTimeout(300);
+  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.getByRole('link', { name: 'Скачать сравнение PDF' })).toHaveAttribute('href', /report-previous/);
+  const comparisonEvidence = path.join(root, 'docs/evc/tasks/p4k-report-07/evidence');
+  await fs.mkdir(comparisonEvidence, { recursive: true });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-1440.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-390.png') });
+  await page.setViewportSize({ width: 320, height: 700 });
+  const comparisonGeometry = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }));
+  expect(comparisonGeometry.scroll).toBe(comparisonGeometry.viewport);
+  // 683 CSS px is the available layout width at 200% zoom on a 1366 px display.
+  await page.setViewportSize({ width: 683, height: 900 });
+  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  const zoomGeometry = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth,
+    contentRight: document.querySelector('#m8-comparison-content').getBoundingClientRect().right,
+  }));
+  expect(zoomGeometry.scroll).toBe(zoomGeometry.viewport);
+  expect(zoomGeometry.contentRight).toBeLessThanOrEqual(zoomGeometry.viewport);
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-200pct-equivalent.png') });
+  let comparisonVariant = { ...comparison, skills: [comparison.skills[0]] };
+  await page.route('**/users/assessment/m8/reports/report-rad01/comparison*', (route) => fulfillJson(route, comparisonVariant));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-1440.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-390.png') });
+  comparisonVariant = { ...comparison,
+    previous: { ...comparison.previous, role_ref: { name: 'Другая роль' } },
+    skills: comparison.skills.map((item) => ({ ...item, difference: null,
+      comparability: { status: 'not_allowed', reason: 'different_role' } })) };
+  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-slices')).toContainText('Роли в оценках различаются');
+  await expect(page.locator('.m8-comparison-table')).toHaveCount(0);
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-390.png') });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-1440.png') });
   await page.getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-score-bars')).toBeVisible();
   await page.setViewportSize({ width: 360, height: 760 });
-  await page.getByRole('button', { name: 'Заливка' }).click();
-  await expect(page.locator('#m8-report-chart')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Заливка' })).toBeDisabled();
+  await expect(page.locator('.m8-score-bar')).toHaveCount(skills.length);
   await page.locator('#m8-report-tab-select').selectOption('K1');
+  await page.getByRole('button', { name: 'Заливка' }).click();
   await expect(page.locator('#m8-report-chart svg')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 900 });
   await expect(page.locator('.m8-radar-key li')).toHaveCount(3);
@@ -3163,7 +3221,7 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
       await page.locator('#m8-report-tab-select').selectOption(`K${groupIndex + 1}`);
       if (groupIndex === 3) {
         await expect(page.locator('.m8-chart-empty')).toBeVisible();
-        await expect(page.locator('#m8-report-skills .report-skill-item')).toHaveCount(groups[groupIndex][1].length);
+        await expect(page.locator('#m8-report-skills .m8-skill-row')).toHaveCount(groups[groupIndex][1].length);
         continue;
       }
       await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[groupIndex][1].length);
@@ -3206,7 +3264,7 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
   await page.locator('.m8-radar-key a').first().focus();
   await expect(page.locator('.m8-radar-key a').first()).toBeFocused();
   await page.locator('.m8-radar-key a').first().click();
-  await expect(page.locator('#m8-skill-S1-1')).toBeFocused();
+  await expect(page.locator('#m8-skill-detail')).toBeFocused();
 
   for (const width of [768, 1024, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -3386,7 +3444,7 @@ test('R03 direct interview URL uses journey and keeps Cycle failure visible', as
   await page.goto(`${base}/?screen=interview&cycle_id=stale-cycle`);
   await expect(page.locator('#processing-panel')).toBeVisible();
   await expect(page.locator('#processing-outcome-title')).toContainText('Не удалось подготовить результат');
-  await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
+  await expect(page.locator('#processing-panel').getByRole('button', { name: 'Проверить состояние', exact: true })).toBeVisible();
   expect(journeyRead).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem('agent4k.productCycleId'))).toBe('current-cycle');
 });
@@ -3567,7 +3625,7 @@ test('P3-B return card keeps unknown time distinct from known zero', async ({ pa
   });
   await page.goto(`${base}/?screen=interview`);
   await expect(page.getByText('Остаток времени выполнения уточняется.')).toBeVisible();
-  await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · Время уточняется');
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Остаток времени выполнения уточняется');
   await expect(page.getByText('0 мин.', { exact: false })).toBeHidden();
   await expect(page.getByText('Без лимита', { exact: false })).toBeHidden();
   remainingSeconds = 0;
@@ -4181,7 +4239,7 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
     prepared_plan: phase === 'ready' ? plan : null,
   });
   const states = [
-    ['waiting', 'Готовим вашу оценку', 'Проверить готовность'],
+    ['waiting', 'Готовим вашу оценку', 'Проверить состояние'],
     ['failed', 'Не удалось подготовить оценку', 'Проверить состояние'],
     ['technical_failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
     ['unknown', 'Не удалось проверить готовность', 'Повторить проверку'],
@@ -4316,6 +4374,6 @@ for (const [failure, expected] of [
     await expect(page.locator('#onboarding-next')).toBeEnabled();
     expect(prepares).toBe(failure === 'organization' ? 0 : 1);
     if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('Когда сведения будут готовы, здесь появится следующий шаг.');
-    if (failure === 'failed') await expect(page.locator('#onboarding-panel .onboarding-diagnostics')).toContainText('synthetic-failed-operation');
+    if (failure === 'failed') await expect(page.locator('#onboarding-panel')).not.toContainText('synthetic-failed-operation');
   });
 }

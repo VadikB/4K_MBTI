@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 import logging
 import threading
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from Api import m6_cycle_aggregation_repository
 from Api import m7_clarification, m7_completion, m8_results
 from Api.database import get_connection
+from Api import preparation_observation as observation
 from Api.m6_admission import VERSION as ADMISSION_VERSION
 from Api.m6_assessment_package_v2 import load_mechanism as load_assessment_mechanism
 from Api.m10_input_resolver import resolve
@@ -23,6 +24,7 @@ _thread = None
 
 
 def ensure_schema(connection) -> None:
+    observation.ensure_schema(connection)
     # The frozen M6 QA package keeps its synthetic-only enqueue contract intact.
     # Product requests are enabled here as a separate adapter-owned migration.
     connection.execute("ALTER TABLE IF EXISTS m6_processing_requests DROP CONSTRAINT IF EXISTS m6_processing_requests_synthetic_confirmed_check")
@@ -97,6 +99,24 @@ def _set_state(connection, cycle_db_id: int, *, status: str, stage: str, error: 
         VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
         (cycle_db_id, revision_no, status, stage, error, calculation_id, results_revision_id,
          report_id, PROCESSING_CONTRACT_VERSION, origin, created_by))
+
+    if stage in {'evidence_queued', 'assessment_queued'}:
+        _observe_report_queue(connection)
+
+
+def _observe_report_queue(connection):
+    # Interim analysis belongs to an open AS. Report preparation begins only at
+    # the persisted collection close, even when its first M6 request predates it.
+    connection.execute("""INSERT INTO preparation_observations
+        (source,operation_id,attempt_token,kind,stage,started_at,stage_started_at,history_json)
+        SELECT 'report',c.cycle_id::text,'collection','report','answers',c.collection_closed_at,c.collection_closed_at,
+            jsonb_build_array(jsonb_build_object('stage','answers','at',c.collection_closed_at))
+        FROM m10_pipeline_runs p JOIN m5_cycles c ON c.id=p.cycle_db_id
+        WHERE c.collection_closed_at IS NOT NULL AND p.status='processing'
+          AND p.stage IN ('evidence_queued','assessment_queued')
+          AND NOT EXISTS(SELECT 1 FROM preparation_observations o WHERE o.source='report'
+              AND o.operation_id=c.cycle_id::text AND o.attempt_token='collection')
+        ON CONFLICT(source,operation_id,attempt_token) DO NOTHING""")
 
 
 def _processing_failure(calculation: dict) -> dict | None:
@@ -271,6 +291,7 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
         return False
     connection.commit()
     factory = connection_factory or get_connection
+    observer = observation.begin('report', str(row['cycle_id']), claim_token, 'report', 'unknown', factory=factory)
     heartbeat_stop = threading.Event()
     claim_lost = threading.Event()
 
@@ -283,6 +304,7 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
                         WHERE cycle_db_id=%s AND token=%s RETURNING token""",
                         (row["id"], claim_token)).fetchone()
                     heartbeat_connection.commit()
+                observation.record(observer, heartbeat=True)
                 if not renewed:
                     claim_lost.set()
                     return
@@ -313,6 +335,7 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
             return True
         c46 = m7_completion.read_c46(connection, cycle_id)
         connection.commit()
+        observation.record(observer, 'results', heartbeat=True)
         calculation = m6_cycle_aggregation_repository.create_substantive_detached(
             cycle_id=cycle_id,
             key=f"product-calculation:{c46['composition_checksum']}:{ADMISSION_VERSION}",
@@ -325,6 +348,7 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
         if claim_lost.is_set():
             raise RuntimeError("M10_REPORT_CLAIM_LOST")
         try:
+            observation.record(observer, 'report', heartbeat=True)
             report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
                 key="product-report:assessee", target_profile=None, created_by=int(row["created_by"]), gateway=gateway,
                 connection_factory=factory, claim_cycle_db_id=int(row["id"]), claim_token=claim_token)
@@ -412,10 +436,16 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
     if checksum(frozen) != row["frozen_input_checksum"] or actual != frozen:
         raise ValueError("M10_RECOVERY_FROZEN_INPUT_MISMATCH")
     connection.execute("UPDATE m10_processing_recoveries SET status='running',started_at=NOW() WHERE id=%s", (row["id"],))
+    observer_heartbeat = None
     try:
         c46 = m7_completion.read_c46(connection, str(row["cycle_id"]))
         connection.commit()
         factory = connection_factory or get_connection
+        observer = observation.begin('recovery', str(row['cycle_id']), uuid4(), 'report', 'unknown', factory=factory)
+        with factory() as observation_connection:
+            observation_connection.execute("UPDATE preparation_observations SET scope_json=%s::jsonb WHERE source='recovery' AND operation_id=%s AND attempt_token=%s",
+                (json.dumps({'recovery_id': str(row['id'])}), str(row['cycle_id']), observer[2]))
+        observer_heartbeat = observation.start_heartbeat(observer)
         try:
             saved_results = m8_results.read_latest_results(connection, str(row["cycle_id"]))
         except ValueError:
@@ -426,6 +456,7 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
             calculation = m6_cycle_aggregation_repository.read(
                 connection, saved_results["results"]["c56_ref"]["calculation_id"])
         else:
+            observation.record(observer, 'results', heartbeat=True)
             calculation = m6_cycle_aggregation_repository.create_substantive_detached(
                 cycle_id=str(row["cycle_id"]),
                 key=f"processing-recovery:{row['id']}:{ADMISSION_VERSION}",
@@ -434,6 +465,7 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
             results = m8_results.create_results(connection, cycle_id=str(row["cycle_id"]), calculation_id=calculation["id"],
                 key=f"processing-recovery-results:{row['id']}", target_profile=None, created_by=int(row["created_by"]))
             connection.commit()
+        observation.record(observer, 'report', heartbeat=True)
         report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
             key="product-report:assessee" if saved_results else f"processing-recovery-report:{row['id']}",
             target_profile=None, created_by=int(row["created_by"]), gateway=gateway, connection_factory=factory,
@@ -455,6 +487,8 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
         _set_state(connection, int(row["cycle_db_id"]), status="failed", stage="recovery_failed",
                    error="M10_PROCESSING_RECOVERY_FAILED", origin="authorized_recovery",
                    created_by=int(row["created_by"]))
+    finally:
+        observation.stop_heartbeat(observer_heartbeat)
     return True
 
 
@@ -478,6 +512,8 @@ def advance_once(*, gateway=None, connection_factory=None) -> bool:
     factory = connection_factory or get_connection
     with factory() as connection:
         try:
+            _observe_report_queue(connection)
+            observation.notice_delays(connection)
             changed = (_propagate_failure(connection) or _process_recovery(connection, gateway=gateway, connection_factory=factory)
                        or _queue_outbox(connection) or _queue_assessment(connection)
                        or _clarify_interim(connection, gateway=gateway, connection_factory=factory)
