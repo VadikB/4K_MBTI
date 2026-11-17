@@ -1,0 +1,1 @@
+{"tested_sha": "46212e0a58e2a049a9144a1fcfcbcb0f9ff7c7c9", "command": "node --test tests/frontend/*.test.mjs", "exit_code": 0}

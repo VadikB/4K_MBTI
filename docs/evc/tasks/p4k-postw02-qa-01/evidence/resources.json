@@ -1,0 +1,24 @@
+{
+  "tested_sha": "46212e0a58e2a049a9144a1fcfcbcb0f9ff7c7c9",
+  "owned_server_checks": [
+    {
+      "port": 59875,
+      "listener": false,
+      "lsof_exit": 1
+    },
+    {
+      "port": 59900,
+      "listener": false,
+      "lsof_exit": 1
+    },
+    {
+      "port": 18965,
+      "listener": false,
+      "lsof_exit": 1
+    }
+  ],
+  "db": null,
+  "llm": 0,
+  "mail": 0,
+  "docker": false
+}
