@@ -253,18 +253,26 @@ export async function completeStartedAssessment({
             || snapshot.finish_availability?.allowed !== true) throw new Error('COMPOSITE_FINISH_NOT_ADMITTED');
         budget.step(situationId);
         const closed = page.waitForResponse((item) => item.request().method() === 'POST'
-          && new URL(item.url()).pathname.endsWith('/finish-situation'), { timeout: 30000 });
+          && new URL(item.url()).pathname.endsWith('/finish-situation'), { timeout: 30000 })
+          .then(response => ({ response }), error => ({ error }));
         let clickError;
         try { await page.locator('#interview-finish-button').click({ timeout: 15000 }); }
         catch (error) { clickError = error; }
         let closeResponse;
-        try { closeResponse = await closed; }
-        catch (error) { throw clickError || error; }
-        if (!closeResponse.ok()) throw new Error('SITUATION_CLOSE_REJECTED');
         if (clickError) {
+          // The other tab may commit after the last read but before the click.
+          // Prove the boundary from the server instead of requiring a receipt
+          // for a command that this tab never sent. AS export is checked below.
           const committed = await runtime(page, base, cycleId);
           if (!committed.between_situations && !collectionClosed(committed)) throw clickError;
+        } else {
+          const receipt = await closed;
+          if (receipt.error) {
+            const committed = await runtime(page, base, cycleId);
+            if (!committed.between_situations && !collectionClosed(committed)) throw receipt.error;
+          } else closeResponse = receipt.response;
         }
+        if (closeResponse && !closeResponse.ok()) throw new Error('SITUATION_CLOSE_REJECTED');
         await advanceWorkers();
         snapshot = await waitRuntime(page, base, cycleId, (value) => value.between_situations === true
           || collectionClosed(value));

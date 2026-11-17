@@ -9,16 +9,19 @@ const terminal = { run_id: 'run-1', cycle_id: 'cycle-1', collection_status: 'cal
   close_reason: 'route_completed', collection_closed_at: '2026-11-10T10:00:00Z',
   situations: [{ status: 'closed' }], pipeline: { status: 'ready' } };
 
-test('completion readback observes another tab closing the AS before Finish', async () => {
+for (const closure of ['before', 'after', 'unconfirmed']) test(`completion requires confirmed AS closure: ${closure} the last Finish read`, async () => {
+  const closesAfterRead = closure !== 'before';
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'p4k-finish-readback-'));
   const ended = { cycle_id: 'cycle-1', status: { collection_status: 'active' },
     current_situation: { assessment_situation_id: 'as-1', status: 'scenario_ended' },
     finish_availability: { allowed: true }, between_situations: false };
   const closed = { ...ended, between_situations: true,
     current_situation: { assessment_situation_id: 'as-1', status: 'closed' } };
-  const snapshots = [ended, ended, ended, closed];
+  const snapshots = closure === 'unconfirmed' ? [ended, ended, ended, ended, ended]
+    : closesAfterRead ? [ended, ended, ended, ended, closed, closed] : [ended, ended, ended, closed];
   const requests = [];
   const clicks = [];
+  let finishAttempts = 0;
   const response = value => ({ ok: () => true, json: async () => value });
   const page = {
     acceptanceDialogHandler: true,
@@ -31,13 +34,20 @@ test('completion readback observes another tab closing the AS before Finish', as
       return response({ situations: [{ assessment_situation_id: 'as-1', status: 'closed',
         session_id: 'session-1', final_handoff_id: 'handoff-1', finalization_status: 'ready' }] });
     } },
-    locator: selector => { throw new Error(`unexpected duplicate Finish: ${selector}`); },
+    locator: selector => {
+      assert.equal(selector, '#interview-finish-button');
+      assert.equal(closesAfterRead, true, 'no Finish attempt after an already closed readback');
+      return { click: async () => { finishAttempts += 1; throw new Error('synthetic hidden Finish'); } };
+    },
     getByRole: (role, options) => {
       assert.equal(role, 'button');
       assert.equal(options.name, 'Приступить к следующей ситуации');
       return { waitFor: async () => {}, click: async () => { clicks.push('next'); } };
     },
     waitForResponse: async predicate => {
+      const finish = { request: () => ({ method: () => 'POST' }),
+        url: () => 'http://fixture.invalid/users/assessment/cycles/cycle-1/finish-situation' };
+      if (predicate(finish)) throw new Error('no local Finish receipt after another tab closed the AS');
       const receipt = { request: () => ({ method: () => 'POST' }),
         url: () => 'http://fixture.invalid/users/assessment/cycles/cycle-1/next' };
       assert.equal(predicate(receipt), true, 'only explicit Next is permitted');
@@ -46,12 +56,22 @@ test('completion readback observes another tab closing the AS before Finish', as
     },
   };
   try {
-    const result = await completeStartedAssessment({ page, base: 'http://fixture.invalid',
+    const completion = completeStartedAssessment({ page, base: 'http://fixture.invalid',
       cycleId: 'cycle-1', runId: 'run-1', evidenceDir: dir, initialSituationId: 'as-1',
       stopAfterFirstNext: true,
       onNextAccepted: async () => ({ ownershipChanged: true, nextSituationId: 'as-2' }) });
+    if (closure === 'unconfirmed') {
+      await assert.rejects(completion, /synthetic hidden Finish/);
+      assert.deepEqual(clicks, []);
+      assert.deepEqual(requests, []);
+      assert.equal(finishAttempts, 1);
+      assert.equal(snapshots.length, 0);
+      return;
+    }
+    const result = await completion;
     assert.deepEqual(clicks, ['next']);
     assert.deepEqual(requests, ['next']);
+    assert.equal(finishAttempts, closesAfterRead ? 1 : 0);
     assert.equal(snapshots.length, 0);
     assert.equal(result.stages[1].assessment_situation_id, 'as-1');
     assert.equal(result.stages[1].close_status, 'closed');

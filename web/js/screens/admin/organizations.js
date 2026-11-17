@@ -1140,13 +1140,15 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
         await showItems(items);
       } catch (_readbackError) {
         if (isCurrent()) {
-          emails.forEach(email => invitationResults.set(invitationResultKey(organizationId, assessment, email),
-            confirmedItems.find(item => item.email === email) || { email, status: 'uncertain', operation_id: operationId,
-              reason_code: _readbackError?.status === 404 ? 'operation_not_found' : 'delivery_unknown' }));
+          const items = emails.map(email => confirmedItems.find(item => item.email === email) ||
+            { email, status: 'uncertain', operation_id: operationId,
+              reason_code: _readbackError?.status === 404 ? 'operation_not_found' : 'delivery_unknown' });
+          items.forEach(item => invitationResults.set(invitationResultKey(organizationId, assessment, item.email), item));
           renderAdminOrganizations();
-          setStatus(error?.message === 'INVITATION_RESPONSE_INCOMPLETE'
+          const message = error?.message === 'INVITATION_RESPONSE_INCOMPLETE'
             ? 'Сервер вернул неполный или противоречивый результат приглашения. Исход отправки пока неизвестен. Проверьте состояние операции перед повтором.'
-            : 'Исход отправки пока неизвестен. Проверьте ту же операцию перед новой отправкой.', 'error');
+            : 'Исход отправки пока неизвестен. Проверьте ту же операцию перед новой отправкой.';
+          setStatus(message + ' ' + invitationOutcomeText(organizationId, items), 'error');
         }
       }
     } else {

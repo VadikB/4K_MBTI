@@ -17,13 +17,24 @@ CONTRIBUTING-MERGE-AUTH-01, PR245 и DEPS.md, тесты dependency/CVE/Knip,
 Knip/lint:dead и audit --audit-level=high сохраняются. Это уже принятое владельцем
 ограниченное решение, не новое исключение из audit.
 
-Merge origin/main в собственную ветку: конфликты только generated web/dist
-(60 путей), исходники объединились автоматически. Dist разрешается штатной сборкой
-объединённых исходников. Локальный node_modules отделён от соседнего worktree.
-Далее: commit интеграции, canonical ready:prepare2.1.30, audit/frontend/browser
-приглашений/ADM28/runtime/радара, review объединённого diff, новый commit/push,
-Ready и gates точного head перед squash merge. Прежние неуспешные попытки ниже —
-история, не актуальный блокер зависимости после интеграции245.
+Интеграция origin/main — commitf36f46a: конфликты только generated web/dist
+(60 путей), исходники объединились автоматически; dist пересобран. Локальный
+node_modules отделён от соседнего worktree. Canonical ready:prepare2.1.30,
+npm ci/audit PASS (high/critical0, moderate3), frontend436PASS,
+lint/build/release/diffPASS; browser55PASS,1worker/0retry/global300s.
+RAD01/QA19-04/ADM28 real/runtime1183 PASS. Первый browser53PASS/2FAIL сохранён:
+исправлены summary частичных фактов после failed readback и закрытие AS другой
+вкладкой после последнего GET в driver; неподтверждённое закрытие driver не принимает.
+Доказательства — evidence/release2130; чужие report-PNG, перезаписанные тестами,
+возвращены к main. Owned PG55439 остановлен, реальные mail/LLM0, TEST не менялся.
+
+Review объединённого diff выполнен: решение245/оба lock/report-код сохранены,
+новая продуктовая правка ограничена QA02 summary; driver — только test harness.
+Прямая приёмка/merge-поручение владельца сохраняется; серверных обязательных
+approvals0, required frontend/pytest/full-verification без bypass. Самостоятельный
+agent review не выдан за отдельное человеческое GitHub review.
+Далее: commit/push кандидата, Ready и gates точного head перед squash merge.
+Прежние неуспешные попытки ниже — история, не актуальный блокер зависимости.
 
 ## Выпуск: PR246 опубликован, merge заблокирован обязательным CI
 

@@ -1,3 +1,32 @@
+# QA-02 — кандидат2.1.30 после интеграции main
+
+База main3be503d /2.1.29 (PR245) влита в рабочую ветку существующего PR246.
+Generated-конфликты web/dist разрешены пересборкой. Принятый exact override
+picomatch→npm:@ryotsu/picomatch@4.0.7-a и оба lock сохранены побайтно относительно
+main; Knip, lint:dead и прежний audit --audit-level=high сохранены.
+Canonical ready:prepare2.1.30 PASS; npm ci/audit PASS (high/critical0, moderate3),
+frontend436PASS, lint/build/release/diffPASS, затронутые browser55PASS
+(1worker/0retry/global300s), включая RAD01, QA19-04, ADM28 real и runtime1183.
+Доказательства и точные команды — evidence/release2130/.
+
+Первый объединённый browser-run53PASS/2FAIL не выдан за PASS: исправлены пропавшие
+счётчики подтверждённой части batch после неудачного readback и вторая гонка driver
+(закрытие AS другой вкладкой после последнего GET перед кликом). Новая регрессия
+падает до исправления; подтверждённое закрытие принимается только по серверному
+состоянию и сохранённому AS export, неподтверждённое по-прежнему завершает driver
+ошибкой. Радар в обоих локальных runs PASS; его runtime/UI не менялся в QA02.
+
+Review интеграции: код QA02 сохранён с указанным bounded summary fix; report-код,
+зависимости и browser-адаптация из245 сохранены. Действуют прямые разрешения
+владельца на публичный состав, интеграцию/2.1.30/Ready/CI и merge после gates.
+Required GitHub approvals=0, protected frontend/pytest/full-verification сохраняются;
+agent self-review не выдаётся за отдельное человеческое GitHub review.
+Следующий шаг — commit/push, Ready, CI точного нового head и squash merge/deploy TEST.
+Реальные mail/LLM0; новый runtime TEST ещё не развёрнут. История ниже относится к
+предыдущим этапам и не заменяет CI нового кандидата.
+
+---
+
 # QA-02 — локальный результат
 
 Реализована матрица приглашений редакции1.1: безопасные причины в POST/GET и списке,
