@@ -37,16 +37,9 @@ const refreshDashboard = async () => {
     });
     const payload = await readApiResponse(response, 'Не удалось обновить сведения');
     if (state.currentScreen !== 'dashboard' || state.identityEpoch !== identityEpoch || state.pendingUser?.id !== ownerId) return;
-    const focusedAction = document.activeElement?.dataset?.dashboardAction || null;
-    const focusedCycleId = document.activeElement?.dataset?.cycleId || null;
     state.dashboard = payload.dashboard || state.dashboard;
     persistAssessmentContext();
     renderDashboard();
-    if (focusedAction) {
-      const matchingButton = [...dashboardPanel.querySelectorAll('[data-dashboard-action]')].find((button) =>
-        button.dataset.dashboardAction === focusedAction && button.dataset.cycleId === focusedCycleId);
-      matchingButton?.focus({ preventScroll: true });
-    }
     dashboardRefreshStatus.classList.add('hidden');
     scheduleDashboardRefresh();
   } catch (_error) {
@@ -112,7 +105,7 @@ const appendCardAction = (article, card, { primaryEntry, history }) => {
   button.dataset.dashboardAction = card.action;
   button.dataset.cycleId = card.cycle_id || '';
   button.textContent = history && card.action === 'open_report' ? 'Открыть отчёт' : card.button_label;
-  button.addEventListener('click', (event) => void performCardAction(card, event));
+  button.onclick = (event) => void performCardAction(card, event);
   actions.appendChild(button);
   article.appendChild(actions);
 };
@@ -170,15 +163,70 @@ const buildCard = (card, { primaryEntry = false, history = false } = {}) => {
   return article;
 };
 
-const renderCards = (container, cards, emptyTitle, emptyDescription) => {
-  container.replaceChildren();
+const cardModels = new WeakMap();
+let renderedOwner = null;
+let renderedEpoch = null;
+const cardBody = (card) => JSON.stringify({ ...card, preparation: null, action: null, button_label: null });
+const rememberCard = (article, card, options) => cardModels.set(article, {
+  body: cardBody(card), history: options.history,
+  preparation: card.preparation && { ...card.preparation },
+});
+const updateCard = (article, card, options) => {
+  const previous = cardModels.get(article);
+  const main = article.querySelector('.participant-assessment-main');
+  let preparation = main.querySelector('[data-preparation-status]');
+  // Keep the actual disclosure, selection and controls attached during a read.
+  if (previous.body !== cardBody(card) || previous.history !== options.history) {
+    const next = buildCard({ ...card, preparation: null, action: null }, options);
+    for (const child of [...main.children]) if (child !== preparation) child.remove();
+    for (const child of [...next.querySelector('.participant-assessment-main').children]) main.insertBefore(child, preparation);
+  }
+  article.className = options.history ? 'participant-assessment-card participant-assessment-card--history' : 'card participant-assessment-card';
+  article.dataset.journeyState = card.journey_state || card.status;
+  if (preparation && (!card.preparation || !card.preparation.reference
+      || preparation.dataset.preparationReferenceId !== card.preparation.reference
+      || previous.preparation?.operation_id !== card.preparation.operation_id
+      || previous.preparation?.kind !== card.preparation.kind)) {
+    preparation.remove(); preparation = null;
+  }
+  if (card.preparation) renderPreparation(main, card.preparation, { compact: true });
+  const actions = article.querySelector('.participant-assessment-actions');
+  const button = actions?.querySelector('button');
+  if (button && card.action && card.button_label && button.dataset.dashboardAction === card.action) {
+    button.id = options.primaryEntry ? 'assessment-action-button' : '';
+    button.textContent = options.history && card.action === 'open_report' ? 'Открыть отчёт' : card.button_label;
+    button.className = `${options.history || card.action === 'open_processing' ? 'ghost-button' : 'primary-button'} participant-assessment-action`;
+    button.onclick = (event) => void performCardAction(card, event);
+  } else {
+    actions?.remove(); appendCardAction(article, card, options);
+  }
+  rememberCard(article, card, options);
+  return article;
+};
+
+const renderCards = (container, cards, emptyTitle, emptyDescription, reusable) => {
   if (cards.length) {
-    cards.forEach((card, index) => container.appendChild(buildCard(card, {
-      primaryEntry: container === currentAssessments && index === 0,
-      history: container === completedAssessments,
-    })));
+    const nodes = cards.map((card, index) => {
+      const options = {
+        primaryEntry: container === currentAssessments && index === 0,
+        history: container === completedAssessments,
+      };
+      const existing = card.cycle_id && reusable.get(card.cycle_id);
+      if (existing) { reusable.delete(card.cycle_id); return updateCard(existing, card, options); }
+      const article = buildCard(card, options); rememberCard(article, card, options); return article;
+    });
+    for (const child of [...container.children]) if (!nodes.includes(child)) child.remove();
+    nodes.forEach((node, index) => {
+      const before = container.children[index] || null;
+      if (before !== node) {
+        // moveBefore preserves focus/selection when the platform supports it.
+        if (container.moveBefore && node.isConnected) container.moveBefore(node, before);
+        else container.insertBefore(node, before);
+      }
+    });
     return;
   }
+  container.replaceChildren();
   const empty = document.createElement('div');
   empty.className = 'card participant-assessment-empty';
   const title = document.createElement('strong');
@@ -193,6 +241,17 @@ export const renderDashboard = () => {
   const dashboard = state.dashboard;
   if (!dashboard) return;
   const user = state.pendingUser;
+  const sameOwner = renderedOwner === user?.id && renderedEpoch === state.identityEpoch;
+  const reusable = new Map(sameOwner ? [...dashboardPanel.querySelectorAll('article[data-cycle-id]')]
+    .filter(node => node.dataset.cycleId).map(node => [node.dataset.cycleId, node]) : []);
+  renderedOwner = user?.id; renderedEpoch = state.identityEpoch;
+  // Capture at application time, after the request: the user's latest focus wins.
+  const focused = document.activeElement;
+  const focusedCard = focused?.closest?.('article[data-cycle-id]');
+  const cycleId = sameOwner && focusedCard?.dataset.cycleId;
+  const wasSummary = focused?.tagName === 'SUMMARY';
+  const wasCopy = focused?.hasAttribute?.('data-preparation-copy');
+  const wasAction = focused?.hasAttribute?.('data-dashboard-action');
   dashboardGreeting.textContent = 'Мои оценки';
   header.updateUser(user);
   const current = Array.isArray(dashboard.current_assessments) ? dashboard.current_assessments : [];
@@ -202,8 +261,18 @@ export const renderDashboard = () => {
   // It remains a single entry; technical Report revisions never become separate rows.
   const featured = current.length ? current : completed.slice(0, 1);
   const previous = current.length ? completed : completed.slice(1);
-  renderCards(currentAssessments, featured, 'Пока нет назначенных оценок', 'Когда вам назначат оценку, она появится здесь');
-  renderCards(completedAssessments, previous, 'Здесь появятся результаты ваших оценок', 'Завершённые оценки пока отсутствуют');
+  renderCards(currentAssessments, featured, 'Пока нет назначенных оценок', 'Когда вам назначат оценку, она появится здесь', reusable);
+  renderCards(completedAssessments, previous, 'Здесь появятся результаты ваших оценок', 'Завершённые оценки пока отсутствуют', reusable);
+  if (cycleId && (wasSummary || wasCopy || wasAction)
+      && (!focused.isConnected || (document.activeElement === document.body && focused !== document.activeElement))) {
+    const card = [...dashboardPanel.querySelectorAll('article[data-cycle-id]')].find(node => node.dataset.cycleId === cycleId);
+    const target = (focused.isConnected ? focused : null)
+      || (wasSummary || wasCopy ? card?.querySelector('summary') : null)
+      || card?.querySelector('[data-dashboard-action]') || card?.querySelector('.participant-assessment-title')
+      || currentAssessmentsTitle;
+    if (!['SUMMARY', 'BUTTON'].includes(target.tagName)) target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  }
 };
 
 export const openDashboard = () => {
