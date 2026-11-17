@@ -160,3 +160,14 @@ test('05E sibling logout removal fences a late autosave ACK from recreating loca
   one.draft.storageChanged({ key, newValue: null }); resolve(); await pending;
   assert.equal(one.storage.getItem(key), null);
 });
+
+
+test('05C focus/reconnect never silently picks a remote revision while a conflict is unresolved', async () => {
+  const one = fixture(); await tick(); one.edit('my confirmed version'); await one.draft.flush();
+  one.server.text = 'other tab version'; one.server.version++; one.server.revision = 'foreign';
+  const key = Object.keys(one.storage)[0];
+  one.draft.storageChanged({ key, newValue: JSON.stringify({revision:'foreign',text:'other tab version'}) });
+  const before = one.calls.length; one.draft.retry(); await tick();
+  assert.equal(one.input.value, 'my confirmed version'); assert.equal(one.calls.length, before);
+  assert.match(one.status.textContent, /другой вкладке/);
+});

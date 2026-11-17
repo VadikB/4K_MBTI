@@ -162,7 +162,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
           || remote.owner_id !== scope.ownerId || remote.cycle_id !== scope.cycleId
           || remote.assessment_situation_id !== scope.situationId) return;
       entry.ready = true;
-      if (entry.record.alternatives?.length) { conflict(entry); return; }
+      if (entry.conflict || entry.record.alternatives?.length) { conflict(entry); return; }
       if (!entry.record.confirmed && entry.record.revision !== remote.revision
           && entry.record.baseVersion !== remote.version
           && !(entry.record.baseVersion === null && remote.version === 0)) { conflict(entry); return; }
@@ -227,7 +227,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
     try { if (event.newValue && JSON.parse(event.newValue)?.revision !== active.record.revision) conflict(active); }
     catch { conflict(active); }
   };
-  const retry = () => { if (!active || active.suspended) return;
+  const retry = () => { if (!active || active.suspended || active.conflict) return;
     if (!active.ready || active.record.confirmed) restoreRemote(active); else void flush(); };
   return { bind, edit, flush, clearAccepted, stop, retry, storageChanged,
     restorePending: (operation) => bind({ ...operation, slotId: operation.draftSlotId || 'pending:' + operation.requestId },
