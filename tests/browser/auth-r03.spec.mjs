@@ -2968,19 +2968,20 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('#m8-report-skills')).toContainText('Результат по части навыка');
   await expect(page.locator('#m8-report-chart-note')).toContainText('Пропуски оставлены открытыми');
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
-  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-table')).toContainText('+0,50');
   await expect(page.locator('.m8-comparison-periods')).toContainText('Программа ранее');
   await expect(page.locator('.m8-comparison-periods')).toContainText('Программа сейчас');
+  await page.getByRole('group', { name: 'Вид сравнения' }).getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-comparison-scales .m8-comparison-scale')).toHaveCount(2);
-  await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
+  await expect(page.locator('.m8-comparison-table')).toContainText('нет полного результата');
   await assertComparisonPdfPair();
   await page.locator('#m8-comparison-select').selectOption('report-other');
-  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
-  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('#m8-comparison-content')).toContainText('Загружаем выбранную пару');
   await page.locator('#m8-comparison-select').selectOption('report-previous');
   await page.waitForTimeout(300);
-  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
-  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-periods')).toContainText('Программа ранее');
+  await expect(page.locator('.m8-comparison-periods')).not.toContainText('Другая программа');
+  expect(new URL(page.url()).searchParams.get('previous_report_id')).toBe('report-previous');
   await assertComparisonPdfPair();
   const comparisonEvidence = path.join(root, 'docs/evc/tasks/p4k-report-07/evidence');
   await fs.mkdir(comparisonEvidence, { recursive: true });
@@ -2993,7 +2994,7 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   expect(comparisonGeometry.scroll).toBe(comparisonGeometry.viewport);
   // 683 CSS px is the available layout width at 200% zoom on a 1366 px display.
   await page.setViewportSize({ width: 683, height: 900 });
-  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-table')).toContainText('+0,50');
   const zoomGeometry = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth,
@@ -3005,8 +3006,9 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   let comparisonVariant = { ...comparison, skills: [comparison.skills[0]] };
   await page.route('**/users/assessment/m8/reports/report-rad01/comparison*', (route) => fulfillJson(route, comparisonVariant));
   await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('[data-compare-back]').click();
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
-  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-table')).toContainText('+0,50');
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-1440.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-390.png') });
@@ -3014,12 +3016,15 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
     previous: { ...comparison.previous, role_ref: { name: 'Другая роль' } },
     skills: comparison.skills.map((item) => ({ ...item, difference: null,
       comparability: { status: 'not_allowed', reason: 'different_role' } })) };
+  await page.locator('[data-compare-back]').click();
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
-  await expect(page.locator('.m8-comparison-slices')).toContainText('Роли в оценках различаются');
-  await expect(page.locator('.m8-comparison-table')).toHaveCount(0);
+  await expect(page.locator('.m8-comparison-table')).toContainText('Роли в оценках различаются');
+  await expect(page.locator('.m8-comparison-table')).not.toContainText('+0,50');
+  await expect(page.locator('.m8-comparison-chart .m8-radar-line,.m8-comparison-chart .m8-radar-fill')).toHaveCount(0);
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-390.png') });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-1440.png') });
+  await page.locator('[data-compare-back]').click();
   await page.getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-score-bars')).toBeVisible();
   await page.setViewportSize({ width: 360, height: 760 });
@@ -3280,8 +3285,13 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
       await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
       await expect(page.locator('.m8-radar-label')).toHaveCount(0);
     } else {
-      await expect(page.locator('.m8-radar-key')).toHaveCount(0);
-      await expect(page.locator('.m8-radar-label')).toHaveCount(groups[0][1].length);
+      // The FIX-02 detail panel also takes space on desktop. Both supported
+      // layouts must show every name once, at the readable sizes below.
+      const [labels, keyItems] = await page.locator('#m8-report-chart').evaluate((node) => [
+        node.querySelectorAll('.m8-radar-label').length, node.querySelectorAll('.m8-radar-key li').length,
+      ]);
+      expect(labels + keyItems).toBe(groups[0][1].length);
+      expect(labels === 0 || keyItems === 0).toBe(true);
     }
     const geometry = await page.locator('#m8-report-chart').evaluate((node) => {
       const svg = node.querySelector('svg');
@@ -3314,10 +3324,10 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
   await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
   await expect(page.locator('.m8-comparison-table')).toContainText('-1');
-  await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
+  await expect(page.locator('.m8-comparison-table')).toContainText('нет полного результата');
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
   await test.info().attach('qa19-04-mobile-radar', {
-    body: await page.locator('#m8-report-chart').screenshot(), contentType: 'image/png',
+    body: await page.locator('.m8-comparison-chart').screenshot(), contentType: 'image/png',
   });
 });
 

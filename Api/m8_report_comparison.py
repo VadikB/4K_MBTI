@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 
-CONTRACT_VERSION = "m8-report-comparison/1.1.0"
+CONTRACT_VERSION = "m8-report-comparison/1.2.0"
 REASON_LABELS = {
     "different_role": "Роли в оценках различаются.",
     "role_snapshot_missing": "Не сохранено достаточное подтверждение роли.",
@@ -111,6 +111,10 @@ def compare_reports(current_report: dict[str, Any], previous_report: dict[str, A
         raise ValueError("COMPARISON_REQUIRES_DISTINCT_CYCLES")
     current = current_report["c67"]
     previous = previous_report["c67"]
+    from Api.m8_report_access import public_projection
+
+    public_current = public_projection(current_report)["c67"]
+    public_previous = public_projection(previous_report)["c67"]
     global_status, global_reason = _global_evidence(current, previous)
     previous_by_id = {str(item.get("skill_id")): item for item in previous.get("skills", [])}
     rows = []
@@ -170,6 +174,11 @@ def compare_reports(current_report: dict[str, Any], previous_report: dict[str, A
             "difference": None,
             "comparability": {"status": "not_allowed", "reason": "skill_absent_in_current_cycle"},
         })
+    for row in rows:
+        row["current_result"] = _public_skill_result(current_report, public_current, row["skill_id"])
+        row["previous_result"] = _public_skill_result(previous_report, public_previous, row["skill_id"])
+        source = row["current_result"] if row["current_result"]["present"] else row["previous_result"]
+        row["competency_name"] = source.get("competency_name")
     statuses = {row["comparability"]["status"] for row in rows}
     mode = "numeric" if statuses == {"allowed"} else "mixed" if "allowed" in statuses else "separate"
     return {
@@ -181,18 +190,45 @@ def compare_reports(current_report: dict[str, Any], previous_report: dict[str, A
     }
 
 
+def _public_skill_result(report: dict, public: dict, skill_id: str) -> dict:
+    """Allowlisted material from this side only; unknown completeness stays null."""
+    skill = next((item for item in public.get("skills", []) if str(item.get("skill_id")) == skill_id), None)
+    presentation = (skill or {}).get("presentation") or {}
+    return {
+        "present": skill is not None,
+        "outcome": (skill or {}).get("outcome"),
+        "completeness": (skill or {}).get("completeness"),
+        "score": (skill or {}).get("score"),
+        "label": presentation.get("label") if skill else "Навык отсутствует в этой оценке",
+        "competency_name": (skill or {}).get("competency_name"),
+        "description": (skill or {}).get("skill_description"),
+        "reasons": presentation.get("reasons", []),
+        "consistency": presentation.get("consistency"),
+        "limitations": list(dict.fromkeys([*(skill or {}).get("limitations", []),
+            *[item["message"] for item in (public.get("partial_result") or {}).get("limitation_reasons", [])
+              if item.get("message")]])),
+        "claims": [item for item in (public.get("descriptive") or {}).get("claims", [])
+                   if skill_id in [str(value) for value in item.get("skill_ids", [])]],
+        "skill_ref": {"report_id": str(report["id"]), "cycle_id": str(report["cycle_id"]), "skill_id": skill_id},
+    }
+
+
 def _report_ref(report: dict[str, Any]) -> dict[str, Any]:
     c67 = report["c67"]
+    from Api.m8_report_access import public_projection
+    public = public_projection(report)["c67"]
     return {
         "cycle_id": str(report["cycle_id"]),
         "report_id": str(report["id"]),
         "report_revision_no": report["revision_no"],
         "results_revision_id": str(report["results_revision_id"]),
         "created_at": report.get("created_at"),
-        "program_name": (c67.get("display") or {}).get("program_name"),
+        "program_name": report.get("program_name") or (c67.get("display") or {}).get("program_name"),
         "role_ref": c67.get("role_ref"),
         "started_at": (c67.get("time") or {}).get("started_at"),
         "closed_at": (c67.get("collection") or {}).get("closed_at"),
+        "limitations": public.get("limitations", []),
+        "partial_result": public.get("partial_result"),
     }
 
 
@@ -208,10 +244,22 @@ def render_comparison_pdf(comparison: dict[str, Any]) -> bytes:
         "previous": comparison["previous"],
         "comparable": comparable,
         "radars": [{"name": "Сопоставимые навыки", "axes": [
-            {"name": row["skill_name"], "current": row["current"], "previous": row["previous"]}
-            for row in comparable]}] if comparable else [],
+            {"name": row["skill_name"],
+             "current": row["current"] if row["comparability"]["status"] == "allowed" else None,
+             "previous": row["previous"] if row["comparability"]["status"] == "allowed" else None,
+             "partial": (row.get("current_result") or {}).get("outcome") == "partial_score",
+             "previous_partial": (row.get("previous_result") or {}).get("outcome") == "partial_score"}
+            for row in comparison["skills"]]}] if comparable else [],
         "separate": [{**row, "reason_text": REASON_LABELS.get(
             row["comparability"]["reason"], "Сопоставимость не подтверждена."
         )} for row in comparison["skills"] if row["comparability"]["status"] != "allowed"],
     }
-    return render_typst_report(payload, "m8_report_comparison_v2.typ")
+    def formatted(value, *, signed=False):
+        return "—" if value is None else format(value, "+.2f" if signed else ".2f").replace(".", ",")
+
+    # Also accepts an older comparison projection without inventing full outcomes.
+    payload["rows"] = [{**row, "previous_text": formatted(row["previous"]),
+        "current_text": formatted(row["current"]), "difference_text": formatted(row["difference"], signed=True),
+        "reason_text": REASON_LABELS.get(row["comparability"].get("reason"), "Сопоставимость не подтверждена.")}
+        for row in comparison["skills"]]
+    return render_typst_report(payload, "m8_report_comparison_v3.typ")

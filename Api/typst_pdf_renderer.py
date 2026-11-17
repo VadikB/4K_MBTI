@@ -16,7 +16,7 @@ class TypstRenderError(RuntimeError):
 
 
 def render_typst_report(payload: dict[str, Any], template_name: str) -> bytes:
-    if template_name not in {"m8_participant_report_v2.typ", "m8_participant_report_v3.typ", "m8_report_comparison_v2.typ"}:
+    if template_name not in {"m8_participant_report_v2.typ", "m8_participant_report_v3.typ", "m8_report_comparison_v2.typ", "m8_report_comparison_v3.typ"}:
         raise TypstRenderError("PDF_TEMPLATE_UNSUPPORTED")
     template_path = Path(__file__).with_name("pdf_templates") / template_name
     if not template_path.is_file():

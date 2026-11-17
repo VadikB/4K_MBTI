@@ -31,22 +31,27 @@ def _runs(values: list[float | None]) -> list[tuple[list[int], bool]]:
     return runs
 
 
-def _series(values: list[float | None], color: str, *, partial: list[bool] | None = None) -> list[str]:
+def _series(values: list[float | None], color: str, *, partial: list[bool] | None = None,
+            previous: bool = False) -> list[str]:
     result = []
     for indexes, closed in _runs(values):
         points = [_point(index, values[index], len(values)) for index in indexes]
         if closed and len(points) > 2:
             points.append(points[0])
         coords = ' '.join(f'{x:.1f},{y:.1f}' for x, y in points)
-        if len(points) > 1:
+        if len(points) > 1 and sum(value is not None for value in values) >= 3:
             result.append(f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="3"' +
-                          (' stroke-dasharray="5 4"' if not closed and len(points) < len(values) else '') + '/>')
+                          (' stroke-dasharray="5 4"' if previous or not closed else '') + '/>')
     for index, value in enumerate(values):
         if value is None:
             continue
         x, y = _point(index, value, len(values))
         dash = ' stroke-dasharray="2 2"' if partial and partial[index] else ''
-        result.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="white" stroke="{color}" stroke-width="3"{dash}/>')
+        fill = 'white' if partial and partial[index] else color
+        if previous:
+            result.append(f'<rect x="{x - 5:.1f}" y="{y - 5:.1f}" width="10" height="10" fill="{fill}" stroke="{color}" stroke-width="3"{dash}/>')
+        else:
+            result.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{fill}" stroke="{color}" stroke-width="3"{dash}/>')
     return result
 
 
@@ -75,9 +80,10 @@ def write_radars(radars: list[dict], directory: Path) -> None:
             lx, ly = _point(i, 3.35, count)
             parts.append(f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="middle" font-size="12" font-family="sans-serif" fill="#29363c">{escape(str(i + 1))}</text>')
         parts.append('<text x="134" y="126" font-size="10" fill="#526168">0</text>')
-        parts += _series([axis.get("current") for axis in axes], "#087f8c",
+        parts += _series([axis.get("current") for axis in axes], "#18b8c6",
                          partial=[bool(axis.get("partial")) for axis in axes])
         if any(axis.get("previous") is not None for axis in axes):
-            parts += _series([axis.get("previous") for axis in axes], "#a24c85")
+            parts += _series([axis.get("previous") for axis in axes], "#64748b", previous=True,
+                             partial=[bool(axis.get("previous_partial")) for axis in axes])
         parts.append('</svg>')
         (directory / f"radar-{number}.svg").write_text(''.join(parts), encoding="utf-8")
