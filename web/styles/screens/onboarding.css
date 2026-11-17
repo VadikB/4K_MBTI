@@ -29,8 +29,7 @@
     justify-content: flex-start; margin: 0; gap: 16px; padding: 0 32px;
     background: var(--w02-white); border-bottom: 1px solid var(--w02-border);
 }
-#onboarding-panel #onboarding-home { border: 0; background: transparent; color: inherit; padding: 8px 0; font: 700 20px/28px var(--font-body); min-height: 44px; text-align: left; }
-#onboarding-panel #onboarding-home::after { content: ''; display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: var(--w02-primary); }
+#onboarding-panel #onboarding-home { border: 0; background: transparent; color: inherit; padding: 8px 0; min-height: 44px; text-align: left; }
 #onboarding-panel .onboarding-section-label { position: absolute; left: 50%; transform: translateX(-50%); font-size: 14px; line-height: 20px; color: var(--w02-muted); text-transform: uppercase; letter-spacing: .04em; }
 #onboarding-panel .step-badge-back { display: none; }
 #onboarding-panel .onboarding-history { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 32px 0; }
@@ -108,7 +107,6 @@
 @media (max-width: 600px) {
     #onboarding-panel .onboarding-topbar { flex-basis: 64px; padding-inline: 16px; gap: 8px; }
     #onboarding-panel #onboarding-home { font-size: 18px; line-height: 24px; white-space: nowrap; }
-    #onboarding-panel #onboarding-home::after { width: 5px; height: 5px; }
     #onboarding-panel .onboarding-section-label { position: static; transform: none; margin-left: auto; font-size: 12px; line-height: 16px; text-align: right; }
     #onboarding-panel .onboarding-thread, #onboarding-panel .onboarding-composer-inner { width: calc(100% - 32px); }
     #onboarding-panel .onboarding-message--assistant { width: 100%; }
@@ -218,7 +216,6 @@
 .auth-waiting-section { display: none; }
 .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) > .auth-header { position: relative; display: flex; flex: 0 0 72px; min-height: 72px; margin: 0; padding: 0 32px; border-bottom: 1px solid var(--w02-border); }
 .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-header-brand { font: 700 20px/28px var(--font-body); }
-.shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-header-brand::after { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 4px; background: var(--w02-primary); }
 .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-waiting-section { display: block; position: absolute; left: 50%; transform: translateX(-50%); color: var(--w02-muted); font: 400 14px/20px var(--font-body); text-transform: uppercase; }
 .shell:has(> #auth-complete-panel.w02-waiting:not(.hidden)) .auth-release-badge { display: none; }
 #auth-complete-panel.w02-waiting .auth-complete-actions button { width: auto; }

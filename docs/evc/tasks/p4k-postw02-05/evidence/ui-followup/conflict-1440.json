@@ -1,0 +1,163 @@
+{
+  "width": 1440,
+  "scrollWidth": 1440,
+  "field": {
+    "x": 176,
+    "y": 816,
+    "width": 872,
+    "height": 96,
+    "bottom": 912
+  },
+  "button": {
+    "x": 1064,
+    "y": 862,
+    "width": 200,
+    "height": 50,
+    "bottom": 912
+  },
+  "fieldStyle": {
+    "backgroundColor": "rgb(255, 255, 255)",
+    "color": "rgb(34, 44, 48)",
+    "opacity": "1",
+    "borderRadius": "8px",
+    "borderColor": "rgb(0, 125, 137)",
+    "outlineWidth": "1px",
+    "outlineColor": "rgb(0, 125, 137)",
+    "outlineOffset": "0px",
+    "resize": "none",
+    "padding": "12px",
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "minHeight": "48px",
+    "maxHeight": "120px"
+  },
+  "buttonStyle": {
+    "backgroundColor": "rgb(214, 226, 229)",
+    "color": "rgb(104, 119, 124)",
+    "opacity": "1",
+    "borderRadius": "8px",
+    "borderColor": "rgb(214, 226, 229)",
+    "outlineWidth": "3px",
+    "outlineColor": "rgb(104, 119, 124)",
+    "outlineOffset": "0px",
+    "resize": "none",
+    "padding": "12px 16px",
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "minHeight": "48px",
+    "maxHeight": "none"
+  },
+  "disabled": true,
+  "text": "Мой текст при конфликте",
+  "status": "В другой вкладке или на другом устройстве сохранён другой вариант черновика. Выберите, с каким текстом продолжить",
+  "timer": {
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "color": "rgb(34, 44, 48)",
+    "opacity": "1",
+    "borderRadius": "999px",
+    "borderColor": "rgb(34, 44, 48)",
+    "outlineWidth": "3px",
+    "outlineColor": "rgb(34, 44, 48)",
+    "outlineOffset": "0px",
+    "resize": "none",
+    "padding": "0px",
+    "fontSize": "24px",
+    "lineHeight": "32px",
+    "minHeight": "0px",
+    "maxHeight": "none"
+  },
+  "scenario": {
+    "x": 160,
+    "y": 200,
+    "width": 880,
+    "height": 340,
+    "bottom": 540
+  },
+  "scenarioTitle": {
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "color": "rgb(34, 44, 48)",
+    "opacity": "1",
+    "borderRadius": "0px",
+    "borderColor": "rgb(34, 44, 48)",
+    "outlineWidth": "3px",
+    "outlineColor": "rgb(34, 44, 48)",
+    "outlineOffset": "0px",
+    "resize": "none",
+    "padding": "0px",
+    "fontSize": "20px",
+    "lineHeight": "28px",
+    "minHeight": "auto",
+    "maxHeight": "none"
+  },
+  "scenarioBody": {
+    "backgroundColor": "rgba(0, 0, 0, 0)",
+    "color": "rgb(34, 44, 48)",
+    "opacity": "1",
+    "borderRadius": "0px",
+    "borderColor": "rgb(34, 44, 48)",
+    "outlineWidth": "3px",
+    "outlineColor": "rgb(34, 44, 48)",
+    "outlineOffset": "0px",
+    "resize": "none",
+    "padding": "0px",
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "minHeight": "auto",
+    "maxHeight": "none"
+  },
+  "actions": [
+    {
+      "text": "Оставить текст из этой вкладки",
+      "rect": {
+        "x": 176,
+        "y": 944,
+        "width": 214.328125,
+        "height": 44,
+        "bottom": 988
+      },
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 125, 137)",
+        "opacity": "1",
+        "borderRadius": "0px",
+        "borderColor": "rgb(0, 125, 137)",
+        "outlineWidth": "3px",
+        "outlineColor": "rgb(0, 125, 137)",
+        "outlineOffset": "0px",
+        "resize": "none",
+        "padding": "10px 0px",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "minHeight": "44px",
+        "maxHeight": "none"
+      }
+    },
+    {
+      "text": "Использовать другой сохранённый вариант",
+      "rect": {
+        "x": 406.328125,
+        "y": 944,
+        "width": 296.15625,
+        "height": 44,
+        "bottom": 988
+      },
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 125, 137)",
+        "opacity": "1",
+        "borderRadius": "0px",
+        "borderColor": "rgb(0, 125, 137)",
+        "outlineWidth": "3px",
+        "outlineColor": "rgb(0, 125, 137)",
+        "outlineOffset": "0px",
+        "resize": "none",
+        "padding": "10px 0px",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "minHeight": "44px",
+        "maxHeight": "none"
+      }
+    }
+  ],
+  "disabledReason": "Явный выбор редакции ещё не выполнен"
+}

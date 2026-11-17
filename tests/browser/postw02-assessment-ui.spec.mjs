@@ -176,6 +176,8 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   run.returning = true;
   await page.reload();
   await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
+  await expect(page.locator('#interview-form')).toBeHidden();
+  await expect(page.locator('#interview-submit-button')).toBeDisabled();
   await screenshot(page, 'return', width);
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
   await expect(page.locator('#interview-textarea')).toBeEnabled();
@@ -188,6 +190,7 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   await expect(page.getByRole('heading', { name: 'Ситуация 3 завершена' })).toBeVisible();
   await expect(page.locator('#interview-case-badge')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Приступить к следующей ситуации' })).toBeEnabled();
+  await expect(page.locator('#interview-form')).toBeHidden();
   await screenshot(page, 'between', width);
   const beforeLeave = posts().length;
   await page.locator('#interview-profile-button').click();

@@ -36,7 +36,7 @@ export const hasUnconfirmedDrafts = (ownerId, storage = window.localStorage) => 
   });
 
 export const createAnswerDrafts = ({ input, status, actions, request, current,
-  storage = window.localStorage, timers = window, newRevision = () => crypto.randomUUID() }) => {
+  onConflictChange = () => {}, storage = window.localStorage, timers = window, newRevision = () => crypto.randomUUID() }) => {
   const editorId = newRevision();
   let active = null, timer = null, maxTimer = null;
   const cancelTimers = () => { timers.clearTimeout(timer); timers.clearTimeout(maxTimer); timer = maxTimer = null; };
@@ -52,9 +52,10 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
   const conflict = (entry) => {
     if (!valid(entry)) return;
     entry.conflict = true; cancelTimers();
-    message(entry, 'Черновик изменён в другой вкладке или на другом устройстве');
+    onConflictChange(true);
+    message(entry, 'В другой вкладке или на другом устройстве сохранён другой вариант черновика. Выберите, с каким текстом продолжить');
     actions.replaceChildren();
-    for (const [label, keepLocal] of [['Сохранить мой текст', true], ['Использовать серверный текст', false]]) {
+    for (const [label, keepLocal] of [['Оставить текст из этой вкладки', true], ['Использовать другой сохранённый вариант', false]]) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'text-button';
       button.textContent = label;
       button.addEventListener('click', async () => {
@@ -68,7 +69,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
             entry.record.revision = remote.revision; entry.record.confirmed = true;
           } else { entry.record.revision = newRevision(); entry.record.confirmed = false; }
           delete entry.record.alternatives; entry.record.editorId = editorId;
-          entry.conflict = false; entry.ready = true;
+          entry.conflict = false; entry.ready = true; onConflictChange(false);
           persist(entry); actions.replaceChildren(); input.dataset.draftRevision = entry.record.revision;
           if (keepLocal) await flush(); else message(entry, 'Черновик восстановлен. Ответ ещё не отправлен');
         } catch { if (valid(entry)) { button.disabled = false; conflict(entry); } }
@@ -236,6 +237,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
       if (active.record.text) message(active, 'Прежний черновик. Отправка сейчас недоступна; текст можно скопировать'); } },
     saved: () => Boolean(active && valid(active) && (active.local || (active.ready && active.record.confirmed))),
     unsynced: () => Boolean(active && !active.record.confirmed),
+    conflicted: () => Boolean(active && valid(active) && active.conflict),
     revision: () => active?.record.revision || '', slotId: () => active?.scope.slotId || '' };
 };
 

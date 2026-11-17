@@ -601,6 +601,7 @@ const prepareProductInterviewAnswer = (text, draftValue, scope = productIntervie
   if (typeof text !== 'string' || !text.trim() || text.length > 10000 || typeof draftValue !== 'string') {
     throw new Error('Введите ответ длиной от 1 до 10000 символов.');
   }
+  if (durableDraft?.conflicted()) throw new Error('Выберите, с каким текстом черновика продолжить.');
   let existing = readProductInterviewAnswer(scope);
   if (existing?.status === 'prepared' && existing.text !== text) {
     productAnswerStorage().removeItem(productInterviewAnswerKey(existing));
@@ -1139,7 +1140,7 @@ const renderProductRuntime = (snapshot) => {
           : productProcessingFailed(snapshot)
             ? 'Не удалось завершить анализ. Ответы сохранены; ожидаем восстановления обработки.'
             : 'Анализируем последний ответ. Завершение ситуации пока недоступно.'
-        : 'Ваши сообщения сохраняются в чате этой ситуации.';
+        : '';
   let preparationPanel = interviewPanel.querySelector('.interview-preparation-status');
   if (snapshot.report_preparation) {
     if (!preparationPanel) { preparationPanel = document.createElement('div'); preparationPanel.id = 'interview-preparation-status'; preparationPanel.className = 'interview-preparation-status'; interviewCaseStatus.after(preparationPanel); }
@@ -1155,6 +1156,7 @@ const renderProductRuntime = (snapshot) => {
   interviewTextarea.placeholder = productProcessingPending(snapshot)
     ? 'Дождитесь завершения обработки' : waitingQuestion ? 'Поясните ваше решение…' : 'Введите ответ или вопрос собеседнику…';
   renderProductInterviewAnswerDelivery(snapshot, confirmedProductInterviewCanSend);
+  if (durableDraft?.conflicted()) interviewSubmitButton.disabled = true;
   const pendingCommand = readProductCommand('scenario_end', commandScope)
     || readProductCommand('finish_situation', commandScope);
   if (productProcessingPending(snapshot)) {
@@ -1950,8 +1952,9 @@ const placeInterviewTimerBadge = () => {
   if (!interviewTimerBadge || !interviewTitleRow || !interviewCaseHeading) return;
   const compact = Boolean(interviewCompactQuery?.matches);
   const target = compact && !isCycleAssessment() ? interviewTitleRow : interviewCaseHeading;
-  if (interviewTimerBadge.parentElement !== target) {
-    target.appendChild(interviewTimerBadge);
+  const timer = interviewTimerBadge.closest?.('.interview-timer') || interviewTimerBadge;
+  if (timer.parentElement !== target) {
+    target.appendChild(timer);
   }
 };
 
@@ -2635,6 +2638,10 @@ export const initInterview = () => {
   const draftActions = document.getElementById?.('interview-draft-actions');
   if (draftStatus && draftActions) {
     durableDraft = createAnswerDrafts({ input: interviewTextarea, status: draftStatus, actions: draftActions,
+      onConflictChange: (blocked) => {
+        interviewSubmitButton.disabled = blocked || interviewTextarea.disabled || !confirmedProductInterviewCanSend
+          || Boolean(readProductInterviewAnswer());
+      },
       storage: { getItem: (key) => window.localStorage.getItem(key), setItem: (key, value) => window.localStorage.setItem(key, value),
         removeItem: (key) => window.localStorage.removeItem(key), keys: () => Object.keys(window.localStorage) },
       current: (scope) => isProductInterviewAnswerCurrent({ ...scope, viewGeneration: getAssessmentViewGeneration() }),

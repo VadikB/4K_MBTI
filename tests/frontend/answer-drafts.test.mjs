@@ -75,7 +75,10 @@ test('05C divergent remote version conflicts without replacing local text; expli
   Object.assign(one.server, { text: 'other device', version: 1, revision: 'other' });
   await one.draft.flush(); assert.match(one.status.textContent, /другой вкладке/); assert.equal(one.input.value, 'my text');
   assert.equal(one.actions.children.length, 2);
+  assert.equal(one.draft.conflicted(), true);
+  assert.deepEqual(one.actions.children.map(b => b.textContent), ['Оставить текст из этой вкладки', 'Использовать другой сохранённый вариант']);
   await one.actions.children[0].click(); await tick(); assert.equal(one.server.text, 'my text');
+  assert.equal(one.draft.conflicted(), false);
 });
 
 test('05C explicit empty text is versioned, never restores an older server edit', async () => {
@@ -170,4 +173,17 @@ test('05C focus/reconnect never silently picks a remote revision while a conflic
   const before = one.calls.length; one.draft.retry(); await tick();
   assert.equal(one.input.value, 'my confirmed version'); assert.equal(one.calls.length, before);
   assert.match(one.status.textContent, /другой вкладке/);
+});
+
+
+test('05 UI explicit remote choice changes only the draft and reports conflict resolution', async () => {
+  const one = fixture(); await tick(); one.edit('local retained until choice');
+  Object.assign(one.server, {text:'remote version',version:1,revision:'other'});
+  await one.draft.flush(); assert.equal(one.draft.conflicted(),true);
+  assert.equal(one.input.value,'local retained until choice');
+  const writes=one.calls.filter(Boolean).length;
+  await one.actions.children[1].click(); await tick();
+  assert.equal(one.input.value,'remote version'); assert.equal(one.draft.conflicted(),false);
+  assert.equal(one.calls.filter(Boolean).length,writes);
+  assert.match(one.status.textContent,/Ответ ещё не отправлен/);
 });

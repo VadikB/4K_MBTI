@@ -1,0 +1,1122 @@
+{
+  "results": [
+    {
+      "width": 1440,
+      "scene": "auth-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "auth-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "onboarding-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "onboarding-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "auth-complete-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "auth-complete-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "prechat-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "prechat-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "interview-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "interview-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "dashboard-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "dashboard-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "report-panel",
+      "offline": false,
+      "brands": []
+    },
+    {
+      "width": 1440,
+      "scene": "report-panel",
+      "offline": true,
+      "brands": []
+    },
+    {
+      "width": 1440,
+      "scene": "processing-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "processing-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "admin-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "admin-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "admin-organizations-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "admin-organizations-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "admin-assessment-empty-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "admin-assessment-empty-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "ai-welcome-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "ai-welcome-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "chat-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scene": "chat-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "20px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "auth-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "auth-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "onboarding-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "onboarding-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "auth-complete-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "auth-complete-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "prechat-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "prechat-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "interview-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "interview-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "dashboard-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "dashboard-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "report-panel",
+      "offline": false,
+      "brands": []
+    },
+    {
+      "width": 390,
+      "scene": "report-panel",
+      "offline": true,
+      "brands": []
+    },
+    {
+      "width": 390,
+      "scene": "processing-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "processing-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "admin-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "admin-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "admin-organizations-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "admin-organizations-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "admin-assessment-empty-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "admin-assessment-empty-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "ai-welcome-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "ai-welcome-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "chat-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scene": "chat-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "auth-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "auth-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "onboarding-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "onboarding-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "auth-complete-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "auth-complete-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "prechat-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "prechat-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "interview-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "interview-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "dashboard-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "dashboard-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "report-panel",
+      "offline": false,
+      "brands": []
+    },
+    {
+      "width": 320,
+      "scene": "report-panel",
+      "offline": true,
+      "brands": []
+    },
+    {
+      "width": 320,
+      "scene": "processing-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "processing-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "admin-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "admin-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "admin-organizations-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "admin-organizations-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "admin-assessment-empty-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "admin-assessment-empty-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "ai-welcome-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "ai-welcome-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "chat-panel",
+      "offline": false,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "scene": "chat-panel",
+      "offline": true,
+      "brands": [
+        {
+          "text": "4К Ассистент",
+          "size": "18px",
+          "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif",
+          "weight": "700",
+          "before": "none",
+          "after": "none"
+        }
+      ]
+    }
+  ],
+  "navPreserved": true,
+  "report": "Existing report heading is Результат оценки; no product brand or decorative dot was added"
+}

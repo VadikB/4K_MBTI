@@ -114,6 +114,48 @@ async function fixture(page, shared = null) {
   return run;
 }
 
+async function captureDraft(page, scene, width) {
+  // Controlled-clock tests must also settle the real CSS transition before measuring colors.
+  await page.clock.runFor(250);
+  await expect(page.locator('#interview-submit-button')).toHaveCSS('background-color', scene === 'conflict' ? 'rgb(214, 226, 229)' : 'rgb(24, 184, 198)');
+  await page.evaluate(async () => { await document.fonts.ready; await Promise.all(document.getAnimations().filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => {}))); });
+  const ui = await page.evaluate(() => {
+    const field = document.querySelector('#interview-textarea'), button = document.querySelector('#interview-submit-button');
+    const rect = el => { const r = el.getBoundingClientRect(); return { x:r.x, y:r.y, width:r.width, height:r.height, bottom:r.bottom }; };
+    const css = el => { const s = getComputedStyle(el); return Object.fromEntries(
+      ['backgroundColor','color','opacity','borderRadius','borderColor','outlineWidth','outlineColor','outlineOffset','resize','padding','fontSize','lineHeight','minHeight','maxHeight'].map(k => [k,s[k]])); };
+    return { width: innerWidth, scrollWidth: document.documentElement.scrollWidth, field: rect(field), button: rect(button),
+      fieldStyle: css(field), buttonStyle: css(button), disabled: button.disabled, text: field.value,
+      status: document.querySelector('#interview-draft-status').textContent,
+      timer: css(document.querySelector('#interview-timer-badge')),
+      scenario: rect(document.querySelector('.product-situation-message')),
+      scenarioTitle: css(document.querySelector('.product-situation-title')),
+      scenarioBody: css(document.querySelector('.product-situation-message .interview-structured-block-body')),
+      actions: [...document.querySelectorAll('#interview-draft-actions button')].map(b => ({text:b.textContent,rect:rect(b),style:css(b)})) };
+  });
+  expect(ui.scrollWidth).toBeLessThanOrEqual(width);
+  expect(ui.disabled).toBe(scene === 'conflict');
+  expect(ui.buttonStyle.opacity).toBe('1');
+  expect(ui.buttonStyle.backgroundColor).toBe(scene === 'conflict' ? 'rgb(214, 226, 229)' : 'rgb(24, 184, 198)');
+  expect(ui.buttonStyle.color).toBe(scene === 'conflict' ? 'rgb(104, 119, 124)' : 'rgb(34, 44, 48)');
+  expect(ui.fieldStyle).toMatchObject({borderRadius:'8px',resize:'none',padding:'12px',fontSize:'16px',lineHeight:'24px',minHeight:'48px',maxHeight:'120px'});
+  expect(ui.field.height).toBe(96);
+  expect(ui.timer).toMatchObject({fontSize:'24px',lineHeight:'32px'});
+  expect(ui.scenarioBody).toMatchObject({fontSize:'16px',lineHeight:'24px'});
+  expect(ui.scenarioTitle).toMatchObject({fontSize:width === 1440?'20px':'18px',lineHeight:width === 1440?'28px':'26px'});
+  if (width === 1440) {
+    expect(ui.button.width).toBe(200); expect(Math.abs(ui.button.bottom-ui.field.bottom)).toBeLessThan(1);
+    expect(ui.scenario.width).toBeCloseTo(880, 1);
+  } else { expect(ui.button.width).toBe(ui.field.width); expect(ui.button.y).toBeGreaterThan(ui.field.bottom); }
+  for (const action of ui.actions) {
+    expect(action.rect.height).toBeGreaterThanOrEqual(44); expect(action.style.color).toBe('rgb(0, 125, 137)');
+  }
+  await fs.writeFile(path.join(evidence, `${scene}-${width}.json`), JSON.stringify({...ui,
+    disabledReason:scene === 'conflict'?'Явный выбор редакции ещё не выполнен':'Active runtime; нет pending/Continue/closed; saved/offline draft сам по себе не блокирует отправку'},null,2));
+  await page.screenshot({path:path.join(evidence, `${scene}-${width}.png`),fullPage:true});
+  return ui;
+}
+
 for (const width of [1440, 390]) test(`05A/B/C/D/F durable draft browser ${width}`, async ({ page, context, browser }) => {
   await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
   await page.clock.install({ time: new Date('2026-11-17T12:00:00Z') });
@@ -126,7 +168,7 @@ for (const width of [1440, 390]) test(`05A/B/C/D/F durable draft browser ${width
   await field.fill(raw); await page.clock.runFor(800);
   await expect(status).toHaveText('Черновик сохранён');
   expect(run.model.trace.turns).toHaveLength(2);
-  await page.screenshot({ path: path.join(evidence, `saved-${width}.png`), fullPage: true });
+  const savedUI = await captureDraft(page, 'saved', width);
 
   // A completely separate browser context has only the server revision.
   const clean = await browser.newContext({ viewport: { width, height: 844 } });
@@ -149,7 +191,8 @@ for (const width of [1440, 390]) test(`05A/B/C/D/F durable draft browser ${width
   run.draftOffline = true;
   await next.locator('#interview-textarea').fill(latest + '\nБез связи'); await next.clock.runFor(800);
   await expect(next.locator('#interview-draft-status')).toContainText('на этом устройстве');
-  await next.screenshot({ path: path.join(evidence, `offline-${width}.png`), fullPage: true });
+  const offlineUI = await captureDraft(next, 'offline', width);
+  expect(offlineUI.field.width).toBe(savedUI.field.width); expect(offlineUI.button.width).toBe(savedUI.button.width);
   run.draftOffline = false; await next.evaluate(() => window.dispatchEvent(new Event('online')));
   await expect(next.locator('#interview-draft-status')).toHaveText('Черновик сохранён');
 
@@ -158,9 +201,26 @@ for (const width of [1440, 390]) test(`05A/B/C/D/F durable draft browser ${width
   await next.locator('#interview-textarea').fill('Мой текст при конфликте'); await next.clock.runFor(800);
   await expect(next.locator('#interview-draft-status')).toContainText('другой вкладке');
   await expect(next.locator('#interview-textarea')).toHaveValue('Мой текст при конфликте');
-  await next.screenshot({ path: path.join(evidence, `conflict-${width}.png`), fullPage: true });
-  await next.getByRole('button', { name: 'Сохранить мой текст', exact: true }).click();
+  const conflictUI = await captureDraft(next, 'conflict', width);
+  expect(conflictUI.field.width).toBe(savedUI.field.width); expect(conflictUI.button.width).toBe(savedUI.button.width);
+  const postsBeforeChoice = run.calls.filter(c => c.url.endsWith('/turns') && c.method === 'POST').length;
+  await next.clock.fastForward(1500); // A runtime poll must not re-enable unresolved conflict.
+  await expect(next.locator('#interview-submit-button')).toBeDisabled();
+  expect(run.calls.filter(c => c.url.endsWith('/turns') && c.method === 'POST')).toHaveLength(postsBeforeChoice);
+  await next.getByRole('button', { name: 'Оставить текст из этой вкладки', exact: true }).click();
   await expect(next.locator('#interview-draft-status')).toHaveText('Черновик сохранён');
+
+  expect(run.calls.filter(c => c.url.endsWith('/turns') && c.method === 'POST')).toHaveLength(postsBeforeChoice);
+  await expect(next.locator('#interview-submit-button')).toBeEnabled();
+
+  // The other explicit choice adopts the remote version without posting an answer.
+  saved.version++; saved.revision = 'other-choice'; saved.text = 'Выбранный сохранённый вариант';
+  await next.locator('#interview-textarea').fill('Локальная редакция до выбора'); await next.clock.runFor(800);
+  await expect(next.locator('#interview-textarea')).toHaveValue('Локальная редакция до выбора');
+  await next.getByRole('button', {name:'Использовать другой сохранённый вариант',exact:true}).click();
+  await expect(next.locator('#interview-textarea')).toHaveValue('Выбранный сохранённый вариант');
+  expect(run.calls.filter(c => c.url.endsWith('/turns') && c.method === 'POST')).toHaveLength(postsBeforeChoice);
+  await next.locator('#interview-textarea').fill('Мой текст при конфликте'); await next.clock.runFor(800);
 
   // A real second tab uses the shared durable buffer; the first keeps its text
   // and requires an explicit choice when it receives the storage event.
@@ -171,7 +231,7 @@ for (const width of [1440, 390]) test(`05A/B/C/D/F durable draft browser ${width
   await expect(next.locator('#interview-draft-status')).toContainText('другой вкладке');
   await expect(next.locator('#interview-textarea')).toHaveValue('Мой текст при конфликте');
   await sibling.close();
-  await next.getByRole('button', { name: 'Сохранить мой текст', exact: true }).click();
+  await next.getByRole('button', { name: 'Оставить текст из этой вкладки', exact: true }).click();
   await expect(next.locator('#interview-draft-status')).toHaveText('Черновик сохранён');
 
   // Lost accepted response + tab close retains the original request/Turn ID.
@@ -190,4 +250,120 @@ for (const width of [1440, 390]) test(`05A/B/C/D/F durable draft browser ${width
   expect(geometry.scrollWidth).toBeLessThanOrEqual(width);
   await fs.writeFile(path.join(evidence, `receipt-${width}.json`), JSON.stringify({ geometry, turns: run.model.trace.turns.length,
     posts: run.calls.filter(c => c.url.endsWith('/turns') && c.method === 'POST').length, errors }));
+});
+
+
+test('UI B/D: focus, long text, reading position, 320px and reduced keyboard viewport', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.clock.install({time:new Date('2026-11-17T12:00:00Z')});
+  const run = await fixture(page);
+  run.model.current_situation.participant_payload.introduction = 'Длинный синтетический материал для прокрутки. '.repeat(80);
+  await page.goto(`${base}/?screen=interview`);
+  const field=page.locator('#interview-textarea'), status=page.locator('#interview-draft-status');
+  await expect(field).toBeEnabled();
+  const style = () => field.evaluate(n => {const s=getComputedStyle(n); return {radius:s.borderRadius,border:s.borderColor,
+    outline:s.outlineWidth,outlineColor:s.outlineColor,offset:s.outlineOffset,resize:s.resize};});
+  await page.locator('#interview-case-badge').click(); await page.clock.runFor(250);
+  const blur=await style(); expect(blur).toMatchObject({radius:'8px',outline:'0px',border:'rgba(0, 0, 0, 0)',resize:'none'});
+  await field.click(); await page.clock.runFor(250);
+  const click=await style(); expect(click).toMatchObject({outline:'1px',outlineColor:'rgb(0, 125, 137)',border:'rgb(0, 125, 137)',offset:'0px'});
+  await page.keyboard.press('Tab'); await expect(page.locator('#interview-submit-button')).toBeFocused();
+  await page.keyboard.press('Shift+Tab'); await expect(field).toBeFocused();
+  const tab=await style(); expect(tab).toEqual(click);
+  const send=page.locator('#interview-submit-button');
+  await send.hover(); await expect(send).toHaveCSS('background-color','rgb(16, 158, 171)');
+  await page.mouse.down(); await expect(send).toHaveCSS('background-color','rgb(12, 133, 145)');
+  await page.mouse.move(0,0); await page.mouse.up();
+  await field.focus();
+  const longText=Array.from({length:100},(_,i)=>`Строка ${i}: весь длинный ответ доступен для редактирования.`).join('\n');
+  await field.fill(longText);
+  const before=await field.evaluate(n => {window.__draftInput=n;n.setSelectionRange(450,480,'backward');n.scrollTop=240;
+    return {start:n.selectionStart,end:n.selectionEnd,direction:n.selectionDirection,top:n.scrollTop};});
+  await page.clock.runFor(800); await expect(status).toHaveText('Черновик сохранён');
+  const after=await field.evaluate(n=>({start:n.selectionStart,end:n.selectionEnd,direction:n.selectionDirection,top:n.scrollTop,
+    same:n===window.__draftInput,focus:document.activeElement===n,text:n.value,scrollHeight:n.scrollHeight,height:n.clientHeight}));
+  expect(after).toMatchObject({...before,same:true,focus:true,text:longText}); expect(after.scrollHeight).toBeGreaterThan(after.height);
+  await field.evaluate(n=>{n.scrollTop=n.scrollHeight;n.setSelectionRange(n.value.length,n.value.length);});
+  expect(await field.evaluate(n=>n.scrollTop+n.clientHeight >= n.scrollHeight-1)).toBe(true);
+  await page.reload(); await expect(field).toHaveValue(longText);
+  await expect(status).toContainText('Ответ ещё не отправлен');
+  const area=page.locator('#interview-scroll-area'), down=page.locator('#interview-messages-scroll');
+  await area.evaluate(n=>n.scrollTo({top:0,behavior:'instant'}));
+  await expect(down).toBeVisible();
+  const reading=await area.evaluate(n=>n.scrollTop);
+  await field.fill(longText+'\nПоследняя строка'); await page.clock.runFor(800);
+  await expect(status).toHaveText('Черновик сохранён'); expect(await area.evaluate(n=>n.scrollTop)).toBe(reading);
+  await down.click(); await page.clock.runFor(600);
+  await expect(down).toBeHidden();
+  await expect.poll(() => area.evaluate(n => n.scrollHeight-n.scrollTop-n.clientHeight)).toBeLessThanOrEqual(1);
+  await expect.poll(() => area.evaluate(n => getComputedStyle(n.closest('.interview-messages-shell'),'::after').opacity)).toBe('0');
+  const last=page.locator('#interview-messages .interview-message').last();
+  const end=await last.evaluate(n=>{const area=document.querySelector('#interview-scroll-area'), r=n.getBoundingClientRect(), a=area.getBoundingClientRect();
+    return {bottom:r.bottom,areaBottom:a.bottom,fade:getComputedStyle(area.closest('.interview-messages-shell'),'::after').opacity};});
+  expect(end.bottom).toBeLessThanOrEqual(end.areaBottom+1); expect(end.fade).toBe('0');
+  await page.screenshot({path:path.join(evidence,'latest-turn-390.png'),fullPage:true});
+  const layouts=[];
+  // Reduced viewport emulates the space left by a keyboard, not a physical OS keyboard.
+  for (const viewport of [{width:320,height:700},{width:390,height:390},{width:320,height:360}]) {
+    await page.setViewportSize(viewport); await field.focus();
+    for (const selector of ['#interview-textarea','#interview-draft-status','#interview-submit-button']) {
+      const control=page.locator(selector);await control.scrollIntoViewIfNeeded();
+      const b=await control.boundingBox();expect(b.x).toBeGreaterThanOrEqual(0);expect(b.x+b.width).toBeLessThanOrEqual(viewport.width);
+      expect(b.y).toBeGreaterThanOrEqual(0);expect(b.y+b.height).toBeLessThanOrEqual(viewport.height+1);
+    }
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
+    await expect(field).toHaveValue(longText+'\nПоследняя строка');
+    layouts.push(viewport);await page.screenshot({path:path.join(evidence,`keyboard-emulated-${viewport.width}-${viewport.height}.png`),fullPage:true});
+  }
+  const other=run.drafts[draftSlot(run.model)];other.version++;other.revision='narrow-conflict';other.text='Вариант другого устройства';
+  await field.fill('Локальная редакция на 320');await page.clock.runFor(800);
+  await expect(status).toContainText('Выберите, с каким текстом');
+  await expect(page.locator('#interview-submit-button')).toBeDisabled();
+  for(const choice of await page.locator('#interview-draft-actions button').all()) {
+    await choice.scrollIntoViewIfNeeded();const r=await choice.boundingBox();
+    expect(r.x).toBeGreaterThanOrEqual(0);expect(r.x+r.width).toBeLessThanOrEqual(320);
+    expect(r.y+r.height).toBeLessThanOrEqual(361);
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await fs.writeFile(path.join(evidence,'interaction.json'),JSON.stringify({blur,click,tab,before,after,end,layouts,keyboard:'Reduced viewport emulation; physical device NOT_RUN'},null,2));
+  expect(run.calls.filter(c=>c.method==='POST'&&c.url.endsWith('/turns'))).toHaveLength(0);
+});
+
+
+test('UI E: shared product identity in existing header markup at 1440/390/320', async ({page,context}) => {
+  // Static screen states reuse the production HTML/CSS; no registration or separate Cycle.
+  await page.route('**/web/dist/**',route=>route.abort());
+  await page.goto(base);
+  const scenes=['auth-panel','onboarding-panel','auth-complete-panel','prechat-panel','interview-panel','dashboard-panel',
+    'report-panel','processing-panel','admin-panel','admin-organizations-panel','admin-assessment-empty-panel','ai-welcome-panel','chat-panel'];
+  const results=[];
+  const nav=await page.locator('.dashboard-topbar-actions,.interview-topbar-actions').allTextContents();
+  for (const width of [1440,390,320]) {
+    await page.setViewportSize({width,height:844});
+    for (const scene of scenes) {
+      await page.evaluate(id=>{
+        document.querySelectorAll('.shell > section.panel').forEach(n=>n.classList.add('hidden'));
+        const panel=document.getElementById(id);panel.classList.remove('hidden');
+        if(id==='auth-complete-panel') panel.classList.add('w02-waiting');
+      },scene);
+      for (const offline of [false,true]) {
+        await context.setOffline(offline);
+        const brands=await page.locator('.product-brand').evaluateAll(nodes=>nodes.filter(n=>n.getClientRects().length).map(n=>{
+          const s=getComputedStyle(n);return {text:n.textContent,size:s.fontSize,font:s.fontFamily,weight:s.fontWeight,
+            before:getComputedStyle(n,'::before').content,after:getComputedStyle(n,'::after').content};}));
+        for(const brand of brands) {
+          expect(brand.text).toBe('4К Ассистент');expect(brand.size,`${scene} ${width} ${JSON.stringify(brand)}`).toBe(width===1440?'20px':'18px');
+          expect(brand.weight).toBe('700');expect(brand.font).toContain('Onest');
+          expect(['none','normal']).toContain(brand.before);expect(['none','normal']).toContain(brand.after);
+        }
+        if(scene==='report-panel') {expect(brands).toHaveLength(0);await expect(page.locator('#report-panel .dashboard-brand')).toHaveText('Результат оценки');}
+        else expect(brands.length).toBeGreaterThan(0);
+        results.push({width,scene,offline,brands});
+      }
+    }
+  }
+  expect(await page.locator('.dashboard-topbar-actions,.interview-topbar-actions').allTextContents()).toEqual(nav);
+  await context.setOffline(false);
+  await fs.writeFile(path.join(evidence,'headers.json'),JSON.stringify({results,navPreserved:true,
+    report:'Existing report heading is Результат оценки; no product brand or decorative dot was added'},null,2));
 });
