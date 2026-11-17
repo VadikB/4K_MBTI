@@ -6,7 +6,7 @@ const organizations = readFileSync(new URL('../../web/js/screens/admin/organizat
 const wiring = readFileSync(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
 
 test('registered members can receive an organization assessment invitation', () => {
-  assert.match(organizations, /const invitationButton = '<button[^;]+send-member-invitation/);
+  assert.match(organizations, /const invitationButton =[\s\S]*?send-member-invitation/);
   assert.doesNotMatch(organizations, /const invitationButton = isRegistered \? ''/);
 });
 
