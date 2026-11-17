@@ -9,9 +9,12 @@ Base/FIX-01 `71a9c535`, code candidate/tested `9422308cce138fd39330412ee7a890217
 lint/build/diff PASS. Четыре снимка/два PDF; реальные БД/LLM/письма=0, свои процессы
 остановлены. [Как посмотреть](docs/evc/tasks/p4k-report-fix-02/HOW_TO_VIEW.md):
 `http://127.0.0.1:18972/__reports/`, Ctrl+C, TTL15 минут.
-branch_push/pr/merge/deploy/version_bump/artifact_publish=false; текущий запрос
-разрешает локальный результат. REPORT-11 не изменялся. Следующий шаг — просмотр
-владельцем. Исторические полномочия ниже не переносятся.
+Владелец принял результат: «принято, заливай на main».
+`branch_push/pr/merge/version_bump=true`, `deploy=test`, `artifact_publish=false`.
+Свежий origin/main `71a9c535` / 2.1.28; кандидат PATCH 2.1.29.
+Следующий шаг — canonical Ready/PR/обязательный CI точного head/squash merge и
+штатный TEST deploy. REPORT-11 не изменялся. Исторические полномочия ниже
+не переносятся.
 
 ---
 

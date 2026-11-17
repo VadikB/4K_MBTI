@@ -13,13 +13,15 @@ fixtures/реальных compare_reports/renderers. Новые данные Res
 1440/390 и 320/200%, два PDF просмотрены. Четыре изображения/два PDF и логи —
 в evidence. Свои loopback процессы/Chromium остановлены; рабочая БД/LLM/почта=0.
 
-Активный шаг: передача готового локального результата владельцу.
+Активный шаг: выпуск принятого результата в main, кандидат PATCH 2.1.29.
 [Как посмотреть](HOW_TO_VIEW.md): `npm run preview:reports`,
 `http://127.0.0.1:18972/__reports/`, остановка Ctrl+C, TTL 15 минут.
 Репродуцируемость старта/stop/TTL подтверждена lifecycle evidence.
 
-branch_push/pr/merge/deploy/version_bump/artifact_publish=false.
-Прямой запрос — «запусти задание 2»; присланный затем 00_START согласуется с локальной
-границей. Чужие прежние release-полномочия не переносятся. Следующий шаг — просмотр
-владельцем; публикация/CI/выпуск только при соответствующем поручении.
+Владелец после просмотра прямо поручил: «принято, заливай на main».
+`branch_push/pr/merge/version_bump=true`, `deploy=test`, `artifact_publish=false`;
+CONTRIBUTING-MERGE-AUTH-01. Свежая база main `71a9c535` / 2.1.28.
+Следующий шаг — canonical Ready, один PR, обязательный CI точного head,
+повторная сверка базы и squash merge/штатный TEST deploy. Локальные evidence выше
+остаются снимком проверенного code candidate, release-проверки фиксируются отдельно.
 Откат — обратный diff; immutable C-67/Results не затронуты. REPORT-11 вне объёма.

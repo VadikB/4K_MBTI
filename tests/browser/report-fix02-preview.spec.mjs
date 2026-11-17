@@ -23,6 +23,8 @@ test('FIX-02 P01/P02: menu, saved scores, gaps, modes and keyboard detail on act
   await expect(page.getByRole('heading', { name: 'Локальный просмотр · вымышленные результаты' })).toBeVisible();
   await expect(page.locator('li a')).toHaveCount(6);
   let frame = await openExample(page, 'P01', true);
+  const version = (await fs.readFile('pyproject.toml', 'utf8')).match(/^version = "([^"]+)"$/m)[1];
+  expect(await frame.evaluate(async () => (await fetch('/users/version')).json())).toEqual({ version });
   await expect(frame.locator('#report-panel [data-app-header]')).toContainText('4К Ассистент');
   await expect(frame.locator('#report-panel')).not.toContainText('Результат оценки');
   await expect(frame.locator('.m8-radar-point')).toHaveCount(preview.payload.fixture.skills.length);

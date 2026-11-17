@@ -10,6 +10,9 @@ import { startAdminProgramPreview } from './adm-program-ui-preview.mjs';
 export async function startReportsPreview({ root = process.cwd(), port = 18972,
   python = process.env.BROWSER_PYTHON || process.env.P4K_PREVIEW_PYTHON || path.join(root, '.venv/bin/python'),
   ttlMs = 15 * 60 * 1000 } = {}) {
+  const release = (await fs.readFile(path.join(root, 'web/js/config.js'), 'utf8'))
+    .match(/^export const APP_RELEASE = "([^"]+)";$/m)?.[1];
+  if (!release) throw new Error('Не удалось прочитать версию приложения из checkout.');
   const children = new Set();
   const render = (command) => new Promise((resolve, reject) => {
     const child = spawn(python, [path.join(root, 'scripts/report_preview_fixture.py')], {
@@ -80,7 +83,7 @@ export async function startReportsPreview({ root = process.cwd(), port = 18972,
     const history = names.map((name) => ({ ...reports[name], report_id: reports[name].id, status: 'report_ready' }));
     const user = { id: 18, email: 'participant@example.test', full_name: 'Вымышленный участник' };
     const admin = session.admin === true;
-    if (url.pathname === '/users/version') return json({ version: '2.1.28' });
+    if (url.pathname === '/users/version') return json({ version: release });
     if (url.pathname === '/users/session/restore' || url.pathname === '/users/18/session-bootstrap') {
       return json({ authenticated: true, exists: true, user, is_admin: admin,
         dashboard: { user, active_assessment: null, current_assessments: [], completed_assessments: history },
