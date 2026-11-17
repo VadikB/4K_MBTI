@@ -2,7 +2,8 @@
 
 QA-02, матрица приглашений rev1.1 от17.11.2026. Задача:
 `docs/evc/tasks/p4k-postw02-qa-02/REPORT.md`; контракт: `CONTRACT.md` рядом.
-Base71a9c535cee4aea094d2b49c2b73f39e22f99bbe; один результат, draft без merge/deploy.
+Base71a9c535cee4aea094d2b49c2b73f39e22f99bbe; один результат, кандидат2.1.29. Владелец поручил «сливай PR на main»;
+разрешены push/PR/Ready/следующийPATCH/merge после checks и штатный deploy TEST.
 
 ## Результат
 
@@ -33,7 +34,7 @@ WORKING01.10.2026, SourceSet2026-10-01, M1v1.4, относящиеся M7v1.3 §
 - Полный integration459PASS/2SKIP/1FAIL: fixture без production created_at;
   исправление проверено адресно. Это не единый зелёный повтор полного набора.
 - Browser15PASS, production bundle + controlled API,1440/390/320; real mail/LLM0.
-- Required CI актуального head — после публикации draft; результаты локальные.
+- Required CI актуального head — после публикации Ready PR; приведённые результаты локальные.
 
 Ручная проверка: отказ с безопасным кодом → краткая причина; mixed batch → точные
 счётчики; unknown → прежний ID; карточка → свёрнутые сведения/copy/обновление;
@@ -42,8 +43,7 @@ WORKING01.10.2026, SourceSet2026-10-01, M1v1.4, относящиеся M7v1.3 §
 ## Непроверенное (что и почему)
 
 Причина живого TEST-отказа неизвестна по QA05: серверный доступ недоступен.
-Реальная отправка/доставка запрещена областью QA02 и не проверялась. CI/приёмка
-и номер кандидата для Ready/merge остаются отдельным этапом.
+Реальная отправка/доставка запрещена областью QA02 и не проверялась. Штатный ready:prepare2.1.29 PASS. CI точного head и review обязательны перед merge.
 
 ## Риски: конфиг / схема / деплой / безопасность / откат
 
@@ -54,8 +54,8 @@ legacy error безопасно читается без раскрытия raw p
 
 ## Следующий минимальный шаг
 
-Владелец разрешает внешний push/draft PR; затем CI точного head и human review.
-Ready/версия/merge/deploy в текущий локальный этап не входят.
+Поручение владельца на merge получено. Проверить CI точного head, выполнить
+squash merge без bypass и подтвердить штатный deploy TEST; pilot/production исключены.
 
 ## Открытые вопросы (блокеры)
 
@@ -64,11 +64,11 @@ Ready/версия/merge/deploy в текущий локальный этап н
 
 ## Действия выпуска
 
-- [ ] branch_push
-- [ ] pr
-- [ ] merge
-- [ ] deploy
-- [ ] version_bump
+- [x] branch_push
+- [x] pr
+- [x] merge
+- [x] deploy
+- [x] version_bump
 - [ ] artifact_publish
 
 ## Готовность

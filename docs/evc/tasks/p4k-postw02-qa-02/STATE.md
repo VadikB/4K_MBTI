@@ -1,5 +1,18 @@
 # QA-02 — приглашения
 
+## Актуальный этап: разрешено слияние в main
+
+17.11.2026, прямое сообщение владельца в этом чате: «сливай PR на main».
+По CONTRIBUTING/CONTRIBUTING-MERGE-AUTH-01 разрешены публичный экспорт этого
+конкретного QA02 состава, branch_push=true, pr=true, version_bump=true (следующий
+PATCH2.1.29 от актуального main2.1.28), Ready=true, merge=true после обязательного CI
+и review; deploy=test штатным workflow. artifact_publish=false, pilot/production=false,
+реальные письма/LLM0. Повторное разрешение шагов выпуска не требуется.
+Проверенный исходный commit39eb435; fetch подтвердилmain71a9c535cee4aea094d2b49c2b73f39e22f99bbe.
+Аккаунт gh имеет WRITE; правила protected main сохраняются, bypass не используется.
+Следующий шаг: штатный ready:prepare, commit/push, один PR, required CI точного head,
+squash merge и проверка штатного deploy. Ниже сохранён предыдущий локальный этап.
+
 Прямой запрос владельца 17.11.2026: «запусти задание» с QA02 и матрицей редакции1.1.
 Вложения — требования к результату, не самостоятельное полномочие внешней публикации.
 Base свежего origin/main71a9c53 (2.1.28), ветка codex/p4k-postw02-qa-02,
@@ -50,3 +63,11 @@ pg_isready2; browser-cleanup listening=false. Реальные mail/LLM0, TEST �
 остаток QA05 — прежние серверные причины UNKNOWN и адресный операторский сбор.
 Финальный локальный SHA и пакет: outputs/p4k-postw02-qa-02-20261117/DELIVERY.json
 родительского workspace. Собственный откат — revert всего QA02 commit.
+
+
+Штатный preflight `npm run ready:prepare -- --candidate 2.1.29` PASS: изменены только
+pyproject/uv.lock/config/index cache keys и штатный dist. Публикация — Ready PR,
+чтобы запустить обязательный полный CI. Прямой допуск владельца на merge является
+принятием представленого результата; самостоятельный agent self-review не выдаётся
+за отдельное человеческое GitHub review. Protected ruleset и серверный merge gate
+применяются без bypass. Прежняя ветка39eb435 сохранена в локальном пакете.
