@@ -25,3 +25,10 @@ CONTRIBUTING-MERGE-AUTH-01. Свежая база main `71a9c535` / 2.1.28.
 повторная сверка базы и squash merge/штатный TEST deploy. Локальные evidence выше
 остаются снимком проверенного code candidate, release-проверки фиксируются отдельно.
 Откат — обратный diff; immutable C-67/Results не затронуты. REPORT-11 вне объёма.
+
+PR [#245](https://github.com/VadikB/4K_MBTI/pull/245) создан. Первый CI c8adcc6
+заблокирован npm audit; отдельно исправлены три старых browser-ожидания.
+Владелец разрешил ограниченный dev-fix, проверки аудита сохранены.
+Knip 6.15.0 остаётся, все picomatch заменены exact override fork 4.0.7-a;
+локальная совместимость и происхождение — [DEPS](DEPS.md).
+Frontend407/lint/build PASS, dist прежний; активен выпуск обновлённого head/полный CI.

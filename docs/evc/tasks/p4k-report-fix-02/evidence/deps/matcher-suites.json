@@ -1,0 +1,50 @@
+{
+  "upstream-tests": {
+    "stats": {
+      "suites": 131,
+      "tests": 1983,
+      "passes": 1983,
+      "pending": 0,
+      "failures": 0,
+      "start": "2026-11-17T18:34:38.255Z",
+      "end": "2026-11-17T18:34:38.594Z",
+      "duration": 339
+    },
+    "failures": []
+  },
+  "fork-tests": {
+    "stats": {
+      "suites": 132,
+      "tests": 2004,
+      "passes": 2004,
+      "pending": 0,
+      "failures": 0,
+      "start": "2026-11-17T18:34:38.905Z",
+      "end": "2026-11-17T18:34:39.333Z",
+      "duration": 428
+    },
+    "failures": []
+  },
+  "upstream-tests-on-fork": {
+    "stats": {
+      "suites": 131,
+      "tests": 1983,
+      "passes": 1981,
+      "pending": 0,
+      "failures": 2,
+      "start": "2026-11-17T18:36:08.270Z",
+      "end": "2026-11-17T18:36:08.842Z",
+      "duration": 572
+    },
+    "failures": [
+      {
+        "title": "posix classes posix bracket type conversion should create regex character classes from POSIX bracket expressions:",
+        "message": "Expected values to be strictly equal:\n+ actual - expected\n\n+ '(?=.)[a-zA-Z0-9a-zA-Z \\\\t\\\\x00-\\\\x1F\\\\x7F0-9\\\\x21-\\\\x7Ea-z\\\\x20-\\\\x7E \\\\-!\"#$%&\\'()\\\\*+,./:;<=>?@[\\\\\\\\\\\\]^_`{|}~ \\\\t\\\\r\\\\n\\\\v\\\\fA-ZA-Fa-f0-9]'\n- '(?=.)[a-zA-Z0-9a-zA-Z \\\\t\\\\x00-\\\\x1F\\\\x7F0-9\\\\x21-\\\\x7Ea-z\\\\x20-\\\\x7E \\\\-!\"#$%&\\'()\\\\*+,./:;<=>?@[\\\\]^_`{|}~ \\\\t\\\\r\\\\n\\\\v\\\\fA-ZA-Fa-f0-9]'\n"
+      },
+      {
+        "title": "posix classes .isMatch should not create an invalid posix character class:",
+        "message": "Expected values to be strictly equal:\n+ actual - expected\n\n+ '(?=.)[abc\\\\-!\"#$%&\\'()\\\\*+,./:;<=>?@[\\\\\\\\\\\\]^_`{|}~\\\\[0-9]'\n- '(?=.)[abc\\\\-!\"#$%&\\'()\\\\*+,./:;<=>?@[\\\\]^_`{|}~\\\\[0-9]'\n"
+      }
+    ]
+  }
+}

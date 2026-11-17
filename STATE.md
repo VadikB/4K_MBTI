@@ -15,6 +15,11 @@ lint/build/diff PASS. Четыре снимка/два PDF; реальные Б�
 Следующий шаг — canonical Ready/PR/обязательный CI точного head/squash merge и
 штатный TEST deploy. REPORT-11 не изменялся. Исторические полномочия ниже
 не переносятся.
+PR [#245](https://github.com/VadikB/4K_MBTI/pull/245): после первого CI владелец
+разрешил ограниченный dev-fix. Knip сохранён; exact fork override закрывает все
+цепочки picomatch в npm/Bun, audit с прежним high-порогом PASS. Совместимость и
+неуспешный первый CI — [DEPS](docs/evc/tasks/p4k-report-fix-02/DEPS.md).
+Локально frontend407/browser6/lint/build PASS; активен полный CI обновлённого head.
 
 ---
 

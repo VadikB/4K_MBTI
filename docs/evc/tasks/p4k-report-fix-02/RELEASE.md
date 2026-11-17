@@ -33,3 +33,9 @@
 TEST: https://test.4k-assistant.ru . Проверка UI — инструкция [HOW_TO_VIEW](HOW_TO_VIEW.md);
 synthetic меню существует только локально, в runtime TEST оно не включается.
 Откат — отдельный revert PR приложения и штатный TEST deploy; миграций нет.
+
+PR: [#245](https://github.com/VadikB/4K_MBTI/pull/245). Первый CI c8adcc6:
+backend/integration/runtime 4/4 PASS, frontend FAIL на npm audit, fast browser
+FAIL на трёх прежних ожиданиях. По отдельному прямому разрешению владельца
+выполнен ограниченный [dev-dependency fix](DEPS.md), проверки аудита сохранены;
+browser-ожидания обновлены к принятому FIX-02. Перед merge — новый обязательный CI.
