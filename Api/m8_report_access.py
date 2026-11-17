@@ -74,7 +74,9 @@ def page_customer_reports(connection, *, user_id: int, organization_id: int | No
           FROM m8_results r JOIN m8_result_revisions rr ON rr.results_id=r.id
             JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
           WHERE r.cycle_db_id=c.id
-          ORDER BY rr.revision_no DESC,p.revision_no DESC LIMIT 1
+          ORDER BY (p.id=(SELECT current.report_id FROM m8_published_reports current
+                           WHERE current.cycle_db_id=c.id)) DESC,
+                   rr.revision_no DESC,p.revision_no DESC LIMIT 1
         ) report ON TRUE
         WHERE c.organization_id=%s AND c.usage_scope='assessment' AND c.collection_closed_at IS NOT NULL"""
     program_expr = "COALESCE(report.c67_json->'display'->>'program_name',c.display_snapshot_json->>'program_name','')"

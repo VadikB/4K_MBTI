@@ -1332,6 +1332,66 @@ export const renderReport = () => {
   });
 };
 
+let m8FreshnessController;
+
+const correctionFieldLabels = {
+  score: 'Показатель', outcome: 'Вывод', presentation: 'Пояснение вывода',
+  comparison: 'Сопоставление', limitations: 'Ограничения', progress: 'Ход оценки',
+  partial_limitations: 'Причины ограничения', summary: 'Краткий вывод', explanation: 'Наблюдения и объяснение',
+};
+
+const coverageNames = {
+  opportunities: 'Возможность наблюдения', indicator_assessments: 'Оценённые индикаторы',
+  admissible_contributions: 'Допущенные вклады', components_with_score: 'Компоненты с показателем',
+  complete_components: 'Полные компоненты',
+};
+const comparisonNames = {
+  NO_TARGET_REQUIREMENT: 'Для навыка нет целевого требования.',
+  NO_SKILL_RESULT: 'Для навыка нет обоснованного результата.',
+  NOT_COMPARABLE: 'Сопоставление с целью пока недоступно.',
+};
+const correctionLabel = (item) => {
+  if (item.field?.startsWith('coverage:')) {
+    const [, scope, name] = item.field.split(':');
+    return `${coverageNames[name] || 'Полнота данных'} · ${scope === 'cycle_plan' ? 'план' : 'весь каталог'}`;
+  }
+  return correctionFieldLabels[item.field] || 'Изменение';
+};
+
+const correctionValue = (field, value) => {
+  if (value == null || (Array.isArray(value) && !value.length)) return 'Не указано';
+  if (field === 'score') return value.value == null ? 'Без числового показателя' :
+    `${value.value}${value.denominator ? ` (${value.numerator}/${value.denominator})` : ''}`;
+  if (field === 'presentation') {
+    const parts = [value.label, ...(value.reasons || []).map((reason) => reason.message)].filter(Boolean);
+    if (value.remaining_plan_relevant === true) parts.push('В оставшемся плане есть связанные ситуации.');
+    if (value.remaining_plan_relevant === false) parts.push('В оставшемся плане связанных ситуаций нет.');
+    return parts.join(' ') || 'Не указано';
+  }
+  if (field === 'outcome') return outcomeLabels[value] || value;
+  if (field === 'comparison') return comparisonNames[value.status] || 'Сопоставление не указано';
+  if (field === 'explanation') return value.map((item) => item.text).join('; ') || 'Не указано';
+  if (field.startsWith('coverage:')) return `${value.numerator ?? 0} из ${value.denominator ?? 0}`;
+  if (field === 'progress') return `${value.completed ?? 0} из ${value.planned ?? 0} ситуаций`;
+  if (field === 'partial_limitations') return value.map((item) => item.message).join('; ') || 'Не указано';
+  if (Array.isArray(value)) return value.join('; ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
+const renderM8Correction = (notice) => {
+  const node = document.getElementById('m8-report-correction');
+  if (!node) return;
+  node.classList.toggle('hidden', !notice);
+  if (!notice) { node.replaceChildren(); return; }
+  const changes = (notice.changes || []).map((item) => `
+    <article class="m8-correction-item"><strong>${escapeHtml(item.skill_name || 'Отчёт')} · ${escapeHtml(correctionLabel(item))}</strong>
+      <div class="m8-correction-pair"><div><span>Было</span>${escapeHtml(correctionValue(item.field, item.before))}</div>
+      <div><span>Стало</span>${escapeHtml(correctionValue(item.field, item.after))}</div></div></article>`).join('');
+  node.innerHTML = `<h3>В отчёт внесено исправление</h3><p>${escapeHtml(formatParticipantDate(notice.created_at))} · ${escapeHtml(notice.reason)}</p>
+    <details><summary>Посмотреть, что изменилось</summary><div class="m8-correction-list">${changes}</div></details>`;
+};
+
 export const openReport = (options = {}) => {
   const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false } = options;
   if (!m8CycleId) {
@@ -1349,6 +1409,8 @@ export const openReport = (options = {}) => {
   reportPanel.classList.remove('hidden');
   reportPanel.classList.toggle('is-m8-report', Boolean(m8CycleId));
   if (m8CycleId) {
+    m8FreshnessController?.abort();
+    m8FreshnessController = new AbortController();
     m8SelectedSkillId = null;
     const legacy = document.getElementById('legacy-report-shell');
     const shell = document.getElementById('m8-report-shell');
@@ -1369,6 +1431,8 @@ export const openReport = (options = {}) => {
     document.getElementById('m8-report-state').textContent = 'Открываем результат…';
     document.getElementById('m8-report-summary').textContent = 'Ниже — результаты по вашим ответам, их основания и ограничения.';
     document.getElementById('m8-report-partial')?.classList.add('hidden');
+    renderM8Correction(null);
+    document.getElementById('m8-report-update')?.classList.add('hidden');
     const download = document.getElementById('report-download-button');
     delete download.dataset.m8ReportId;
     delete download.dataset.m8ReportAccess;
@@ -1876,6 +1940,28 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
     || (reportId && String(report.id) !== String(reportId))
   ) throw new Error('Сессия или выбранный отчёт изменились.');
   const c67 = report.c67;
+  renderM8Correction(report.correction);
+  {
+    const checkFreshness = async () => {
+      if (!isCurrent() || document.visibilityState === 'hidden') return;
+      try {
+        const response = await fetch(customerAccess
+          ? `/users/admin/m8-access/cycles/${encodeURIComponent(cycleId)}/reports/latest`
+          : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`);
+        const latest = await readApiResponse(response, 'Не удалось проверить актуальность отчёта.');
+        if (!isCurrent() || String(latest.id) === String(report.id)) return;
+        const update = document.getElementById('m8-report-update');
+        update.innerHTML = '<h3>Отчёт обновлён</h3><p>Откройте актуальный отчёт, чтобы увидеть исправление.</p><button class="ghost-button compact-ghost" type="button">Открыть актуальный отчёт</button>';
+        update.classList.remove('hidden');
+        update.querySelector('button')?.addEventListener('click', () => openReport({
+          m8CycleId: cycleId, m8ReportId: latest.id, returnTarget: state.reportReturnTarget, customerAccess,
+        }), { once: true });
+      } catch { /* The saved view remains stable when freshness is unavailable. */ }
+    };
+    document.addEventListener('visibilitychange', checkFreshness, { signal: m8FreshnessController.signal });
+    window.addEventListener('focus', checkFreshness, { signal: m8FreshnessController.signal });
+    void checkFreshness();
+  }
   stateNode.textContent = 'Результат готов';
   const metadata = document.getElementById('m8-report-metadata');
   const finishedAt = report.collection_closed_at || c67.collection?.closed_at;

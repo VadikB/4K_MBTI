@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.rows import dict_row
 
-from Api import m8_report_access, m8_results, routes
+from Api import m8_report_access, m8_report_corrections, m8_results, routes
 
 pytestmark = pytest.mark.integration
 MIGRATIONS = Path('scripts/migrations')
@@ -59,6 +59,7 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         connection.execute('''CREATE TABLE m8_reports(id uuid PRIMARY KEY,result_revision_id uuid,revision_no integer,
             audience text,status text DEFAULT 'ready',created_at timestamptz DEFAULT now(),c67_json jsonb)''')
         m8_report_access.ensure_schema(connection)
+        m8_report_corrections.ensure_schema(connection)
         connection.execute("INSERT INTO users VALUES(10,'Участник','owner@example.test'),(11,'Другой','other@example.test'),"
                            "(20,'Админ','admin@example.test'),(21,'Новый','new@example.test'),"
                            "(22,'Снятый','removed@example.test'),(23,'Чужой','foreign@example.test')")
@@ -187,6 +188,11 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
             auto = client.get(comparison)
             assert auto.status_code == 200
             assert auto.json()['previous']['report_id'] == str(previous_correction_report)
+            connection.execute('INSERT INTO m8_published_reports(cycle_db_id,report_id) VALUES(2,%s)',
+                               (previous_report,))
+            published = client.get(comparison)
+            assert published.status_code == 200
+            assert published.json()['previous']['report_id'] == str(previous_report)
             assert client.get(comparison, params={'previous_report_id': str(correction_report_id)}).status_code == 403
             assert client.get(own + '/comparison.pdf', params={'previous_report_id': str(previous_report)}).status_code == 200
             assert client.get(comparison, params={'previous_report_id': str(foreign_report)}).status_code == 403

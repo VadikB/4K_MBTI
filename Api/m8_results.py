@@ -610,6 +610,8 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         LEFT JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
         WHERE """ + owner_scope + """
         ORDER BY COALESCE(c.collection_closed_at,c.created_at) DESC,c.id DESC,
+                 (p.id=(SELECT current.report_id FROM m8_published_reports current
+                        WHERE current.cycle_db_id=c.id)) DESC NULLS LAST,
                  rr.revision_no DESC NULLS LAST,
                  p.revision_no DESC NULLS LAST""", (user_id,)).fetchall()
     cycles = {}
@@ -631,6 +633,11 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             'latest_results_revision_no':row['results_revision_no'],
             'report_id':None, 'revision_no':None, 'created_at':row['cycle_created_at'], 'versions':[],
             'report_processing_status':None})
+        if (row['results_revision_no'] is not None and
+                (item['latest_results_revision_no'] is None or
+                 row['results_revision_no'] > item['latest_results_revision_no'])):
+            item['latest_results_revision_id'] = str(row['results_revision_id'])
+            item['latest_results_revision_no'] = row['results_revision_no']
         if row['report_id']:
             version = {'cycle_id':cid,'report_id':str(row['report_id']), 'revision_no':row['revision_no'],
                 'created_at':row['created_at'],'results_revision_id':str(row['results_revision_id']),
@@ -721,6 +728,11 @@ def _present_report(saved: dict) -> dict:
 
 def read_latest_report(connection, cycle_id: str, audience: str) -> dict:
     cycle = m7_completion._cycle(connection, cycle_id, lock=False)
+    if audience == "assessee":
+        row = connection.execute("SELECT report_id AS id FROM m8_published_reports WHERE cycle_db_id=%s",
+                                 (cycle["id"],)).fetchone()
+        if row:
+            return read_report(connection, row["id"])
     row = connection.execute("""SELECT p.id FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
         JOIN m8_results r ON r.id=rr.results_id WHERE r.cycle_db_id=%s AND p.audience=%s
         ORDER BY rr.revision_no DESC,p.revision_no DESC LIMIT 1""", (cycle["id"], audience)).fetchone()

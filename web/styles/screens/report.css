@@ -102,6 +102,25 @@
   background: var(--palette-graphite-050);
 }
 
+.m8-correction {
+  border-left: 4px solid var(--palette-cyan-500);
+  background: var(--palette-graphite-050);
+}
+
+.m8-correction h3 { margin: 0 0 8px; }
+.m8-correction p { margin: 0 0 12px; }
+.m8-correction summary { cursor: pointer; font-weight: 700; }
+.m8-correction-list { display: grid; gap: 12px; padding: 12px 0 0; }
+.m8-correction-item { border-top: 1px solid var(--line); padding-top: 12px; }
+.m8-correction-item strong { display: block; margin-bottom: 8px; }
+.m8-correction-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.m8-correction-pair div { min-width: 0; overflow-wrap: anywhere; }
+.m8-correction-pair span { display: block; color: var(--text-muted); font-size: 12px; }
+
+@media (max-width: 720px) {
+  .m8-correction-pair { grid-template-columns: 1fr; }
+}
+
 .m8-report-shell .report-tab-button {
   min-height: 48px;
 }

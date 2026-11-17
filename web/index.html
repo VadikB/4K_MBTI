@@ -5,34 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4K Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.23">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.23">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.24">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.24">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
   <link rel="manifest" href="/favicons/site.webmanifest">
-  <link rel="stylesheet" href="/web/styles/preparation-status.css?v=2.1.23">
+  <link rel="stylesheet" href="/web/styles/preparation-status.css?v=2.1.24">
 </head>
 <body>
   <div id="app-loader" class="app-loader hidden" aria-live="polite">
@@ -56,7 +56,7 @@
     <header class="auth-header" aria-label="4К Ассистент">
       <span class="auth-header-brand">4К Ассистент</span>
       <span class="auth-waiting-section">Оценка</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.23</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.24</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -1511,6 +1511,8 @@
           <p id="m8-report-state" role="status">Открываем результат…</p>
           <dl id="m8-report-metadata" class="report-metadata-list"></dl>
         </section>
+        <section id="m8-report-correction" class="card report-details-card m8-correction hidden" aria-label="Исправление отчёта"></section>
+        <section id="m8-report-update" class="card report-details-card m8-correction hidden" role="status"></section>
         <section class="card report-details-card" aria-labelledby="m8-report-summary-title">
           <div class="report-card-head"><div><p class="section-label">Кратко</p><h3 id="m8-report-summary-title">Главное из вашей оценки</h3></div></div>
           <div id="m8-report-summary"><p>Ниже — сохранённые факты, их основания и ограничения.</p></div>
@@ -1679,7 +1681,7 @@
         <span>Политика конфиденциальности</span>
         <span>Согласие на обработку персональных данных</span>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.1.23</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.1.24</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -1695,6 +1697,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.23"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.24"></script>
 </body>
 </html>
