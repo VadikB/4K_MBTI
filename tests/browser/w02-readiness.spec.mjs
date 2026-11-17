@@ -272,7 +272,7 @@ if (process.env.W02_ADD01_EVIDENCE) for (const width of [1440, 390]) for (const 
       const target = path.join(process.env.W02_EVIDENCE_DIR, `${scene}-${width}.png`);
       await page.screenshot({ path: target, fullPage: false });
       await fs.writeFile(target.replace('.png', '.json'), JSON.stringify({ layout: await w02Layout(page), server_operation: run.m.preparation_operation, commands: forbiddenCommands(run.calls) }, null, 2));
-      const refresh = page.getByRole('button', { name: scene === 'preparing' ? 'Проверить готовность' : 'Проверить состояние', exact: true });
+      const refresh = page.getByRole('button', { name: 'Проверить состояние', exact: true });
       if (scene !== 'ready') await refresh.click();
       expect(forbiddenCommands(run.calls)).toHaveLength(0);
     } finally { await context.close(); }

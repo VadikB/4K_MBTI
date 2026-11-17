@@ -4305,6 +4305,8 @@ def ensure_core_schema() -> None:
             WHERE status IN ('queued', 'running')
             """
         )
+        from Api.preparation_observation import ensure_schema as ensure_preparation_observation
+        ensure_preparation_observation(connection)
         ensure_execution_snapshot_guards(connection)
         connection.execute(
             """

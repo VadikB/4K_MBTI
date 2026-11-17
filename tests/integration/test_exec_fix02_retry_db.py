@@ -14,6 +14,7 @@ from pathlib import Path
 
 import psycopg
 import pytest
+from tests.preparation_assertions import assert_same_operation_readback
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from Api import routes, m10_product_flow
@@ -253,7 +254,7 @@ def test_first_next_capacity_recovery_and_concurrent_retry_fencing(retry_env, tm
         assert "synthetic-key" not in str(public)
         if cycle:
             runtime = env.http.get(f"/users/assessment/cycles/{cycle}/runtime").json()
-            assert runtime["preparation_operation"] == public
+            assert_same_operation_readback(runtime["preparation_operation"], public)
         env.transport.slots.release()
         if kind == "first":
             with env.db() as c:
@@ -273,7 +274,7 @@ def test_first_next_capacity_recovery_and_concurrent_retry_fencing(retry_env, tm
         assert completed["status"] == "completed", completed
         sent_completed = env.transport.sent
         env.queue._process(old_job); env.queue._process(new_job)
-        assert env.queue.get_status(reclaimed["operation_id"]) == completed
+        assert_same_operation_readback(env.queue.get_status(reclaimed["operation_id"]), completed)
         assert env.transport.sent == sent_completed
         assert env.queue._claim() is None
         result = completed["result_json"]
@@ -322,7 +323,7 @@ def test_next_configuration_and_admission_failures_cannot_change_transport_key(r
     _, failed = _process(env); assert failed["status"] == "failed", failed
     read = env.http.get("/users/assessment/cycles/preparation/blocked-next").json()
     assert read["retry_allowed"] is False
-    assert _post(env, "blocked-next", cycle).json() == read
+    assert_same_operation_readback(_post(env, "blocked-next", cycle).json(), read)
     assert _post(env, "new-blocked-next", cycle).status_code == 409
     with env.db() as c:
         assert c.execute("SELECT count(*) AS n FROM m5_assessment_situations").fetchone()["n"] == 1
@@ -355,8 +356,8 @@ def test_next_retry_rechecks_live_guards_before_provider(retry_env, guard):
     if guard != "terminal":
         with env.db() as c:
             runtime = m10_product_flow.read_runtime(c, cycle_id=cycle)
-        assert runtime["preparation_operation"] == read
-    assert _post(env, "transient-next", cycle).json() == read
+        assert_same_operation_readback(runtime["preparation_operation"], read)
+    assert_same_operation_readback(_post(env, "transient-next", cycle).json(), read)
     assert _post(env, "new-next-after-guard", cycle).status_code == 409
     assert env.transport.sent == sent_before
     with env.db() as c:

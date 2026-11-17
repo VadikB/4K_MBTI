@@ -1,0 +1,59 @@
+[
+  {
+    "id": "ProductArchitecture.Change01",
+    "version": "1.0/01",
+    "status": "WORKING",
+    "kind": "original",
+    "path": "docs/architecture/product-4k/1.0/updates/2026-10-01/source.pdf",
+    "expected_sha256": "dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081",
+    "actual_sha256": "dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081",
+    "match": true
+  },
+  {
+    "id": "M7",
+    "version": "1.3",
+    "status": "FROZEN",
+    "kind": "original",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M7_Assessment_Cycle_v1.3_FROZEN_2026-09-30.docx",
+    "expected_sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10",
+    "actual_sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10",
+    "match": true
+  },
+  {
+    "id": "M7",
+    "version": "1.3",
+    "status": "FROZEN",
+    "kind": "derived",
+    "path": "docs/methodology/source-sets/2026-10-01/derived/M7-v1.3.md",
+    "expected_sha256": "9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8",
+    "actual_sha256": "9b65a8eee1520fed57286b209a28ce73e33cd394ba8c9353c240673867483ec8",
+    "match": true
+  },
+  {
+    "id": "M8",
+    "version": "1.2",
+    "status": "FROZEN",
+    "kind": "original",
+    "path": "docs/methodology/source-sets/2026-10-01/originals/M8_Results_v1.2_FROZEN_2026-10-01.docx",
+    "expected_sha256": "a61909c996f66e88668c4cf713fb91129f3ab778ed843d0e796c7d4e226b73fa",
+    "actual_sha256": "a61909c996f66e88668c4cf713fb91129f3ab778ed843d0e796c7d4e226b73fa",
+    "match": true
+  },
+  {
+    "id": "M8",
+    "version": "1.2",
+    "status": "FROZEN",
+    "kind": "derived",
+    "path": "docs/methodology/source-sets/2026-10-01/derived/M8-v1.2.md",
+    "expected_sha256": "f0272e304f36dc2d58777080b753a5fcc55578d22947e3afbae308b8afb71e0e",
+    "actual_sha256": "f0272e304f36dc2d58777080b753a5fcc55578d22947e3afbae308b8afb71e0e",
+    "match": true
+  },
+  {
+    "id": "Glossary.Working",
+    "version": "2026-09-30",
+    "path": "../P4K_EXEC_FIX_03_2026-11-09/resources/Product_4K_Common_Glossary_Reconciliation_WORKING_2026-09-30.docx",
+    "actual_sha256": "95bdc36d5ccb7d2da93d268ec6cb2012daace2b85878f0ffefc39e9d4c66b95d",
+    "note": "В manifest отсутствует; найден первичный локальный файл пакета EXEC_FIX03; прочитаны Dialogue/Turn/Response и W064. Исторические REVIEW не изменены."
+  }
+]

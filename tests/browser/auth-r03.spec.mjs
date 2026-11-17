@@ -3444,7 +3444,7 @@ test('R03 direct interview URL uses journey and keeps Cycle failure visible', as
   await page.goto(`${base}/?screen=interview&cycle_id=stale-cycle`);
   await expect(page.locator('#processing-panel')).toBeVisible();
   await expect(page.locator('#processing-outcome-title')).toContainText('Не удалось подготовить результат');
-  await expect(page.getByRole('button', { name: 'Проверить готовность' })).toBeVisible();
+  await expect(page.locator('#processing-panel').getByRole('button', { name: 'Проверить состояние', exact: true })).toBeVisible();
   expect(journeyRead).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem('agent4k.productCycleId'))).toBe('current-cycle');
 });
@@ -3625,7 +3625,7 @@ test('P3-B return card keeps unknown time distinct from known zero', async ({ pa
   });
   await page.goto(`${base}/?screen=interview`);
   await expect(page.getByText('Остаток времени выполнения уточняется.')).toBeVisible();
-  await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · Время уточняется');
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Остаток времени выполнения уточняется');
   await expect(page.getByText('0 мин.', { exact: false })).toBeHidden();
   await expect(page.getByText('Без лимита', { exact: false })).toBeHidden();
   remainingSeconds = 0;
@@ -4239,7 +4239,7 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
     prepared_plan: phase === 'ready' ? plan : null,
   });
   const states = [
-    ['waiting', 'Готовим вашу оценку', 'Проверить готовность'],
+    ['waiting', 'Готовим вашу оценку', 'Проверить состояние'],
     ['failed', 'Не удалось подготовить оценку', 'Проверить состояние'],
     ['technical_failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
     ['unknown', 'Не удалось проверить готовность', 'Повторить проверку'],
@@ -4374,6 +4374,6 @@ for (const [failure, expected] of [
     await expect(page.locator('#onboarding-next')).toBeEnabled();
     expect(prepares).toBe(failure === 'organization' ? 0 : 1);
     if (failure === 'organization') await expect(page.locator('#feature-list')).toContainText('Когда сведения будут готовы, здесь появится следующий шаг.');
-    if (failure === 'failed') await expect(page.locator('#onboarding-panel .onboarding-diagnostics')).toContainText('synthetic-failed-operation');
+    if (failure === 'failed') await expect(page.locator('#onboarding-panel')).not.toContainText('synthetic-failed-operation');
   });
 }

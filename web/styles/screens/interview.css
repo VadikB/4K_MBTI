@@ -947,7 +947,7 @@
     }
 
     #interview-section-title {
-        display: none;
+        display: block;
     }
 
     .interview-topbar-actions {

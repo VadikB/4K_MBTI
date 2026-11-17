@@ -7,6 +7,7 @@ import hashlib
 from uuid import uuid4
 
 import pytest
+from tests.preparation_assertions import assert_same_operation_readback
 from Api.llm import deepseek_gateway as gateway_module
 from Api import m10_product_flow, m7_cycle_planner
 from Api.product_cycle_preparation_queue import _canonical
@@ -175,7 +176,8 @@ def test_first_retry_rechecks_live_guard_without_sending_provider(retry_env, gua
     read = env.http.get('/users/assessment/cycles/preparation/first-capacity-before-guard')
     assert read.status_code == 200 and read.json()['retry_allowed'] is False, read.text
     same_key = _post(env, 'first-capacity-before-guard')
-    assert same_key.status_code == 202 and same_key.json() == read.json(), same_key.text
+    assert same_key.status_code == 202, same_key.text
+    assert_same_operation_readback(same_key.json(), read.json())
     new_key = _post(env, 'first-capacity-after-guard')
     assert new_key.status_code == 409, new_key.text
     assert env.transport.sent == sent_before
@@ -220,7 +222,8 @@ def test_late_legacy_next_cannot_advance_after_its_predecessor_closes(retry_env)
     read = env.http.get('/users/assessment/cycles/preparation/legacy-before-close')
     assert read.status_code == 200 and read.json()['retry_allowed'] is False, read.text
     same_key = _post(env, 'legacy-before-close', cycle_id)
-    assert same_key.status_code == 201 and same_key.json() == read.json(), same_key.text
+    assert same_key.status_code == 201, same_key.text
+    assert_same_operation_readback(same_key.json(), read.json())
 
     new_boundary = _post(env, 'new-next-after-real-close', cycle_id)
     assert new_boundary.status_code == 201 and new_boundary.json()['status'] == 'queued', new_boundary.text
