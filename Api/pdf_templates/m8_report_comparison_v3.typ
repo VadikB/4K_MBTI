@@ -31,7 +31,7 @@
 }
 
 #for (index, item) in data.rows.enumerate() [
-  #block(breakable: true, stroke: 0.5pt + rgb("#cbd5e1"), inset: 10pt, radius: 8pt)[
+  #block(breakable: false, stroke: 0.5pt + rgb("#cbd5e1"), inset: 10pt, radius: 8pt)[
     == #(index + 1). #item.skill_name
     #grid(columns: (1fr, 1fr), gutter: 12pt,
       [*Предыдущая оценка* \ #side(item, "previous_result", item.previous_text)],
