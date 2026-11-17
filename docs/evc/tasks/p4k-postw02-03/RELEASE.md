@@ -46,3 +46,26 @@ affected frontend 12 PASS; diff PASS. Python runtime из GoogleDrive также
 передаче. Предыдущие FAIL/NOT_RUN не переписываются результатами нового кандидата.
 Полный HTTP на этой же базе — 189 PASS. CI/merge/deploy ещё не объявляются PASS
 до проверки точного head; результаты вне Git по указанному пути.
+
+## Первый полный CI и исправления
+
+Head dcf53b05: frontend/pytest PASS; browser fast и runtime1/2/4 PASS;
+runtime3 FAIL в двух сценариях, integration 434 PASS / 8 FAIL / 2 явных
+LLM SKIP. Ссылка: actions/runs/44036668163. Ошибки не скрывались.
+
+- Два browser fixtures создавали старые paused/interrupted состояния через
+  публичный API, который теперь правильно запрещает новые команды. Сценарии
+  проверяют409 и создают saved state отдельным CLI на owned QA stand. Нового
+  HTTP-допуска/permissions не добавлено; owner/scope/marker/provider guards сохранены.
+- Выявлена регрессия автоматического закрытия при Resume после лимита. Возвращено
+  прежнее first-deadline time_limit закрытие до допуска resume, без запуска времени.
+  Результат дополнительно сохраняется под исходным ключом с checksum, чтобы
+  потерянный ответ/повтор не создавали новый переход.
+- Положительный EXEC-FIX05 fixture после переписи синтетической истории сохраняет
+  реальный открытый authorized_pause; отрицательные first-deadline ожидания не
+  ослаблены. Новый blocking_wait fixture исправлен: одно открытое состояние вместо
+  нарушения существующего unique index двумя интервалами.
+
+Адресные unit/HTTP после изменений —46 PASS, JS syntax/diff PASS. Следующий полный
+CI выполняется на corrective head; номер2.1.22 остаётся тем же кандидатом до выпуска.
+Локальный минимум corrective-кандидата: backend1193 и HTTP189 PASS; release gate/diff PASS.

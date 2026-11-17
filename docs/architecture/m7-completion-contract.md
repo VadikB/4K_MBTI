@@ -73,9 +73,11 @@ AS: для Cycle нужны сохранённые pause receipt и authorized_p
 для AS-only паузы — сохранённый interaction_paused при active Session/Cycle.
 Проверяются маршрут, причины, оба лимита и отсутствие обязательного return-continue.
 Межкейсовое состояние и блокирующее ожидание не снимаются этой командой.
-Неподтверждённые сочетания дают `M7_PARTICIPANT_RESUME_NOT_ALLOWED`, истёкшие
-лимиты — `M7_TIME_LIMIT_REACHED`, признанное отсутствие —
-`M7_RETURN_EXPLICIT_CONTINUE_REQUIRED`. Pending intent старого interrupted Cycle
+Неподтверждённые сочетания дают `M7_PARTICIPANT_RESUME_NOT_ALLOWED`, признанное
+отсутствие — `M7_RETURN_EXPLICIT_CONTINUE_REQUIRED`. При истёкшем лимите Cycle/control
+сохраняет штатное `time_limit` закрытие с первым наступившим основанием, без
+возобновления; его результат читается по исходному ключу Resume. AS-only resume
+возвращает `M7_TIME_LIMIT_REACHED`. Pending intent старого interrupted Cycle
 по-прежнему потребляется через Additional Session; новая команда прерывания
 участнику недоступна. Подробные сочетания — в [отчёте](../evc/tasks/p4k-postw02-03/REPORT.md).
 

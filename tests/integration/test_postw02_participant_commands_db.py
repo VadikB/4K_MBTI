@@ -96,11 +96,25 @@ def test_public_cycle_resume_cannot_bypass_saved_recovery_constraints(db, defect
         if defect=='budget':
             c.execute("UPDATE m5_cycle_time_intervals SET started_at=ended_at-INTERVAL '100 hours' WHERE interval_type='collecting'")
         if defect=='blocking_wait':
-            c.execute("""INSERT INTO m5_cycle_time_intervals(cycle_db_id,session_db_id,interval_type,started_at,reason,operation_ref)
-                SELECT id,(SELECT id FROM m5_cycle_sessions LIMIT 1),'blocking_system_wait',NOW(),'system','pending-operation' FROM m5_cycles""")
+            # The schema permits one open interval per Cycle: represent the
+            # persisted blocking state without inserting a second open interval.
+            c.execute("""UPDATE m5_cycle_time_intervals SET interval_type='blocking_system_wait',
+                reason='system',operation_ref='pending-operation' WHERE ended_at IS NULL""")
         if defect=='recognized_absence':
             from Api.m7_return_integration import reconcile_presence
             reconcile_presence(c, cycle_id=cycle_id, owner_user_id=99)
+        if defect in {'deadline','budget'}:
+            result=completion.control(c,cycle_id=cycle_id,key='expired-resume',action='resume',
+                                      reason='continue',initiated_by=99,participant_command=True)
+            assert result['reason']==('calendar_deadline' if defect=='deadline' else 'time_budget')
+            assert result['states']['cycle']=='collection_closed'
+            assert c.execute('SELECT status FROM m5_assessment_situations').fetchone()['status']=='closed'
+            assert c.execute('SELECT count(*) AS n FROM m5_cycle_time_intervals WHERE ended_at IS NULL').fetchone()['n']==0
+            after=persisted(c)
+            assert completion.control(c,cycle_id=cycle_id,key='expired-resume',action='resume',
+                                      reason='continue',initiated_by=99,participant_command=True)==result
+            assert persisted(c)==after
+            return
         expected = ('M7_RETURN_EXPLICIT_CONTINUE_REQUIRED' if defect in {'recognized_absence','expired_lease'} else
                     'M7_TIME_LIMIT_REACHED' if defect in {'deadline','budget'} else 'M7_PARTICIPANT_RESUME_NOT_ALLOWED')
         before = persisted(c)

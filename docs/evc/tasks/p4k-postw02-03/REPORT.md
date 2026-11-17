@@ -35,7 +35,7 @@ intent, Evidence, смены AS/Session/Cycle, материалов или вр�
 | Между AS, текущая AS закрыта/позиция завершена | resume запрещён; существующий явный старт следующей AS сохраняется |
 | blocking_system_wait | resume не закрывает ожидание; применяется существующий системный путь |
 | Обязательный возврат |409 EXPLICIT_CONTINUE_REQUIRED; сначала return-continue, затем при оставшейся старой ручной паузе допустимый resume |
-| Истёкший бюджет/deadline |409 TIME_LIMIT_REACHED, время не запускается; штатное закрытие выполняется существующим runtime/worker |
+| Истёкший бюджет/deadline | Cycle/control сохраняет штатное time_limit закрытие и readback; время не запускается. AS-only resume —409 TIME_LIMIT_REACHED |
 | interrupted + pending intent | Additional Session один раз; закрытая AS остаётся закрытой, новый intent не создаётся |
 | intent уже consumed | тот же ключ возвращает сохранённую Session; другой ключ не создаёт вторую |
 | Нет current route, pause event/receipt, несогласованная причина/AS/Session, повреждённый checksum | безопасного публичного resume нет;409 RESUME_NOT_ALLOWED. Массового исправления/миграции нет; требуется адресная диагностика сохранённого состояния |

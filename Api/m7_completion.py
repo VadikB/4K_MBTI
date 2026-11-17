@@ -351,8 +351,12 @@ def control(connection,*,cycle_id,key,action,reason,initiated_by,participant_com
     if participant_command and action=='pause':
         raise ValueError('M7_PARTICIPANT_MANUAL_CONTROL_NOT_ALLOWED')
     if cycle['status'] in TERMINAL_CYCLE:raise ValueError('M7_COLLECTION_CLOSED')
-    if not participant_command and action=='resume' and _effective_limit(connection,cycle)!=(None,None):
-        return complete(connection,cycle_id=cycle_id,key=f'{key}:expiry',action='time_limit',reason='resume_after_limit',initiated_by=initiated_by)
+    if action=='resume' and _effective_limit(connection,cycle)!=(None,None):
+        # Expiry closes collection; it does not grant permission to resume.
+        result=complete(connection,cycle_id=cycle_id,key=f'{key}:expiry',action='time_limit',reason='resume_after_limit',initiated_by=initiated_by)
+        connection.execute('INSERT INTO m7_completion_commands VALUES(%s,%s,%s,%s::jsonb,NOW())',
+            (cycle['id'],key,request_checksum,json.dumps(result)))
+        return result
     session=connection.execute('SELECT * FROM m5_cycle_sessions WHERE cycle_db_id=%s ORDER BY ordinal DESC LIMIT 1 FOR UPDATE',(cycle['id'],)).fetchone()
     if not session:raise ValueError('M7_SESSION_NOT_FOUND')
     open_as=connection.execute("SELECT * FROM m5_assessment_situations WHERE session_db_id=%s AND status IN('active','paused') ORDER BY id DESC LIMIT 1 FOR UPDATE",(session['id'],)).fetchone()

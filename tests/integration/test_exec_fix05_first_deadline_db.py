@@ -118,6 +118,12 @@ def test_http_resume_reports_and_persists_first_deadline(current, http, monkeypa
         m7_completion.control(c, cycle_id=current['cycle_id'], key='pause', action='pause',
                               reason='authorized', initiated_by=99)
         budget_at, calendar_at = _limits(c, current, budget_offset, calendar_offset)
+        if reason is None:
+            # _limits rewrites every interval into a closed deterministic history.
+            # Keep the real saved pause open for this positive recovery case.
+            c.execute("""UPDATE m5_cycle_time_intervals SET ended_at=NULL
+                WHERE cycle_db_id=%s AND interval_type='authorized_pause' AND reason='authorized'""",
+                (current['cycle_db'],))
         c.commit()
         before = _effects(c)
     if reason is None:

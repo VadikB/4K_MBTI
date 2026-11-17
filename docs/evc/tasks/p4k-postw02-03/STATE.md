@@ -7,7 +7,9 @@ PR #231; свежая база 4170fc0d / 2.1.21 объединена без к�
 в GoogleDrive недоступен по таймауту packed-refs, прежние файлы не изменяются.
 Локально: адресные54, backend1183, HTTP189, frontend12, lint/build/release gate
 и diff PASS. Кандидат2.1.22 подготовлен. Текущий шаг: commit/push, Ready и полный
-CI перед squash merge. Полные DB/browser проверки ещё ожидаются в CI.
+CI перед squash merge. Первый полный CI выявил 8 integration и 2 browser fixture/regression FAIL;
+RELEASE.md содержит причины и исправления. После исправлений backend1193,
+HTTP189 и адресные46 PASS. Активно: corrective push и полный CI нового head.
 Финальные статусы — outputs/p4k-postw02-03-20261117/DELIVERY.json вне Git.
 
 История draft-этапа (прежние ограничения/блокеры заменены новым поручением):
