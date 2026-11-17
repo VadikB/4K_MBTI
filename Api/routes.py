@@ -61,6 +61,7 @@ from Api.assessment_role_profiles import (
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue, public_operation
+from Api import preparation_observation as preparation_observation
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
@@ -686,9 +687,12 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                 deadline = m7_completion.read_status(connection, cycle_id).get('calendar_deadline')
             except ValueError:
                 deadline = None
+        card_preparation = None
         if cycle['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'}:
             status, label, description, action, button = _participant_cycle_outcome(history)
+            card_preparation = preparation_observation.report_status(connection, cycle_id)
             completed_assessments.append(ParticipantAssessmentCard(
+                preparation=card_preparation,
                 cycle_id=cycle_id, title=history.get('program_name') or cycle['assessment_title'],
                 organization_name=cycle['organization_name'], status=status,
                 status_label=label, description=description, action=action,
@@ -702,6 +706,7 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
             same_assignment = (acquaintance_state.get('assignment_id') == cycle['assignment_id']
                 and acquaintance_state.get('late_readiness', {}).get('personalized_profile_id') == cycle['personalized_profile_id'])
             operation = (acquaintance_state.get('preparation_operation') or {}) if same_assignment else {}
+            card_preparation = operation.get('preparation')
             if operation.get('status') == 'failed':
                 journey_state, label, description, action, button = (
                     'preparation_failed', 'Не удалось подготовить оценку',
@@ -731,6 +736,11 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                 'active', 'Оценка идёт', 'Продолжите прохождение с текущей ситуации.',
                 'continue', 'Продолжить оценку →')
             if progress['between_situations']:
+                from Api.product_cycle_preparation_queue import latest_next_operation
+                try:
+                    card_preparation = (latest_next_operation(connection, cycle_id=cycle_id, user_id=int(user.id)) or {}).get('preparation')
+                except ValueError:
+                    card_preparation = None
                 journey_state, label, description = ('between_situations',
                     'Между ситуациями', 'Ответы сохранены. Следующую ситуацию вы начнёте сами.')
             elif progress['current_position_no'] is not None:
@@ -746,6 +756,7 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
             journey_state, label, description = ('runtime_error', 'Не удалось продолжить оценку',
                 'Ваши ответы сохранены. Откройте оценку, чтобы проверить состояние.')
         current_assessments.append(ParticipantAssessmentCard(
+            preparation=card_preparation,
             cycle_id=cycle_id, title=cycle['assessment_title'],
             organization_name=cycle['organization_name'], status=cycle['status'], journey_state=journey_state,
             status_label=label, description=description, action=action,
@@ -782,6 +793,7 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                     'open_legacy_acquaintance' if readiness['status'] == 'ready' else 'start',
                     'Продолжить знакомство')
             current_assessments.append(ParticipantAssessmentCard(
+                preparation=(acquaintance_state.get('preparation_operation') or {}).get('preparation'),
                 title=acquaintance_state.get('assessment_name') or 'Оценка 4К',
                 organization_name=early.get('organization_name'), status=status, journey_state=status,
                 status_label=label, description=description, action=action, button_label=button))
@@ -1159,6 +1171,7 @@ def _project_admin_assessment_stage(row: dict) -> dict:
         if result_summary["technical_failure"]:
             description_parts.append("Есть отдельное техническое ограничение обработки.")
     return {
+        "preparation": row.get("preparation"),
         "code": code, "label": label, "action": action,
         "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
         "operation_id": row.get("preparation_operation_id"),
@@ -1410,6 +1423,19 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
                 "cycle_status": row.get("cycle_status"),
             })
+            if row.get('cycle_status') in {'collection_closed','calculation_pending','calculated','failed'}:
+                row['preparation'] = preparation_observation.report_status(connection, str(row['cycle_id']))
+            elif row.get('cycle_id'):
+                from Api.product_cycle_preparation_queue import latest_next_operation
+                try:
+                    next_operation = latest_next_operation(connection, cycle_id=str(row['cycle_id']), user_id=int(row['recipient_user_id']))
+                except ValueError:
+                    next_operation = None
+                if next_operation and next_operation['status'] in {'queued','running','failed'}:
+                    row['preparation'] = next_operation.get('preparation')
+            if not row.get('preparation') and row.get('preparation_operation_id'):
+                operation = product_cycle_preparation_queue.get_owned_status(str(row['preparation_operation_id']), int(row['recipient_user_id']))
+                row['preparation'] = operation.get('preparation') if operation else None
             if row.get('cycle_status') == 'prepared':
                 from Api.assessment_start_readiness import read as read_start_readiness
                 row['start_readiness'] = read_start_readiness(
@@ -6536,10 +6562,13 @@ def transition_owned_m5_situation(assessment_situation_id: UUID, payload: M5Tran
     user=_m5_owned_situation(request, str(assessment_situation_id))
     try:
         with get_connection() as connection:
-            _m7_require_explicit_return(connection, owner_user_id=int(user.id),
-                                        assessment_situation_id=str(assessment_situation_id))
+            # Pause/resume check saved receipts before any presence mutation.
+            if payload.action not in {'pause','resume'}:
+                _m7_require_explicit_return(connection, owner_user_id=int(user.id),
+                                            assessment_situation_id=str(assessment_situation_id))
             result = m5_scenario_runtime.transition(connection, assessment_situation_id=str(assessment_situation_id),
-                                                    action=payload.action, reason=payload.reason, request_id=payload.request_id)
+                                                    action=payload.action, reason=payload.reason, request_id=payload.request_id,
+                                                    participant_command=True)
             if payload.action=='scenario_end':
                 handoff=m5_scenario_runtime.build_c45(connection,str(assessment_situation_id),mode='interim')
                 queued=m10_orchestration.enqueue_handoff(connection,handoff_id=str(handoff['handoff_id']),created_by=int(user.id))
@@ -6650,8 +6679,12 @@ def start_owned_assessment_cycle(payload: ProductCycleActionRequest, request: Re
                 if acquaintance.preparation_scope(connection, user_id=int(user.id), profile_id=payload.personalized_profile_id):
                     raise ValueError('W02_PREPARED_CYCLE_REQUIRED')
                 # Compatibility path for released clients. New UI always prepares first.
-                result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
-                    selected_skills=list(payload.selected_skills),profile_id=payload.personalized_profile_id)
+                with preparation_observation.synchronous(payload.idempotency_key, 'assessment', {'user_id': int(user.id)}, factory=get_connection):
+                    result=m10_product_flow.start_or_resume(connection,user_id=int(user.id),key=payload.idempotency_key,
+                        selected_skills=list(payload.selected_skills),profile_id=payload.personalized_profile_id)
+                    runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
+                    connection.commit()
+                    return {**m10_product_flow.participant_presentation(result),'runtime':runtime}
             runtime=m10_product_flow.read_runtime(connection,cycle_id=str(result['plan']['cycle_id']))
             connection.commit();return {**m10_product_flow.participant_presentation(result),'runtime':runtime}
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
@@ -6685,8 +6718,11 @@ def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,req
                         raise HTTPException(status_code=409,detail='Ключ операции уже использован для другого запроса.') from exc
                     raise
                 return public_operation(operation)
-            result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
-                key=payload.idempotency_key);connection.commit();return m10_product_flow.participant_presentation(result)
+            with preparation_observation.synchronous(payload.idempotency_key, 'next', {'user_id': int(user.id), 'cycle_id': str(cycle_id)}, factory=get_connection):
+                result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
+                    key=payload.idempotency_key)
+                connection.commit()
+            return m10_product_flow.participant_presentation(result)
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
@@ -6832,7 +6868,7 @@ def control_owned_m7_cycle(cycle_id:UUID,payload:CycleControlRequest,request:Req
     user=_m7_owned_cycle(request,str(cycle_id))
     try:
         with get_connection() as connection:
-            result=m7_completion.control(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id));connection.commit();return result
+            result=m7_completion.control(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id),participant_command=True);connection.commit();return result
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
@@ -6841,7 +6877,7 @@ def complete_owned_m7_cycle(cycle_id:UUID,payload:CompletionRequest,request:Requ
     user=_m7_owned_cycle(request,str(cycle_id))
     try:
         with get_connection() as connection:
-            result=m7_completion.complete(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id));connection.commit();return result
+            result=m7_completion.complete(connection,cycle_id=str(cycle_id),key=payload.idempotency_key,action=payload.action,reason=payload.reason,initiated_by=int(user.id),participant_command=True);connection.commit();return result
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
 
 
@@ -8646,6 +8682,7 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
         cycle = m7_completion.read_status(connection, str(cycle_id))
         pipeline = connection.execute("""SELECT p.status,p.stage,p.error_code FROM m10_pipeline_runs p
             JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""", (cycle_id,)).fetchone()
+        cycle = {**cycle, 'preparation': preparation_observation.report_status(connection, str(cycle_id)) if pipeline else None}
         if pipeline and pipeline['status']=='failed':
             try:
                 report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')

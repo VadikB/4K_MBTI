@@ -3,20 +3,27 @@ import { readApiResponse, fetchWithDeadline, getSessionGeneration } from './api.
 const POLL_INTERVAL_MS = 1500;
 // Technical client limit only. The queued server operation keeps running.
 const ACTIVE_WAIT_MS = 60000;
+const automaticBudgets = new Map();
 
 const stopped = () => Object.assign(new Error('Локальное ожидание завершено; серверная подготовка продолжается.'), {
   name: 'PreparationWaitStopped',
 });
 
 export const waitForProductCyclePreparation = async (accepted, {
-  onStatus = () => {}, isCurrent = () => true, signal, maxWaitMs = ACTIVE_WAIT_MS,
+  onStatus = () => {}, onReadError = () => {}, isCurrent = () => true, signal, maxWaitMs = ACTIVE_WAIT_MS,
 } = {}) => {
   const generation = getSessionGeneration();
   const current = () => generation === getSessionGeneration() && isCurrent() && !signal?.aborted;
   let operation = accepted;
   const operationId = accepted.operation_id;
   if (!operationId) throw new Error('Сервер не вернул идентификатор подготовки плана оценки.');
-  const startedAt = Date.now();
+  const budgetKey = 'p4k-preparation-wait:' + operationId;
+  let startedAt = automaticBudgets.get(operationId);
+  try { startedAt ??= Number(window.sessionStorage?.getItem(budgetKey)) || null; } catch { /* Memory budget. */ }
+  startedAt ??= Date.now();
+  automaticBudgets.set(operationId, startedAt);
+  try { window.sessionStorage?.setItem(budgetKey, String(startedAt)); } catch { /* Memory budget. */ }
+  if (automaticBudgets.size > 64) automaticBudgets.delete(automaticBudgets.keys().next().value);
   const waitLimit = () => Object.assign(new Error('Подготовка продолжается. Проверьте состояние той же операции.'), {
     name: 'PreparationWaitLimit', operationId, operationStatus: operation.status,
   });
@@ -31,15 +38,25 @@ export const waitForProductCyclePreparation = async (accepted, {
       });
     }
     if (Date.now() - startedAt >= maxWaitMs) throw waitLimit();
-    await new Promise((resolve) => window.setTimeout(resolve, delay));
+    await new Promise((resolve) => {
+      const done = () => { window.clearTimeout(timer); signal?.removeEventListener('abort', done); resolve(); };
+      const timer = window.setTimeout(done, delay);
+      signal?.addEventListener('abort', done, { once: true });
+    });
     if (!current()) throw stopped();
     if (Date.now() - startedAt >= maxWaitMs) throw waitLimit();
-    const statusResponse = await fetchWithDeadline(
-      '/users/assessment/cycles/preparation/' + encodeURIComponent(operationId),
-      { credentials: 'same-origin', signal },
-      Math.min(15000, maxWaitMs - (Date.now() - startedAt)),
-    );
-    operation = await readApiResponse(statusResponse, 'Не удалось получить статус подготовки плана оценки.');
+    try {
+      const statusResponse = await fetchWithDeadline(
+        '/users/assessment/cycles/preparation/' + encodeURIComponent(operationId),
+        { credentials: 'same-origin', signal },
+        Math.min(15000, maxWaitMs - (Date.now() - startedAt)),
+      );
+      operation = await readApiResponse(statusResponse, 'Не удалось получить статус подготовки плана оценки.');
+    } catch (error) {
+      if (!current()) throw stopped();
+      onReadError(error);
+      throw Object.assign(error, { operationId, lastOperation: operation });
+    }
     if (!current()) throw stopped();
     if (operation.status === 'completed' && !operation.result) {
       throw new Error('Подготовка завершена без готового плана оценки.');

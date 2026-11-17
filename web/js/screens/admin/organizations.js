@@ -1,3 +1,4 @@
+import { preparationHtml, renderPreparation } from '../../preparation-status.js';
 import { createOperationId, readApiResponse, fetchWithDeadline as fetch, previewAccountPurge,
   getPendingAccountPurges, confirmAccountPurge, executeAccountPurge, accountPurgeErrorMessage } from '../../api.js';
 import {
@@ -491,14 +492,14 @@ const setLocalOperationStatus = (root, message, tone) => {
   return local;
 };
 
-const setStatus = (message, tone = 'muted', root = operationRoot()) => {
+const setStatus = (message, tone = 'muted', root = operationRoot(), { focus = true } = {}) => {
   if (!adminOrganizationsStatus) return;
   adminOrganizationsStatus.textContent = message || '';
   adminOrganizationsStatus.classList.toggle('hidden', !message);
   adminOrganizationsStatus.dataset.tone = tone;
   const local = setLocalOperationStatus(root, message, tone);
   adminOrganizationsStatus.classList.toggle('hidden', !message || Boolean(local));
-  if (message && tone !== 'loading' && !adminOrganizationsPanel.classList.contains('hidden')) {
+  if (focus && message && tone !== 'loading' && !adminOrganizationsPanel.classList.contains('hidden')) {
     const target = local || adminOrganizationsStatus;
     target.focus({ preventScroll: true });
     target.scrollIntoView({ block: 'nearest' });
@@ -605,13 +606,13 @@ export const refreshAdminOrganizationsSafely = async () => {
       'Не удалось обновить организации.',
     );
     if (!data) return false;
-    setStatus('Состояние организаций обновлено.', 'success');
+    setStatus('Состояние организаций обновлено.', 'success', undefined, { focus: false });
     return true;
   } catch (error) {
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         organizationsRequestGeneration !== requestGeneration) return false;
     markOrganizationsReadStale(error.message || 'Не удалось обновить организации.');
-    setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error');
+    setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error', undefined, { focus: false });
     return false;
   }
 };
@@ -2065,6 +2066,8 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
         const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
         const scopedStage = item.assessment_stages?.[selectedAssessmentRef] || null;
         const preparationStatus = String(scopedStage?.code || '');
+        // A historical preparation cannot override cancellation or a start blocker.
+        const preparationModel = ['preparing', 'preparation_failed', 'active', 'paused', 'interrupted', 'processing', 'failed', 'report_ready'].includes(preparationStatus) ? scopedStage?.preparation : null;
         const isPreparing = preparationStatus === 'preparing';
         const isPrepared = ['preparation_complete', 'start_blocked', 'ready_to_start', 'active', 'paused', 'interrupted', 'processing', 'report_ready'].includes(preparationStatus);
         const canPrepare = item.assessment_profile_ready === true && !isPreparing && !isPrepared;
@@ -2101,7 +2104,7 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
         const currentStage = scopedStage
           ? (scopedStage.label || stageLabels[preparationStatus] || preparationStatus)
           : hasAssignment ? 'Оценка назначена' : 'Оценка не назначена';
-        const stageDescription = scopedStage?.description || (hasAssignment
+        const stageDescription = scopedStage?.description || (scopedStage?.code === 'cancelled' ? 'Назначение отменено.' : scopedStage || hasAssignment
           ? 'Ожидаем следующего действия участника или системы.'
           : 'Для выбранной оценки назначения нет.');
         const assignmentHistory = (item.assessment_history || [])
@@ -2146,7 +2149,7 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
           '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
           escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
           '</div>' +
-          '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span></div>' +
+          (preparationModel ? preparationHtml(preparationModel, { compact: true }) : '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span>' + '</div>') +
           '<div class="admin-organization-member-actions">' +
           primaryAction +
           '<details class="admin-organization-member-menu"><summary aria-label="Другие действия" aria-haspopup="menu">⋯</summary><div role="menu">' + menuActions + '</div></details>' +
@@ -2228,6 +2231,9 @@ export const renderAdminOrganizations = () => {
       )
       .join('');
   }
+  const preparationRoots = new Map(Array.from(adminOrganizationsList.querySelectorAll('[data-preparation-status]'), (node) => [node.dataset.preparationReferenceId, node]));
+  const focusedPreparationControl = document.activeElement?.closest?.('[data-preparation-status]') ? document.activeElement : null;
+  const focusedCheckUser = document.activeElement?.matches?.('[data-action="check-member-preparation"]') ? document.activeElement.closest('.admin-organization-member')?.querySelector('[data-user-id]')?.dataset.userId : null;
   adminOrganizationsList.innerHTML = purgeRecoveryMarkup + invitationRecoveryMarkup + staleMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
@@ -2551,8 +2557,22 @@ export const renderAdminOrganizations = () => {
       );
     })
     .join('');
+  for (const freshRoot of adminOrganizationsList.querySelectorAll('[data-preparation-status]')) {
+    const previousRoot = preparationRoots.get(freshRoot.dataset.preparationReferenceId);
+    if (previousRoot) freshRoot.replaceWith(previousRoot);
+  }
+  for (const organization of organizations) for (const member of organization.members || []) {
+    for (const stage of Object.values(member.assessment_stages || {})) {
+      const model = stage.preparation;
+      if (model) for (const root of adminOrganizationsList.querySelectorAll('[data-preparation-status]')) {
+        if (root.dataset.preparationReferenceId === model.reference) renderPreparation(root, model, { readError: organizationsReadStale });
+      }
+    }
+  }
   restoreAdminOrganizationsDraft();
   restoreProgramConnectionFeedback();
+  if (focusedPreparationControl?.isConnected) focusedPreparationControl.focus({ preventScroll: true });
+  else if (focusedCheckUser) adminOrganizationsList.querySelector('[data-user-id="' + CSS.escape(focusedCheckUser) + '"]')?.closest('.admin-organization-member')?.querySelector('[data-action="check-member-preparation"]')?.focus({ preventScroll: true });
   adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')
     .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));
 };

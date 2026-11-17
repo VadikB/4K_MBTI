@@ -1,7 +1,7 @@
 # STATE — P4K-REPORT-08
 
-- Base `8ad6d1577f90555159502fbbf49e37bc4a90b025` (`main`=`origin/main` на момент реализации), ветка `codex/p4k-report-08`, отдельный worktree. Кандидат `2.1.21`.
+- Исходная база `8ad6d1577f90555159502fbbf49e37bc4a90b025`; после открытия PR #238 интегрирован `origin/main`=`c05fe745ca48424796ad38886ee9e03d67d0bd69`. Ветка `codex/p4k-report-08`, отдельный worktree. Кандидат пересчитан на `2.1.23`.
 - Реализовано: серверная страница закрытых assessment Cycle в одной доступной организации, latest saved Report, серверные фильтры/total; список с состояниями/адаптивной таблицей, точный M8 detail/PDF и возврат; legacy 410 и удаление активных exports, графиков и экранов. Данные/схема не менялись.
 - Источники, граница и правило M8→контракт→код — `TASK.md`. Карта удалений и сохранённых зависимостей — `LEGACY_MAP.md`; фактические проверки — `CHECKS.md`. Визуальные снимки `evidence/list-{1440,390}.png`.
 - Стоп-условия: новых нет; изменение публичного legacy API прямо задано пользователем в REPORT_08. Детального утверждённого макета нет, новая композиция требует приёмки владельца. CI точного PR head обязателен до merge.
-- Следующий шаг: финальный review diff, commit/push и Ready PR с полным CI; затем передача владельцу для визуальной и продуктовой приёмки. `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`, `version_bump=true`, `artifact_publish=false`.
+- Следующий шаг: проверки совмещённого head, push в Ready PR #238 и обязательный CI; затем передача владельцу для визуальной и продуктовой приёмки. `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`, `version_bump=true`, `artifact_publish=false`.

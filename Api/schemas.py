@@ -352,6 +352,7 @@ class AssessmentReport(BaseModel):
 
 
 class ParticipantAssessmentCard(BaseModel):
+    preparation: dict | None = None
     cycle_id: str | None = None
     title: str
     organization_name: str | None = None

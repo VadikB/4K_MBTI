@@ -98,7 +98,7 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  const assessmentAction=page.locator('#assessment-action-button').filter({visible:true});
  const welcomeAction=page.locator('#start-first-assessment').filter({visible:true});
  const dashboard=page.locator('#dashboard-panel').filter({visible:true});
- const completedDashboardAction=page.getByRole('button',{name:'В личный кабинет',exact:true}).filter({visible:true});
+ const completedDashboardAction=page.locator('#processing-panel').getByRole('button',{name:'Мои оценки',exact:true}).filter({visible:true});
  let routeReady=continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction);
  if(allowDashboard)routeReady=routeReady.or(dashboard).or(completedDashboardAction);
  await expect(routeReady.first()).toBeVisible({timeout:15000});
@@ -388,7 +388,7 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  await page.unroute(journeyPattern);
  await page.route(journeyPattern,route=>route.abort());
  await page.route(detailPattern,route=>route.abort());
- await page.getByRole('button',{name:'Проверить готовность'}).click();
+ await page.locator('#processing-panel').getByRole('button',{name:'Проверить состояние',exact:true}).click();
  await expect(page.locator('#processing-outcome-notice')).toContainText('Не удалось проверить готовность');
  await page.screenshot({path:path.join(stand.dir,'outcome-offline-390.png'),fullPage:true});
  await page.setViewportSize({width:1440,height:1000});
@@ -1219,17 +1219,24 @@ async function runtime(page,stand){
  const response=await page.waitForResponse(r=>r.url().endsWith('/runtime'));
  return response.json();
 }
+async function seedSavedCompletion(stand,cycleId,action,info){
+ const prepared=spawnSync(python,['scripts/browser_completion_fixture.py',
+   '--state',path.join(stand.dir,'state.json'),'--cycle',cycleId,'--action',action],{encoding:'utf8'});
+ expect(prepared.status,prepared.stderr).toBe(0);
+ await info.attach('historical-completion-fixture',{body:prepared.stdout,contentType:'application/json'});
+}
 test('S10-B saved interruption recovery preserves Cycle and deadline',async({page,stand},info)=>{
  await login(page,stand);await start(page);await answer(page);
  const first=await runtime(page,stand);
  await expect(page.locator('#interview-additional-button')).toBeHidden();
- // Seed an old saved interrupted state through the existing synthetic server.
- // This is recovery coverage, not an ordinary participant interruption action.
+ // The public command is refused; seed historical state through the owned stand fixture.
  info.annotations.push({type:'historical_state',description:'Synthetic saved interrupted Cycle; ordinary UI interrupt must remain absent.'});
  const interrupted=await page.request.post(`${stand.url}/users/assessment/m7/cycles/${first.cycle_id}/completion`,{
    data:{action:'interrupt_for_continuation',reason:'synthetic_historical_interruption',idempotency_key:randomUUID()},
  });
- expect(interrupted.ok()).toBe(true);
+ expect(interrupted.status()).toBe(409);
+ expect((await interrupted.json()).detail).toBe('M7_PARTICIPANT_MANUAL_CONTROL_NOT_ALLOWED');
+ await seedSavedCompletion(stand,first.cycle_id,'interrupt_for_continuation',info);
  await page.reload();
  await expect(page.locator('#interview-case-status')).toContainText('Прохождение прервано');
  await expect(page.locator('#interview-additional-button')).toHaveText('Продолжить сохранённое прохождение');
@@ -1265,7 +1272,9 @@ for(const variant of ['C1','C2']) test(`S10-${variant} background time closure w
    const paused=await page.request.post(`${stand.url}/users/assessment/m7/cycles/${before.cycle_id}/control`,{
      data:{action:'pause',reason:'synthetic_historical_pause',idempotency_key:randomUUID()},
    });
-   expect(paused.ok()).toBe(true);
+   expect(paused.status()).toBe(409);
+   expect((await paused.json()).detail).toBe('M7_PARTICIPANT_MANUAL_CONTROL_NOT_ALLOWED');
+   await seedSavedCompletion(stand,before.cycle_id,'pause',info);
    await page.reload();
    await expect(page.locator('#interview-pause-button')).toHaveText('Продолжить оценку');
    await page.close();page=await context.newPage();

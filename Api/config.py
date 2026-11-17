@@ -25,6 +25,8 @@ DEPLOYMENT_PUBLIC_ORIGIN = (None if os.getenv("AGENT4K_ISOLATED_STAND") == "1"
 
 
 class Settings:
+    # UX threshold only; no later than five minutes, independent of worker leases.
+    preparation_delay_notice_seconds: int = int(os.getenv("PREPARATION_DELAY_NOTICE_SECONDS", "300"))
     db_host: str = os.getenv("DB_HOST", "localhost")
     db_port: int = int(os.getenv("DB_PORT", "5432"))
     db_name: str = os.getenv("DB_NAME", "app_db")
