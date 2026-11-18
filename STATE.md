@@ -1,3 +1,74 @@
+# QA-03 — Ready и merge разрешены, 18.11.2026
+
+Прямое поручение владельца: «Переводи PR #247 в Ready for review, запускай
+полные проверки и после их успешного завершения сливай в main».
+По CONTRIBUTING-MERGE-AUTH-01 разрешены branch_push/pr/version_bump/Ready/merge=true,
+deploy=test штатным workflow после merge; artifact_publish/pilot/production=false.
+Main997e4eb /2.1.30 актуален; кандидат — непосредственный PATCH2.1.31.
+Границы QA-03 сохраняются; реализация interview.js8b3ca49 не меняется.
+Активно: canonical ready:prepare → release commit/push → Ready → все обязательные
+CI точного head → свежая база → squash merge → наблюдение штатного TEST deploy.
+Старые false flags ниже относятся к прежним этапам и заменены этим поручением.
+
+---
+
+# QA-03 — публикация прямо разрешена, 18.11.2026
+
+Владелец прямо подтвердил: «Да, разрешаю опубликовать ветку QA-03 с кодом,
+тестами, отчётом и синтетическими снимками в VadikB/4K_MBTI и создать draft PR
+в main». Это новый точный допуск destination/payload, снимающий прежнее ожидание
+после отказа automatic approval review. branch_push/pr=true;
+merge/deploy/version_bump/artifact_publish=false. Собственная ветка:
+codex/p4k-postw02-qa-03; destination https://github.com/VadikB/4K_MBTI; base main.
+Fresh main997e4eb неизменён. Код/тесты/dist после проверок не менялись;
+frontend463/HTTP3/browser12/lint/build/diff PASS сохраняют применимость.
+Текущий шаг: push → один draft PR → наблюдение быстрого CI точного head.
+Ниже сохранён журнал предыдущих этапов; старый блокер снят новым поручением.
+
+---
+
+# STATE — QA-03: push отклонён automatic review, 18.11.2026
+
+Локальная подготовка PR завершена, merged base997e4eb, tests463/HTTP3/browser12
+PASS. Automatic approval review отклонил push58fff10 в VadikB/4K_MBTI: не
+подтверждено явное разрешение на этот конкретный destination и payload.
+Remote ветка/PR/CI не созданы; повтор/обход запрещён и не выполнялся.
+Ожидается точное подтверждение публикации ветки/одного draft PR в этот repo.
+merge/deploy/version_bump=false. Состояние/основание — QA-03/PR.md.
+
+---
+
+# STATE — QA-03: публикация PR, 18.11.2026
+
+Владелец прямо поручил: «выполни PR в main». Разрешены push собственной ветки
+`codex/p4k-postw02-qa-03` и создание PR в `VadikB/4K_MBTI`, base `main`, с кодом,
+тестами, отчётом и синтетическими evidence. `branch_push/pr=true`.
+Поручение на PR не является поручением на merge: `merge/deploy/version_bump/
+artifact_publish=false`. Подготовка — draft по CONTRIBUTING до release-этапа.
+Интегрируется main `997e4eb` /2.1.30; исходники QA-03 не конфликтуют,
+STATE сохраняет истории, dist пересобирается из объединённых источников.
+Совместимость PASS: frontend463/HTTP3/browser12/lint/build45/diff.
+Активно: commit/push → draft PR и быстрый CI; детали — QA-03/PR.md.
+
+---
+
+# STATE — P4K-POSTW02-QA-03, 17.11.2026
+
+Локальная [QA-03](docs/evc/tasks/p4k-postw02-qa-03/TASK.md) завершена в
+`codex/p4k-postw02-qa-03`, база/main71a9c53 /2.1.28.
+Код/tests/dist `8b3ca49d9398366b42ffea736dfeab885712fa93`; отчёт и доказательства —
+[REPORT](docs/evc/tasks/p4k-postw02-qa-03/REPORT.md),
+[STATE](docs/evc/tasks/p4k-postw02-qa-03/STATE.md).
+Runtime single-flight, восстановление текущей Next-кнопки и подтверждённое время
+проверены: frontend431/HTTP3/ownedDB3/browser12 +lint/build45/diff PASS.
+Рабочие данные/API/методология неизменны; свои ресурсы остановлены.
+Публикация/PR/merge/deploy/version_bump/artifact_publish=false, CI NOT_RUN.
+Следующий этап — приёмка владельцем. QA-04 не запускалась.
+Ниже история прежних задач; её полномочия сюда не переносятся.
+
+
+---
+
 # STATE — P4K-REPORT-FIX-02, 17.11.2026
 
 Локальная реализация завершена: [TASK](docs/evc/tasks/p4k-report-fix-02/TASK.md),

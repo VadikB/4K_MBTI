@@ -9,7 +9,7 @@ const section = (start, end) => source.slice(source.indexOf(start), source.index
 // Execute production presenter/delivery/submit functions with a small DOM,
 // deterministic layout callbacks and injected HTTP responses. These fixtures do
 // not prove browser geometry, software keyboards, or real backend/DB behavior.
-export const createInterviewHarness = ({ animationFrame = true, storage = new Map(), meta = false } = {}) => {
+export const createInterviewHarness = ({ animationFrame = true, storage = new Map(), meta = false, timer = false } = {}) => {
   const callbacks = new Map();
   const calls = [];
   const listeners = new Map();
@@ -30,6 +30,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
       this.style = {};
       this.className = '';
       this.isConnected = false;
+      this.disabled = false;
       this.listeners = new Map();
       const classes = new Set();
       this.classList = {
@@ -148,6 +149,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     ${section('export const addInterviewMessage =', '\nconst isInterviewNearBottom =').replaceAll('export const ', 'const ')}
     ${section('const isInterviewNearBottom =', '\nconst getCurrentCaseDropdownLabel =')}
     ${section('export const initInterview =', '\nexport { startAssessmentInterview').replace('export const ', 'const ')}
+    ${timer ? section('const getRemainingCaseTimeMs =', '\nconst handleAssessmentResponse =') : ''}
     globalThis.subject = {renderProductRuntime, addInterviewMessage, setInterviewMessageDeliveryState,
       scheduleInterviewScrollAlignment, scheduleInterviewBottomAlignment, cancelInterviewScrollAlignment,
       productEventText, initInterview, sendProductInterviewAnswer, readProductInterviewAnswer, isCycleAssessment,

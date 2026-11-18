@@ -1,0 +1,38 @@
+{
+  "base_sha": "997e4eb1ea64d8d248aee0de59f552421a2d7d58",
+  "implementation_unchanged_from": "8b3ca49d9398366b42ffea736dfeab885712fa93",
+  "frontend": {
+    "pass": 463,
+    "fail": 0
+  },
+  "http": {
+    "pass": 3,
+    "fail": 0
+  },
+  "browser": {
+    "pass": 12,
+    "fail": 0,
+    "widths": [
+      1440,
+      390,
+      320
+    ],
+    "workers": 1,
+    "retries": 0,
+    "duration_seconds": 31.3
+  },
+  "lint": "PASS",
+  "build": "PASS",
+  "dist_files": 48,
+  "reproducible_dist": true,
+  "audit_high_gate": "PASS",
+  "audit_high_or_critical": 0,
+  "audit_moderate_from_main": 3,
+  "llm": 0,
+  "mail": 0,
+  "db_reused": {
+    "sha": "8b3ca49d9398366b42ffea736dfeab885712fa93",
+    "pass": 3,
+    "area": "unchanged production timing handlers; actual isolated PostgreSQL proof in REPORT/evidence/db.log"
+  }
+}

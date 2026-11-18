@@ -1,0 +1,121 @@
+
+Running 4 tests using 1 worker
+
+(node:55645) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 1440 (5.8s)
+(node:55735) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 390 (5.9s)
+(node:55776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 320 (5.7s)
+(node:55827) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  4 tests/browser/qa03-runtime.spec.mjs:102:1 › R1/R2 real polling continues across GETs slower than poll interval without overlapping requests (551ms)
+
+
+  1) tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 1440
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('#interview-timer-badge')
+    Expected: "Время выполнения · 120:00"
+    Received: "Время недоступно"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" locator('#interview-timer-badge') with timeout 5000ms
+      - waiting for locator('#interview-timer-badge')
+        14 × locator resolved to <span id="interview-timer-badge" class="interview-timer-badge" title="Не удалось получить актуальный остаток времени.">Время недоступно</span>
+           - unexpected value "Время недоступно"
+
+
+      90 |   await snap(page, 'read-error', width);
+      91 |   run.offline = false; run.model.status.remaining_seconds = 7200; await page.clock.runFor(1300);
+    > 92 |   await expect(timer).toHaveText('Время выполнения · 120:00'); await expect(next).toBeEnabled();
+         |                       ^
+      93 |   // Readback of completed Next can only present the server-selected result.
+      94 |   phase = 'completed'; Object.assign(run.model, active); run.model.preparation_operation = undefined;
+      95 |   await next.click(); await expect(page.locator('#interview-textarea')).toBeEnabled();
+        at /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/browser/qa03-runtime.spec.mjs:92:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-30c17-ime-focus-and-recovery-1440/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-30c17-ime-focus-and-recovery-1440/error-context.md
+
+    Error Context: .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-30c17-ime-focus-and-recovery-1440/error-context.md
+
+  2) tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 390
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('#interview-timer-badge')
+    Expected: "Время выполнения · 120:00"
+    Received: "Время недоступно"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" locator('#interview-timer-badge') with timeout 5000ms
+      - waiting for locator('#interview-timer-badge')
+        14 × locator resolved to <span id="interview-timer-badge" class="interview-timer-badge" title="Не удалось получить актуальный остаток времени.">Время недоступно</span>
+           - unexpected value "Время недоступно"
+
+
+      90 |   await snap(page, 'read-error', width);
+      91 |   run.offline = false; run.model.status.remaining_seconds = 7200; await page.clock.runFor(1300);
+    > 92 |   await expect(timer).toHaveText('Время выполнения · 120:00'); await expect(next).toBeEnabled();
+         |                       ^
+      93 |   // Readback of completed Next can only present the server-selected result.
+      94 |   phase = 'completed'; Object.assign(run.model, active); run.model.preparation_operation = undefined;
+      95 |   await next.click(); await expect(page.locator('#interview-textarea')).toBeEnabled();
+        at /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/browser/qa03-runtime.spec.mjs:92:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-a6666-time-focus-and-recovery-390/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-a6666-time-focus-and-recovery-390/error-context.md
+
+    Error Context: .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-a6666-time-focus-and-recovery-390/error-context.md
+
+  3) tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 320
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('#interview-timer-badge')
+    Expected: "Время выполнения · 120:00"
+    Received: "Время недоступно"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" locator('#interview-timer-badge') with timeout 5000ms
+      - waiting for locator('#interview-timer-badge')
+        14 × locator resolved to <span id="interview-timer-badge" class="interview-timer-badge" title="Не удалось получить актуальный остаток времени.">Время недоступно</span>
+           - unexpected value "Время недоступно"
+
+
+      90 |   await snap(page, 'read-error', width);
+      91 |   run.offline = false; run.model.status.remaining_seconds = 7200; await page.clock.runFor(1300);
+    > 92 |   await expect(timer).toHaveText('Время выполнения · 120:00'); await expect(next).toBeEnabled();
+         |                       ^
+      93 |   // Readback of completed Next can only present the server-selected result.
+      94 |   phase = 'completed'; Object.assign(run.model, active); run.model.preparation_operation = undefined;
+      95 |   await next.click(); await expect(page.locator('#interview-textarea')).toBeEnabled();
+        at /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/browser/qa03-runtime.spec.mjs:92:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-d9d59-time-focus-and-recovery-320/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-d9d59-time-focus-and-recovery-320/error-context.md
+
+    Error Context: .test-stand/browser-output/qa03-runtime-R3-R4-R6-R7-R-d9d59-time-focus-and-recovery-320/error-context.md
+
+  3 failed
+    tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 1440
+    tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 390
+    tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 320
+  1 passed (20.1s)

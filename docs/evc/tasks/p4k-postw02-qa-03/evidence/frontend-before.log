@@ -1,0 +1,538 @@
+TAP version 13
+# (node:61782) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/product-cycle-preparation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: R1/R2: slow runtime and return-state reads coalesce while polling and manual checks continue
+not ok 1 - R1/R2: slow runtime and return-state reads coalesce while polling and manual checks continue
+  ---
+  duration_ms: 43.150042
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:17:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    one return-state + runtime per round
+
+    8 !== 2
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 8
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:24:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: R5: late GET rejected after owner change
+ok 2 - R5: late GET rejected after owner change
+  ---
+  duration_ms: 1.591417
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after epoch change
+ok 3 - R5: late GET rejected after epoch change
+  ---
+  duration_ms: 1.89275
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after cycle change
+ok 4 - R5: late GET rejected after cycle change
+  ---
+  duration_ms: 1.353625
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after situation change
+ok 5 - R5: late GET rejected after situation change
+  ---
+  duration_ms: 1.586959
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after screen change
+ok 6 - R5: late GET rejected after screen change
+  ---
+  duration_ms: 1.224958
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after view change
+ok 7 - R5: late GET rejected after view change
+  ---
+  duration_ms: 1.161291
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after poll change
+ok 8 - R5: late GET rejected after poll change
+  ---
+  duration_ms: 1.241208
+  type: 'test'
+  ...
+# Subtest: R5: new context can read while old context is pending; old completion cannot clear the new chain
+not ok 9 - R5: new context can read while old context is pending; old completion cannot clear the new chain
+  ---
+  duration_ms: 2.199375
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:53:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    6 !== 4
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 4
+  actual: 6
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:60:66)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R3/R4: replaced Next button recovers after timeout and checks the same operation
+not ok 10 - R3/R4: replaced Next button recovers after timeout and checks the same operation
+  ---
+  duration_ms: 2.479875
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:64:60'
+  failureType: 'testCodeFailure'
+  error: |-
+    connected action released immediately
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:82:23)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R3/R4: replaced Next button recovers after network and checks the same operation
+not ok 11 - R3/R4: replaced Next button recovers after network and checks the same operation
+  ---
+  duration_ms: 1.97425
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:64:60'
+  failureType: 'testCodeFailure'
+  error: |-
+    connected action released immediately
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:82:23)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R3/R4: replaced Next button recovers after completed and checks the same operation
+not ok 12 - R3/R4: replaced Next button recovers after completed and checks the same operation
+  ---
+  duration_ms: 2.044291
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:64:60'
+  failureType: 'testCodeFailure'
+  error: |-
+    connected action released immediately
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:82:23)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R4: failed preparation without retry permission remains disabled; completed operation opens only server-admitted AS
+ok 13 - R4: failed preparation without retry permission remains disabled; completed operation opens only server-admitted AS
+  ---
+  duration_ms: 1.817625
+  type: 'test'
+  ...
+# Subtest: R2: confirmed trace, AS phase and preparation progress never roll back
+not ok 14 - R2: confirmed trace, AS phase and preparation progress never roll back
+  ---
+  duration_ms: 2.281042
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:109:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'active'
+    - 'scenario_ended'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'scenario_ended'
+  actual: 'active'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:113:106)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R6/R7: time mode paused/false is independent of known budget
+not ok 15 - R6/R7: time mode paused/false is independent of known budget
+  ---
+  duration_ms: 3.044792
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:122:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:126:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R6/R7: time mode paused/null is independent of known budget
+not ok 16 - R6/R7: time mode paused/null is independent of known budget
+  ---
+  duration_ms: 2.437375
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:122:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    false !== true
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:126:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R6/R7: time mode active/true is independent of known budget
+not ok 17 - R6/R7: time mode active/true is independent of known budget
+  ---
+  duration_ms: 1.571292
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:122:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Время на ответы сейчас не расходуется/. Input:
+
+    'Во время подготовки время на выполнение не расходуется. Общий срок завершения оценки продолжает идти'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'Во время подготовки время на выполнение не расходуется. Общий срок завершения оценки продолжает идти'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:128:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R6/R7: time mode active/false is independent of known budget
+not ok 18 - R6/R7: time mode active/false is independent of known budget
+  ---
+  duration_ms: 0.962459
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:122:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Сведения о времени сейчас недоступны/. Input:
+
+    'Не удалось уточнить, учитывается ли сейчас время выполнения. Общий срок завершения оценки продолжает идти'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'Не удалось уточнить, учитывается ли сейчас время выполнения. Общий срок завершения оценки продолжает идти'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:128:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R6/R7: time mode active/null is independent of known budget
+not ok 19 - R6/R7: time mode active/null is independent of known budget
+  ---
+  duration_ms: 0.917584
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:122:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Сведения о времени сейчас недоступны/. Input:
+
+    'Не удалось уточнить, учитывается ли сейчас время выполнения. Общий срок завершения оценки продолжает идти'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'Не удалось уточнить, учитывается ли сейчас время выполнения. Общий срок завершения оценки продолжает идти'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:128:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R7: invalid remainder undefined stays unknown and recovers after GET failure
+not ok 20 - R7: invalid remainder undefined stays unknown and recovers after GET failure
+  ---
+  duration_ms: 1.041416
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:132:66'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Остаток времени выполнения уточняется'
+    - 'Время недоступно'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Время недоступно'
+  actual: 'Остаток времени выполнения уточняется'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:134:49)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R7: invalid remainder null stays unknown and recovers after GET failure
+not ok 21 - R7: invalid remainder null stays unknown and recovers after GET failure
+  ---
+  duration_ms: 0.911583
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:132:66'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Остаток времени выполнения уточняется'
+    - 'Время недоступно'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Время недоступно'
+  actual: 'Остаток времени выполнения уточняется'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:134:49)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R7: invalid remainder -1 stays unknown and recovers after GET failure
+not ok 22 - R7: invalid remainder -1 stays unknown and recovers after GET failure
+  ---
+  duration_ms: 0.90775
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:132:66'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Остаток времени выполнения уточняется'
+    - 'Время недоступно'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Время недоступно'
+  actual: 'Остаток времени выполнения уточняется'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:134:49)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R7: invalid remainder 120 stays unknown and recovers after GET failure
+not ok 23 - R7: invalid remainder 120 stays unknown and recovers after GET failure
+  ---
+  duration_ms: 0.961791
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:132:66'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Остаток времени выполнения уточняется'
+    - 'Время недоступно'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Время недоступно'
+  actual: 'Остаток времени выполнения уточняется'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:134:49)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R7: invalid remainder NaN stays unknown and recovers after GET failure
+not ok 24 - R7: invalid remainder NaN stays unknown and recovers after GET failure
+  ---
+  duration_ms: 0.897042
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:132:66'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Остаток времени выполнения уточняется'
+    - 'Время недоступно'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Время недоступно'
+  actual: 'Остаток времени выполнения уточняется'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:134:49)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R7: invalid remainder Infinity stays unknown and recovers after GET failure
+not ok 25 - R7: invalid remainder Infinity stays unknown and recovers after GET failure
+  ---
+  duration_ms: 1.229375
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:132:66'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + 'Остаток времени выполнения уточняется'
+    - 'Время недоступно'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'Время недоступно'
+  actual: 'Остаток времени выполнения уточняется'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:134:49)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R3/R5: old pending Next and detached handler cannot lock or mutate a new identity context
+not ok 26 - R3/R5: old pending Next and detached handler cannot lock or mutate a new identity context
+  ---
+  duration_ms: 1.290417
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:142:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:153:41)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: R3: known Next refusal survives replacement; checks remain read-only
+not ok 27 - R3: known Next refusal survives replacement; checks remain read-only
+  ---
+  duration_ms: 1.540583
+  type: 'test'
+  location: '/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:164:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    3 !== 1
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/tests/frontend/qa03-runtime.test.mjs:177:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 8
+# fail 19
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 204.581792

@@ -1,0 +1,61 @@
+{
+  "change": "Только конечные пробелы строк и пустые строки в EOF; содержимое и результаты не изменены для git diff --check.",
+  "raw_archive": "/Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/outputs/p4k-qa03-runtime-20261117/raw-logs",
+  "files": [
+    {
+      "file": "browser.log",
+      "raw_sha256": "0ebada6ee952eb0b69fac54abe5f5abc9c638fa4eab5b449267e5f0ca27df343",
+      "display_sha256": "0ebada6ee952eb0b69fac54abe5f5abc9c638fa4eab5b449267e5f0ca27df343"
+    },
+    {
+      "file": "browser-fastpath-before.log",
+      "raw_sha256": "6d95266ce3ccfa359dbe2ef902737bdea67dc59484fb7222e7a61c677beac5e7",
+      "display_sha256": "84c118e55ca8a7c37636ee725cc25ab7e192f075c35c55fcaa4637d8238e710f"
+    },
+    {
+      "file": "frontend-before.log",
+      "raw_sha256": "4b059998fa9f42f59c5bd90392fd495b429164f72cbd2a73323001e541e50131",
+      "display_sha256": "7baa74ff18193cce54c712e1f504396af8b204b742a5e14e33973a22944742bd"
+    },
+    {
+      "file": "lint.log",
+      "raw_sha256": "d825f2b97f9f2a8a649c44834a7271f31801b772b21c97f6805ed56e74f00dbf",
+      "display_sha256": "9fb74435fb2a2a219ee50577da7f4b96553d05fd6e24c57c01e6ff0a8a6858ba"
+    },
+    {
+      "file": "db.log",
+      "raw_sha256": "7d1b8355c0c0aa76349a255feeaed1553f4a251c4d5bf8039055fde963460c56",
+      "display_sha256": "7d1b8355c0c0aa76349a255feeaed1553f4a251c4d5bf8039055fde963460c56"
+    },
+    {
+      "file": "browser-desktop.log",
+      "raw_sha256": "b59d209f65dfb82aca3f677998337db606c002677b41e333e4fbed63617c0c3a",
+      "display_sha256": "b59d209f65dfb82aca3f677998337db606c002677b41e333e4fbed63617c0c3a"
+    },
+    {
+      "file": "http.log",
+      "raw_sha256": "945d74f889178198cba36dd969a21dabea4826468412d7c88fed7b967c685880",
+      "display_sha256": "945d74f889178198cba36dd969a21dabea4826468412d7c88fed7b967c685880"
+    },
+    {
+      "file": "frontend-full.log",
+      "raw_sha256": "568202f05f9581c14a59cac10d749306bc0bc25d5a42b62f2a57758af25954c9",
+      "display_sha256": "568202f05f9581c14a59cac10d749306bc0bc25d5a42b62f2a57758af25954c9"
+    },
+    {
+      "file": "frontend-targeted.log",
+      "raw_sha256": "09b76147b7e4d10bdb340b4daa30ac4b48e8e005a172599287c8da5149ed8ade",
+      "display_sha256": "09b76147b7e4d10bdb340b4daa30ac4b48e8e005a172599287c8da5149ed8ade"
+    },
+    {
+      "file": "build-repeat.log",
+      "raw_sha256": "9e31ef16d66a9da309e9378c8279796c2ab476d6c087aa68dcffd678b914886d",
+      "display_sha256": "9e31ef16d66a9da309e9378c8279796c2ab476d6c087aa68dcffd678b914886d"
+    },
+    {
+      "file": "build.log",
+      "raw_sha256": "dae8866f022ca8784d106b627f7de86f177510ac5bacbc97166da87516e2f363",
+      "display_sha256": "dae8866f022ca8784d106b627f7de86f177510ac5bacbc97166da87516e2f363"
+    }
+  ]
+}

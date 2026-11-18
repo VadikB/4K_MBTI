@@ -264,6 +264,7 @@ const productInterviewAnswerKey = (scope) => `agent4k.assessmentPending:${scope.
 const productInterviewRequestKey = (scope) => productInterviewAnswerKey(scope) + ':' + scope.identityEpoch;
 const productCommandKey = (kind, scope) =>
   `agent4k.assessmentCommand:${kind}:${scope.cycleId}:${scope.situationId || 'between'}:${scope.ownerId}`;
+const nextSituationRequestKey = (scope) => productCommandKey('next', scope) + ':' + scope.identityEpoch + ':' + scope.viewGeneration;
 const readProductCommand = (kind, scope) => {
   try {
     const value = JSON.parse(window.sessionStorage.getItem(productCommandKey(kind, scope)) || 'null');
@@ -764,11 +765,36 @@ const serverRemainingSeconds = (value) => {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 };
 
+const productTimePaused = (snapshot) => ['paused', 'interrupted'].includes(snapshot.status?.collection_status)
+  || snapshot.blocking_system_wait === true;
+
+const productTimeNotice = (snapshot) => productTimePaused(snapshot)
+  ? 'Время на ответы сейчас не расходуется. Общий срок завершения оценки продолжает идти'
+  : 'Сведения о времени сейчас недоступны. Общий срок завершения оценки продолжает идти';
+
+// Controls belong to the connected card, which may replace the request's card.
+const syncNextSituationButton = (snapshot) => {
+  const button = interviewMessages.querySelector('.next-situation-button');
+  if (!button) return;
+  if (snapshot) {
+    const preparation = snapshot.preparation_operation;
+    button.dataset.nextUnavailable = String(preparation?.status === 'failed' && preparation.retry_allowed !== true);
+    button.textContent = preparation?.status === 'failed'
+      ? preparation.retry_allowed === true ? 'Повторить подготовку' : 'Подготовка недоступна'
+      : preparation?.operation_id || readProductCommand('next', productInterviewAnswerScope())
+        ? 'Проверить состояние' : 'Приступить к следующей ситуации';
+  }
+  button.disabled = nextSituationRequests.has(button.dataset.nextRequestKey)
+    || button.dataset.nextUnavailable === 'true';
+};
+
 const serverPositionCount = (value) => Number.isInteger(value) && value >= 0 ? value : null;
 
 const clearUnconfirmedProductTime = () => {
   state.assessmentRemainingSeconds = null;
   interviewTimerBadge.classList.remove('is-paused');
+  const notice = interviewMessages.querySelector('.preparation-time-notice');
+  if (notice) notice.textContent = productTimeNotice({});
   updateInterviewTimer();
 };
 
@@ -808,6 +834,18 @@ const olderProductRuntimeSnapshot = (incoming, presented) => {
   if (!presented || incoming?.cycle_id !== presented.cycle_id
       || incoming.current_situation?.assessment_situation_id !== presented.current_situation?.assessment_situation_id) {
     return false;
+  }
+  const phases = ['admitted', 'active', 'scenario_ended', 'closed'];
+  if (phases.indexOf(incoming.current_situation?.status) >= 0
+      && phases.indexOf(incoming.current_situation?.status) < phases.indexOf(presented.current_situation?.status)) return true;
+  const incomingPreparation = incoming.preparation_operation;
+  const knownPreparation = presented.preparation_operation;
+  if (incomingPreparation?.operation_id && incomingPreparation.operation_id === knownPreparation?.operation_id) {
+    // A worker may legitimately requeue the same operation after a lease/retry.
+    // Compare server read times instead of treating queue status as monotonic.
+    const receivedAt = Date.parse(incomingPreparation.preparation?.read_at);
+    const presentedAt = Date.parse(knownPreparation.preparation?.read_at);
+    if (Number.isFinite(receivedAt) && Number.isFinite(presentedAt) && receivedAt < presentedAt) return true;
   }
   // M5 Turn and scenario event history is append-only within one AS. A poll
   // started before a command may arrive after its authoritative readback.
@@ -937,21 +975,31 @@ const renderProductRuntime = (snapshot) => {
       delete interviewError.dataset.productCommandRecovery;
     }
     stopProductPresence();
-    const blockingWait = snapshot.blocking_system_wait === true;
+    const blockingWait = productTimePaused(snapshot);
     interviewTimerBadge.classList.toggle('is-paused', blockingWait);
+    const nextRequestKey = nextSituationRequestKey(commandScope);
     const existingPreparationCard = interviewMessages.querySelector('.interview-return-card');
-    if (existingPreparationCard?.dataset.preparationOperation === snapshot.preparation_operation?.operation_id
-        && snapshot.preparation_operation?.preparation
-        && existingPreparationCard.dataset.preparationState === snapshot.preparation_operation.status) {
+    if (existingPreparationCard && existingPreparationCard.dataset.preparationOperation === snapshot.preparation_operation?.operation_id
+        && existingPreparationCard.dataset.nextRequestKey === nextRequestKey
+        && snapshot.preparation_operation?.preparation) {
+      existingPreparationCard.dataset.preparationState = snapshot.preparation_operation.status;
       renderPreparation(existingPreparationCard, snapshot.preparation_operation.preparation);
       const feedback = existingPreparationCard.querySelector('[data-next-preparation-feedback]');
-      if (feedback && !nextSituationRequests.size) feedback.textContent = '';
+      if (feedback && !nextSituationRequests.has(nextRequestKey)) feedback.textContent = '';
       const timeNotice = existingPreparationCard.querySelector('.preparation-time-notice');
-      if (timeNotice) timeNotice.textContent = blockingWait ? 'Во время подготовки время на выполнение не расходуется. Общий срок завершения оценки продолжает идти' : 'Не удалось уточнить, учитывается ли сейчас время выполнения. Общий срок завершения оценки продолжает идти';
+      if (timeNotice) timeNotice.textContent = productTimeNotice(snapshot);
+      const root = existingPreparationCard.querySelector('[data-preparation-status]');
+      const action = existingPreparationCard.querySelector('.next-situation-button');
+      const time = root?.querySelector('[data-preparation-time]');
+      const actions = root?.querySelector('[data-preparation-actions]');
+      if (timeNotice && time && timeNotice.parentElement !== time) time.append(timeNotice);
+      if (action && actions && action.parentElement !== actions) actions.append(action, feedback);
+      syncNextSituationButton(snapshot);
       updateInterviewTimer();
-      return;
+      return snapshot;
     }
-    const preservedPreparationRoot = existingPreparationCard && existingPreparationCard.dataset.preparationOperation === snapshot.preparation_operation?.operation_id ? existingPreparationCard.querySelector('[data-preparation-status]') : null;
+    const preservedPreparationRoot = existingPreparationCard?.dataset.nextRequestKey === nextRequestKey
+      && existingPreparationCard.dataset.preparationOperation === snapshot.preparation_operation?.operation_id ? existingPreparationCard.querySelector('[data-preparation-status]') : null;
     interviewMessages.innerHTML = '';
     const card = document.createElement('section'); card.className = 'interview-return-card';
     card.dataset.preparationState = snapshot.preparation_operation?.status || '';
@@ -960,15 +1008,17 @@ const renderProductRuntime = (snapshot) => {
     const copy = document.createElement('p');
     copy.textContent = 'Ответы сохранены. Ожидаем следующую ситуацию.';
     const timeNotice = document.createElement('p'); timeNotice.className = 'preparation-time-notice';
-    timeNotice.textContent = blockingWait ? 'Во время подготовки время на выполнение не расходуется. Общий срок завершения оценки продолжает идти' : 'Не удалось уточнить, учитывается ли сейчас время выполнения. Общий срок завершения оценки продолжает идти';
-    const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button';
+    timeNotice.textContent = productTimeNotice(snapshot);
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button next-situation-button';
     button.textContent = 'Приступить к следующей ситуации';
     const status = document.createElement('p'); status.setAttribute('role', 'status');
     const preparation = snapshot.preparation_operation;
     let latestPreparation = preparation?.preparation;
     status.dataset.nextPreparationFeedback = '';
     const scope = productInterviewAnswerScope();
-    const commandKey = productCommandKey('next', scope);
+    card.dataset.nextRequestKey = nextRequestKey;
+    button.dataset.nextRequestKey = nextRequestKey;
+    button.dataset.nextUnavailable = String(preparation?.status === 'failed' && preparation.retry_allowed !== true);
     let pendingNext = readProductCommand('next', scope);
     if (!pendingNext && preparation?.operation_id) {
       pendingNext = saveProductCommand('next', scope, preparation.operation_id);
@@ -986,20 +1036,24 @@ const renderProductRuntime = (snapshot) => {
       button.textContent = 'Проверить состояние';
     }
     if (latestPreparation) status.textContent = '';
-    if (nextSituationRequests.has(commandKey)) button.disabled = true;
+    button.disabled = nextSituationRequests.has(nextRequestKey) || button.dataset.nextUnavailable === 'true';
     let knownRefusal = false;
     button.addEventListener('click', async () => {
       const current = () => isProductInterviewAnswerCurrent(scope);
       const visible = () => current() && card.isConnected;
-      if (nextSituationRequests.has(commandKey)) return;
+      if (!visible() || button.disabled || nextSituationRequests.has(nextRequestKey)) return;
       const requestToken = Symbol('next');
-      nextSituationRequests.set(commandKey, requestToken);
-      const retry = preparation?.status === 'failed' && preparation.retry_allowed === true;
-      let command = retry ? null : readProductCommand('next', scope);
+      nextSituationRequests.set(nextRequestKey, requestToken);
+      productRuntimeMutationGeneration += 1;
+      const latestOperation = confirmedProductInterviewSnapshot?.preparation_operation;
+      latestPreparation = latestOperation?.preparation || latestPreparation;
+      const retry = latestOperation?.status === 'failed' && latestOperation.retry_allowed === true;
+      let command = retry ? null : readProductCommand('next', scope)
+        || (latestOperation?.operation_id ? saveProductCommand('next', scope, latestOperation.operation_id) : null);
       let posted = false;
       button.disabled = true; status.textContent = 'Проверяем готовность следующей ситуации…';
       try {
-        if (knownRefusal) {
+        if (knownRefusal || command?.refused) {
           await loadProductRuntime();
           return;
         }
@@ -1055,7 +1109,7 @@ const renderProductRuntime = (snapshot) => {
       } catch (error) {
         if (!current()) return;
         if (posted && [403, 409].includes(Number(error?.status))) {
-          clearProductCommand('next', scope);
+          window.sessionStorage.setItem(productCommandKey('next', scope), JSON.stringify({ ...command, refused: true }));
           knownRefusal = true;
         }
         if (!posted && Number(error?.status) === 404) {
@@ -1072,6 +1126,7 @@ const renderProductRuntime = (snapshot) => {
         if (error.name === 'PreparationFailed') {
           if (visible()) {
             status.textContent = error.message || 'Подготовка завершилась ошибкой.';
+            button.dataset.nextUnavailable = String(!error.retryAllowed);
             button.disabled = !error.retryAllowed;
             button.textContent = error.retryAllowed ? 'Повторить подготовку' : 'Подготовка недоступна';
           }
@@ -1086,9 +1141,8 @@ const renderProductRuntime = (snapshot) => {
           button.textContent = 'Проверить состояние';
         }
       } finally {
-        if (nextSituationRequests.get(commandKey) === requestToken) nextSituationRequests.delete(commandKey);
-        if (visible() && button.textContent === 'Проверить состояние') button.disabled = false;
-        else if (current() && !visible()) void loadProductRuntime().catch(showInterviewRuntimeError);
+        if (nextSituationRequests.get(nextRequestKey) === requestToken) nextSituationRequests.delete(nextRequestKey);
+        if (current()) syncNextSituationButton();
       }
     });
     card.append(title, copy, timeNotice, button, status); interviewMessages.appendChild(card);
@@ -1114,7 +1168,7 @@ const renderProductRuntime = (snapshot) => {
   const waitingQuestion = clarification?.status === 'ASK' && !clarification.response_outcome;
   const closed = ['collection_closed', 'calculation_pending', 'calculated', 'failed'].includes(cycleStatus);
   const suspended = ['paused', 'interrupted'].includes(cycleStatus);
-  interviewTimerBadge.classList.toggle('is-paused', suspended || snapshot.blocking_system_wait === true);
+  interviewTimerBadge.classList.toggle('is-paused', productTimePaused(snapshot));
   interviewTextarea.disabled = closed || suspended || !current;
   interviewSubmitButton.disabled = closed || suspended || !current;
   interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion
@@ -1384,10 +1438,16 @@ const loadReturnState = async ({ generation = productRuntimePollGeneration, isCu
 };
 
 let productRuntimeReadSerial = 0;
+let productRuntimeRead = null;
 export const loadProductRuntime = async ({ generation = productRuntimePollGeneration } = {}) => {
   if (!state.productCycleId) throw new Error('Не удалось определить текущую оценку.');
-  const readSerial = ++productRuntimeReadSerial;
   const requestGeneration = generation ?? productRuntimePollGeneration;
+  // Polling and manual checks share the whole return-state/runtime chain.
+  // Only a new context supersedes a read; a slow GET can still be presented.
+  if (productRuntimeRead?.current() && productRuntimeRead.generation === requestGeneration) {
+    return productRuntimeRead.promise;
+  }
+  const readSerial = ++productRuntimeReadSerial;
   const mutationGeneration = productRuntimeMutationGeneration;
   const viewGeneration = getAssessmentViewGeneration();
   const cycleId = state.productCycleId;
@@ -1401,55 +1461,62 @@ export const loadProductRuntime = async ({ generation = productRuntimePollGenera
     && requestGeneration === productRuntimePollGeneration
     && mutationGeneration === productRuntimeMutationGeneration
     && viewGeneration === getAssessmentViewGeneration();
-  try {
-    // Check the server-owned pause before fetching any AS content. Reload/login/GET
-    // never resumes a recognized absence; only the explicit command above does.
-    if (await loadReturnState({ generation, isCurrent: current })) return null;
-    if (!current()) return null;
-    const response = await fetchWithDeadline('/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime', {
-      credentials: 'same-origin',
-    });
-    const saved = await readApiResponse(response, 'Не удалось восстановить состояние оценки.');
-    if (!current() || saved.cycle_id !== cycleId) return null;
-    if (olderProductRuntimeSnapshot(saved, confirmedProductInterviewSnapshot)) {
-      return confirmedProductInterviewSnapshot;
-    }
-    clearConfirmedReturnContinue(saved);
-    state.productAssessmentSituationId = saved.current_situation?.assessment_situation_id || null;
-    situationId = state.productAssessmentSituationId;
-    const terminal = ['collection_closed', 'calculation_pending', 'calculated', 'failed']
-      .includes(saved.status?.collection_status);
-    const snapshot = renderProductRuntime(saved);
-    if (!terminal && saved.return_policy_enabled && saved.current_situation && returnPresenceCycleId !== saved.cycle_id) {
-      try {
-        const presenceContract = await heartbeatProductPresence();
-        if (!current()) return null;
-        if (presenceContract) {
-          returnPresenceCycleId = saved.cycle_id;
-          startProductPresence(presenceContract);
-        } else {
-          await loadReturnState({ generation, isCurrent: current });
-        }
-      } catch (error) {
-        if (!current()) return null;
-        showInterviewRuntimeError(error);
-        returnPresenceCycleId = saved.cycle_id;
-        startProductPresence();
+  const read = { current, generation: requestGeneration, promise: null };
+  productRuntimeRead = read;
+  read.promise = (async () => {
+    try {
+      // Check the server-owned pause before fetching any AS content. Reload/login/GET
+      // never resumes a recognized absence; only the explicit command above does.
+      if (await loadReturnState({ generation, isCurrent: current })) return null;
+      if (!current()) return null;
+      const response = await fetchWithDeadline('/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime', {
+        credentials: 'same-origin',
+      });
+      const saved = await readApiResponse(response, 'Не удалось восстановить состояние оценки.');
+      if (!current() || saved.cycle_id !== cycleId) return null;
+      if (olderProductRuntimeSnapshot(saved, confirmedProductInterviewSnapshot)) {
+        return confirmedProductInterviewSnapshot;
       }
+      clearConfirmedReturnContinue(saved);
+      state.productAssessmentSituationId = saved.current_situation?.assessment_situation_id || null;
+      situationId = state.productAssessmentSituationId;
+      const terminal = ['collection_closed', 'calculation_pending', 'calculated', 'failed']
+        .includes(saved.status?.collection_status);
+      const snapshot = renderProductRuntime(saved);
+      if (!terminal && saved.return_policy_enabled && saved.current_situation && returnPresenceCycleId !== saved.cycle_id) {
+        try {
+          const presenceContract = await heartbeatProductPresence();
+          if (!current()) return null;
+          if (presenceContract) {
+            returnPresenceCycleId = saved.cycle_id;
+            startProductPresence(presenceContract);
+          } else {
+            await loadReturnState({ generation, isCurrent: current });
+          }
+        } catch (error) {
+          if (!current()) return null;
+          showInterviewRuntimeError(error);
+          returnPresenceCycleId = saved.cycle_id;
+          startProductPresence();
+        }
+      }
+      if (terminal && returnPresenceCycleId) {
+        stopProductPresence();
+      }
+      if (['collection_closed', 'calculation_pending', 'calculated'].includes(snapshot.status?.collection_status) &&
+          !interviewPanel.classList.contains('hidden')) {
+        openProcessing();
+      }
+      return snapshot;
+    } catch (error) {
+      if (!current()) return null;
+      clearUnconfirmedProductTime();
+      throw error;
+    } finally {
+      if (productRuntimeRead === read) productRuntimeRead = null;
     }
-    if (terminal && returnPresenceCycleId) {
-      stopProductPresence();
-    }
-    if (['collection_closed', 'calculation_pending', 'calculated'].includes(snapshot.status?.collection_status) &&
-        !interviewPanel.classList.contains('hidden')) {
-      openProcessing();
-    }
-    return snapshot;
-  } catch (error) {
-    if (!current()) return null;
-    clearUnconfirmedProductTime();
-    throw error;
-  }
+  })();
+  return read.promise;
 };
 
 const waitForProductClarification = async (previousDecisionId = null) => {
@@ -2204,11 +2271,13 @@ const updateInterviewTimer = () => {
   const prefix = interviewTimerBadge.classList.contains('is-paused')
     ? interviewPanel.classList.contains('between-situations') ? 'Время выполнения · ' : 'Пауза · ' : '';
   if (remainingMs === null) {
-    interviewTimerBadge.textContent = 'Остаток времени выполнения уточняется';
+    interviewTimerBadge.textContent = isCycleAssessment() ? 'Время недоступно' : 'Остаток времени выполнения уточняется';
+    interviewTimerBadge.title = 'Не удалось получить актуальный остаток времени.';
     interviewTimerBadge.classList.remove('is-low-time');
     return false;
   }
 
+  interviewTimerBadge.title = '';
   if (remainingMs <= 0) {
     interviewTimerBadge.textContent = prefix + '00:00';
     interviewTimerBadge.classList.add('is-low-time');

@@ -7,7 +7,7 @@ test('F18 pending entry discards local placeholder progress and time until serve
   Object.assign(h.state, { assessmentCaseNumber: 1, assessmentTotalCases: 5, assessmentRemainingSeconds: 7200 });
   h.subject.openInterview();
   assert.equal(h.badge.textContent, 'Прогресс уточняется');
-  assert.equal(h.timer.textContent, 'Остаток времени выполнения уточняется');
+  assert.equal(h.timer.textContent, 'Время недоступно');
 });
 
 for (const completed of [undefined, null, '0']) {
@@ -56,7 +56,7 @@ for (const remaining of [120, 0, null, undefined, -1, '0', NaN, Infinity]) {
     const saved = h.snapshot();
     saved.status.remaining_seconds = remaining;
     h.subject.renderProductRuntime(saved);
-    assert.equal(h.timer.textContent, remaining === 120 ? '02:00' : remaining === 0 ? '00:00' : 'Остаток времени выполнения уточняется');
+    assert.equal(h.timer.textContent, remaining === 120 ? '02:00' : remaining === 0 ? '00:00' : 'Время недоступно');
     assert.equal(h.timer.classList.contains('is-paused'), false);
   });
 }

@@ -193,6 +193,7 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
 }
 
 test('REMAIN-03 unknown invitation survives reload and reads the same operation', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-17T12:00:00Z') });
   const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
   state.invitationLoseResponse = true;
   state.invitationReadStatus = 503;

@@ -1,0 +1,16 @@
+{
+  "stats": {
+    "startTime": "2026-11-17T18:16:30.467Z",
+    "duration": 30701.516,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "errors": [],
+  "code_sha": "8b3ca49d9398366b42ffea736dfeab885712fa93",
+  "source_matches_code_sha": true,
+  "dist_files": 45,
+  "dist_matches_tested_build": true,
+  "local_links_valid": true
+}

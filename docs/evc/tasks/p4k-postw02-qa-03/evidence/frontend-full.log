@@ -1,0 +1,2722 @@
+TAP version 13
+# (node:61788) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/api.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: lost reply and module reload retain exact actor/target/fingerprint/operation, without preview
+ok 1 - lost reply and module reload retain exact actor/target/fingerprint/operation, without preview
+  ---
+  duration_ms: 44.600667
+  type: 'test'
+  ...
+# Subtest: definite 403 refusal restores new preview/confirmation and never leaks raw text
+ok 2 - definite 403 refusal restores new preview/confirmation and never leaks raw text
+  ---
+  duration_ms: 0.805833
+  type: 'test'
+  ...
+# Subtest: definite 409 refusal restores new preview/confirmation and never leaks raw text
+ok 3 - definite 409 refusal restores new preview/confirmation and never leaks raw text
+  ---
+  duration_ms: 0.551875
+  type: 'test'
+  ...
+# Subtest: 5xx/invalid response remains unknown; a later denied recovery cannot erase prior uncertainty
+ok 4 - 5xx/invalid response remains unknown; a later denied recovery cannot erase prior uncertainty
+  ---
+  duration_ms: 4.889916
+  type: 'test'
+  ...
+# Subtest: changed actor, target, fingerprint and command cannot reuse confirmation
+ok 5 - changed actor, target, fingerprint and command cannot reuse confirmation
+  ---
+  duration_ms: 0.363792
+  type: 'test'
+  ...
+# Subtest: blocked persistence prevents sending an unrecoverable delete
+ok 6 - blocked persistence prevents sending an unrecoverable delete
+  ---
+  duration_ms: 0.171166
+  type: 'test'
+  ...
+# Subtest: actual production click catches preview transport failure locally
+ok 7 - actual production click catches preview transport failure locally
+  ---
+  duration_ms: 12.3345
+  type: 'test'
+  ...
+# Subtest: actual production click recovers an old target before preview, including dedicated recovery control
+ok 8 - actual production click recovers an old target before preview, including dedicated recovery control
+  ---
+  duration_ms: 24.573333
+  type: 'test'
+  ...
+# Subtest: actual production click catches execute rejection and suppresses old actor preview failure
+ok 9 - actual production click catches execute rejection and suppresses old actor preview failure
+  ---
+  duration_ms: 24.411416
+  type: 'test'
+  ...
+# Subtest: post-commit failure code cannot erase command or claim rollback; exact receipt retry resolves
+ok 10 - post-commit failure code cannot erase command or claim rollback; exact receipt retry resolves
+  ---
+  duration_ms: 2.95525
+  type: 'test'
+  ...
+# Subtest: storage read/write failure resuming an old unknown command never claims that delete was not sent
+ok 11 - storage read/write failure resuming an old unknown command never claims that delete was not sent
+  ---
+  duration_ms: 1.273584
+  type: 'test'
+  ...
+# Subtest: F02/R01 success receipt survives read failure during local cleanup and reload checks the same operation
+ok 12 - F02/R01 success receipt survives read failure during local cleanup and reload checks the same operation
+  ---
+  duration_ms: 2.754291
+  type: 'test'
+  ...
+# Subtest: F02/R01 success receipt survives write failure during local cleanup and reload checks the same operation
+ok 13 - F02/R01 success receipt survives write failure during local cleanup and reload checks the same operation
+  ---
+  duration_ms: 4.350208
+  type: 'test'
+  ...
+# Subtest: F02 explicit CANNOT_PURGE_CONFIGURED_ACCOUNT refusal is actionable and never shown as deletion success
+ok 14 - F02 explicit CANNOT_PURGE_CONFIGURED_ACCOUNT refusal is actionable and never shown as deletion success
+  ---
+  duration_ms: 0.482208
+  type: 'test'
+  ...
+# Subtest: F02 explicit CANNOT_PURGE_LAST_ORGANIZATION_ADMIN refusal is actionable and never shown as deletion success
+ok 15 - F02 explicit CANNOT_PURGE_LAST_ORGANIZATION_ADMIN refusal is actionable and never shown as deletion success
+  ---
+  duration_ms: 0.263125
+  type: 'test'
+  ...
+# Subtest: F02 explicit ACCOUNT_PURGE_SCOPE_FORBIDDEN refusal is actionable and never shown as deletion success
+ok 16 - F02 explicit ACCOUNT_PURGE_SCOPE_FORBIDDEN refusal is actionable and never shown as deletion success
+  ---
+  duration_ms: 0.17725
+  type: 'test'
+  ...
+# Subtest: ADM01 keeps participant invitations bound to the selected assessment
+ok 17 - ADM01 keeps participant invitations bound to the selected assessment
+  ---
+  duration_ms: 2.929667
+  type: 'test'
+  ...
+# Subtest: ADM01 admin surface uses the accepted readiness and control colors
+ok 18 - ADM01 admin surface uses the accepted readiness and control colors
+  ---
+  duration_ms: 0.278125
+  type: 'test'
+  ...
+# Subtest: PILOT31-03 shows exact assignment readiness and blocks an invalid submit
+ok 19 - PILOT31-03 shows exact assignment readiness and blocks an invalid submit
+  ---
+  duration_ms: 0.191458
+  type: 'test'
+  ...
+# Subtest: registered members can receive an organization assessment invitation
+ok 20 - registered members can receive an organization assessment invitation
+  ---
+  duration_ms: 1.485041
+  type: 'test'
+  ...
+# Subtest: member form resets only after confirmed success
+ok 21 - member form resets only after confirmed success
+  ---
+  duration_ms: 0.176625
+  type: 'test'
+  ...
+# Subtest: manual questionnaire draft fields are not blocked by publish required attributes
+ok 22 - manual questionnaire draft fields are not blocked by publish required attributes
+  ---
+  duration_ms: 0.76625
+  type: 'test'
+  ...
+# Subtest: ADM 1A uses the accepted navigation, groups and provenance wording
+ok 23 - ADM 1A uses the accepted navigation, groups and provenance wording
+  ---
+  duration_ms: 2.444583
+  type: 'test'
+  ...
+# Subtest: selected members can receive an explicit assessment assignment
+ok 24 - selected members can receive an explicit assessment assignment
+  ---
+  duration_ms: 0.210042
+  type: 'test'
+  ...
+# (node:61791) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/answer-drafts.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 05B immediate durable input survives a new tab before debounce and syncs exact raw text
+ok 25 - 05B immediate durable input survives a new tab before debounce and syncs exact raw text
+  ---
+  duration_ms: 1.89125
+  type: 'test'
+  ...
+# Subtest: 05A server restoration in a separate browser storage after login
+ok 26 - 05A server restoration in a separate browser storage after login
+  ---
+  duration_ms: 0.2935
+  type: 'test'
+  ...
+# Subtest: 05B network and disabled storage show honest failure, preserving DOM
+ok 27 - 05B network and disabled storage show honest failure, preserving DOM
+  ---
+  duration_ms: 0.406792
+  type: 'test'
+  ...
+# Subtest: 05B continuous typing keeps a fixed maxWait and one debounce, not requests per character
+ok 28 - 05B continuous typing keeps a fixed maxWait and one debounce, not requests per character
+  ---
+  duration_ms: 1.191708
+  type: 'test'
+  ...
+# Subtest: 05C divergent remote version conflicts without replacing local text; explicit choice uses CAS
+ok 29 - 05C divergent remote version conflicts without replacing local text; explicit choice uses CAS
+  ---
+  duration_ms: 0.456208
+  type: 'test'
+  ...
+# Subtest: 05C explicit empty text is versioned, never restores an older server edit
+ok 30 - 05C explicit empty text is versioned, never restores an older server edit
+  ---
+  duration_ms: 0.406875
+  type: 'test'
+  ...
+# Subtest: 05C slot and owner isolate drafts; heartbeat revisions do not rotate the question
+ok 31 - 05C slot and owner isolate drafts; heartbeat revisions do not rotate the question
+  ---
+  duration_ms: 1.325417
+  type: 'test'
+  ...
+# Subtest: 05D late ACK and acceptance do not clear newer raw edit, even with the same text
+ok 32 - 05D late ACK and acceptance do not clear newer raw edit, even with the same text
+  ---
+  duration_ms: 0.857209
+  type: 'test'
+  ...
+# Subtest: 05E identity change ignores late GET and explicit logout removes only owner local copies
+ok 33 - 05E identity change ignores late GET and explicit logout removes only owner local copies
+  ---
+  duration_ms: 0.643125
+  type: 'test'
+  ...
+# Subtest: 05C divergent offline tabs retain both branches across closing and reopening
+ok 34 - 05C divergent offline tabs retain both branches across closing and reopening
+  ---
+  duration_ms: 0.94275
+  type: 'test'
+  ...
+# Subtest: 05D unknown pending restores its exact prior text read-only and performs no draft GET/PUT
+ok 35 - 05D unknown pending restores its exact prior text read-only and performs no draft GET/PUT
+  ---
+  duration_ms: 0.358375
+  type: 'test'
+  ...
+# Subtest: 05B reconnect with both local storage and network failed never clears the only DOM copy
+ok 36 - 05B reconnect with both local storage and network failed never clears the only DOM copy
+  ---
+  duration_ms: 0.274708
+  type: 'test'
+  ...
+# Subtest: 05E sibling logout removal fences a late autosave ACK from recreating local text
+ok 37 - 05E sibling logout removal fences a late autosave ACK from recreating local text
+  ---
+  duration_ms: 0.279791
+  type: 'test'
+  ...
+# Subtest: 05C focus/reconnect never silently picks a remote revision while a conflict is unresolved
+ok 38 - 05C focus/reconnect never silently picks a remote revision while a conflict is unresolved
+  ---
+  duration_ms: 0.284458
+  type: 'test'
+  ...
+# Subtest: 05 UI explicit remote choice changes only the draft and reports conflict resolution
+ok 39 - 05 UI explicit remote choice changes only the draft and reports conflict resolution
+  ---
+  duration_ms: 0.266625
+  type: 'test'
+  ...
+# Subtest: QA A1 late choice preserves new revision: Новый текст после выбора
+ok 40 - QA A1 late choice preserves new revision: Новый текст после выбора
+  ---
+  duration_ms: 0.778041
+  type: 'test'
+  ...
+# Subtest: QA A1 late choice preserves new revision: local
+ok 41 - QA A1 late choice preserves new revision: local
+  ---
+  duration_ms: 0.498584
+  type: 'test'
+  ...
+# Subtest: QA A3 a choice locks every alternative, rejects duplicate/stale clicks and recovers after failure
+ok 42 - QA A3 a choice locks every alternative, rejects duplicate/stale clicks and recovers after failure
+  ---
+  duration_ms: 0.662917
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after stop
+ok 43 - QA A3 late choice fenced after stop
+  ---
+  duration_ms: 0.293667
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after suspend
+ok 44 - QA A3 late choice fenced after suspend
+  ---
+  duration_ms: 0.258958
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after identity
+ok 45 - QA A3 late choice fenced after identity
+  ---
+  duration_ms: 0.1805
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after ownerId
+ok 46 - QA A3 late choice fenced after ownerId
+  ---
+  duration_ms: 0.096875
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after cycleId
+ok 47 - QA A3 late choice fenced after cycleId
+  ---
+  duration_ms: 1.347709
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after situationId
+ok 48 - QA A3 late choice fenced after situationId
+  ---
+  duration_ms: 0.48325
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after slotId
+ok 49 - QA A3 late choice fenced after slotId
+  ---
+  duration_ms: 0.143708
+  type: 'test'
+  ...
+# Subtest: QA A3 late choice fenced after logout
+ok 50 - QA A3 late choice fenced after logout
+  ---
+  duration_ms: 0.136083
+  type: 'test'
+  ...
+# Subtest: QA A3 sibling durable edit during choice is not overwritten
+ok 51 - QA A3 sibling durable edit during choice is not overwritten
+  ---
+  duration_ms: 0.331834
+  type: 'test'
+  ...
+# Subtest: QA A3 mismatched read owner_id leaves retry available
+ok 52 - QA A3 mismatched read owner_id leaves retry available
+  ---
+  duration_ms: 0.237875
+  type: 'test'
+  ...
+# Subtest: QA A3 mismatched read cycle_id leaves retry available
+ok 53 - QA A3 mismatched read cycle_id leaves retry available
+  ---
+  duration_ms: 0.119542
+  type: 'test'
+  ...
+# Subtest: QA A3 mismatched read assessment_situation_id leaves retry available
+ok 54 - QA A3 mismatched read assessment_situation_id leaves retry available
+  ---
+  duration_ms: 0.128084
+  type: 'test'
+  ...
+# Subtest: QA A3 mismatched read slot_id leaves retry available
+ok 55 - QA A3 mismatched read slot_id leaves retry available
+  ---
+  duration_ms: 0.090084
+  type: 'test'
+  ...
+# Subtest: QA A3 suspend/resume fences the old choice and restores actions
+ok 56 - QA A3 suspend/resume fences the old choice and restores actions
+  ---
+  duration_ms: 0.165625
+  type: 'test'
+  ...
+# (node:61792) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/api.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: known domain codes provide actionable messages
+ok 57 - known domain codes provide actionable messages
+  ---
+  duration_ms: 31.243542
+  type: 'test'
+  ...
+# Subtest: assignment blocker ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED keeps its exact next action
+ok 58 - assignment blocker ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED keeps its exact next action
+  ---
+  duration_ms: 0.233834
+  type: 'test'
+  ...
+# Subtest: assignment blocker PROGRAM_ASSIGNMENT_REF_MISMATCH keeps its exact next action
+ok 59 - assignment blocker PROGRAM_ASSIGNMENT_REF_MISMATCH keeps its exact next action
+  ---
+  duration_ms: 0.272084
+  type: 'test'
+  ...
+# Subtest: assignment blocker PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS keeps its exact next action
+ok 60 - assignment blocker PROGRAM_NOT_AVAILABLE_FOR_NEW_ASSIGNMENTS keeps its exact next action
+  ---
+  duration_ms: 0.224333
+  type: 'test'
+  ...
+# Subtest: assignment blocker PROGRAM_CONFIGURATION_NOT_AVAILABLE keeps its exact next action
+ok 61 - assignment blocker PROGRAM_CONFIGURATION_NOT_AVAILABLE keeps its exact next action
+  ---
+  duration_ms: 0.279
+  type: 'test'
+  ...
+# Subtest: assignment blocker PROGRAM_CATALOG_SCOPE_MISMATCH keeps its exact next action
+ok 62 - assignment blocker PROGRAM_CATALOG_SCOPE_MISMATCH keeps its exact next action
+  ---
+  duration_ms: 0.136959
+  type: 'test'
+  ...
+# Subtest: assignment blocker PROGRAM_SOURCE_SELECTION_STALE keeps its exact next action
+ok 63 - assignment blocker PROGRAM_SOURCE_SELECTION_STALE keeps its exact next action
+  ---
+  duration_ms: 0.268459
+  type: 'test'
+  ...
+# Subtest: known invitation provider configuration error remains actionable
+ok 64 - known invitation provider configuration error remains actionable
+  ---
+  duration_ms: 0.163917
+  type: 'test'
+  ...
+# Subtest: invitation conflict INVITATION_ALREADY_USED remains safe and actionable
+ok 65 - invitation conflict INVITATION_ALREADY_USED remains safe and actionable
+  ---
+  duration_ms: 1.33575
+  type: 'test'
+  ...
+# Subtest: invitation conflict INVITATION_NOT_FOUND remains safe and actionable
+ok 66 - invitation conflict INVITATION_NOT_FOUND remains safe and actionable
+  ---
+  duration_ms: 2.434042
+  type: 'test'
+  ...
+# Subtest: invitation conflict INVITATION_STATE_CHANGED remains safe and actionable
+ok 67 - invitation conflict INVITATION_STATE_CHANGED remains safe and actionable
+  ---
+  duration_ms: 0.286875
+  type: 'test'
+  ...
+# Subtest: membership conflict preserves scoped reason and removes unavailable legacy action
+ok 68 - membership conflict preserves scoped reason and removes unavailable legacy action
+  ---
+  duration_ms: 0.67275
+  type: 'test'
+  ...
+# Subtest: unknown 500 json detail is sanitized
+ok 69 - unknown 500 json detail is sanitized
+  ---
+  duration_ms: 0.258292
+  type: 'test'
+  ...
+# Subtest: unknown 500 plain text is sanitized
+ok 70 - unknown 500 plain text is sanitized
+  ---
+  duration_ms: 0.153125
+  type: 'test'
+  ...
+# Subtest: unknown 500 html is sanitized
+ok 71 - unknown 500 html is sanitized
+  ---
+  duration_ms: 0.097375
+  type: 'test'
+  ...
+# Subtest: unknown 500 invalid json is sanitized
+ok 72 - unknown 500 invalid json is sanitized
+  ---
+  duration_ms: 0.09225
+  type: 'test'
+  ...
+# Subtest: stale purge preview tells the operator to refresh without claiming deletion
+ok 73 - stale purge preview tells the operator to refresh without claiming deletion
+  ---
+  duration_ms: 0.113833
+  type: 'test'
+  ...
+# Subtest: F02 protected configured account blocks organization purge with a safe explicit reason
+ok 74 - F02 protected configured account blocks organization purge with a safe explicit reason
+  ---
+  duration_ms: 0.10525
+  type: 'test'
+  ...
+# Subtest: membership conflict string/object code never proposes disabled transfer
+ok 75 - membership conflict string/object code never proposes disabled transfer
+  ---
+  duration_ms: 0.157708
+  type: 'test'
+  ...
+# Subtest: membership conflict string/object code never proposes disabled transfer
+ok 76 - membership conflict string/object code never proposes disabled transfer
+  ---
+  duration_ms: 0.124666
+  type: 'test'
+  ...
+# Subtest: scoped organization name containing transfer word remains an exact reason
+ok 77 - scoped organization name containing transfer word remains an exact reason
+  ---
+  duration_ms: 0.112958
+  type: 'test'
+  ...
+# Subtest: actual add-member handler displays the scoped API reason through production membership formatter
+ok 78 - actual add-member handler displays the scoped API reason through production membership formatter
+  ---
+  duration_ms: 1.420125
+  type: 'test'
+  ...
+# (node:61793) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/api.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: journey authentication failure explains a lost session without misreporting the product stage
+ok 79 - journey authentication failure explains a lost session without misreporting the product stage
+  ---
+  duration_ms: 0.82025
+  type: 'test'
+  ...
+# Subtest: a rejected login preserves the server error without expired-session recovery
+ok 80 - a rejected login preserves the server error without expired-session recovery
+  ---
+  duration_ms: 33.401625
+  type: 'test'
+  ...
+# Subtest: a protected API 401 starts expired-session recovery and preserves the status
+ok 81 - a protected API 401 starts expired-session recovery and preserves the status
+  ---
+  duration_ms: 0.284083
+  type: 'test'
+  ...
+# Subtest: concurrent 401 responses trigger only one recovery flow
+ok 82 - concurrent 401 responses trigger only one recovery flow
+  ---
+  duration_ms: 0.578584
+  type: 'test'
+  ...
+# Subtest: a late 401 from an earlier session generation does not recover the current session
+ok 83 - a late 401 from an earlier session generation does not recover the current session
+  ---
+  duration_ms: 0.315958
+  type: 'test'
+  ...
+# Subtest: a late successful response cannot overwrite a newer session
+ok 84 - a late successful response cannot overwrite a newer session
+  ---
+  duration_ms: 0.196334
+  type: 'test'
+  ...
+# Subtest: an unfinished old recovery does not suppress recovery for the current generation
+ok 85 - an unfinished old recovery does not suppress recovery for the current generation
+  ---
+  duration_ms: 0.435625
+  type: 'test'
+  ...
+# (node:61794) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/components/app-header.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared header displays the available name without guessing its word order
+ok 86 - shared header displays the available name without guessing its word order
+  ---
+  duration_ms: 5.364083
+  type: 'test'
+  ...
+# Subtest: shared header normalizes name whitespace and supports a single name
+ok 87 - shared header normalizes name whitespace and supports a single name
+  ---
+  duration_ms: 0.111
+  type: 'test'
+  ...
+# Subtest: shared header uses participant fallback only when user name is absent
+ok 88 - shared header uses participant fallback only when user name is absent
+  ---
+  duration_ms: 0.27525
+  type: 'test'
+  ...
+# Subtest: ADD01 requires email, name and position in the administrative member form
+ok 89 - ADD01 requires email, name and position in the administrative member form
+  ---
+  duration_ms: 1.072125
+  type: 'test'
+  ...
+# Subtest: ADD01 keeps the desktop member form in the measured right-hand geometry
+ok 90 - ADD01 keeps the desktop member form in the measured right-hand geometry
+  ---
+  duration_ms: 0.507917
+  type: 'test'
+  ...
+# Subtest: ARCH30 logout reset covers every current logout and exit button by contract
+ok 91 - ARCH30 logout reset covers every current logout and exit button by contract
+  ---
+  duration_ms: 1.608959
+  type: 'test'
+  ...
+# Subtest: ADM-STATUS-01 shows one current participant stage and keeps secondary signals in the card
+ok 92 - ADM-STATUS-01 shows one current participant stage and keeps secondary signals in the card
+  ---
+  duration_ms: 1.111666
+  type: 'test'
+  ...
+# Subtest: ADM-STATUS-01 keeps destructive participant operations separate and explicit
+ok 93 - ADM-STATUS-01 keeps destructive participant operations separate and explicit
+  ---
+  duration_ms: 0.214625
+  type: 'test'
+  ...
+# Subtest: PROGRAM01 R07 uses accessible subject-specific dialogs for invitation and assignment actions
+ok 94 - PROGRAM01 R07 uses accessible subject-specific dialogs for invitation and assignment actions
+  ---
+  duration_ms: 0.148541
+  type: 'test'
+  ...
+# Subtest: PROGRAM01 R08 explains invitation revoke conflicts and refreshes applicable actions
+ok 95 - PROGRAM01 R08 explains invitation revoke conflicts and refreshes applicable actions
+  ---
+  duration_ms: 5.305792
+  type: 'test'
+  ...
+# Subtest: ADM-STATUS-01 scopes preserved participant selection by organization and assessment
+ok 96 - ADM-STATUS-01 scopes preserved participant selection by organization and assessment
+  ---
+  duration_ms: 0.333084
+  type: 'test'
+  ...
+# Subtest: ARCH30 membership errors hide stable server code and distinguish recovery states
+ok 97 - ARCH30 membership errors hide stable server code and distinguish recovery states
+  ---
+  duration_ms: 0.78675
+  type: 'test'
+  ...
+# Subtest: ARCH30 removes the duplicate legacy organization profile field from both admin forms
+ok 98 - ARCH30 removes the duplicate legacy organization profile field from both admin forms
+  ---
+  duration_ms: 1.506792
+  type: 'test'
+  ...
+# Subtest: ARCH30 exposes a legacy profile as an explicit C01 migration draft without automatic overwrite
+ok 99 - ARCH30 exposes a legacy profile as an explicit C01 migration draft without automatic overwrite
+  ---
+  duration_ms: 0.296125
+  type: 'test'
+  ...
+# Subtest: ARCH30 removes organization transfer from the product UI
+ok 100 - ARCH30 removes organization transfer from the product UI
+  ---
+  duration_ms: 1.36325
+  type: 'test'
+  ...
+# Subtest: ARCH30 removes obsolete transfer conflict copy
+ok 101 - ARCH30 removes obsolete transfer conflict copy
+  ---
+  duration_ms: 0.17225
+  type: 'test'
+  ...
+# Subtest: ARCH30 keeps deactivation reversible through an explicit restore action
+ok 102 - ARCH30 keeps deactivation reversible through an explicit restore action
+  ---
+  duration_ms: 0.462834
+  type: 'test'
+  ...
+# Subtest: R10 feedback rehydrates only the exact current identity, organization, selection and connection
+ok 103 - R10 feedback rehydrates only the exact current identity, organization, selection and connection
+  ---
+  duration_ms: 1.040875
+  type: 'test'
+  ...
+# Subtest: R10 late feedback is generation guarded while exact server readback stays mandatory
+ok 104 - R10 late feedback is generation guarded while exact server readback stays mandatory
+  ---
+  duration_ms: 0.283083
+  type: 'test'
+  ...
+# Subtest: R10 feedback is invalidated on session clearing, selection and new actions
+ok 105 - R10 feedback is invalidated on session clearing, selection and new actions
+  ---
+  duration_ms: 0.227708
+  type: 'test'
+  ...
+# Subtest: ARCH30 connects an exact published program version from the superadmin UI
+ok 106 - ARCH30 connects an exact published program version from the superadmin UI
+  ---
+  duration_ms: 0.618917
+  type: 'test'
+  ...
+# Subtest: PROGRAM01 rejects incomplete assignment batches and preserves role-scoped idempotency
+ok 107 - PROGRAM01 rejects incomplete assignment batches and preserves role-scoped idempotency
+  ---
+  duration_ms: 0.13625
+  type: 'test'
+  ...
+# Subtest: PROGRAM01 restores the bulk selection projection and rejects stale organization reads
+ok 108 - PROGRAM01 restores the bulk selection projection and rejects stale organization reads
+  ---
+  duration_ms: 0.064667
+  type: 'test'
+  ...
+# Subtest: PROGRAM01 R06 scopes cancellation and exposes stale readback recovery
+ok 109 - PROGRAM01 R06 scopes cancellation and exposes stale readback recovery
+  ---
+  duration_ms: 0.265417
+  type: 'test'
+  ...
+# Subtest: PROGRAM01 R02 binds questionnaire forms to the exact connected program key
+ok 110 - PROGRAM01 R02 binds questionnaire forms to the exact connected program key
+  ---
+  duration_ms: 0.188458
+  type: 'test'
+  ...
+# {"limits":{"maxStepsPerAS":5,"maxSteps":100},"reason":"/DRIVER_AS_STEP_LIMIT/","accepted_ask_answers":3,"as_count":1}
+# {"limits":{"maxStepsPerAS":100,"maxSteps":6},"reason":"/DRIVER_RUN_STEP_LIMIT/","accepted_ask_answers":3,"as_count":1}
+# Subtest: driver accepts one_ask and does not send a stale command
+ok 111 - driver accepts one_ask and does not send a stale command
+  ---
+  duration_ms: 41.299459
+  type: 'test'
+  ...
+# Subtest: driver accepts second_ask and does not send a stale command
+ok 112 - driver accepts second_ask and does not send a stale command
+  ---
+  duration_ms: 33.844541
+  type: 'test'
+  ...
+# Subtest: driver accepts other_client_ended and does not send a stale command
+ok 113 - driver accepts other_client_ended and does not send a stale command
+  ---
+  duration_ms: 21.007083
+  type: 'test'
+  ...
+# Subtest: driver accepts calendar_close and does not send a stale command
+ok 114 - driver accepts calendar_close and does not send a stale command
+  ---
+  duration_ms: 23.367208
+  type: 'test'
+  ...
+# Subtest: driver accepts delayed_ask and does not send a stale command
+ok 115 - driver accepts delayed_ask and does not send a stale command
+  ---
+  duration_ms: 23.792708
+  type: 'test'
+  ...
+# Subtest: driver never answers an ASK that remains undelivered
+ok 116 - driver never answers an ASK that remains undelivered
+  ---
+  duration_ms: 2.331542
+  type: 'test'
+  ...
+# Subtest: actual ASK-loop stops with /DRIVER_AS_STEP_LIMIT/
+ok 117 - actual ASK-loop stops with /DRIVER_AS_STEP_LIMIT/
+  ---
+  duration_ms: 3.034958
+  type: 'test'
+  ...
+# Subtest: actual ASK-loop stops with /DRIVER_RUN_STEP_LIMIT/
+ok 118 - actual ASK-loop stops with /DRIVER_RUN_STEP_LIMIT/
+  ---
+  duration_ms: 3.811584
+  type: 'test'
+  ...
+# Subtest: actual driver unchanged processing stops with /RUN_DEADLINE_EXCEEDED/
+ok 119 - actual driver unchanged processing stops with /RUN_DEADLINE_EXCEEDED/
+  ---
+  duration_ms: 81.765333
+  type: 'test'
+  ...
+# Subtest: actual driver unchanged processing stops with /RUN_NO_PROGRESS_EXCEEDED/
+ok 120 - actual driver unchanged processing stops with /RUN_NO_PROGRESS_EXCEEDED/
+  ---
+  duration_ms: 80.544208
+  type: 'test'
+  ...
+# Subtest: short positive driver stops at explicit Next within finite limits, before Report
+ok 121 - short positive driver stops at explicit Next within finite limits, before Report
+  ---
+  duration_ms: 3.70925
+  type: 'test'
+  ...
+# Subtest: cleanup requires a known terminal execution outcome after preparation
+ok 122 - cleanup requires a known terminal execution outcome after preparation
+  ---
+  duration_ms: 0.7505
+  type: 'test'
+  ...
+# Subtest: coordinator preserves owned DB when execution export is missing
+ok 123 - coordinator preserves owned DB when execution export is missing
+  ---
+  duration_ms: 0.889375
+  type: 'test'
+  ...
+# Subtest: terminal export is persisted and checked before cleanup admission
+ok 124 - terminal export is persisted and checked before cleanup admission
+  ---
+  duration_ms: 28.994
+  type: 'test'
+  ...
+# Subtest: export write retains actual file state and diagnostic error
+ok 125 - export write retains actual file state and diagnostic error
+  ---
+  duration_ms: 4.096458
+  type: 'test'
+  ...
+# Subtest: export readback retains actual file state and diagnostic error
+ok 126 - export readback retains actual file state and diagnostic error
+  ---
+  duration_ms: 20.032209
+  type: 'test'
+  ...
+# Subtest: expired-session cleanup clears old feedback before the lazy boundary and keeps generation guard
+ok 127 - expired-session cleanup clears old feedback before the lazy boundary and keeps generation guard
+  ---
+  duration_ms: 0.942083
+  type: 'test'
+  ...
+# Subtest: ordinary chat reset still clears auth feedback by default after the guarded lazy load
+ok 128 - ordinary chat reset still clears auth feedback by default after the guarded lazy load
+  ---
+  duration_ms: 0.239291
+  type: 'test'
+  ...
+# Subtest: auth forms expose password-manager fields and an explicit way to change email
+ok 129 - auth forms expose password-manager fields and an explicit way to change email
+  ---
+  duration_ms: 0.099375
+  type: 'test'
+  ...
+# Subtest: action validation fences pending input without advancing the parent auth-operation generation
+ok 130 - action validation fences pending input without advancing the parent auth-operation generation
+  ---
+  duration_ms: 0.117041
+  type: 'test'
+  ...
+# Subtest: registration and repeat login route through the existing journey without auth-complete
+ok 131 - registration and repeat login route through the existing journey without auth-complete
+  ---
+  duration_ms: 0.094916
+  type: 'test'
+  ...
+# Subtest: server dashboard journey preserves safe profile and reports subroutes on reload
+ok 132 - server dashboard journey preserves safe profile and reports subroutes on reload
+  ---
+  duration_ms: 0.18225
+  type: 'test'
+  ...
+# Subtest: mutating auth actions guard repeated submissions and expose busy state
+ok 133 - mutating auth actions guard repeated submissions and expose busy state
+  ---
+  duration_ms: 0.166792
+  type: 'test'
+  ...
+# Subtest: new passwords use two in-memory steps and the accepted ASCII policy
+ok 134 - new passwords use two in-memory steps and the accepted ASCII policy
+  ---
+  duration_ms: 0.227541
+  type: 'test'
+  ...
+# Subtest: auth surface exposes the R04 mail state and non-interactive shared footer
+ok 135 - auth surface exposes the R04 mail state and non-interactive shared footer
+  ---
+  duration_ms: 0.48225
+  type: 'test'
+  ...
+# Subtest: resend timing is server-driven and survives reload, background time and another tab
+ok 136 - resend timing is server-driven and survives reload, background time and another tab
+  ---
+  duration_ms: 0.390917
+  type: 'test'
+  ...
+# Subtest: CMP01 has an explicit comparison entry and exact columns
+ok 137 - CMP01 has an explicit comparison entry and exact columns
+  ---
+  duration_ms: 0.941834
+  type: 'test'
+  ...
+# Subtest: CMP01 renders non-comparable values as separate slices without delta
+ok 138 - CMP01 renders non-comparable values as separate slices without delta
+  ---
+  duration_ms: 0.140333
+  type: 'test'
+  ...
+# Subtest: E01 names assessment positions as situations and separates sending from completion
+ok 139 - E01 names assessment positions as situations and separates sending from completion
+  ---
+  duration_ms: 0.851625
+  type: 'test'
+  ...
+# Subtest: E01 keeps the absolute deadline outside assessment and marks only server-confirmed pauses
+ok 140 - E01 keeps the absolute deadline outside assessment and marks only server-confirmed pauses
+  ---
+  duration_ms: 0.179417
+  type: 'test'
+  ...
+# Subtest: E01 scopes editable drafts to cycle and assessment situation
+ok 141 - E01 scopes editable drafts to cycle and assessment situation
+  ---
+  duration_ms: 0.115875
+  type: 'test'
+  ...
+# Subtest: E01 protects supplied materials and silently blocks transferred answers
+ok 142 - E01 protects supplied materials and silently blocks transferred answers
+  ---
+  duration_ms: 0.341666
+  type: 'test'
+  ...
+# Subtest: E01 applies accepted conversation tokens and mobile layout
+ok 143 - E01 applies accepted conversation tokens and mobile layout
+  ---
+  duration_ms: 0.168708
+  type: 'test'
+  ...
+# Subtest: E01 ADD01 presents the admitted situation once inside the chat without raw JSON or a route column
+ok 144 - E01 ADD01 presents the admitted situation once inside the chat without raw JSON or a route column
+  ---
+  duration_ms: 2.09325
+  type: 'test'
+  ...
+# Subtest: E02 exposes the accepted completion, waiting, ready and failure copy
+ok 145 - E02 exposes the accepted completion, waiting, ready and failure copy
+  ---
+  duration_ms: 0.78025
+  type: 'test'
+  ...
+# Subtest: E02 does not expose pipeline stages, invented percentages or participant recovery
+ok 146 - E02 does not expose pipeline stages, invented percentages or participant recovery
+  ---
+  duration_ms: 0.165167
+  type: 'test'
+  ...
+# Subtest: E02 keeps calculated results waiting until an owned assessee report is ready
+ok 147 - E02 keeps calculated results waiting until an owned assessee report is ready
+  ---
+  duration_ms: 0.211875
+  type: 'test'
+  ...
+# Subtest: E02 restores an explicit M8 report after URL identifiers become strings
+ok 148 - E02 restores an explicit M8 report after URL identifiers become strings
+  ---
+  duration_ms: 0.097833
+  type: 'test'
+  ...
+# Subtest: E02 polling is cancellable, visibility-aware and ignores stale responses
+ok 149 - E02 polling is cancellable, visibility-aware and ignores stale responses
+  ---
+  duration_ms: 0.813875
+  type: 'test'
+  ...
+# Subtest: E02 uses accepted visual tokens and mobile actions
+ok 150 - E02 uses accepted visual tokens and mobile actions
+  ---
+  duration_ms: 0.113625
+  type: 'test'
+  ...
+# (node:61808) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server INTERIM_PENDING
+ok 151 - EXEC01 C1/C3 ordinary finish remains disabled for server INTERIM_PENDING
+  ---
+  duration_ms: 4.612417
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server WAIT_TECHNICAL
+ok 152 - EXEC01 C1/C3 ordinary finish remains disabled for server WAIT_TECHNICAL
+  ---
+  duration_ms: 1.109541
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server DECISION_STALE
+ok 153 - EXEC01 C1/C3 ordinary finish remains disabled for server DECISION_STALE
+  ---
+  duration_ms: 1.098334
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1/C3 ordinary finish remains disabled for server ANALYSIS_FAILED
+ok 154 - EXEC01 C1/C3 ordinary finish remains disabled for server ANALYSIS_FAILED
+  ---
+  duration_ms: 1.020584
+  type: 'test'
+  ...
+# Subtest: EXEC01 C1 open ASK remains answerable and blocks Finish
+ok 155 - EXEC01 C1 open ASK remains answerable and blocks Finish
+  ---
+  duration_ms: 1.074083
+  type: 'test'
+  ...
+# Subtest: EXEC01 C2 server current decision enables ordinary Finish; new pending snapshot locks it again
+ok 156 - EXEC01 C2 server current decision enables ordinary Finish; new pending snapshot locks it again
+  ---
+  duration_ms: 1.114458
+  type: 'test'
+  ...
+# Subtest: EXEC01 A1 failed first presence never hides the already confirmed ASK/history
+ok 157 - EXEC01 A1 failed first presence never hides the already confirmed ASK/history
+  ---
+  duration_ms: 1.8785
+  type: 'test'
+  ...
+# Subtest: EXEC01 A2 Continue preserves the AS and ordinary draft without retargeting it into ASK
+ok 158 - EXEC01 A2 Continue preserves the AS and ordinary draft without retargeting it into ASK
+  ---
+  duration_ms: 2.677208
+  type: 'test'
+  ...
+# (node:61809) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: EXEC03 unknown previous AS resolves without transferring its text into next AS
+ok 159 - EXEC03 unknown previous AS resolves without transferring its text into next AS
+  ---
+  duration_ms: 41.537667
+  type: 'test'
+  ...
+# Subtest: EXEC03 unknown previous AS resolves without transferring its text into processing
+ok 160 - EXEC03 unknown previous AS resolves without transferring its text into processing
+  ---
+  duration_ms: 1.624208
+  type: 'test'
+  ...
+# Subtest: EXEC03 late previous-AS recovery cannot clear a different login session
+ok 161 - EXEC03 late previous-AS recovery cannot clear a different login session
+  ---
+  duration_ms: 1.472167
+  type: 'test'
+  ...
+# Subtest: EXEC03 processing navigation retains absent identity without server source-phase proof
+ok 162 - EXEC03 processing navigation retains absent identity without server source-phase proof
+  ---
+  duration_ms: 2.787125
+  type: 'test'
+  ...
+# Subtest: EXEC03 processing navigation retains pending identity without server source-phase proof
+ok 163 - EXEC03 processing navigation retains pending identity without server source-phase proof
+  ---
+  duration_ms: 2.064875
+  type: 'test'
+  ...
+# Subtest: EXEC03 processing navigation retains failed identity without server source-phase proof
+ok 164 - EXEC03 processing navigation retains failed identity without server source-phase proof
+  ---
+  duration_ms: 1.546333
+  type: 'test'
+  ...
+# (node:61810) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: EXEC-03 ordinary unsent draft is not retargeted into a presented M7 ASK
+ok 165 - EXEC-03 ordinary unsent draft is not retargeted into a presented M7 ASK
+  ---
+  duration_ms: 8.656834
+  type: 'test'
+  ...
+# Subtest: EXEC-03 each M7 ASK restores only its own exact raw draft after replacement and reload
+ok 166 - EXEC-03 each M7 ASK restores only its own exact raw draft after replacement and reload
+  ---
+  duration_ms: 3.674708
+  type: 'test'
+  ...
+# Subtest: EXEC-03 ordinary and ASK drafts are separated by account on the same Cycle/AS
+ok 167 - EXEC-03 ordinary and ASK drafts are separated by account on the same Cycle/AS
+  ---
+  duration_ms: 10.32375
+  type: 'test'
+  ...
+# Subtest: EXEC-03 legacy ordinary draft migrates on confirmed ordinary readback and gains owner isolation
+ok 168 - EXEC-03 legacy ordinary draft migrates on confirmed ordinary readback and gains owner isolation
+  ---
+  duration_ms: 2.82575
+  type: 'test'
+  ...
+# Subtest: EXEC-03 a legacy ordinary draft is not migrated into an initial ASK
+ok 169 - EXEC-03 a legacy ordinary draft is not migrated into an initial ASK
+  ---
+  duration_ms: 1.107959
+  type: 'test'
+  ...
+# Subtest: EXEC-03 authoritative absence after phase change retires old operation and clears only its matching draft
+ok 170 - EXEC-03 authoritative absence after phase change retires old operation and clears only its matching draft
+  ---
+  duration_ms: 37.543
+  type: 'test'
+  ...
+# Subtest: EXEC-03 authoritative absence for superseded ASK retires only that question operation and draft
+ok 171 - EXEC-03 authoritative absence for superseded ASK retires only that question operation and draft
+  ---
+  duration_ms: 4.030709
+  type: 'test'
+  ...
+# Subtest: EXEC-03 accepted applied readback clears pending while keeping newer input without another POST
+ok 172 - EXEC-03 accepted applied readback clears pending while keeping newer input without another POST
+  ---
+  duration_ms: 1.693834
+  type: 'test'
+  ...
+# Subtest: EXEC-03 failed answer-status keeps unknown identity and retry endpoint after the ASK changes
+ok 173 - EXEC-03 failed answer-status keeps unknown identity and retry endpoint after the ASK changes
+  ---
+  duration_ms: 3.233666
+  type: 'test'
+  ...
+# Subtest: EXEC-03 same-phase authoritative absence retries M7 with the original full identity
+ok 174 - EXEC-03 same-phase authoritative absence retries M7 with the original full identity
+  ---
+  duration_ms: 3.354083
+  type: 'test'
+  ...
+# (node:61811) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: EXEC-03 lazy-import acceptance cannot erase a newer draft revision even when raw text is identical
+ok 175 - EXEC-03 lazy-import acceptance cannot erase a newer draft revision even when raw text is identical
+  ---
+  duration_ms: 44.365791
+  type: 'test'
+  ...
+# Subtest: EXEC-03 lazy import cannot retarget a captured submission when the current question changes in the same AS
+ok 176 - EXEC-03 lazy import cannot retarget a captured submission when the current question changes in the same AS
+  ---
+  duration_ms: 5.975292
+  type: 'test'
+  ...
+# Subtest: EXEC-03 legacy pending operation gains a revision before readback so equal newer input survives
+ok 177 - EXEC-03 legacy pending operation gains a revision before readback so equal newer input survives
+  ---
+  duration_ms: 3.184917
+  type: 'test'
+  ...
+# Subtest: F02 org admin and superadmin current participant controls directly delete the whole person
+ok 178 - F02 org admin and superadmin current participant controls directly delete the whole person
+  ---
+  duration_ms: 2.652625
+  type: 'test'
+  ...
+# Subtest: F02 permission availability is explicit and self is hidden even for superadmin
+ok 179 - F02 permission availability is explicit and self is hidden even for superadmin
+  ---
+  duration_ms: 0.742209
+  type: 'test'
+  ...
+# Subtest: F02 current administrator has separate named revoke-rights and whole-account controls
+ok 180 - F02 current administrator has separate named revoke-rights and whole-account controls
+  ---
+  duration_ms: 0.445625
+  type: 'test'
+  ...
+# Subtest: F02 known pending command takes recovery priority over a fresh preview or unavailable capability
+ok 181 - F02 known pending command takes recovery priority over a fresh preview or unavailable capability
+  ---
+  duration_ms: 0.439
+  type: 'test'
+  ...
+# Subtest: F02 obsolete exclude, restore and transfer user flows have no renderer, handler or export
+ok 182 - F02 obsolete exclude, restore and transfer user flows have no renderer, handler or export
+  ---
+  duration_ms: 0.844167
+  type: 'test'
+  ...
+# Subtest: F06 old success cannot redraw another login or navigate it
+ok 183 - F06 old success cannot redraw another login or navigate it
+  ---
+  duration_ms: 2.292416
+  type: 'test'
+  ...
+# Subtest: F06 A→B→A rejects late success and 409 from the previous screen generation
+ok 184 - F06 A→B→A rejects late success and 409 from the previous screen generation
+  ---
+  duration_ms: 0.818958
+  type: 'test'
+  ...
+# Subtest: F06 current success and known error preserve feedback
+ok 185 - F06 current success and known error preserve feedback
+  ---
+  duration_ms: 0.883
+  type: 'test'
+  ...
+# (node:61814) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+ok 186 - F07 first known 409 is rejected beside the answer and a status check does not resend the Turn
+  ---
+  duration_ms: 34.852667
+  type: 'test'
+  ...
+# Subtest: F08 lost scenario_end response retains command identity and locks input through reload
+ok 187 - F08 lost scenario_end response retains command identity and locks input through reload
+  ---
+  duration_ms: 3.335875
+  type: 'test'
+  ...
+# Subtest: F09 lost Next response and reload check the saved operation without a second POST
+ok 188 - F09 lost Next response and reload check the saved operation without a second POST
+  ---
+  duration_ms: 3.54875
+  type: 'test'
+  ...
+# Subtest: F09 server-opened next AS retires the old between-situations command
+ok 189 - F09 server-opened next AS retires the old between-situations command
+  ---
+  duration_ms: 1.931125
+  type: 'test'
+  ...
+# Subtest: F09 known Next refusal makes the next click a readback rather than a new POST
+ok 190 - F09 known Next refusal makes the next click a readback rather than a new POST
+  ---
+  duration_ms: 2.616667
+  type: 'test'
+  ...
+# (node:61815) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/product-cycle-preparation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F09 local wait limit preserves queued operation identity and never reports server failure
+ok 191 - F09 local wait limit preserves queued operation identity and never reports server failure
+  ---
+  duration_ms: 1.8005
+  type: 'test'
+  ...
+# Subtest: F09 terminal worker result retains server retry permission
+ok 192 - F09 terminal worker result retains server retry permission
+  ---
+  duration_ms: 0.203791
+  type: 'test'
+  ...
+# Subtest: F22-06 prefers a scoped draft and otherwise restores the confirmed revision
+ok 193 - F22-06 prefers a scoped draft and otherwise restores the confirmed revision
+  ---
+  duration_ms: 1.222875
+  type: 'test'
+  ...
+# Subtest: F22-04 keeps newer server revisions and post-submit drafts
+ok 194 - F22-04 keeps newer server revisions and post-submit drafts
+  ---
+  duration_ms: 0.823791
+  type: 'test'
+  ...
+# (node:61818) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/state.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F22-01 ignores a late members import after identity changes
+ok 195 - F22-01 ignores a late members import after identity changes
+  ---
+  duration_ms: 32.679333
+  type: 'test'
+  ...
+# (node:61819) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/screens/admin/organization-draft-key.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F22-02 scopes questionnaire recipient drafts by assignment and revision
+ok 196 - F22-02 scopes questionnaire recipient drafts by assignment and revision
+  ---
+  duration_ms: 0.896375
+  type: 'test'
+  ...
+# Subtest: REPORT-02 leaves no recipient section in the questionnaire preview
+ok 197 - REPORT-02 leaves no recipient section in the questionnaire preview
+  ---
+  duration_ms: 0.936958
+  type: 'test'
+  ...
+# Subtest: F22-03 rejects obsolete preview generations and stale input signatures
+ok 198 - F22-03 rejects obsolete preview generations and stale input signatures
+  ---
+  duration_ms: 1.19225
+  type: 'test'
+  ...
+# (node:61822) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/api.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: HTTP deadline bounds a stalled response body and aborts transport
+ok 199 - HTTP deadline bounds a stalled response body and aborts transport
+  ---
+  duration_ms: 14.124291
+  type: 'test'
+  ...
+# Subtest: HTTP deadline retains status/body and rejects invalid JSON without hanging
+ok 200 - HTTP deadline retains status/body and rejects invalid JSON without hanging
+  ---
+  duration_ms: 34.464125
+  type: 'test'
+  ...
+# Subtest: LK01 renders server-owned current and completed Cycle cards
+ok 201 - LK01 renders server-owned current and completed Cycle cards
+  ---
+  duration_ms: 1.011416
+  type: 'test'
+  ...
+# Subtest: LK01 has explicit Cycle actions and no catalogue or repeat action
+ok 202 - LK01 has explicit Cycle actions and no catalogue or repeat action
+  ---
+  duration_ms: 0.354375
+  type: 'test'
+  ...
+# Subtest: LK01 keeps accessible mobile actions and accepted visual tokens
+ok 203 - LK01 keeps accessible mobile actions and accepted visual tokens
+  ---
+  duration_ms: 0.517125
+  type: 'test'
+  ...
+# Subtest: confirmed server answers discard the scoped local draft
+ok 204 - confirmed server answers discard the scoped local draft
+  ---
+  duration_ms: 1.23625
+  type: 'test'
+  ...
+# (node:61825) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/readiness-presentation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: resume uses actual consent and saved answers rather than legacy skipped/current_step
+ok 205 - resume uses actual consent and saved answers rather than legacy skipped/current_step
+  ---
+  duration_ms: 0.926667
+  type: 'test'
+  ...
+# Subtest: local operation key separates account, tenant, assignment generation and questionnaire revision
+ok 206 - local operation key separates account, tenant, assignment generation and questionnaire revision
+  ---
+  duration_ms: 0.182958
+  type: 'test'
+  ...
+# Subtest: prepared plan survives reload even when a stale briefing projection disagrees on consent
+ok 207 - prepared plan survives reload even when a stale briefing projection disagrees on consent
+  ---
+  duration_ms: 0.080041
+  type: 'test'
+  ...
+# Subtest: readiness distinguishes organizational waiting, job status, network and admitted prepared plan
+ok 208 - readiness distinguishes organizational waiting, job status, network and admitted prepared plan
+  ---
+  duration_ms: 0.0855
+  type: 'test'
+  ...
+# Subtest: nonempty READY or LIMITED route never substitutes for server admission
+ok 209 - nonempty READY or LIMITED route never substitutes for server admission
+  ---
+  duration_ms: 0.211208
+  type: 'test'
+  ...
+# Subtest: server admission cannot enable a missing route or time budget
+ok 210 - server admission cannot enable a missing route or time budget
+  ---
+  duration_ms: 0.083459
+  type: 'test'
+  ...
+# Subtest: W02 FIX a prepared plan preserves the current explanation on reload
+ok 211 - W02 FIX a prepared plan preserves the current explanation on reload
+  ---
+  duration_ms: 0.134209
+  type: 'test'
+  ...
+# Subtest: ADD01 early assignment sources uses participant copy without changing server distinctions
+ok 212 - ADD01 early assignment sources uses participant copy without changing server distinctions
+  ---
+  duration_ms: 0.12325
+  type: 'test'
+  ...
+# (node:61826) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/onboarding-flow.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: late acquaintance GET cannot replace a newer assignment generation
+ok 213 - late acquaintance GET cannot replace a newer assignment generation
+  ---
+  duration_ms: 2.281625
+  type: 'test'
+  ...
+# Subtest: full deletion preview is shown to superadmin
+ok 214 - full deletion preview is shown to superadmin
+  ---
+  duration_ms: 0.8655
+  type: 'test'
+  ...
+# Subtest: full deletion shows exact preview and keeps production execution gated
+ok 215 - full deletion shows exact preview and keeps production execution gated
+  ---
+  duration_ms: 0.289917
+  type: 'test'
+  ...
+# Subtest: deleting a person uses the full account operation from the current list
+ok 216 - deleting a person uses the full account operation from the current list
+  ---
+  duration_ms: 0.215708
+  type: 'test'
+  ...
+# Subtest: physical purge request includes all backend confirmations
+ok 217 - physical purge request includes all backend confirmations
+  ---
+  duration_ms: 0.24625
+  type: 'test'
+  ...
+# Subtest: account operation recovery remains available without a remaining organization
+ok 218 - account operation recovery remains available without a remaining organization
+  ---
+  duration_ms: 0.652542
+  type: 'test'
+  ...
+# Subtest: purge preview explains protected accounts
+ok 219 - purge preview explains protected accounts
+  ---
+  duration_ms: 0.183166
+  type: 'test'
+  ...
+# Subtest: P03 confirms server presence independently of typing and requires explicit continue
+ok 220 - P03 confirms server presence independently of typing and requires explicit continue
+  ---
+  duration_ms: 1.254334
+  type: 'test'
+  ...
+# Subtest: P03 blocks stopped AS input and uses admitted equivalent candidate for replacement
+ok 221 - P03 blocks stopped AS input and uses admitted equivalent candidate for replacement
+  ---
+  duration_ms: 0.191333
+  type: 'test'
+  ...
+# Subtest: P3-B keeps unknown timing distinct from zero or unlimited time
+ok 222 - P3-B keeps unknown timing distinct from zero or unlimited time
+  ---
+  duration_ms: 0.150125
+  type: 'test'
+  ...
+# (node:61832) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: P3-A HTML and synchronous Cycle entry keep input/actions disabled until confirmed runtime
+ok 223 - P3-A HTML and synchronous Cycle entry keep input/actions disabled until confirmed runtime
+  ---
+  duration_ms: 6.635667
+  type: 'test'
+  ...
+# Subtest: P3-A late preflight cannot post or mutate a different Cycle/AS/screen/owner/epoch
+ok 224 - P3-A late preflight cannot post or mutate a different Cycle/AS/screen/owner/epoch
+  ---
+  duration_ms: 69.82525
+  type: 'test'
+  ...
+# Subtest: P3-A known POST receipt survives failed readback/reload and is never resent
+ok 225 - P3-A known POST receipt survives failed readback/reload and is never resent
+  ---
+  duration_ms: 6.07725
+  type: 'test'
+  ...
+# Subtest: P3-A commit then lost response retains one identity across reload and same-key provider recovery
+ok 226 - P3-A commit then lost response retains one identity across reload and same-key provider recovery
+  ---
+  duration_ms: 5.615583
+  type: 'test'
+  ...
+# Subtest: P3-A failed readback never establishes absence or permits a fresh blind command
+ok 227 - P3-A failed readback never establishes absence or permits a fresh blind command
+  ---
+  duration_ms: 1.846334
+  type: 'test'
+  ...
+# Subtest: P3-A raw multiline draft changed during POST is not erased by an older acceptance
+ok 228 - P3-A raw multiline draft changed during POST is not erased by an older acceptance
+  ---
+  duration_ms: 1.708375
+  type: 'test'
+  ...
+# Subtest: P3-A late POST success/error stays in its original scope and cannot enable/focus another view
+ok 229 - P3-A late POST success/error stays in its original scope and cannot enable/focus another view
+  ---
+  duration_ms: 9.039291
+  type: 'test'
+  ...
+# Subtest: P3-A a pause confirmed during POST remains authoritative after the old request fails
+ok 230 - P3-A a pause confirmed during POST remains authoritative after the old request fails
+  ---
+  duration_ms: 4.164416
+  type: 'test'
+  ...
+# Subtest: P3-A double retry shares one in-flight guard and preserves the pending row through history rebuild
+ok 231 - P3-A double retry shares one in-flight guard and preserves the pending row through history rebuild
+  ---
+  duration_ms: 2.319584
+  type: 'test'
+  ...
+# Subtest: P3-A stale retained retry callback cannot turn an old answer into a new AS command
+ok 232 - P3-A stale retained retry callback cannot turn an old answer into a new AS command
+  ---
+  duration_ms: 3.753625
+  type: 'test'
+  ...
+# Subtest: P3-A a failed preflight sent nothing and leaves the draft editable for a corrected new answer
+ok 233 - P3-A a failed preflight sent nothing and leaves the draft editable for a corrected new answer
+  ---
+  duration_ms: 5.901125
+  type: 'test'
+  ...
+# Subtest: P3-A reload during prepared preflight discards only the undispatched operation and keeps its draft
+ok 234 - P3-A reload during prepared preflight discards only the undispatched operation and keeps its draft
+  ---
+  duration_ms: 4.622292
+  type: 'test'
+  ...
+# Subtest: P3-A a retained retry callback cannot resurrect a resolved operation in the same AS
+ok 235 - P3-A a retained retry callback cannot resurrect a resolved operation in the same AS
+  ---
+  duration_ms: 2.681666
+  type: 'test'
+  ...
+# Subtest: P3-A paused/closed/unpresented clarification phases do not issue POST or enable their input
+ok 236 - P3-A paused/closed/unpresented clarification phases do not issue POST or enable their input
+  ---
+  duration_ms: 6.198
+  type: 'test'
+  ...
+# Subtest: P3-A source endpoint/clarification decision is never retargeted after phase changes
+ok 237 - P3-A source endpoint/clarification decision is never retargeted after phase changes
+  ---
+  duration_ms: 9.292875
+  type: 'test'
+  ...
+# Subtest: P3-A receipt validation distinguishes M5 turn and M7 answer; empty/foreign 2xx stays unknown
+ok 238 - P3-A receipt validation distinguishes M5 turn and M7 answer; empty/foreign 2xx stays unknown
+  ---
+  duration_ms: 26.042625
+  type: 'test'
+  ...
+# Subtest: P3-A a return/Continue card survives a pending GET error without cached AS resurrection
+ok 239 - P3-A a return/Continue card survives a pending GET error without cached AS resurrection
+  ---
+  duration_ms: 1.537334
+  type: 'test'
+  ...
+# Subtest: P3-A malformed persisted operation and overlong new text never fetch or corrupt the editable draft
+ok 240 - P3-A malformed persisted operation and overlong new text never fetch or corrupt the editable draft
+  ---
+  duration_ms: 13.38075
+  type: 'test'
+  ...
+# Subtest: P3-A UUID fallback uses secure random bytes and preserves the draft when crypto is unavailable
+ok 241 - P3-A UUID fallback uses secure random bytes and preserves the draft when crypto is unavailable
+  ---
+  duration_ms: 2.273625
+  type: 'test'
+  ...
+# Subtest: P3-A wiring captures scope/raw draft before lazy import and its old guard cannot block a new AS
+ok 242 - P3-A wiring captures scope/raw draft before lazy import and its old guard cannot block a new AS
+  ---
+  duration_ms: 2.587166
+  type: 'test'
+  ...
+# Subtest: P3-A wiring preserves the exact pre-import raw draft while a newer multiline draft is entered
+ok 243 - P3-A wiring preserves the exact pre-import raw draft while a newer multiline draft is entered
+  ---
+  duration_ms: 2.053459
+  type: 'test'
+  ...
+# (node:61838) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: P3-A opens long restored/new AS at its beginning without scrolling each saved Turn
+ok 244 - P3-A opens long restored/new AS at its beginning without scrolling each saved Turn
+  ---
+  duration_ms: 4.987541
+  type: 'test'
+  ...
+# Subtest: P3-A renders only public fields of delivered string/structured materials
+ok 245 - P3-A renders only public fields of delivered string/structured materials
+  ---
+  duration_ms: 1.119584
+  type: 'test'
+  ...
+# Subtest: P3-A hides only the identical initial material mirror and retains later same-ID content/updates
+ok 246 - P3-A hides only the identical initial material mirror and retains later same-ID content/updates
+  ---
+  duration_ms: 1.562041
+  type: 'test'
+  ...
+# Subtest: P3-A new saved dialogue preserves the reader position and unchanged polls never reposition it
+ok 247 - P3-A new saved dialogue preserves the reader position and unchanged polls never reposition it
+  ---
+  duration_ms: 1.245916
+  type: 'test'
+  ...
+# Subtest: P3-A follows a new saved reply only when the reader was already at the end
+ok 248 - P3-A follows a new saved reply only when the reader was already at the end
+  ---
+  duration_ms: 1.252542
+  type: 'test'
+  ...
+# Subtest: P3-A assistant/delivery updates preserve reading; explicit own send can reveal its row
+ok 249 - P3-A assistant/delivery updates preserve reading; explicit own send can reveal its row
+  ---
+  duration_ms: 1.152
+  type: 'test'
+  ...
+# Subtest: P3-A deferred alignment yields when a participant scrolls between layout callbacks
+ok 250 - P3-A deferred alignment yields when a participant scrolls between layout callbacks
+  ---
+  duration_ms: 3.752667
+  type: 'test'
+  ...
+# Subtest: P3-A stale callbacks cannot move a new Cycle, AS, screen, or replaced DOM
+ok 251 - P3-A stale callbacks cannot move a new Cycle, AS, screen, or replaced DOM
+  ---
+  duration_ms: 6.00425
+  type: 'test'
+  ...
+# Subtest: P3-A a newer alignment cancels older RAF/timers even when an old callback is delivered late
+ok 252 - P3-A a newer alignment cancels older RAF/timers even when an old callback is delivered late
+  ---
+  duration_ms: 1.68525
+  type: 'test'
+  ...
+# Subtest: P3-A reading/focus/leave cancel deferred work and the latest-messages button remains controlled
+ok 253 - P3-A reading/focus/leave cancel deferred work and the latest-messages button remains controlled
+  ---
+  duration_ms: 1.711833
+  type: 'test'
+  ...
+# Subtest: P3-A+3B loader rejects late runtime for another owner, Cycle, AS or screen
+ok 254 - P3-A+3B loader rejects late runtime for another owner, Cycle, AS or screen
+  ---
+  duration_ms: 4.790667
+  type: 'test'
+  ...
+# Subtest: REMAIN06 network failure invalidates only the current server time without confirming pause
+ok 255 - REMAIN06 network failure invalidates only the current server time without confirming pause
+  ---
+  duration_ms: 1.592583
+  type: 'test'
+  ...
+# Subtest: P3-A+3B default initial/visibility load rejects old AS but accepts server advance
+ok 256 - P3-A+3B default initial/visibility load rejects old AS but accepts server advance
+  ---
+  duration_ms: 0.651875
+  type: 'test'
+  ...
+# Subtest: P3-A+3B late presence cannot apply effects after an AS replacement
+ok 257 - P3-A+3B late presence cannot apply effects after an AS replacement
+  ---
+  duration_ms: 0.345709
+  type: 'test'
+  ...
+# Subtest: P3-A+3B delayed return-state cannot replace a newer AS card
+ok 258 - P3-A+3B delayed return-state cannot replace a newer AS card
+  ---
+  duration_ms: 0.420125
+  type: 'test'
+  ...
+# Subtest: QA03 same-context reads share one pending GET and both receive its confirmed result
+ok 259 - QA03 same-context reads share one pending GET and both receive its confirmed result
+  ---
+  duration_ms: 5.250791
+  type: 'test'
+  ...
+# Subtest: 04 late return-state read cannot replace a newer runtime with an old pause card
+ok 260 - 04 late return-state read cannot replace a newer runtime with an old pause card
+  ---
+  duration_ms: 1.878542
+  type: 'test'
+  ...
+# (node:61841) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/screens/admin/questionnaire-assignment-state.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: questionnaire undefined, cached confirmed=false: unknown is not unconfirmed
+ok 261 - questionnaire undefined, cached confirmed=false: unknown is not unconfirmed
+  ---
+  duration_ms: 0.867875
+  type: 'test'
+  ...
+# Subtest: questionnaire undefined, cached confirmed=true: unknown is not unconfirmed
+ok 262 - questionnaire undefined, cached confirmed=true: unknown is not unconfirmed
+  ---
+  duration_ms: 0.121417
+  type: 'test'
+  ...
+# Subtest: questionnaire loading, cached confirmed=false: unknown is not unconfirmed
+ok 263 - questionnaire loading, cached confirmed=false: unknown is not unconfirmed
+  ---
+  duration_ms: 0.049167
+  type: 'test'
+  ...
+# Subtest: questionnaire loading, cached confirmed=true: unknown is not unconfirmed
+ok 264 - questionnaire loading, cached confirmed=true: unknown is not unconfirmed
+  ---
+  duration_ms: 0.045375
+  type: 'test'
+  ...
+# Subtest: questionnaire error, cached confirmed=false: unknown is not unconfirmed
+ok 265 - questionnaire error, cached confirmed=false: unknown is not unconfirmed
+  ---
+  duration_ms: 0.04975
+  type: 'test'
+  ...
+# Subtest: questionnaire error, cached confirmed=true: unknown is not unconfirmed
+ok 266 - questionnaire error, cached confirmed=true: unknown is not unconfirmed
+  ---
+  duration_ms: 0.041
+  type: 'test'
+  ...
+# Subtest: questionnaire successful ready read: retain actual confirmation
+ok 267 - questionnaire successful ready read: retain actual confirmation
+  ---
+  duration_ms: 0.1195
+  type: 'test'
+  ...
+# Subtest: questionnaire successful empty read: retain actual confirmation
+ok 268 - questionnaire successful empty read: retain actual confirmation
+  ---
+  duration_ms: 0.042708
+  type: 'test'
+  ...
+# Subtest: viewport evidence preserves primary failure and restoration policy (false)
+ok 269 - viewport evidence preserves primary failure and restoration policy (false)
+  ---
+  duration_ms: 10.382209
+  type: 'test'
+  ...
+# Subtest: viewport evidence preserves primary failure and restoration policy (true)
+ok 270 - viewport evidence preserves primary failure and restoration policy (true)
+  ---
+  duration_ms: 7.450208
+  type: 'test'
+  ...
+# (node:61843) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared projection wins with completed=undefined
+ok 271 - shared projection wins with completed=undefined
+  ---
+  duration_ms: 7.554375
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=null
+ok 272 - shared projection wins with completed=null
+  ---
+  duration_ms: 2.643334
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=0
+ok 273 - shared projection wins with completed=0
+  ---
+  duration_ms: 1.532625
+  type: 'test'
+  ...
+# Subtest: shared projection wins with completed=2
+ok 274 - shared projection wins with completed=2
+  ---
+  duration_ms: 1.278083
+  type: 'test'
+  ...
+# Subtest: 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+ok 275 - 45 seconds and repeated manual GET keep pending neutral, reuse budget and never open finish
+  ---
+  duration_ms: 46.675917
+  type: 'test'
+  ...
+# Subtest: failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+ok 276 - failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is server-owned
+  ---
+  duration_ms: 1.908375
+  type: 'test'
+  ...
+# Subtest: ordinary active actions never pause or interrupt; existing saved recovery remains
+ok 277 - ordinary active actions never pause or interrupt; existing saved recovery remains
+  ---
+  duration_ms: 1.772042
+  type: 'test'
+  ...
+# Subtest: late status read cannot paint another screen or owner
+ok 278 - late status read cannot paint another screen or owner
+  ---
+  duration_ms: 3.539334
+  type: 'test'
+  ...
+# Subtest: interrupted recovery after a lost additional-session receipt reuses its consumed intent
+ok 279 - interrupted recovery after a lost additional-session receipt reuses its consumed intent
+  ---
+  duration_ms: 3.297583
+  type: 'test'
+  ...
+# Subtest: 05 UI unresolved draft conflict blocks direct send and remains blocked after runtime refresh
+ok 280 - 05 UI unresolved draft conflict blocks direct send and remains blocked after runtime refresh
+  ---
+  duration_ms: 1.892417
+  type: 'test'
+  ...
+# (node:61844) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/dashboard-presentation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: POSTW02 shows saved current position even when completed is unknown
+ok 281 - POSTW02 shows saved current position even when completed is unknown
+  ---
+  duration_ms: 0.862542
+  type: 'test'
+  ...
+# Subtest: POSTW02 never infers a current position or total from materialized/completed counts
+ok 282 - POSTW02 never infers a current position or total from materialized/completed counts
+  ---
+  duration_ms: 0.164667
+  type: 'test'
+  ...
+# Subtest: POSTW02 between screen stays on last presented closed position
+ok 283 - POSTW02 between screen stays on last presented closed position
+  ---
+  duration_ms: 0.063125
+  type: 'test'
+  ...
+# Subtest: POSTW02 metadata retains organization and not-started state before a saved plan exists
+ok 284 - POSTW02 metadata retains organization and not-started state before a saved plan exists
+  ---
+  duration_ms: 0.83275
+  type: 'test'
+  ...
+# Subtest: POSTW02 metadata follows ready, presented, return, between and result states
+ok 285 - POSTW02 metadata follows ready, presented, return, between and result states
+  ---
+  duration_ms: 51.279
+  type: 'test'
+  ...
+# Subtest: POSTW02 missing position and completion date never invent metadata
+ok 286 - POSTW02 missing position and completion date never invent metadata
+  ---
+  duration_ms: 1.38725
+  type: 'test'
+  ...
+# Subtest: QA B1 real refreshDashboard keeps disclosure and updates the same operation
+ok 287 - QA B1 real refreshDashboard keeps disclosure and updates the same operation
+  ---
+  duration_ms: 12.284083
+  type: 'test'
+  ...
+# Subtest: QA B2 latest disclosure action during pending refresh: false
+ok 288 - QA B2 latest disclosure action during pending refresh: false
+  ---
+  duration_ms: 3.795417
+  type: 'test'
+  ...
+# Subtest: QA B2 latest disclosure action during pending refresh: true
+ok 289 - QA B2 latest disclosure action during pending refresh: true
+  ---
+  duration_ms: 17.209042
+  type: 'test'
+  ...
+# Subtest: QA B3 reorder, stage, operation, removal, owner and identity isolate disclosure
+ok 290 - QA B3 reorder, stage, operation, removal, owner and identity isolate disclosure
+  ---
+  duration_ms: 8.705083
+  type: 'test'
+  ...
+# Subtest: QA B4 focus stays on copy; removed control falls back within its card; external focus wins
+ok 291 - QA B4 focus stays on copy; removed control falls back within its card; external focus wins
+  ---
+  duration_ms: 6.953833
+  type: 'test'
+  ...
+# Subtest: QA B3 same Cycle crosses current/history with fresh composition and retains its operation
+ok 292 - QA B3 same Cycle crosses current/history with fresh composition and retains its operation
+  ---
+  duration_ms: 3.375125
+  type: 'test'
+  ...
+# Subtest: QA B3 late response after identity/screen change never changes dashboard
+ok 293 - QA B3 late response after identity/screen change never changes dashboard
+  ---
+  duration_ms: 6.243916
+  type: 'test'
+  ...
+# (node:61848) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/preparation-status.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: 30 minute wait uses saved times and contains only human support information
+ok 294 - 30 minute wait uses saved times and contains only human support information
+  ---
+  duration_ms: 15.154583
+  type: 'test'
+  ...
+# Subtest: failed and completed win over delay; stale heartbeat does not claim working
+ok 295 - failed and completed win over delay; stale heartbeat does not claim working
+  ---
+  duration_ms: 0.329792
+  type: 'test'
+  ...
+# Subtest: markup escapes server text and has no live timer or fixed technical stepper
+ok 296 - markup escapes server text and has no live timer or fixed technical stepper
+  ---
+  duration_ms: 0.250666
+  type: 'test'
+  ...
+# Subtest: delay threshold is exactly five minutes and terminal elapsed time stops
+ok 297 - delay threshold is exactly five minutes and terminal elapsed time stops
+  ---
+  duration_ms: 0.226667
+  type: 'test'
+  ...
+# Subtest: read failure and success describe reading, never an answer receipt
+ok 298 - read failure and success describe reading, never an answer receipt
+  ---
+  duration_ms: 0.63325
+  type: 'test'
+  ...
+# Subtest: stale or unconfirmed data freeze durations at the successful read
+ok 299 - stale or unconfirmed data freeze durations at the successful read
+  ---
+  duration_ms: 0.378083
+  type: 'test'
+  ...
+# Subtest: confirmed failure and failed read remain two separate facts
+ok 300 - confirmed failure and failed read remain two separate facts
+  ---
+  duration_ms: 0.388709
+  type: 'test'
+  ...
+# Subtest: one stage, disclosed number and complete human details in compact markup
+ok 301 - one stage, disclosed number and complete human details in compact markup
+  ---
+  duration_ms: 0.378125
+  type: 'test'
+  ...
+# Subtest: product Cycle preparation polls the operation and exposes only completed result
+ok 302 - product Cycle preparation polls the operation and exposes only completed result
+  ---
+  duration_ms: 1.71925
+  type: 'test'
+  ...
+# Subtest: first start reconciles a lost POST response through read-only runtime
+ok 303 - first start reconciles a lost POST response through read-only runtime
+  ---
+  duration_ms: 0.2405
+  type: 'test'
+  ...
+# Subtest: functional next situation waits for durable generation and admission
+ok 304 - functional next situation waits for durable generation and admission
+  ---
+  duration_ms: 0.147917
+  type: 'test'
+  ...
+# (node:61852) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/product-cycle-start.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: returns the committed first runtime after the start POST response is lost
+ok 305 - returns the committed first runtime after the start POST response is lost
+  ---
+  duration_ms: 30.688667
+  type: 'test'
+  ...
+# Subtest: does not present an admitted but unstarted situation as a successful start
+ok 306 - does not present an admitted but unstarted situation as a successful start
+  ---
+  duration_ms: 0.406709
+  type: 'test'
+  ...
+# Subtest: does not turn a server rejection into an unknown transport outcome
+ok 307 - does not turn a server rejection into an unknown transport outcome
+  ---
+  duration_ms: 0.431292
+  type: 'test'
+  ...
+# Subtest: preserves an unknown start across failed readback and recovers by GET after reload
+ok 308 - preserves an unknown start across failed readback and recovers by GET after reload
+  ---
+  duration_ms: 0.549041
+  type: 'test'
+  ...
+# Subtest: an explicit retry after unstarted readback reuses the original idempotency key
+ok 309 - an explicit retry after unstarted readback reuses the original idempotency key
+  ---
+  duration_ms: 0.615708
+  type: 'test'
+  ...
+# Subtest: foreign runtime cannot confirm a lost start
+ok 310 - foreign runtime cannot confirm a lost start
+  ---
+  duration_ms: 0.957958
+  type: 'test'
+  ...
+# Subtest: a 503 POST response also requires readback before reporting failure
+ok 311 - a 503 POST response also requires readback before reporting failure
+  ---
+  duration_ms: 2.503833
+  type: 'test'
+  ...
+# Subtest: uncertain first start abort keeps identity and recovers committed runtime
+ok 312 - uncertain first start abort keeps identity and recovers committed runtime
+  ---
+  duration_ms: 1.505459
+  type: 'test'
+  ...
+# Subtest: uncertain first start deadline keeps identity and recovers committed runtime
+ok 313 - uncertain first start deadline keeps identity and recovers committed runtime
+  ---
+  duration_ms: 1.6735
+  type: 'test'
+  ...
+# Subtest: uncertain first start empty keeps identity and recovers committed runtime
+ok 314 - uncertain first start empty keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.582917
+  type: 'test'
+  ...
+# Subtest: uncertain first start invalid keeps identity and recovers committed runtime
+ok 315 - uncertain first start invalid keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.228875
+  type: 'test'
+  ...
+# Subtest: uncertain first start incomplete keeps identity and recovers committed runtime
+ok 316 - uncertain first start incomplete keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.138417
+  type: 'test'
+  ...
+# Subtest: uncertain first start foreign keeps identity and recovers committed runtime
+ok 317 - uncertain first start foreign keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.125625
+  type: 'test'
+  ...
+# Subtest: uncertain first start body-abort keeps identity and recovers committed runtime
+ok 318 - uncertain first start body-abort keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.121792
+  type: 'test'
+  ...
+# Subtest: uncertain first start empty-payload keeps identity and recovers committed runtime
+ok 319 - uncertain first start empty-payload keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.138875
+  type: 'test'
+  ...
+# Subtest: uncertain first start scalar-payload keeps identity and recovers committed runtime
+ok 320 - uncertain first start scalar-payload keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.183416
+  type: 'test'
+  ...
+# Subtest: uncertain first start array-payload keeps identity and recovers committed runtime
+ok 321 - uncertain first start array-payload keeps identity and recovers committed runtime
+  ---
+  duration_ms: 0.131167
+  type: 'test'
+  ...
+# Subtest: invalid success plus unavailable readback remains pending; foreign readback cannot allow retry
+ok 322 - invalid success plus unavailable readback remains pending; foreign readback cannot allow retry
+  ---
+  duration_ms: 0.963875
+  type: 'test'
+  ...
+# Subtest: default first-start transport bounds stalled headers and body, then performs readback
+ok 323 - default first-start transport bounds stalled headers and body, then performs readback
+  ---
+  duration_ms: 23.044291
+  type: 'test'
+  ...
+# Subtest: known cancelled/admission 409 clears its pending command and never opens readback AS
+ok 324 - known cancelled/admission 409 clears its pending command and never opens readback AS
+  ---
+  duration_ms: 0.547042
+  type: 'test'
+  ...
+# Subtest: known cancellation on readback stays visible while the lost POST outcome remains unknown
+ok 325 - known cancellation on readback stays visible while the lost POST outcome remains unknown
+  ---
+  duration_ms: 0.981583
+  type: 'test'
+  ...
+# (node:61853) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/state.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: ending an account context clears profile caches even before lazy UI cleanup
+ok 326 - ending an account context clears profile caches even before lazy UI cleanup
+  ---
+  duration_ms: 1.96975
+  type: 'test'
+  ...
+# Subtest: server journey replaces and removes the complete runtime identity tuple
+ok 327 - server journey replaces and removes the complete runtime identity tuple
+  ---
+  duration_ms: 0.322666
+  type: 'test'
+  ...
+# (node:61854) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/product-cycle-preparation.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: R1/R2: slow runtime and return-state reads coalesce while polling and manual checks continue
+ok 328 - R1/R2: slow runtime and return-state reads coalesce while polling and manual checks continue
+  ---
+  duration_ms: 40.69675
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after owner change
+ok 329 - R5: late GET rejected after owner change
+  ---
+  duration_ms: 2.301917
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after epoch change
+ok 330 - R5: late GET rejected after epoch change
+  ---
+  duration_ms: 1.536458
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after cycle change
+ok 331 - R5: late GET rejected after cycle change
+  ---
+  duration_ms: 1.301208
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after situation change
+ok 332 - R5: late GET rejected after situation change
+  ---
+  duration_ms: 1.283042
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after screen change
+ok 333 - R5: late GET rejected after screen change
+  ---
+  duration_ms: 1.209375
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after view change
+ok 334 - R5: late GET rejected after view change
+  ---
+  duration_ms: 1.32
+  type: 'test'
+  ...
+# Subtest: R5: late GET rejected after poll change
+ok 335 - R5: late GET rejected after poll change
+  ---
+  duration_ms: 1.286208
+  type: 'test'
+  ...
+# Subtest: R5: new context can read while old context is pending; old completion cannot clear the new chain
+ok 336 - R5: new context can read while old context is pending; old completion cannot clear the new chain
+  ---
+  duration_ms: 2.038625
+  type: 'test'
+  ...
+# Subtest: R3/R4: replaced Next button recovers after timeout and checks the same operation
+ok 337 - R3/R4: replaced Next button recovers after timeout and checks the same operation
+  ---
+  duration_ms: 2.513959
+  type: 'test'
+  ...
+# Subtest: R3/R4: replaced Next button recovers after network and checks the same operation
+ok 338 - R3/R4: replaced Next button recovers after network and checks the same operation
+  ---
+  duration_ms: 1.46725
+  type: 'test'
+  ...
+# Subtest: R3/R4: replaced Next button recovers after completed and checks the same operation
+ok 339 - R3/R4: replaced Next button recovers after completed and checks the same operation
+  ---
+  duration_ms: 1.4005
+  type: 'test'
+  ...
+# Subtest: R4: failed preparation without retry permission remains disabled; completed operation opens only server-admitted AS
+ok 340 - R4: failed preparation without retry permission remains disabled; completed operation opens only server-admitted AS
+  ---
+  duration_ms: 1.585917
+  type: 'test'
+  ...
+# Subtest: R2: confirmed trace, AS phase and preparation progress never roll back
+ok 341 - R2: confirmed trace, AS phase and preparation progress never roll back
+  ---
+  duration_ms: 4.355667
+  type: 'test'
+  ...
+# Subtest: R6/R7: time mode paused/false is independent of known budget
+ok 342 - R6/R7: time mode paused/false is independent of known budget
+  ---
+  duration_ms: 4.696125
+  type: 'test'
+  ...
+# Subtest: R6/R7: time mode paused/null is independent of known budget
+ok 343 - R6/R7: time mode paused/null is independent of known budget
+  ---
+  duration_ms: 1.38125
+  type: 'test'
+  ...
+# Subtest: R6/R7: time mode active/true is independent of known budget
+ok 344 - R6/R7: time mode active/true is independent of known budget
+  ---
+  duration_ms: 1.9035
+  type: 'test'
+  ...
+# Subtest: R6/R7: time mode active/false is independent of known budget
+ok 345 - R6/R7: time mode active/false is independent of known budget
+  ---
+  duration_ms: 1.655667
+  type: 'test'
+  ...
+# Subtest: R6/R7: time mode active/null is independent of known budget
+ok 346 - R6/R7: time mode active/null is independent of known budget
+  ---
+  duration_ms: 1.695209
+  type: 'test'
+  ...
+# Subtest: R7: invalid remainder undefined stays unknown and recovers after GET failure
+ok 347 - R7: invalid remainder undefined stays unknown and recovers after GET failure
+  ---
+  duration_ms: 2.763083
+  type: 'test'
+  ...
+# Subtest: R7: invalid remainder null stays unknown and recovers after GET failure
+ok 348 - R7: invalid remainder null stays unknown and recovers after GET failure
+  ---
+  duration_ms: 1.347333
+  type: 'test'
+  ...
+# Subtest: R7: invalid remainder -1 stays unknown and recovers after GET failure
+ok 349 - R7: invalid remainder -1 stays unknown and recovers after GET failure
+  ---
+  duration_ms: 1.27075
+  type: 'test'
+  ...
+# Subtest: R7: invalid remainder 120 stays unknown and recovers after GET failure
+ok 350 - R7: invalid remainder 120 stays unknown and recovers after GET failure
+  ---
+  duration_ms: 1.295708
+  type: 'test'
+  ...
+# Subtest: R7: invalid remainder NaN stays unknown and recovers after GET failure
+ok 351 - R7: invalid remainder NaN stays unknown and recovers after GET failure
+  ---
+  duration_ms: 1.472917
+  type: 'test'
+  ...
+# Subtest: R7: invalid remainder Infinity stays unknown and recovers after GET failure
+ok 352 - R7: invalid remainder Infinity stays unknown and recovers after GET failure
+  ---
+  duration_ms: 2.639
+  type: 'test'
+  ...
+# Subtest: R3/R5: old pending Next and detached handler cannot lock or mutate a new identity context
+ok 353 - R3/R5: old pending Next and detached handler cannot lock or mutate a new identity context
+  ---
+  duration_ms: 1.492083
+  type: 'test'
+  ...
+# Subtest: R3: known Next refusal survives replacement; checks remain read-only
+ok 354 - R3: known Next refusal survives replacement; checks remain read-only
+  ---
+  duration_ms: 1.655958
+  type: 'test'
+  ...
+# (node:61855) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/utils/report-radar.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: RAD01 preserves real zero and keeps null out of the chart
+ok 355 - RAD01 preserves real zero and keeps null out of the chart
+  ---
+  duration_ms: 1.454667
+  type: 'test'
+  ...
+# Subtest: RAD01 never joins a radar line across missing values
+ok 356 - RAD01 never joins a radar line across missing values
+  ---
+  duration_ms: 0.271084
+  type: 'test'
+  ...
+# Subtest: REPORT-05 projection preserves saved identity, exact score and limitations
+ok 357 - REPORT-05 projection preserves saved identity, exact score and limitations
+  ---
+  duration_ms: 0.182708
+  type: 'test'
+  ...
+# Subtest: RAD01 exposes fill, outline and bars with a permanent text list
+ok 358 - RAD01 exposes fill, outline and bars with a permanent text list
+  ---
+  duration_ms: 0.402625
+  type: 'test'
+  ...
+# Subtest: REPORT-02 removes the recipient section from organization forms
+ok 359 - REPORT-02 removes the recipient section from organization forms
+  ---
+  duration_ms: 1.66525
+  type: 'test'
+  ...
+# Subtest: UX-FIX20-03 routes invitations through the shared selected assessment
+ok 360 - UX-FIX20-03 routes invitations through the shared selected assessment
+  ---
+  duration_ms: 0.3345
+  type: 'test'
+  ...
+# Subtest: REL01 customer report uses protected read and PDF endpoints
+ok 361 - REL01 customer report uses protected read and PDF endpoints
+  ---
+  duration_ms: 0.249792
+  type: 'test'
+  ...
+# (node:61857) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/release-version.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: release format accepts three numeric parts only
+ok 362 - release format accepts three numeric parts only
+  ---
+  duration_ms: 1.548292
+  type: 'test'
+  ...
+# Subtest: backend outage or mismatch keeps frontend build version
+ok 363 - backend outage or mismatch keeps frontend build version
+  ---
+  duration_ms: 0.198
+  type: 'test'
+  ...
+# Subtest: all visible release targets update together as text
+ok 364 - all visible release targets update together as text
+  ---
+  duration_ms: 0.758
+  type: 'test'
+  ...
+# Subtest: auth badge hides when the frontend release is unknown and recovers with a valid build
+ok 365 - auth badge hides when the frontend release is unknown and recovers with a valid build
+  ---
+  duration_ms: 0.07825
+  type: 'test'
+  ...
+# Subtest: actual waiting click remains waiting, handles refusal, and never opens legacy
+ok 366 - actual waiting click remains waiting, handles refusal, and never opens legacy
+  ---
+  duration_ms: 2.995416
+  type: 'test'
+  ...
+# Subtest: actual waiting click ignores a late owner response and an obsolete screen
+ok 367 - actual waiting click ignores a late owner response and an obsolete screen
+  ---
+  duration_ms: 3.126292
+  type: 'test'
+  ...
+# Subtest: actual waiting click reconciles an assignment through server journey
+ok 368 - actual waiting click reconciles an assignment through server journey
+  ---
+  duration_ms: 0.568334
+  type: 'test'
+  ...
+# (node:61859) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/acquaintance-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: actual acquaintance handler retains answer/step after answer TypeError
+ok 369 - actual acquaintance handler retains answer/step after answer TypeError
+  ---
+  duration_ms: 3.892667
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after answer AbortError
+ok 370 - actual acquaintance handler retains answer/step after answer AbortError
+  ---
+  duration_ms: 0.4835
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after answer RequestDeadlineError
+ok 371 - actual acquaintance handler retains answer/step after answer RequestDeadlineError
+  ---
+  duration_ms: 0.371167
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after answer opaque409
+ok 372 - actual acquaintance handler retains answer/step after answer opaque409
+  ---
+  duration_ms: 0.424917
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent TypeError
+ok 373 - actual acquaintance handler retains answer/step after consent TypeError
+  ---
+  duration_ms: 0.403125
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent AbortError
+ok 374 - actual acquaintance handler retains answer/step after consent AbortError
+  ---
+  duration_ms: 0.337375
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent RequestDeadlineError
+ok 375 - actual acquaintance handler retains answer/step after consent RequestDeadlineError
+  ---
+  duration_ms: 0.375333
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after consent opaque409
+ok 376 - actual acquaintance handler retains answer/step after consent opaque409
+  ---
+  duration_ms: 0.36575
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress TypeError
+ok 377 - actual acquaintance handler retains answer/step after progress TypeError
+  ---
+  duration_ms: 0.749167
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress AbortError
+ok 378 - actual acquaintance handler retains answer/step after progress AbortError
+  ---
+  duration_ms: 0.682291
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress RequestDeadlineError
+ok 379 - actual acquaintance handler retains answer/step after progress RequestDeadlineError
+  ---
+  duration_ms: 0.419875
+  type: 'test'
+  ...
+# Subtest: actual acquaintance handler retains answer/step after progress opaque409
+ok 380 - actual acquaintance handler retains answer/step after progress opaque409
+  ---
+  duration_ms: 0.367917
+  type: 'test'
+  ...
+# Subtest: safe renderer preserves known cancellation/admission reasons and separates reference
+ok 381 - safe renderer preserves known cancellation/admission reasons and separates reference
+  ---
+  duration_ms: 1.331708
+  type: 'test'
+  ...
+# Subtest: actual start refusal codes and opaque UUID keep safe reasons
+ok 382 - actual start refusal codes and opaque UUID keep safe reasons
+  ---
+  duration_ms: 0.12175
+  type: 'test'
+  ...
+# Subtest: F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+ok 383 - F21 actual clipboard handlers silently block transfers and protected selections in assessment scope
+  ---
+  duration_ms: 4.600833
+  type: 'test'
+  ...
+# (node:61861) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F18 pending entry discards local placeholder progress and time until server readback
+ok 384 - F18 pending entry discards local placeholder progress and time until server readback
+  ---
+  duration_ms: 3.924916
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count undefined does not hide known N/M
+ok 385 - F18 missing or invalid completed count undefined does not hide known N/M
+  ---
+  duration_ms: 2.45525
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count null does not hide known N/M
+ok 386 - F18 missing or invalid completed count null does not hide known N/M
+  ---
+  duration_ms: 1.303833
+  type: 'test'
+  ...
+# Subtest: F18 missing or invalid completed count 0 does not hide known N/M
+ok 387 - F18 missing or invalid completed count 0 does not hide known N/M
+  ---
+  duration_ms: 1.181291
+  type: 'test'
+  ...
+# Subtest: F18 return card and header share frozen plan8, completed0 and confirmed pause
+ok 388 - F18 return card and header share frozen plan8, completed0 and confirmed pause
+  ---
+  duration_ms: 1.548542
+  type: 'test'
+  ...
+# Subtest: F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+ok 389 - F18 frozen plan8, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.282292
+  type: 'test'
+  ...
+# Subtest: F18 return card and header share frozen plan3, completed0 and confirmed pause
+ok 390 - F18 return card and header share frozen plan3, completed0 and confirmed pause
+  ---
+  duration_ms: 1.175959
+  type: 'test'
+  ...
+# Subtest: F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+ok 391 - F18 frozen plan3, catalog9, materialized1: current and completed use server facts
+  ---
+  duration_ms: 1.348917
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 120 never falls back to stale legacy fields
+ok 392 - F19 Cycle time 120 never falls back to stale legacy fields
+  ---
+  duration_ms: 3.946958
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 393 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 2.631
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time null never falls back to stale legacy fields
+ok 394 - F19 Cycle time null never falls back to stale legacy fields
+  ---
+  duration_ms: 1.4815
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time undefined never falls back to stale legacy fields
+ok 395 - F19 Cycle time undefined never falls back to stale legacy fields
+  ---
+  duration_ms: 1.898042
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time -1 never falls back to stale legacy fields
+ok 396 - F19 Cycle time -1 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.122333
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time 0 never falls back to stale legacy fields
+ok 397 - F19 Cycle time 0 never falls back to stale legacy fields
+  ---
+  duration_ms: 1.098291
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time NaN never falls back to stale legacy fields
+ok 398 - F19 Cycle time NaN never falls back to stale legacy fields
+  ---
+  duration_ms: 1.078792
+  type: 'test'
+  ...
+# Subtest: F19 Cycle time Infinity never falls back to stale legacy fields
+ok 399 - F19 Cycle time Infinity never falls back to stale legacy fields
+  ---
+  duration_ms: 1.085
+  type: 'test'
+  ...
+# Subtest: F19 known legacy timer remains compatible outside Cycle runtime
+ok 400 - F19 known legacy timer remains compatible outside Cycle runtime
+  ---
+  duration_ms: 1.985875
+  type: 'test'
+  ...
+# (node:61862) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/assessment-errors.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: F07 actual Finish/Pause/Additional handlers normalize rejected network calls and retain business reasons
+ok 401 - F07 actual Finish/Pause/Additional handlers normalize rejected network calls and retain business reasons
+  ---
+  duration_ms: 9.507208
+  type: 'test'
+  ...
+# Subtest: F08 rejected polling and heartbeat retain unknown answer recovery and its original operation
+ok 402 - F08 rejected polling and heartbeat retain unknown answer recovery and its original operation
+  ---
+  duration_ms: 4.977375
+  type: 'test'
+  ...
+# Subtest: F08 storage value/context failure never promises current draft revision is saved
+ok 403 - F08 storage value/context failure never promises current draft revision is saved
+  ---
+  duration_ms: 6.3945
+  type: 'test'
+  ...
+# Subtest: F08 active pending POST retains recovery priority when a poll fails before its receipt
+ok 404 - F08 active pending POST retains recovery priority when a poll fails before its receipt
+  ---
+  duration_ms: 30.831292
+  type: 'test'
+  ...
+# Subtest: F09 actual rejected return/runtime polling requests cannot alter a newer owner/epoch/Cycle/AS/screen/generation
+ok 405 - F09 actual rejected return/runtime polling requests cannot alter a newer owner/epoch/Cycle/AS/screen/generation
+  ---
+  duration_ms: 22.073792
+  type: 'test'
+  ...
+# Subtest: F09 default runtime load captures generation across navigation back to the same owner/Cycle/AS
+ok 406 - F09 default runtime load captures generation across navigation back to the same owner/Cycle/AS
+  ---
+  duration_ms: 1.741875
+  type: 'test'
+  ...
+# Subtest: F09 rejected presence is scoped to identity/Cycle/AS and its own heartbeat generation
+ok 407 - F09 rejected presence is scoped to identity/Cycle/AS and its own heartbeat generation
+  ---
+  duration_ms: 9.694833
+  type: 'test'
+  ...
+# Subtest: F09 actual action handlers ignore late rejection/finally after owner/Cycle/AS and action generation change
+ok 408 - F09 actual action handlers ignore late rejection/finally after owner/Cycle/AS and action generation change
+  ---
+  duration_ms: 30.84775
+  type: 'test'
+  ...
+# Subtest: F09 same-scope re-entry cannot revive a rejected old send or action
+ok 409 - F09 same-scope re-entry cannot revive a rejected old send or action
+  ---
+  duration_ms: 3.454792
+  type: 'test'
+  ...
+# Subtest: REP01 presents the four M8 outcomes without derived levels or competency scores
+ok 410 - REP01 presents the four M8 outcomes without derived levels or competency scores
+  ---
+  duration_ms: 1.2905
+  type: 'test'
+  ...
+# Subtest: REP01 groups saved skills and hides technical trace identifiers from participant markup
+ok 411 - REP01 groups saved skills and hides technical trace identifiers from participant markup
+  ---
+  duration_ms: 0.487291
+  type: 'test'
+  ...
+# Subtest: REP02 presents saved descriptions and explicit non-blocking states without advice
+ok 412 - REP02 presents saved descriptions and explicit non-blocking states without advice
+  ---
+  duration_ms: 0.2375
+  type: 'test'
+  ...
+# Subtest: REP01 keeps exact report binding and handles PDF failure locally
+ok 413 - REP01 keeps exact report binding and handles PDF failure locally
+  ---
+  duration_ms: 0.353375
+  type: 'test'
+  ...
+# Subtest: A05 separates catalog, assessment tasks and factual coverage from the score
+ok 414 - A05 separates catalog, assessment tasks and factual coverage from the score
+  ---
+  duration_ms: 0.227708
+  type: 'test'
+  ...
+# (node:61864) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/%D0%9C%D0%BE%D0%B8%CC%86%20%D0%B4%D0%B8%D1%81%D0%BA/HC%20Ai/P4K%20Codex%20%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%B2%20%D0%BA%D0%BE%D0%B4%D0%B5/p4k-qa03-runtime/web/js/components/app-footer.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/dmitriyzemlyanov/Library/CloudStorage/GoogleDrive-dozemlyanov@gmail.com/Мой диск/HC Ai/P4K Codex Реализация в коде/p4k-qa03-runtime/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shared footer is visible on common panels and hidden on chat panels
+ok 415 - shared footer is visible on common panels and hidden on chat panels
+  ---
+  duration_ms: 0.85925
+  type: 'test'
+  ...
+# Subtest: footer has one non-interactive document block and a runtime year
+ok 416 - footer has one non-interactive document block and a runtime year
+  ---
+  duration_ms: 0.312583
+  type: 'test'
+  ...
+# Subtest: footer uses shared Onest and palette tokens with responsive flow layout
+ok 417 - footer uses shared Onest and palette tokens with responsive flow layout
+  ---
+  duration_ms: 0.601125
+  type: 'test'
+  ...
+# Subtest: UI02 maps waiting statuses to the exact owner palette pair
+ok 418 - UI02 maps waiting statuses to the exact owner palette pair
+  ---
+  duration_ms: 0.902459
+  type: 'test'
+  ...
+# Subtest: UI02 measures real radar labels and keeps them inside a safe area
+ok 419 - UI02 measures real radar labels and keeps them inside a safe area
+  ---
+  duration_ms: 0.420375
+  type: 'test'
+  ...
+# Subtest: UI03 exposes the owner palette and semantic aliases from one token source
+ok 420 - UI03 exposes the owner palette and semantic aliases from one token source
+  ---
+  duration_ms: 0.9365
+  type: 'test'
+  ...
+# Subtest: QA19-02 resolves every palette token and rejects retired undefined names
+ok 421 - QA19-02 resolves every palette token and rejects retired undefined names
+  ---
+  duration_ms: 4.550959
+  type: 'test'
+  ...
+# Subtest: UI03 keeps participant and admin primary actions semantically distinct
+ok 422 - UI03 keeps participant and admin primary actions semantically distinct
+  ---
+  duration_ms: 0.304958
+  type: 'test'
+  ...
+# Subtest: UI03 prevents local six-digit hex colors outside the owner palette
+ok 423 - UI03 prevents local six-digit hex colors outside the owner palette
+  ---
+  duration_ms: 12.219458
+  type: 'test'
+  ...
+# Subtest: UI03 keeps embedded SVG fills inside the owner palette
+ok 424 - UI03 keeps embedded SVG fills inside the owner palette
+  ---
+  duration_ms: 0.895292
+  type: 'test'
+  ...
+# Subtest: UI03 invalidates cached CSS and JavaScript entrypoints
+ok 425 - UI03 invalidates cached CSS and JavaScript entrypoints
+  ---
+  duration_ms: 0.106708
+  type: 'test'
+  ...
+# Subtest: W02 uses server briefing, saves each answer and confirms all three before 4K
+ok 426 - W02 uses server briefing, saves each answer and confirms all three before 4K
+  ---
+  duration_ms: 0.859625
+  type: 'test'
+  ...
+# Subtest: W02 keeps preparation separate from explicit assessment start
+ok 427 - W02 keeps preparation separate from explicit assessment start
+  ---
+  duration_ms: 0.214667
+  type: 'test'
+  ...
+# Subtest: W02 displays server-resolved assignment timing and restores the prepared snapshot
+ok 428 - W02 displays server-resolved assignment timing and restores the prepared snapshot
+  ---
+  duration_ms: 0.165375
+  type: 'test'
+  ...
+# Subtest: UX-AUD29-05 explains return from the saved policy instead of snapshot truthiness
+ok 429 - UX-AUD29-05 explains return from the saved policy instead of snapshot truthiness
+  ---
+  duration_ms: 0.172125
+  type: 'test'
+  ...
+# Subtest: W02 closes one situation and requires an explicit start for the next one
+ok 430 - W02 closes one situation and requires an explicit start for the next one
+  ---
+  duration_ms: 0.16975
+  type: 'test'
+  ...
+# Subtest: Cycle progress is based on route positions rather than generated situations
+ok 431 - Cycle progress is based on route positions rather than generated situations
+  ---
+  duration_ms: 0.118083
+  type: 'test'
+  ...
+1..431
+# tests 431
+# suites 0
+# pass 431
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1427.481375

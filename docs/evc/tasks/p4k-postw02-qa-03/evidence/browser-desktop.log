@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+(node:58699) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/qa03-runtime.spec.mjs:40:39 › R3/R4/R6/R7/R9 current Next, time, focus and recovery 1440 (988ms)
+
+  1 passed (1.7s)
