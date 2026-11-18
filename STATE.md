@@ -1,3 +1,14 @@
+# QA-04 — уточнены оба штатных исхода статуса, 18.11.2026
+
+PR248/2.1.32: test helper допускает нейтральный accepted receipt или очищенную
+зону после character reply. Errors/unknown не считаются успехом; server trace,
+POST count и авторство сохранены. Продуктовые исходники прежние.
+Локально539 +3 owned DB/browser cases PASS, включая character и stalled body;
+предыдущие4 runtime cases также PASS. Ресурсы закрыты. Активно: полный CI нового
+head → squash merge → штатный TEST deploy. Допуск владельца сохраняется.
+
+---
+
 # QA-04 — PR248: исправлены CI assertions, 18.11.2026
 
 Кандидат2.1.32, main/e67cf7a. Старый CI ошибочно требовал скрывать status zone

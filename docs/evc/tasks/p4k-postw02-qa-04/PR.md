@@ -100,3 +100,17 @@ unknown/accepted в новом месте статуса над composer. Лим
 DB/HTTP процессы остановлены, порты закрыты. Секреты/.env/рабочие БД не читались.
 Evidence: evidence/release2132/ci-repair-*. Старый CI не объявляется PASS;
 новый push обязан пройти все checks точного нового head перед merge.
+
+## Дополнение ожиданий после реакции персонажа
+
+Новый CI4d1b7cb: runtime1/2 PASS; runtime4 прошёл7/8, в character branch
+уведомление корректно очищено после новой character реплики. Предыдущая test
+правка слишком строго требовала постоянно видимый receipt. Test helper теперь
+принимает скрытую очищенную зону либо строго допустимый neutral receipt;
+read error/failed/unknown не принимаются. Response.ok/server trace/авторство,
+число POST и primary action label по-прежнему проверяются. Product code не меняется.
+Локально после уточнения539 frontend/receipt PASS и3 real HTTP/owned DB/Chromium
+cases PASS за1.4min: positive/clarification/Report/PDF, F07 stalled body с exact
+readback и character branch. 1worker/0retries/0LLM/mail, свои PG/HTTP ports закрыты.
+Evidence: ci-repair-settled-* и ci-character-cleared-before.log.gz.
+Новый head снова обязан пройти весь обязательный CI перед merge; release2.1.32 прежний.

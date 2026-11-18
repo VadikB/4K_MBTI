@@ -1,0 +1,9 @@
+{
+  "exit_code": 0,
+  "postgres_stopped": true,
+  "postgres_port_closed": true,
+  "http_port_closed": true,
+  "cluster_owned": "/private/tmp/p4k-qa04-pytest-045p4fb3",
+  "llm": 0,
+  "mail": 0
+}

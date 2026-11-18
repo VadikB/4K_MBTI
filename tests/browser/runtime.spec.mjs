@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { completeStartedAssessment } from './fixtures/assessment-completion-profile.mjs';
-import { acceptedAnswerNotice } from './fixtures/answer-status.mjs';
+import { settledAnswerStatus } from './fixtures/answer-status.mjs';
 const root=process.cwd(), python=process.env.BROWSER_PYTHON || path.join(root,'.venv/bin/python');
 const fixture=JSON.parse(fs.readFileSync('tests/browser/fixtures/v1.json','utf8'));
 const test=base.extend({context:async({browser},use)=>{
@@ -269,7 +269,7 @@ async function answer(page,text=fixture.answer){
   const snapshot=await response.json();
   return snapshot.trace?.turns?.some(turn=>turn.speaker_type==='assessee' && turn.content_text===text) || false;
  },{timeout:30000}).toBe(true);
- await expect(acceptedAnswerNotice(page)).toBeVisible();
+ await expect(settledAnswerStatus(page)).toBeAttached();
  await expect(page.locator('#interview-submit-button')).toHaveText('Отправить');
  await expect(page.locator('#interview-messages .own')).toContainText([text]);
 }
@@ -1329,7 +1329,7 @@ test('Recovery: lost response, unaccepted request, two tabs and owner boundaries
     await expect(retry).toHaveCount(1);
     await retry.click();
    }
-   await expect(acceptedAnswerNotice(page)).toBeVisible();
+   await expect(settledAnswerStatus(page)).toBeAttached();
    await expect(page.locator('#interview-submit-button')).toHaveText('Отправить');
    await expect(page.locator('#interview-submit-button')).toBeEnabled();
    await expect.poll(async()=>{
