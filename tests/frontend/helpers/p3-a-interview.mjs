@@ -42,13 +42,16 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     remove() { if (this.parentElement) this.parentElement.children = this.parentElement.children.filter((child) => child !== this); this.isConnected = false; }
     focus() { this.focused = true; }
     append(...children) { children.forEach((child) => this.appendChild(child)); }
-    set innerHTML(_value) { this.children.forEach((child) => { child.isConnected = false; }); this.children = []; }
+    set innerHTML(_value) { this.children.forEach((child) => { if (typeof child === 'object') child.isConnected = false; }); this.children = []; }
+    set textContent(value) { this.innerHTML = ''; this.text = value || ''; }
+    get textContent() { return (this.text || '') + this.children.map(child => typeof child === 'string' ? child : child.textContent).join(''); }
     get firstChild() { return this.children[0] || null; }
     get lastElementChild() { return this.children.at(-1) || null; }
     setAttribute() {}
     addEventListener(name, handler) { this.listeners.set(name, handler); }
     querySelector(selector) {
       for (const child of this.children) {
+        if (typeof child !== 'object') continue;
         if (child.className.split(' ').includes(selector.slice(1))) return child;
         const nested = child.querySelector(selector);
         if (nested) return nested;
@@ -97,13 +100,14 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     interviewCaseBadge: new Element(), interviewCaseTitle: new Element(),
     interviewProgressFill: new Element(), interviewRouteLabel: new Element(), caseProgressList: null,
     interviewTimerBadge: new Element(), interviewSubmitButton: new Element(),
+    interviewSubmitLabel: new Element(),
     interviewFinishButton: new Element(), interviewPauseButton: new Element(),
     interviewAdditionalButton: new Element(), interviewCaseStatus: new Element(),
     persistAssessmentContext() {},
     setCurrentScreen(screen) { state.currentScreen = screen; },
     syncUrlState() {}, hideAllPanels() {}, loadProductRuntime: async () => {},
     interviewError: new Element(),
-    showError(_element, message) { errors.push(message); },
+    showError(element, message) { errors.push(message); element.hidden = !message; element.textContent = message; },
     createOperationId, crypto: { randomUUID: createOperationId },
     fetch: async (...args) => { fetchCalls.push(args); return fetchImpl(...args); },
     // Deadline transport is verified separately; this harness injects its response.

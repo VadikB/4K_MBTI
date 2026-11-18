@@ -102,7 +102,8 @@ test('P3-A known POST receipt survives failed readback/reload and is never resen
   assert.equal(result.pending, true);
   assert.equal(h.textarea.value, '');
   assert.equal(h.storage.has('agent4k.assessmentDraft:cycle-a:as-a'), false);
-  assert.ok(deliveryText(pendingRow(h)).includes('Ответ принят'));
+  assert.equal(pendingRow(h).querySelector('.interview-message-delivery').hidden, true);
+  assert.match(h.context.interviewError.textContent, /Ответ сохранён\. Не удалось обновить состояние/);
   assert.equal(h.controls.submit.disabled, true);
   const operation = h.subject.readProductInterviewAnswer();
   assert.equal(operation.accepted, true);

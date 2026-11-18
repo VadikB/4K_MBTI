@@ -1,0 +1,32 @@
+{
+  "resources": [
+    {
+      "port": 53869,
+      "closed": true,
+      "file": "docs/evc/tasks/p4k-postw02-qa-04/evidence/release2132/browser/cleanup.json"
+    },
+    {
+      "port": 53819,
+      "closed": true,
+      "file": "../outputs/p4k-qa04-answer-20261118/release2132/qa01/cleanup.json"
+    },
+    {
+      "port": 53753,
+      "closed": true,
+      "file": "../outputs/p4k-qa04-answer-20261118/release2132/drafts/cleanup.json"
+    },
+    {
+      "port": 53799,
+      "closed": true,
+      "file": "../outputs/p4k-qa04-answer-20261118/release2132/assessment/cleanup.json"
+    },
+    {
+      "port": 53844,
+      "closed": true,
+      "file": "../outputs/p4k-qa04-answer-20261118/release2132/qa03/cleanup.json"
+    }
+  ],
+  "llm": 0,
+  "mail": 0,
+  "db_created": false
+}

@@ -53,8 +53,7 @@ test('P3-A hides only the identical initial material mirror and retains later sa
       payload_json: { content: 'HIDDEN-DECISION' } },
   ];
   h.subject.renderProductRuntime(saved); h.flush();
-  const text = (node) => [node.textContent || '', ...node.children.map(text)].join(' ');
-  const visible = text(h.messages);
+  const visible = h.messages.textContent;
   assert.equal(h.messages.children.length, 4, 'one start bubble and three public events');
   assert.equal(visible.split('Стартовое содержание').length - 1, 2,
     'only the initial mirror is hidden; a mandatory update is retained even with identical content');

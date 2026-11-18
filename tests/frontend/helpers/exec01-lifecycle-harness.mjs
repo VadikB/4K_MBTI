@@ -99,6 +99,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     interviewCaseBadge: new Element(), interviewCaseTitle: new Element(),
     interviewProgressFill: new Element(),
     interviewTimerBadge: new Element(), interviewSubmitButton: new Element(),
+    interviewSubmitLabel: new Element(),
     interviewFinishButton: new Element(), interviewPauseButton: new Element(),
     interviewAdditionalButton: new Element(), interviewCaseStatus: new Element(),
     persistAssessmentContext() {},

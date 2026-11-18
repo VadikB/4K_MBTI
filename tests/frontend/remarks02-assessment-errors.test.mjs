@@ -94,7 +94,7 @@ test('F08 rejected polling and heartbeat retain unknown answer recovery and its 
     if (channel === 'poll') { h.subject.resumeProductRuntimePolling(); h.poll(); }
     else h.subject.startProductPresence();
     await tick();
-    assert.match(h.errors.at(-1), /исход отправки.*кнопкой в сообщении/);
+    assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
     assert.doesNotMatch(h.errors.at(-1), /Текст сохранён|текст сохранён/);
     assert.equal(h.controls.submit.disabled, true);
     assert.equal(h.controls.finish.disabled, true);
@@ -103,7 +103,7 @@ test('F08 rejected polling and heartbeat retain unknown answer recovery and its 
     assert.ok(h.messages.children.includes(row), 'background error retains the recovery action');
     h.context.window.sessionStorage.getItem = () => { throw new Error('Storage read failed after dispatch'); };
     h.subject.showInterviewRuntimeError(new TypeError('Failed to fetch'));
-    assert.match(h.errors.at(-1), /исход отправки.*кнопкой в сообщении/);
+    assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
     assert.equal(h.controls.submit.disabled, true);
     assert.equal(h.controls.finish.disabled, true);
     h.subject.stopProductPresence();
@@ -145,10 +145,10 @@ test('F08 active pending POST retains recovery priority when a poll fails before
   const sending = h.subject.sendProductInterviewAnswer(h.textarea.value); await tick();
   h.setFetch(async () => { throw new TypeError('Failed to fetch'); });
   h.subject.resumeProductRuntimePolling(); h.poll(); await tick();
-  assert.match(h.errors.at(-1), /исход отправки.*кнопкой в сообщении/);
+  assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
   assert.equal(h.controls.submit.disabled, true); assert.equal(h.controls.finish.disabled, true);
   pending.reject(new TypeError('Failed to fetch')); await sending; await tick();
-  assert.match(h.errors.at(-1), /исход отправки/);
+  assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
 });
 
 const switches = {

@@ -1,0 +1,30 @@
+{
+  "commit": "e44fa78efb1ec8605b28cf9bc2c2272da2b9122a",
+  "checks": {
+    "dist/assessment-demo.mjs": true,
+    "dist/index.html": true,
+    "dist/r01/app.mjs": true,
+    "dist/r01/assets/OFL.txt": true,
+    "dist/r01/assets/Onest-Variable.woff": true,
+    "dist/r01/assets/eye.svg": true,
+    "dist/r01/assets/info.svg": true,
+    "dist/r01/index.html": true,
+    "dist/r01/model.mjs": true,
+    "dist/r01/review.css": true,
+    "dist/r01/review.mjs": true,
+    "dist/r01/screen.css": true,
+    "dist/r01/screen.html": true,
+    "dist/report-cabinet.css": true,
+    "dist/report-data.mjs": true,
+    "dist/report.css": true,
+    "dist/report.html": true,
+    "dist/report.mjs": true,
+    "dist/review.css": true,
+    "dist/review.js": true,
+    "dist/screen.css": true,
+    "dist/screen.html": true,
+    "dist/screen.mjs": true,
+    "dist/ui-theme.css": true
+  },
+  "match": true
+}

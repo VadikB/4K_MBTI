@@ -94,7 +94,22 @@ test('05C slot and owner isolate drafts; heartbeat revisions do not rotate the q
   assert.notEqual(draftSlot(snapshot), draftSlot({ clarification: { id: 'ask', status: 'ASK', question_turn_id: 'question' } }));
   const one = fixture(); await tick(); one.edit('owner8');
   const two = fixture({ storage: one.storage, owner: '9' }); await tick(); assert.equal(two.input.value, '');
-  one.draft.bind({ ...scope, slotId: 'dialogue:q2' }); assert.equal(one.input.value, '');
+  one.draft.bind({ ...scope, slotId: 'clarification:ask:q2' }); assert.equal(one.input.value, '');
+});
+
+test('C2/C7 new dialogue slot retains raw unsent text; a nonempty remote slot requires the existing conflict choice', async () => {
+  for (const remoteText of ['', 'Другой сохранённый вариант']) {
+    const one = fixture(); await tick(); one.edit('  Мой текст\nс продолжением  ');
+    const oldRevision = one.draft.revision();
+    Object.assign(one.server, { slot_id: 'dialogue:q2', text: remoteText, version: remoteText ? 1 : 0, revision: remoteText ? 'remote' : '' });
+    one.draft.bind({ ...scope, slotId: 'dialogue:q2' }); await tick();
+    assert.equal(one.input.value, '  Мой текст\nс продолжением  ');
+    assert.notEqual(one.draft.revision(), oldRevision);
+    assert.equal(one.draft.conflicted(), Boolean(remoteText));
+    if (!remoteText) assert.equal(one.server.text, one.input.value);
+    one.draft.bind({ ...scope, situationId: 'other-as', slotId: 'dialogue:q3' });
+    assert.equal(one.input.value, '');
+  }
 });
 
 test('05D late ACK and acceptance do not clear newer raw edit, even with the same text', async () => {

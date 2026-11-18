@@ -1,0 +1,37 @@
+{
+  "resources": [
+    {
+      "file": "docs/evc/tasks/p4k-postw02-qa-04/evidence/browser/cleanup.json",
+      "port": 52342,
+      "server_reported_closed": true,
+      "port_open": false
+    },
+    {
+      "file": "../outputs/p4k-qa04-answer-20261118/compatibility/qa01/cleanup.json",
+      "port": 52022,
+      "server_reported_closed": true,
+      "port_open": false
+    },
+    {
+      "file": "../outputs/p4k-qa04-answer-20261118/compatibility/drafts/cleanup.json",
+      "port": 51965,
+      "server_reported_closed": true,
+      "port_open": false
+    },
+    {
+      "file": "../outputs/p4k-qa04-answer-20261118/compatibility/assessment/cleanup.json",
+      "port": 52003,
+      "server_reported_closed": true,
+      "port_open": false
+    },
+    {
+      "file": "../outputs/p4k-qa04-answer-20261118/compatibility/qa03/cleanup.json",
+      "port": 52047,
+      "server_reported_closed": true,
+      "port_open": false
+    }
+  ],
+  "llm": 0,
+  "mail": 0,
+  "database_created": false
+}

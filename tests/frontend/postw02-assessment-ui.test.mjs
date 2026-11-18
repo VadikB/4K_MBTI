@@ -48,7 +48,7 @@ test('45 seconds and repeated manual GET keep pending neutral, reuse budget and 
     const button = h.context.interviewError.children.at(-1);
     await button.listeners.get('click')();
     assert.equal(h.context.interviewError.dataset.tone, 'neutral');
-    assert.match(h.errors.at(-1), /Ответ сохранён.*Обработка продолжается/);
+    assert.match(h.errors.at(-1), /Обработка занимает больше времени/);
     assert.equal(h.subject.productProcessingBudget(saved), deadline);
     assert.equal(h.subject.productRuntimePollAllowed(), false);
     assert.equal(h.controls.finish.disabled, true);
@@ -62,16 +62,16 @@ test('failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is
   h.subject.renderProductRuntime(saved);
   h.setFetch(async () => { throw new TypeError('offline'); });
   await h.context.interviewError.children.at(-1).listeners.get('click')();
-  assert.equal(h.errors.at(-1), 'Не удалось проверить состояние. Попробуйте ещё раз.');
+  assert.equal(h.errors.at(-1), 'Не удалось обновить состояние.');
   assert.equal(h.context.interviewError.dataset.tone, 'neutral');
   saved.pipeline.status = 'failed';
   h.subject.renderProductRuntime(saved);
   assert.equal(h.context.interviewError.dataset.tone, 'failed');
-  assert.match(h.errors.at(-1), /Не удалось обработать/);
+  assert.match(h.errors.at(-1), /Не удалось завершить обработку/);
   saved.pipeline.status = 'running'; saved.finish_availability.reason = 'WAIT_TECHNICAL';
   h.subject.renderProductRuntime(saved);
   assert.equal(h.context.interviewError.dataset.tone, 'neutral');
-  assert.match(h.errors.at(-1), /ожидает восстановления/);
+  assert.match(h.errors.at(-1), /требует проверки/);
   assert.equal(h.subject.productRuntimePollAllowed(), false);
   saved.clarification = { id: 'ask-1', status: 'ASK', question_turn_id: 'q-1', question: { text: 'Почему?' } };
   h.subject.renderProductRuntime(saved);

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { persistReceipt } from './receipt-file.mjs';
+import { settledAnswerStatus } from './answer-status.mjs';
 
 const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
@@ -145,7 +146,7 @@ async function submit(page, text) {
   await page.locator('#interview-submit-button').click({ timeout: 15000 });
   const accepted = await response;
   if (!accepted.ok()) throw new Error(`answer rejected: HTTP ${accepted.status()}`);
-  await page.locator('#interview-error').waitFor({ state: 'hidden' });
+  await settledAnswerStatus(page).waitFor({ state: 'attached' });
 }
 
 /**

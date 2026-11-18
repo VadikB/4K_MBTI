@@ -1,0 +1,20 @@
+{
+  "320": {
+    "background": "rgb(255, 255, 255)",
+    "borderLeft": "3px",
+    "radius": "8px",
+    "font": "Onest, Arial, sans-serif"
+  },
+  "390": {
+    "background": "rgb(255, 255, 255)",
+    "borderLeft": "3px",
+    "radius": "8px",
+    "font": "Onest, Arial, sans-serif"
+  },
+  "1440": {
+    "background": "rgb(255, 255, 255)",
+    "borderLeft": "3px",
+    "radius": "8px",
+    "font": "Onest, Arial, sans-serif"
+  }
+}
