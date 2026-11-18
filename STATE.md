@@ -8,7 +8,8 @@
 branch_push/pr/version_bump/Ready/merge=true, deploy=test штатным workflow;
 artifact_publish/pilot/production/real LLM/mail=false. Прежний отказ снят новым
 прямым допуском; старые записи ниже исторические. Кандидат QA04 —2.1.32.
-Активно: интеграцияmain → canonical preflight → локальный минимум → PR/CI → merge.
+Кандидат2.1.32: ready/frontend539/HTTP3/browser22/lint/audit-high/build48/diff PASS.
+Активно: публикация PR → полный CI точного head → squash merge → TEST deploy.
 
 ---
 

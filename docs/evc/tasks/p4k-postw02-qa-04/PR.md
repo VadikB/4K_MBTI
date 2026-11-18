@@ -1,3 +1,36 @@
+# QA-04 — выпуск2.1.32 разрешён, 18.11.2026
+
+Владелец принял результат и поручил: «результаты приняты. выпускай PR и сливай
+его в main». После точного вопроса о публикации кода, тестов, web/dist, отчёта,
+синтетических screenshots/logs в публичном https://github.com/VadikB/4K_MBTI,
+ветке codex/p4k-postw02-qa-04, PR/main и merge после CI ответил:
+**«Разрешаю этот состав и публичный репозиторий»**.
+Дополнительно: «третье задание слито в main. перепроверь и приступи к своей
+выгрузке на main». Это новый точный допуск destination/payload после прежнего
+automatic review rejection, не повтор отклонённого действия без нового основания.
+branch_push/pr/version_bump/Ready/merge=true, deploy=test штатным workflow;
+artifact_publish/pilot/production/real LLM/mail=false. Человеческая приёмка QA04
+получена; обязательные release/CI gates сохраняются.
+
+Проверено live: QA03 PR247 MERGED18.11.2026 10:25:54 MSK, squash
+`e67cf7a859a5a5ebe5e8d63c1c66d0c463adf3fd`, main2.1.31. Зависимость закрыта.
+Собственная ветка интегрирует свежий main. Конфликты были в generated dist,
+корневом STATE и старых QA03 PR_BODY/STATE: dist пересобран, актуальные QA03 docs
+сохранены из main, история STATE сохранена под актуальным этапом. Принятые
+interview.js/wiring.js/answer-drafts.js/interview.css при интеграции не изменились.
+Следующий PATCH2.1.32 следует из прямого merge-поручения и CONTRIBUTING-MERGE-AUTH-01.
+
+План выпуска: canonical `npm run ready:prepare -- --candidate 2.1.32`;
+frontend/HTTP/lint/build/diff и scoped Chromium после интеграции; own branch push,
+один PR main, полный CI точного head, fresh-main check, squash merge, штатный
+TEST deploy/readback. Проверки и SHA кандидата фиксируются ниже после результата.
+Откат — отдельный revert будущего squash QA04 через штатные release/CI gates;
+QA03, серверные Turns/интервалы/snapshots не переписываются.
+
+---
+
+## История предыдущего этапа
+
 ## Автоматический отказ публикации
 
 Push862c36a в публичный VadikB/4K_MBTI отклонён automatic approval review:
@@ -38,3 +71,14 @@ QA03 не изменяется и не сливается. QA04 можно по�
 → squash merge → наблюдение deploy-test и readback версии. До разрешения dependency
 независимая подготовка/push/draft QA04 разрешены. Миграций/новых runtime артефактов нет.
 Откат будущего выпуска — отдельный revert squash QA04 через штатный процесс.
+
+## Проверки кандидата2.1.32
+
+Canonical ready:prepare PASS; frontend473 + receipt harness66 =539 PASS;
+HTTP3 PASS, Chromium22 PASS (30.1s,1worker/0retries/0real LLM/mail), lint PASS.
+Audit high gate PASS; предсуществующие moderate замечания не менялись.
+Повторная сборка48 файлов побайтово совпала; diff/source review PASS.
+Своих открытых fixture ports0, рабочих БД/.env не использовали.
+Evidence: `evidence/release2132/`, новые screenshots1440/390/320.
+Серверный API/БД и QA03 docs совпадают с main; продуктовый diff только QA04 + release.
+Следующее: один PR в main, полный CI точного head; готовность merge определяется CI.

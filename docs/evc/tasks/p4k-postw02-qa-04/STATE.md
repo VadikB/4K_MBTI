@@ -1,3 +1,30 @@
+# QA-04 — кандидат2.1.32 проверен, публикация разрешена
+
+Свежая база e67cf7a /2.1.31, QA03/#247 MERGED. Интеграция fca17a6;
+принятый продуктовый код QA04 не менялся. Canonical preflight2.1.32 PASS.
+Локально:473frontend +66receipt=539, HTTP3, Chromium22, lint/audit-high/build48/diff PASS.
+Свои fixture servers закрыты; LLM/mail0. Новый точный допуск: «Разрешаю этот состав
+и публичный репозиторий» после вопроса о code/tests/web-dist/report/synthetic evidence
+в публичном VadikB/4K_MBTI, PR/main и merge после CI. Старый отказ ниже исторический.
+branch_push/pr/version_bump/Ready/merge=true, deploy=test штатно;
+artifact_publish/pilot/production=false. Активно: PR → полный CI точного head → merge.
+Подробности/проверки: [PR.md](PR.md), evidence/release2132/.
+
+---
+
+# QA-04 — выпуск после интеграции QA03, 18.11.2026
+
+Получен точный ответ: «Разрешаю этот состав и публичный репозиторий» на запрос
+о QA04 code/tests/web-dist/report/synthetic evidence в публичный VadikB/4K_MBTI,
+с PR/main и merge после CI. Прежний отказ снят новым прямым допуском.
+QA03 проверен: PR247 MERGED/e67cf7a, main2.1.31; локально интегрирован.
+branch_push/pr/version_bump/Ready/merge=true, deploy=test штатным workflow;
+artifact_publish/pilot/production/real LLM/mail=false. Следующий PATCH2.1.32.
+Активно: canonical preflight → локальный минимум → PR/полный CI → squash merge.
+Результат принят владельцем. Подробности/точные основания: [PR.md](PR.md).
+
+---
+
 # QA-04 — публикация остановлена automatic review, 18.11.2026
 
 Готовый payload862c36a; push в публичный VadikB/4K_MBTI отклонён: reviewer
