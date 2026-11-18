@@ -120,3 +120,16 @@ test('C6 conclusive receipt read survives retirement of the pending operation an
   assert.match(notice(h), /Ответ сохранён\. Не удалось обновить состояние\./);
   assert.doesNotMatch(notice(h), /продолжается|Ожидайте завершения|сейчас не расходуется/);
 });
+
+test('C4 server-blocked preflight keeps the action label without inventing a send failure', async () => {
+  const h = setup();
+  const wiring = fs.readFileSync(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
+  h.context.loadInterview = async () => h.subject;
+  vm.runInContext(wiring.slice(wiring.indexOf('let failedInterviewMessage ='), wiring.indexOf("interviewForm.addEventListener('submit'"))
+    + '\nglobalThis.submit = submitCurrentInterviewAnswer;', h.context);
+  const s = waiting(h); h.setFetch(() => json(s)); h.textarea.value = 'Черновик до изменения состояния';
+  await h.context.submit(); assert.equal(h.controls.submit.disabled, true);
+  assert.equal(h.context.interviewSubmitLabel.textContent, 'Отправить');
+  assert.equal(h.fetchCalls.some(([, options]) => options?.method === 'POST'), false);
+  assert.equal(h.textarea.value, 'Черновик до изменения состояния');
+});

@@ -2760,7 +2760,7 @@ const submitCurrentInterviewAnswer = async () => {
     const result = await sendInterviewAnswer(text, reusableFailedRow);
     if (!current()) return;
     const sent = typeof result === 'object' ? result.accepted : result;
-    setInterviewSubmitLabel(result?.pending || sent ? 'Отправить' : 'Повторить отправку');
+    setInterviewSubmitLabel(result?.pending || result?.blocked || sent ? 'Отправить' : 'Повторить отправку');
   } catch (error) {
     if (!current()) return;
     showError(interviewError, assessmentRuntimeErrorMessage(error));
