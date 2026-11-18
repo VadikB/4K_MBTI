@@ -69,7 +69,7 @@ function adapter(mode, dir) {
     }
   };
   const locator = (selector) => ({ fill: async (text) => { input = text; },
-    click: () => click(selector), waitFor: async () => {} });
+    click: () => click(selector), waitFor: async () => {}, filter: () => locator(selector) });
   const page = { request: { get: async (url) => response(url,
     url.includes('/runtime') ? snapshot() : url.includes('/execution-export/') ? exported()
       : url.includes('/journey-state') ? { report_status: closed ? 'ready' : 'waiting' }

@@ -1,3 +1,15 @@
+# QA-04 — обновление CI assertions, 18.11.2026
+
+PR248, кандидат2.1.32, base e67cf7a. CI старого head82102ab нашёл устаревшие
+assertions скрытия зоны после успешного ответа. Исправлены только test consumers
+runtime/completion-profile и адаптер; продуктовый source/release неизменны.
+Локально539 frontend/receipt +4 owned DB/runtime browser cases PASS, все свои
+DB/HTTP процессы остановлены. Активно: push → полный CI нового head → merge.
+Приёмка и точный публичный destination/payload допуск сохраняются; gates не ослаблены.
+Подробности: [PR.md](PR.md).
+
+---
+
 # QA-04 — кандидат2.1.32 проверен, публикация разрешена
 
 Свежая база e67cf7a /2.1.31, QA03/#247 MERGED. Интеграция fca17a6;

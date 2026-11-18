@@ -82,3 +82,21 @@ Audit high gate PASS; предсуществующие moderate замечани
 Evidence: `evidence/release2132/`, новые screenshots1440/390/320.
 Серверный API/БД и QA03 docs совпадают с main; продуктовый diff только QA04 + release.
 Следующее: один PR в main, полный CI точного head; готовность merge определяется CI.
+
+## Исправление CI browser expectations
+
+CI82102ab: frontend/pytest/integration PASS; runtime shards выявили старое
+требование скрывать весь #interview-error после успешного ответа. Эта зона
+по QA04 теперь содержит нейтральный receipt. Пропущенные assertions исправлены
+в runtime.spec и assessment-completion-profile, без изменения product source.
+Проверка требует именно neutral receipt с допустимым текстом; failed/read error/
+unknown не принимаются как успешная отправка. Проверки server trace, числа POST,
+same-ID readback и разрешённых действий сохранены. Stalled-body test читает
+unknown/accepted в новом месте статуса над composer. Лимиты/CI gates не ослаблены.
+
+Локально после правки:539 frontend/receipt PASS;4 runtime cases PASS за2min
+(positive/clarification/Report/PDF, lost response/idempotency, REV02, G10.7).
+Собственный новый PostgreSQL cluster/test DB,1worker,0retries/LLM/mail; все свои
+DB/HTTP процессы остановлены, порты закрыты. Секреты/.env/рабочие БД не читались.
+Evidence: evidence/release2132/ci-repair-*. Старый CI не объявляется PASS;
+новый push обязан пройти все checks точного нового head перед merge.

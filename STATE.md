@@ -1,3 +1,13 @@
+# QA-04 — PR248: исправлены CI assertions, 18.11.2026
+
+Кандидат2.1.32, main/e67cf7a. Старый CI ошибочно требовал скрывать status zone
+после accepted ответа; обновлены test consumers. Product source неизменён.
+Локально539 +4 controlled DB/runtime browser PASS. Свои ресурсы закрыты.
+Активно: полный CI нового head → merge → штатный TEST deploy.
+[QA04 PR](docs/evc/tasks/p4k-postw02-qa-04/PR.md).
+
+---
+
 # QA-04 — разрешён выпуск после QA03, 18.11.2026
 
 Владелец подтвердил точный состав и публичный VadikB/4K_MBTI:
