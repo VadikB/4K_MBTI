@@ -1,0 +1,17 @@
+{
+  "zones": {
+    "historyBeforeStatus": true,
+    "statusBeforeForm": true,
+    "background": "rgb(255, 255, 255)",
+    "borderLeft": "3px",
+    "radius": "8px",
+    "font": "Onest, Inter, \"Segoe UI\", Arial, sans-serif"
+  },
+  "posts": 1,
+  "oldTop": 0,
+  "ownPendingVisible": true,
+  "draftRetainedOnPoll": true,
+  "waitingDelayedReadErrorFailed": true,
+  "askAndFinish": true,
+  "pageErrors": []
+}

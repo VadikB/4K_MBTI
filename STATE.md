@@ -1,3 +1,15 @@
+# QA-04 — локальная реализация завершена, 18.11.2026
+
+Код/tests/dist и финальный UI head a134d58, собственная ветка codex/p4k-postw02-qa-04.
+Последовательная локальная база QA03/8930e64 + main997e4eb, версия2.1.30.
+C1–C8 PASS: frontend473/HTTP3/browser22, после placeholder/типографики/blocked-label — QA04 browser7;
+lint/build/dist48/diff PASS. Все свои ресурсы закрыты, LLM/mail0.
+branch_push/pr/merge/deploy/version_bump/artifact_publish=false.
+Отчёт и следующий шаг: [QA04 STATE](docs/evc/tasks/p4k-postw02-qa-04/STATE.md).
+Ниже сохранена история прежних этапов QA03; их разрешения не перенесены на QA04.
+
+---
+
 # QA-03 — публикация прямо разрешена, 18.11.2026
 
 Владелец прямо подтвердил: «Да, разрешаю опубликовать ветку QA-03 с кодом,
