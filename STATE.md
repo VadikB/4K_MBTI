@@ -1,3 +1,32 @@
+# QA-04 — разрешён выпуск после QA03, 18.11.2026
+
+Владелец подтвердил точный состав и публичный VadikB/4K_MBTI:
+«Разрешаю этот состав и публичный репозиторий». Это ответ на вопрос о публикации
+кода/tests/web-dist/report/synthetic screenshots/logs QA04, PR в main и merge
+после CI. Также: «третье задание слито в main. перепроверь и приступи к своей
+выгрузке на main». Зависимость проверена: PR247 MERGED/e67cf7a, main2.1.31.
+branch_push/pr/version_bump/Ready/merge=true, deploy=test штатным workflow;
+artifact_publish/pilot/production/real LLM/mail=false. Прежний отказ снят новым
+прямым допуском; старые записи ниже исторические. Кандидат QA04 —2.1.32.
+Активно: интеграцияmain → canonical preflight → локальный минимум → PR/CI → merge.
+
+---
+
+# QA-03 — Ready и merge разрешены, 18.11.2026
+
+Прямое поручение владельца: «Переводи PR #247 в Ready for review, запускай
+полные проверки и после их успешного завершения сливай в main».
+По CONTRIBUTING-MERGE-AUTH-01 разрешены branch_push/pr/version_bump/Ready/merge=true,
+deploy=test штатным workflow после merge; artifact_publish/pilot/production=false.
+Main997e4eb /2.1.30 актуален; кандидат — непосредственный PATCH2.1.31.
+Границы QA-03 сохраняются; реализация interview.js8b3ca49 не меняется.
+Активно: canonical ready:prepare → release commit/push → Ready → все обязательные
+CI точного head → свежая база → squash merge → наблюдение штатного TEST deploy.
+Старые false flags ниже относятся к прежним этапам и заменены этим поручением.
+
+
+---
+
 # QA-04 — публикация остановлена automatic review, 18.11.2026
 
 Готовый payload862c36a; push в публичный VadikB/4K_MBTI отклонён: reviewer
