@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import csv
+from contextlib import contextmanager
 import hashlib
 import hmac
 import io
@@ -21,6 +22,8 @@ from fastapi import APIRouter, HTTPException, Request, Response as FastAPIRespon
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
+from Api import invitation_outcomes
+from Api.invitation_outcomes import InvitationRefusal
 from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
 from Api.config import settings
@@ -1476,6 +1479,9 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 personal_invitation.used_at AS invitation_used_at,
                 personal_invitation.revoked_at AS invitation_revoked_at,
                 personal_invitation.delivery_status AS invitation_delivery_status,
+                personal_invitation.delivery_error AS invitation_delivery_error,
+                personal_invitation.request_id AS invitation_operation_id,
+                personal_invitation.created_by_user_id AS invitation_sender_id,
                 COALESCE(assignments.assignment_refs, ARRAY[]::text[]) AS assessment_assignments,
                 CASE
                     WHEN personal_invitation.id IS NULL THEN 'not_created'
@@ -1496,7 +1502,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             LEFT JOIN auth_password_credentials c ON c.user_id = u.id OR LOWER(c.email) = LOWER(u.email)
             LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
             LEFT JOIN LATERAL (
-                SELECT id, created_at, expires_at, revoked_at, used_at, delivery_status
+                SELECT id, created_at, expires_at, revoked_at, used_at, delivery_status, delivery_error, request_id, created_by_user_id
                 FROM organization_invitations oi
                 WHERE oi.organization_id = om.organization_id
                   AND LOWER(oi.recipient_email) = LOWER(u.email)
@@ -1549,6 +1555,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                     "admission_status": "admitted",
                     "registration_status": "registered" if bool(row["has_password"]) else "pending",
                     "invitation_delivery_status": row["invitation_delivery_status"] or "not_sent",
+                    "invitation_reason": invitation_outcomes.facts(row['invitation_delivery_status'] or 'not_sent', row.get('invitation_delivery_error')),
+                    "invitation_operation_id": row.get('invitation_operation_id') if row.get('invitation_sender_id') == actor_user_id else None,
                     "invitation_link_status": row["invitation_link_status"] or "not_created",
                     "invitation_expires_at": row["invitation_expires_at"],
                     "invitation_created_at": row["invitation_created_at"],
@@ -3921,10 +3929,49 @@ def revoke_organization_invitation(
     response_model=PersonalInvitationBatchResponse,
 )
 def send_personal_organization_invitations(
+    organization_id: int, payload: PersonalInvitationRequest, request: Request,
+) -> PersonalInvitationBatchResponse:
+    actor = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    operation = str(request.headers.get('Idempotency-Key') or payload.operation_id or '').strip()
+    if not operation:
+        raise HTTPException(status_code=400, detail='Idempotency-Key or operation_id is required')
+    with get_connection() as connection:
+        _require_organization_admin(connection, actor, organization_id)
+        # Bounded command lock protects the exact recipient set, including concurrent
+        # disjoint batches with one ID. The owner reuses this connection throughout.
+        lock_key = f'personal-invitation:{organization_id}:{operation}'
+        deadline = time.monotonic() + 2.0
+        locked = connection.execute('SELECT pg_try_advisory_lock(hashtextextended(%s, 0)) AS locked', (lock_key,)).fetchone()
+        while not locked.get('locked', True) and time.monotonic() < deadline:
+            time.sleep(0.05)
+            locked = connection.execute('SELECT pg_try_advisory_lock(hashtextextended(%s, 0)) AS locked', (lock_key,)).fetchone()
+        if not locked.get('locked', True):
+            return PersonalInvitationBatchResponse(items=[PersonalInvitationResultItem(
+                email=email, status='uncertain', delivery_status='sending', operation_id=operation,
+                **invitation_outcomes.facts('sending'),
+            ) for email in sorted(set(str(value).strip().lower() for value in payload.emails))])
+        try:
+            return _execute_personal_invitations(organization_id, payload, request, connection)
+        finally:
+            connection.rollback()
+            connection.execute('SELECT pg_advisory_unlock(hashtextextended(%s, 0))', (lock_key,))
+            connection.commit()
+
+
+def _execute_personal_invitations(
     organization_id: int,
     payload: PersonalInvitationRequest,
     request: Request,
+    command_connection,
 ) -> PersonalInvitationBatchResponse:
+    @contextmanager
+    def borrow_connection():
+        try:
+            yield command_connection
+        except Exception:
+            command_connection.rollback()
+            raise
+
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     request_id = str(
         request.headers.get("Idempotency-Key") or payload.operation_id or ""
@@ -3932,6 +3979,8 @@ def send_personal_organization_invitations(
     if request_id is None:
         raise HTTPException(status_code=400, detail="Idempotency-Key or operation_id is required")
     assignment_ref = str(payload.assignment_ref or "").strip()
+    with borrow_connection() as connection:
+        _require_organization_admin(connection, current_user, organization_id)
     invitation_secret = str(
         settings.auth_invitation_token_secret
         or settings.postmark_server_token
@@ -3940,11 +3989,38 @@ def send_personal_organization_invitations(
     )
     if len(invitation_secret) < 32:
         raise HTTPException(status_code=503, detail="EMAIL_PROVIDER_NOT_CONFIGURED")
+    recipients = sorted(set(str(value).strip().lower() for value in payload.emails))
+    with borrow_connection() as connection:
+        saved_rows = connection.execute(
+            """/* invitation-command */ SELECT id, recipient_email, assignment_ref, created_by_user_id,
+                      delivery_status, delivery_error, expires_at, used_at, revoked_at, created_at
+               FROM organization_invitations
+               WHERE organization_id=%s AND request_id=%s AND purpose='personal_registration'""",
+            (organization_id, request_id),
+        ).fetchall()
+    for saved in saved_rows:
+        if (saved['created_by_user_id'] != current_user.id or str(saved.get('assignment_ref') or 'competencies_4k') != assignment_ref
+                or (invitation_outcomes.stored_recipient_fingerprint(saved.get('delivery_error')) not in (None, invitation_outcomes.recipient_fingerprint(recipients)))):
+            return PersonalInvitationBatchResponse(items=[PersonalInvitationResultItem(email=email, status='error',
+                delivery_status='error', error='operation_id уже принадлежит другой операции.',
+                **invitation_outcomes.facts('error', reason_code='operation_mismatch')) for email in recipients])
+    saved_by_email = {str(row['recipient_email']).lower(): row for row in saved_rows}
     results: list[PersonalInvitationResultItem] = []
-    for raw_email in dict.fromkeys(payload.emails):
+    for raw_email in dict.fromkeys(str(value).strip().lower() for value in payload.emails):
         invitation_id: int | None = None
+        dispatched = False
         try:
-            email = normalize_email(raw_email)
+            try:
+                email = normalize_email(raw_email)
+            except ValueError as exc:
+                raise InvitationRefusal('invalid_email') from exc
+            previous = saved_by_email.get(email)
+            if previous and previous['delivery_status'] == 'error':
+                safe = invitation_outcomes.facts('error', previous.get('delivery_error'))
+                results.append(PersonalInvitationResultItem(email=email, status='error',
+                    invitation_id=previous['id'], delivery_status='error', operation_id=request_id,
+                    error=invitation_outcomes.message(safe['reason_code']), replayed=True, **safe))
+                continue
             token_material = f"{organization_id}:{assignment_ref}:{email}:{request_id}".encode("utf-8")
             raw_token = base64.urlsafe_b64encode(
                 hmac.new(invitation_secret.encode("utf-8"), token_material, hashlib.sha256).digest()
@@ -3952,16 +4028,21 @@ def send_personal_organization_invitations(
             now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
             expires_at = now_utc + timedelta(hours=max(settings.auth_personal_invitation_ttl_hours,1))
             invitation_url = build_public_link(settings.app_base_url, {"invite": raw_token}, mode=settings.app_origin_mode)
-            with get_connection() as connection:
-                _require_organization_admin(connection, current_user, organization_id)
+            with borrow_connection() as connection:
+                try:
+                    _require_organization_admin(connection, current_user, organization_id)
+                except HTTPException as exc:
+                    raise InvitationRefusal('permission_denied') from exc
                 if is_platform_protected_account(connection, email=email):
-                    raise ValueError("Участник не добавлен в эту организацию.")
+                    raise InvitationRefusal('member_unavailable')
                 readiness = questionnaire_sources.assignment_readiness(
                     connection, organization_id=organization_id, assignment_ref=assignment_ref,
                 )
                 if readiness["status"] != "ready":
-                    raise ValueError(
-                        "Чтобы пригласить участников, заполните и подтвердите сведения для знакомства."
+                    raise InvitationRefusal(
+                        'organization_unsupported' if readiness.get('reason') == 'university_admission_not_supported' else
+                        'questionnaire_incomplete' if readiness.get('reason') == 'early_minimum' else 'questionnaire_unconfirmed',
+                        {'missing_fields': readiness.get('missing', [])} if readiness.get('reason') == 'early_minimum' else {},
                     )
                 member = connection.execute(
                     """
@@ -3981,15 +4062,15 @@ def send_personal_organization_invitations(
                     (organization_id, email),
                 ).fetchone()
                 if member is None:
-                    raise ValueError("Участник не добавлен в эту организацию.")
+                    raise InvitationRefusal('member_unavailable')
                 if settings.auth_magic_link_dev_mode or settings.email_provider in {"", "console"}:
-                    raise EmailDeliveryError("Почтовый провайдер не настроен для отправки приглашений.")
+                    raise InvitationRefusal('mail_not_configured')
                 row = connection.execute(
                     """
                     INSERT INTO organization_invitations (
                         organization_id, token_hash, expires_at, created_by_user_id,
-                        recipient_email, purpose, delivery_status, request_id, assignment_ref, created_at
-                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued', %s, %s,
+                        recipient_email, purpose, delivery_status, request_id, assignment_ref, delivery_error, created_at
+                    ) VALUES (%s, %s, %s, %s, %s, 'personal_registration', 'queued', %s, %s, %s,
                         (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'))
                     ON CONFLICT DO NOTHING
                     RETURNING id, expires_at, delivery_status
@@ -4002,6 +4083,7 @@ def send_personal_organization_invitations(
                         email,
                         request_id,
                         assignment_ref,
+                        invitation_outcomes.encode_reason('queued', 'queued', recipients=recipients),
                     ),
                 ).fetchone()
                 if row is None and request_id is not None:
@@ -4021,35 +4103,35 @@ def send_personal_organization_invitations(
                     if row is None:
                         raise RuntimeError("Не удалось восстановить результат операции отправки.")
                     if int(row["created_by_user_id"] or -1) != int(current_user.id):
-                        raise ValueError("operation_id уже принадлежит другой операции.")
+                        raise InvitationRefusal('operation_mismatch')
                     stored_assignment = str(row.get("assignment_ref") or "competencies_4k")
                     if stored_assignment != assignment_ref:
-                        raise ValueError("operation_id уже использован для другой оценки.")
+                        raise InvitationRefusal('operation_mismatch')
                 if row is None:
                     raise RuntimeError("Не удалось создать приглашение.")
                 invitation_id = int(row["id"])
                 connection.commit()
-            with get_connection() as connection:
+            with borrow_connection() as connection:
                 try:
                     _require_organization_admin(connection, current_user, organization_id)
                 except HTTPException as exc:
-                    raise ValueError("Права отправителя на организацию отозваны.") from exc
+                    raise InvitationRefusal('permission_changed') from exc
                 if is_platform_protected_account(connection, email=email):
-                    raise ValueError("Участник не добавлен в эту организацию.")
+                    raise InvitationRefusal('member_unavailable')
                 if questionnaire_sources.assignment_readiness(
                     connection, organization_id=organization_id, assignment_ref=assignment_ref,
                 )["status"] != "ready":
-                    raise ValueError("Сведения для знакомства изменились. Подтвердите их перед отправкой.")
+                    raise InvitationRefusal('organization_changed')
                 locked = connection.execute(
                     """SELECT id, expires_at, delivery_status, token_hash, used_at, revoked_at,
-                              recipient_email, organization_id
+                              recipient_email, organization_id, delivery_error, created_at
                        FROM organization_invitations WHERE id = %s FOR UPDATE""",
                     (invitation_id,),
                 ).fetchone()
                 if locked is None:
                     raise RuntimeError("Операция отправки не найдена.")
                 if int(locked["organization_id"]) != organization_id or normalize_email(locked["recipient_email"]) != email:
-                    raise ValueError("Сохранённая операция не соответствует адресату или организации.")
+                    raise InvitationRefusal('operation_mismatch')
                 recipient_allowed = connection.execute(
                     """SELECT EXISTS (
                            SELECT 1 FROM auth_password_credentials c
@@ -4064,22 +4146,21 @@ def send_personal_organization_invitations(
                     (organization_id, email),
                 ).fetchone()
                 if recipient_allowed is None:
-                    raise ValueError("Организация неактивна или доступ участника отозван.")
+                    raise InvitationRefusal('access_changed')
                 if str(locked["token_hash"]) != hash_invitation_token(raw_token):
-                    raise ValueError(
-                        "Старая операция не может быть безопасно восстановлена. "
-                        "Выполните явную повторную отправку с новым operation_id."
-                    )
+                    raise InvitationRefusal('operation_mismatch')
                 if (locked["used_at"] is not None or locked["revoked_at"] is not None
                         or locked["expires_at"] <= datetime.now(timezone.utc).replace(tzinfo=None)):
-                    raise ValueError("Приглашение уже использовано, отозвано или истекло. Выполните явную повторную отправку.")
+                    if locked['delivery_status'] == 'sending':
+                        raise InvitationDeliveryUncertainError('Письмо могло быть принято сервисом. Состояние ссылки изменилось.')
+                    raise InvitationRefusal('link_used' if locked['used_at'] else 'link_revoked' if locked['revoked_at'] else 'link_expired')
                 if str(locked["delivery_status"] or "queued") == "accepted":
                     connection.commit()
                     results.append(PersonalInvitationResultItem(
                         email=email,
-                        status="accepted",
+                        status="accepted", replayed=True,
                         invitation_id=invitation_id,
-                        expires_at=locked["expires_at"],
+                        expires_at=locked["expires_at"], created_at=locked.get("created_at"),
                     ))
                     continue
                 if str(locked["delivery_status"] or "queued") == "sending":
@@ -4107,23 +4188,30 @@ def send_personal_organization_invitations(
                     else:
                         raise InvitationDeliveryUncertainError(
                             "Исход предыдущей отправки неизвестен. Не повторяйте операцию; "
-                            "используйте явную повторную отправку с новым operation_id."
+                            "проверьте эту же попытку."
                         )
                     continue
                 if str(locked["delivery_status"] or "queued") == "error":
-                    raise ValueError("Предыдущая отправка завершилась ошибкой. Выполните явную повторную отправку с новым operation_id.")
+                    results.append(PersonalInvitationResultItem(
+                        email=email, status='error', invitation_id=invitation_id,
+                        error=invitation_outcomes.message(invitation_outcomes.facts('error', locked.get('delivery_error'))['reason_code']),
+                        delivery_status='error', operation_id=request_id, replayed=True,
+                        **invitation_outcomes.facts('error', locked.get('delivery_error')),
+                    ))
+                    continue
                 connection.execute(
-                    "UPDATE organization_invitations SET delivery_status = 'sending', delivery_started_at = NOW(), delivery_error = NULL WHERE id = %s",
+                    "UPDATE organization_invitations SET delivery_status = 'sending', delivery_started_at = NOW() WHERE id = %s",
                     (invitation_id,),
                 )
                 connection.commit()
+            dispatched = True
             send_auth_action_email(
                 email=email,
                 action_url=invitation_url,
-                expires_at=locked["expires_at"],
+                expires_at=locked["expires_at"], created_at=locked.get("created_at"),
                 purpose="organization_invitation",
             )
-            with get_connection() as connection:
+            with borrow_connection() as connection:
                 try:
                     _require_organization_admin(connection, current_user, organization_id)
                 except HTTPException as exc:
@@ -4145,12 +4233,12 @@ def send_personal_organization_invitations(
                     )
                 accepted = connection.execute(
                     """UPDATE organization_invitations
-                       SET delivery_status = 'accepted', sent_at = NOW(), delivery_error = NULL
+                       SET delivery_status = 'accepted', sent_at = NOW(), delivery_error = %s
                        WHERE id = %s AND delivery_status = 'sending'
                          AND used_at IS NULL AND revoked_at IS NULL
                          AND expires_at > (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
                        RETURNING id""",
-                    (invitation_id,),
+                    (invitation_outcomes.encode_reason('accepted', 'accepted', recipients=recipients), invitation_id),
                 ).fetchone()
                 if accepted is None:
                     raise InvitationDeliveryUncertainError(
@@ -4168,26 +4256,69 @@ def send_personal_organization_invitations(
                     (organization_id, email, invitation_id),
                 )
                 connection.commit()
-            results.append(PersonalInvitationResultItem(email=email, status="accepted", invitation_id=invitation_id, expires_at=locked["expires_at"]))
+            results.append(PersonalInvitationResultItem(email=email, status="accepted", invitation_id=invitation_id, expires_at=locked["expires_at"], created_at=locked.get("created_at")))
         except (InvitationDeliveryUncertainError, EmailDeliveryUncertainError) as exc:
-            logger.warning("Personal invitation delivery outcome is uncertain organization_id=%s", organization_id)
+            code = 'context_changed' if isinstance(exc, InvitationDeliveryUncertainError) and dispatched else 'delivery_unknown'
+            logger.warning('Personal invitation outcome organization_id=%s operation_id=%s reason_code=%s',
+                           organization_id, re.sub(r'[^a-zA-Z0-9_-]', '_', request_id)[:200], code)
+            if invitation_id is not None:
+                with borrow_connection() as connection:
+                    connection.execute(
+                        "UPDATE organization_invitations SET delivery_error = %s WHERE id = %s AND delivery_status = 'sending'",
+                        (invitation_outcomes.encode_reason('sending', code, recipients=recipients), invitation_id),
+                    )
+                    connection.commit()
             results.append(PersonalInvitationResultItem(
-                email=str(raw_email).strip().lower(), status="uncertain",
-                invitation_id=invitation_id, error=str(exc),
+                email=str(raw_email).strip().lower(), status='uncertain', invitation_id=invitation_id,
+                error=invitation_outcomes.message(code), delivery_status='sending', operation_id=request_id,
+                **invitation_outcomes.facts('sending', reason_code=code),
             ))
         except (ValueError, EmailDeliveryError) as exc:
-            logger.warning("Personal invitation delivery failed organization_id=%s", organization_id)
+            if dispatched and not isinstance(exc, EmailDeliveryError):
+                logger.warning('Personal invitation outcome organization_id=%s operation_id=%s reason_code=delivery_unknown',
+                               organization_id, re.sub(r'[^a-zA-Z0-9_-]', '_', request_id)[:200])
+                # An adapter bug while reading a POST response is not a rejection receipt.
+                with borrow_connection() as connection:
+                    connection.execute(
+                        "UPDATE organization_invitations SET delivery_error = %s WHERE id = %s AND delivery_status = 'sending'",
+                        (invitation_outcomes.encode_reason('sending', 'delivery_unknown', recipients=recipients), invitation_id),
+                    )
+                    connection.commit()
+                results.append(PersonalInvitationResultItem(email=str(raw_email).strip().lower(),
+                    status='uncertain', invitation_id=invitation_id, delivery_status='sending',
+                    operation_id=request_id, **invitation_outcomes.facts('sending', reason_code='delivery_unknown')))
+                continue
+            code = getattr(exc, 'reason_code', 'failed_unclassified')
+            safe = invitation_outcomes.facts('error', reason_code=code)
+            code = safe['reason_code']
+            logger.warning('Personal invitation outcome organization_id=%s operation_id=%s reason_code=%s',
+                           organization_id, re.sub(r'[^a-zA-Z0-9_-]', '_', request_id)[:200], code)
             if invitation_id is not None:
-                with get_connection() as connection:
+                with borrow_connection() as connection:
                     connection.execute(
                         """UPDATE organization_invitations
                            SET delivery_status = 'error', delivery_error = %s
-                           WHERE id = %s AND delivery_status IN ('queued', 'sending')
-                             AND used_at IS NULL AND revoked_at IS NULL""",
-                        (str(exc)[:1000], invitation_id),
+                           WHERE id = %s AND delivery_status IN ('queued', 'sending')""",
+                        (invitation_outcomes.encode_reason('error', code, getattr(exc, 'reason_params', {}), recipients=recipients), invitation_id),
                     )
                     connection.commit()
-            results.append(PersonalInvitationResultItem(email=str(raw_email).strip().lower(), status="error", invitation_id=invitation_id, error=str(exc)))
+            previous = saved_by_email.get(str(raw_email).strip().lower())
+            prior_accepted = previous and previous['delivery_status'] == 'accepted'
+            link = ('used' if previous.get('used_at') else 'revoked' if previous.get('revoked_at') else
+                    'expired' if previous['expires_at'] <= datetime.now(timezone.utc).replace(tzinfo=None) else 'active') if previous else None
+            results.append(PersonalInvitationResultItem(email=str(raw_email).strip().lower(), status='error',
+                invitation_id=invitation_id, error=invitation_outcomes.message(code),
+                delivery_status='accepted' if prior_accepted else 'error', operation_id=request_id,
+                link_status=link, expires_at=previous['expires_at'] if previous else None,
+                **(invitation_outcomes.facts('accepted') if prior_accepted else
+                   invitation_outcomes.facts('error', invitation_outcomes.encode_reason('error', code, getattr(exc, 'reason_params', {}), recipients=recipients)))))
+    for item in results:
+        item.operation_id = request_id
+        if item.outcome is None:
+            for key, value in invitation_outcomes.facts(item.delivery_status or item.status).items():
+                setattr(item, key, value)
+        if item.delivery_status is None:
+            item.delivery_status = item.status
     return PersonalInvitationBatchResponse(items=results)
 
 
@@ -4216,7 +4347,7 @@ def read_personal_organization_invitation_operation(
     with get_connection() as connection:
         _require_organization_admin(connection, current_user, organization_id)
         rows = connection.execute(
-            """SELECT id,recipient_email,expires_at,delivery_status,delivery_error,used_at,revoked_at
+            """SELECT id,recipient_email,expires_at,delivery_status,delivery_error,used_at,revoked_at,created_at
                FROM organization_invitations
                WHERE organization_id=%s AND created_by_user_id=%s
                  AND purpose='personal_registration' AND request_id=%s AND assignment_ref=%s
@@ -4248,7 +4379,9 @@ def read_personal_organization_invitation_operation(
             status=status,
             invitation_id=int(row["id"]),
             expires_at=row["expires_at"],
-            error=str(row["delivery_error"] or "") or None,
+            error=invitation_outcomes.message(invitation_outcomes.facts(delivery, row.get('delivery_error'))['reason_code']) if delivery != 'accepted' else None,
+            operation_id=operation_id, created_at=row.get('created_at'),
+            **invitation_outcomes.facts(delivery, row.get('delivery_error')),
             delivery_status=delivery,
             link_status=link_status,
         ))
@@ -4256,7 +4389,7 @@ def read_personal_organization_invitation_operation(
         if email not in latest:
             # No saved row can mean a pre-commit loss or a per-recipient refusal.
             # Neither outcome may be invented by readback.
-            items.append(PersonalInvitationResultItem(email=email, status="uncertain"))
+            items.append(PersonalInvitationResultItem(email=email, status='uncertain', operation_id=operation_id, **invitation_outcomes.facts('unknown')))
     return PersonalInvitationBatchResponse(items=items)
 
 

@@ -1,3 +1,4 @@
+import { reportHeader } from '../components/report-header.js';
 import { bindReportPdf } from '../utils/report-download.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import { reportsPanel, profileHistoryList } from '../dom.js';
@@ -88,6 +89,7 @@ export const renderReportsPage = () => {
 };
 
 export const openReports = async () => {
+  reportHeader(reportsPanel).updateUser(state.pendingUser);
   const ownerId = state.pendingUser?.id;
   const identityEpoch = state.identityEpoch;
   const requestEpoch = ++historyRequestEpoch;

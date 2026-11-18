@@ -1850,6 +1850,15 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
       return;
     }
+    if (button.dataset.action === 'check-member-invitation') {
+      withScreen(loadAdminOrganizations, module => module.checkAdminInvitation(organizationId,
+        button.dataset.value, button.dataset.assignmentRef, button.dataset.operationId));
+      return;
+    }
+    if (button.dataset.action === 'review-invitation-organization') {
+      withScreen(loadAdminOrganizations, module => module.reviewInvitationOrganization(organizationId));
+      return;
+    }
     if (button.dataset.action === 'recover-member-invitation') {
       button.disabled = true;
       withScreen(loadAdminOrganizations, (module) => module.recoverAdminOrganizationInvitation(
@@ -2088,6 +2097,12 @@ if (adminOrganizationsList) {
         });
         dialog.querySelector('[data-card-actions]').append(reset);
       }
+      let invitationInfo = {};
+      try { invitationInfo = JSON.parse(button.dataset.invitationInfo || '{}'); } catch { /* no raw fallback */ }
+      withScreen(loadAdminOrganizations, module => {
+        if (dialog.isConnected) module.mountAdminInvitationDetails(dialog, organizationId,
+          button.dataset.email || '', button.dataset.invitationAssessment || '', invitationInfo);
+      });
       document.body.append(dialog);
       dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
       dialog.showModal();

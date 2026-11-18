@@ -124,7 +124,7 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await card.locator('input[name="invitation_email"]').evaluateAll((fields) => fields.forEach((field) => { field.checked = false; }));
     await card.locator('input[name="invitation_email"][value="added@example.test"]').check();
     await card.getByRole('button', { name: 'Отправить приглашения', exact: true }).click();
-    await expect(card.locator('form[data-action="send-member-invitations"] [data-operation-status]')).toContainText('Сервис приглашений не настроен');
+    await expect(card.locator('.admin-invitation-common')).toContainText('Приглашения недоступны: сервис отправки не настроен');
     for (const width of [1440, 1280, 390, 320]) {
       await page.setViewportSize({ width, height: 936 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

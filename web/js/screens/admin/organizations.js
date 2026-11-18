@@ -1,3 +1,5 @@
+import { mountInvitationDetails } from './invitation-details.js';
+import { invitationMessage, invitationFacts, invitationSummary, invitationCommonMessage, exactInvitationItems, invitationLinkMessage, safeInvitationItem, invitationMissingText } from './invitation-presentation.js';
 import { preparationHtml, renderPreparation } from '../../preparation-status.js';
 import { createOperationId, readApiResponse, fetchWithDeadline as fetch, previewAccountPurge,
   getPendingAccountPurges, confirmAccountPurge, executeAccountPurge, accountPurgeErrorMessage } from '../../api.js';
@@ -19,6 +21,7 @@ import { questionnaireAssignmentState } from './questionnaire-assignment-state.j
 
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
+const invitationResults = new Map();
 const assignmentSourceRequests = new Map();
 const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
@@ -84,25 +87,65 @@ const participantLabel = (organizationId, { user_id: userId, email } = {}) => {
     userId ? Number(item.user_id) === Number(userId) : String(item.email || '').toLowerCase() === String(email || '').toLowerCase());
   return member?.full_name || member?.email || email || (userId ? 'Участник ' + Number(userId) : 'Участник');
 };
-const invitationOutcomeText = (organizationId, items) => items.map((item) => {
-  const label = participantLabel(organizationId, item);
-  const outcomes = {
-    accepted: 'письмо принято почтовым сервисом',
-    queued: 'приглашение поставлено в очередь',
-    uncertain: 'исход отправки пока неизвестен',
-    error: 'приглашение не отправлено',
-    already_registered: 'регистрация уже завершена',
-  };
-  const safeReason = item.status === 'error'
-    ? ' — проверьте адрес и настройку почты, затем повторите'
-    : '';
-  const link = item.link_status === 'used' ? '; ссылка использована' :
-    item.link_status === 'revoked' ? '; ссылка отозвана' :
-      item.link_status === 'expired' ? '; ссылка истекла' :
-        item.expires_at && (!item.link_status || item.link_status === 'active')
-          ? '; ссылка действует до ' + localDateTime(item.expires_at) : '';
-  return label + ': ' + (outcomes[item.status] || 'исход неизвестен') + link + safeReason;
-}).join('. ') + '.';
+const invitationOutcomeText = (_organizationId, items) => invitationSummary(items) + '.';
+const invitationResultKey = (organizationId, assessment, email) => assessmentKey(organizationId, assessment) + ':' + email.toLowerCase();
+const invitationFor = (organizationId, assessment, member) => safeInvitationItem(invitationResults.get(invitationResultKey(organizationId, assessment, member.email)) || {
+  email: member.email, invitation_id: member.invitation_id, operation_id: member.invitation_operation_id,
+  delivery_status: member.invitation_delivery_status, link_status: member.invitation_link_status,
+  created_at: member.invitation_created_at, expires_at: member.invitation_expires_at, ...member.invitation_reason,
+});
+const renderInvitationFeedback = (organizationId, assessment, members) => {
+  const items = members.map(member => invitationFor(organizationId, assessment, member));
+  const message = invitationCommonMessage(items);
+  const operator = items.some(item => item.next_action === 'operator') ? ' Настройку почтового сервиса выполняет оператор.' : '';
+  return message ? '<div class="admin-invitation-common" role="status">' + escapeHtml(message + operator) + '</div>' : '';
+};
+export const reviewInvitationOrganization = (organizationId) => {
+  organizationViews.set(Number(organizationId), 'organization-data');
+  renderAdminOrganizations();
+};
+export const checkAdminInvitation = async (organizationId, email, assessment, operationId) => {
+  const epoch = state.identityEpoch;
+  const actor = currentIdentityKey();
+  const generation = assignmentViewGeneration;
+  const screen = state.currentScreen;
+  const valid = () => epoch === state.identityEpoch && actor === currentIdentityKey() &&
+    generation === assignmentViewGeneration && screen === state.currentScreen && Number(selectedOrganizationId) === Number(organizationId);
+  const query = new URLSearchParams({ assignment_ref: assessment, email });
+  try {
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/operations/' +
+      encodeURIComponent(operationId) + '?' + query, { credentials: 'same-origin' });
+    const result = await readApiResponse(response, 'Не удалось обновить сведения');
+    if (!valid()) return;
+    const updated = exactInvitationItems(result, [email], [], operationId)[0];
+    invitationResults.set(invitationResultKey(organizationId, assessment, email), { ...updated, operation_id: operationId });
+    renderAdminOrganizations();
+    setStatus(invitationSummary([updated]), 'muted');
+  } catch (error) {
+    if (valid()) setStatus(error?.status === 404 ? 'Результат этой попытки пока не найден' :
+      'Не удалось обновить сведения. Последний подтверждённый исход сохранён', 'error');
+  }
+};
+export const mountAdminInvitationDetails = (dialog, organizationId, email, assessment, initial) => {
+  const epoch = state.identityEpoch;
+  const actor = currentIdentityKey();
+  const generation = assignmentViewGeneration;
+  const screen = state.currentScreen;
+  const valid = () => dialog.isConnected && epoch === state.identityEpoch && actor === currentIdentityKey() &&
+    generation === assignmentViewGeneration && screen === state.currentScreen && Number(selectedOrganizationId) === Number(organizationId);
+  const refresh = initial.operation_id ? async (item) => {
+    const query = new URLSearchParams({ assignment_ref: assessment, email });
+    const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/operations/' +
+      encodeURIComponent(item.operation_id) + '?' + query, { credentials: 'same-origin' });
+    const result = await readApiResponse(response, 'Не удалось обновить сведения');
+    if (!valid()) return null;
+    const updated = { ...item, ...exactInvitationItems(result, [email], [item], item.operation_id)[0] };
+    invitationResults.set(invitationResultKey(organizationId, assessment, email), updated);
+    renderAdminOrganizations();
+    return updated;
+  } : null;
+  mountInvitationDetails(dialog, initial, refresh);
+};
 const localDateTime = (value) => {
   if (!value) return '';
   const parsed = new Date(value);
@@ -377,6 +420,7 @@ const clearAdminOrganizationsSessionState = () => {
   assignmentViewGeneration += 1;
   selectedOrganizationId = null;
   invitationRequestsInFlight.clear();
+  invitationResults.clear();
   assignmentSourceRequests.clear();
   assignmentOperationIds.clear();
   cancellationOperationIds.clear();
@@ -974,7 +1018,8 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     .filter(Boolean))].sort();
   const assessment = String(assignmentRef || '').trim();
   if (!assessment) {
-    setStatus('Сначала укажите оценку в разделе «Данные организации».', 'error');
+    setStatus('Сначала выберите оценку в данных организации', 'error');
+    offerAssessmentDataNavigation(organizationId, assessment);
     return;
   }
   const identityEpoch = state.identityEpoch;
@@ -983,16 +1028,25 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
   const currentScreen = state.currentScreen;
   const requestKey = identityKey + ':' + Number(organizationId) + ':' + assessment + ':' + emails.join(',');
   const inFlightKey = identityEpoch + ':' + requestKey;
-  if (!identityKey || !emails.length || invitationRequestsInFlight.has(inFlightKey)) return;
+  if (!emails.length) { setStatus('Выберите участников для приглашения', 'error'); return; }
+  if (!identityKey || invitationRequestsInFlight.has(inFlightKey)) return;
   const isCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
     Number(selectedOrganizationId) === Number(organizationId) && assignmentViewGeneration === viewGeneration &&
     state.currentScreen === currentScreen;
   const existing = pendingInvitationOperations(identityKey).find((item) => item.requestKey === requestKey);
+  const overlap = pendingInvitationOperations(identityKey).find(item => item.requestKey !== requestKey &&
+    item.organizationId === Number(organizationId) && item.assignmentRef === assessment &&
+    item.emails.some(email => emails.includes(email) && !item.results?.some(result => result.email === email && invitationFacts(result).outcome === 'failed')));
+  if (overlap) {
+    if (isCurrent()) setStatus('Не удалось подтвердить отправку. Проверьте прежнюю попытку для выбранных участников.', 'error');
+    return;
+  }
   const operationId = existing?.operationId || createOperationId();
+  const attemptCreatedAt = existing?.createdAt || new Date().toISOString();
   if (!existing && !savePendingInvitationOperation({ requestKey, operationId, organizationId: Number(organizationId),
-    assignmentRef: assessment, emails }, identityKey)) {
+    assignmentRef: assessment, emails, createdAt: attemptCreatedAt }, identityKey)) {
     clearPendingInvitationOperation(requestKey, identityKey);
-    if (isCurrent()) setStatus('Не удалось сохранить операцию для проверки после перезагрузки. Отправка не начата.', 'error');
+    if (isCurrent()) setStatus('Не удалось подготовить отправку. Приглашения ещё не отправлялись', 'error');
     return;
   }
   const readback = async () => {
@@ -1002,27 +1056,57 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
       encodeURIComponent(operationId) + '?' + query.toString(), { credentials: 'same-origin' });
     return readApiResponse(response, 'Исход отправки пока неизвестен.');
   };
+  let readingPrevious = Boolean(existing);
+  let confirmedItems = Array.isArray(existing?.results) ? existing.results.map(safeInvitationItem) : [];
   const exactItems = (result) => {
-    const items = Array.isArray(result?.items) ? result.items : [];
-    return exactBatch(items, emails, (item) => String(item?.email ?? item).trim().toLowerCase(),
-      ['accepted', 'queued', 'uncertain', 'error', 'already_registered']) ? items : null;
+    const items = exactInvitationItems(result, emails, confirmedItems, operationId);
+    const complete = Array.isArray(result?.items) && result.items.length === emails.length &&
+      emails.every(email => result.items.filter(item => String(item?.email || '').trim().toLowerCase() === email).length === 1);
+    if (!complete) {
+      // Preserve attributable facts from a partial receipt, then read this same
+      // command. An extra recipient cannot establish any new batch outcome.
+      confirmedItems = items;
+      savePendingInvitationOperation({ requestKey, operationId, organizationId: Number(organizationId),
+        assignmentRef: assessment, emails, createdAt: attemptCreatedAt, results: items }, identityKey);
+      throw new Error('INVITATION_RESPONSE_INCOMPLETE');
+    }
+    return items;
   };
   const showItems = async (items) => {
-    const unresolved = items.some((item) => item.status === 'uncertain');
+    confirmedItems = items;
+    const unresolved = items.some((item) => ['unknown', 'pending'].includes(invitationFacts(item).outcome));
+    if (unresolved) savePendingInvitationOperation({ requestKey, operationId, organizationId: Number(organizationId),
+      assignmentRef: assessment, emails, createdAt: attemptCreatedAt, results: items }, identityKey);
     if (!unresolved) clearPendingInvitationOperation(requestKey, identityKey);
     if (!isCurrent()) return;
-    const outcome = invitationOutcomeText(organizationId, items);
+    items.forEach(item => {
+      const key = invitationResultKey(organizationId, assessment, item.email);
+      const current = invitationResults.get(key);
+      const created = item.created_at || attemptCreatedAt;
+      if (current?.operation_id !== operationId && (Number(current?.invitation_id) > Number(item.invitation_id || 0) ||
+          (current?.created_at && new Date(current.created_at) > new Date(created)))) return;
+      invitationResults.set(key, { ...item, operation_id: operationId, created_at: created });
+    });
+    const outcome = (items.some(item => item.status === 'uncertain' && !item.invitation_id) ? 'Не удалось подтвердить исход для всех выбранных участников. ' : '') + invitationOutcomeText(organizationId, items);
     try {
       await loadAdminOrganizations({ isCurrent });
       if (isCurrent()) setStatus(outcome, unresolved || items.some((item) => item.status === 'error')
         ? 'error' : items.some((item) => item.status === 'queued') ? 'muted' : 'success');
     } catch (_refreshError) {
-      if (isCurrent()) setStatus(outcome + ' Не удалось обновить список; показанные данные могут быть устаревшими.',
+      if (isCurrent()) renderAdminOrganizations();
+      if (isCurrent()) setStatus(outcome + (items.some(item => invitationFacts(item).outcome === 'accepted')
+        ? ' Письмо принято сервисом. Список участников пока не обновлён.' : ' Не удалось обновить список; показанные данные могут быть устаревшими.'),
         unresolved ? 'error' : 'muted');
     }
   };
   try {
     invitationRequestsInFlight.add(inFlightKey);
+    if (isCurrent() && !existing) {
+      emails.forEach(email => invitationResults.set(invitationResultKey(organizationId, assessment, email),
+        { email, status: 'in_flight', operation_id: operationId }));
+      renderAdminOrganizations();
+      setStatus('Отправляем приглашение', 'loading');
+    }
     if (existing) {
       try {
         const items = exactItems(await readback());
@@ -1035,6 +1119,7 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
       }
     }
     if (!isCurrent()) return;
+    readingPrevious = false;
     const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Idempotency-Key': operationId },
@@ -1044,8 +1129,8 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
     if (!items) throw new Error('INVITATION_RESPONSE_INCOMPLETE');
     await showItems(items);
   } catch (error) {
-    const unknown = error?.name === 'RequestDeadlineError' || error instanceof TypeError ||
-      (error?.status >= 500 && error?.code !== 'EMAIL_PROVIDER_NOT_CONFIGURED') ||
+    const unknown = readingPrevious || error?.name === 'RequestDeadlineError' || error instanceof TypeError ||
+      (error?.status >= 500 && error?.code !== 'EMAIL_PROVIDER_NOT_CONFIGURED') || !error?.status ||
       ['Failed to fetch', 'INVITATION_RESPONSE_INCOMPLETE',
         'INVITATION_READBACK_INCOMPLETE'].includes(error?.message);
     if (unknown) {
@@ -1055,18 +1140,33 @@ export const sendAdminOrganizationMemberInvitation = async (organizationId, emai
         await showItems(items);
       } catch (_readbackError) {
         if (isCurrent()) {
+          const items = emails.map(email => confirmedItems.find(item => item.email === email) ||
+            { email, status: 'uncertain', operation_id: operationId,
+              reason_code: _readbackError?.status === 404 ? 'operation_not_found' : 'delivery_unknown' });
+          items.forEach(item => invitationResults.set(invitationResultKey(organizationId, assessment, item.email), item));
           renderAdminOrganizations();
-          setStatus(error?.message === 'INVITATION_RESPONSE_INCOMPLETE'
+          const message = error?.message === 'INVITATION_RESPONSE_INCOMPLETE'
             ? 'Сервер вернул неполный или противоречивый результат приглашения. Исход отправки пока неизвестен. Проверьте состояние операции перед повтором.'
-            : 'Исход отправки пока неизвестен. Проверьте ту же операцию перед новой отправкой.', 'error');
+            : 'Исход отправки пока неизвестен. Проверьте ту же операцию перед новой отправкой.';
+          setStatus(message + ' ' + invitationOutcomeText(organizationId, items), 'error');
         }
       }
     } else {
       clearPendingInvitationOperation(requestKey, identityKey);
-      if (isCurrent()) setStatus(error.message || 'Не удалось отправить приглашение.', 'error');
+      if (isCurrent()) {
+        const reason_code = error?.code === 'EMAIL_PROVIDER_NOT_CONFIGURED' ? 'mail_not_configured' :
+          error?.code === 'INVITATION_OPERATION_MISMATCH' ? 'operation_mismatch' :
+          error?.status === 401 ? 'session_expired' : error?.status === 403 ? 'permission_denied' :
+          [400, 422].includes(error?.status) ? 'invalid_request' : 'failed_unclassified';
+        const items = emails.map(email => ({ email, status: 'error', reason_code }));
+        items.forEach(item => invitationResults.set(invitationResultKey(organizationId, assessment, item.email), item));
+        renderAdminOrganizations();
+        setStatus(invitationSummary(items), 'error');
+      }
     }
   } finally {
     invitationRequestsInFlight.delete(inFlightKey);
+    if (isCurrent()) renderAdminOrganizations();
   }
 };
 
@@ -2052,7 +2152,7 @@ const renderTagList = (items, emptyText, className, deleteAction, { canDeletePer
   );
 };
 
-const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false, selectedAssessmentRef = '', selectedAssessmentLabel = '' } = {}) => {
+const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false, selectedAssessmentRef = '', selectedAssessmentLabel = '', organizationId = selectedOrganizationId } = {}) => {
   if (!items.length) {
     return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
   }
@@ -2081,17 +2181,14 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
               (canPrepare ? '' : ' disabled title="Заполните роль, обязанности и сферу деятельности"') +
               '>Подготовить кейсы</button>';
         const removeButton = renderAccountPurgeButton(item, { available: canDeletePerson });
+        const invitation = invitationFor(organizationId, selectedAssessmentRef, item);
         const invitationStatus = String(item.invitation_status || 'not_sent');
         const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', sending: 'Исход отправки уточняется', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
-        const deliveryLabels = { not_sent: 'Письмо: не отправлено', queued: 'Письмо: в очереди', sending: 'Письмо: исход неизвестен', accepted: 'Письмо: принято провайдером', error: 'Письмо: ошибка' };
-        const invitationExpiry = localDateTime(item.invitation_expires_at);
-        const linkLabels = { not_created: 'Ссылка: не создана', active: invitationExpiry
-          ? 'Ссылка: действует до ' + invitationExpiry : 'Ссылка: действует; срок не удалось уточнить',
-        revoked: 'Ссылка: отозвана', expired: 'Ссылка: истекла', used: 'Ссылка: использована' };
+        const invitationExpiry = localDateTime(invitation.expires_at || item.invitation_expires_at);
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
         const invitationLabel = invitationLabels[invitationStatus] || 'Статус письма неизвестен';
-        const deliveryLabel = deliveryLabels[item.invitation_delivery_status] || 'Письмо: статус неизвестен';
-        const linkLabel = linkLabels[item.invitation_link_status] || 'Ссылка: статус неизвестен';
+        const deliveryLabel = invitationFacts(invitation).outcome === 'failed' ? 'Приглашение не отправлено' : invitationMessage(invitation, { compact: true });
+        const linkLabel = invitationLinkMessage(invitation.link_status || item.invitation_link_status, invitationExpiry);
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
         const stageLabels = {
           assigned: 'Оценка назначена', acquaintance: 'Знакомство', acquaintance_complete: 'Знакомство завершено',
@@ -2120,7 +2217,11 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
               revoked ? 'отменено ' + revoked : '', cycle].filter(Boolean).join(', ');
           }).join(' · ') || 'История точного назначения отсутствует';
         const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
-        const invitationButton = '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
+        const pendingInvitation = pendingInvitationOperations().find(operation => operation.organizationId === Number(organizationId) && operation.assignmentRef === selectedAssessmentRef && operation.emails.includes(email));
+        const invitationButton = ['unknown', 'pending'].includes(invitationFacts(invitation).outcome) && invitation.delivery_status !== 'not_sent'
+          ? (pendingInvitation ? '<button type="button" data-action="recover-member-invitation" data-request-key="' + escapeHtml(pendingInvitation.requestKey) + '"' + (invitationRequestsInFlight.has(state.identityEpoch + ':' + pendingInvitation.requestKey) ? ' disabled' : '') + '>Проверить отправку</button>' : invitation.operation_id ?
+            '<button type="button" data-action="check-member-invitation" data-value="' + escapeHtml(email) + '" data-operation-id="' + escapeHtml(invitation.operation_id) + '" data-assignment-ref="' + escapeHtml(selectedAssessmentRef) + '">Проверить отправку</button>' : '')
+          : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
         const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
           ? '<button type="button" role="menuitem" data-action="revoke-member-invitation" data-participant-name="' + escapeHtml(participantName) + '" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>'
           : '';
@@ -2143,11 +2244,15 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
         return (
           '<article class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
-          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-registration="' + escapeHtml(registrationLabel) + '" data-invitation="' + escapeHtml(deliveryLabel + ' · ' + linkLabel) + '" data-invitation-created="' + escapeHtml(localDateTime(item.invitation_created_at)) + '" data-invitation-expires="' + escapeHtml(invitationExpiry) + '" data-invitation-used="' + escapeHtml(localDateTime(item.invitation_used_at)) + '" data-invitation-revoked="' + escapeHtml(localDateTime(item.invitation_revoked_at)) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
+          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-registration="' + escapeHtml(registrationLabel) + '" data-invitation="' + escapeHtml(deliveryLabel + ' · ' + linkLabel) + '" data-invitation-info="' + escapeHtml(JSON.stringify(invitation)) + '" data-invitation-assessment="' + escapeHtml(selectedAssessmentRef) + '" data-invitation-created="' + escapeHtml(localDateTime(item.invitation_created_at)) + '" data-invitation-expires="' + escapeHtml(invitationExpiry) + '" data-invitation-used="' + escapeHtml(localDateTime(item.invitation_used_at)) + '" data-invitation-revoked="' + escapeHtml(localDateTime(item.invitation_revoked_at)) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
           '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
           '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
           escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
+          (['failed', 'unknown', 'pending'].includes(invitationFacts(invitation).outcome) && invitation.delivery_status !== 'not_sent' && invitationMessage(invitation, { compact: true }) !== deliveryLabel
+            ? '<span class="admin-invitation-reason">' + escapeHtml(invitationMessage(invitation, { compact: true })) +
+              (invitationMissingText(invitation) ? ' · Не заполнены: ' + escapeHtml(invitationMissingText(invitation)) : '') + '</span>' +
+              (invitation.next_action === 'review_organization' ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '') : '') +
           '</div>' +
           (preparationModel ? preparationHtml(preparationModel, { compact: true }) : '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span>' + '</div>') +
           '<div class="admin-organization-member-actions">' +
@@ -2495,7 +2600,8 @@ export const renderAdminOrganizations = () => {
         '<div class="admin-organization-bulk-actions" data-bulk-actions hidden><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
         '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit"' +
         (assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button></form></div>' +
-        renderMemberList(org.members || [], {
+        renderInvitationFeedback(orgId, selectedRef, org.members || []) + renderMemberList(org.members || [], {
+          organizationId: orgId,
           isSuperadmin,
           canDeletePerson: purgePreviewAvailable,
           selectedAssessmentRef: selectedRef,

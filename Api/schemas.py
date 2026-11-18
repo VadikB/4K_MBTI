@@ -240,8 +240,16 @@ class PersonalInvitationResultItem(BaseModel):
     error: str | None = None
     delivery_status: str | None = None
     link_status: str | None = None
+    outcome: str | None = None
+    reason_code: str | None = None
+    reason_params: dict[str, int | list[str]] = Field(default_factory=dict)
+    next_action: str | None = None
+    failure_stage: str | None = None
+    operation_id: str | None = None
+    replayed: bool = False
+    created_at: datetime | None = None
 
-    @field_serializer('expires_at', when_used='json')
+    @field_serializer('expires_at', 'created_at', when_used='json')
     def serialize_expires_at(self, value: datetime | None) -> str | None:
         return _utc_invitation_expiry(value)
 
@@ -944,6 +952,8 @@ class AdminOrganizationMemberItem(BaseModel):
     admission_status: str = "admitted"
     registration_status: str = "pending"
     invitation_delivery_status: str = "not_sent"
+    invitation_reason: dict = Field(default_factory=dict)
+    invitation_operation_id: str | None = None
     invitation_link_status: str = "not_created"
     invitation_expires_at: datetime | None = None
     invitation_created_at: datetime | None = None
@@ -953,7 +963,7 @@ class AdminOrganizationMemberItem(BaseModel):
     assessment_stages: dict[str, dict] = Field(default_factory=dict)
     assessment_history: list[dict] = Field(default_factory=list)
 
-    @field_serializer('invitation_expires_at', when_used='json')
+    @field_serializer('invitation_expires_at', 'invitation_created_at', 'invitation_used_at', 'invitation_revoked_at', when_used='json')
     def serialize_invitation_expires_at(self, value: datetime | None) -> str | None:
         return _utc_invitation_expiry(value)
 

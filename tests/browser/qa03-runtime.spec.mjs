@@ -5,7 +5,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { draftFixture, preparationModel } from './fixtures/postw02-qa.mjs';
 
-const evidence = 'docs/evc/tasks/p4k-postw02-qa-03/evidence/browser';
+const evidence = process.env.QA03_EVIDENCE || 'docs/evc/tasks/p4k-postw02-qa-03/evidence/browser';
 let server, base;
 test.beforeAll(async () => {
   await fs.mkdir(evidence, { recursive: true });

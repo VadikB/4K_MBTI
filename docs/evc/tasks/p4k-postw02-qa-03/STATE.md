@@ -1,3 +1,16 @@
+# QA-03 — текущий этап PR, 18.11.2026
+
+Прямое поручение «выполни PR в main»: branch_push/pr=true, merge/deploy/
+version_bump/artifact_publish=false. Свежий main997e4eb /2.1.30 интегрирован;
+реализация interview.js8b3ca49 неизменна. Подготовлен draft по CONTRIBUTING.
+Новые проверки на общей базе: frontend463/HTTP3/browser12/lint/build45/diff PASS.
+DB3 переиспользованы по неизменённой серверной области. Audit high gatePASS,
+moderate3 из main сохранены. Отчёт/полномочия: [PR.md](PR.md).
+Следующий шаг — push/один draft PR и наблюдение быстрого CI точного head.
+Ниже история локального этапа, прежние false публикации заменены этим поручением.
+
+---
+
 # QA-03 — передача состояния
 
 17.11.2026. Локальная реализация завершена. Ветка `codex/p4k-postw02-qa-03`.

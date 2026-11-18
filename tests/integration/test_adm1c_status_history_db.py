@@ -34,7 +34,7 @@ def test_exact_assignment_readback_requires_committed_operation(test_database_ur
         connection.execute("""CREATE TABLE organization_invitations(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,created_by_user_id BIGINT,purpose TEXT,
             request_id TEXT,assignment_ref TEXT,recipient_email TEXT,expires_at TIMESTAMP,
-            delivery_status TEXT,delivery_error TEXT,used_at TIMESTAMP,revoked_at TIMESTAMP)""")
+            delivery_status TEXT,delivery_error TEXT,used_at TIMESTAMP,revoked_at TIMESTAMP,created_at TIMESTAMP DEFAULT NOW())""")
         connection.execute("""INSERT INTO organization_assessment_assignments
             (organization_id,recipient_user_id,assignment_ref,status) VALUES(3,8,'assessment-a','active')""")
         connection.commit()

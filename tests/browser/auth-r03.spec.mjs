@@ -2395,7 +2395,8 @@ test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting ze
   await page.locator('input[name="invitation_email"]').nth(0).check();
   await page.locator('input[name="invitation_email"]').nth(1).check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('неполный или противоречивый результат приглашения');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 1. Не отправлены: 0. Исход уточняется: 1');
+  await expect(page.locator('[data-action="recover-member-invitation"]').first()).toBeVisible();
   await expect(page.locator('#admin-organizations-status')).not.toContainText('принял приглашения: 0');
 });
 
@@ -2403,7 +2404,8 @@ test('R03 reports an unconfigured invitation provider as a known failure', async
   await openAdminOrganizations(page, (route) => fulfillJson(route, { detail: 'EMAIL_PROVIDER_NOT_CONFIGURED' }, 503));
   await page.locator('input[name="invitation_email"]').check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('Сервис приглашений не настроен');
+  await expect(page.locator('.admin-invitation-common')).toContainText('сервис отправки не настроен');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Не отправлены: 1');
   await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
 });
 
@@ -2482,7 +2484,8 @@ test('AC18-ADM-1C shows queued invitation outcome per person without provider co
   }));
   await page.locator('input[name="invitation_email"]').check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('Person: приглашение поставлено в очередь');
+  await expect(page.locator('.admin-organization-member-invitation')).toContainText('Приглашение подготовлено. Отправка ещё не подтверждена');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 0. Не отправлены: 0. Исход уточняется: 1');
   await expect(page.locator('#admin-organizations-status')).not.toContainText('Принято провайдером');
 });
 
@@ -2493,7 +2496,8 @@ test('AC18-ADM-1C reads back an unknown invitation and hides the operation key',
   });
   await page.locator('input[name="invitation_email"]').check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('Person: приглашение поставлено в очередь');
+  await expect(page.locator('.admin-organization-member-invitation')).toContainText('Приглашение подготовлено. Отправка ещё не подтверждена');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 0. Не отправлены: 0. Исход уточняется: 1');
   await expect(page.locator('#admin-organizations-status')).not.toContainText('operation_id');
 });
 
@@ -2968,19 +2972,20 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   await expect(page.locator('#m8-report-skills')).toContainText('Результат по части навыка');
   await expect(page.locator('#m8-report-chart-note')).toContainText('Пропуски оставлены открытыми');
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
-  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-table')).toContainText('+0,50');
   await expect(page.locator('.m8-comparison-periods')).toContainText('Программа ранее');
   await expect(page.locator('.m8-comparison-periods')).toContainText('Программа сейчас');
+  await page.getByRole('group', { name: 'Вид сравнения' }).getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-comparison-scales .m8-comparison-scale')).toHaveCount(2);
-  await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
+  await expect(page.locator('.m8-comparison-table')).toContainText('нет полного результата');
   await assertComparisonPdfPair();
   await page.locator('#m8-comparison-select').selectOption('report-other');
-  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
-  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('#m8-comparison-content')).toContainText('Загружаем выбранную пару');
   await page.locator('#m8-comparison-select').selectOption('report-previous');
   await page.waitForTimeout(300);
-  await expect(page.locator('#m8-comparison-content')).toContainText('Выберите «Сравнить оценки»');
-  await page.getByRole('button', { name: 'Сравнить оценки' }).click();
+  await expect(page.locator('.m8-comparison-periods')).toContainText('Программа ранее');
+  await expect(page.locator('.m8-comparison-periods')).not.toContainText('Другая программа');
+  expect(new URL(page.url()).searchParams.get('previous_report_id')).toBe('report-previous');
   await assertComparisonPdfPair();
   const comparisonEvidence = path.join(root, 'docs/evc/tasks/p4k-report-07/evidence');
   await fs.mkdir(comparisonEvidence, { recursive: true });
@@ -2993,7 +2998,7 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   expect(comparisonGeometry.scroll).toBe(comparisonGeometry.viewport);
   // 683 CSS px is the available layout width at 200% zoom on a 1366 px display.
   await page.setViewportSize({ width: 683, height: 900 });
-  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-table')).toContainText('+0,50');
   const zoomGeometry = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth,
@@ -3005,8 +3010,9 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   let comparisonVariant = { ...comparison, skills: [comparison.skills[0]] };
   await page.route('**/users/assessment/m8/reports/report-rad01/comparison*', (route) => fulfillJson(route, comparisonVariant));
   await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('[data-compare-back]').click();
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
-  await expect(page.locator('.m8-comparison-table')).toContainText('0.5');
+  await expect(page.locator('.m8-comparison-table')).toContainText('+0,50');
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-1440.png') });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-numeric-390.png') });
@@ -3014,12 +3020,15 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
     previous: { ...comparison.previous, role_ref: { name: 'Другая роль' } },
     skills: comparison.skills.map((item) => ({ ...item, difference: null,
       comparability: { status: 'not_allowed', reason: 'different_role' } })) };
+  await page.locator('[data-compare-back]').click();
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
-  await expect(page.locator('.m8-comparison-slices')).toContainText('Роли в оценках различаются');
-  await expect(page.locator('.m8-comparison-table')).toHaveCount(0);
+  await expect(page.locator('.m8-comparison-table')).toContainText('Роли в оценках различаются');
+  await expect(page.locator('.m8-comparison-table')).not.toContainText('+0,50');
+  await expect(page.locator('.m8-comparison-chart .m8-radar-line,.m8-comparison-chart .m8-radar-fill')).toHaveCount(0);
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-390.png') });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator('.m8-comparison').screenshot({ path: path.join(comparisonEvidence, 'comparison-role-1440.png') });
+  await page.locator('[data-compare-back]').click();
   await page.getByRole('button', { name: 'Шкалы' }).click();
   await expect(page.locator('.m8-score-bars')).toBeVisible();
   await page.setViewportSize({ width: 360, height: 760 });
@@ -3280,8 +3289,13 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
       await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
       await expect(page.locator('.m8-radar-label')).toHaveCount(0);
     } else {
-      await expect(page.locator('.m8-radar-key')).toHaveCount(0);
-      await expect(page.locator('.m8-radar-label')).toHaveCount(groups[0][1].length);
+      // The FIX-02 detail panel also takes space on desktop. Both supported
+      // layouts must show every name once, at the readable sizes below.
+      const [labels, keyItems] = await page.locator('#m8-report-chart').evaluate((node) => [
+        node.querySelectorAll('.m8-radar-label').length, node.querySelectorAll('.m8-radar-key li').length,
+      ]);
+      expect(labels + keyItems).toBe(groups[0][1].length);
+      expect(labels === 0 || keyItems === 0).toBe(true);
     }
     const geometry = await page.locator('#m8-report-chart').evaluate((node) => {
       const svg = node.querySelector('svg');
@@ -3314,10 +3328,10 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
   await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
   await page.getByRole('button', { name: 'Сравнить оценки' }).click();
   await expect(page.locator('.m8-comparison-table')).toContainText('-1');
-  await expect(page.locator('.m8-comparison-slices')).toContainText('нет полного результата');
+  await expect(page.locator('.m8-comparison-table')).toContainText('нет полного результата');
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
   await test.info().attach('qa19-04-mobile-radar', {
-    body: await page.locator('#m8-report-chart').screenshot(), contentType: 'image/png',
+    body: await page.locator('.m8-comparison-chart').screenshot(), contentType: 'image/png',
   });
 });
 
@@ -3379,7 +3393,7 @@ test('R03 queued batch is not reported as provider accepted', async ({ page }) =
   }));
   await page.locator('input[name="invitation_email"]').check();
   await page.locator('[data-action="send-member-invitations"] button').click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('Person: приглашение поставлено в очередь.');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 0. Не отправлены: 0. Исход уточняется: 1');
   await expect(page.locator('#admin-organizations-status')).not.toContainText('Почтовый сервис принял');
 });
 
@@ -3388,13 +3402,13 @@ test('R03 network retry reuses invitation operation id', async ({ page }) => {
   await openAdminOrganizations(page, (route) => {
     if (route.request().method() === 'POST') keys.push(route.request().headers()['idempotency-key']);
     return route.request().method() === 'POST' ? route.abort('failed') : fulfillJson(route, {}, 404);
-  });
+  }, { ...adminOrganization, members: [{ ...adminOrganization.members[0], invitation_status: 'not_sent', invitation_delivery_status: 'not_sent' }] });
   const row = page.locator('.admin-organization-member').first();
   await row.locator('.admin-organization-member-menu summary').click();
   const button = row.locator('[data-action="send-member-invitation"]');
   await button.click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Исход отправки пока неизвестен');
-  await page.locator('[data-action="recover-member-invitation"]').click();
+  await page.locator('[data-action="recover-member-invitation"]').first().click();
   await expect.poll(() => keys.length).toBe(2);
   expect(keys[0]).toBe(keys[1]);
 });

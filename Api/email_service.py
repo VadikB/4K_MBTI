@@ -5,6 +5,7 @@ import logging
 from datetime import datetime, timezone
 from urllib import request as urlrequest
 from urllib.error import HTTPError, URLError
+from http.client import HTTPException as HTTPProtocolError
 
 from Api.config import settings
 
@@ -18,11 +19,64 @@ def _utc_expiry_label(expires_at: datetime) -> str:
 
 
 class EmailDeliveryError(RuntimeError):
-    pass
+    def __init__(self, message, *, reason_code='provider_rejected', reason_params=None):
+        self.reason_code = reason_code
+        self.reason_params = reason_params or {}
+        super().__init__(message)
 
 
 class EmailDeliveryUncertainError(EmailDeliveryError):
     """Transport failed after dispatch; provider acceptance cannot be proven."""
+
+
+def _provider_rejection(provider, result, http_status):
+    # Only typed provider codes are diagnostic evidence. No message matching.
+    key = 'ErrorCode' if provider == 'postmark' else 'code'
+    code = result.get(key) if isinstance(result, dict) else None
+    if type(code) is not int:
+        code = None
+    mapping = ({10: 'provider_access', 406: 'provider_recipient', 100: 'provider_temporary'}
+               if provider == 'postmark' else
+               {101: 'provider_access', 102: 'provider_access', 105: 'provider_access',
+                106: 'provider_access', 215: 'provider_access', 206: 'provider_sender',
+                901: 'provider_limit'})
+    reason = mapping.get(code, 'provider_limit' if http_status == 429 else 'provider_rejected')
+    return EmailDeliveryError('Почтовый сервис отклонил запрос.', reason_code=reason)
+
+
+def _dispatch(req, provider):
+    """No retry here: a lost/invalid response after POST cannot disprove acceptance."""
+    try:
+        try:
+            with urlrequest.urlopen(req, timeout=15) as response:
+                status = getattr(response, 'status', None) or response.getcode()
+                raw = response.read()
+        except HTTPError as exc:
+            status = exc.code
+            try:
+                raw = exc.read()
+            except (OSError, HTTPProtocolError):
+                raw = b''
+        try:
+            result = json.loads(raw)
+        except (ValueError, TypeError, UnicodeError):
+            result = None
+        if isinstance(result, dict):
+            rejected = (type(result.get('ErrorCode')) is int and result['ErrorCode'] != 0
+                        if provider == 'postmark' else result.get('status') == 'error')
+            if rejected:
+                if status >= 500 and not (provider == 'postmark' and result.get('ErrorCode') == 100):
+                    raise EmailDeliveryUncertainError('Приём письма после сбоя сервиса не подтверждён.')
+                raise _provider_rejection(provider, result, status)
+            accepted = (result.get('ErrorCode') == 0 and type(result.get('ErrorCode')) is int
+                        if provider == 'postmark' else result.get('status') in {'success', 'ok'})
+            if accepted and 200 <= status < 300:
+                return
+        if 400 <= status < 500:
+            raise _provider_rejection(provider, {}, status)
+        raise EmailDeliveryUncertainError('Приём письма почтовым сервисом не подтверждён.')
+    except (URLError, OSError, HTTPProtocolError) as exc:
+        raise EmailDeliveryUncertainError('Ответ почтового сервиса не получен.') from exc
 
 
 def _build_magic_link_email_payload(email: str, login_url: str, expires_at: datetime) -> dict[str, object]:
@@ -54,7 +108,7 @@ def _build_magic_link_email_payload(email: str, login_url: str, expires_at: date
 
 def _send_via_postmark(email: str, login_url: str, expires_at: datetime) -> None:
     if not settings.postmark_server_token:
-        raise EmailDeliveryError("Postmark не настроен: отсутствует POSTMARK_SERVER_TOKEN.")
+        raise EmailDeliveryError("Postmark не настроен: отсутствует POSTMARK_SERVER_TOKEN.", reason_code="mail_not_configured")
 
     payload = _build_magic_link_email_payload(email, login_url, expires_at)
     raw_body = json.dumps(payload).encode("utf-8")
@@ -68,23 +122,12 @@ def _send_via_postmark(email: str, login_url: str, expires_at: datetime) -> None
             "X-Postmark-Server-Token": settings.postmark_server_token,
         },
     )
-    try:
-        with urlrequest.urlopen(req, timeout=15) as response:
-            status_code = getattr(response, "status", response.getcode())
-            if status_code >= 400:
-                raise EmailDeliveryError(f"Postmark вернул статус {status_code}.")
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="ignore")
-        raise EmailDeliveryError(
-            f"Не удалось отправить письмо через Postmark: HTTP {exc.code}. {detail[:240]}"
-        ) from exc
-    except URLError as exc:
-        raise EmailDeliveryUncertainError(f"Исход отправки через Postmark неизвестен: {exc.reason}") from exc
+    _dispatch(req, 'postmark')
 
 
 def _send_via_unisender_go(*, email: str, subject: str, text_body: str, html_body: str) -> None:
     if not settings.unisender_go_api_key:
-        raise EmailDeliveryError("Unisender Go не настроен: отсутствует UNISENDER_GO_API_KEY.")
+        raise EmailDeliveryError("Unisender Go не настроен: отсутствует UNISENDER_GO_API_KEY.", reason_code="mail_not_configured")
     payload = {
         "message": {
             "recipients": [{"email": email}],
@@ -105,23 +148,7 @@ def _send_via_unisender_go(*, email: str, subject: str, text_body: str, html_bod
             "X-API-KEY": settings.unisender_go_api_key,
         },
     )
-    try:
-        with urlrequest.urlopen(req, timeout=15) as response:
-            status_code = getattr(response, "status", response.getcode())
-            response_body = response.read().decode("utf-8", errors="ignore")
-            if status_code >= 400:
-                raise EmailDeliveryError(f"Unisender Go вернул статус {status_code}.")
-            try:
-                result = json.loads(response_body or "{}")
-            except json.JSONDecodeError as exc:
-                raise EmailDeliveryError("Unisender Go вернул некорректный ответ.") from exc
-            if str(result.get("status") or "").lower() not in {"success", "ok"}:
-                raise EmailDeliveryError(f"Unisender Go отклонил письмо: {str(result)[:240]}")
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="ignore")
-        raise EmailDeliveryError(f"Unisender Go вернул HTTP {exc.code}: {detail[:240]}") from exc
-    except URLError as exc:
-        raise EmailDeliveryUncertainError(f"Исход отправки через Unisender Go неизвестен: {exc.reason}") from exc
+    _dispatch(req, 'unisender_go')
 
 
 def send_magic_link_email(*, email: str, login_url: str, expires_at: datetime) -> None:
@@ -176,9 +203,9 @@ def send_auth_action_email(*, email: str, action_url: str, expires_at: datetime,
         logger.info("Auth action email sent via Unisender Go purpose=%s", purpose)
         return
     if settings.email_provider != "postmark":
-        raise EmailDeliveryError("Email-провайдер не настроен. Укажите EMAIL_PROVIDER=unisender_go.")
+        raise EmailDeliveryError("Email-провайдер не настроен. Укажите EMAIL_PROVIDER=unisender_go.", reason_code="mail_not_configured")
     if not settings.postmark_server_token:
-        raise EmailDeliveryError("Postmark не настроен: отсутствует POSTMARK_SERVER_TOKEN.")
+        raise EmailDeliveryError("Postmark не настроен: отсутствует POSTMARK_SERVER_TOKEN.", reason_code="mail_not_configured")
     raw_body = json.dumps(payload).encode("utf-8")
     req = urlrequest.Request(
         "https://api.postmarkapp.com/email",
@@ -186,11 +213,4 @@ def send_auth_action_email(*, email: str, action_url: str, expires_at: datetime,
         method="POST",
         headers={"Accept": "application/json", "Content-Type": "application/json", "X-Postmark-Server-Token": settings.postmark_server_token},
     )
-    try:
-        with urlrequest.urlopen(req, timeout=15) as response:
-            if getattr(response, "status", response.getcode()) >= 400:
-                raise EmailDeliveryError("Провайдер отклонил письмо авторизации.")
-    except HTTPError as exc:
-        raise EmailDeliveryError(f"Не удалось отправить письмо авторизации: {exc}") from exc
-    except URLError as exc:
-        raise EmailDeliveryUncertainError(f"Исход отправки письма авторизации неизвестен: {exc.reason}") from exc
+    _dispatch(req, 'postmark')

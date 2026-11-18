@@ -209,8 +209,11 @@ test('REMAIN-03 unknown invitation survives reload and reads the same operation'
   expect(state.invitationPosts).toBe(1);
   expect(state.requests.some((request) => request.path.includes('/personal-invitations/operations/' +
     firstPost.body.operation_id))).toBe(true);
-  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
-  await expect(page.locator('#admin-organizations-status')).toContainText('17.11.2026');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 1. Не отправлены: 0. Исход уточняется: 0');
+  await card(page).locator('[data-action="open-member-card"]').first().click();
+  const details = page.locator('.admin-member-card-dialog .admin-invitation-details');
+  await details.locator('summary').click();
+  await expect(details).toContainText('17.11.2026');
 });
 
 test('REMAIN-03 precommit loss retries the same identity after reload', async ({ page }) => {
@@ -243,7 +246,7 @@ test('REMAIN-03 a new invitation does not discard older unresolved identities', 
   });
   await card(page).locator('[data-action="send-member-invitation"]').click();
   await expect.poll(() => state.invitationPosts).toBe(1);
-  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 1. Не отправлены: 0. Исход уточняется: 0');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('agent4k.pendingInvitations.18')));
   expect(saved).toHaveLength(20);
   expect(saved[0].operationId).toBe('old-operation-0');
@@ -256,7 +259,7 @@ test('REMAIN-03 late invitation result cannot change a newer view', async ({ pag
   await expect.poll(() => state.invitationPosts).toBe(1);
   await view(page, 'Данные организации');
   pending.release();
-  await expect.poll(() => page.locator('#admin-organizations-status').textContent()).not.toContain('письмо принято почтовым сервисом');
+  await expect.poll(() => page.locator('#admin-organizations-status').textContent()).not.toContain('Приняты сервисом: 1');
   await view(page, 'Участники оценки');
   await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
 });
@@ -269,7 +272,7 @@ test('REMAIN-03 late invitation result cannot change a logged-out actor', async 
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   pending.release();
-  await expect(page.locator('#admin-organizations-status')).not.toContainText('письмо принято почтовым сервисом');
+  await expect(page.locator('#admin-organizations-status')).not.toContainText('Приняты сервисом: 1');
   await expect(page.locator('#admin-organizations-panel')).toBeHidden();
 });
 
@@ -286,8 +289,7 @@ test('REMAIN-03 batch reports each recipient and rejects extra response item', a
   ];
   await card(page).locator('input[name="select_all_participants"]').check();
   await card(page).locator('form[data-action="send-member-invitations"] button').click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('приглашение не отправлено');
-  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 1. Не отправлены: 1. Исход уточняется: 0');
   await expect(page.locator('#admin-organizations-status')).not.toContainText('foreign@example.test');
   expect(state.invitationPosts).toBe(1);
   expect(state.requests.filter((request) => request.path.includes('/personal-invitations/operations/')).length).toBe(1);
@@ -303,7 +305,7 @@ test('REMAIN-03 does not send when operation cannot survive reload', async ({ pa
     };
   });
   await card(page).locator('[data-action="send-member-invitation"]').click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('Отправка не начата');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Не удалось подготовить отправку. Приглашения ещё не отправлялись');
   expect(state.invitationPosts).toBe(0);
 });
 
@@ -336,8 +338,8 @@ test('REMAIN-03 confirmed result survives organization refresh failure', async (
   const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
   state.collectionStatus = 503;
   await card(page).locator('[data-action="send-member-invitation"]').click();
-  await expect(page.locator('#admin-organizations-status')).toContainText('письмо принято почтовым сервисом');
-  await expect(page.locator('#admin-organizations-status')).toContainText('Не удалось обновить список');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 1. Не отправлены: 0. Исход уточняется: 0');
+  await expect(page.locator('#admin-organizations-status')).toContainText('Список участников пока не обновлён');
   await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
 });
 

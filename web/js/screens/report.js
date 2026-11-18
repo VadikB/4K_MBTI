@@ -1,4 +1,4 @@
-import { bindReportPdf, downloadReportPdf, resetReportDownload, withReportDeadline } from '../utils/report-download.js';
+import { downloadReportPdf, resetReportDownload, withReportDeadline } from '../utils/report-download.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import {
   reportPanel,
@@ -37,6 +37,8 @@ import { getLevelPercent } from '../utils/competency.js';
 import { readApiResponse } from '../api.js';
 import { hideAllPanels, syncUrlState, navigateToScreen } from '../router.js';
 import { projectReportRadar, radarPoint, summarizeReportScores } from '../utils/report-radar.js';
+import { reportHeader } from '../components/report-header.js';
+import { mountReportComparison } from '../utils/report-comparison.js';
 import { openHomePage } from './ai-welcome.js';
 import { openReports } from './reports.js';
 
@@ -1412,11 +1414,14 @@ export const downloadSelectedReportPdf = () => {
 };
 
 export const openReport = (options = {}) => {
-  const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false } = options;
+  const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false,
+    previousReportId = '', comparisonView = false } = options;
+  const comparisonState = new URLSearchParams(window.location.search);
   if (!m8CycleId) {
     void openReports();
     return;
   }
+  reportHeader(reportPanel).updateUser(state.pendingUser);
   const requestEpoch = ++state.reportRequestEpoch;
   const identityEpoch = state.identityEpoch;
   const ownerId = state.pendingUser?.id;
@@ -1433,6 +1438,11 @@ export const openReport = (options = {}) => {
     m8SelectedSkillId = null;
     m8SelectedCompetencyId = null;
     m8ChartRenderContext = null;
+    comparisonViewActive = false;
+    comparisonSelectionEpoch += 1;
+    comparisonUnmount?.();
+    comparisonUnmount = null;
+    reportPanel.classList.remove('is-comparison');
     window.clearTimeout(reportInfoModalCloseTimer);
     reportInfoModalCloseTimer = null;
     reportInfoModal?.classList.add('hidden');
@@ -1476,11 +1486,14 @@ export const openReport = (options = {}) => {
     else url.searchParams.delete('report_id');
     if (customerAccess) url.searchParams.set('report_access', 'customer');
     else url.searchParams.delete('report_access');
+    if (previousReportId) url.searchParams.set('previous_report_id', previousReportId);
+    if (comparisonView && !customerAccess) url.searchParams.set('report_view', 'comparison');
     window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
     const load = () => {
       if (!isCurrent()) return;
       document.getElementById('m8-report-state').textContent = 'Открываем результат…';
-      void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId, customerAccess).catch(() => {
+      void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId, customerAccess,
+        { previousReportId, comparisonView: comparisonView && !customerAccess, comparisonState }).catch(() => {
         if (!isCurrent()) return;
         const stateNode = document.getElementById('m8-report-state');
         if (!stateNode) return;
@@ -1586,7 +1599,8 @@ const buildM8Bars = (skills) => `<div class="m8-score-bars" role="list">${projec
     `</article>`;
 }).join('')}</div>`;
 
-const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) => {
+const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960, series = null,
+  selectedSkillId = m8SelectedSkillId } = {}) => {
   const { axes, runs } = projectReportRadar(skills);
   const values = axes.map((axis) => axis.value);
   const width = chartWidth;
@@ -1602,7 +1616,7 @@ const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) 
     return `${value.x.toFixed(1)},${value.y.toFixed(1)}`;
   }).join(' ');
   const description = axes.map((axis) => `${axis.name}: ${axis.value == null ? 'без числового показателя' : `${axis.displayValue} из 3${axis.partial ? ', частичный показатель' : ''}`}`).join('. ');
-  const selectedMarkup = (skill) => String(skill.skill_id) === String(m8SelectedSkillId) ? ' class="is-selected" aria-current="true"' : '';
+  const selectedMarkup = (skill) => String(skill.skill_id) === String(selectedSkillId) ? ' class="is-selected" aria-current="true"' : '';
   let svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="m8-radar-title m8-radar-description"><title id="m8-radar-title">Показатели навыков выбранной компетенции</title><desc id="m8-radar-description">Шкала от 0 до 3. ${escapeHtml(description)}. Полный текстовый список расположен после графика.</desc>`;
   for (let level = 1; level <= 3; level += 1) {
     svg += `<polygon points="${polygon(level)}" class="m8-radar-grid"/><text x="${centerX + 8}" y="${centerY - radius * level / 3 + 4}" class="m8-radar-scale">${level}</text>`;
@@ -1628,22 +1642,32 @@ const buildM8Radar = (skills, mode, { compact = false, chartWidth = 960 } = {}) 
     ).join('');
     svg += `<line x1="${centerX}" y1="${centerY}" x2="${end.x}" y2="${end.y}" class="m8-radar-axis"/><a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}. Открыть подробности`)}"><polyline class="m8-radar-leader"/><text x="${labelX}" y="${startY}" text-anchor="${side === 'left' ? 'start' : 'end'}" class="m8-radar-label" data-m8-side="${side}" data-m8-anchor-y="${label.y.toFixed(1)}" data-m8-axis-x="${end.x.toFixed(1)}" data-m8-axis-y="${end.y.toFixed(1)}">${labelMarkup}</text></a>`;
   });
-  runs.forEach((run) => {
-    const points = run.indexes.map((index) => point(index, values[index]));
-    if (mode === 'fill' && points.length >= 2) {
+  const drawSeries = (projection, previous = false, label = '') => {
+  const seriesValues = projection.axes.map((axis) => axis.value);
+  const seriesClass = previous ? ' m8-series-previous' : '';
+  projection.runs.forEach((run) => {
+    const points = run.indexes.map((index) => point(index, seriesValues[index]));
+    if (mode === 'fill' && points.length >= 3 && !previous) {
       const fillPoints = run.closed ? points : [{ x: centerX, y: centerY }, ...points];
-      svg += `<polygon points="${fillPoints.map((item) => `${item.x},${item.y}`).join(' ')}" class="m8-radar-fill"/>`;
+      svg += `<polygon points="${fillPoints.map((item) => `${item.x},${item.y}`).join(' ')}" class="m8-radar-fill${seriesClass}"/>`;
     }
-    if (points.length >= 2) {
+    if (points.length >= 2 && seriesValues.filter((value) => value != null).length >= 3) {
       const tag = run.closed ? 'polygon' : 'polyline';
-      svg += `<${tag} points="${points.map((item) => `${item.x},${item.y}`).join(' ')}" class="m8-radar-line"/>`;
+      svg += `<${tag} points="${points.map((item) => `${item.x},${item.y}`).join(' ')}" class="m8-radar-line${seriesClass}"/>`;
     }
   });
   skills.forEach((skill, index) => {
-    if (values[index] == null) return;
-    const value = point(index, values[index]);
-    svg += `<a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${skill.skill_name || 'Навык'}: ${axes[index].displayValue} из 3${axes[index].partial ? ', частичный показатель' : ''}. Открыть подробности`)}"><circle cx="${value.x}" cy="${value.y}" r="16" class="m8-radar-hit"/>${String(skill.skill_id) === String(m8SelectedSkillId) ? `<circle cx="${value.x}" cy="${value.y}" r="11" class="m8-radar-selection"/>` : ''}<circle cx="${value.x}" cy="${value.y}" r="6" class="m8-radar-point${skill.outcome === 'partial_score' ? ' is-partial' : ''}"/></a>`;
+    if (seriesValues[index] == null) return;
+    const value = point(index, seriesValues[index]);
+    const axis = projection.axes[index];
+    const markerClass = `m8-radar-point${seriesClass}${axis.partial ? ' is-partial' : ''}`;
+    const marker = previous ? `<rect x="${value.x - 6}" y="${value.y - 6}" width="12" height="12" class="${markerClass}"/>`
+      : `<circle cx="${value.x}" cy="${value.y}" r="6" class="${markerClass}"/>`;
+    svg += `<a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}" aria-label="${escapeHtml(`${label} ${skill.skill_name || 'Навык'}: ${axis.displayValue} из 3${axis.partial ? ', частичный показатель' : ''}. Открыть подробности`)}"><circle cx="${value.x}" cy="${value.y}" r="16" class="m8-radar-hit"/>${String(skill.skill_id) === String(selectedSkillId) ? `<circle cx="${value.x}" cy="${value.y}" r="11" class="m8-radar-selection"/>` : ''}${marker}</a>`;
   });
+  };
+  if (series) series.forEach((item) => drawSeries(projectReportRadar(item.skills), item.previous, item.label));
+  else drawSeries({ axes, runs });
   const key = compact ? `<ol class="m8-radar-key" aria-label="Навыки на схеме">${skills.map((skill, index) =>
     `<li><a href="#m8-skill-detail"${selectedMarkup(skill)} data-m8-skill-id="${escapeHtml(String(skill.skill_id))}">` +
     `<span class="m8-radar-key-marker" aria-hidden="true">${index + 1}</span>` +
@@ -1755,6 +1779,7 @@ const comparisonReasonLabels = {
   m2_sources_not_confirmed: 'Совпадение версий методологии не подтверждено.',
   m6_rules_not_confirmed: 'Совпадение правил расчёта не подтверждено.',
   assessment_context_not_confirmed: 'Сопоставимость условий оценки не подтверждена.',
+  assessment_conditions_not_confirmed: 'Сопоставимость бюджета, календарного окна и правил возврата не подтверждена.',
   role_requirements_not_confirmed: 'Сопоставимость требований роли не подтверждена.',
   partial_cycle: 'Одна из оценок завершена не полностью.',
   full_score_required: 'Для одного из срезов нет полного результата по навыку.',
@@ -1767,65 +1792,78 @@ const comparisonReasonLabels = {
   score_completeness_changed: 'Полный и частичный результаты не являются одним показателем.',
 };
 
-const comparisonScore = (value) => value == null ? 'Нет результата' : String(value);
+let comparisonViewActive = false;
+let comparisonSelectionEpoch = 0;
+let comparisonUnmount = null;
 
-const comparisonRole = (reference) => reference?.name || reference?.title || reference?.role_name || 'Роль не указана';
+const comparisonAddress = (active, previousId) => {
+  const url = new URL(window.location.href);
+  if (previousId) url.searchParams.set('previous_report_id', previousId);
+  if (active) url.searchParams.set('report_view', 'comparison');
+  else url.searchParams.delete('report_view');
+  window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
+};
 
-const renderM8Comparison = (comparison, isCurrent) => {
-  const node = document.getElementById('m8-comparison-content');
-  if (!node) return;
-  const allowed = comparison.skills.filter((item) => item.comparability.status === 'allowed');
-  const separate = comparison.skills.filter((item) => item.comparability.status !== 'allowed');
-  const periods = `<dl class="m8-comparison-periods"><div><dt>Предыдущее прохождение</dt><dd>${escapeHtml(comparison.previous.program_name || 'Оценка 4К')}</dd><dd>${escapeHtml(formatParticipantDate(comparison.previous.closed_at || comparison.previous.created_at))}</dd><dd>${escapeHtml(comparisonRole(comparison.previous.role_ref))}</dd></div>` +
-    `<div><dt>Текущее прохождение</dt><dd>${escapeHtml(comparison.current.program_name || 'Оценка 4К')}</dd><dd>${escapeHtml(formatParticipantDate(comparison.current.closed_at || comparison.current.created_at))}</dd><dd>${escapeHtml(comparisonRole(comparison.current.role_ref))}</dd></div></dl>`;
-  const table = allowed.length ? `<div class="m8-comparison-table-wrap"><table class="m8-comparison-table"><thead><tr><th>Навык</th><th>Предыдущая</th><th>Текущая</th><th>Разница</th></tr></thead><tbody>${allowed.map((item) =>
-    `<tr><th>${escapeHtml(item.skill_name)}</th><td>${escapeHtml(comparisonScore(item.previous))}</td><td>${escapeHtml(comparisonScore(item.current))}</td><td>${escapeHtml(String(item.difference))}</td></tr>`
-  ).join('')}</tbody></table></div>` : '';
-  const slices = separate.length ? `<div class="m8-comparison-slices"><p><strong>${allowed.length ? 'Остальные навыки показаны отдельными срезами' : 'Числовое сравнение недоступно'}</strong></p>${separate.map((item) =>
-    `<article><strong>${escapeHtml(item.skill_name)}</strong><span>Предыдущая: ${escapeHtml(comparisonScore(item.previous))}</span><span>Текущая: ${escapeHtml(comparisonScore(item.current))}</span><p>${escapeHtml(comparisonReasonLabels[item.comparability.reason] || 'Сопоставимость не подтверждена.')}</p></article>`
-  ).join('')}</div>` : '';
-  const pdfQuery = `?previous_report_id=${encodeURIComponent(comparison.previous.report_id)}`;
-  const pdf = '<div class="report-pdf-action"><button type="button" class="ghost-button compact-ghost">Скачать сравнение PDF</button><span class="report-pdf-status" role="status"></span></div>';
-  const scale = `<div class="m8-comparison-scales"><h4>Показатели по навыкам</h4><p>Сравнимые значения показаны с разностью. Остальные — раздельно с причиной.</p>${comparison.skills.map((item) => {
-    const bar = (value, label, kind) => `<div class="m8-comparison-scale-line"><span>${label}</span><span class="m8-comparison-track"><span class="${kind}" style="width:${value == null ? 0 : Math.max(0, Math.min(100, Number(value) / 3 * 100))}%"></span></span><strong>${escapeHtml(comparisonScore(value))}</strong></div>`;
-    return `<div class="m8-comparison-scale"><strong>${escapeHtml(item.skill_name)}</strong>${bar(item.previous, 'Ранее', 'm8-comparison-past')}${bar(item.current, 'Сейчас', 'm8-comparison-now')}${item.comparability.status !== 'allowed' ? `<small>${escapeHtml(comparisonReasonLabels[item.comparability.reason] || 'Сопоставимость не подтверждена.')}</small>` : ''}</div>`;
-  }).join('')}</div>`;
-  node.innerHTML = periods + `<p class="m8-comparison-note">Разность расчётных показателей не доказывает развитие навыка и не означает процент роста.</p>` + scale + table + slices + pdf;
-  bindReportPdf(node.querySelector('.report-pdf-action button'), {
-    status: node.querySelector('.report-pdf-status'), isCurrent,
-    url: `/users/assessment/m8/reports/${encodeURIComponent(comparison.current.report_id)}/comparison.pdf${pdfQuery}`,
-    filename: `4k-report-comparison-${comparison.current.report_id}.pdf`,
+const closeM8Comparison = () => {
+  comparisonViewActive = false;
+  comparisonSelectionEpoch += 1;
+  comparisonUnmount?.(); comparisonUnmount = null;
+  reportPanel.classList.remove('is-comparison');
+  comparisonAddress(false, document.getElementById('m8-comparison-select').value);
+  document.getElementById('m8-comparison-content').innerHTML = '<p>Выберите предыдущую оценку и нажмите «Сравнить оценки».</p>';
+  document.querySelector('#m8-report-tabs button[aria-selected="true"]')?.click();
+  document.getElementById('m8-comparison-open')?.focus();
+};
+
+const renderM8Comparison = (comparison, isCurrent, initialState) => {
+  comparisonUnmount = mountReportComparison({
+    node: document.getElementById('m8-comparison-content'), comparison, isCurrent,
+    buildRadar: buildM8Radar, fitLabels: scheduleM8RadarLabelFit,
+    formatDate: formatParticipantDate, reasonLabels: comparisonReasonLabels, outcomeLabels,
+    initialState, onBack: closeM8Comparison, onHistory: () => void openReports(),
   });
 };
 
-const loadM8Comparison = async (reportId, previousReportId = '', isCurrent = () => true) => {
+const loadM8Comparison = async (reportId, previousReportId, isCurrent, initialState) => {
   const node = document.getElementById('m8-comparison-content');
-  if (!node) return;
-  node.innerHTML = '<p>Загружаем предыдущую завершённую оценку…</p>';
+  if (!node || !isCurrent()) return;
+  comparisonUnmount?.(); comparisonUnmount = null;
+  m8ChartRenderContext = null;
+  comparisonViewActive = true;
+  reportPanel.classList.add('is-comparison');
+  comparisonAddress(true, previousReportId);
+  node.innerHTML = '<p role="status">Загружаем выбранную пару оценок…</p>';
+  document.getElementById('m8-comparison-title')?.focus({ preventScroll: true });
   try {
     const suffix = previousReportId ? `?previous_report_id=${encodeURIComponent(previousReportId)}` : '';
-    const response = await fetch(`/users/assessment/m8/reports/${encodeURIComponent(reportId)}/comparison${suffix}`);
+    const comparison = await withReportDeadline(async (signal) => {
+      const response = await fetch(`/users/assessment/m8/reports/${encodeURIComponent(reportId)}/comparison${suffix}`, { signal });
+      return readApiResponse(response, 'Не удалось загрузить сравнение оценок.');
+    });
     if (!isCurrent()) return;
-    if (response.status === 404) {
-      node.innerHTML = '<p><strong>Предыдущей завершённой оценки пока нет.</strong></p>';
-      return;
+    if (String(comparison.current?.report_id) !== String(reportId)
+      || (previousReportId && String(comparison.previous?.report_id) !== String(previousReportId))) {
+      throw new Error('Выбранную пару оценок не удалось подтвердить.');
     }
-    const comparison = await readApiResponse(response, 'Не удалось загрузить сравнение оценок.');
-    if (isCurrent() && String(comparison.current?.report_id) === String(reportId)
-      && String(comparison.previous?.report_id) === String(previousReportId)) renderM8Comparison(comparison, isCurrent);
-    else if (isCurrent()) node.innerHTML = '<p>Выбранную пару оценок не удалось подтвердить.</p>';
+    comparisonAddress(true, comparison.previous.report_id);
+    renderM8Comparison(comparison, isCurrent, initialState);
   } catch (_error) {
-    if (isCurrent()) node.innerHTML = '<p><strong>Сравнение временно недоступно.</strong> Попробуйте ещё раз.</p>';
+    if (!isCurrent()) return;
+    node.innerHTML = '<p role="alert">Сравнение временно недоступно.</p><button type="button" class="ghost-button compact-ghost" data-compare-retry>Повторить</button><button type="button" class="ghost-button compact-ghost" data-compare-back>К отчёту</button>';
+    node.querySelector('[data-compare-retry]').onclick = () => void loadM8Comparison(reportId, previousReportId, isCurrent, initialState);
+    node.querySelector('[data-compare-back]').onclick = closeM8Comparison;
   }
 };
 
-const setupM8ComparisonOptions = async (cycleId, reportId, isCurrent) => {
+const setupM8ComparisonOptions = async (cycleId, reportId, isCurrent, options = {}) => {
   const select = document.getElementById('m8-comparison-select');
   const button = document.getElementById('m8-comparison-open');
   if (!select || !button) return;
+  let historyLoaded = false;
   try {
     const history = await readApiResponse(await fetch('/users/assessment/m8/history'), 'Не удалось загрузить историю оценок.');
     if (!isCurrent()) return;
+    historyLoaded = true;
     const current = history.cycles.find((item) => String(item.cycle_id) === String(cycleId));
     const candidates = history.cycles.filter((item) => String(item.cycle_id) !== String(cycleId)
       && item.report_id && item.collection_closed_at && item.status !== 'failed'
@@ -1834,21 +1872,38 @@ const setupM8ComparisonOptions = async (cycleId, reportId, isCurrent) => {
     select.disabled = candidates.length === 0;
   } catch (_error) {
     if (!isCurrent()) return;
-    select.innerHTML = '<option value="">Последняя завершённая</option>';
+    select.innerHTML = '<option value="">История временно недоступна</option>';
     select.disabled = true;
   }
+  if (options.previousReportId) {
+    if (![...select.options].some((option) => option.value === options.previousReportId)) {
+      select.add(new Option('Выбранная сохранённая оценка', options.previousReportId));
+    }
+    select.value = options.previousReportId;
+    select.disabled = false;
+  }
   button.disabled = select.disabled;
-  let selectionEpoch = 0;
-  select.onchange = () => {
-    selectionEpoch += 1;
+  if (select.disabled) {
     const content = document.getElementById('m8-comparison-content');
-    if (content) content.innerHTML = '<p>Выберите «Сравнить оценки», чтобы открыть эту пару.</p>';
-  };
-  button.onclick = () => {
+    content.innerHTML = historyLoaded ? '<p>Предыдущей завершённой оценки пока нет.</p>'
+      : '<p>Не удалось загрузить список предыдущих оценок.</p><button class="ghost-button compact-ghost" type="button">Повторить</button>';
+    content.querySelector('button')?.addEventListener('click', () => void setupM8ComparisonOptions(cycleId, reportId, isCurrent, options));
+  }
+  const openPair = () => {
     const selectedId = select.value;
-    const epoch = ++selectionEpoch;
-    void loadM8Comparison(reportId, selectedId, () => isCurrent() && epoch === selectionEpoch && select.value === selectedId);
+    const epoch = ++comparisonSelectionEpoch;
+    void loadM8Comparison(reportId, selectedId,
+      () => isCurrent() && epoch === comparisonSelectionEpoch && select.value === selectedId,
+      options.comparisonState);
   };
+  select.onchange = () => {
+    comparisonSelectionEpoch += 1;
+    comparisonUnmount?.(); comparisonUnmount = null;
+    if (comparisonViewActive) openPair();
+    else document.getElementById('m8-comparison-content').innerHTML = '<p>Выберите «Сравнить оценки», чтобы открыть эту пару.</p>';
+  };
+  button.onclick = openPair;
+  if (options.comparisonView) openPair();
 };
 
 const buildSkillNarrative = (claims) => [
@@ -1955,7 +2010,7 @@ const setupM8CompetencyNavigation = (c67) => {
   });
 };
 
-const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAccess = false) => {
+const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAccess = false, comparisonOptions = {}) => {
   const stateNode = document.getElementById('m8-report-state');
   if (!reportId) {
   const status = await withReportDeadline(async (signal) => readApiResponse(
@@ -2037,6 +2092,8 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
     partialNode.classList.add('hidden');
   }
   setupM8CompetencyNavigation(c67);
+  const requestedSkill = comparisonOptions.comparisonState?.get('skill_id');
+  if (requestedSkill) focusM8Skill(requestedSkill);
   const coverage = document.getElementById('m8-report-coverage');
   const context = c67.coverage_context || {};
   const scopeSummary = context.contract_version
@@ -2055,7 +2112,7 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
   download.dataset.m8ReportId = report.id;
   download.dataset.m8ReportAccess = customerAccess ? 'customer' : 'owner';
   download.disabled = false;
-  if (!customerAccess) void setupM8ComparisonOptions(cycleId, report.id, isCurrent);
+  if (!customerAccess) void setupM8ComparisonOptions(cycleId, report.id, isCurrent, comparisonOptions);
 };
 
 export const resolveAssessmentSessionIdByCode = async () => {
@@ -2083,6 +2140,7 @@ export const resolveAssessmentSessionIdByCode = async () => {
 };
 
 export const handleReportBack = () => {
+  if (comparisonViewActive) { closeM8Comparison(); return; }
   if (state.reportReturnTarget === 'admin-reports') {
     void import('./admin/reports.js').then((module) => module.openAdminReports());
     return;

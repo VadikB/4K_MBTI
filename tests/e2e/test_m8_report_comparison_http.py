@@ -86,3 +86,44 @@ def test_comparison_rejects_foreign_previous_report(monkeypatch):
         response = client.get(f"/users/assessment/m8/reports/{current_id}/comparison?previous_report_id={previous_id}")
         assert response.status_code == 403
         assert "skills" not in response.text
+
+
+def test_fix02_http_projects_both_partial_outcomes_and_real_pdf_with_unchanged_acl(monkeypatch):
+    from scripts.report_preview_fixture import saved_reports
+    from pypdf import PdfReader
+    from io import BytesIO
+    from copy import deepcopy
+
+    reports = saved_reports()
+    current, previous = reports["partial-current"], reports["partial-previous"]
+    before = deepcopy((current, previous))
+    class Connection:
+        def execute(self, _sql, params=None):
+            report = current if str(params[0]) == current["id"] else previous
+            self.row = {"id": report["id"], "cycle_db_id": 1, "cycle_id": report["cycle_id"],
+                "owner_user_id": 18, "organization_id": 1,
+                "collection_closed_at": datetime.fromisoformat(report["collection_closed_at"].replace("Z", "+00:00"))}
+            return self
+        def fetchone(self): return self.row
+    @contextmanager
+    def connection(): yield Connection()
+    monkeypatch.setattr(routes, "get_connection", connection)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token", lambda token: SimpleNamespace(id=18) if token == "owner" else None)
+    monkeypatch.setattr(routes.m8_results, "owner_can_read_cycle", lambda *_: True)
+    monkeypatch.setattr(routes.m8_results, "read_report", lambda _c, report_id: current if str(report_id) == current["id"] else previous)
+    app = FastAPI(); app.include_router(routes.router)
+    with TestClient(app) as client:
+        base = f"/users/assessment/m8/reports/{current['id']}/comparison"
+        suffix = f"?previous_report_id={previous['id']}"
+        assert client.get(base + suffix).status_code == 401
+        client.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
+        response = client.get(base + suffix)
+        assert response.status_code == 200
+        first = response.json()["skills"][0]
+        assert first["difference"] == .25
+        assert first["previous_result"]["outcome"] == first["current_result"]["outcome"] == "partial_score"
+        pdf = client.get(base + ".pdf" + suffix)
+        assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF-")
+        text = " ".join(page.extract_text() for page in PdfReader(BytesIO(pdf.content)).pages)
+        assert "+0,25" in text and text.count("Результат по части навыка") == 2
+    assert (current, previous) == before

@@ -84,3 +84,7 @@ CI перед merge остаётся обязательным, локальны�
 QA-05 — независимая read-only диагностика, её результат не подменяется этим fix.
 
 Итог: [REPORT.md](REPORT.md), [STATE.md](STATE.md). Код/тесты/dist: `8b3ca49`.
+
+18.11.2026: прямое поручение владельца «выполни PR в main» разрешает публикацию
+ветки/один PR; актуальный этап/flags/checks — [PR.md](PR.md). Локальный этап выше
+сохранён как история. merge/deploy/version_bump/artifact_publish=false.

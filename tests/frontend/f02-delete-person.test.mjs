@@ -1,3 +1,4 @@
+import { invitationFacts, invitationMessage, invitationLinkMessage, invitationMissingText } from '../../web/js/screens/admin/invitation-presentation.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -12,7 +13,10 @@ const setup = ({ actorId = 1, pending = [] } = {}) => {
   const context = vm.createContext({
     currentIdentityKey: () => String(actorId), pendingAdminAccountPurges: () => pending,
     escapeHtml: (value) => String(value ?? '').replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;'),
-    localDateTime: () => '',
+    localDateTime: () => '', selectedOrganizationId: 3,
+    invitationFacts, invitationMessage, invitationLinkMessage, invitationMissingText,
+    invitationFor: (_org, _assessment, item) => ({ email: item.email, delivery_status: item.invitation_delivery_status || 'not_sent' }),
+    pendingInvitationOperations: () => [],
   });
   vm.runInContext(renderSource + '\nthis.members = renderMemberList; this.tags = renderTagList;', context);
   return context;

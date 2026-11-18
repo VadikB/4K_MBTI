@@ -1,0 +1,113 @@
+{
+  "base": "3be503d15f06152a87041e28695dc31754bde34b",
+  "base_version": "2.1.29",
+  "candidate": "2.1.30",
+  "source_integration": "f36f46a",
+  "audit": {
+    "exit_code": 0,
+    "high": 0,
+    "critical": 0,
+    "moderate": 3,
+    "override": "npm:@ryotsu/picomatch@4.0.7-a",
+    "matches_PR245": true
+  },
+  "frontend_passed": 436,
+  "browser_final": {
+    "passed": 55,
+    "workers": 1,
+    "retries": 0,
+    "global_timeout_ms": 300000,
+    "radar": [
+      "RAD01 renders saved scores, gaps and mobile competency view",
+      "QA19-04 keeps four M8 competency radars readable across mobile and desktop widths"
+    ]
+  },
+  "browser_initial": {
+    "passed": 53,
+    "failed": [
+      "auth-r03.spec.mjs:2378 AC18-ADM-1B partial counters missing after failed readback",
+      "runtime.spec.mjs:1183 closure after final runtime read before click"
+    ]
+  },
+  "repairs": [
+    "Keep confirmed partial counters in readback-failure summary",
+    "Driver requires authoritative boundary and AS close export after a failed Finish click; unconfirmed readback still fails"
+  ],
+  "review": {
+    "QA02_sources_preserved_except_bounded_summary_fix": true,
+    "PR245_dependencies_and_report_code_preserved": true,
+    "workflow_or_audit_gate_changed": false,
+    "own_GitHub_approval_invented": false,
+    "owner_merge_authorization": "direct chat instructions retained",
+    "required_approvals": 0
+  },
+  "ci": "PENDING after publication/Ready",
+  "resources": {
+    "real_mail": 0,
+    "real_llm": 0,
+    "TEST_changed": false,
+    "owned_pg": "/private/tmp/p4k-qa02-pg:55439",
+    "owned_pg_running": false
+  },
+  "logs": {
+    "npm_ci": {
+      "path": "evidence/release2130/npm_ci.log.gz",
+      "sha256": "0f0e327f1f97365e8c23bc104de4f27cb65b3aed6a962c1b8068aaaaa83038a9"
+    },
+    "audit": {
+      "path": "evidence/release2130/audit.log.gz",
+      "sha256": "e3f163296b3fc90dd74d1afa2638bf97a96273a5faf599f4c02e671bc9e0368e"
+    },
+    "dependencies": {
+      "path": "evidence/release2130/dependencies.log.gz",
+      "sha256": "320c9038c1ec1029a7168dab3d95108ccc5cefd3f725ac4793f44ffd198a0cdc"
+    },
+    "ready": {
+      "path": "evidence/release2130/ready.log.gz",
+      "sha256": "1a944e227eba8d9fdf14b566399763cd6aa361e86ffccbc96c9279fd7370ea5c"
+    },
+    "frontend": {
+      "path": "evidence/release2130/frontend.log.gz",
+      "sha256": "88437b7911a2fc1f5fd6cdf6f7a7ab2ec2aa36745102a127c46103dabc0b25db"
+    },
+    "lint": {
+      "path": "evidence/release2130/lint.log.gz",
+      "sha256": "d825f2b97f9f2a8a649c44834a7271f31801b772b21c97f6805ed56e74f00dbf"
+    },
+    "browser_initial": {
+      "path": "evidence/release2130/browser_initial.log.gz",
+      "sha256": "a272bba95793b2581c1b5791366f1ba3f917dbee24124b27f0b8fda76af92c36"
+    },
+    "browser_final": {
+      "path": "evidence/release2130/browser_final.log.gz",
+      "sha256": "35c3b4a7247b4627fd2f27339ca1c7f54cfa62d81df66ceeb7513daaf61462d1"
+    },
+    "driver_before": {
+      "path": "evidence/release2130/driver_before.log.gz",
+      "sha256": "dbe465ed1ee5bb9e58731b4f9f7d9bdfdf759074a36233a4b57255ad5b2950da"
+    },
+    "driver_after": {
+      "path": "evidence/release2130/driver_after.log.gz",
+      "sha256": "b38f0ab70c26340d2d3e654ab61f49956eee1aaecbfb318013606f7428199ae1"
+    }
+  },
+  "upstream_evidence_restored_after_readonly_browser_run": [
+    "docs/evc/tasks/p4k-report-07/evidence/comparison-1440.png",
+    "docs/evc/tasks/p4k-report-07/evidence/comparison-200pct-equivalent.png",
+    "docs/evc/tasks/p4k-report-07/evidence/comparison-390.png",
+    "docs/evc/tasks/p4k-report-07/evidence/comparison-numeric-1440.png",
+    "docs/evc/tasks/p4k-report-07/evidence/comparison-numeric-390.png",
+    "docs/evc/tasks/p4k-report-07/evidence/comparison-role-1440.png",
+    "docs/evc/tasks/p4k-report-07/evidence/comparison-role-390.png",
+    "docs/evc/tasks/p4k-report-fix-02/evidence/single-1440.png"
+  ],
+  "commands": [
+    "npm ci",
+    "npm audit --audit-level=high",
+    "npm ls picomatch --all",
+    "npm run ready:prepare -- --candidate 2.1.30",
+    "node --test tests/frontend/*.test.mjs",
+    "npm run lint:js",
+    "STAND_ADMIN_URL=postgresql://qa02@127.0.0.1:55439/postgres BROWSER_PYTHON=<venv>/bin/python playwright test tests/browser/adm-program-guards.spec.mjs tests/browser/qa02-invitations.spec.mjs tests/browser/adm28-real.spec.mjs tests/browser/runtime.spec.mjs tests/browser/auth-r03.spec.mjs tests/browser/report-fix02-preview.spec.mjs --grep \"REMAIN-03|ADM-PROGRAM|F16 processing dialog|QA02|ADM28 real isolated backend|EXEC-CONTOUR scenario end from another tab|QA19-04|RAD01|R03.*invitation|FIX-02 P0\" --workers=1 --retries=0 --global-timeout=300000"
+  ]
+}

@@ -1,3 +1,17 @@
+# STATE — QA-03: публикация PR, 18.11.2026
+
+Владелец прямо поручил: «выполни PR в main». Разрешены push собственной ветки
+`codex/p4k-postw02-qa-03` и создание PR в `VadikB/4K_MBTI`, base `main`, с кодом,
+тестами, отчётом и синтетическими evidence. `branch_push/pr=true`.
+Поручение на PR не является поручением на merge: `merge/deploy/version_bump/
+artifact_publish=false`. Подготовка — draft по CONTRIBUTING до release-этапа.
+Интегрируется main `997e4eb` /2.1.30; исходники QA-03 не конфликтуют,
+STATE сохраняет истории, dist пересобирается из объединённых источников.
+Совместимость PASS: frontend463/HTTP3/browser12/lint/build45/diff.
+Активно: commit/push → draft PR и быстрый CI; детали — QA-03/PR.md.
+
+---
+
 # STATE — P4K-POSTW02-QA-03, 17.11.2026
 
 Локальная [QA-03](docs/evc/tasks/p4k-postw02-qa-03/TASK.md) завершена в
@@ -11,6 +25,32 @@ Runtime single-flight, восстановление текущей Next-кноп
 Публикация/PR/merge/deploy/version_bump/artifact_publish=false, CI NOT_RUN.
 Следующий этап — приёмка владельцем. QA-04 не запускалась.
 Ниже история прежних задач; её полномочия сюда не переносятся.
+
+
+---
+
+# STATE — P4K-REPORT-FIX-02, 17.11.2026
+
+Локальная реализация завершена: [TASK](docs/evc/tasks/p4k-report-fix-02/TASK.md),
+[STATE](docs/evc/tasks/p4k-report-fix-02/STATE.md), [CHECKS](docs/evc/tasks/p4k-report-fix-02/CHECKS.md).
+Base/FIX-01 `71a9c535`, code candidate/tested `9422308cce138fd39330412ee7a89021797a678f`,
+2.1.28, ветка `codex/p4k-report-fix-02`. Обе полноты/исходы и основания в сравнении
+1.2.0; две серии радара, панель/пара/reload; серверный PDF v3; оболочка POSTW02;
+`npm run preview:reports` P01–P06. Итог: backend1224/HTTP202/frontend404/browser38,
+lint/build/diff PASS. Четыре снимка/два PDF; реальные БД/LLM/письма=0, свои процессы
+остановлены. [Как посмотреть](docs/evc/tasks/p4k-report-fix-02/HOW_TO_VIEW.md):
+`http://127.0.0.1:18972/__reports/`, Ctrl+C, TTL15 минут.
+Владелец принял результат: «принято, заливай на main».
+`branch_push/pr/merge/version_bump=true`, `deploy=test`, `artifact_publish=false`.
+Свежий origin/main `71a9c535` / 2.1.28; кандидат PATCH 2.1.29.
+Следующий шаг — canonical Ready/PR/обязательный CI точного head/squash merge и
+штатный TEST deploy. REPORT-11 не изменялся. Исторические полномочия ниже
+не переносятся.
+PR [#245](https://github.com/VadikB/4K_MBTI/pull/245): после первого CI владелец
+разрешил ограниченный dev-fix. Knip сохранён; exact fork override закрывает все
+цепочки picomatch в npm/Bun, audit с прежним high-порогом PASS. Совместимость и
+неуспешный первый CI — [DEPS](docs/evc/tasks/p4k-report-fix-02/DEPS.md).
+Локально frontend407/browser6/lint/build PASS; активен полный CI обновлённого head.
 
 ---
 
