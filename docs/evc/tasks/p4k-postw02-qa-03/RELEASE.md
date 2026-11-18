@@ -21,3 +21,12 @@ CI точного head → свежая база → squash merge → наблю
 Canonical ready:prepare2.1.31 PASS; release frontend463/lint/diff PASS.
 Изменились только согласованные metadata версии, dist и документы.
 Полный CI запускается переходом Ready для опубликованного release head.
+
+Первый полный CI44255445204 на3e30584: frontend/pytest/integration и четыре
+runtime browser shards PASS; fast lane FAIL на трёх тестовых ожиданиях.
+1) auth-r03 timer: обновлён короткий текст, unknown/zero assertions сохранены.
+2) invitation fixture: дата17.11 зафиксирована управляемыми часами, без зависимости
+от фактического дня18.11. 3) restoration: счётчик questionnaire проверяется после
+async GET через expect.poll, ожидается по-прежнему ровно1. Product code unchanged.
+Адресный browser3 PASS за2.5s, worker1/retries0, реальные LLM/mail0. Logs сохранены.
+Новый head пройдёт полный CI; merge до успешного результата не выполняется.

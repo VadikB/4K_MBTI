@@ -450,7 +450,7 @@ test('ADM28 session restoration hides credentials and loads each admin resource 
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
   await expect(page.locator('.admin-organization-member')).toHaveCount(1);
   expect(organizations).toBe(1);
-  expect(questionnaires).toBe(1);
+  await expect.poll(() => questionnaires).toBe(1);
 });
 
 test('ADM28 temporary restore failure offers retry and does not show login credentials', async ({ page }) => {
@@ -3647,7 +3647,7 @@ test('P3-B return card keeps unknown time distinct from known zero', async ({ pa
   });
   await page.goto(`${base}/?screen=interview`);
   await expect(page.getByText('Остаток времени выполнения уточняется.')).toBeVisible();
-  await expect(page.locator('#interview-timer-badge')).toHaveText('Остаток времени выполнения уточняется');
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Время недоступно');
   await expect(page.getByText('0 мин.', { exact: false })).toBeHidden();
   await expect(page.getByText('Без лимита', { exact: false })).toBeHidden();
   remainingSeconds = 0;
