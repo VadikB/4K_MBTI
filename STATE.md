@@ -1,3 +1,13 @@
+# QA-04 — публикация остановлена automatic review, 18.11.2026
+
+Готовый payload862c36a; push в публичный VadikB/4K_MBTI отклонён: reviewer
+требует точного согласия на destination и код/tests/dist/report/synthetic evidence.
+Remote ветки/PR нет, обхода/повтора нет. Запрошен точный допуск публикации;
+отдельно ожидается решение QA03 prerequisite. Локальные проверки остаются PASS.
+Полное основание: [QA04 PR](docs/evc/tasks/p4k-postw02-qa-04/PR.md).
+
+---
+
 # QA-04 — разрешён PR и merge, 18.11.2026
 
 Владелец: «результаты приняты. выпускай PR и сливай его в main».
