@@ -1,3 +1,13 @@
+# QA-04 — разрешён PR и merge, 18.11.2026
+
+Владелец: «результаты приняты. выпускай PR и сливай его в main».
+branch_push/pr/merge/version_bump=true, deploy=test через штатный workflow.
+QA03 PR247 ещё OPEN; fresh main997e4eb. Уточняется отдельный допуск QA03;
+независимая подготовка draft QA04 продолжается. Merge QA04 до dependency/CI запрещён.
+Текущий этап: [QA04 PR](docs/evc/tasks/p4k-postw02-qa-04/PR.md).
+
+---
+
 # QA-04 — локальная реализация завершена, 18.11.2026
 
 Код/tests/dist и финальный UI head a134d58, собственная ветка codex/p4k-postw02-qa-04.
