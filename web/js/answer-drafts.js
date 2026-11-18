@@ -153,6 +153,14 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
       if (active.conflict && resumed) conflict(active);
       return;
     }
+    // New dialogue Turns can arrive while the participant is typing. Keep that
+    // unsent buffer within the same AS; M7 questions and other identities start
+    // separately. The old slot stays durable and late ACKs remain fenced.
+    const previous = active && !active.stopped && !active.suspended
+      && active.scope.ownerId === scope.ownerId && active.scope.identityEpoch === scope.identityEpoch
+      && active.scope.cycleId === scope.cycleId && active.scope.situationId === scope.situationId
+      && active.scope.slotId.startsWith('dialogue:') && scope.slotId.startsWith('dialogue:')
+      && active.record.text ? { ...active.record } : null;
     cancelTimers(); input.value = ''; input.dataset.draftRevision = ''; status.textContent = ''; actions.replaceChildren();
     const entry = { scope, key, ready: false, local: false, record: {
       text: '', revision: '', baseVersion: null, baseRevision: '', confirmed: true } }; active = entry;
@@ -164,6 +172,14 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
         if (saved.text) message(entry, 'Черновик восстановлен. Ответ ещё не отправлен');
       } else if (saved) storage.removeItem(key);
     } catch { /* remote can still restore/safely save without local storage */ }
+    if (previous && !readOnly && (previous.text !== entry.record.text || previous.alternatives?.length)) {
+      const alternatives = [...(previous.alternatives || [])];
+      if (entry.record.text) alternatives.push({ text: entry.record.text, revision: entry.record.revision });
+      entry.record = { text: previous.text, revision: newRevision(), baseVersion: null, baseRevision: '',
+        confirmed: false, editorId, expiresAt: scopeExpiry(scope), alternatives };
+      input.value = entry.record.text; input.dataset.draftRevision = entry.record.revision;
+      persist(entry);
+    }
     if (readOnly) {
       entry.suspended = true;
       if (!entry.record.revision) {
@@ -245,7 +261,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
     } catch { /* never erase a newer DOM revision */ }
     if (active?.key === key && valid(active) && active.record.revision === operation.draftRevision) {
       active.stopped = true; cancelTimers(); input.value = ''; input.dataset.draftRevision = '';
-      active.record.text = ''; active.record.confirmed = true; message(active, 'Ответ принят'); actions.replaceChildren();
+      active.record.text = ''; active.record.confirmed = true; message(active, ''); actions.replaceChildren();
     }
   };
   const stop = () => { cancelTimers(); if (active) active.stopped = true; active = null;

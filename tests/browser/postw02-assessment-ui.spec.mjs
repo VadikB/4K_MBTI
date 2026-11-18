@@ -146,7 +146,7 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   await screenshot(page, 'long', width);
   await page.locator('#interview-textarea').fill('');
   await page.locator('#interview-finish-button').click();
-  await expect(page.locator('#interview-error')).toContainText('Ответ сохранён. Обработка продолжается');
+  await expect(page.locator('#interview-error')).toContainText('Ожидайте завершения обработки');
   await page.clock.fastForward(46000);
   await expect(page.locator('#interview-error')).toHaveAttribute('data-tone', 'neutral');
   await expect(page.locator('#interview-finish-button')).toBeDisabled();
@@ -157,11 +157,11 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   await page.clock.fastForward(60000);
   expect(run.calls).toHaveLength(readsBefore);
   await page.getByRole('button', { name: 'Проверить состояние', exact: true }).click();
-  await expect(page.locator('#interview-error')).toContainText('Обработка продолжается');
+  await expect(page.locator('#interview-error')).toContainText('Обработка занимает больше времени');
   expect(posts()).toHaveLength(1);
   run.offline = true;
   await page.getByRole('button', { name: 'Проверить состояние', exact: true }).click();
-  await expect(page.locator('#interview-error')).toContainText('Не удалось проверить состояние. Попробуйте ещё раз');
+  await expect(page.locator('#interview-error')).toContainText('Не удалось обновить состояние');
   await screenshot(page, 'offline', width);
   run.offline = false;
   run.model.pipeline.status = 'failed';
@@ -231,6 +231,6 @@ test('unknown answer outcome keeps the draft; manual processing check never rese
   await page.reload();
   await expect(page.locator('#interview-textarea')).toHaveValue(text);
   await expect(page.locator('#interview-error')).not.toContainText('Ответ сохранён');
-  await page.getByRole('button', { name: 'Проверить состояние', exact: true }).click();
+  await page.getByRole('button', { name: 'Проверить сохранение', exact: true }).click();
   expect(run.calls.filter((c) => c.method === 'POST' && c.url.endsWith('/turns'))).toHaveLength(1);
 });
