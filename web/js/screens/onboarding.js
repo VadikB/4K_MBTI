@@ -679,7 +679,11 @@ const advance = async (override = null) => {
       startReadbackAdmitted = false;
       const cycleId = model.prepared_plan?.cycle_id;
       if (!cycleId) throw new Error('Подготовленный цикл пока недоступен. Проверьте готовность.');
-      await saveProgress('completed', readinessIndex());
+      const finalStep = readinessIndex();
+      const progress = model.onboarding;
+      if (progress?.status !== 'completed' || progress.current_step !== finalStep) {
+        await saveProgress('completed', finalStep);
+      }
       const { loadInterview } = await import('../screen-loaders.js');
       const interview = await loadInterview();
       if (!isCurrent(owner, epoch, run)) return;
