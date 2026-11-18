@@ -1,3 +1,15 @@
+# QA-03 — PR ожидает подтверждения destination, 18.11.2026
+
+Код/интеграция/локальные проверки готовы. Push58fff10 отклонён automatic approval
+review: явное разрешение на публикацию payload именно в VadikB/4K_MBTI не
+подтверждено. Удалённая ветка/PR/CI отсутствуют. Повтор/обход не выполнялся.
+Нужен точный допуск на push своей ветки и один draft PR base main с кодом,
+тестами, отчётом и synthetic screenshots/logs. Merge/deploy/version_bump=false.
+Причина/описание/проверки: [PR.md](PR.md), [PR_BODY.md](PR_BODY.md).
+Ниже сохранён журнал подготовленного этапа.
+
+---
+
 # QA-03 — текущий этап PR, 18.11.2026
 
 Прямое поручение «выполни PR в main»: branch_push/pr=true, merge/deploy/

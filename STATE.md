@@ -1,3 +1,14 @@
+# STATE — QA-03: push отклонён automatic review, 18.11.2026
+
+Локальная подготовка PR завершена, merged base997e4eb, tests463/HTTP3/browser12
+PASS. Automatic approval review отклонил push58fff10 в VadikB/4K_MBTI: не
+подтверждено явное разрешение на этот конкретный destination и payload.
+Remote ветка/PR/CI не созданы; повтор/обход запрещён и не выполнялся.
+Ожидается точное подтверждение публикации ветки/одного draft PR в этот repo.
+merge/deploy/version_bump=false. Состояние/основание — QA-03/PR.md.
+
+---
+
 # STATE — QA-03: публикация PR, 18.11.2026
 
 Владелец прямо поручил: «выполни PR в main». Разрешены push собственной ветки
