@@ -122,6 +122,8 @@ for (const width of [1440, 390, 320]) {
     run.offline = false; run.model.pipeline.status = 'failed';
     await notice.getByRole('button', { name: 'Проверить состояние' }).click();
     await expect(notice).toContainText('Ответ сохранён. Не удалось завершить обработку.');
+    expect(await notice.evaluate(n => getComputedStyle(n).fontFamily.startsWith('Onest'))).toBe(true);
+    await expect(notice).toHaveCSS('border-radius', '8px');
     await expect(page.locator('#interview-finish-button')).toBeHidden();
     await capture(page, 'failed', width);
     run.model.pipeline.status = 'running'; run.model.blocking_system_wait = false;

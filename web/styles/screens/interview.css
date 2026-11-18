@@ -1282,7 +1282,16 @@
     text-align: left;
 }
 #interview-error[data-tone="neutral"]::before { display: none; }
-#interview-error.processing-notice { display: block; overflow-wrap: anywhere; }
+#interview-error.processing-notice {
+    display: block;
+    overflow-wrap: anywhere;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+    text-align: left;
+}
 #interview-error.processing-notice::before { display: none; }
 .processing-notice-detail { display: block; margin-top: 8px; }
 #interview-error[hidden] { display: none; }
