@@ -1,3 +1,18 @@
+# QA-03 — публикация прямо разрешена, 18.11.2026
+
+Владелец прямо подтвердил: «Да, разрешаю опубликовать ветку QA-03 с кодом,
+тестами, отчётом и синтетическими снимками в VadikB/4K_MBTI и создать draft PR
+в main». Это новый точный допуск destination/payload, снимающий прежнее ожидание
+после отказа automatic approval review. branch_push/pr=true;
+merge/deploy/version_bump/artifact_publish=false. Собственная ветка:
+codex/p4k-postw02-qa-03; destination https://github.com/VadikB/4K_MBTI; base main.
+Fresh main997e4eb неизменён. Код/тесты/dist после проверок не менялись;
+frontend463/HTTP3/browser12/lint/build/diff PASS сохраняют применимость.
+Текущий шаг: push → один draft PR → наблюдение быстрого CI точного head.
+Ниже сохранён журнал предыдущих этапов; старый блокер снят новым поручением.
+
+---
+
 # STATE — QA-03: push отклонён automatic review, 18.11.2026
 
 Локальная подготовка PR завершена, merged base997e4eb, tests463/HTTP3/browser12
