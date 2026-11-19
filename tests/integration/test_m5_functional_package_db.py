@@ -2,25 +2,229 @@ from __future__ import annotations
 
 import copy
 import json
+from contextlib import nullcontext
 from uuid import uuid4
 
 import psycopg
 import pytest
 from psycopg.rows import dict_row
 
+from Api import database
 from Api.database import ensure_m5_runtime_schema
+from Api.m5_case_runtime import checksum
+from Api.m5_case_type_catalog import load_case_type_catalog
+from Api.m5_catalog_integrity import publication_plan
+from Api.m5_package import digest, json_bytes
 from Api.m5_storage import M5ImportConflict, import_package, package_readback
 from Api.m5_storage import prepare_assessment_situation
 from Api.m5_cycle_runtime import create_cycle_session_for_case
 from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
-from Api.m5_runtime_rules import import_runtime_rule_version, load_runtime_rule_package
-from Api.m5_scenario_runtime import build_c45, start, submit_turn, transition
+from Api.m5_runtime_rules import import_runtime_rule_version, load_runtime_rule_package, resolve_runtime_rules
+from Api.m5_scenario_runtime import build_c45, start, submit_turn, trace, transition
 from Api.m6_input_resolver import resolve as resolve_m6_input
 from scripts.build_m5_sales_package import build_execution_rules
 from scripts.build_m5_functional_package import OUTPUT
+from scripts import plan_specialist_program_release as release
 
 RUNTIME_PACKAGE = OUTPUT.parent.parent / "functional-personalization-runtime/1.2.0"
 FUNCTIONAL_PACKAGES = OUTPUT.parent
+
+
+@pytest.fixture
+def specialist_release_connection(test_database_url, monkeypatch):
+    schema = psycopg.sql.Identifier("m5_release_" + uuid4().hex)
+    with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(schema))
+        connection.execute(psycopg.sql.SQL("SET search_path TO {}").format(schema))
+        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY)")
+        connection.execute("INSERT INTO users VALUES (99)")
+        connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY)")
+        connection.execute("INSERT INTO organizations VALUES (11)")
+        connection.execute(
+            "CREATE TABLE assessment_personalized_profiles "
+            "(id BIGINT PRIMARY KEY, status TEXT NOT NULL, content_json JSONB NOT NULL, "
+            "provenance_json JSONB NOT NULL, checksum TEXT NOT NULL)"
+        )
+        ensure_m5_runtime_schema(connection)
+        connection.execute(
+            """INSERT INTO assessment_personalized_profiles
+               VALUES (7,'ready','{"base_role":"specialist_expert"}','{}',%s)""", ("7" * 64,),
+        )
+        connection.commit()
+        monkeypatch.setattr(database, "get_connection", lambda: nullcontext(connection))
+        try:
+            yield connection
+        finally:
+            connection.rollback()
+            connection.execute(psycopg.sql.SQL("DROP SCHEMA {} CASCADE").format(schema))
+
+
+@pytest.mark.integration
+def test_specialist_cli_publishes_after_working_import_and_preserves_snapshots(
+    specialist_release_connection, monkeypatch, capsys,
+):
+    connection = specialist_release_connection
+
+    def run_cli(*args):
+        monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", *args])
+        assert release.main() == 0
+        return json.loads(capsys.readouterr().out)["database"]
+
+    draft = run_cli("--apply-import")
+    draft_package = draft["readback"]["package"]
+    draft_case = draft["readback"]["cases"][0]
+    assert draft_package["package_version"] == "0.5"
+    assert draft_case["status"] == "WORKING"
+    assert draft_package["package_checksum"] == checksum({
+        "package": draft_package["package_json"], "manifest": draft_package["manifest_json"],
+    })
+    case_id, version = draft_case["case_id"], draft_case["case_version"]
+    cycle, session = create_cycle_session_for_case(
+        connection, personalized_profile_id=7, case_id=case_id, case_version=version,
+        created_by=99, usage_scope="qa",
+    )
+    as_id = str(uuid4())
+    as_snapshot = prepare_assessment_situation(
+        connection, assessment_situation_id=as_id, case_id=case_id, case_version=version,
+        personalized_profile_id=7, cycle_db_id=cycle["id"], session_db_id=session["id"],
+        substitutions=[], usage_scope="qa", qa_authorized_by=99,
+        policy={"id": "aud-01", "version": "1", "allowed_case_statuses": ["WORKING"],
+                "required_evidence_scopes": ["case_format", "case_dialogue", "assessment_situation"]},
+        runtime_rule_version_id=draft["runtime"]["id"],
+    )
+    old_trace = trace(connection, as_id)
+    connection.commit()
+
+    publish = ("--publish-admitted-catalog", "--published-by", "99", "--usage-scope", "qa",
+               "--organization-id", "11", "--catalog-id", "aud-01", "--idempotency-key", "aud-01")
+    monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", *publish, "--decision-basis", " "])
+    with pytest.raises(ValueError, match="SPECIALIST_ADMISSION_DECISION_BASIS_REQUIRED"):
+        release.main()
+    assert connection.execute("SELECT count(*) AS n FROM m5_catalogs").fetchone()["n"] == 0
+    assert connection.execute("SELECT count(*) AS n FROM m5_packages").fetchone()["n"] == 1
+
+    publish += ("--decision-basis", "AUD-01 synthetic QA evidence")
+    first = run_cli(*publish)
+    catalog = first["catalog_readback"]
+    manifest = catalog["manifest"]
+    admitted_package = first["readback"]["package"]
+    runtime_db_id = first["runtime"]["id"]
+    assert manifest["usage_scope"] == "qa"
+    assert manifest["organization_id"] == 11
+    assert manifest["case_type_catalog_ref"] == load_case_type_catalog().ref.model_dump()
+    assert manifest["package_ref"] == {
+        "id": draft_package["package_id"], "version": "0.5-admitted.1-qa",
+        "checksum": admitted_package["package_checksum"],
+    }
+    assert admitted_package["manifest_json"]["source_package_ref"] == {
+        "id": draft_package["package_id"], "version": "0.5", "checksum": draft_package["package_checksum"],
+    }
+    artifacts = {item["name"]: item["sha256"] for item in admitted_package["manifest_json"]["artifacts"]}
+    assert artifacts["case-package.json"] == digest(json_bytes(admitted_package["package_json"]))
+    assert artifacts["execution-rules.json"] == digest(json_bytes(admitted_package["runtime_rules_json"]))
+    assert admitted_package["package_checksum"] == checksum({
+        "package": admitted_package["package_json"], "manifest": admitted_package["manifest_json"],
+    })
+    runtime = connection.execute("SELECT * FROM m5_runtime_rule_versions WHERE id=%s", (runtime_db_id,)).fetchone()
+    runtime_ref = manifest["runtime_rule_ref"]
+    assert runtime_ref["artifact_version"] == "1.2.1-qa"
+    assert runtime_ref["manifest_checksum"] == digest(json_bytes(runtime["manifest_json"]))
+    assert runtime_ref["rules_checksum"] == checksum(runtime["rules_json"])
+    assert runtime["manifest_json"]["source"]["case_package_version"] == "0.5-admitted.1-qa"
+
+    cases = first["readback"]["cases"]
+    assert [item["case_id"] for item in cases] == release.EXPECTED_CASE_IDS
+    assert sorted(item["id"] for item in cases) == manifest["case_version_ids"]
+    bindings = {}
+    for working, admitted in zip(draft["readback"]["cases"], cases, strict=True):
+        assert admitted["case_version"] == working["case_version"] + "-admitted.1-qa"
+        assert admitted["status"] == "FROZEN"
+        row = connection.execute(
+            """SELECT binding_json,binding_checksum FROM m5_runtime_rule_case_bindings
+               WHERE runtime_rule_version_id=%s AND case_version_id=%s""", (runtime_db_id, admitted["id"]),
+        ).fetchone()
+        binding = row["binding_json"]
+        bindings[admitted["case_id"]] = binding
+        assert binding["case_version"] == admitted["case_version"]
+        assert binding["case_checksum"] == admitted["content_checksum"]
+        assert checksum(binding) == row["binding_checksum"]
+        rules, ref = resolve_runtime_rules(
+            connection, case_version_id=admitted["id"], case_id=admitted["case_id"],
+            legacy_rules={}, catalog_db_id=catalog["id"],
+        )
+        assert rules["cases"][admitted["case_id"]]["case_version"] == admitted["case_version"]
+        assert ref["version"] == "1.2.1-qa"
+    binding_artifact = {key: runtime["manifest_json"][key] for key in
+                        ("schema_version", "id", "version", "status", "owner")}
+    binding_artifact["case_bindings"] = bindings
+    assert runtime["manifest_json"]["artifacts"][0]["sha256"] == digest(json_bytes(binding_artifact))
+    assessment_plan = publication_plan(
+        connection, package_db_id=admitted_package["id"], case_version_ids=manifest["case_version_ids"],
+        usage_scope="assessment", runtime_rule_version_id=runtime_db_id,
+    )
+    assert not assessment_plan["publishable"]
+    assert all("QA_EVIDENCE_ORIGIN_NOT_ALLOWED:case_format" in item["reasons"]
+               for item in assessment_plan["decisions"])
+    with pytest.raises(ValueError, match="M5_RUNTIME_RULE_CATALOG_MISMATCH"):
+        resolve_runtime_rules(
+            connection, case_version_id=draft_case["id"], case_id=case_id, legacy_rules={},
+            catalog_db_id=catalog["id"], runtime_rule_version_id=draft["runtime"]["id"],
+        )
+    with pytest.raises(ValueError, match="M5_RUNTIME_RULE_CATALOG_MISMATCH"):
+        resolve_runtime_rules(
+            connection, case_version_id=cases[0]["id"], case_id=case_id, legacy_rules={},
+            catalog_db_id=catalog["id"], runtime_rule_version_id=draft["runtime"]["id"],
+        )
+
+    repeated_draft = run_cli("--apply-import")
+    assert repeated_draft["import"] == {**draft["import"], "created": False}
+    assert repeated_draft["readback"] == draft["readback"]
+    repeated = run_cli(*publish)
+    assert repeated["import"] == {**first["import"], "created": False}
+    assert repeated["runtime"] == {**first["runtime"], "created": False}
+    assert repeated["catalog"] == {**first["catalog"], "idempotent": True}
+    assert repeated["catalog_readback"] == catalog
+    counts = connection.execute("""
+        SELECT (SELECT count(*) FROM m5_packages) AS packages,
+               (SELECT count(*) FROM m5_case_versions) AS cases,
+               (SELECT count(*) FROM m5_runtime_rule_versions) AS rules,
+               (SELECT count(*) FROM m5_catalogs) AS catalogs,
+               (SELECT count(*) FROM m5_qa_evidence) AS evidence
+    """).fetchone()
+    assert counts == {"packages": 2, "cases": 18, "rules": 2, "catalogs": 1, "evidence": 27}
+    for column in ("package_json", "runtime_rules_json"):
+        changed = {**admitted_package[column], "changed": True}
+        with pytest.raises(M5ImportConflict, match="M5_PACKAGE_VERSION_CONTENT_CONFLICT"):
+            import_package(
+                connection, manifest=admitted_package["manifest_json"],
+                package=changed if column == "package_json" else admitted_package["package_json"],
+                execution_rules=changed if column == "runtime_rules_json" else admitted_package["runtime_rules_json"],
+            )
+    with pytest.raises(ValueError, match="M5_RUNTIME_RULE_VERSION_CONFLICT"):
+        import_runtime_rule_version(
+            connection, {"manifest": runtime["manifest_json"], "manifest_checksum": runtime["manifest_checksum"],
+                         "bindings": {"case_bindings": bindings}},
+            {**runtime["rules_json"], "changed": True}, package_db_id=admitted_package["id"],
+        )
+    ordinary = run_cli(
+        "--publish-admitted-catalog", "--published-by", "99", "--decision-basis", "AUD-01 fixture review",
+        "--catalog-id", "aud-01-assessment", "--idempotency-key", "aud-01-assessment",
+    )
+    ordinary_manifest = ordinary["catalog_readback"]["manifest"]
+    assert ordinary_manifest["usage_scope"] == "assessment"
+    assert ordinary_manifest["package_ref"]["version"] == "0.5-admitted.1"
+    assert ordinary_manifest["runtime_rule_ref"]["artifact_version"] == "1.2.1"
+    assert set(manifest["case_version_ids"]).isdisjoint(ordinary_manifest["case_version_ids"])
+    assert run_cli(*publish)["catalog_readback"] == catalog
+    assert trace(connection, as_id) == old_trace
+    stored = connection.execute(
+        """SELECT case_version_id,snapshot_json,snapshot_checksum,execution_payload_json
+           FROM m5_assessment_situations WHERE id=%s""", (as_snapshot["id"],),
+    ).fetchone()
+    assert stored["case_version_id"] == draft_case["id"]
+    assert stored["snapshot_checksum"] == checksum(stored["snapshot_json"])
+    assert stored["snapshot_json"]["case_ref"] == as_snapshot["snapshot"]["case_ref"]
+    assert stored["execution_payload_json"] == as_snapshot["execution_payload"]
 
 
 @pytest.mark.integration

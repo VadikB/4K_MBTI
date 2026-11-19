@@ -80,7 +80,9 @@ def load_event_bindings(path: Path, cases: list[dict[str, Any]], *, expected_ver
     return value
 
 
-def import_runtime_rule_version(connection, loaded: dict[str, Any], compiled_rules: dict[str, Any]) -> dict[str, Any]:
+def import_runtime_rule_version(
+    connection, loaded: dict[str, Any], compiled_rules: dict[str, Any], *, package_db_id: int | None = None,
+) -> dict[str, Any]:
     manifest = loaded["manifest"]
     bindings = loaded["bindings"]
     rules_checksum = checksum(compiled_rules)
@@ -104,8 +106,9 @@ def import_runtime_rule_version(connection, loaded: dict[str, Any], compiled_rul
     for case_id, binding in bindings["case_bindings"].items():
         case = connection.execute(
             "SELECT id,content_checksum FROM m5_case_versions "
-            "WHERE case_id=%s AND case_version=%s AND content_checksum=%s ORDER BY id DESC LIMIT 1",
-            (case_id, binding["case_version"], binding["case_checksum"]),
+            "WHERE case_id=%s AND case_version=%s AND content_checksum=%s "
+            "AND (%s::bigint IS NULL OR package_id=%s) ORDER BY id DESC LIMIT 1",
+            (case_id, binding["case_version"], binding["case_checksum"], package_db_id, package_db_id),
         ).fetchone()
         if case is None or case["content_checksum"] != binding["case_checksum"]:
             raise ValueError(f"M5_RUNTIME_RULE_CASE_NOT_IMPORTED:{case_id}")
@@ -127,10 +130,12 @@ def resolve_runtime_rules(connection, *, case_version_id: int, case_id: str,
             "WHERE catalog_db_id=%s AND case_version_id=%s",
             (catalog_db_id, case_version_id),
         ).fetchone()
-        if member and member["runtime_rule_version_id"] is not None:
-            if selected is not None and int(member["runtime_rule_version_id"]) != int(selected):
-                raise ValueError("M5_RUNTIME_RULE_CATALOG_MISMATCH")
-            selected = int(member["runtime_rule_version_id"])
+        if member is None:
+            raise ValueError("M5_RUNTIME_RULE_CATALOG_MISMATCH")
+        pinned = member["runtime_rule_version_id"]
+        if selected is not None and (pinned is None or int(pinned) != int(selected)):
+            raise ValueError("M5_RUNTIME_RULE_CATALOG_MISMATCH")
+        selected = pinned
     if selected is None:
         return legacy_rules, {"source": "package_legacy"}
     row = connection.execute("""
