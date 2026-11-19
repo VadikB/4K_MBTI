@@ -1,6 +1,6 @@
-# Admin 02 — перенос на main b99ff3e8, 19.11.2026
+# Admin 02 — перенос на main 1c7fcb9c, 19.11.2026
 
-Draft PR #252 получил fast CI frontend/pytest PASS на SHA `4ba79bade4b7493606724b0ef6858525919c8cd7`; полный CI на draft был SKIPPED. Перед Ready свежий `main` продвинулся до `b99ff3e8` / 2.1.36 (PR #253). Владелец сказал «продолжаем»; выполняется интеграция main без переписывания истории, следующий PATCH 2.1.37 и повтор затронутых проверок. `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. Локальные проверки предыдущего кандидата: backend 1295, frontend 473, HTTP/e2e 218, browser guards 43, реальные UI/HTTP/PG 3 PASS. Актуальные SHA и CI нового кандидата фиксируются после переноса. [Отчёт](docs/evc/tasks/admin-organization-02.md).
+Draft PR #252 получил fast CI frontend/pytest PASS на SHA `4ba79bade4b7493606724b0ef6858525919c8cd7`; полный CI на draft был SKIPPED. После поручения владельца «продолжаем» main продвинулся до `b99ff3e8` / 2.1.36 (PR #253), затем до `1c7fcb9c` / 2.1.37 (PR #254). Оба интегрированы без переписывания истории, merge SHA `5ea34e32` и `08eb319f`; непосредственный PATCH 2.1.38 подготовлен preflight PASS. На промежуточной базе 2.1.37 локально: backend 1295, frontend 476, HTTP/e2e 218, browser guards 43, адресные integration 5, реальные UI/HTTP/PG 3 PASS; lint и diff check PASS. На 2.1.38 адресно: backend/HTTP 20, integration анкеты/M5 2, frontend Admin 02/Next 12 PASS; lint/diff check PASS. `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. Активно: release-коммит/push, Ready и обязательный CI точного head; затем человеческое review и отдельное решение владельца о слиянии. [Отчёт](docs/evc/tasks/admin-organization-02.md).
 
 ---
 
