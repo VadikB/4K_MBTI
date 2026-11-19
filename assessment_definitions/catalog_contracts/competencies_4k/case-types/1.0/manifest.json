@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "m5-case-type-catalog",
+  "version": "1.0",
+  "status": "FROZEN",
+  "owner": "M5 methodology owner",
+  "source": "M5.Methodology v1.1, M5.2 CaseType; P4K_M5_CASETYPE_01 v1.1",
+  "artifacts": [
+    {
+      "name": "sources/M5_CaseType_Catalog_CT01-CT20_v1.0_FROZEN.xlsx",
+      "sha256": "d748e390933a45eabca44f305027f757c7568a6c4ef343ee5bc7f104c210b7c0"
+    }
+  ]
+}
