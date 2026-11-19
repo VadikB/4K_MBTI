@@ -94,7 +94,12 @@ python3 scripts/build_m4_context_package.py \
 ```
 
 Исходный DOCX не копируется в Git. Его имя и SHA-256, а также контрольные суммы
-трёх производных артефактов находятся в `manifest.json`.
+артефактов находятся в `manifest.json`. `admin_context_choices.json` содержит
+отдельно утверждённые владельцем варианты для формы администратора (решение
+19.11.2026, [задача](../docs/evc/tasks/admin-organization-02.md)). Это варианты UI,
+а не дополнение к нормативному тексту M4. Сборщик копирует этот файл из пакета,
+проверяет его структуру и включает checksum в manifest; подтверждённый
+OrganizationContext сохраняет версию и checksum в `source_manifest_json`.
 
 ## Кейсы M5 для 4К 1.1
 

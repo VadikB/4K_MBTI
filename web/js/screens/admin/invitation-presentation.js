@@ -8,7 +8,7 @@ const reasons = {
   batch_incomplete: 'Не удалось подтвердить исход для всех выбранных участников',
   invalid_email: 'Приглашение не отправлено: указан некорректный email',
   questionnaire_unconfirmed: 'Приглашение не отправлено: для этой оценки не подтверждены сведения организации',
-  questionnaire_incomplete: 'Приглашение не отправлено: заполните цель оценки, организатора и использование результатов',
+  questionnaire_incomplete: 'Приглашение не отправлено: заполните цель оценки и использование результатов',
   organization_changed: 'Приглашение не отправлено: сведения организации изменились. Проверьте и подтвердите их',
   member_unavailable: 'Участника нельзя пригласить в эту организацию. Обновите список и проверьте его доступ',
   permission_denied: 'Недостаточно прав для приглашения участников этой организации',
@@ -63,7 +63,7 @@ export const safeInvitationItem = (item = {}) => {
   if (typeof item.operation_id === 'string' && item.operation_id.length <= 200) clean.operation_id = item.operation_id;
   if (item.replayed === true) clean.replayed = true;
   const missing = item.reason_params?.missing_fields;
-  if (item.reason_code === 'questionnaire_incomplete' && Array.isArray(missing)) clean.reason_params = { missing_fields: ['purpose', 'organizer', 'results_usage'].filter(field => missing.includes(field)) };
+  if (item.reason_code === 'questionnaire_incomplete' && Array.isArray(missing)) clean.reason_params = { missing_fields: ['purpose', 'results_usage'].filter(field => missing.includes(field)) };
   const retry = item.reason_params?.retry_after_seconds;
   if (item.reason_code === 'provider_limit' && Number.isInteger(retry) && retry >= 0 && retry <= 86400) clean.reason_params = { retry_after_seconds: retry };
   return clean;
@@ -89,7 +89,7 @@ export const invitationLinkMessage = (status, expires = '') => ({
 }[status] || 'Актуальность ссылки не подтверждена');
 
 export const invitationMissingText = item => {
-  const names = { purpose: 'цель оценки', organizer: 'организатор', results_usage: 'использование результатов' };
+  const names = { purpose: 'цель оценки', results_usage: 'использование результатов' };
   const fields = item.reason_params?.missing_fields;
   return item.reason_code === 'questionnaire_incomplete' && Array.isArray(fields)
     ? fields.filter(field => Object.prototype.hasOwnProperty.call(names, field)).map(field => names[field]).join(', ') : '';

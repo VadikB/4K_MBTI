@@ -5646,7 +5646,10 @@ def get_admin_organization_questionnaire_revision(organization_id: int, revision
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail="QUESTIONNAIRE_REVISION_NOT_FOUND")
-        return questionnaire_sources.public_revision(dict(row))
+        current_name = connection.execute(
+            "SELECT name FROM organizations WHERE id=%s", (organization_id,),
+        ).fetchone()["name"]
+        return {**questionnaire_sources.public_revision(dict(row)), "organization_name_current": current_name}
 
 
 @router.post("/admin/organizations/{organization_id}/questionnaire/{revision_id}/confirm")
@@ -5683,6 +5686,9 @@ def confirm_admin_organization_questionnaire(
             )
             connection.commit()
             confirmed = questionnaire_sources.public_revision(result)
+            confirmed["organization_name_current"] = connection.execute(
+                "SELECT name FROM organizations WHERE id=%s", (organization_id,),
+            ).fetchone()["name"]
             try:
                 confirmed["readiness"] = questionnaire_sources.admin_assignment_readiness(
                     connection, organization_id=organization_id,

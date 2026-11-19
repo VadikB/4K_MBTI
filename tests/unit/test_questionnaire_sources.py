@@ -20,6 +20,17 @@ def test_csv_example_is_ready_and_preserves_non_w02_answers():
     assert "responsible_contact" not in result["answers"]["C21"]
 
 
+def test_c21_is_optional_for_new_csv_and_product_form():
+    without_organizer = "\n".join(
+        line for line in EXAMPLE.read_text().splitlines() if not line.startswith("C21,")
+    ) + "\n"
+    csv_result = parse_csv(without_organizer)
+    assert csv_result["status"] == "ready_for_confirmation"
+    assert "C21" not in csv_result["answers"]
+    product = normalize_answers(answers=csv_result["answers"], channel="product_form")
+    assert product["status"] == "ready_for_confirmation"
+
+
 def test_c22_is_preserved_but_not_used_as_server_confirmation():
     result = parse_csv(EXAMPLE.read_text() + '\nC22,answer,"да"\n')
     assert result["status"] == "ready_for_confirmation"

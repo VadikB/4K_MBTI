@@ -31,18 +31,22 @@ const json = (route, value, status = 200) => route.fulfill({ status, contentType
 const card = (page, id = 3) => page.locator(`[data-organization-id="${id}"]`);
 const form = (page, id = 3) => card(page, id).locator('[data-action="preview-early-data"]');
 const fields = (label) => ({ organization_name: `Синтетическая ИТ-компания ${label}`,
-  organization_type: `ИТ-разработка ${label}`, organizer: `contact-${label || 'empty'}@example.test` });
+  organization_type: `ИТ-разработка ${label}` });
 async function fill(page, values, id = 3) {
   for (const [name, value] of Object.entries(values)) await form(page, id).locator(`[name="${name}"]`).fill(value);
 }
 async function assertValues(page, values, id = 3) {
-  for (const [name, value] of Object.entries(values)) await expect(form(page, id).locator(`[name="${name}"]`)).toHaveValue(value);
+  for (const [name, value] of Object.entries(values)) {
+    const expected = values === empty && name === 'organization_name' ? `Synthetic organization ${id}` : value;
+    await expect(form(page, id).locator(`[name="${name}"]`)).toHaveValue(expected);
+  }
 }
 const empty = Object.fromEntries(Object.keys(fields('')).map((name) => [name, '']));
 const confirmed = { id: 201, status: 'confirmed', channel: 'product_form', assignment_ref: 'pilot-11',
   source_author: 'Исторический автор',
   answers_json: {
     C01: { name: fields('сервер').organization_name, organization_type: fields('сервер').organization_type },
+    C17: { case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' },
     C21: { organizer: fields('сервер').organizer },
   } };
 
@@ -109,10 +113,29 @@ test('Q-DRAFT pristine initial form does not mask a confirmed server revision', 
   const f = await fixture(page, { items: [confirmed] });
   await finishRead(page, f);
   await assertValues(page, fields('сервер'));
+  await expect(form(page).locator('[name="case_reality_level"]')).toHaveValue('Реальные');
+  await expect(form(page).locator('[name="organization_name_usage_rules"]')).toHaveValue('Разрешено');
   await card(page).getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await assertValues(page, fields('сервер'));
   expect(f.state.mutations).toEqual([]);
+});
+
+test('ADMIN-02 offers approved context choices to a new organization draft', async ({ page }) => {
+  const f = await fixture(page);
+  await finishRead(page, f);
+  const reality = form(page).locator('select[name="case_reality_level"]');
+  const nameUsage = form(page).locator('select[name="organization_name_usage_rules"]');
+  await expect(reality.locator('option')).toHaveText([
+    'Выберите вариант', 'Обобщённые рабочие ситуации', 'Близко к реальной работе',
+  ]);
+  await expect(nameUsage.locator('option')).toHaveText([
+    'Выберите вариант', 'Использовать условное название', 'Можно использовать настоящее название',
+  ]);
+  await reality.selectOption('Близко к реальной работе');
+  await nameUsage.selectOption('Использовать условное название');
+  await expect(reality).toHaveValue('Близко к реальной работе');
+  await expect(nameUsage).toHaveValue('Использовать условное название');
 });
 test('Q-DRAFT live input wins over a delayed confirmed revision in the same scope', async ({ page }) => {
   const f = await fixture(page, { items: [confirmed] });

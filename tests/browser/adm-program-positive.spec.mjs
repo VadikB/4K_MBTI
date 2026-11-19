@@ -111,10 +111,6 @@ for (const channel of ['product_form', 'csv']) {
       const organizationId = await card.getAttribute('data-organization-id');
       await expect(card.locator('.admin-assignment-readiness')).toContainText('ADM28 synthetic Specialist pilot');
       await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();
-      const profile = card.locator('[data-action="update-profile"]');
-      await profile.locator('[name="name"]').fill(fixture.fields.organization_name);
-      await profile.getByRole('button', { name: 'Сохранить карточку', exact: true }).click();
-      await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
       await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
       const connectionResponse = await page.request.get(`${base}/users/admin/organizations/${organizationId}/assessment-program`);
       expect(connectionResponse.status()).toBe(200);
@@ -128,7 +124,11 @@ for (const channel of ['product_form', 'csv']) {
       await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
       if (channel === 'product_form') {
         for (const [name, value] of Object.entries(fixture.fields)) {
-          if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+          if (!['source_author', 'organizer'].includes(name)) {
+            const field = form.locator(`[name="${name}"]`);
+            if (['case_reality_level', 'organization_name_usage_rules'].includes(name)) await field.selectOption(value);
+            else await field.fill(value);
+          }
         }
       } else {
         await form.locator('[name="csv"]').setInputFiles({ name: 'example.synthetic.csv',
@@ -137,7 +137,7 @@ for (const channel of ['product_form', 'csv']) {
       await page.screenshot({ path: path.join(directory, 'filled-1440.png'), fullPage: true });
       const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST'
         && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
-      await form.getByRole('button', { name: channel === 'csv' ? 'Предпросмотр анкеты' : 'Сохранить черновик и предпросмотр', exact: true }).click();
+      await form.getByRole('button', { name: channel === 'csv' ? 'Загрузить заполненную анкету' : 'Сохранить черновик и предпросмотр', exact: true }).click();
       const previewReply = await previewResponse;
       expect(previewReply.status()).toBe(201);
       const previewPayload = await previewReply.json();
@@ -186,11 +186,11 @@ for (const channel of ['product_form', 'csv']) {
       await page.screenshot({ path: path.join(directory, 'confirmed-1440.png'), fullPage: true });
       await page.reload();
       await expect(card).toBeVisible();
-      await card.locator(`.admin-organization-step[data-view="${channel === 'csv' ? 'questionnaire' : 'organization-data'}"]`).click();
+      await card.locator('.admin-organization-step[data-view="organization-data"]').click();
       await expect(form.locator('[name="source_author"]')).toHaveCount(0);
       if (channel === 'product_form') {
         for (const [name, value] of Object.entries(fixture.fields)) {
-          if (name !== 'source_author') await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
+          if (!['source_author', 'organizer'].includes(name)) await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
         }
       }
       await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');

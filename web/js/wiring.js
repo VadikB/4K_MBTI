@@ -1734,7 +1734,6 @@ if (adminOrganizationsList) {
               case_reality_level: value('case_reality_level'),
               organization_name_usage_rules: value('organization_name_usage_rules'),
             },
-            C21: { organizer: value('organizer') },
           },
           idempotency_key: createOperationId(),
         }),
