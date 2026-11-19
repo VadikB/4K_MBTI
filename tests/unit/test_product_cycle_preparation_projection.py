@@ -127,3 +127,13 @@ def test_functional_generation_runs_only_for_unassigned_selected_decision() -> N
         decision={**selected, "assigned_as_db_id": 42},
     ) is False
     assert needs_functional_generation(functional=False, decision=selected) is False
+
+
+@pytest.mark.parametrize('error_code', ['ValueError', 'LlmGatewayError'])
+def test_admission01_verification_failure_is_distinct_and_does_not_offer_new_generation(error_code):
+    result = public_operation({'operation_id': 'verification-failure', 'status': 'failed',
+        'error_code': error_code, 'error_message': 'M5_FUNCTIONAL_VERIFICATION_INCOMPLETE:private finding',
+        'result_json': {'generated': {'candidate_as': 'private candidate'}}})
+    assert result['error']['code'] == 'ASSESSMENT_VERIFICATION_INCOMPLETE'
+    assert result['retry_allowed'] is False
+    assert 'private' not in str(result)

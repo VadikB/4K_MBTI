@@ -467,7 +467,7 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
 )
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
         product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase,
-        tester_outcome, *, first_case_only=False):
+        tester_outcome, *, first_case_only=False, next_failure=None):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -607,7 +607,8 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                         "reason": "synthetic mandatory failure" if tester_outcome else "isolated functional Cycle fixture",
                         "evidence_paths": [],
                         "findings": ([{"code": "SYNTHETIC_BLOCK", "severity": "blocking",
-                                      "paths": ["candidate_as"], "reason": "synthetic mandatory failure"}]
+                                      "paths": ["candidate_as"], "reason": "synthetic mandatory failure",
+                                      "requirement_ref": item["check_id"]}]
                                      if tester_outcome == "FAIL" and ":tester:" in kwargs["routing_key"]
                                      and item["check_id"] == "common.confidentiality" else []),
                         "adversarial_review": {"candidate_conflicts": [], "resolution": "fixture"}}
@@ -676,7 +677,9 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         from Api import routes
 
         assert operation["status"] == "failed", operation
-        assert operation["error_message"] == f"M5_FUNCTIONAL_AS_NOT_ADMITTED:{tester_outcome}"
+        code = ('M5_FUNCTIONAL_VERIFICATION_INCOMPLETE' if tester_outcome == 'INCOMPLETE'
+                else 'M5_FUNCTIONAL_AS_NOT_ADMITTED')
+        assert operation["error_message"] == f"{code}:{tester_outcome}"
         diagnostic = operation["result_json"]["generated"]["tester"]
         assert diagnostic["aggregation"]["status"] == tester_outcome
         assert diagnostic["aggregation"]["admitted_for_participant"] is False
@@ -885,6 +888,34 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     app = FastAPI()
     app.include_router(routes.router)
     second_operation = "functional-cycle-next"
+    if next_failure:
+        with product_db() as connection:
+            before_cycle = read_cycle(connection, cycle_id)
+            before_plan = connection.execute('SELECT content_checksum FROM m7_plan_revisions ORDER BY revision_no').fetchall()
+            before_as = connection.execute('SELECT snapshot_json,execution_payload_json,status FROM m5_assessment_situations').fetchall()
+            before_turns = connection.execute('SELECT * FROM m5_dialogue_turns ORDER BY id').fetchall()
+        original_chat = FunctionalGateway.chat_with_trace
+        review_calls = []
+        def rejected_next(self, messages, **kwargs):
+            review_calls.append(kwargs['routing_key'])
+            response = original_chat(self, messages, **kwargs)
+            if ':tester:' in kwargs['routing_key']:
+                raw = json.loads(response.content)
+                check = next((x for x in raw['checks'] if x['check_id'] == 'common.authority'), None)
+                if check:
+                    if next_failure == 'FAIL':
+                        check.update(status='FAIL', findings=[{
+                            'code': 'SYNTHETIC_NEXT_DEFECT', 'severity': 'blocking',
+                            'reason': 'synthetic localized defect', 'paths': ['candidate_as'],
+                            'requirement_ref': check['check_id']}])
+                    elif next_failure == 'JSON_EXHAUSTED':
+                        response.content = '{"checks":'
+                        return response
+                    else:
+                        raw['checks'].remove(check)
+                    response.content = json.dumps(raw)
+            return response
+        monkeypatch.setattr(FunctionalGateway, 'chat_with_trace', rejected_next)
     with TestClient(app) as http:
         http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-owner")
         next_path = f"/users/assessment/m7/cycles/{cycle_id}/next"
@@ -892,6 +923,13 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         accepted = http.post(next_path, json={"idempotency_key": second_operation})
         assert accepted.status_code == 201, accepted.text
         assert_queued_operation(accepted.json(), second_operation, "next")
+        if next_failure:
+            from concurrent.futures import ThreadPoolExecutor
+            def concurrent_next(index):
+                return queue.enqueue(operation_id=f'parallel-next-{index}', user_id=99,
+                    request={'kind': 'next', 'cycle_id': cycle_id, 'idempotency_key': f'parallel-next-{index}'})
+            with ThreadPoolExecutor(max_workers=2) as workers:
+                assert [op['operation_id'] for op in workers.map(concurrent_next, range(2))] == [second_operation] * 2
         assert http.get(status_path).json()["status"] == "queued"
         claimed = queue._claim()
         assert claimed and claimed["operation_id"] == second_operation
@@ -904,6 +942,59 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         queue._process(claimed)
         finished = http.get(status_path)
         assert finished.status_code == 200
+        if next_failure:
+            from scripts.preparation_diagnostics import lookup
+            from Api.preparation_observation import reference
+            assert finished.json()['status'] == 'failed'
+            assert finished.json()['retry_allowed'] is False
+            expected_code = ('ASSESSMENT_AS_NOT_ADMITTED' if next_failure == 'FAIL'
+                             else 'ASSESSMENT_VERIFICATION_INCOMPLETE')
+            assert finished.json()['error']['code'] == expected_code
+            calls_at_failure = list(review_calls)
+            repeated_reads = []
+            for _ in range(2):
+                operation_read = http.get(status_path)
+                runtime_read = http.get(f'/users/assessment/cycles/{cycle_id}/runtime')
+                assert operation_read.status_code == runtime_read.status_code == 200
+                runtime_operation = runtime_read.json()['preparation_operation']
+                operation_body = operation_read.json()
+                # read_at belongs to each GET, while the saved terminal outcome is identical.
+                assert {**runtime_operation, 'preparation': {k: v for k, v in runtime_operation['preparation'].items() if k != 'read_at'}} == {
+                    **operation_body, 'preparation': {k: v for k, v in operation_body['preparation'].items() if k != 'read_at'}}
+                assert runtime_read.json()['between_situations'] is True
+                assert runtime_read.json()['current_situation'] is None
+                assert runtime_read.json()['situations'] == [{'assessment_situation_id': first_as, 'status': 'closed'}]
+                repeated_reads.append({'operation': operation_read.json(), 'runtime_operation': runtime_operation})
+            # Lost response, same command and another tab never create another AS/Turn.
+            assert http.post(next_path, json={'idempotency_key': second_operation}).json()['operation_id'] == second_operation
+            assert http.post(next_path, json={'idempotency_key': 'forbidden-next-retry'}).status_code == 409
+            assert review_calls == calls_at_failure
+            with product_db() as connection:
+                after_cycle = read_cycle(connection, cycle_id)
+                assert connection.execute('SELECT content_checksum FROM m7_plan_revisions ORDER BY revision_no').fetchall() == before_plan
+                assert connection.execute('SELECT snapshot_json,execution_payload_json,status FROM m5_assessment_situations').fetchall() == before_as
+                assert connection.execute('SELECT * FROM m5_dialogue_turns ORDER BY id').fetchall() == before_turns
+                for field in ('cycle_id', 'time_budget_seconds', 'calendar_window_seconds', 'calendar_deadline', 'remaining_seconds'):
+                    assert after_cycle[field] == before_cycle[field]
+                diagnostic = lookup(connection, reference('cycle', second_operation))[-1]['operation']
+                assert diagnostic['candidate_checksum']
+                assert diagnostic['admission_checks']
+                assert diagnostic['admission_aggregation']['admitted_for_participant'] is False
+            assert sum(':generation:repair:' in key for key in review_calls) == (1 if next_failure == 'FAIL' else 0)
+            assert sum(':generation:' in key for key in review_calls) == (2 if next_failure == 'FAIL' else 1)
+            evidence = {'synthetic': True, 'outcome': next_failure, 'cycle_id': cycle_id,
+                        'closed_as': first_as, 'reads': repeated_reads,
+                        'generation_calls': sum(':generation:' in key for key in review_calls),
+                        'repair_calls': sum(':generation:repair:' in key for key in review_calls),
+                        'unchanged_plan_as_turns_budget': True,
+                        'candidate_checksum': diagnostic['candidate_checksum'],
+                        'aggregation': diagnostic['admission_aggregation']}
+            import os
+            evidence_dir = os.getenv('CASE_ADMISSION_EVIDENCE')
+            if evidence_dir:
+                (Path(evidence_dir) / f'http-{next_failure.lower()}.json').write_text(
+                    json.dumps(evidence, ensure_ascii=False, indent=2))
+            return
         assert finished.json()["status"] == "completed"
         assert finished.json()["result"]["decision"]["status"] == "SELECTED"
         with product_db() as connection:

@@ -46,7 +46,9 @@ def functional_trace(*, warning=False, repair=False):
     checks = [{"check_id": "synthetic-protected", "mandatory": True, "protected": True, "status": "PASS"}]
     if warning:
         checks.append({"check_id": "synthetic-warning", "mandatory": True, "protected": False,
-                       "status": "FAIL", "findings": [{"severity": "non_blocking"}]})
+                       "status": "FAIL", "findings": [{"severity": "non_blocking",
+                           "code": "SYNTHETIC_WARNING", "paths": ["candidate_as"],
+                           "reason": "synthetic presentation issue", "requirement_ref": "synthetic-warning"}]})
     candidate = {"CaseID": "synthetic-case", "CaseVersion": "1"}
     trace = {"accepted_as": candidate, "candidate_checksum": candidate_checksum(candidate),
              "admitted_for_participant": True,

@@ -565,3 +565,198 @@ def test_blocking_tester_failure_triggers_one_full_repair_and_retest():
         "checksum": "d0b424cbff9000dfd3aa55341f89c63f20964c254a0077dc65cf95d90c77ccf0",
     }
     assert result["tester"]["aggregation"]["status"] == "PASS"
+
+
+@pytest.mark.parametrize('mutation', ['pass_blocking', 'fail_without_basis', 'checksum', 'missing'])
+@pytest.mark.parametrize('reviewer', ['tester', 'challenger'])
+def test_admission01_protocol_failure_never_requests_candidate_repair(mutation, reviewer, record_property):
+    class BrokenReview(Gateway):
+        def __init__(self):
+            super().__init__()
+            self.repairs = 0
+
+        def chat_with_trace(self, messages, **kwargs):
+            self.repairs += int(':generation:repair:' in kwargs['routing_key'])
+            response = super().chat_with_trace(messages, **kwargs)
+            if f':{reviewer}:' in kwargs['routing_key']:
+                raw = json.loads(response.content)
+                check = next((x for x in raw['checks'] if x['check_id'] == 'common.authority'), None)
+                if check:
+                    if mutation == 'pass_blocking':
+                        check['findings'] = [{'severity': 'blocking'}]
+                    elif mutation == 'fail_without_basis':
+                        check.update(status='FAIL', findings=[{'severity': 'blocking'}])
+                    elif mutation == 'checksum':
+                        raw['candidate_checksum'] = '0' * 64
+                    else:
+                        raw['checks'].remove(check)
+                response.content = json.dumps(raw)
+            return response
+
+    gateway = BrokenReview()
+    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+                                           operation_id=f'admission01-{reviewer}-{mutation}', synthetic=True)
+    result = service.prepare(snapshot, gateway)
+    record_property('generation_calls', len(gateway.profiles))
+    record_property('repair_calls', gateway.repairs)
+    assert not result['admitted_for_participant']
+    assert result['compiled_case'] is None
+    assert gateway.repairs == 0
+    assert result['tester']['aggregation']['status'] == 'INCOMPLETE'
+    assert result['tester']['aggregation']['verification_errors']
+
+
+def test_admission01_tester_block_survives_incomplete_challenger_and_is_retested_after_repair(record_property):
+    class MixedReview(Gateway):
+        def __init__(self):
+            super().__init__()
+            self.repaired = False
+            self.repairs = 0
+            self.repair_payload = None
+
+        def chat_with_trace(self, messages, **kwargs):
+            key = kwargs['routing_key']
+            if ':generation:repair:' in key:
+                self.repairs += 1
+                self.repaired = True
+                self.repair_payload = json.loads(next(x['content'] for x in reversed(messages) if x['role'] == 'user'))
+            response = super().chat_with_trace(messages, **kwargs)
+            if ':generation:repair:' in key:
+                candidate = json.loads(response.content)
+                candidate['Название'] += ' — синтетическая исправленная редакция'
+                response.content = json.dumps(candidate)
+            if not self.repaired and (':tester:' in key or ':challenger:' in key):
+                raw = json.loads(response.content)
+                check = next((x for x in raw['checks'] if x['check_id'] == 'common.authority'), None)
+                if check:
+                    if ':tester:' in key:
+                        check.update(status='FAIL', reason='synthetic localized defect', findings=[{
+                            'code': 'SYNTHETIC_AUTHORITY', 'severity': 'blocking',
+                            'paths': ['candidate_as.Вводная участнику'], 'reason': 'synthetic basis',
+                            'requirement_ref': 'common.authority'}])
+                    else:
+                        raw['checks'].remove(check)
+                response.content = json.dumps(raw)
+            return response
+
+    gateway = MixedReview()
+    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+                                           operation_id='admission01-mixed', synthetic=True)
+    result = service.prepare(snapshot, gateway)
+    record_property('generation_calls', len(gateway.profiles))
+    record_property('repair_calls', gateway.repairs)
+    record_property('tested_candidate_checksum', result['tester']['candidate_checksum'])
+    assert gateway.repairs == 1
+    original = result['repair']['original_tester']
+    assert original['aggregation']['blocking_failures'][0]['findings'][0]['code'] == 'SYNTHETIC_AUTHORITY'
+    assert original['aggregation']['incomplete_checks']
+    assert original['candidate_checksum'] == result['repair']['original_candidate_checksum']
+    assert gateway.repair_payload['blocking_failures']
+    assert result['candidate_checksum'] != result['repair']['original_candidate_checksum']
+    assert result['tester']['candidate_checksum'] == result['candidate_checksum']
+    assert result['admitted_for_participant']
+
+
+@pytest.mark.parametrize('field,value', [
+    ('Активные персонажи', None), ('Активные персонажи', {}),
+    ('Активные персонажи', [None]), ('Активные персонажи', [{'CharacterID': []}]),
+    ('Активные персонажи', [{'CharacterID': 7}]),
+    ('Материалы', [{'MaterialID': []}]), ('Стартовые MaterialIDs', [{}]),
+])
+@pytest.mark.parametrize('stage', ['generation', 'repair'])
+def test_admission01_malformed_candidate_is_structured_validation_failure(field, value, stage):
+    class MalformedCandidate(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            response = super().chat_with_trace(messages, **kwargs)
+            if ':generation:' in kwargs['routing_key']:
+                candidate = json.loads(response.content)
+                candidate[field] = value
+                response.content = json.dumps(candidate)
+            return response
+
+    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+                                           operation_id='admission01-shape', synthetic=True)
+    gateway = MalformedCandidate()
+    if stage == 'generation':
+        result = service.generate(snapshot, gateway)
+    else:
+        original = service.generate(snapshot, Gateway())
+        result = service.repair_candidate(snapshot, original,
+            {'aggregation': {'blocking_failures': [], 'deterministic_failures': []}}, gateway)
+    validation = result['deterministic_validation']
+    assert validation['status'] == 'FAIL'
+    assert any(error['error_class'] == 'candidate_validation' and field in error['path']
+               and error['check'] for error in validation['errors'])
+
+
+@pytest.mark.parametrize('case_id', ['CASE.SPEC.02', 'CASE.SPEC.07'])
+def test_admission01_written_case_accepts_empty_character_namespace(case_id):
+    snapshot = service.build_input_snapshot(case_id=case_id, profile=profile('synthetic'),
+                                           operation_id='admission01-empty-characters', synthetic=True)
+    assert snapshot['author_as_example']['Активные персонажи'] == []
+    result = service.prepare(snapshot, Gateway())
+    assert result['admitted_for_participant']
+
+
+@pytest.mark.parametrize('stage', ['tester', 'challenger'])
+@pytest.mark.parametrize('exhausted', [False, True])
+def test_admission01_json_retry_keeps_same_candidate_and_existing_limit(stage, exhausted, record_property):
+    class ReviewJson(Gateway):
+        def __init__(self):
+            super().__init__()
+            self.calls = []
+            self.review_candidates = []
+
+        def chat_with_trace(self, messages, **kwargs):
+            key = kwargs['routing_key']
+            self.calls.append(key)
+            response = super().chat_with_trace(messages, **kwargs)
+            if f':{stage}:01:' in key:
+                payload = json.loads(next(x['content'] for x in reversed(messages) if x['role'] == 'user'))
+                self.review_candidates.append(payload['candidate_checksum'])
+                if exhausted or not key.endswith(':json-retry'):
+                    response.content = '{"checks":'
+            return response
+
+    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+                                           operation_id='admission01-json', synthetic=True)
+    gateway = ReviewJson()
+    result = service.prepare(snapshot, gateway)
+    record_property('generation_calls', sum(':generation:' in key for key in gateway.calls))
+    record_property('repair_calls', sum(':generation:repair:' in key for key in gateway.calls))
+    record_property('technical_review_attempts', len(gateway.review_candidates))
+    assert len(gateway.review_candidates) == 2
+    assert len(set(gateway.review_candidates)) == 1
+    assert sum(':generation:' in key for key in gateway.calls) == 1
+    assert result['repair'] is None
+    assert result['admitted_for_participant'] is (not exhausted)
+    if exhausted:
+        assert result['tester']['aggregation']['status'] == 'INCOMPLETE'
+        assert any(x['code'] == 'PROVIDER_JSON_INVALID_RETRY_EXHAUSTED'
+                   for x in result['tester']['aggregation']['verification_errors'])
+
+
+@pytest.mark.parametrize('stage', ['generation', 'repair'])
+@pytest.mark.parametrize('field,value', [('character_refs', ['MISSING']), ('material_refs', [{}]),
+                                       ('event_refs', None), ('authority_refs', [42])])
+def test_admission01_bad_reference_is_checked_in_generated_and_repaired_candidate(stage, field, value):
+    class InvalidReference(Gateway):
+        def chat_with_trace(self, messages, **kwargs):
+            response = super().chat_with_trace(messages, **kwargs)
+            if ':generation:' in kwargs['routing_key']:
+                candidate = json.loads(response.content)
+                candidate['IndicatorObservability'][0][field] = value
+                response.content = json.dumps(candidate)
+            return response
+
+    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+                                           operation_id='admission01-bad-ref', synthetic=True)
+    if stage == 'generation':
+        result = service.generate(snapshot, InvalidReference())
+    else:
+        result = service.repair_candidate(snapshot, service.generate(snapshot, Gateway()),
+            {'aggregation': {'blocking_failures': [], 'deterministic_failures': []}}, InvalidReference())
+    failure = next(x for x in result['deterministic_validation']['checks']
+                   if x['code'] == 'indicator_adaptation_references')
+    assert failure['result'] == 'FAIL'
+    assert field in str(failure['actual'])

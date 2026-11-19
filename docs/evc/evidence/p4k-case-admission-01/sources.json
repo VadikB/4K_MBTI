@@ -1,0 +1,53 @@
+{
+  "base_sha": "fd6d4e0c24981246a939199de42672322d1999b5",
+  "sources": [
+    {
+      "id": "M4.Context",
+      "version": "1.0",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M4.Context-v1.0.docx",
+      "sha256": "07875e93ae422668b1b30cd60bc1c6140cae91db12b0b80ba4abca441cfe9291"
+    },
+    {
+      "id": "M5.Methodology",
+      "version": "1.1",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M5.Methodology-v1.1.docx",
+      "sha256": "dc96f9b48e0711326c0c4239d63f50a2fa1e63176a728f3e9eb4420f9efb77c1"
+    },
+    {
+      "id": "M5.CasePassport",
+      "version": "1.1",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M5.CasePassport-v1.1.docx",
+      "sha256": "5560fec1f335bac8f60452d0d1f3659436962d5db1c5d3693848a6a7370d7ace"
+    },
+    {
+      "id": "M7",
+      "version": "1.3",
+      "path": "docs/methodology/source-sets/2026-10-01/originals/M7_Assessment_Cycle_v1.3_FROZEN_2026-09-30.docx",
+      "sha256": "50a0d53a3aaf6258957ecc6d9e89f27d922bfbe4cd55668185d475c87f4e2f10"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "c304a0383bfbf4d04a29e18abc51fbf51c755731bd282128fb3cb09eb2fc515a"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sha256": "305d39001008a28956010c4ddf29ad4405bd7e08cb8386eb71f49eb60a53d41a"
+    },
+    {
+      "path": "docs/evc/decision-register.md",
+      "sha256": "c0346911ecb2aae55f476c61632da50ee23f9b89e43ef3e6c1f160337a583f70"
+    },
+    {
+      "path": "docs/architecture/product-4k/registry.md",
+      "sha256": "b663db7f557fc3de3abd2d9e86b596926274ba4c5e2170047d4a6e5e60c54001"
+    },
+    {
+      "path": "docs/evc/protocols/m5-functional-personalization-tester-v2.json",
+      "sha256": "d921f29c2a644bd4e3229758679cab4f7e67ee95bd738dad7d7e901154389f15"
+    },
+    {
+      "path": "docs/architecture/product-4k/1.0/updates/2026-10-01/source.md",
+      "sha256": "ee03f59d78e441f69964352bcd94a1e7c375c2ce306433a8d0cd056ba3af93d2"
+    }
+  ]
+}
