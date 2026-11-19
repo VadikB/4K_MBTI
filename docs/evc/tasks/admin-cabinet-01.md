@@ -86,7 +86,7 @@
 | Playwright `path-admin-contract.spec.mjs` | 1 PASS; собственная БД удалена |
 | Playwright `auth-r03`/`qa02-invitations` адресный набор | 10 PASS; повтор новой строки и отчёта 1 PASS |
 | Playwright старые сценарии выхода `adm-program-guards`, `program-connection-feedback`, `questionnaire-draft-guards` | 3 PASS |
-| GitHub CI `frontend`/`pytest`/`full-verification` | NOT_RUN: PR ещё не создан; проверить точный head после push |
+| GitHub CI PR #250 head `03488cdb` | `frontend`, `pytest`, `integration`, четыре runtime browser shard — PASS; `browser (fast)` — CANCELLED по 15-минутному job timeout, агрегат `full-verification` — FAIL; новый CI требуется |
 
 Первый sandbox-прогон `npm run test:backend` дал 9 отказов из-за запрета `ps`;
 повтор с разрешённым доступом к локальным процессам дал 1255 PASS. Первый
@@ -100,3 +100,13 @@
 `pyproject.toml`, `uv.lock`, `web/js/config.js`, `web/index.html`, пересобран
 `web/dist`; база осталась `83468687d48b585f2cfb3d655dd805c15c25f065`.
 CI точного SHA обязателен до слияния. Слияние и deploy не разрешены.
+
+После публикации [PR #250](https://github.com/VadikB/4K_MBTI/pull/250) первый
+Ready CI подтвердил `frontend`, `pytest`, `integration` и четыре runtime browser
+shard. `browser (fast)` был отменён на job timeout 15 минут после частичного
+прогона без зафиксированного test FAIL; обязательный агрегат не мог пройти.
+`BROWSER_SUITE=fast npx playwright test --config tests/browser/playwright.ci.config.mjs --list`
+показал 408 тестов в 49 файлах. Для завершения полного набора изменён только
+`timeout-minutes` browser job с 15 на 35 в `.github/workflows/full-verification.yml`.
+Ни один spec, shard, gate или retry не исключён. Новый CI должен подтвердить
+точный head после этого изменения; предыдущий результат не засчитывается.
