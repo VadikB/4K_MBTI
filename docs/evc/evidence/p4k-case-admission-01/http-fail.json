@@ -1,0 +1,160 @@
+{
+  "synthetic": true,
+  "outcome": "FAIL",
+  "cycle_id": "dbaf16a9-9f33-46b6-ba87-6dff445901d9",
+  "closed_as": "c164a209-3a71-43c8-8089-bfefdb9c173d",
+  "reads": [
+    {
+      "operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_AS_NOT_ADMITTED",
+          "message": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:16.916480+03:00",
+          "stage_started_at": "2026-11-19T18:18:17.288646+03:00",
+          "last_progress_at": "2026-11-19T18:18:17.288646+03:00",
+          "finished_at": "2026-11-19T18:18:17.385708+03:00",
+          "read_at": "2026-11-19T15:18:17.413297+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      },
+      "runtime_operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_AS_NOT_ADMITTED",
+          "message": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:16.916480+03:00",
+          "stage_started_at": "2026-11-19T18:18:17.288646+03:00",
+          "last_progress_at": "2026-11-19T18:18:17.288646+03:00",
+          "finished_at": "2026-11-19T18:18:17.385708+03:00",
+          "read_at": "2026-11-19T15:18:17.442731+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      }
+    },
+    {
+      "operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_AS_NOT_ADMITTED",
+          "message": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:16.916480+03:00",
+          "stage_started_at": "2026-11-19T18:18:17.288646+03:00",
+          "last_progress_at": "2026-11-19T18:18:17.288646+03:00",
+          "finished_at": "2026-11-19T18:18:17.385708+03:00",
+          "read_at": "2026-11-19T15:18:17.456759+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      },
+      "runtime_operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_AS_NOT_ADMITTED",
+          "message": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:16.916480+03:00",
+          "stage_started_at": "2026-11-19T18:18:17.288646+03:00",
+          "last_progress_at": "2026-11-19T18:18:17.288646+03:00",
+          "finished_at": "2026-11-19T18:18:17.385708+03:00",
+          "read_at": "2026-11-19T15:18:17.485118+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      }
+    }
+  ],
+  "generation_calls": 2,
+  "repair_calls": 1,
+  "unchanged_plan_as_turns_budget": true,
+  "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12",
+  "aggregation": {
+    "status": "FAIL",
+    "warnings": [],
+    "review_required": [],
+    "blocking_failures": [
+      {
+        "reason": "isolated functional Cycle fixture",
+        "status": "FAIL",
+        "category": "authority",
+        "check_id": "common.authority",
+        "findings": [
+          {
+            "code": "SYNTHETIC_NEXT_DEFECT",
+            "paths": [
+              "candidate_as"
+            ],
+            "reason": "synthetic localized defect",
+            "severity": "blocking",
+            "requirement_ref": "common.authority"
+          }
+        ],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта.",
+        "evidence_paths": [],
+        "protocol_errors": [],
+        "adversarial_review": {
+          "resolution": "fixture",
+          "candidate_conflicts": []
+        },
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      }
+    ],
+    "incomplete_checks": [],
+    "verification_errors": [],
+    "deterministic_failures": [],
+    "admitted_for_participant": false,
+    "deterministic_protocol_errors": []
+  }
+}

@@ -100,6 +100,10 @@ PUBLIC_TECHNICAL_FAILURE = {
     "message": "Не удалось завершить подготовку. Можно повторить её.",
 }
 PUBLIC_FAILURES_BY_PREFIX = {
+    "M5_FUNCTIONAL_VERIFICATION_INCOMPLETE": {
+        "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+        "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки.",
+    },
     "M7_NO_ADMISSIBLE_CASE": {
         "code": "ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE",
         "message": "Для роли «Специалист» в назначенной конфигурации пока нет допущенной ситуации. Обратитесь к ответственному за настройку оценки.",
@@ -631,9 +635,13 @@ class ProductCyclePreparationQueue:
                 if not generated["admitted_for_participant"]:
                     failure_result = {
                         "stage": "functional_tester_admission",
+                        "plan": {"cycle_id": str(result["plan"]["cycle_id"])},
                         "generated": generated,
                     }
-                    raise ValueError("M5_FUNCTIONAL_AS_NOT_ADMITTED:" + generated["tester"]["aggregation"]["status"])
+                    outcome = generated["tester"]["aggregation"]["status"]
+                    failure_code = ("M5_FUNCTIONAL_VERIFICATION_INCOMPLETE" if outcome == "INCOMPLETE"
+                                    else "M5_FUNCTIONAL_AS_NOT_ADMITTED")
+                    raise ValueError(failure_code + ":" + outcome)
                 trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job, lock=True)

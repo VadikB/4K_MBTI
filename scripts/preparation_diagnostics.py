@@ -29,7 +29,11 @@ def lookup(connection, code):
             op = connection.execute('''SELECT operation_id,status,attempts,attempt_token,locked_at,error_code,
                 request_json->>'assignment_id' AS assignment_id, request_json->>'cycle_id' AS cycle_id,
                 request_json->>'preparation_key' AS preparation_key,
-                result_json->'plan'->>'cycle_id' AS prepared_cycle_id
+                result_json->'plan'->>'cycle_id' AS prepared_cycle_id,
+                result_json->'generated'->'candidate_checksum' AS candidate_checksum,
+                result_json->'generated'->'tester'->'aggregation' AS admission_aggregation,
+                result_json->'generated'->'tester'->'independent_checks' AS admission_checks,
+                result_json->'generated'->'deterministic_validation' AS deterministic_validation
                 FROM product_cycle_preparation_operations WHERE operation_id=%s''', (row['operation_id'],)).fetchone()
             detail['operation'] = dict(op) if op else None
         elif row['source'] in {'report','recovery'}:

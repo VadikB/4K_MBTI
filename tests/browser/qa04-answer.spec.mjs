@@ -62,8 +62,10 @@ for (const width of [1440, 390, 320]) {
     const notice = page.locator('#interview-error'), area = page.locator('#interview-scroll-area');
     await input.fill('Мой новый ответ\nи обоснование'); await page.clock.runFor(900);
     await expect(page.locator('#interview-draft-status')).toHaveText('Черновик сохранён');
-    await area.evaluate(n => { n.scrollTop = 350; });
+    // Set a settled reading position; CSS smooth scrolling must not race the poll.
+    await area.evaluate(n => n.scrollTo({ top: 350, behavior: 'instant' }));
     const oldTop = await area.evaluate(n => n.scrollTop);
+    expect(oldTop).toBe(350);
     run.model.trace.turns.push({ turn_id: 'background-update', sequence_no: 35, speaker_type: 'character', content_text: 'Фоновое дополнение условий.' });
     await page.clock.runFor(1500);
     expect(await area.evaluate(n => n.scrollTop)).toBe(oldTop);
@@ -71,7 +73,7 @@ for (const width of [1440, 390, 320]) {
     await expect(page.locator('#interview-messages-scroll')).toBeVisible();
     await page.locator('#interview-messages-scroll').click(); await page.clock.runFor(800);
     await expect.poll(() => bottom(page)).toBeLessThanOrEqual(1);
-    await area.evaluate(n => { n.scrollTop = 350; });
+    await area.evaluate(n => n.scrollTo({ top: 350, behavior: 'instant' }));
     const entered = deferred(), release = deferred(), readbackEntered = deferred(), releaseReadback = deferred();
     let posts = 0, holdReadback = false;
     await page.route('**/runtime', async route => {

@@ -1,3 +1,60 @@
+# P4K_CASE_ADMISSION_01 / PR251 — исправлена гонка browser-fixture, 19.11.2026
+
+На af4a2918 frontend/pytest/integration/4 runtime shards PASS; fast browser FAIL
+в неизменённом QA04 scroll-position assert320px. Локально воспроизведено1/10.
+Только test setup использует instant scrollTo350 и строгий assert350 вместо
+присваивания scrollTop с CSS smooth. Продуктовые JS/CSS, допуски и gates не менялись.
+QA04 целиком6 PASS/1 reference SKIP; исходный320px20 повторов PASS.
+Версия2.1.35 сохраняется; полный CI нового head обязателен. Допуск владельца на
+push/PR/merge после успеха и штатный TEST deploy сохраняется.
+Активно: idempotent ready:prepare → test-fix commit/push → весь CI нового head →
+свежая база → squash merge → TEST deploy. PR: https://github.com/VadikB/4K_MBTI/pull/251.
+
+---
+
+# P4K_CASE_ADMISSION_01 — разрешён PR и merge, 19.11.2026
+
+Прямой ответ владельца: «Результат принимаю. Создавай PR, запускай полные проверки
+и после их успешного завершения сливай в main».
+По CONTRIBUTING-MERGE-AUTH-01: branch_push/pr/version_bump/Ready/merge=true,
+merge только после успешных обязательных checks актуального head; deploy=test
+через штатный workflow. artifact_publish/pilot/production/paid LLM/mail=false.
+Destination: публичный VadikB/4K_MBTI, текущий code/tests/docs/synthetic evidence.
+Принят локальный кандидат b7657bb06e0b3d639cbfd82d04c332bde0af53ff;
+backend1294/HTTP218/integration468 PASS, 2 real-provider SKIP, адресно130 PASS.
+Свежий main fd6d4e0c/2.1.34; следующий PATCH2.1.35 разрешён этим поручением.
+ready:prepare2.1.35/build/release/lint/frontend/harness/audit-high PASS.
+Активно: release commit/push → Ready PR → полный CI → merge → штатный TEST deploy. Прежние false flags ниже относятся к завершённому локальному
+этапу и заменены этим прямым допуском в указанной области.
+Карточка: docs/evc/tasks/p4k-case-admission-01.md.
+
+---
+
+# P4K_CASE_ADMISSION_01 — локальное исправление допуска, 19.11.2026
+
+База: `fd6d4e0c24981246a939199de42672322d1999b5`, Product 4K 2.1.34.
+Ветка: `codex/p4k-case-admission-01`, отдельный worktree `/private/tmp/p4k-case-admission-01`.
+Карточка: [P4K_CASE_ADMISSION_01](docs/evc/tasks/p4k-case-admission-01.md).
+
+Исправлены AC-1–AC-5: структурированная ошибка проверки отделена от дефекта AS;
+Tester/Challenger сохраняются независимо; блок не теряется при неполном Challenger;
+JSON exhaustion машинно различим; кандидаты с неверной формой проверяются без
+исключений типов; безопасный отказ читается по той же операции и в runtime Cycle.
+Синтетические HTTP подтверждают прежнюю закрытую AS/Turns/план/оба лимита/deadline,
+два чтения и два параллельных обращения без повторной AS. Приёмка адресно130 PASS.
+Первичные backend1289/HTTP218 PASS; причины первого integration и адресные повторы
+зафиксированы в карточке. Финальные base/candidate/tested SHA и полный повтор
+зафиксированного кандидата — в FINAL_REPORT.md и manifest локальной поставки.
+
+Продуктовые артефакты, старые snapshots, правила M7 и версия приложения не менялись.
+ready:prepare подтвердил базу и вернул2: выпуск потребовал бы версии2.1.35.
+branch_push/pr/merge/deploy/version_bump/artifact_publish=false; остановка на
+локальном кандидате. CI/real LLM/методологическая приёмка/выпуск NOT_RUN.
+Откат — revert собственного локального коммита. Следующий этап — ревью владельца;
+для публикации и выпуска нужно отдельное поручение.
+
+---
+
 # QA-04 — уточнены оба штатных исхода статуса, 18.11.2026
 
 PR248/2.1.32: test helper допускает нейтральный accepted receipt или очищенную

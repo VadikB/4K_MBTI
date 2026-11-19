@@ -174,11 +174,14 @@ def _frozen_file(snapshot: dict[str, Any], ref_name: str) -> Path:
 def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, Any]:
     expected = snapshot["author_as_example"]
     checks: list[dict[str, Any]] = []
-    def check(code: str, passed: bool, actual: Any = None) -> None:
+    errors = []
+    def check(code: str, passed: bool, actual: Any = None, *, path: str = "candidate_as") -> None:
         checks.append({"code": code, "result": "PASS" if passed else "FAIL", "actual": actual})
+        if not passed:
+            errors.append({"error_class": "candidate_validation", "check": code, "path": path})
     check("json_object", isinstance(candidate, dict))
     if not isinstance(candidate, dict):
-        return {"status": "FAIL", "checks": checks}
+        return {"status": "FAIL", "checks": checks, "errors": errors}
     package_ref = (snapshot.get("refs") or {}).get("package") or {}
     compiler = package_ref.get("compiler") or {}
     required = set(expected)
@@ -265,11 +268,12 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
         material_ids = set(materials_by_id)
         event_ids = set(events_by_id)
         character_ids = set(characters_by_id)
-        authority_ids = {f"character:{item.get('CharacterID')}" for item in candidate.get("Активные персонажи", [])
-                         if isinstance(item, dict) and item.get("CharacterID")}
+        authority_ids = {f"character:{character_id}" for character_id in characters_by_id}
         authority_ids.add("participant")
         adapted_failures = []
         for indicator_id, target in adapted_by_id.items():
+            if indicator_id not in expected_by_id:
+                continue  # The target-set check owns this error, not mapping lookup.
             missing = [field for field in ADAPTED_TARGET_FIELDS if field not in target]
             mapping = target.get("author_mapping")
             expected_pointer = f"/IndicatorObservability/{list(expected_by_id).index(indicator_id)}"
@@ -304,15 +308,30 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
                     or invalid["author_mapping"]):
                 adapted_failures.append({"indicator_id": indicator_id, **invalid})
         check("indicator_adaptation_references", not adapted_failures, adapted_failures)
+        for failure in adapted_failures:
+            for field in ("material_refs", "event_refs", "character_refs", "authority_refs", "author_mapping"):
+                if failure.get(field) or field in failure["reference_types"]:
+                    errors.append({"error_class": "candidate_validation", "check": "indicator_adaptation_references",
+                                   "path": f"candidate_as/{INDICATOR_LAYER_FIELD}/adapted/targets/{failure['indicator_id']}/{field}"})
         check("indicator_adapted_layer_checksum", isinstance(adapted_layer, dict)
               and adapted_layer.get("version") == "functional-indicator-adaptation/1.0.0"
               and adapted_layer.get("checksum") == checksum(adapted_targets))
+    # Only validated namespaces may feed dependent reference checks, including
+    # legacy compiler profiles. Empty lists remain valid when the passport allows.
+    namespaces = {}
+    for field, id_field in (("Активные персонажи", "CharacterID"),
+                            ("Материалы", "MaterialID"), ("События", "EventID")):
+        namespace, shape_errors = indexed(candidate.get(field), id_field)
+        namespaces[field] = namespace
+        check("namespace_shape:" + id_field, not shape_errors, shape_errors,
+              path="candidate_as/" + field)
     characters = candidate.get("Активные персонажи")
     check("character_count", isinstance(characters, list) and len(characters) == len(expected.get("Активные персонажи", [])))
-    materials = candidate.get("Материалы")
-    material_ids = {x.get("MaterialID") for x in materials if isinstance(x, dict)} if isinstance(materials, list) else set()
+    material_ids = set(namespaces["Материалы"])
     starts = candidate.get("Стартовые MaterialIDs")
-    check("start_material_refs", isinstance(starts, list) and set(starts) <= material_ids, starts)
+    check("start_material_refs", isinstance(starts, list)
+          and all(isinstance(value, str) and value.strip() for value in starts)
+          and set(starts) <= material_ids, starts, path="candidate_as/Стартовые MaterialIDs")
     events = candidate.get("События")
     check("events_present", isinstance(events, list) and len(events) == len(expected.get("События", [])))
     forbidden = {"Evidence", "IA", "participant_score", "participant_level"}
@@ -321,7 +340,8 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
         if isinstance(value, list): return set().union(*(keys(x) for x in value), set())
         return set()
     check("no_premature_assessment", not (keys(candidate) & forbidden), sorted(keys(candidate) & forbidden))
-    return {"status": "PASS" if all(x["result"] == "PASS" for x in checks) else "FAIL", "checks": checks}
+    return {"status": "PASS" if all(x["result"] == "PASS" for x in checks) else "FAIL",
+            "checks": checks, "errors": errors}
 
 
 def bind_indicator_target_layers(snapshot: dict[str, Any], candidate: Any) -> Any:
@@ -342,11 +362,12 @@ def bind_indicator_target_layers(snapshot: dict[str, Any], candidate: Any) -> An
     for target in adapted_targets:
         if not isinstance(target, dict):
             continue
-        source_index = source_indexes.get(target.get("IndicatorID"))
+        indicator_id = target.get("IndicatorID")
+        source_index = source_indexes.get(indicator_id) if isinstance(indicator_id, str) else None
         mapping = target.get("author_mapping")
         expected_pointer = (f"/IndicatorObservability/{source_index}"
                             if source_index is not None else None)
-        if isinstance(mapping, dict) and mapping.get("source_pointer") == expected_pointer:
+        if source_index is not None and isinstance(mapping, dict) and mapping.get("source_pointer") == expected_pointer:
             mapping["source_checksum"] = checksum(source_targets[source_index])
     bound["IndicatorObservability"] = deepcopy(source_targets)
     bound[INDICATOR_LAYER_FIELD] = {
@@ -389,7 +410,8 @@ def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) 
 
 def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation_id: str,
                       max_tokens: int, temperature: float,
-                      retry_instruction: str) -> tuple[Any, Any, list[dict[str, Any]]]:
+                      retry_instruction: str, review_checks: list[dict[str, Any]] | None = None,
+                      candidate_checksum: str | None = None) -> tuple[Any, Any, list[dict[str, Any]]]:
     """Retry one malformed provider envelope; never salvage or merge partial JSON."""
     failures: list[dict[str, Any]] = []
     current = list(messages)
@@ -408,6 +430,12 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
                              "position": exc.pos, "response_characters": len(response.content),
                              "finish_reason": response.provider.get("finish_reason")})
             if attempt == 2:
+                if review_checks is not None:
+                    return {"candidate_checksum": candidate_checksum, "checks": [{
+                        "check_id": item["check_id"], "status": "TECHNICAL_ERROR",
+                        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+                        "protocol_error_code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+                    } for item in review_checks]}, response, failures
                 raise ValueError("M5_FUNCTIONAL_PROVIDER_JSON_INVALID") from exc
             current = [*messages, {"role": "system", "content": retry_instruction}]
     raise AssertionError("unreachable")
@@ -422,10 +450,13 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
         if actual != expected_candidate_checksum:
             reason = ("Tester review не содержит привязки к кандидату."
                       if actual is None else "Tester review относится к другому кандидату.")
-            return [{"check_id": check_id, "status": "TECHNICAL_ERROR", "reason": reason}
+            return [{"check_id": check_id, "status": "TECHNICAL_ERROR", "reason": reason,
+                     "protocol_error_code": ("CANDIDATE_CHECKSUM_REQUIRED" if actual is None
+                                             else "CANDIDATE_CHECKSUM_MISMATCH")}
                     for check_id in ids]
     checks = raw.get("checks") if isinstance(raw, dict) else None
-    return [item for item in checks if isinstance(item, dict) and item.get("check_id") in ids] \
+    return [item for item in checks if isinstance(item, dict)
+            and isinstance(item.get("check_id"), str) and item["check_id"] in ids] \
         if isinstance(checks, list) else []
 
 
@@ -545,6 +576,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         raw, response, parse_failures = _strict_json_call(
             gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+            review_checks=batch_checks, candidate_checksum=candidate_checksum,
         )
         tester_raw_checks.extend(_bound_batch_checks(raw, batch_checks, candidate_checksum))
         tester_operations.append({
@@ -553,7 +585,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
             "parse_failures": parse_failures,
         })
-    checks = normalize_results(plan, tester_raw_checks)
+    checks = [{**item, "reviewer": "tester", "candidate_checksum": generation["candidate_checksum"]}
+              for item in normalize_results(plan, tester_raw_checks)]
     protected = [item for item in plan["required_checks"] if item.get("protected")]
     challenge_payload = {
         "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
@@ -600,6 +633,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         challenge_raw, challenge_response, challenge_failures = _strict_json_call(
             gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+            review_checks=batch_checks, candidate_checksum=candidate_checksum,
         )
         challenger_raw_checks.extend(_bound_batch_checks(challenge_raw, batch_checks, candidate_checksum))
         challenger_operations.append({
@@ -609,21 +643,28 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
             "parse_failures": challenge_failures,
         })
-    challenge_checks = normalize_results(plan, challenger_raw_checks)
+    challenge_plan = {**plan, "required_checks": protected, "not_applicable_checks": []}
+    challenge_checks = [{**item, "reviewer": "challenger", "candidate_checksum": generation["candidate_checksum"]}
+                        for item in normalize_results(challenge_plan, challenger_raw_checks)]
     challenge_by_id = {item["check_id"]: item for item in challenge_checks
                        if item.get("status") != "NOT_APPLICABLE"}
     merged_checks = []
     for item in checks:
         challenged = challenge_by_id.get(item["check_id"])
-        if challenged is not None and item.get("protected") and challenged.get("status") != "PASS":
+        # Keep a localized Tester defect even when Challenger could not check it.
+        if (challenged is not None and item.get("protected") and challenged.get("status") != "PASS"
+                and not (item.get("status") == "FAIL" and not item.get("protocol_errors"))):
             merged_checks.append(challenged)
         else:
             merged_checks.append(item)
-    checks = merged_checks
-    aggregation = aggregate(generation["deterministic_validation"], checks)
+    # Aggregate both independent records: neither can overwrite the other.
+    aggregation = aggregate(generation["deterministic_validation"], [*checks, *challenge_checks])
     tester_input_checksum = checksum([item["input_checksum"] for item in tester_operations])
     challenger_input_checksum = checksum([item["input_checksum"] for item in challenger_operations])
-    return {"protocol": plan["protocol"], "checks": checks, "aggregation": aggregation,
+    return {"protocol": plan["protocol"], "checks": merged_checks, "aggregation": aggregation,
+            "candidate_checksum": generation["candidate_checksum"],
+            "reviewed_candidate_checksum": candidate_checksum,
+            "independent_checks": {"tester": checks, "challenger": challenge_checks},
             "provider_operation": {"kind": "independent_tester_v2_batched",
                                    "operation_id": f"{snapshot['operation_id']}:tester:batched",
                                    "input_checksum": tester_input_checksum,

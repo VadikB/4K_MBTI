@@ -60,7 +60,8 @@ def _deterministic(passed=True):
 
 
 def _check(status="PASS", *, protected=True, mandatory=True, severity=None):
-    findings = [] if severity is None else [{"code": "KNOWN", "severity": severity, "reason": "known"}]
+    findings = [] if severity is None else [{"code": "KNOWN", "severity": severity, "reason": "known",
+                                           "paths": ["candidate_as.materials"], "requirement_ref": "known"}]
     return {"check_id": "known", "category": "invariant" if protected else "presentation_quality",
             "mandatory": mandatory, "protected": protected, "status": status, "findings": findings}
 
@@ -100,7 +101,8 @@ def test_empty_deterministic_protocol_is_incomplete_and_not_admitted():
 
 def test_blocking_finding_cannot_hide_under_declared_pass():
     result = aggregate(_deterministic(), [_check("PASS", severity="blocking")])
-    assert result["status"] == "FAIL"
+    assert result["status"] == "INCOMPLETE"
+    assert result["blocking_failures"] == []
     assert result["admitted_for_participant"] is False
 
 
