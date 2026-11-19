@@ -1,3 +1,17 @@
+# P4K_CASE_ADMISSION_01 / PR251 — исправлена гонка browser-fixture, 19.11.2026
+
+На af4a2918 frontend/pytest/integration/4 runtime shards PASS; fast browser FAIL
+в неизменённом QA04 scroll-position assert320px. Локально воспроизведено1/10.
+Только test setup использует instant scrollTo350 и строгий assert350 вместо
+присваивания scrollTop с CSS smooth. Продуктовые JS/CSS, допуски и gates не менялись.
+QA04 целиком6 PASS/1 reference SKIP; исходный320px20 повторов PASS.
+Версия2.1.35 сохраняется; полный CI нового head обязателен. Допуск владельца на
+push/PR/merge после успеха и штатный TEST deploy сохраняется.
+Активно: idempotent ready:prepare → test-fix commit/push → весь CI нового head →
+свежая база → squash merge → TEST deploy. PR: https://github.com/VadikB/4K_MBTI/pull/251.
+
+---
+
 # P4K_CASE_ADMISSION_01 — разрешён PR и merge, 19.11.2026
 
 Прямой ответ владельца: «Результат принимаю. Создавай PR, запускай полные проверки

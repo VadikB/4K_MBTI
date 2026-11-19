@@ -143,3 +143,24 @@ release commit/push → Ready PR → frontend/pytest/full-verification точн�
 lockfile не менялся). Product backend остаётся принятым b7657bb0; release step
 меняет только штатные version/build файлы и записи передачи. Обязательный полный
 remote CI запускается новым Ready PR и относится к его точному head.
+
+## Устранение блокера полного CI PR #251
+
+Первый remote Full verification run44556903535 на af4a2918: integration и все
+4 runtime browser shards PASS; frontend/pytest run44556903534 PASS. Fast browser:
+366 PASS, 41 SKIP, 1 FAIL — неизменённый QA04 C1–C8 при320px, scrollTop ожидался0,
+получено2. Изменений qa04-answer.spec.mjs, interview.js и CSS в принятом кандидате
+до этого не было. Локальный исходный тест: 9 PASS/1 FAIL за10 повторов, тот же assert.
+
+Причина — подготовка позиции через scrollTop при CSS scroll-behavior:smooth:
+чтение oldTop происходило до завершения начатой тестом анимации. Исправлена только
+подготовка browser-fixture в qa04-answer.spec.mjs: scrollTo350 с behavior:instant
+и дополнительная строгая проверка oldTop==350. Исходное точное сравнение позиции
+после фонового poll сохранено; допуски, retries, продуктовые JS/CSS и CI gates не менялись.
+Это адресная техническая стабилизация обязательной регрессии для завершения выпуска.
+
+Полный QA04-файл: 6 PASS/1 SKIP (внешний reference archive не задан).
+Исходный320px сценарий после исправления: **20 PASS** подряд, oldTop350,
+проверены POST1, сохранение draft/истории/ожидания, ошибок страницы0.
+Версия кандидата остаётся2.1.35: она ещё не выпущена. Новый head проходит полный
+remote CI заново; merge по-прежнему только после успешных обязательных checks.
