@@ -1,6 +1,17 @@
-# Admin 02 — кандидат на свежем main, 19.11.2026
+# Admin 02 — перенос на main b99ff3e8, 19.11.2026
 
-База обновлена с `fd6d4e0c` / 2.1.34 до `592527e5` / 2.1.35 (PR #251). Владелец ответил «продолжаем» на точный запрос о следующем PATCH, публикации ветки и draft PR: `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. Кандидат 2.1.36: кодовый SHA `3b99d8ee5af926868568c9a169072938945c94d0`, ветка опубликована, [draft PR #252](https://github.com/VadikB/4K_MBTI/pull/252). `ready:prepare` PASS, `web/dist` пересобран, backend 1295 PASS, frontend 473 PASS, HTTP/e2e 218 PASS, browser guards 43 PASS, реальные UI/HTTP/PG сценарии анкеты/формы/CSV 3 PASS, integration стенда после коррекции параметра 4 PASS. Fast CI: frontend PASS, pytest RUNNING при первичном просмотре; Full verification на draft SKIPPED. Активно: дождаться fast CI; перед слиянием нужны Ready, полный обязательный CI актуального head, review и отдельное решение владельца. Полный отчёт: [Admin 02](docs/evc/tasks/admin-organization-02.md).
+Draft PR #252 получил fast CI frontend/pytest PASS на SHA `4ba79bade4b7493606724b0ef6858525919c8cd7`; полный CI на draft был SKIPPED. Перед Ready свежий `main` продвинулся до `b99ff3e8` / 2.1.36 (PR #253). Владелец сказал «продолжаем»; выполняется интеграция main без переписывания истории, следующий PATCH 2.1.37 и повтор затронутых проверок. `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. Локальные проверки предыдущего кандидата: backend 1295, frontend 473, HTTP/e2e 218, browser guards 43, реальные UI/HTTP/PG 3 PASS. Актуальные SHA и CI нового кандидата фиксируются после переноса. [Отчёт](docs/evc/tasks/admin-organization-02.md).
+
+---
+
+# P4K_ASSESSMENT_REFUSAL_UI_01 — выпуск 2.1.36
+
+Владелец принял локальный результат и поручил создать PR, выполнить полные
+проверки и слить в main после успеха. Base `592527e5` (2.1.35).
+Причина отказа Next сохраняется при повторном чтении, reload и возврате
+из «Моих оценок». Ветка `codex/p4k-assessment-refusal-ui-01-release`.
+Готовность к слиянию подтверждают обязательные проверки CI на PR.
+[Карточка задачи](docs/evc/tasks/p4k-assessment-refusal-ui-01.md).
 
 ---
 
