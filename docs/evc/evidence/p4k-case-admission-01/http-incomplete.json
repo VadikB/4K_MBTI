@@ -1,0 +1,165 @@
+{
+  "synthetic": true,
+  "outcome": "INCOMPLETE",
+  "cycle_id": "6da5dad2-ff36-40fb-85fe-a1171366e38f",
+  "closed_as": "29a33315-acde-450b-94cf-2581c75ba8e2",
+  "reads": [
+    {
+      "operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:19.829491+03:00",
+          "stage_started_at": "2026-11-19T18:18:19.972461+03:00",
+          "last_progress_at": "2026-11-19T18:18:19.972461+03:00",
+          "finished_at": "2026-11-19T18:18:20.050722+03:00",
+          "read_at": "2026-11-19T15:18:20.071869+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      },
+      "runtime_operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:19.829491+03:00",
+          "stage_started_at": "2026-11-19T18:18:19.972461+03:00",
+          "last_progress_at": "2026-11-19T18:18:19.972461+03:00",
+          "finished_at": "2026-11-19T18:18:20.050722+03:00",
+          "read_at": "2026-11-19T15:18:20.095737+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      }
+    },
+    {
+      "operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:19.829491+03:00",
+          "stage_started_at": "2026-11-19T18:18:19.972461+03:00",
+          "last_progress_at": "2026-11-19T18:18:19.972461+03:00",
+          "finished_at": "2026-11-19T18:18:20.050722+03:00",
+          "read_at": "2026-11-19T15:18:20.106671+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      },
+      "runtime_operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:19.829491+03:00",
+          "stage_started_at": "2026-11-19T18:18:19.972461+03:00",
+          "last_progress_at": "2026-11-19T18:18:19.972461+03:00",
+          "finished_at": "2026-11-19T18:18:20.050722+03:00",
+          "read_at": "2026-11-19T15:18:20.126654+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      }
+    }
+  ],
+  "generation_calls": 1,
+  "repair_calls": 0,
+  "unchanged_plan_as_turns_budget": true,
+  "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12",
+  "aggregation": {
+    "status": "INCOMPLETE",
+    "warnings": [],
+    "review_required": [],
+    "blocking_failures": [],
+    "incomplete_checks": [
+      {
+        "reason": "Tester не вернул обязательный результат.",
+        "status": "NOT_RUN",
+        "category": "authority",
+        "check_id": "common.authority",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "REQUIRED_CHECK_NOT_RUN",
+            "path": "checks/common.authority",
+            "reason": "Tester не вернул обязательный результат.",
+            "check_id": "common.authority",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      }
+    ],
+    "verification_errors": [
+      {
+        "code": "REQUIRED_CHECK_NOT_RUN",
+        "path": "checks/common.authority",
+        "reason": "Tester не вернул обязательный результат.",
+        "check_id": "common.authority",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      }
+    ],
+    "deterministic_failures": [],
+    "admitted_for_participant": false,
+    "deterministic_protocol_errors": []
+  }
+}

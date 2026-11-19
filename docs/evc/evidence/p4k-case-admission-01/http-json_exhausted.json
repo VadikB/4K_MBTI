@@ -1,0 +1,395 @@
+{
+  "synthetic": true,
+  "outcome": "JSON_EXHAUSTED",
+  "cycle_id": "f48acc50-e90e-4d84-8198-1028dee14141",
+  "closed_as": "b7b13ecd-e87c-4e2a-b615-e2ae52ebff83",
+  "reads": [
+    {
+      "operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:22.226291+03:00",
+          "stage_started_at": "2026-11-19T18:18:22.378068+03:00",
+          "last_progress_at": "2026-11-19T18:18:22.378068+03:00",
+          "finished_at": "2026-11-19T18:18:22.501759+03:00",
+          "read_at": "2026-11-19T15:18:22.525614+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      },
+      "runtime_operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:22.226291+03:00",
+          "stage_started_at": "2026-11-19T18:18:22.378068+03:00",
+          "last_progress_at": "2026-11-19T18:18:22.378068+03:00",
+          "finished_at": "2026-11-19T18:18:22.501759+03:00",
+          "read_at": "2026-11-19T15:18:22.551864+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      }
+    },
+    {
+      "operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:22.226291+03:00",
+          "stage_started_at": "2026-11-19T18:18:22.378068+03:00",
+          "last_progress_at": "2026-11-19T18:18:22.378068+03:00",
+          "finished_at": "2026-11-19T18:18:22.501759+03:00",
+          "read_at": "2026-11-19T15:18:22.563518+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      },
+      "runtime_operation": {
+        "operation_id": "functional-cycle-next",
+        "status": "failed",
+        "retry_allowed": false,
+        "error": {
+          "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
+          "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки."
+        },
+        "preparation": {
+          "operation_id": "functional-cycle-next",
+          "kind": "next",
+          "status": "failed",
+          "stage_label": "Проверяем материалы ситуации",
+          "explanation": "Не удалось завершить подготовку. Проверяем материалы ситуации.",
+          "started_at": "2026-11-19T18:18:22.226291+03:00",
+          "stage_started_at": "2026-11-19T18:18:22.378068+03:00",
+          "last_progress_at": "2026-11-19T18:18:22.378068+03:00",
+          "finished_at": "2026-11-19T18:18:22.501759+03:00",
+          "read_at": "2026-11-19T15:18:22.586865+00:00",
+          "freshness": "confirmed",
+          "delayed": false,
+          "delay_notice_seconds": 300,
+          "allowed_actions": [],
+          "reference": "P4K-A8D5C27AD153AE41493AD7CD"
+        }
+      }
+    }
+  ],
+  "generation_calls": 1,
+  "repair_calls": 0,
+  "unchanged_plan_as_turns_budget": true,
+  "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12",
+  "aggregation": {
+    "status": "INCOMPLETE",
+    "warnings": [],
+    "review_required": [],
+    "blocking_failures": [],
+    "incomplete_checks": [
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "target_integrity",
+        "check_id": "common.target_integrity",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "CaseID, CaseVersion, BaseRole, точные IndicatorIDs и версии M2 сохранены.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/common.target_integrity",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "common.target_integrity",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "invariant",
+        "check_id": "common.professional_consistency",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Профессиональная замена согласована во вводной, материалах, авторах, персонажах, правилах и карте наблюдаемости.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/common.professional_consistency",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "common.professional_consistency",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "authority",
+        "check_id": "common.authority",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "AS не расширяет подтверждённый мандат и не создаёт согласие, ресурс или действие другого субъекта.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/common.authority",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "common.authority",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "confidentiality",
+        "check_id": "common.confidentiality",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "Стартовые, закрытые и отложенные сведения имеют корректную аудиторию и условия раскрытия.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/common.confidentiality",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "common.confidentiality",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "scenario_executability",
+        "check_id": "common.scenario_executability",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "События, сроки, единицы, ссылки, остановка и продолжение сцены внутренне согласованы и исполнимы.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/common.scenario_executability",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "common.scenario_executability",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "target_integrity",
+        "check_id": "common.no_premature_assessment",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "requirement": "До фактической траектории отсутствуют Evidence, IA, уровень и готовое правильное решение участника.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/common.no_premature_assessment",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "common.no_premature_assessment",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "presentation_quality",
+        "check_id": "quality.clarity",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": false,
+        "requirement": "Текст однозначно различает статусы источников, субъектов, единицы и учебное происхождение фактов.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/quality.clarity",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "quality.clarity",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "status": "TECHNICAL_ERROR",
+        "category": "invariant",
+        "check_id": "invariant:CASE.SPEC.03.I01",
+        "findings": [],
+        "reviewer": "tester",
+        "mandatory": true,
+        "protected": true,
+        "source_ref": {
+          "field": "16",
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.4",
+          "invariant_id": "CASE.SPEC.03.I01"
+        },
+        "requirement": "Три активных коллеги имеют разные необходимые профессиональные вклады; оцениваемый не распоряжается их ресурсами.",
+        "evidence_paths": [],
+        "protocol_errors": [
+          {
+            "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+            "path": "checks/invariant:CASE.SPEC.03.I01",
+            "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+            "check_id": "invariant:CASE.SPEC.03.I01",
+            "error_class": "verification_protocol"
+          }
+        ],
+        "adversarial_review": null,
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      }
+    ],
+    "verification_errors": [
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/common.target_integrity",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "common.target_integrity",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/common.professional_consistency",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "common.professional_consistency",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/common.authority",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "common.authority",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/common.confidentiality",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "common.confidentiality",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/common.scenario_executability",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "common.scenario_executability",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/common.no_premature_assessment",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "common.no_premature_assessment",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/quality.clarity",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "quality.clarity",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      },
+      {
+        "code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
+        "path": "checks/invariant:CASE.SPEC.03.I01",
+        "reason": "Исчерпан технический повтор JSON-ответа проверки.",
+        "check_id": "invariant:CASE.SPEC.03.I01",
+        "reviewer": "tester",
+        "error_class": "verification_protocol",
+        "candidate_checksum": "8f997a218e0da42ac3638978483db50e34c2a3462342c489552199c730068a12"
+      }
+    ],
+    "deterministic_failures": [],
+    "admitted_for_participant": false,
+    "deterministic_protocol_errors": []
+  }
+}

@@ -93,6 +93,37 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     }
 
 
+def finding_errors(item: dict[str, Any]) -> list[dict[str, Any]]:
+    """Validate evidence before it can be interpreted as a candidate defect."""
+    findings = item.get("findings", [])
+    errors = []
+    def error(code: str, path: str) -> None:
+        errors.append({"error_class": "verification_protocol", "code": code,
+                       "check_id": item.get("check_id"), "path": path})
+    if not isinstance(findings, list):
+        error("FINDINGS_NOT_A_LIST", "findings")
+        return errors
+    if item.get("status") == "FAIL" and not findings:
+        error("FAIL_WITHOUT_BASIS", "findings")
+    if item.get("status") != "FAIL" and findings:
+        error("STATUS_FINDINGS_CONFLICT", "findings")
+    for index, finding in enumerate(findings):
+        path = f"findings/{index}"
+        if not isinstance(finding, dict):
+            error("FINDING_NOT_AN_OBJECT", path)
+            continue
+        for field in ("code", "reason", "requirement_ref"):
+            if not isinstance(finding.get(field), str) or not finding[field].strip():
+                error("FINDING_BASIS_REQUIRED", f"{path}/{field}")
+        if not isinstance(finding.get("severity"), str) or finding["severity"] not in {"blocking", "non_blocking"}:
+            error("UNKNOWN_FINDING_SEVERITY", f"{path}/severity")
+        paths = finding.get("paths")
+        if not isinstance(paths, list) or not paths or any(
+                not isinstance(value, str) or not value.strip() for value in paths):
+            error("FINDING_LOCATION_REQUIRED", f"{path}/paths")
+    return errors
+
+
 def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, Any]]:
     provided = {}
     duplicates = set()
@@ -111,13 +142,14 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, A
         reason = str(item.get("reason") or "").strip()
         if definition["check_id"] in duplicates:
             status, reason = "TECHNICAL_ERROR", "Tester вернул повторяющийся check_id."
-        elif status not in RESULT_STATUSES:
+        elif not isinstance(status, str) or status not in RESULT_STATUSES:
             status, reason = "NOT_RUN", "Tester не вернул обязательный результат."
         elif status == "NOT_APPLICABLE":
             status, reason = "TECHNICAL_ERROR", "LLM не может исключить проверку, которую план применимости пометил обязательной."
         findings = item.get("findings") if isinstance(item.get("findings"), list) else []
-        if status == "FAIL" and not findings:
-            status, reason = "TECHNICAL_ERROR", "FAIL без локализованной находки и серьёзности не может быть агрегирован."
+        protocol_errors = finding_errors(item)
+        if protocol_errors:
+            status, reason = "TECHNICAL_ERROR", "Ответ проверки содержит противоречивую или нелокализованную находку."
         protected = bool(definition.get("protected") or definition.get("category") in PROTECTED_CATEGORIES)
         adversarial = item.get("adversarial_review") if isinstance(item.get("adversarial_review"), dict) else None
         if status == "PASS" and definition.get("mandatory") and protected:
@@ -131,6 +163,11 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, A
             "evidence_paths": item.get("evidence_paths") if isinstance(item.get("evidence_paths"), list) else [],
             "findings": [finding for finding in findings if isinstance(finding, dict)],
             "adversarial_review": adversarial,
+            "protocol_errors": protocol_errors or ([{
+                "error_class": "verification_protocol", "code": item.get("protocol_error_code") or "REQUIRED_CHECK_" + status,
+                "check_id": definition["check_id"], "path": "checks/" + definition["check_id"],
+                "reason": reason,
+            }] if status in {"NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"} else []),
         })
     normalized.extend(deepcopy(plan["not_applicable_checks"]))
     return normalized
@@ -158,6 +195,10 @@ def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, A
         if status == "NOT_APPLICABLE":
             if item.get("mandatory") or not str(item.get("basis") or "").strip():
                 incomplete.append(item)
+            continue
+        errors = item.get("protocol_errors") or finding_errors(item)
+        if errors:
+            incomplete.append({**item, "protocol_errors": errors})
             continue
         findings = item.get("findings") or []
         severities = {finding.get("severity") for finding in findings}
@@ -195,6 +236,8 @@ def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, A
         "deterministic_protocol_errors": deterministic_protocol_errors,
         "blocking_failures": blocking_failures,
         "incomplete_checks": incomplete,
+        "verification_errors": [{**error, **{key: item[key] for key in ("reviewer", "candidate_checksum") if key in item}}
+                                for item in incomplete for error in item.get("protocol_errors", [])],
         "review_required": review,
         "warnings": warnings,
     }

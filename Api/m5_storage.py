@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 from uuid import UUID
 
-from Api.assessment_case_contracts import AssessmentSituationV2, validate_case_version
+from Api.assessment_case_contracts import AssessmentSituationV2
 from Api.assessment_contexts import build_personalized_profile, canonical_json, context_checksum
 from Api.m5_case_runtime import build_assessment_situation, checksum
+from Api.m5_package import validate_package_cases
 from Api.m5_rule_engine import build_m5_ai_operations_snapshot
 from Api.m5_runtime_rules import resolve_runtime_rules
 from Api.m5_catalog_integrity import case_admission, resolve_profile_base_role
@@ -62,6 +63,7 @@ def resolve_legacy_base_role(*values: object) -> str:
 def import_package(connection, *, package: dict, manifest: dict, execution_rules: dict | None = None) -> dict:
     if package.get("runtime_enabled") is not False or package.get("source_status") != "WORKING":
         raise ValueError("M5 candidate import expects WORKING/runtime_disabled package")
+    cases = validate_package_cases(package)
     package_checksum = checksum({"package": package, "manifest": manifest})
     package_key = (manifest["id"], manifest["version"])
     rules = execution_rules or {}
@@ -83,10 +85,9 @@ def import_package(connection, *, package: dict, manifest: dict, execution_rules
         if (existing is None or existing["package_checksum"] != package_checksum
                 or checksum(existing["runtime_rules_json"]) != checksum(rules)):
             raise M5ImportConflict("M5_PACKAGE_VERSION_CONTENT_CONFLICT")
-        return {"package_db_id": int(existing["id"]), "created": False, "case_count": len(package["cases"])}
+        return {"package_db_id": int(existing["id"]), "created": False, "case_count": len(cases)}
     package_db_id = int(row["id"])
-    for raw in package["cases"]:
-        case = validate_case_version(raw)
+    for case in cases:
         content = case.model_dump(exclude_unset=True)
         content_checksum = checksum(content)
         case_row = connection.execute("""
@@ -112,7 +113,7 @@ def import_package(connection, *, package: dict, manifest: dict, execution_rules
                     f"INSERT INTO {table} (case_version_id,{key},content_json,display_order) VALUES (%s,%s,%s::jsonb,%s)",
                     (case_db_id, payload[key], json.dumps(payload, ensure_ascii=False), position),
                 )
-    return {"package_db_id": package_db_id, "created": True, "case_count": len(package["cases"])}
+    return {"package_db_id": package_db_id, "created": True, "case_count": len(cases)}
 
 
 def import_package_directory(connection, directory: Path) -> dict:

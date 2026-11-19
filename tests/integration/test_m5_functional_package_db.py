@@ -12,6 +12,7 @@ from psycopg.rows import dict_row
 from Api import database
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_case_runtime import checksum
+from Api.m5_case_type_catalog import load_case_type_catalog
 from Api.m5_catalog_integrity import publication_plan
 from Api.m5_package import digest, json_bytes
 from Api.m5_storage import M5ImportConflict, import_package, package_readback
@@ -110,6 +111,7 @@ def test_specialist_cli_publishes_after_working_import_and_preserves_snapshots(
     runtime_db_id = first["runtime"]["id"]
     assert manifest["usage_scope"] == "qa"
     assert manifest["organization_id"] == 11
+    assert manifest["case_type_catalog_ref"] == load_case_type_catalog().ref.model_dump()
     assert manifest["package_ref"] == {
         "id": draft_package["package_id"], "version": "0.5-admitted.1-qa",
         "checksum": admitted_package["package_checksum"],

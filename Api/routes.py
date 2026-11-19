@@ -31,6 +31,7 @@ from Api.email_service import EmailDeliveryError, EmailDeliveryUncertainError, s
 from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
 from Api import m5_catalog_integrity
+from Api.m5_case_type_catalog import M5CaseTypeCatalogError
 from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage, m5_equivalent_generation
 from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
@@ -6508,7 +6509,10 @@ def _persist_time_expiry_for_situation(assessment_situation_id:str):
 def import_m5_runtime_package(request: Request) -> dict:
     _m5_superadmin(request)
     with get_connection() as connection:
-        result = m5_storage.import_package_directory(connection, M5_PACKAGE_DIR)
+        try:
+            result = m5_storage.import_package_directory(connection, M5_PACKAGE_DIR)
+        except M5CaseTypeCatalogError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         readback = m5_storage.package_readback(connection, result["package_db_id"])
         connection.commit()
     return {"result": result, "readback": readback}

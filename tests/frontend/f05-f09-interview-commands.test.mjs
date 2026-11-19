@@ -114,3 +114,38 @@ test('F09 known Next refusal makes the next click a readback rather than a new P
   await button.listeners.get('click')();
   assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
 });
+
+test('AC3 confirmed replacement operation supersedes a stored Next receipt and clears the old reason', async () => {
+  const h = createInterviewHarness();
+  const between = { ...h.snapshot(), current_situation: null, between_situations: true };
+  h.subject.renderProductRuntime({ ...between, preparation_operation: {
+    operation_id: 'refused-old', status: 'failed', retry_allowed: false,
+    error: { message: 'Старая безопасная причина.' },
+  } });
+  assert.match(h.messages.children[0].children.at(-1).textContent, /Старая безопасная причина/);
+  h.subject.renderProductRuntime({ ...between, preparation_operation: { operation_id: 'confirmed-new', status: 'running' } });
+  const card = h.messages.children[0], button = card.querySelector('.next-situation-button');
+  assert.equal(card.children.at(-1).textContent.includes('Старая безопасная причина'), false);
+  assert.equal(button.disabled, false);
+  h.setFetch(async url => {
+    assert.equal(url, '/users/assessment/cycles/preparation/confirmed-new');
+    return json({ operation_id: 'confirmed-new', status: 'running' });
+  });
+  h.context.waitForProductCyclePreparation = async () => {
+    throw Object.assign(new Error('wait ended'), { name: 'PreparationWaitLimit' });
+  };
+  await button.listeners.get('click')();
+  assert.equal(h.fetchCalls.length, 1);
+  assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 0);
+  assert.equal(JSON.parse(h.storage.get(commandKey('next', 'between'))).operationId, 'confirmed-new');
+});
+
+test('AC4 legacy failed operation without details retains safe fallback and denies a new Next', () => {
+  const h = createInterviewHarness();
+  h.subject.renderProductRuntime({ ...h.snapshot(), current_situation: null, between_situations: true,
+    preparation_operation: { operation_id: 'legacy-failed', status: 'failed', retry_allowed: false } });
+  const card = h.messages.children[0];
+  assert.equal(card.children.at(-1).textContent, 'Не удалось подготовить следующую ситуацию.');
+  assert.equal(card.querySelector('.next-situation-button').disabled, true);
+  assert.equal(h.fetchCalls.length, 0);
+});

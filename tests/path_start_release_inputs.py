@@ -23,6 +23,54 @@ def reserve_release_ids(connection, table, first_id):
     connection.execute('SELECT setval(pg_get_serial_sequence(%s,%s),%s,false)', (table, 'id', first_id))
 
 
+def _mirror_catalog(connection, *, catalog, package_db_id, case_ids, runtime_id, actor, receipt_sha256):
+    from Api.m5_case_runtime import checksum
+    from Api.m5_catalog_integrity import catalog_readback, publication_plan
+
+    # Restore the exact receipt in the owned stand. A new publication builds
+    # a new manifest with the current CaseType reference.
+    reserve_release_ids(connection, 'm5_catalogs', catalog['id'])
+    plan = publication_plan(
+        connection, package_db_id=package_db_id, case_version_ids=case_ids,
+        usage_scope=catalog['usage_scope'], organization_id=catalog['organization_id'],
+        runtime_rule_version_id=runtime_id,
+    )
+    assert plan['publishable'], plan['decisions']
+    manifest = catalog['manifest_json']
+    runtime_ref = connection.execute('''
+        SELECT artifact_id,artifact_version,manifest_checksum,rules_checksum
+        FROM m5_runtime_rule_versions WHERE id=%s
+    ''', (runtime_id,)).fetchone()
+    assert manifest['package_ref'] == {
+        'id': plan['package_id'], 'version': plan['package_version'], 'checksum': plan['package_checksum'],
+    }
+    assert manifest['m2_checksum'] == plan['m2_checksum']
+    assert manifest['case_version_ids'] == plan['case_version_ids']
+    assert manifest['runtime_rule_ref'] == dict(runtime_ref)
+    assert (manifest['catalog_id'], manifest['catalog_version'], manifest['organization_id'], manifest['usage_scope']) == (
+        catalog['catalog_id'], catalog['catalog_version'], catalog['organization_id'], catalog['usage_scope'],
+    )
+    request_hash = checksum({'receipt_sha256': receipt_sha256, 'published_by': actor})
+    row = connection.execute('''
+        INSERT INTO m5_catalogs
+            (catalog_id,catalog_version,organization_id,usage_scope,package_db_id,manifest_json,
+             manifest_checksum,status,published_by,decision_basis,idempotency_key,request_hash,published_at)
+        VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s,'published',%s,%s,'path-start-release-mirror',%s,NOW())
+        RETURNING id
+    ''', (catalog['catalog_id'], catalog['catalog_version'], catalog['organization_id'], catalog['usage_scope'],
+          package_db_id, json.dumps(manifest, ensure_ascii=False), catalog['manifest_checksum'],
+          actor, catalog['decision_basis'], request_hash)).fetchone()
+    catalog_db_id = row['id']
+    assert catalog_db_id == catalog['id'], 'RELEASE_CATALOG_ID_MISMATCH'
+    for case_version_id in plan['case_version_ids']:
+        connection.execute('''
+            INSERT INTO m5_catalog_case_versions (catalog_db_id,case_version_id,runtime_rule_version_id)
+            VALUES (%s,%s,%s)
+        ''', (catalog_db_id, case_version_id, runtime_id))
+    assert catalog_readback(connection, catalog_db_id)['manifest'] == manifest, 'RELEASE_CATALOG_MISMATCH'
+    return catalog_db_id
+
+
 def seed_release(connection, actor, *, receipt_reference=None):
     from tests.path_start_release_source import load_release_receipt, load_release_reference
     from scripts.plan_specialist_program_release import build_admitted_materials, PACKAGE_DIR
@@ -35,7 +83,6 @@ def seed_release(connection, actor, *, receipt_reference=None):
     from Api.m5_case_runtime import checksum
     from Api.m5_storage import import_package
     from Api.m5_runtime_rules import import_runtime_rule_version
-    from Api.m5_catalog_integrity import publish_catalog
     from scripts.build_m5_sales_package import build_execution_rules
     case_ids = [case['id'] for case in source['cases']]
     assert case_ids == list(range(case_ids[0], case_ids[0] + 9)), 'RELEASE_NONCONTIGUOUS_IDS'
@@ -58,20 +105,16 @@ def seed_release(connection, actor, *, receipt_reference=None):
                 (case_version_id,scope,result,evidence_json,evidence_checksum)
                 VALUES(%s,%s,%s,%s::jsonb,%s)''', (local['id'], qa['scope'], qa['result'],
                     json.dumps(qa['evidence_json'], ensure_ascii=False), qa['evidence_checksum']))
-    reserve_release_ids(connection, 'm5_catalogs', source['catalog']['id'])
-    catalog = publish_catalog(connection, catalog_id=source['catalog']['catalog_id'],
-        catalog_version=source['catalog']['catalog_version'], package_db_id=imported['package_db_id'],
-        case_version_ids=[row['id'] for row in local_cases], usage_scope='assessment',
-        published_by=actor, decision_basis=basis, idempotency_key='path-start-release-mirror',
-        runtime_rule_version_id=runtime['id'])
-    assert catalog['manifest_checksum'] == source['catalog']['manifest_checksum'], 'RELEASE_CATALOG_MISMATCH'
-    assert catalog['catalog_db_id'] == source['catalog']['id'], 'RELEASE_CATALOG_ID_MISMATCH'
+    catalog_db_id = _mirror_catalog(
+        connection, catalog=source['catalog'], package_db_id=imported['package_db_id'],
+        case_ids=case_ids, runtime_id=runtime['id'], actor=actor, receipt_sha256=selected['sha256'],
+    )
     from Api.assessment_authoring_service import assessment_authoring_service
     config = source['configuration']
     reserve_release_ids(connection, 'assessment_configurations', config['id'])
     other = assessment_authoring_service.create_configuration(connection,
         code=config['code'], name=config['name'], methodology_version_id=config['methodology_version_id'],
-        scenario_version_id=config['scenario_version_id'], catalog_version_id=catalog['catalog_db_id'],
+        scenario_version_id=config['scenario_version_id'], catalog_version_id=catalog_db_id,
         actor_user_id=actor, comment='Owned mirror of independently verified published PATH release')
     other = assessment_authoring_service.publish_configuration(connection,
         configuration_id=other['id'], make_default=False, actor_user_id=actor,
@@ -85,7 +128,7 @@ def seed_release(connection, actor, *, receipt_reference=None):
     from Api.assessment_programs import definition_checksum
     assert program['definition_checksum'] == definition_checksum(code=program['code'], version=program['version'],
         name=program['name'], assignment_ref=program['assignment_ref'], mode=program['mode'],
-        configuration_id=other['id'], catalog_version_id=catalog['catalog_db_id'],
+        configuration_id=other['id'], catalog_version_id=catalog_db_id,
         role_version_ids=[role['id']], source_refs=program['source_refs_json'])
     reserve_release_ids(connection, 'assessment_program_definitions', program['id'])
     program_id = connection.execute('''INSERT INTO assessment_program_definitions
@@ -93,13 +136,13 @@ def seed_release(connection, actor, *, receipt_reference=None):
          source_refs_json,definition_checksum,published_by_user_id)
         VALUES(%s,%s,%s,%s,%s,'draft',%s,%s,%s::jsonb,%s,%s) RETURNING id''',
         (program['code'], program['version'], program['name'], program['assignment_ref'], program['mode'],
-         other['id'], catalog['catalog_db_id'], json.dumps(program['source_refs_json']),
+         other['id'], catalog_db_id, json.dumps(program['source_refs_json']),
          program['definition_checksum'], actor)).fetchone()['id']
     connection.execute('''INSERT INTO assessment_program_allowed_roles
         (program_definition_id,role_profile_version_id,display_order) VALUES(%s,%s,0)''', (program_id, role['id']))
     connection.execute("UPDATE assessment_program_definitions SET status='published',published_at=NOW() WHERE id=%s", (program_id,))
     from tests.assessment_first_case_evidence import source_provenance
-    provenance = source_provenance(connection, catalog['catalog_db_id'])
+    provenance = source_provenance(connection, catalog_db_id)
     provenance.update(release=source, release_receipt_sha256=selected['sha256'],
         published_release_ref=selected,
         origin_contract_note='Original published QA origins preserved; no synthetic human_review substitution',
