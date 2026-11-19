@@ -18,6 +18,7 @@ import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state, safeStorage } from '../../state.js';
 import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
 import { questionnaireAssignmentState } from './questionnaire-assignment-state.js';
+import adminContextChoices from '../../../../assessment_definitions/contexts/competencies_4k/1.1/admin_context_choices.json' with { type: 'json' };
 
 let selectedOrganizationId = null;
 const invitationRequestsInFlight = new Set();
@@ -82,6 +83,15 @@ const clearPendingInvitationOperation = (requestKey, identityKey = currentIdenti
 };
 const organizationById = (organizationId) => (state.adminOrganizations?.items || [])
   .find((item) => Number(item.id) === Number(organizationId));
+const reflectConfirmedOrganizationName = (organizationId, revision, { allowAnswerFallback = false } = {}) => {
+  const name = String(revision?.organization_name_current ||
+    (allowAnswerFallback ? revision?.answers_json?.C01?.name : '') || '').trim();
+  const organization = organizationById(organizationId);
+  if (organization && name) {
+    organization.name = name;
+    persistAssessmentContext();
+  }
+};
 const participantLabel = (organizationId, { user_id: userId, email } = {}) => {
   const member = (organizationById(organizationId)?.members || []).find((item) =>
     userId ? Number(item.user_id) === Number(userId) : String(item.email || '').toLowerCase() === String(email || '').toLowerCase());
@@ -253,6 +263,8 @@ const mergeQuestionnaireRevision = (received, cached) => {
 const questionnaireErrorMessage = (error, fallback) => {
   const message = String(error?.message || '');
   if (message.includes('QUESTIONNAIRE_REVISION_CONFLICT')) return 'Эта редакция устарела: уже подтверждена более новая. Обновите предпросмотр.';
+  if (message.includes('QUESTIONNAIRE_ORGANIZATION_NAME_CONFLICT')) return 'Название организации изменилось после сохранения черновика. Сверьте текущее название и обновите предпросмотр; введённый текст сохранён.';
+  if (message.includes('QUESTIONNAIRE_CONTEXT_VERSION_CONFLICT')) return 'Сведения организации изменились после сохранения черновика. Обновите предпросмотр перед подтверждением; введённый текст сохранён.';
   if (message.includes('QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION')) return 'Анкета ещё не готова к подтверждению. Исправьте обязательные поля.';
   if (message.includes('QUESTIONNAIRE_TEMPLATE_MISMATCH')) return 'Файл создан по другой версии шаблона. Скачайте актуальный шаблон и повторите загрузку.';
   if (message.includes('QUESTIONNAIRE_FILE_TOO_LARGE')) return 'Файл анкеты слишком большой.';
@@ -386,7 +398,6 @@ const restoreConfirmedRevisionForm = (form, revision) => {
     activity_description: answers.C01?.activity_description,
     purpose: answers.C02a?.participant_text,
     results_usage: answers.C03?.participant_text,
-    organizer: answers.C21?.organizer,
     case_reality_level: answers.C17?.case_reality_level,
     organization_name_usage_rules: answers.C17?.organization_name_usage_rules,
   };
@@ -486,6 +497,18 @@ const escapeHtml = (value) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+
+const contextChoiceSelect = (field, currentValue) => {
+  const current = String(currentValue || '');
+  const choices = adminContextChoices.fields[field];
+  const options = choices.map((value) => '<option value="' + escapeHtml(value) + '"' +
+    (value === current ? ' selected' : '') + '>' + escapeHtml(value) + '</option>').join('');
+  const legacy = current && !choices.includes(current)
+    ? '<option value="' + escapeHtml(current) + '" selected>Ранее сохранено: ' + escapeHtml(current) + '</option>' : '';
+  return '<select name="' + field + '">' +
+    '<option value="" disabled' + (current ? '' : ' selected') + '>Выберите вариант</option>' +
+    options + legacy + '</select>';
+};
 
 const readinessLabel = (status) => ({
   ready: 'Готово', data_missing: 'Данные не заполнены', draft_unconfirmed: 'Черновик не подтверждён',
@@ -1617,6 +1640,7 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     if (currentForm && inputChanged) captureFormDraft(organizationId, currentForm);
     else if (!managementDrafts.has(draftKey) && submittedForm) captureFormDraft(organizationId, submittedForm);
     questionnairePreviews.set(scopeKey, preview);
+    if (payload?.channel === 'csv') organizationViews.set(Number(organizationId), 'organization-data');
     if (inputChanged) staleQuestionnairePreviews.add(scopeKey);
     else staleQuestionnairePreviews.delete(scopeKey);
     renderAdminOrganizations();
@@ -1707,6 +1731,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     questionnaireRevisions.set(revisionsKey,
       [mergeQuestionnaireRevision(confirmed, cachedRevision),
         ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
+    reflectConfirmedOrganizationName(organizationId, confirmed, { allowAnswerFallback: true });
     const currentPreview = questionnairePreviews.get(confirmedKey);
     if (!currentPreview || Number(currentPreview.id) === Number(revisionId)) {
       questionnairePreviews.delete(confirmedKey);
@@ -1824,6 +1849,7 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
     const latest = revisions.find((item) => item.assignment_ref === saved.assignment_ref);
     questionnaireRevisions.set(revisionsKey, [mergeQuestionnaireRevision(saved, latest),
       ...revisions.filter((item) => item.assignment_ref !== saved.assignment_ref)]);
+    reflectConfirmedOrganizationName(organizationId, saved);
     const preview = questionnairePreviews.get(requestKey);
     if (Number(preview?.id) === Number(revisionId)) questionnairePreviews.delete(requestKey);
     outcome.status = 'confirmed';
@@ -2476,6 +2502,8 @@ export const renderAdminOrganizations = () => {
         '</form>' : '';
       const revisionAnswers = currentRevision?.answers_json || {};
       const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
+      const organizationName = escapeHtml(revisionAnswers?.C01?.name === undefined
+        ? org.name : revisionAnswers.C01.name);
       const legacyProfile = String(org.profile || '').trim();
       const currentActivityDescription = String(revisionAnswers?.C01?.activity_description || '').trim();
       const legacyProfileMarkup = !legacyProfile ? '' :
@@ -2510,10 +2538,9 @@ export const renderAdminOrganizations = () => {
       const participant = questionnairePreview?.participant_preview || {};
       const fieldLabels = { organization_name: 'Организация', organization_type: 'Тип организации',
         industry: 'Сфера деятельности', activity_description: 'Описание деятельности', purpose: 'Цель оценки',
-        results_usage: 'Использование результатов',
-        organizer: 'Организатор' };
+        results_usage: 'Использование результатов' };
       const validationLabels = { C01: 'сведения об организации', C02a: 'цель оценки', C03: 'использование результатов',
-        C17: 'правила кейсов', C21: 'организатор' };
+        C17: 'правила кейсов' };
       const participantRows = Object.entries(fieldLabels).filter(([key]) => participant[key]).map(([key, label]) =>
         '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(participant[key]) + '</dd>').join('');
       const changes = Array.isArray(questionnairePreview?.changes) ? questionnairePreview.changes : [];
@@ -2525,6 +2552,7 @@ export const renderAdminOrganizations = () => {
           '<p>Изменений относительно текущей подтверждённой редакции нет.</p>');
       const humanProblems = questionnaireProblems.map((item) => validationLabels[item] ||
         (String(item).includes('duplicate') ? 'повторяющиеся поля' : 'некорректно заполненные поля'));
+      const nameMismatch = questionnairePreview && participant.organization_name && participant.organization_name !== org.name;
       const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" role="status" data-draft-action="questionnaire-preview" data-assessment-ref="' +
         escapeHtml(selectedRef) + '" data-preview-action="' +
         (questionnairePreview.channel === 'csv' ? 'preview-questionnaire' : 'preview-early-data') +
@@ -2537,6 +2565,8 @@ export const renderAdminOrganizations = () => {
           '<button type="button" class="text-button" data-action="refresh-questionnaire-preview">Обновить предпросмотр</button></p>' : '') +
         (humanProblems.length ? '<p>Проверьте: ' + escapeHtml([...new Set(humanProblems)].join(', ')) + '.</p>' :
           '<p>Обязательные сведения заполнены.</p>') +
+        (nameMismatch ? '<p class="form-status error" role="alert">Название в анкете «' + escapeHtml(participant.organization_name) +
+          '» отличается от текущего названия «' + escapeHtml(org.name) + '». При подтверждении организация будет переименована.</p>' : '') +
         '<section><h5>Что увидит участник</h5><dl>' + participantRows + '</dl></section>' +
         '<section><h5>Изменения относительно текущей редакции</h5>' + changesMarkup + '</section>' +
         (questionnairePreview.status === 'ready_for_confirmation' ?
@@ -2632,41 +2662,32 @@ export const renderAdminOrganizations = () => {
         '</form>' +
         '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') + '" data-admin-view="organization-data">' + questionnaireLoadMarkup + currentReadinessMarkup + '<h4>Данные организации и выбранной оценки</h4>' +
-        (!isSuperadmin ? '<form class="admin-organization-profile-form admin-organization-profile-form--compact" data-action="update-profile">' +
-          '<div class="admin-organization-profile-heading"><strong>Карточка организации</strong><button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
-          '<label><span>Название</span><input name="name" value="' + escapeHtml(org.name) + '" required></label>' +
-          '<label><span>Код</span><input name="code" value="' + escapeHtml(org.code) + '" required></label>' +
-          '<input name="founded_year" type="hidden" value="' + escapeHtml(org.founded_year ?? '') + '">' +
-          '<input name="employee_count" type="hidden" value="' + escapeHtml(org.employee_count ?? '') + '">' +
-          '<input name="industry" type="hidden" value="' + escapeHtml(org.industry || '') + '">' +
-          '<input name="website" type="hidden" value="' + escapeHtml(org.website || '') + '">' +
-          '<input name="headquarters" type="hidden" value="' + escapeHtml(org.headquarters || '') + '">' +
-          '<input name="notes" type="hidden" value="' + escapeHtml(org.notes || '') + '"></form>' : '') +
         '<p>Черновик можно редактировать. Участники увидят новые сведения после подтверждения.</p>' + legacyProfileMarkup +
         '<form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' + escapeHtml(selectedRef) + '">' +
         assessmentFieldMarkup +
         '<fieldset class="admin-questionnaire-field-group"><legend>Об организации</legend>' +
-        '<label><span>Название организации</span><input name="organization_name" value="' + answer('C01', 'name') + '"></label>' +
+        '<label><span>Название организации</span><input name="organization_name" value="' + organizationName + '" required></label>' +
         '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
         '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '"></label>' +
         '<label class="admin-organization-profile-wide"><span>Описание деятельности</span><textarea name="activity_description">' + answer('C01', 'activity_description') + '</textarea></label>' +
-        '<label><span>Близость кейсов к реальной деятельности</span><input name="case_reality_level" value="' + answer('C17', 'case_reality_level') + '"></label>' +
-        '<label><span>Использование названия в кейсах</span><input name="organization_name_usage_rules" value="' + answer('C17', 'organization_name_usage_rules') + '"></label></fieldset>' +
-        '<fieldset class="admin-questionnaire-field-group"><legend>Условия оценки</legend>' +
-        '<label class="admin-organization-profile-wide"><span>Цель оценки</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
-        '<label class="admin-organization-profile-wide"><span>Использование результатов</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label>' +
-        '<label><span>Организатор</span><input name="organizer" value="' + answer('C21', 'organizer') + '"></label>' +
         '</fieldset>' +
+        '<fieldset class="admin-questionnaire-field-group"><legend>Сведения для знакомства</legend>' +
+        '<label class="admin-organization-profile-wide"><span>Зачем проводится оценка</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
+        '<label class="admin-organization-profile-wide"><span>Как будут использоваться результаты</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label>' +
+        '<p>Предпросмотр: ' + escapeHtml(revisionAnswers?.C02a?.participant_text || '') + ' · ' +
+          escapeHtml(revisionAnswers?.C03?.participant_text || '') + '</p></fieldset>' +
+        '<fieldset class="admin-questionnaire-field-group"><legend>Настройки контекста для ситуаций</legend>' +
+        '<label><span>Близость ситуаций к реальной работе</span>' + contextChoiceSelect('case_reality_level', revisionAnswers?.C17?.case_reality_level) + '</label>' +
+        '<label><span>Название организации в ситуациях</span>' + contextChoiceSelect('organization_name_usage_rules', revisionAnswers?.C17?.organization_name_usage_rules) + '</label></fieldset>' +
         '<button class="primary-button compact-primary" type="submit"' + (programConfirmed ? '' : ' disabled') + '>Сохранить черновик и предпросмотр</button></form>' +
         (activeView === 'organization-data' ? confirmationMarkup + previewMarkup : '') + '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + currentReadinessMarkup + '<h4>Корпоративная анкета</h4>' +
-        '<p>Скачайте утверждённый UTF-8 CSV-шаблон, загрузите заполненный файл и проверьте ошибки.</p>' +
-        '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать CSV-шаблон</a></p>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire" data-assessment-ref="' + escapeHtml(selectedRef) + '">' +
         assessmentFieldMarkup +
         '<input name="csv" type="file" accept=".csv,text/csv" required>' +
-        '<button class="ghost-button compact-ghost" type="submit"' + (programConfirmed ? '' : ' disabled') + '>Предпросмотр анкеты</button></form>' +
-        (activeView === 'questionnaire' ? confirmationMarkup + previewMarkup : '') +
+        '<button class="primary-button compact-primary" type="submit"' + (programConfirmed ? '' : ' disabled') + '>Загрузить заполненную анкету</button></form>' +
+        '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать шаблон</a></p>' +
+        (questionnairePreview?.channel === 'csv' ? '<p class="form-status success" role="status">Анкета загружена. Подтвердите сведения в «Данных организации».</p>' : '') +
         '</section>' +
         '</article>'
       );

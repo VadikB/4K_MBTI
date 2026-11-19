@@ -52,7 +52,13 @@ test('owner-approved matrix is an independent exact text oracle',async()=>{
     ['context_changed','После transport изменились права/участник/ссылка','uncertain'],['operation_not_found','Readback не находит запись','uncertain'],
     ['failed_unclassified','Подтверждённый отказ, безопасная категория неизвестна','error'],['operation_mismatch','ID принадлежит другой операции/оценке/адресату','error'],
   ];
-  for(const [reason_code,name,status]of cases)assert.equal(invitationMessage({reason_code,status}),rows.get(name),name);
+  for(const [reason_code,name,status]of cases) {
+    // ADMIN-02 supersedes the older QA02 wording only for the C21 minimum.
+    const expected = reason_code === 'questionnaire_incomplete'
+      ? 'Приглашение не отправлено: заполните цель оценки и использование результатов'
+      : rows.get(name);
+    assert.equal(invitationMessage({reason_code,status}),expected,name);
+  }
 });
 
 test('a contradictory operation or invitation identity cannot confirm this command',()=>{

@@ -16,13 +16,13 @@ pytestmark = pytest.mark.integration
 EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.2/example.synthetic.csv")
 
 
-def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_database_url):
+def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_database_url, monkeypatch):
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         schema = "questionnaire_pytest_" + uuid4().hex
         connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
         connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
         connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT,email TEXT)")
-        connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,is_active BOOLEAN DEFAULT TRUE)")
+        connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY,code TEXT,name TEXT,is_active BOOLEAN DEFAULT TRUE,updated_at TIMESTAMP DEFAULT NOW())")
         connection.execute("CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)")
         connection.execute("""CREATE TABLE organization_invitations(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_email TEXT,purpose TEXT,
@@ -38,7 +38,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         connection.execute("CREATE TABLE m5_cycles(id BIGINT PRIMARY KEY)")
         connection.execute("CREATE TABLE m8_reports(id UUID PRIMARY KEY)")
         connection.execute("INSERT INTO users VALUES(1,'Участник','participant@example.test'),(2,'Администратор','admin@example.test')")
-        connection.execute("INSERT INTO organizations VALUES(10),(20)")
+        connection.execute("INSERT INTO organizations(id,code,name) VALUES(10,'org-a','Организация А'),(20,'org-b','Организация Б')")
         connection.execute("""CREATE TABLE assessment_organization_contexts(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT NOT NULL REFERENCES organizations(id),
             code TEXT NOT NULL,created_at TIMESTAMP NOT NULL DEFAULT NOW(),UNIQUE(organization_id,code))""")
@@ -86,6 +86,11 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             (confirmed["organization_context_version_id"],),
         ).fetchone()
         assert version["status"] == "published"
+        assert version["definition_json"]["name"] == "Синтетическая организация"
+        assert connection.execute("SELECT id,code,name FROM organizations WHERE id=10").fetchone() == {
+            "id": 10, "code": "org-a", "name": "Синтетическая организация",
+        }
+        assert connection.execute("SELECT name FROM organizations WHERE id=20").fetchone()["name"] == "Организация Б"
         assert "participant_briefing" not in version["definition_json"]
         assert confirmed["briefing_json"]["purpose"]
         assert "result_recipients" not in confirmed["briefing_json"]
@@ -100,6 +105,32 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         )["organization_context_version_id"] == confirmed["organization_context_version_id"]
         assert connection.execute("SELECT COUNT(*) AS n FROM questionnaire_response_revisions WHERE id=%s AND status='confirmed'",
                                   (preview["id"],)).fetchone()["n"] == 1
+        rename_answers = parse_csv(EXAMPLE.read_text())["answers"]
+        rename_answers["C01"]["name"] = "Новое название"
+        conflicting = save_preview(connection, **{
+            **kwargs, "channel": "product_form", "raw_text": None,
+            "answers": rename_answers, "idempotency_key": "preview-name-conflict",
+        })
+        connection.execute("UPDATE organizations SET name='Параллельная правка' WHERE id=10")
+        with pytest.raises(ValueError, match="QUESTIONNAIRE_ORGANIZATION_NAME_CONFLICT"):
+            confirm(connection, revision_id=conflicting["id"], organization_id=10, confirmed_by=2)
+        assert connection.execute("SELECT name FROM organizations WHERE id=10").fetchone()["name"] == "Параллельная правка"
+        assert connection.execute("SELECT status FROM questionnaire_response_revisions WHERE id=%s", (conflicting["id"],)).fetchone()["status"] != "confirmed"
+        connection.execute("UPDATE organizations SET name='Синтетическая организация' WHERE id=10")
+        failing = save_preview(connection, **{
+            **kwargs, "channel": "product_form", "raw_text": None,
+            "answers": rename_answers, "idempotency_key": "preview-publish-failure",
+        })
+        from Api import questionnaire_sources
+        original_publish = questionnaire_sources.publish_organization_context
+        monkeypatch.setattr(questionnaire_sources, "publish_organization_context",
+                            lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("synthetic publish failure")))
+        with pytest.raises(RuntimeError, match="synthetic publish failure"):
+            with connection.transaction():
+                confirm(connection, revision_id=failing["id"], organization_id=10, confirmed_by=2)
+        monkeypatch.setattr(questionnaire_sources, "publish_organization_context", original_publish)
+        assert connection.execute("SELECT name FROM organizations WHERE id=10").fetchone()["name"] == "Синтетическая организация"
+        assert connection.execute("SELECT status FROM questionnaire_response_revisions WHERE id=%s", (failing["id"],)).fetchone()["status"] != "confirmed"
         incomplete = save_preview(connection, **{
             **kwargs, "channel": "product_form", "raw_text": None,
             "answers": {"C01": {"name": "Новый неполный черновик"}},
@@ -121,6 +152,10 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
                 "Устаревшая цель",
             ),
         })
+        stale_other_assignment = save_preview(connection, **{
+            **kwargs, "assignment_ref": "parallel-assignment",
+            "idempotency_key": "preview-parallel-assignment",
+        })
         fresh = save_preview(connection, **{
             **kwargs, "idempotency_key": "preview-fresh",
             "raw_text": EXAMPLE.read_text().replace(
@@ -139,6 +174,9 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
                 confirmed_by=2)
         with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_CONFLICT"):
             confirm(connection, revision_id=stale["id"], organization_id=10,
+                    confirmed_by=2)
+        with pytest.raises(ValueError, match="QUESTIONNAIRE_CONTEXT_VERSION_CONFLICT"):
+            confirm(connection, revision_id=stale_other_assignment["id"], organization_id=10,
                     confirmed_by=2)
 
         second_kwargs = {
@@ -162,15 +200,26 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert public_revision(saved_old_draft)["status"] == "ready_for_confirmation"
         confirm(connection, revision_id=second["id"], organization_id=10,
                 confirmed_by=2)
+        without_organizer = parse_csv(EXAMPLE.read_text())["answers"]
+        without_organizer.pop("C21")
         manual = save_preview(connection, **{
             **kwargs, "assignment_ref": "manual-assignment", "channel": "product_form",
-            "raw_text": None, "answers": parse_csv(EXAMPLE.read_text())["answers"],
+            "raw_text": None, "answers": without_organizer,
             "idempotency_key": "preview-manual",
         })
         assert manual["status"] == "ready_for_confirmation"
         manual_confirmed = confirm(connection, revision_id=manual["id"], organization_id=10,
                                    confirmed_by=2)
         assert manual_confirmed["status"] == "confirmed"
+        manual_version = connection.execute(
+            "SELECT source_manifest_json FROM assessment_organization_context_versions WHERE id=%s",
+            (manual_confirmed["organization_context_version_id"],),
+        ).fetchone()
+        assert manual_version["source_manifest_json"]["admin_context_choices"] == {
+            "id": "admin-organization-context-choices", "version": "1.0",
+            "sha256": "b76cb4b804de2916b074f4070858f7e4fb53e87328ad03191c2b21ace7feaf8a",
+        }
+        assert manual_confirmed["briefing_json"]["organizer"] == ""
         assert assignment_readiness(connection, organization_id=10,
                                     assignment_ref="manual-assignment")["status"] == "ready"
         first_ready = assignment_readiness(

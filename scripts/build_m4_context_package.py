@@ -30,6 +30,8 @@ ORGANIZATION_REQUIRED_FIELDS = (
     "name", "organization_type", "industry", "activity_description",
     "case_reality_level", "organization_name_usage_rules",
 )
+ADMIN_CHOICES_PATH = (Path(__file__).resolve().parents[1] / "assessment_definitions" /
+                      "contexts" / "competencies_4k" / "1.1" / "admin_context_choices.json")
 
 
 def _paragraph_text(paragraph: ET.Element) -> str:
@@ -240,8 +242,18 @@ def write_package(source_docx: Path, output_dir: Path) -> None:
     source = markdown_source(blocks)
     contract = json.dumps(build_contract(blocks, tables), ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     schema = json.dumps(personalized_profile_schema(), ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    choices = ADMIN_CHOICES_PATH.read_text(encoding="utf-8")
+    choice_data = json.loads(choices)
+    fields = choice_data.get("fields") or {}
+    if (choice_data.get("version") != "1.0" or choice_data.get("status") != "approved_for_admin_form"
+            or set(fields) != {"case_reality_level", "organization_name_usage_rules"}
+            or any(not isinstance(options, list) or len(options) != 2
+                   or any(not isinstance(option, str) or not option.strip() for option in options)
+                   or len(set(options)) != 2 for options in fields.values())):
+        raise ValueError("Invalid admin context choices artifact.")
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts = {
+        "admin_context_choices.json": choices,
         "m4_context_source.md": source,
         "context_contract.json": contract,
         "personalized_profile.schema.json": schema,

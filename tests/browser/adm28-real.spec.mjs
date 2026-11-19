@@ -67,9 +67,13 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
       organization_name: 'Синтетическая организация ADM28', organization_type: 'Компания', industry: 'ИТ',
       activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель', results_usage: 'Для развития',
       organizer: 'Синтетический HR',
-      case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' };
+      case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название' };
     for (const [name, value] of Object.entries(values)) {
-      if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+      if (!['source_author', 'organizer'].includes(name)) {
+        const field = form.locator(`[name="${name}"]`);
+        if (['case_reality_level', 'organization_name_usage_rules'].includes(name)) await field.selectOption(value);
+        else await field.fill(value);
+      }
     }
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     const preview = card.locator('.admin-questionnaire-preview');

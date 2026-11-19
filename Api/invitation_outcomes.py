@@ -89,7 +89,7 @@ def facts(delivery: str, stored=None, *, reason_code=None) -> dict:
     retry = saved.get('reason_params', {}).get('retry_after_seconds') if isinstance(saved.get('reason_params'), dict) else None
     missing = saved.get('reason_params', {}).get('missing_fields') if isinstance(saved.get('reason_params'), dict) else None
     if code == 'questionnaire_incomplete' and isinstance(missing, list):
-        params['missing_fields'] = [field for field in ('purpose', 'organizer', 'results_usage') if field in missing]
+        params['missing_fields'] = [field for field in ('purpose', 'results_usage') if field in missing]
     if code == 'provider_limit' and type(retry) is int and 0 <= retry <= 86400:
         params['retry_after_seconds'] = retry
     return dict(outcome=outcome, reason_code=code, reason_params=params, next_action=action, failure_stage=stage)

@@ -1,3 +1,9 @@
+# Admin 02 — кандидат на свежем main, 19.11.2026
+
+База обновлена с `fd6d4e0c` / 2.1.34 до `592527e5` / 2.1.35 (PR #251). Владелец ответил «продолжаем» на точный запрос о следующем PATCH, публикации ветки и draft PR: `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. Новый кандидат — 2.1.36. Исходники задачи, M4-пакет вариантов, тесты и отчёт перенесены без изменения предметного решения. `ready:prepare` PASS, `web/dist` пересобран, backend 1295 PASS, frontend 473 PASS, HTTP/e2e 218 PASS, browser guards 43 PASS, реальные UI/HTTP/PG сценарии анкеты/формы/CSV 3 PASS, integration стенда после коррекции параметра 4 PASS. Активно: commit/push → draft PR и CI. Исходный локальный кодовый SHA до переноса: `5510077229f6b70455aed811f5141da4e7ffcad1`; SHA нового кандидата появится после коммита. Полный отчёт: [Admin 02](docs/evc/tasks/admin-organization-02.md).
+
+---
+
 # P4K_CASE_ADMISSION_01 / PR251 — исправлена гонка browser-fixture, 19.11.2026
 
 На af4a2918 frontend/pytest/integration/4 runtime shards PASS; fast browser FAIL

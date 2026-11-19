@@ -1,0 +1,17 @@
+{
+  "id": "admin-organization-context-choices",
+  "version": "1.0",
+  "status": "approved_for_admin_form",
+  "scope": "organization_admin_form",
+  "source": "Решение владельца в чате Codex от 2026-11-19; не изменяет M4.Context v1.0",
+  "fields": {
+    "case_reality_level": [
+      "Обобщённые рабочие ситуации",
+      "Близко к реальной работе"
+    ],
+    "organization_name_usage_rules": [
+      "Использовать условное название",
+      "Можно использовать настоящее название"
+    ]
+  }
+}

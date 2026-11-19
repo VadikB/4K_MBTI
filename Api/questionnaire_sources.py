@@ -34,11 +34,26 @@ EARLY_REQUIRED = {
     ("C01", "activity_description"), ("C02a", "participant_text"),
     ("C03", "participant_text"),
     ("C17", "case_reality_level"), ("C17", "organization_name_usage_rules"),
-    ("C21", "organizer"),
 }
 ALLOWED_CHANNELS = {"csv", "product_form", "external_form"}
 LEGACY_FIELDS = {("C04", "answer"), ("C21", "responsible_contact")}
 MAX_SOURCE_BYTES = 1_048_576
+ADMIN_CHOICES_PACKAGE = (Path(__file__).resolve().parents[1] / "assessment_definitions" /
+                         "contexts" / "competencies_4k" / "1.1")
+
+
+def _admin_choices_provenance() -> dict:
+    path = ADMIN_CHOICES_PACKAGE / "admin_context_choices.json"
+    content = path.read_bytes()
+    checksum = hashlib.sha256(content).hexdigest()
+    manifest = json.loads((ADMIN_CHOICES_PACKAGE / "manifest.json").read_text(encoding="utf-8"))
+    expected = {item["name"]: item["sha256"] for item in manifest["artifacts"]}.get(path.name)
+    if expected != checksum:
+        raise ValueError("ADMIN_CONTEXT_CHOICES_CHECKSUM_INVALID")
+    metadata = json.loads(content)
+    if metadata.get("status") != "approved_for_admin_form" or metadata.get("version") != "1.0":
+        raise ValueError("ADMIN_CONTEXT_CHOICES_IDENTITY_INVALID")
+    return {"id": metadata["id"], "version": metadata["version"], "sha256": checksum}
 
 
 def _load_participant_question_schema() -> dict:
@@ -157,6 +172,18 @@ def save_preview(connection, *, organization_id: int, assignment_ref: str, chann
         if prior["request_hash"] != request_hash:
             raise ValueError("IDEMPOTENCY_CONFLICT")
         return dict(prior)
+    organization = connection.execute(
+        "SELECT name FROM organizations WHERE id=%s", (organization_id,),
+    ).fetchone()
+    if organization is None:
+        raise ValueError("ORGANIZATION_NOT_FOUND")
+    published = connection.execute(
+        """SELECT v.id FROM assessment_organization_context_versions v
+           JOIN assessment_organization_contexts c ON c.id=v.organization_context_id
+           WHERE c.organization_id=%s AND v.status='published'
+           ORDER BY v.version DESC,v.id DESC LIMIT 1""",
+        (organization_id,),
+    ).fetchone()
     row = connection.execute(
         """INSERT INTO questionnaire_response_revisions(
              organization_id,assignment_ref,template_variant,template_version,channel,status,
@@ -165,7 +192,9 @@ def save_preview(connection, *, organization_id: int, assignment_ref: str, chann
            VALUES(%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s,%s,%s,%s) RETURNING *""",
         (organization_id, assignment_ref, template_variant, template_version, channel,
          normalized["status"], json.dumps(normalized["answers"], ensure_ascii=False),
-         json.dumps({"errors": normalized["errors"], "missing": normalized["missing"]}, ensure_ascii=False),
+         json.dumps({"errors": normalized["errors"], "missing": normalized["missing"],
+                     "expected_organization_name": organization["name"],
+                     "expected_context_version_id": published["id"] if published else None}, ensure_ascii=False),
          raw_text, hashlib.sha256((raw_text or "").encode("utf-8")).hexdigest(), uploaded_by,
          source_author.strip(), idempotency_key, request_hash),
     ).fetchone()
@@ -203,12 +232,27 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     if normalized["errors"] or normalized["missing"]:
         raise ValueError("QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION")
     answers = normalized["answers"]
+    organization = connection.execute(
+        "SELECT name FROM organizations WHERE id=%s FOR UPDATE", (organization_id,),
+    ).fetchone()
+    if organization is None:
+        raise ValueError("ORGANIZATION_NOT_FOUND")
+    expected_name = (row.get("validation_json") or {}).get("expected_organization_name")
+    if expected_name is not None and organization["name"] != expected_name:
+        raise ValueError("QUESTIONNAIRE_ORGANIZATION_NAME_CONFLICT")
     current = connection.execute(
-        """SELECT v.definition_json FROM assessment_organization_context_versions v
+        """SELECT v.id,v.definition_json FROM assessment_organization_context_versions v
            JOIN assessment_organization_contexts c ON c.id=v.organization_context_id
            WHERE c.organization_id=%s AND v.status='published' ORDER BY v.version DESC,v.id DESC LIMIT 1""",
         (organization_id,),
     ).fetchone()
+    validation = row.get("validation_json") or {}
+    if "expected_context_version_id" in validation and validation["expected_context_version_id"] != (current["id"] if current else None):
+        raise ValueError("QUESTIONNAIRE_CONTEXT_VERSION_CONFLICT")
+    connection.execute(
+        "UPDATE organizations SET name=%s,updated_at=NOW() WHERE id=%s",
+        (answers["C01"]["name"], organization_id),
+    )
     definition = dict(current["definition_json"] or {}) if current else {}
     definition.update(answers["C01"])
     definition.update({key: value for key, value in answers["C17"].items()
@@ -216,7 +260,7 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     participant_briefing = {
         "purpose": answers["C02a"]["participant_text"],
         "customer_question": answers.get("C02b", {}).get("answer", ""),
-        "organizer": answers["C21"]["organizer"],
+        "organizer": answers.get("C21", {}).get("organizer", ""),
         "results_usage": answers["C03"]["participant_text"],
         "organization_type": answers["C01"]["organization_type"],
         "provided_participant_fields": PROVIDED_PARTICIPANT_FIELDS,
@@ -228,11 +272,14 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
         "assignment_ref": str(row["assignment_ref"]),
     }
     definition.pop("participant_briefing", None)
+    source_manifest = {"questionnaire_revision_id": int(row["id"]), "channel": row["channel"],
+                       "template_variant": row["template_variant"], "template_version": row["template_version"],
+                       "source_checksum": row["source_checksum"]}
+    if row["channel"] == "product_form":
+        source_manifest["admin_context_choices"] = _admin_choices_provenance()
     version_id = create_organization_context_draft(
         connection, organization_id=organization_id, definition=definition,
-        source_manifest={"questionnaire_revision_id": int(row["id"]), "channel": row["channel"],
-                         "template_variant": row["template_variant"], "template_version": row["template_version"],
-                         "source_checksum": row["source_checksum"]},
+        source_manifest=source_manifest,
     )
     publish_organization_context(connection, version_id=version_id, confirmed_by_user_id=confirmed_by)
     saved = connection.execute(
@@ -273,7 +320,7 @@ def assignment_readiness(connection, *, organization_id: int, assignment_ref: st
         "университет", "вуз", "university",
     }:
         return {"status": "draft", "reason": "university_admission_not_supported", "missing": ["admission"]}
-    required = ("purpose", "organizer", "results_usage")
+    required = ("purpose", "results_usage")
     missing = [key for key in required if not str(briefing.get(key) or "").strip()]
     if missing:
         return {"status": "draft", "reason": "early_minimum", "missing": missing}

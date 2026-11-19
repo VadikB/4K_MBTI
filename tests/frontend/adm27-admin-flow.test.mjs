@@ -25,9 +25,10 @@ test('manual questionnaire draft fields are not blocked by publish required attr
 test('ADM 1A uses the accepted navigation, groups and provenance wording', () => {
   assert.match(organizations, /viewButton\('people', 'Участники оценки'\)/);
   assert.match(organizations, /<legend>Об организации<\/legend>/);
-  assert.match(organizations, /<legend>Условия оценки<\/legend>/);
-  assert.match(organizations, /Близость кейсов к реальной деятельности/);
-  assert.match(organizations, /Использование названия в кейсах/);
+  assert.match(organizations, /<legend>Сведения для знакомства<\/legend>/);
+  assert.match(organizations, /<legend>Настройки контекста для ситуаций<\/legend>/);
+  assert.match(organizations, /Близость ситуаций к реальной работе/);
+  assert.match(organizations, /Название организации в ситуациях/);
   assert.match(organizations, /payload\?\.channel === 'csv'[\s\S]*Анкета загружена[\s\S]*Черновик сохранён/);
   assert.doesNotMatch(organizations, /Первая публикация|Анкета распознана|Обязательные поля распознаны/);
 });
