@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from Api.m5_case_runtime import checksum
+from Api.m5_case_type_catalog import load_case_type_catalog
 
 
 POLICY_PATH = (
@@ -204,11 +205,17 @@ def publication_plan(
         raise ValueError("M5_PACKAGE_NOT_FOUND")
     selected = sorted(set(int(value) for value in case_version_ids))
     cases = connection.execute(
-        "SELECT id FROM m5_case_versions WHERE package_id=%s AND id=ANY(%s) ORDER BY id",
+        "SELECT case_id,content_json FROM m5_case_versions WHERE package_id=%s AND id=ANY(%s) ORDER BY id",
         (package_db_id, selected),
     ).fetchall() if selected else []
     if len(cases) != len(selected):
         raise ValueError("M5_CATALOG_CASE_OUTSIDE_PACKAGE")
+    case_types = load_case_type_catalog()
+    for row in cases:
+        content = row["content_json"]
+        # Historical rows without the v2/v3 Case contract have no typed CaseTypeIDs.
+        if content.get("schema_version") in (2, 3) or "case_type_ids" in content:
+            case_types.validate(content.get("case_type_ids"), case_id=row["case_id"], pointer="/case_type_ids")
     if runtime_rule_version_id is not None:
         covered = connection.execute(
             "SELECT case_version_id FROM m5_runtime_rule_case_bindings "
@@ -222,6 +229,7 @@ def publication_plan(
         "package_db_id": package_db_id, "package_id": package["package_id"],
         "package_version": package["package_version"], "package_checksum": package["package_checksum"],
         "m2_checksum": package["manifest_json"]["dependencies"]["m2"],
+        "case_type_catalog_ref": case_types.ref.model_dump(),
         "organization_id": organization_id, "usage_scope": usage_scope,
         "runtime_rule_version_id": runtime_rule_version_id,
         "case_version_ids": selected, "decisions": [
@@ -255,6 +263,10 @@ def publish_catalog(
         (published_by, idempotency_key),
     ).fetchone()
     if existing:
+        if "case_type_catalog_ref" not in existing["manifest_json"]:
+            # Catalogs published before the CaseType source was pinned used this request shape.
+            request.pop("case_type_catalog_ref")
+            request_hash = checksum(request)
         if existing["request_hash"] != request_hash:
             raise ValueError("IDEMPOTENCY_CONFLICT")
         return {"dry_run": False, "idempotent": True, "catalog_db_id": int(existing["id"]),
@@ -262,7 +274,8 @@ def publish_catalog(
     manifest = {"schema_version": 1, "catalog_id": catalog_id, "catalog_version": catalog_version,
                 "package_ref": {"id": plan["package_id"], "version": plan["package_version"],
                                 "checksum": plan["package_checksum"]},
-                "m2_checksum": plan["m2_checksum"], "organization_id": organization_id,
+                "m2_checksum": plan["m2_checksum"], "case_type_catalog_ref": plan["case_type_catalog_ref"],
+                "organization_id": organization_id,
                 "usage_scope": usage_scope, "case_version_ids": plan["case_version_ids"]}
     if runtime_rule_version_id is not None:
         runtime = connection.execute(

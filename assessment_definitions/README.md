@@ -117,8 +117,12 @@ OrganizationContext сохраняет версию и checksum в `source_manif
 
 Конвертер использует стандартную библиотеку и Pydantic, проверяет SHA-256 исходной
 книги, 22 поля каждого паспорта, ссылки M2/M3, 43 назначения индикаторов и создаёт
-неизменяемый source snapshot. БД и LLM для сборки не нужны. Приложение читает JSON,
-а не XLSX.
+неизменяемый source snapshot. БД и LLM для сборки не нужны. Содержимое Case
+приложение загружает из JSON.
+
+[CaseType v1.0 FROZEN](catalog_contracts/competencies_4k/case-types/1.0/manifest.json)
+подключён как исходный XLSX целиком. При импорте и выпуске банк получает
+допустимые `CaseTypeID` из столбца книги после сверки версии и SHA-256.
 
 `case-package.json` содержит пять Case, персонажей, данные, шаги сценария,
 Applicability и точные цели. `admission-policy.json` отделяет правила допуска от

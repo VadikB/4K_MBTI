@@ -17,6 +17,13 @@
 
 ## Контракт допуска
 
+При проверке пакета, импорте Case v2/v3 и планировании нового выпуска M5
+проверяется членство каждого `case_type_ids` в листе `CaseType Catalog` выбранного
+[источника CaseType v1.0 FROZEN](../../../assessment_definitions/catalog_contracts/competencies_4k/case-types/1.0/manifest.json).
+Неизвестный ID прерывает операцию с адресом поля и версией источника. Сами схемы
+Case проверяют формат и уникальность ID. Цели оценки задаются `indicator_targets`
+версии Case и проверяются по контрактам M2 и M5.
+
 Единый предикат `Api.m5_catalog_integrity.case_admission` используется при
 планировании и непосредственной подготовке AS. Для каждого scope
 `case_format`, `case_dialogue`, `assessment_situation` выбирается последняя
@@ -46,6 +53,10 @@ UPDATE/DELETE. Пустой каталог разрешён: профиль со
 совместимости `legacy-unbound-test-catalog` применяется только к изолированным
 старым contract-test схемам, где столбца `catalog_version_id` физически нет; в
 production bootstrap столбец создаётся до внешнего ключа.
+
+Manifest новой публикации содержит `case_type_catalog_ref` с ID, версией и SHA-256
+XLSX. Чтение опубликованного каталога проверяет его сохранённый manifest и
+membership. Исторические manifests читаются в сохранённом формате.
 
 ## Миграция и откат
 
