@@ -1302,9 +1302,10 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                    COALESCE(plan_progress.completed_positions, 0) AS completed_positions,
                    result_revision.payload_json AS results_payload,
                    pipeline.status AS pipeline_status,
-                   ready_report.id AS report_id,
-                   ready_report.id IS NOT NULL AS report_ready,
-                   ready_report.id IS NOT NULL AS report_access,
+                   CASE WHEN ready_report.can_open AND cycle.collection_closed_at IS NOT NULL
+                        THEN ready_report.id END AS report_id,
+                   COALESCE(ready_report.can_open AND cycle.collection_closed_at IS NOT NULL,FALSE) AS report_ready,
+                   COALESCE(ready_report.can_open AND cycle.collection_closed_at IS NOT NULL,FALSE) AS report_access,
                    'customer' AS report_access_kind
             FROM organization_assessment_assignments assignment
             JOIN LATERAL (
@@ -1312,7 +1313,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 WHERE b.assignment_id=assignment.id ORDER BY b.id DESC LIMIT 1
             ) binding ON TRUE
             LEFT JOIN LATERAL (
-                SELECT runtime.id,runtime.cycle_id,runtime.status,runtime.personalized_profile_id
+                SELECT runtime.id,runtime.cycle_id,runtime.status,runtime.personalized_profile_id,
+                       runtime.collection_closed_at
                 FROM m5_cycles runtime
                 WHERE runtime.owner_user_id=assignment.recipient_user_id
                   AND runtime.organization_id=assignment.organization_id
@@ -1366,12 +1368,16 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 LIMIT 1
             ) product_preparation ON TRUE
             LEFT JOIN LATERAL (
-                SELECT report.id
+                SELECT report.id,
+                       report.status IN ('ready','limited','no_result')
+                         AND COALESCE(report.c67_json->'processing'->>'status','') <> 'failed' AS can_open
                 FROM m8_results result
                 JOIN m8_result_revisions revision ON revision.results_id=result.id
                 JOIN m8_reports report ON report.result_revision_id=revision.id
                 WHERE result.cycle_db_id=cycle.id AND report.audience='assessee'
-                ORDER BY revision.revision_no DESC,report.revision_no DESC
+                ORDER BY (report.id=(SELECT published.report_id FROM m8_published_reports published
+                                     WHERE published.cycle_db_id=cycle.id)) DESC,
+                         revision.revision_no DESC,report.revision_no DESC
                 LIMIT 1
             ) ready_report ON TRUE
             LEFT JOIN m7_cycle_plans plan ON plan.cycle_db_id=cycle.id

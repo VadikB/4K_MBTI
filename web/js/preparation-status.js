@@ -43,7 +43,7 @@ export const preparationHtml = (model, { compact = false } = {}) => model ? `<se
     <p data-preparation-explanation>${escape(model.explanation)}</p>
     <div data-preparation-notice></div><p data-preparation-duration></p></div>
   <div data-preparation-time></div><div data-preparation-actions></div>
-  <details><summary>Сведения о подготовке</summary><div class="preparation-details">
+  <details${model.status === 'failed' ? ' open' : ''}><summary>Сведения о подготовке</summary><div class="preparation-details">
     <dl><div><dt>Вид подготовки</dt><dd data-preparation-kind></dd></div>
       <div><dt>Этап</dt><dd data-preparation-detail-stage></dd></div>
       <div><dt>Начало подготовки</dt><dd data-preparation-started></dd></div>

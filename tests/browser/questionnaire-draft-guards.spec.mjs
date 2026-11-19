@@ -145,6 +145,7 @@ test('Q-DRAFT pending read cannot clone a draft into a different connected asses
 });
 test('Q-DRAFT old account read cannot erase or restore drafts after re-login', async ({ page }) => {
   const f = await fixture(page); await fill(page, fields('A'));
+  await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   await page.locator('#email-input').fill('admin-28@example.test');

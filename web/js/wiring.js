@@ -1349,6 +1349,18 @@ if (adminOrganizationsLogoutButton) {
   adminOrganizationsLogoutButton.addEventListener('click', (event) =>
     void logoutAndReturnToStart(event.currentTarget));
 }
+const adminAccountMenu = document.querySelector('.org-admin-account-menu');
+if (adminAccountMenu) {
+  adminAccountMenu.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !adminAccountMenu.open) return;
+    event.preventDefault();
+    adminAccountMenu.open = false;
+    adminAccountMenu.querySelector('summary')?.focus();
+  });
+  document.addEventListener('click', (event) => {
+    if (!adminAccountMenu.contains(event.target)) adminAccountMenu.open = false;
+  });
+}
 
 if (authCompleteContinueButton) {
   authCompleteContinueButton.addEventListener('click', async () => {
@@ -1841,6 +1853,9 @@ if (adminOrganizationsList) {
     if (!button) {
       return;
     }
+    const actionMenu = button.closest('.admin-organization-member-menu[open]');
+    const returnControl = actionMenu?.querySelector('summary') || button;
+    actionMenu?.removeAttribute('open');
     const card = button.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
@@ -2068,7 +2083,7 @@ if (adminOrganizationsList) {
       dialog.className = 'admin-member-card-dialog';
       dialog.setAttribute('aria-labelledby', 'admin-member-card-title');
       dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-card-title"></h3><button type="submit" class="dialog-close" aria-label="Закрыть карточку">×</button></div>' +
-        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>История оценки</dt><dd data-card-assignment-history></dd><dt>Допуск</dt><dd data-card-admission></dd><dt>Регистрация</dt><dd data-card-registration></dd><dt>Письмо и ссылка</dt><dd data-card-invitation></dd><dt>История приглашения</dt><dd data-card-invitation-history></dd></dl>' +
+        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>История оценки</dt><dd data-card-assignment-history></dd><dt>Допуск</dt><dd data-card-admission></dd></dl>' +
         '<div data-card-actions></div><button type="submit" class="primary-button">Закрыть</button></form>';
       dialog.querySelector('#admin-member-card-title').textContent = button.dataset.participantName || value;
       dialog.querySelector('[data-card-email]').textContent = button.dataset.email || 'Не указан';
@@ -2077,14 +2092,6 @@ if (adminOrganizationsList) {
       dialog.querySelector('[data-card-description]').textContent = button.dataset.stageDescription || 'Нет пояснения';
       dialog.querySelector('[data-card-assignment-history]').textContent = button.dataset.assignmentHistory || 'История неизвестна';
       dialog.querySelector('[data-card-admission]').textContent = button.dataset.admission || 'Нет данных';
-      dialog.querySelector('[data-card-registration]').textContent = button.dataset.registration || 'Нет данных';
-      dialog.querySelector('[data-card-invitation]').textContent = button.dataset.invitation || 'Неизвестно';
-      dialog.querySelector('[data-card-invitation-history]').textContent = button.dataset.invitationCreated
-        ? ['Создано: ' + button.dataset.invitationCreated,
-          button.dataset.invitationExpires ? 'Действует до: ' + button.dataset.invitationExpires : '',
-          button.dataset.invitationUsed ? 'Использовано: ' + button.dataset.invitationUsed : '',
-          button.dataset.invitationRevoked ? 'Отозвано: ' + button.dataset.invitationRevoked : ''].filter(Boolean).join('. ')
-        : 'История приглашения неизвестна';
       if (button.dataset.canResetPassword === 'true') {
         const reset = document.createElement('button');
         reset.type = 'button';
@@ -2099,10 +2106,12 @@ if (adminOrganizationsList) {
       }
       let invitationInfo = {};
       try { invitationInfo = JSON.parse(button.dataset.invitationInfo || '{}'); } catch { /* no raw fallback */ }
-      withScreen(loadAdminOrganizations, module => {
-        if (dialog.isConnected) module.mountAdminInvitationDetails(dialog, organizationId,
-          button.dataset.email || '', button.dataset.invitationAssessment || '', invitationInfo);
-      });
+      if (invitationInfo.invitation_id || invitationInfo.operation_id) {
+        withScreen(loadAdminOrganizations, module => {
+          if (dialog.isConnected) module.mountAdminInvitationDetails(dialog, organizationId,
+            button.dataset.email || '', button.dataset.invitationAssessment || '', invitationInfo);
+        });
+      }
       document.body.append(dialog);
       dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
       dialog.showModal();
@@ -2139,7 +2148,7 @@ if (adminOrganizationsList) {
       if (!invitationId) return;
       const participantName = button.dataset.participantName || value;
       openAdminSubjectConfirmation({
-        trigger: button,
+        trigger: returnControl,
         title: 'Отозвать приглашение?',
         subject: participantName + ' · ' + value,
         consequences: 'Персональная ссылка перестанет действовать. Назначение оценки, участие в организации, аккаунт и обычный вход сохранятся.',
@@ -2157,7 +2166,7 @@ if (adminOrganizationsList) {
       const assessmentLabel = button.dataset.assessmentLabel || 'выбранная оценка';
       if (!assignmentId) return;
       openAdminSubjectConfirmation({
-        trigger: button,
+        trigger: returnControl,
         title: 'Отменить назначение?',
         subject: participantName + ' · «' + assessmentLabel + '»',
         consequences: 'Участник больше не сможет начать эту оценку. Для нового прохождения потребуется новое назначение. Аккаунт, участие в организации и история сохранятся.',

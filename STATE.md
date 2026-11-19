@@ -1284,3 +1284,33 @@ Real-provider smoke оставлен NOT_RUN по отдельному реше�
   C02/C03/C07 сохранены отдельно. N07 live publish/deploy `NOT_RUN`: нет подключённого
   общего test stand/PR/remote CI; локальная PILOT-120 граница PASS. N08 PASS TECH;
   N09 PASS TECH, methodology `NOT_RUN`.
+
+## ADMIN-CABINET-01 · 19.11.2026
+
+- Основание: прямое «делаем» к архиву
+  `P4K_Admin_01_Cabinet_2026-11-19.zip`; требования/границы и полный отчёт —
+  `docs/evc/tasks/admin-cabinet-01.md`. Внешний `TASK.md` сам не разрешает push,
+  PR, bump, merge или deploy.
+- Ветка/worktree: `codex/admin-cabinet-01` / `worktrees/admin-cabinet-01`,
+  база и повторно проверенный `origin/main`:
+  `83468687d48b585f2cfb3d655dd805c15c25f065` (`2.1.33`).
+- Реализовано: меню аккаунта со штатным выходом, вход «Управление» в участников,
+  действия строки по состоянию, карточка без общего блока регистрации,
+  проверка прежней подготовки, точный допустимый report ID по приоритету реестра.
+  Изменены `Api/routes.py`, затронутые `web/` и тесты; `web/dist` пересобран.
+- Проверено: `git diff --check`, JS lint/build, frontend 473 PASS, backend
+  1255 PASS, HTTP 218 PASS, M8 access HTTP 3 PASS, SQL integration 9 PASS,
+  PATH-admin owned stand 18 PASS, actual browser HTTP/PG 1 PASS,
+  адресный browser-набор 10 PASS и сценарии выхода 3 PASS. Docker PostgreSQL 16
+  и marker-owned БД удалены. Не выполнялись реальные письма, LLM и визуальная
+  приёмка по изображениям.
+- Откат: revert UI bundle и SQL-проекции; записи о приглашениях, назначениях и
+  публикациях сохраняются. `bump:version -- patch --dry-run` предложил `2.1.34`;
+  владелец прямо подтвердил версию и PR 19.11.2026. `ready:prepare` PASS,
+  `2.1.34` назначена, `web/dist` пересобран. PR #250 создан. На head `03488cdb`
+  CI `frontend`, `pytest`, `integration` и четыре runtime browser shard — PASS;
+  `browser (fast)` отменён после лимита 15 минут, `full-verification` — FAIL.
+  Повтор на `8e6d74e0` завершил fast lane: 12 FAIL, 41 SKIP, 355 PASS; остальные
+  jobs PASS. Все 12 отказов — устаревшие селекторы после изменения UI; адресные
+  12 сценариев исправлены и локально PASS. Промежуточный лимит 35 минут возвращён
+  к исходным 15. Следующий шаг: новый CI точного head и review; merge/deploy отдельно.

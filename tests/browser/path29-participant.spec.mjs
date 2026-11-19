@@ -621,7 +621,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
         await committedGate;
         expect(delayedPosts).toBe(1);
-        await admin.locator('#admin-organizations-logout-button').click();
+        await admin.locator('#admin-organizations-account-name').click();
+  await admin.locator('#admin-organizations-logout-button').click();
         await expect(admin.locator('#email-input')).toBeVisible();
         await admin.locator('#email-input').fill(state.path29.admin_email);
         await admin.locator('#request-magic-link-button').click();

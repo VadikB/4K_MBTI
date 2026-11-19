@@ -58,7 +58,7 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
     await scaleText();
     const row = card.locator('.admin-organization-member').first();
     await row.locator('.admin-organization-member-menu summary').click();
-    const remove = row.getByRole('button', { name: 'Удалить человека', exact: true });
+    const remove = row.locator('[data-action="purge-account"]');
     await remove.focus();
     await expect(remove).toBeFocused();
     await remove.scrollIntoViewIfNeeded();

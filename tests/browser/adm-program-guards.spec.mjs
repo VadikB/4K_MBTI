@@ -270,6 +270,7 @@ test('REMAIN-03 late invitation result cannot change a logged-out actor', async 
   const pending = gate(); state.invitationPostGate = pending.promise;
   await card(page).locator('[data-action="send-member-invitation"]').click();
   await expect.poll(() => state.invitationPosts).toBe(1);
+  await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   pending.release();

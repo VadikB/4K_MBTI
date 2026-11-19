@@ -60,6 +60,10 @@ export async function capturePathViewports(page, directory, phase, controls, { w
         // controls: do not force-enable them just to collect evidence.
         if (enabled) await locator.click({ trial: true });
         else await locator.scrollIntoViewIfNeeded();
+        // The card can rerender during questionnaire/program reads after the trial.
+        // Recheck the current node before measuring its clipping ancestors.
+        await expect(locator).toBeVisible();
+        await locator.scrollIntoViewIfNeeded();
         const geometry = await viewportGeometry(locator);
         Object.assign(control, { box: geometry.box, geometry });
         const ancestors = await locator.evaluate((el) => {

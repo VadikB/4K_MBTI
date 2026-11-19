@@ -36,10 +36,11 @@ def lineage_db(test_database_url):
             'participant_acquaintance_confirmations': 'id bigint,user_id bigint,organization_id bigint,assignment_ref text,questionnaire_revision_id bigint,personalized_profile_id bigint,confirmed_at timestamp',
             'assessment_preparation_jobs': 'id bigint,operation_id text,status text,user_id bigint,personalized_profile_id bigint,created_at timestamp',
             'product_cycle_preparation_operations': 'id bigint,operation_id text,status text,user_id bigint,request_json jsonb,created_at timestamp,result_json jsonb',
-            'm5_cycles': 'id bigint,cycle_id text,status text,owner_user_id bigint,organization_id bigint,assignment_id bigint,usage_scope text,personalized_profile_id bigint,created_at timestamp',
+            'm5_cycles': 'id bigint,cycle_id text,status text,owner_user_id bigint,organization_id bigint,assignment_id bigint,usage_scope text,personalized_profile_id bigint,created_at timestamp,collection_closed_at timestamp',
             'm8_results': 'id bigint,cycle_db_id bigint',
             'm8_result_revisions': 'id bigint,results_id bigint,revision_no int,payload_json jsonb',
-            'm8_reports': 'id bigint,result_revision_id bigint,audience text,revision_no int',
+            'm8_reports': 'id bigint,result_revision_id bigint,audience text,revision_no int,status text,c67_json jsonb',
+            'm8_published_reports': 'cycle_db_id bigint,report_id bigint',
             'm7_cycle_plans': 'id bigint,cycle_db_id bigint,status text',
             'm7_plan_revisions': 'plan_id bigint,revision_no int,content_json jsonb',
             'm5_assessment_situations': 'id bigint,cycle_db_id bigint,status text',
@@ -83,7 +84,7 @@ def test_exact_product_operation_overrides_legacy_job_not_foreign_scope(lineage_
 
 
 def test_old_completed_operation_requires_exact_cycle_pointer_without_assignment_id(lineage_db):
-    lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
+    lineage_db.execute("INSERT INTO m5_cycles(id,cycle_id,status,owner_user_id,organization_id,assignment_id,usage_scope,personalized_profile_id,created_at) VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
     lineage_db.execute('''INSERT INTO product_cycle_preparation_operations
         (id,operation_id,status,user_id,request_json,created_at,result_json) VALUES
         (1,'old-A','completed',1,'{"personalized_profile_id":101,"organization_id":10,"assignment_ref":"A","questionnaire_revision_id":21}',NOW(),'{"plan":{"cycle_id":"cycle-A"}}'),
@@ -94,7 +95,7 @@ def test_old_completed_operation_requires_exact_cycle_pointer_without_assignment
 
 
 def test_new_generation_never_projects_old_prepared_cycle(lineage_db):
-    lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
+    lineage_db.execute("INSERT INTO m5_cycles(id,cycle_id,status,owner_user_id,organization_id,assignment_id,usage_scope,personalized_profile_id,created_at) VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
     lineage_db.execute("INSERT INTO m5_assessment_situations VALUES(1,1,'admitted')")
     assert _prepared_plan_snapshot(lineage_db, personalized_profile_id=101, assignment_id=42) is None
 
@@ -102,7 +103,24 @@ def test_new_generation_never_projects_old_prepared_cycle(lineage_db):
 def test_unproven_legacy_profile_is_unknown_but_exact_cycle_pointer_is_valid(lineage_db):
     lineage_db.execute('DELETE FROM participant_acquaintance_confirmations')
     assert all(row['preparation_operation_id'] is None for row in project(lineage_db).values())
-    lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
+    lineage_db.execute("INSERT INTO m5_cycles(id,cycle_id,status,owner_user_id,organization_id,assignment_id,usage_scope,personalized_profile_id,created_at) VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
     rows = project(lineage_db)
     assert rows['A']['preparation_operation_id'] == 'job-A'
     assert rows['B']['preparation_operation_id'] is None
+
+
+def test_admin_row_opens_same_admissible_publication_as_report_registry(lineage_db):
+    lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','calculated',1,10,41,'assessment',101,NOW(),NOW())")
+    lineage_db.execute("INSERT INTO m8_results VALUES(1,1)")
+    lineage_db.execute("INSERT INTO m8_result_revisions VALUES(1,1,1,'{}'),(2,1,2,'{}')")
+    lineage_db.execute("INSERT INTO m8_reports VALUES(101,1,'assessee',1,'limited','{}'),"
+                       "(102,2,'assessee',1,'ready','{}'),(103,2,'customer',1,'ready','{}')")
+    lineage_db.execute("INSERT INTO m8_published_reports VALUES(1,101)")
+    assert project(lineage_db)['A']['report_id'] == 101
+    lineage_db.execute("UPDATE m8_reports SET status='failed' WHERE id=101")
+    assert project(lineage_db)['A']['report_id'] is None
+    lineage_db.execute("DELETE FROM m8_published_reports WHERE cycle_db_id=1")
+    assert project(lineage_db)['A']['report_id'] == 102
+    lineage_db.execute("UPDATE m8_reports SET c67_json=%s WHERE id=102",
+                       ('{"processing":{"status":"failed"}}',))
+    assert project(lineage_db)['A']['report_id'] is None
