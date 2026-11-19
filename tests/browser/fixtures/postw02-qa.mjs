@@ -26,6 +26,7 @@ export async function draftFixture(page, shared = null) {
     if (url === '/users/version') return json({ version: '2.1.14' });
     if (url === '/users/session/restore') return json({ authenticated: true, user, dashboard: {} });
     if (url === '/users/8/session-bootstrap') return json({ user, dashboard: {} });
+    if (url === '/users/8/acquaintance/issues' && req.method() === 'GET') return json({ items: [] });
     if (url === '/users/8/journey-state') return json({ next_action: 'resume_assessment',
       assessment: { runtime_kind: 'cycle', cycle_id: model.cycle_id, assessment_situation_id: 'synthetic-as', status: 'active' },
       profile: { status: 'complete' }, onboarding: { status: 'completed' } });
@@ -109,6 +110,7 @@ export async function dashboardFixture(page) {
     if (pathname === '/users/session/restore') return respond(route, { authenticated: true, user, dashboard });
     if (pathname === '/users/8/session-bootstrap') return journey.readFailure
       ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : respond(route, { user, dashboard });
+    if (pathname === '/users/8/acquaintance/issues' && request.method() === 'GET') return respond(route, { items: [] });
     if (pathname === '/users/8/journey-state') return respond(route, { next_action: journey.next_action, can_open_dashboard: true,
       profile: { status: 'complete' }, onboarding: model.onboarding, assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: card.cycle_id } });
     if (pathname.startsWith('/users/assessment/cycles/preparation/')) return respond(route, model.preparation_operation);

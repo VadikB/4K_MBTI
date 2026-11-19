@@ -54,6 +54,7 @@ async function fixture(page) {
     if (pathname === '/users/session/restore') return respond(route, { authenticated: true, user, dashboard });
     if (pathname === '/users/8/session-bootstrap') return journey.readFailure
       ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : respond(route, { user, dashboard });
+    if (pathname === '/users/8/acquaintance/issues' && request.method() === 'GET') return respond(route, { items: [] });
     if (pathname === '/users/8/journey-state') return respond(route, { next_action: journey.next_action, can_open_dashboard: true,
       profile: { status: 'complete' }, onboarding: model.onboarding, assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: card.cycle_id } });
     if (pathname === '/users/8/acquaintance') return respond(route, model);
