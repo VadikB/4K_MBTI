@@ -31,6 +31,8 @@ if [ -n "$deploy_commit" ]; then
   }
 fi
 previous_commit="$(git rev-parse HEAD)"
+previous_release="$(git show "$previous_commit:pyproject.toml" | .venv/bin/python -c 'import sys, tomllib; print(tomllib.loads(sys.stdin.read())["project"]["version"])')"
+schema_may_have_expanded=0
 frontend_asset_backup_dir="$(mktemp -d)"
 public_origin_backup="$(mktemp)"
 had_public_origin=0
@@ -56,6 +58,11 @@ cleanup_frontend_asset_backup() {
 }
 
 rollback() {
+  if [ "$schema_may_have_expanded" -eq 1 ]; then
+    echo "Test deployment failed after Admin 03 schema may have expanded; retaining the new checkout for compatible recovery" >&2
+    cleanup_frontend_asset_backup
+    exit 1
+  fi
   echo "Test deployment failed; rolling back to $previous_commit" >&2
   if [ "$had_public_origin" -eq 1 ]; then
     cp "$public_origin_backup" .public-origin.json
@@ -125,7 +132,16 @@ sh scripts/retain_previous_frontend_assets.sh \
   "$frontend_asset_backup_dir" \
   14 || rollback
 
-sudo -n systemctl restart "$service_name" || rollback
+target_release="$(.venv/bin/python -c 'import tomllib; from pathlib import Path; print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])')"
+if [ "$previous_release" = "2.1.39" ] && [ "$target_release" = "2.1.40" ]; then
+  # Admin 03 removes a unique constraint required by the old API's ON CONFLICT.
+  # Stop old writers before the new process applies schema; never restart 2.1.39 afterwards.
+  sudo -n systemctl stop "$service_name" || rollback
+  schema_may_have_expanded=1
+  sudo -n systemctl start "$service_name" || rollback
+else
+  sudo -n systemctl restart "$service_name" || rollback
+fi
 
 attempt=0
 until curl -fsS "$health_url" >/dev/null; do

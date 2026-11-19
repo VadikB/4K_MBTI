@@ -175,6 +175,33 @@ def test_bootstrap_failure_rolls_back_to_original_not_candidate(stand: dict, fai
     assert 'sudo -n systemctl restart agent4k-test.service' in stand["log"].read_text()
 
 
+@pytest.mark.parametrize("smoke_failure", [False, True])
+def test_admin03_transition_stops_old_writers_and_never_restores_incompatible_code(
+    stand: dict, smoke_failure: bool,
+) -> None:
+    # The disposable fixture uses older synthetic version numbers; select the
+    # exact same transition branch without changing product release constants.
+    stand["source"] = stand["source"].replace('"2.1.39"', '"2.0.31"').replace('"2.1.40"', '"2.0.34"')
+    fakebin = Path(stand["env"]["PATH"].split(os.pathsep)[0])
+    executable(fakebin / "sudo", """
+        #!/bin/sh
+        case "$*" in
+          '-n systemctl stop agent4k-test.service'|'-n systemctl start agent4k-test.service') ;;
+          *) exit 99 ;;
+        esac
+        printf 'sudo %s\n' "$*" >> "$SYNTHETIC_DEPLOY_LOG"
+    """)
+    result = run_deploy(stand, stand["target"], SYNTHETIC_SMOKE_FAIL="1" if smoke_failure else "0")
+    assert result.returncode == (1 if smoke_failure else 0), result.stderr
+    commands = stand["log"].read_text().splitlines()
+    assert 'sudo -n systemctl stop agent4k-test.service' in commands
+    assert 'sudo -n systemctl start agent4k-test.service' in commands
+    assert not any('systemctl restart' in command for command in commands)
+    assert git(stand["repo"], "rev-parse", "HEAD") == stand["target"]
+    if smoke_failure:
+        assert 'retaining the new checkout for compatible recovery' in result.stderr
+
+
 def test_dirty_checkout_is_rejected_without_mutation_or_restart(stand: dict) -> None:
     dirty = stand["repo"] / "pyproject.toml"
     dirty.write_text("user-owned local change", encoding="utf-8")
