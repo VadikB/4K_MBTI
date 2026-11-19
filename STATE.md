@@ -1284,3 +1284,27 @@ Real-provider smoke оставлен NOT_RUN по отдельному реше�
   C02/C03/C07 сохранены отдельно. N07 live publish/deploy `NOT_RUN`: нет подключённого
   общего test stand/PR/remote CI; локальная PILOT-120 граница PASS. N08 PASS TECH;
   N09 PASS TECH, methodology `NOT_RUN`.
+
+## ADMIN-CABINET-01 · 19.11.2026
+
+- Основание: прямое «делаем» к архиву
+  `P4K_Admin_01_Cabinet_2026-11-19.zip`; требования/границы и полный отчёт —
+  `docs/evc/tasks/admin-cabinet-01.md`. Внешний `TASK.md` сам не разрешает push,
+  PR, bump, merge или deploy.
+- Ветка/worktree: `codex/admin-cabinet-01` / `worktrees/admin-cabinet-01`,
+  база и повторно проверенный `origin/main`:
+  `83468687d48b585f2cfb3d655dd805c15c25f065` (`2.1.33`).
+- Реализовано: меню аккаунта со штатным выходом, вход «Управление» в участников,
+  действия строки по состоянию, карточка без общего блока регистрации,
+  проверка прежней подготовки, точный допустимый report ID по приоритету реестра.
+  Изменены `Api/routes.py`, затронутые `web/` и тесты; `web/dist` пересобран.
+- Проверено: `git diff --check`, JS lint/build, frontend 473 PASS, backend
+  1255 PASS, HTTP 218 PASS, M8 access HTTP 3 PASS, SQL integration 9 PASS,
+  PATH-admin owned stand 18 PASS, actual browser HTTP/PG 1 PASS,
+  адресный browser-набор 10 PASS и сценарии выхода 3 PASS. Docker PostgreSQL 16
+  и marker-owned БД удалены. Не выполнялись реальные письма, LLM, визуальная
+  приёмка по изображениям и GitHub CI (PR ещё не создан).
+- Откат: revert UI bundle и SQL-проекции; записи о приглашениях, назначениях и
+  публикациях сохраняются. `bump:version -- patch --dry-run` предложил `2.1.34`.
+  Следующий шаг: прямое решение владельца о кандидате версии и PR, затем
+  `ready:prepare`, актуальный CI и review; merge/deploy отдельно.

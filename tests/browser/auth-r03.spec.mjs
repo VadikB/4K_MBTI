@@ -404,6 +404,7 @@ test('ADM28 late confirmation after account change cannot populate the new accou
     await delayed; return fulfillJson(route, saved);
   });
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   const nextUser = { ...adminUser, id: 28, email: 'next@example.test', full_name: 'Account B' };
@@ -936,6 +937,7 @@ test('PROGRAM01 R10 does not render the old connection result after logout', asy
   const form = page.locator('[data-action="connect-assessment-program"]');
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
+  await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   releaseReadback();
@@ -1283,8 +1285,9 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   await expect(dialog.getByRole('button', { name: 'Оставить приглашение' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
-  await expect(revokeTrigger).toBeFocused();
+  await expect(menu.locator('summary')).toBeFocused();
   expect(revoked).toBe(false);
+  await menu.locator('summary').click();
   await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
   dialog = page.getByRole('dialog', { name: 'Отозвать приглашение?' });
   await dialog.getByRole('button', { name: 'Отозвать приглашение', exact: true }).click();
@@ -1433,6 +1436,7 @@ test('PROGRAM01 R06 does not render an old cancellation result after identity ch
   await page.getByRole('menuitem', { name: 'Отменить назначение оценки' }).click();
   await page.getByRole('dialog', { name: 'Отменить назначение?' })
     .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
+  await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   release();
@@ -1486,8 +1490,67 @@ test('PROGRAM01 R05 keeps privileged password reset in the card and exposes only
   await expect(row.getByRole('menuitem', { name: 'Сбросить пароль' })).toHaveCount(0);
   await row.locator('[data-action="open-member-card"]').click();
   const card = page.locator('.admin-member-card-dialog');
-  await expect(card).toContainText(/Создано: 01\.11\.2026, (10:00 UTC|13:00 GMT\+3)/);
+  await expect(card).not.toContainText('История приглашения');
+  await expect(row.locator('.admin-organization-member-invitation')).toContainText('Ссылка');
   await expect(card.getByRole('button', { name: 'Сбросить пароль' })).toHaveCount(1);
+});
+
+test('ADMIN-CABINET-01 keeps row actions scoped to invitation and report state', async ({ page }) => {
+  const reportId = '11111111-1111-4111-8111-111111111111';
+  const organization = { ...adminOrganization, members: [
+    { ...adminOrganization.members[0], user_id: 8, email: 'new@example.test', invitation_id: null,
+      invitation_status: 'not_sent', invitation_delivery_status: 'not_sent', invitation_link_status: 'not_created' },
+    { ...adminOrganization.members[0], user_id: 9, email: 'sent@example.test', invitation_status: 'accepted',
+      invitation_delivery_status: 'accepted' },
+    { ...adminOrganization.members[0], user_id: 10, email: 'result@example.test', invitation_status: 'used',
+      invitation_delivery_status: 'accepted', invitation_link_status: 'used', assessment_assignments: ['competencies_4k'],
+      assessment_stages: { competencies_4k: { code: 'report_ready', action: 'open_report',
+        cycle_id: '22222222-2222-4222-8222-222222222222', report_id: reportId, report_access: 'customer',
+        result_summary: { kind: 'insufficient' } } } },
+    { ...adminOrganization.members[0], user_id: 11, email: 'failed@example.test', invitation_status: 'used',
+      invitation_delivery_status: 'accepted', assessment_assignments: ['competencies_4k'],
+      assessment_stages: { competencies_4k: { code: 'preparation_failed', action: 'retry_preparation',
+        operation_id: 'prep-known-11', description: 'Последний подтверждённый этап: подготовка кейсов.' } } },
+  ] };
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
+  const account = page.locator('.org-admin-account-menu');
+  await expect(account.locator('summary')).toHaveText('Admin');
+  await account.locator('summary').click();
+  await expect(account.getByRole('button', { name: 'Выйти' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(account).not.toHaveAttribute('open');
+  const rows = page.locator('.admin-organization-member');
+  await expect(rows.nth(0).getByRole('button', { name: 'Пригласить' })).toBeVisible();
+  await expect(rows.nth(0).locator('.admin-organization-member-menu')).toHaveCount(0);
+  await expect(rows.nth(1).locator('.admin-organization-member-menu')).toHaveCount(1);
+  await rows.nth(1).locator('.admin-organization-member-menu summary').click();
+  await expect(rows.nth(1).getByRole('menuitem')).toHaveCount(3);
+  await page.keyboard.press('Escape');
+  await expect(rows.nth(1).locator('.admin-organization-member-menu')).not.toHaveAttribute('open');
+  await expect(rows.nth(2).getByRole('button', { name: 'Открыть пояснение' })).toHaveAttribute('data-report-id', reportId);
+  await expect(rows.nth(2).locator('.admin-organization-member-menu')).toHaveCount(0);
+  await expect(rows.nth(2).getByRole('button', { name: 'Удалить человека' })).toBeVisible();
+  await expect(rows.nth(3)).toContainText('Номер случая: prep-known-11');
+  const reads = [];
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/users/admin/organizations') reads.push(request.method());
+  });
+  await rows.nth(3).getByRole('button', { name: 'Проверить состояние' }).click();
+  await expect.poll(() => reads.length).toBeGreaterThan(0);
+  expect(reads).toEqual(['GET']);
+  await rows.nth(1).locator('[data-action="open-member-card"]').click();
+  await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Регистрация');
+  await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Письмо и ссылка');
+  await expect(rows.nth(1).locator('.admin-organization-member-invitation')).toContainText('Регистрация');
+  await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
+  const reportReads = [];
+  page.on('request', (request) => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname.includes('/admin/m8-access/reports/')) {
+      reportReads.push(new URL(request.url()).pathname);
+    }
+  });
+  await rows.nth(2).getByRole('button', { name: 'Открыть пояснение' }).click();
+  await expect.poll(() => reportReads).toContain('/users/admin/m8-access/reports/' + reportId);
 });
 
 test('ARCH30 offers an explicit one-way legacy profile copy into an empty C01 draft', async ({ page }) => {
@@ -1524,9 +1587,10 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await expect(rows).toHaveCount(2);
   await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(0);
   await rows.nth(1).locator('[data-action="open-member-card"]').click();
-  await expect(page.locator('.admin-member-card-dialog')).toContainText('Регистрация: завершена');
+  await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Регистрация');
+  await expect(rows.nth(1).locator('.admin-organization-member-invitation')).toContainText('Регистрация: завершена');
   await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
-  await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(1);
+  await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(0);
 
   // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
   for (const width of [320, 375, 390, 683, 768, 1024, 1366, 1440]) {
@@ -1579,7 +1643,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     expect(dialog.message()).toContain(longEmail);
     await dialog.dismiss();
   });
-  const deletePerson = rows.first().getByRole('button', { name: 'Удалить человека', exact: true });
+  const deletePerson = rows.first().locator('[data-action="purge-account"]');
   await deletePerson.click();
   await expect(deletePerson).toBeEnabled();
   expect(purgePosts).toBe(0);

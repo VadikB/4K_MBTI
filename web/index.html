@@ -419,9 +419,11 @@
           <button class="admin-account-navigation-item" type="button" data-admin-area="assessment">Моя оценка</button>
         </nav>
         <div class="org-admin-account">
-          <span id="admin-organizations-account-name">Аккаунт</span>
           <button id="admin-organizations-back-button" class="ghost-button compact-ghost" type="button">К сводке</button>
-          <button id="admin-organizations-logout-button" class="ghost-button compact-ghost" type="button">Выйти</button>
+          <details class="org-admin-account-menu">
+            <summary id="admin-organizations-account-name" aria-label="Меню аккаунта">Аккаунт</summary>
+            <div><button id="admin-organizations-logout-button" class="user-menu-item" type="button">Выйти</button></div>
+          </details>
         </div>
       </header>
 

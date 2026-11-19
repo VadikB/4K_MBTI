@@ -133,6 +133,7 @@ test('R10-STATUS same program in another organization never receives the old out
 });
 test('R10-STATUS logout and another account cannot restore the previous outcome', async ({ page }) => {
   const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
+  await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
   await page.locator('#email-input').fill('admin-28@example.test');

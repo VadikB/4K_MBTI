@@ -37,6 +37,18 @@
     color: var(--text-muted);
     font-size: var(--fs-meta);
 }
+.org-admin-account-menu { position: relative; }
+.org-admin-account-menu summary {
+    cursor: pointer; list-style: none; color: var(--admin-primary); font-weight: var(--fw-semibold);
+}
+.org-admin-account-menu summary::-webkit-details-marker { display: none; }
+.org-admin-account-menu > div {
+    position: absolute; right: 0; top: calc(100% + 12px); z-index: 30;
+    min-width: 148px; padding: 6px; background: #fff;
+    border: 1px solid var(--palette-graphite-200); border-radius: var(--radius-sm);
+    box-shadow: 0 12px 32px rgb(15 23 42 / 18%);
+}
+.org-admin-account-menu button { width: 100%; text-align: left; }
 
 .admin-assessment-empty-content {
     display: grid;

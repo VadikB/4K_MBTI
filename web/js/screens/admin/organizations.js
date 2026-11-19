@@ -2216,9 +2216,9 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
             return ['Назначение #' + entry.assignment_id + ': ' + status, created ? 'создано ' + created : '',
               revoked ? 'отменено ' + revoked : '', cycle].filter(Boolean).join(', ');
           }).join(' · ') || 'История точного назначения отсутствует';
-        const sendLabel = item.invitation_id ? 'Отправить повторно' : 'Отправить';
+        const sendLabel = item.invitation_id ? 'Отправить письмо повторно' : 'Пригласить';
         const pendingInvitation = pendingInvitationOperations().find(operation => operation.organizationId === Number(organizationId) && operation.assignmentRef === selectedAssessmentRef && operation.emails.includes(email));
-        const invitationButton = ['unknown', 'pending'].includes(invitationFacts(invitation).outcome) && invitation.delivery_status !== 'not_sent'
+        const invitationButton = invitationStatus === 'used' ? '' : ['unknown', 'pending'].includes(invitationFacts(invitation).outcome) && invitation.delivery_status !== 'not_sent'
           ? (pendingInvitation ? '<button type="button" data-action="recover-member-invitation" data-request-key="' + escapeHtml(pendingInvitation.requestKey) + '"' + (invitationRequestsInFlight.has(state.identityEpoch + ':' + pendingInvitation.requestKey) ? ' disabled' : '') + '>Проверить отправку</button>' : invitation.operation_id ?
             '<button type="button" data-action="check-member-invitation" data-value="' + escapeHtml(email) + '" data-operation-id="' + escapeHtml(invitation.operation_id) + '" data-assignment-ref="' + escapeHtml(selectedAssessmentRef) + '">Проверить отправку</button>' : '')
           : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
@@ -2232,19 +2232,26 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
         const reportButton = scopedStage?.action === 'open_report' && scopedStage?.report_id
           ? '<button type="button" data-action="open-member-report" data-report-id="' + escapeHtml(scopedStage.report_id) +
             '" data-cycle-id="' + escapeHtml(scopedStage.cycle_id || '') + '" data-report-access="' +
-            escapeHtml(scopedStage.report_access || '') + '">Открыть отчёт</button>' : '';
-        const checkPreparationButton = scopedStage?.action === 'check_preparation'
-          ? '<button type="button" data-action="check-member-preparation">Проверить подготовку</button>' : '';
+            escapeHtml(scopedStage.report_access || '') + '">' +
+            (scopedStage.result_summary?.kind === 'insufficient' ? 'Открыть пояснение' : 'Открыть отчёт') + '</button>' : '';
+        const checkPreparationButton = (scopedStage?.action === 'check_preparation' ||
+          (preparationStatus === 'preparation_failed' && scopedStage?.operation_id))
+          ? '<button type="button" data-action="check-member-preparation">Проверить состояние</button>' : '';
         const processingButton = scopedStage?.action === 'open_processing'
           ? '<button type="button" data-action="open-member-processing" data-participant-name="' + escapeHtml(participantName) +
             '" data-stage-description="' + escapeHtml(stageDescription) + '">Подробнее об обработке</button>' : '';
         const primaryAction = reportButton || processingButton || checkPreparationButton || (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus)
           ? invitationButton : '');
         const menuActions = (primaryAction === invitationButton ? '' : invitationButton) + revokeButton + cancelButton + preparationButton + removeButton;
+        const extraCount = (menuActions.match(/<button\b/g) || []).length;
+        const extraActions = extraCount > 1
+          ? '<details class="admin-organization-member-menu"><summary aria-label="Другие действия" aria-haspopup="menu">⋯</summary><div role="menu">' +
+            menuActions.replaceAll(' role="menuitem"', '').replaceAll('<button ', '<button role="menuitem" ') + '</div></details>'
+          : menuActions.replace(' role="menuitem"', '');
         return (
           '<article class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
-          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-registration="' + escapeHtml(registrationLabel) + '" data-invitation="' + escapeHtml(deliveryLabel + ' · ' + linkLabel) + '" data-invitation-info="' + escapeHtml(JSON.stringify(invitation)) + '" data-invitation-assessment="' + escapeHtml(selectedAssessmentRef) + '" data-invitation-created="' + escapeHtml(localDateTime(item.invitation_created_at)) + '" data-invitation-expires="' + escapeHtml(invitationExpiry) + '" data-invitation-used="' + escapeHtml(localDateTime(item.invitation_used_at)) + '" data-invitation-revoked="' + escapeHtml(localDateTime(item.invitation_revoked_at)) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
+          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-invitation-info="' + escapeHtml(JSON.stringify(invitation)) + '" data-invitation-assessment="' + escapeHtml(selectedAssessmentRef) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
           '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
           '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
@@ -2254,10 +2261,12 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
               (invitationMissingText(invitation) ? ' · Не заполнены: ' + escapeHtml(invitationMissingText(invitation)) : '') + '</span>' +
               (invitation.next_action === 'review_organization' ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '') : '') +
           '</div>' +
-          (preparationModel ? preparationHtml(preparationModel, { compact: true }) : '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span>' + '</div>') +
+          (preparationModel ? preparationHtml(preparationModel, { compact: true }) : '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' + (['preparation_failed', 'start_blocked', 'failed'].includes(preparationStatus) ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span>' +
+            (preparationStatus === 'preparation_failed' && scopedStage?.operation_id
+              ? '<span>Номер случая: ' + escapeHtml(scopedStage.operation_id) + '</span>' : '') + '</div>') +
           '<div class="admin-organization-member-actions">' +
           primaryAction +
-          '<details class="admin-organization-member-menu"><summary aria-label="Другие действия" aria-haspopup="menu">⋯</summary><div role="menu">' + menuActions + '</div></details>' +
+          extraActions +
           '</div>' +
           '</article>'
         );
@@ -2685,6 +2694,7 @@ export const renderAdminOrganizations = () => {
 
 export const openAdminOrganizations = async () => {
   assignmentViewGeneration += 1;
+  organizationViews.clear();
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   state.activeArea = 'management';

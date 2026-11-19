@@ -158,7 +158,8 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       try {
         await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
         await committedGate;
-        await page.locator('#admin-organizations-logout-button').click();
+        await page.locator('#admin-organizations-account-name').click();
+  await page.locator('#admin-organizations-logout-button').click();
         await expect(page.locator('#email-input')).toBeVisible();
         await page.locator('#email-input').fill('admin@example.test');
         await page.locator('#request-magic-link-button').click();
