@@ -3191,6 +3191,61 @@ def ensure_acquaintance_confirmation_schema(connection) -> None:
     )
 
 
+def ensure_appeals_schema(connection) -> None:
+    """Expand legacy reports without rewriting their message or status."""
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS participant_data_issue_reports (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+            message TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            resolved_at TIMESTAMP,
+            UNIQUE (user_id, organization_id, message)
+        )
+        """
+    )
+    # Existing reports keep the legacy scope. A new assignment gets its own
+    # idempotency boundary, so an identical message is not lost across cycles.
+    connection.execute("ALTER TABLE participant_data_issue_reports ADD COLUMN IF NOT EXISTS scope_key TEXT NOT NULL DEFAULT 'legacy'")
+    connection.execute("ALTER TABLE participant_data_issue_reports ADD COLUMN IF NOT EXISTS assignment_ref TEXT")
+    connection.execute("ALTER TABLE participant_data_issue_reports ADD COLUMN IF NOT EXISTS questionnaire_revision_id BIGINT")
+    connection.execute("ALTER TABLE participant_data_issue_reports ADD COLUMN IF NOT EXISTS assignment_id BIGINT")
+    connection.execute("ALTER TABLE participant_data_issue_reports ADD COLUMN IF NOT EXISTS claimed_by_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL")
+    connection.execute("ALTER TABLE participant_data_issue_reports ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMP")
+    connection.execute("""DO $$
+        DECLARE old_key TEXT;
+        BEGIN
+          FOR old_key IN SELECT conname FROM pg_constraint
+            WHERE conrelid='participant_data_issue_reports'::regclass AND contype='u'
+              AND pg_get_constraintdef(oid)='UNIQUE (user_id, organization_id, message)'
+          LOOP
+            EXECUTE format('ALTER TABLE participant_data_issue_reports DROP CONSTRAINT %I', old_key);
+          END LOOP;
+        END $$""")
+    connection.execute("""DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint
+          WHERE conrelid='participant_data_issue_reports'::regclass
+            AND conname='participant_data_issue_reports_status_check'
+            AND pg_get_constraintdef(oid) LIKE '%in_progress%') THEN
+          ALTER TABLE participant_data_issue_reports
+            DROP CONSTRAINT IF EXISTS participant_data_issue_reports_status_check;
+          ALTER TABLE participant_data_issue_reports
+            ADD CONSTRAINT participant_data_issue_reports_status_check
+              CHECK (status IN ('open', 'in_progress', 'answered', 'resolved'));
+        END IF;
+    END $$""")
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS participant_data_issue_reports_scope_message_key ON participant_data_issue_reports(user_id, organization_id, scope_key, message)")
+    connection.execute("""CREATE TABLE IF NOT EXISTS participant_data_issue_replies (
+        issue_id BIGINT PRIMARY KEY REFERENCES participant_data_issue_reports(id) ON DELETE CASCADE,
+        author_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )""")
+
+
 def ensure_m5_runtime_schema(connection) -> None:
     """Хранилище неизменяемых M5 CaseVersion, AS, допуска и фактической трассы."""
     connection.execute("""
@@ -4716,20 +4771,7 @@ def ensure_core_schema() -> None:
         )
         connection.execute("ALTER TABLE participant_acquaintance_states ADD COLUMN IF NOT EXISTS assignment_ref TEXT")
         connection.execute("ALTER TABLE participant_acquaintance_states ADD COLUMN IF NOT EXISTS questionnaire_revision_id BIGINT")
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS participant_data_issue_reports (
-                id BIGSERIAL PRIMARY KEY,
-                user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-                message TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
-                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-                resolved_at TIMESTAMP,
-                UNIQUE (user_id, organization_id, message)
-            )
-            """
-        )
+        ensure_appeals_schema(connection)
         connection.execute(
             "ALTER TABLE organization_memberships ADD COLUMN IF NOT EXISTS admission_source "
             "TEXT NOT NULL DEFAULT 'legacy_unclassified'"

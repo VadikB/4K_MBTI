@@ -123,6 +123,7 @@ def early_readiness(connection, *, user_id: int) -> dict:
                 "organization_name": str(organization["name"]),
                 "organization_context_version_id": assignment["organization_context_version_id"],
                 "assignment_ref": assignment["assignment_ref"],
+                "assignment_id": int(binding["assignment_id"]) if binding else None,
                 "questionnaire_revision_id": assignment.get("questionnaire_revision_id"),
                 "organization_kind": "organization",
                 "responsible_contact": None,
@@ -592,11 +593,18 @@ def report_issue(connection, *, user_id: int, message: str) -> dict:
     ).fetchone()
     if admin is None:
         raise ValueError("W02_RESPONSIBLE_NOT_CONFIGURED")
+    assignment_ref = readiness.get("assignment_ref")
+    revision_id = readiness.get("questionnaire_revision_id")
+    assignment_id = readiness.get("assignment_id")
+    scope_key = json.dumps([assignment_ref, revision_id, assignment_id], separators=(",", ":")) if assignment_ref else "legacy"
     row = connection.execute(
-        """INSERT INTO participant_data_issue_reports(user_id,organization_id,message)
-           VALUES(%s,%s,%s) ON CONFLICT(user_id,organization_id,message)
-           DO UPDATE SET message=EXCLUDED.message RETURNING id,status,created_at""",
-        (user_id, readiness["organization_id"], normalized),
+        """INSERT INTO participant_data_issue_reports
+               (user_id, organization_id, scope_key, assignment_ref, questionnaire_revision_id, assignment_id, message)
+           VALUES(%s,%s,%s,%s,%s,%s,%s)
+           ON CONFLICT(user_id,organization_id,scope_key,message)
+           DO UPDATE SET message=EXCLUDED.message
+           RETURNING id,status,created_at""",
+        (user_id, readiness["organization_id"], scope_key, assignment_ref, revision_id, assignment_id, normalized),
     ).fetchone()
     return dict(row)
 

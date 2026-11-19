@@ -946,3 +946,7 @@
     gap: 6px;
     font-size: 13px;
 }
+
+[data-participant-appeals] { display: grid; gap: 16px; margin-block: 24px; }
+.participant-appeal { display: grid; gap: 10px; }
+.participant-appeal p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -21,6 +21,7 @@ import { questionnaireAssignmentState } from './questionnaire-assignment-state.j
 import adminContextChoices from '../../../../assessment_definitions/contexts/competencies_4k/1.1/admin_context_choices.json' with { type: 'json' };
 
 let selectedOrganizationId = null;
+let appealsOnly = false;
 const invitationRequestsInFlight = new Set();
 const invitationResults = new Map();
 const assignmentSourceRequests = new Map();
@@ -2178,9 +2179,10 @@ const renderTagList = (items, emptyText, className, deleteAction, { canDeletePer
   );
 };
 
-const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false, selectedAssessmentRef = '', selectedAssessmentLabel = '', organizationId = selectedOrganizationId } = {}) => {
+const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false, selectedAssessmentRef = '', selectedAssessmentLabel = '', organizationId = selectedOrganizationId, appealsOnly = false } = {}) => {
+  if (appealsOnly) items = items.filter(item => Number(item.issue_count || 0) > 0);
   if (!items.length) {
-    return '<p class="admin-organizations-empty">Участники не привязаны.</p>';
+    return '<p class="admin-organizations-empty">' + (appealsOnly ? 'Участников с обращениями нет.' : 'Участники не привязаны.') + '</p>';
   }
   return (
     '<div class="admin-organization-members">' +
@@ -2277,8 +2279,9 @@ const renderMemberList = (items, { isSuperadmin = false, canDeletePerson = false
         return (
           '<article class="admin-organization-member">' +
           '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
-          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-invitation-info="' + escapeHtml(JSON.stringify(invitation)) + '" data-invitation-assessment="' + escapeHtml(selectedAssessmentRef) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
+          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-user-id="' + Number(item.user_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(currentStage) + '" data-stage-description="' + escapeHtml(stageDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-invitation-info="' + escapeHtml(JSON.stringify(invitation)) + '" data-invitation-assessment="' + escapeHtml(selectedAssessmentRef) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
           '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
+          (item.issue_count ? '<span class="admin-organization-member-issues">С обращениями · ' + Number(item.issue_count) + '</span>' : '') +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
           '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
           escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
@@ -2631,7 +2634,7 @@ export const renderAdminOrganizations = () => {
         viewButton('people', 'Участники оценки') +
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>' +
-        '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Участники оценки</h4>' +
+        '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people"><h4>Участники оценки</h4><button type="button" class="ghost-button compact-ghost" data-action="toggle-appeals-filter" aria-pressed="' + appealsOnly + '">С обращениями</button>' +
         '<dl class="admin-people-context"><div><dt>Программа оценки</dt><dd>' + (programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram ? escapeHtml(programIdentity(currentProgram)) + ' · версия ' + escapeHtml(currentProgram.program_version) : 'Не подключена') + '</dd></div><div><dt>Роль в оценке</dt><dd>' + escapeHtml(assignmentRoleLabel) + '</dd></div></dl>' +
         '<p>Назначение не запускает оценку.</p>' +
         assignmentReadinessMarkup +
@@ -2640,6 +2643,7 @@ export const renderAdminOrganizations = () => {
         '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit"' +
         (assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button></form></div>' +
         renderInvitationFeedback(orgId, selectedRef, org.members || []) + renderMemberList(org.members || [], {
+          appealsOnly,
           organizationId: orgId,
           isSuperadmin,
           canDeletePerson: purgePreviewAvailable,
@@ -2711,6 +2715,11 @@ export const renderAdminOrganizations = () => {
   else if (focusedCheckUser) adminOrganizationsList.querySelector('[data-user-id="' + CSS.escape(focusedCheckUser) + '"]')?.closest('.admin-organization-member')?.querySelector('[data-action="check-member-preparation"]')?.focus({ preventScroll: true });
   adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')
     .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));
+};
+
+export const toggleAppealsFilter = () => {
+  appealsOnly = !appealsOnly;
+  renderAdminOrganizations();
 };
 
 export const openAdminOrganizations = async () => {

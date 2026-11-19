@@ -1083,6 +1083,13 @@
 .admin-member-card-dialog dt { color: var(--text-muted); }
 .admin-member-card-dialog dd { margin: 0; overflow-wrap: anywhere; }
 .admin-member-card-dialog .dialog-close { width: 44px; height: 44px; border: 0; border-radius: 50%; font-size: 24px; cursor: pointer; }
+.admin-organization-member-issues { color: var(--palette-outcome-link); font-weight: 600; }
+.admin-member-appeals { display: grid; gap: 12px; max-height: 40vh; overflow-y: auto; }
+.admin-member-appeals h4 { margin: 0; }
+.admin-member-appeal { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--palette-graphite-200); border-radius: var(--radius-sm); }
+.admin-member-appeal p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-member-appeal textarea { width: 100%; min-height: 96px; }
+.admin-member-appeal button { justify-self: start; }
 .admin-subject-confirmation-dialog { width: min(560px, calc(100vw - 32px)); }
 .admin-subject-confirmation-dialog p { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
 .admin-subject-confirmation-subject { font-weight: 600; color: var(--text-main); }

@@ -935,6 +935,7 @@ class AdminOrganizationAdminItem(BaseModel):
 
 class AdminOrganizationMemberItem(BaseModel):
     user_id: int
+    issue_count: int = 0
     email: str
     full_name: str | None = None
     role: str = "member"
