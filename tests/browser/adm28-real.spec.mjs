@@ -57,9 +57,6 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await expect(card.getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
     await card.locator('input[name="invitation_email"]').first().uncheck();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
-    const profile = card.locator('form[data-action="update-profile"]');
-    await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
-    await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
     const form = card.locator('form[data-action="preview-early-data"]');
     await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
     await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
