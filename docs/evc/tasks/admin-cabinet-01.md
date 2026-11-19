@@ -104,9 +104,17 @@ CI точного SHA обязателен до слияния. Слияние �
 После публикации [PR #250](https://github.com/VadikB/4K_MBTI/pull/250) первый
 Ready CI подтвердил `frontend`, `pytest`, `integration` и четыре runtime browser
 shard. `browser (fast)` был отменён на job timeout 15 минут после частичного
-прогона без зафиксированного test FAIL; обязательный агрегат не мог пройти.
+прогона; обязательный агрегат не мог пройти.
 `BROWSER_SUITE=fast npx playwright test --config tests/browser/playwright.ci.config.mjs --list`
-показал 408 тестов в 49 файлах. Для завершения полного набора изменён только
-`timeout-minutes` browser job с 15 на 35 в `.github/workflows/full-verification.yml`.
-Ни один spec, shard, gate или retry не исключён. Новый CI должен подтвердить
-точный head после этого изменения; предыдущий результат не засчитывается.
+показал 408 тестов в 49 файлах. Промежуточный commit `8e6d74e0` увеличил лимит
+browser job до 35 минут для получения полного журнала. Второй CI этого head
+завершил fast lane с 12 FAIL, 41 SKIP, 355 PASS; `frontend`, `pytest`, `integration`
+и четыре runtime shard — PASS. Все 12 отказов связаны со старыми селекторами
+после изменения UI. Адресная локальная регрессия исправленных сценариев:
+`preparation-status` 3 PASS, `remarks-admin-render` 1 PASS, `PATH-START` 5 PASS,
+остальные `auth-r03` 3 PASS. Первичный sandbox-запуск `preparation-status` был
+остановлен запретом loopback (`listen EPERM`); повтор в разрешённом окружении
+воспроизвёл исходный FAIL, затем три сценария прошли. Первопричина длительности —
+ожидание отсутствующих элементов в тестах, поэтому исходный лимит 15 минут
+восстановлен. Ни один spec, shard, gate или retry не исключён. Новый CI нужен на
+точном head после исправлений; предыдущие результаты не засчитываются.

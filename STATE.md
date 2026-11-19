@@ -1310,5 +1310,7 @@ Real-provider smoke оставлен NOT_RUN по отдельному реше�
   `2.1.34` назначена, `web/dist` пересобран. PR #250 создан. На head `03488cdb`
   CI `frontend`, `pytest`, `integration` и четыре runtime browser shard — PASS;
   `browser (fast)` отменён после лимита 15 минут, `full-verification` — FAIL.
-  В работе узкое увеличение browser job timeout до 35 минут для полного прогона
-  408 fast тестов. Следующий шаг: новый CI точного head и review; merge/deploy отдельно.
+  Повтор на `8e6d74e0` завершил fast lane: 12 FAIL, 41 SKIP, 355 PASS; остальные
+  jobs PASS. Все 12 отказов — устаревшие селекторы после изменения UI; адресные
+  12 сценариев исправлены и локально PASS. Промежуточный лимит 35 минут возвращён
+  к исходным 15. Следующий шаг: новый CI точного head и review; merge/deploy отдельно.

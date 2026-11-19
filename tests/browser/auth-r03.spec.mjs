@@ -1107,12 +1107,12 @@ test('PATH-START ST-R4: authorized read-only preparation action survives rendere
       assessment_stages: { competencies_4k: { code: 'preparing', label: 'Идёт подготовка оценки',
         action: 'check_preparation', assignment_id: 41, operation_id: 'synthetic-current-operation' } } }] };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
-  await expect(page.getByRole('button', { name: 'Проверить подготовку', exact: true })).toBeVisible();
+  await expect(page.locator('[data-action="check-member-preparation"]')).toBeVisible();
   let mutations = 0;
   page.on('request', (request) => {
     if (request.url().includes('/users/admin/organizations/') && request.method() !== 'GET') mutations += 1;
   });
-  await page.getByRole('button', { name: 'Проверить подготовку', exact: true }).click();
+  await page.locator('[data-action="check-member-preparation"]').click();
   await expect(page.locator('#admin-organizations-status')).toContainText('обновлено');
   expect(mutations).toBe(0);
 });
@@ -1138,7 +1138,7 @@ for (const width of [1440, 320, 390, 768]) {
     await expect(card.locator('.admin-assignment-readiness')).toContainText('Не удалось проверить сохранённую анкету');
     const explanation = await card.locator('.admin-assignment-readiness .form-status li').boundingBox();
     expect(explanation.width).toBeGreaterThan(150);
-    const action = card.getByRole('button', { name: 'Проверить подготовку', exact: true });
+    const action = card.locator('[data-action="check-member-preparation"]');
     await expect(action).toBeVisible();
     await expect(page.locator('body')).toHaveJSProperty('scrollWidth', width);
     const box = await action.boundingBox();
@@ -1326,8 +1326,8 @@ test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acqua
 
   await expect(page.locator('#admin-organizations-status'))
     .toContainText('приглашение нельзя отозвать после начала знакомства');
-  await menu.locator('summary').click();
-  await expect(menu.getByRole('menuitem', { name: 'Отозвать приглашение' })).toHaveCount(0);
+  await expect(menu).toHaveCount(0);
+  await expect(page.locator('[data-action="revoke-member-invitation"]')).toHaveCount(0);
   await expect(page.locator('.admin-organization-member-invitation')).toContainText('использована');
 });
 
@@ -2583,8 +2583,7 @@ test('AC18-ADM-1C shows factual invitation lifetime and read-only processing det
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   await expect(page.locator('.admin-organization-member-invitation')).not.toContainText('72 часа');
   await page.getByRole('button', { name: 'Person' }).click();
-  await expect(page.locator('[data-card-invitation-history]')).toContainText('Действует до:');
-  await expect(page.locator('[data-card-invitation-history]')).toContainText('Использовано:');
+  await expect(page.locator('.admin-member-card-dialog [data-card-invitation-history]')).toHaveCount(0);
   await expect(page.locator('[data-card-assignment-history]')).toContainText('Назначение #42: назначено');
   await expect(page.locator('[data-card-assignment-history]')).toContainText('Cycle cycle-current');
   await expect(page.locator('[data-card-assignment-history]')).toContainText('Назначение #41: отменено');
@@ -3468,7 +3467,6 @@ test('R03 network retry reuses invitation operation id', async ({ page }) => {
     return route.request().method() === 'POST' ? route.abort('failed') : fulfillJson(route, {}, 404);
   }, { ...adminOrganization, members: [{ ...adminOrganization.members[0], invitation_status: 'not_sent', invitation_delivery_status: 'not_sent' }] });
   const row = page.locator('.admin-organization-member').first();
-  await row.locator('.admin-organization-member-menu summary').click();
   const button = row.locator('[data-action="send-member-invitation"]');
   await button.click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Исход отправки пока неизвестен');

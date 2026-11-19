@@ -281,10 +281,10 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
       await expect(adminRoot.locator('details')).toHaveAttribute('open','');
       await expect(adminRoot.getByRole('button',{name:'Скопировать сведения'})).toBeFocused();
       adminError=true;
-      await member.getByRole('button',{name:'Проверить подготовку'}).click();
+      await member.locator('[data-action="check-member-preparation"]').click();
       await expect(adminRoot.locator('[data-preparation-notice]')).toContainText('Не удалось обновить состояние');
       adminError=false;
-      await member.getByRole('button',{name:'Проверить подготовку'}).click();
+      await member.locator('[data-action="check-member-preparation"]').click();
       await expect(adminRoot.locator('[data-preparation-notice]')).not.toContainText('Не удалось обновить состояние');
       expect((await(await page.request.get(`${admin.base}/__preview/requests`)).json()).filter(r=>r.method!=='GET')).toEqual([]);
       for(const tab of await card.locator('.admin-organization-step').all()) {
