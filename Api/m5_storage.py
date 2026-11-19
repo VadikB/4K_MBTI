@@ -63,22 +63,27 @@ def import_package(connection, *, package: dict, manifest: dict, execution_rules
     if package.get("runtime_enabled") is not False or package.get("source_status") != "WORKING":
         raise ValueError("M5 candidate import expects WORKING/runtime_disabled package")
     package_checksum = checksum({"package": package, "manifest": manifest})
-    existing = connection.execute(
-        "SELECT id, package_checksum FROM m5_packages WHERE package_id=%s AND package_version=%s FOR UPDATE",
-        (manifest["id"], manifest["version"]),
-    ).fetchone()
-    if existing:
-        if existing["package_checksum"] != package_checksum:
-            raise M5ImportConflict("M5_PACKAGE_VERSION_CONTENT_CONFLICT")
-        return {"package_db_id": int(existing["id"]), "created": False, "case_count": len(package["cases"])}
+    package_key = (manifest["id"], manifest["version"])
+    rules = execution_rules or {}
     row = connection.execute("""
         INSERT INTO m5_packages (package_id, package_version, schema_version, status, source_checksum,
             package_checksum, manifest_json, package_json, runtime_rules_json)
-        VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb) RETURNING id
-    """, (manifest["id"], manifest["version"], package["schema_version"], package["status"],
+        VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb)
+        ON CONFLICT DO NOTHING RETURNING id
+    """, (*package_key, package["schema_version"], package["status"],
           next(x["sha256"] for x in manifest["artifacts"] if x["name"].startswith("sources/")),
           package_checksum, json.dumps(manifest, ensure_ascii=False), json.dumps(package, ensure_ascii=False),
-          json.dumps(execution_rules or {}, ensure_ascii=False))).fetchone()
+          json.dumps(rules, ensure_ascii=False))).fetchone()
+    if row is None:
+        existing = connection.execute(
+            "SELECT id,package_checksum,runtime_rules_json FROM m5_packages "
+            "WHERE package_id=%s AND package_version=%s FOR UPDATE",
+            package_key,
+        ).fetchone()
+        if (existing is None or existing["package_checksum"] != package_checksum
+                or checksum(existing["runtime_rules_json"]) != checksum(rules)):
+            raise M5ImportConflict("M5_PACKAGE_VERSION_CONTENT_CONFLICT")
+        return {"package_db_id": int(existing["id"]), "created": False, "case_count": len(package["cases"])}
     package_db_id = int(row["id"])
     for raw in package["cases"]:
         case = validate_case_version(raw)

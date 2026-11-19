@@ -17,7 +17,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from Api.m5_case_runtime import checksum
-from Api.m5_package import digest, verify_package_directory
+from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_runtime_rules import load_runtime_rule_package
 
 
@@ -110,7 +110,8 @@ def apply_import(trace: dict[str, Any]) -> dict[str, Any]:
     with get_connection() as connection:
         imported = import_package_directory(connection, PACKAGE_DIR)
         runtime = import_runtime_rule_version(
-            connection, loaded_runtime, build_execution_rules(package["cases"], loaded_runtime["bindings"])
+            connection, loaded_runtime, build_execution_rules(package["cases"], loaded_runtime["bindings"]),
+            package_db_id=imported["package_db_id"],
         )
         readback = package_readback(connection, imported["package_db_id"])
         case_ids = [int(item["id"]) for item in readback["cases"]]
@@ -123,7 +124,7 @@ def apply_import(trace: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_admitted_materials(decision_basis: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Build the DB release snapshot without rewriting the repository candidate."""
+    """Build the approved Case content, also used to replay historical releases."""
     if not str(decision_basis or "").strip():
         raise ValueError("SPECIALIST_ADMISSION_DECISION_BASIS_REQUIRED")
     package = json.loads((PACKAGE_DIR / "case-package.json").read_text())
@@ -154,27 +155,80 @@ def build_admitted_materials(decision_basis: str) -> tuple[dict[str, Any], dict[
     return admitted, runtime, evidence_refs
 
 
+def build_release_artifacts(
+    package: dict[str, Any], runtime: dict[str, Any], *, usage_scope: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Assign immutable DB versions and seal the derived package and rule bindings."""
+    from scripts.build_m5_sales_package import build_execution_rules
+
+    if usage_scope not in {"assessment", "qa"}:
+        raise ValueError("M5_USAGE_SCOPE_INVALID")
+    scope_suffix = "-qa" if usage_scope == "qa" else ""
+    release_suffix = f"-admitted.1{scope_suffix}"
+    source_manifest = json.loads((PACKAGE_DIR / "manifest.json").read_text())
+    source_package = json.loads((PACKAGE_DIR / "case-package.json").read_text())
+    source_ref = {
+        "id": source_manifest["id"], "version": source_manifest["version"],
+        "checksum": checksum({"package": source_package, "manifest": source_manifest}),
+    }
+    package["version"] = f"{source_ref['version']}{release_suffix}"
+    package["status"] = "FROZEN"
+    bindings = runtime["bindings"]
+    for case in package["cases"]:
+        # The author payload keeps the approved source revision.
+        case["version"] += release_suffix
+        bindings["case_bindings"][case["case_id"]].update(
+            case_version=case["version"], case_checksum=checksum(case),
+        )
+    rules = build_execution_rules(package["cases"], bindings)
+    replacements = {"case-package.json": package, "execution-rules.json": rules}
+    manifest = {
+        **source_manifest, "version": package["version"], "status": package["status"],
+        "source_package_ref": source_ref,
+        "artifacts": [
+            {**item, "sha256": digest(json_bytes(replacements[item["name"]]))}
+            if item["name"] in replacements else item
+            for item in source_manifest["artifacts"]
+        ],
+    }
+    runtime_manifest = runtime["manifest"]
+    source_runtime_ref = {
+        "id": runtime_manifest["id"], "version": runtime_manifest["version"],
+        "manifest_checksum": runtime["manifest_checksum"],
+    }
+    runtime_version = f"1.2.1{scope_suffix}"
+    bindings["version"] = runtime_version
+    bindings.pop("artifact_checksum")
+    bindings["artifact_checksum"] = digest(json_bytes(bindings))
+    runtime_manifest.update(
+        version=runtime_version,
+        source={
+            "case_package_id": manifest["id"], "case_package_version": manifest["version"],
+            "runtime_ref": source_runtime_ref,
+        },
+        artifacts=[{"name": "event-bindings.json", "sha256": bindings["artifact_checksum"]}],
+    )
+    runtime["manifest_checksum"] = digest(json_bytes(runtime_manifest))
+    return manifest, rules
+
+
 def publish_admitted_catalog(
     trace: dict[str, Any], *, published_by: int, decision_basis: str,
     catalog_id: str, catalog_version: str, idempotency_key: str,
-    organization_id: int | None,
+    organization_id: int | None, usage_scope: str = "assessment",
 ) -> dict[str, Any]:
     from Api.database import get_connection
     from Api.m5_catalog_integrity import catalog_readback, publish_catalog
     from Api.m5_runtime_rules import import_runtime_rule_version
     from Api.m5_storage import import_package, package_readback
-    from scripts.build_m5_sales_package import build_execution_rules
-
     package, loaded_runtime, evidence_refs = build_admitted_materials(decision_basis)
-    manifest = json.loads((PACKAGE_DIR / "manifest.json").read_text())
-    execution_rules = json.loads((PACKAGE_DIR / "execution-rules.json").read_text())
+    manifest, execution_rules = build_release_artifacts(package, loaded_runtime, usage_scope=usage_scope)
     with get_connection() as connection:
         imported = import_package(
             connection, package=package, manifest=manifest, execution_rules=execution_rules
         )
         runtime = import_runtime_rule_version(
-            connection, loaded_runtime,
-            build_execution_rules(package["cases"], loaded_runtime["bindings"]),
+            connection, loaded_runtime, execution_rules, package_db_id=imported["package_db_id"],
         )
         readback = package_readback(connection, imported["package_db_id"])
         cases = readback["cases"]
@@ -186,9 +240,9 @@ def publish_admitted_catalog(
                         "id": case["case_id"], "version": case["case_version"],
                         "checksum": case["content_checksum"],
                     },
-                    "base_role": case["base_role"], "usage_scopes": ["assessment"],
+                    "base_role": case["base_role"], "usage_scopes": [usage_scope],
                     "origin": {
-                        "type": "human_review",
+                        "type": "synthetic_test" if usage_scope == "qa" else "human_review",
                         "actor_ref": f"user:{published_by}:{decision_basis.strip()}",
                     },
                     "evidence_ref": evidence_ref,
@@ -204,7 +258,7 @@ def publish_admitted_catalog(
         catalog = publish_catalog(
             connection, catalog_id=catalog_id, catalog_version=catalog_version,
             package_db_id=imported["package_db_id"],
-            case_version_ids=[int(case["id"]) for case in cases], usage_scope="assessment",
+            case_version_ids=[int(case["id"]) for case in cases], usage_scope=usage_scope,
             organization_id=organization_id, published_by=published_by,
             decision_basis=decision_basis, idempotency_key=idempotency_key,
             runtime_rule_version_id=runtime["id"],
@@ -228,6 +282,8 @@ def main() -> int:
     parser.add_argument("--catalog-version", default="1.0")
     parser.add_argument("--idempotency-key", default="specialist-pilot-1.0")
     parser.add_argument("--organization-id", type=int)
+    parser.add_argument("--usage-scope", choices=("assessment", "qa"), default="assessment",
+                        help="Publication scope; qa uses synthetic evidence and separate artifact versions.")
     args = parser.parse_args()
     result = build_trace()
     if args.publish_admitted_catalog:
@@ -237,6 +293,7 @@ def main() -> int:
             copy.deepcopy(result), published_by=args.published_by, decision_basis=args.decision_basis,
             catalog_id=args.catalog_id, catalog_version=args.catalog_version,
             idempotency_key=args.idempotency_key, organization_id=args.organization_id,
+            usage_scope=args.usage_scope,
         )
     elif args.apply_import:
         result["database"] = apply_import(result)
