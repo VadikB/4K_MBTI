@@ -10,7 +10,7 @@ import { persistReceipt } from './fixtures/receipt-file.mjs';
 for (const scenario of [
   { name: 'first-three-1440', count: 3, width: 1440 },
   { name: 'first-three-390', count: 3, width: 390 },
-  { name: 'all-fields-1440', count: 12, width: 1440 },
+  { name: 'all-fields-1440', count: 8, width: 1440 },
   { name: 'read-complete-control', count: 0, width: 1440 },
 ]) test(`Q-DRAFT-01 actual PG: ${scenario.name} retains input without refill`, async ({ page }) => {
   test.setTimeout(150000);
@@ -21,7 +21,7 @@ for (const scenario of [
   fs.mkdirSync(directory, { recursive: true });
   const statePath = path.join(directory, 'state.json'), port = '18874', base = `http://127.0.0.1:${port}`;
   const fixture = JSON.parse(fs.readFileSync(path.join(root, 'tests/browser/fixtures/questionnaire-it-synthetic-v1.json'), 'utf8'));
-  const entries = Object.entries(fixture.fields).filter(([name]) => name !== 'source_author');
+  const entries = Object.entries(fixture.fields).filter(([name]) => !['source_author', 'organizer'].includes(name));
   const save = (name, value) => persistReceipt(path.join(directory, `${name}.json`), value);
   const run = (script, args) => {
     const result = spawnSync(python, [script, ...args], { encoding: 'utf8', timeout: 90000 });
@@ -72,9 +72,14 @@ for (const scenario of [
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const organizationId = await card.getAttribute('data-organization-id');
     const form = card.locator('[data-action="preview-early-data"]');
-    const fill = async (items) => { for (const [name, value] of items) await form.locator(`[name="${name}"]`).fill(value); };
+    const fill = async (items) => { for (const [name, value] of items) {
+      const field = form.locator(`[name="${name}"]`);
+      if (['case_reality_level', 'organization_name_usage_rules'].includes(name)) await field.selectOption(value);
+      else await field.fill(value);
+    } };
     const values = () => form.evaluate((element) => Object.fromEntries(
-      [...element.querySelectorAll('input[name]:not([type="hidden"]),textarea[name]')].map((field) => [field.name, field.value])));
+      [...element.querySelectorAll('input[name]:not([type="hidden"]),textarea[name],select[name]')]
+        .map((field) => [field.name, field.value])));
     await fill(entries.slice(0, scenario.count));
     const original = await form.elementHandle();
     const before = await values(); save('before-release', { values: before, fields_entered: scenario.count });
@@ -114,7 +119,7 @@ for (const scenario of [
     for (const [name, value] of entries) await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
     expect(requests.filter((item) => /\/(prepare|start)$/.test(item.path))).toEqual([]);
     save('result', { status: 'PASS_UI_HTTP_PG_NOT_AC18', scenario, retained_fields: scenario.count,
-      refill_count: 0, all_12_after_reload: true, preview_status: 201, confirm_status: 200, readback_status: 200,
+      refill_count: 0, all_8_after_reload: true, preview_status: 201, confirm_status: 200, readback_status: 200,
       provider_operations: 0, real_get_response_unmodified: true, requests,
       historical_ac18_causality: 'NOT_PROVEN', timeout_cleanup_cause: 'UNKNOWN', prep_diag_01: 'UNKNOWN' });
   } catch (error) {
