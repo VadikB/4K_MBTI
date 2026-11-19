@@ -56,9 +56,10 @@
 
 ## Полномочия, риски и откат
 
-`branch_push=false`, `pr=false` до прямого подтверждения действий передачи:
-приложенный `TASK.md` описывает PR, но сам по себе не разрешает внешние действия.
-`merge=false`, `deploy=false`, `version_bump=false`,
+`branch_push=true`, `pr=true`, `version_bump=true` после прямого подтверждения
+владельца «подтверждаю» на запрос о `2.1.34` и PR от 19.11.2026. Приложенный
+`TASK.md` сам по себе не служил допуском к внешним действиям.
+`merge=false`, `deploy=false`,
 `artifact_publish=false`. Отдельное принятие результата владельцем и CI остаются
 условием выпуска. Безопасный откат: вернуть предыдущую сборку `web/dist` и проекцию
 `Api/routes.py` одним revert-коммитом или предыдущим релизом; данные о приглашениях,
@@ -85,7 +86,7 @@
 | Playwright `path-admin-contract.spec.mjs` | 1 PASS; собственная БД удалена |
 | Playwright `auth-r03`/`qa02-invitations` адресный набор | 10 PASS; повтор новой строки и отчёта 1 PASS |
 | Playwright старые сценарии выхода `adm-program-guards`, `program-connection-feedback`, `questionnaire-draft-guards` | 3 PASS |
-| GitHub CI `frontend`/`pytest`/`full-verification` | NOT_RUN: PR ещё не создан |
+| GitHub CI `frontend`/`pytest`/`full-verification` | NOT_RUN: PR ещё не создан; проверить точный head после push |
 
 Первый sandbox-прогон `npm run test:backend` дал 9 отказов из-за запрета `ps`;
 повтор с разрешённым доступом к локальным процессам дал 1255 PASS. Первый
@@ -94,6 +95,8 @@
 поймал rerender между trial click и измерением viewport; fixture перечитывает
 видимость после trial, затем actual HTTP/PG-прогон прошёл.
 
-`npm run bump:version -- patch --dry-run` предложил `2.1.34`, изменений не внёс.
-Для `Ready for review` нужен допуск владельца на номер и отдельный PR; CI точного
-SHA обязателен до слияния. Слияние и deploy не разрешены.
+`npm run bump:version -- patch --dry-run` предложил `2.1.34`. После прямого
+подтверждения `npm run ready:prepare -- --candidate 2.1.34` прошёл: обновлены
+`pyproject.toml`, `uv.lock`, `web/js/config.js`, `web/index.html`, пересобран
+`web/dist`; база осталась `83468687d48b585f2cfb3d655dd805c15c25f065`.
+CI точного SHA обязателен до слияния. Слияние и deploy не разрешены.
