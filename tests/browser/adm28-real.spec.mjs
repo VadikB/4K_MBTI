@@ -57,9 +57,6 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await expect(card.getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
     await card.locator('input[name="invitation_email"]').first().uncheck();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
-    const profile = card.locator('form[data-action="update-profile"]');
-    await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
-    await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
     const form = card.locator('form[data-action="preview-early-data"]');
     await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
     await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
@@ -67,9 +64,13 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
       organization_name: 'Синтетическая организация ADM28', organization_type: 'Компания', industry: 'ИТ',
       activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель', results_usage: 'Для развития',
       organizer: 'Синтетический HR',
-      case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' };
+      case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название' };
     for (const [name, value] of Object.entries(values)) {
-      if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+      if (!['source_author', 'organizer'].includes(name)) {
+        const field = form.locator(`[name="${name}"]`);
+        if (['case_reality_level', 'organization_name_usage_rules'].includes(name)) await field.selectOption(value);
+        else await field.fill(value);
+      }
     }
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     const preview = card.locator('.admin-questionnaire-preview');

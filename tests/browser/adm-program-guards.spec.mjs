@@ -362,7 +362,7 @@ for (const superadmin of [false, true]) {
     await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
     await expect(manual(page)).toContainText(message);
     await expect(manual(page)).not.toContainText('исторический ключ');
-    await manual(page).locator('[name="organizer"]').fill('contact-absent@example.test');
+    await manual(page).locator('[name="purpose"]').fill('Синтетическая цель до подключения');
     await forcedSubmit(manual(page));
     await settled(page);
     await view(page, 'Анкета');
@@ -379,11 +379,8 @@ for (const superadmin of [false, true]) {
     else {
       await expect(connectForm(page)).toHaveCount(0);
       await view(page, 'Данные организации');
-      const profile = card(page).locator('form[data-action="update-profile"]');
-      await expect(profile.getByRole('button', { name: 'Сохранить карточку', exact: true })).toBeEnabled();
-      await profile.locator('[name="name"]').fill('Синтетическая независимая карточка');
-      await profile.getByRole('button', { name: 'Сохранить карточку', exact: true }).click();
-      await expect.poll(() => state.requests.some((r) => r.path === '/users/admin/organizations/3' && r.method === 'PATCH')).toBe(true);
+      await expect(card(page).locator('form[data-action="update-profile"]')).toHaveCount(0);
+      expect(state.requests.some((r) => r.path === '/users/admin/organizations/3' && r.method === 'PATCH')).toBe(false);
     }
     await evidence(page, state, info, `absent-${superadmin ? 'superadmin' : 'admin'}`);
   });
@@ -402,7 +399,7 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
     await expect(form).toContainText('Подключение программы пока не подтверждено');
     await expect(form.locator('[name="assignment_ref"]')).toHaveCount(0);
     if (label === 'Данные организации') {
-      await form.locator('[name="organizer"]').fill('contact-unknown@example.test');
+      await form.locator('[name="purpose"]').fill('Синтетическая цель без подключения');
     } else {
       await form.locator('input[type="file"]').setInputFiles(file('unknown-initial'));
     }
@@ -416,7 +413,7 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
 test('ADM-PROGRAM AC04 absent to first connection preserves both unscoped drafts', async ({ page }, info) => {
   const state = await fixture(page, { program: null });
   await view(page, 'Данные организации');
-  await manual(page).locator('[name="organizer"]').fill('contact-manual@example.test');
+  await manual(page).locator('[name="purpose"]').fill('Синтетическая цель вручную');
   await manual(page).locator('[name="organization_name"]').fill('Синтетические первые сведения');
   await view(page, 'Анкета');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
@@ -427,7 +424,7 @@ test('ADM-PROGRAM AC04 absent to first connection preserves both unscoped drafts
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await expect(csv(page).locator('[data-csv-reselect]')).toBeVisible();
   await view(page, 'Данные организации');
-  await expect(manual(page).locator('[name="organizer"]')).toHaveValue('contact-manual@example.test');
+  await expect(manual(page).locator('[name="purpose"]')).toHaveValue('Синтетическая цель вручную');
   await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('Синтетические первые сведения');
   expect(scopedPosts(state)).toEqual([]);
   await evidence(page, state, info, 'first-connection-drafts');
@@ -436,7 +433,7 @@ test('ADM-PROGRAM AC04 absent to first connection preserves both unscoped drafts
 test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B', async ({ page }, info) => {
   const state = await fixture(page, { saved: [revision('pilot-11')] });
   await view(page, 'Данные организации');
-  await manual(page).locator('[name="organizer"]').fill('contact-a@example.test');
+  await manual(page).locator('[name="purpose"]').fill('Синтетическая цель A');
   await manual(page).getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
   await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
   const before = scopedPosts(state).length;
@@ -485,7 +482,7 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
 test('ADM-PROGRAM AC04 manual and CSV authors remain scoped across A to B to A; file reselect is explicit', async ({ page }, info) => {
   const state = await fixture(page);
   await view(page, 'Данные организации');
-  await manual(page).locator('[name="organizer"]').fill('contact-a@example.test');
+  await manual(page).locator('[name="purpose"]').fill('Синтетическая цель A');
   await manual(page).locator('[name="organization_name"]').fill('Синтетическая организация A');
   await view(page, 'Анкета');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
@@ -497,14 +494,14 @@ test('ADM-PROGRAM AC04 manual and CSV authors remain scoped across A to B to A; 
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('B'));
   await view(page, 'Данные организации');
-  await expect(manual(page).locator('[name="organizer"]')).toHaveValue('');
-  await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('');
-  await manual(page).locator('[name="organizer"]').fill('contact-b@example.test');
+  await expect(manual(page).locator('[name="purpose"]')).toHaveValue('');
+  await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('Синтетическая организация');
+  await manual(page).locator('[name="purpose"]').fill('Синтетическая цель B');
   await manual(page).locator('[name="organization_name"]').fill('Синтетическая организация B');
   await connectForm(page).locator('[name="program_definition_id"]').selectOption('11');
   await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-11');
-  await expect(manual(page).locator('[name="organizer"]')).toHaveValue('contact-a@example.test');
+  await expect(manual(page).locator('[name="purpose"]')).toHaveValue('Синтетическая цель A');
   await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('Синтетическая организация A');
   await view(page, 'Анкета');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
@@ -573,7 +570,7 @@ for (const channel of ['manual', 'csv']) test(
     await view(page, channel === 'manual' ? 'Данные организации' : 'Анкета');
     const form = channel === 'manual' ? manual(page) : csv(page);
     if (channel === 'manual') {
-      await form.locator('[name="organizer"]').fill('live-contact@example.test');
+      await form.locator('[name="purpose"]').fill('Синтетическая цель после начала GET');
       await form.locator('[name="organization_name"]').fill('Синтетические live сведения после начала GET');
     } else {
       await form.locator('input[type="file"]').setInputFiles(file('live-after-GET'));
@@ -581,7 +578,7 @@ for (const channel of ['manual', 'csv']) test(
     await expect(page.locator('[data-organizations-stale]')).toBeVisible();
     await expect(form).toContainText('Подключение программы пока не подтверждено');
     if (channel === 'manual') {
-      await expect(form.locator('[name="organizer"]')).toHaveValue('live-contact@example.test');
+      await expect(form.locator('[name="purpose"]')).toHaveValue('Синтетическая цель после начала GET');
       await expect(form.locator('[name="organization_name"]')).toHaveValue('Синтетические live сведения после начала GET');
     } else {
       expect(await form.locator('input[type="file"]').evaluate((input) => input.files?.[0]?.name))
@@ -595,12 +592,12 @@ for (const channel of ['manual', 'csv']) test(
     await expect.poll(() => state.collectionReads).toBe(nextReads + 1);
     await expect(page.getByRole('button', { name: 'Обновить безопасно', exact: true })).toBeDisabled();
     if (channel === 'manual') {
-      await form.locator('[name="organizer"]').fill('newest-contact@example.test');
+      await form.locator('[name="purpose"]').fill('Новая синтетическая цель');
     }
     nextPending.release();
     await expect(page.getByRole('button', { name: 'Обновить безопасно', exact: true })).toBeEnabled();
     if (channel === 'manual') {
-      await expect(form.locator('[name="organizer"]')).toHaveValue('newest-contact@example.test');
+      await expect(form.locator('[name="purpose"]')).toHaveValue('Новая синтетическая цель');
     } else {
       await expect(form.locator('[data-csv-reselect]')).toHaveAttribute('data-csv-reselect', 'synthetic-live-after-GET.csv');
     }
@@ -655,7 +652,7 @@ test('ADM-PROGRAM AC02 older import collection cannot authorize stale program A'
   pending.release(); await importResponse; await settled(page);
   await view(page, 'Данные организации');
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
-  await manual(page).locator('[name="organizer"]').fill('contact-b@example.test');
+  await manual(page).locator('[name="purpose"]').fill('Синтетическая цель B');
   await manual(page).getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
   await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
   expect(scopedPosts(state).map((r) => r.body.assignment_ref)).toEqual(['pilot-12']);
@@ -733,7 +730,7 @@ for (const scenario of [
     expect(scopedPosts(state)[0].body.role_profile_version_id).toBe(92);
   }
   await view(page, 'Данные организации');
-  await expect(card(page).locator('form[data-action="update-profile"] button')).toBeEnabled();
+  await expect(card(page).locator('form[data-action="update-profile"]')).toHaveCount(0);
   await evidence(page, state, info, 'confirmed-readiness-' + scenario.rolesMode);
 });
 
@@ -756,7 +753,7 @@ test('ADM-PROGRAM readiness cached confirmation plus failed read stays unknown',
 });
 
 test('F16 processing dialog is read only across Escape and program switch', async ({ page }) => {
-  const state = await fixture(page, { superadmin: false, memberStage: {
+  const state = await fixture(page, { superadmin: true, memberStage: {
     code: 'processing', action: 'open_processing', assignment_id: 41,
     cycle_id: '11111111-1111-4111-8111-111111111111',
     label: 'Готовится отчёт', description: 'Синтетическая обработка результата',
@@ -769,11 +766,9 @@ test('F16 processing dialog is read only across Escape and program switch', asyn
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   expect(state.requests.filter((request) => ['POST', 'PATCH'].includes(request.method))).toEqual([]);
-  state.program = 12;
-  await view(page, 'Данные организации');
-  const profile = card(page).locator('form[data-action="update-profile"]');
-  await profile.getByRole('button', { name: 'Сохранить карточку', exact: true }).click();
-  await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
+  await connectForm(page).locator('[name="program_definition_id"]').selectOption('12');
+  await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
+  await expect(connectForm(page)).toContainText('Опубликованная версия программы подключена');
   await view(page, 'Участники оценки');
   await expect(card(page).locator('[data-action="open-member-processing"]')).toHaveCount(0);
   expect(state.requests.filter((request) => request.method === 'POST')).toEqual([]);

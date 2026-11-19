@@ -14,7 +14,7 @@ from Api.questionnaire_sources import assignment_readiness
 from Api.questionnaire_sources import PARTICIPANT_QUESTION_SCHEMA
 
 
-REQUIRED_BRIEFING_FIELDS = ("purpose", "organizer", "results_usage")
+REQUIRED_BRIEFING_FIELDS = ("purpose", "results_usage")
 
 
 def _participant_fields(connection, *, user_id: int, organization_id: int,
@@ -108,6 +108,8 @@ def early_readiness(connection, *, user_id: int) -> dict:
                 waiting = _waiting('participant_fields:' + ','.join(missing), university=False, organization=organization)
                 return waiting
             safe_briefing = {key: briefing[key] for key in REQUIRED_BRIEFING_FIELDS}
+            if briefing.get("organizer"):
+                safe_briefing["organizer"] = briefing["organizer"]
             safe_briefing.update({
                 "provided_participant_fields": provided,
                 "questions": briefing["participant_questions"],
@@ -168,6 +170,8 @@ def early_readiness(connection, *, user_id: int) -> dict:
         key: briefing[key]
         for key in REQUIRED_BRIEFING_FIELDS
     }
+    if briefing.get("organizer"):
+        safe_briefing["organizer"] = briefing["organizer"]
     safe_briefing.update({
         "provided_participant_fields": provided,
         "questions": [str(q).strip() for q in questions],

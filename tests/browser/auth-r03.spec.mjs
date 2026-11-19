@@ -380,6 +380,16 @@ test('ADM28 old confirmation cannot delete a newly created preview or newer inpu
   await expect(card.locator('[data-questionnaire-revision-id="202"]')).toContainText('New synthetic purpose');
 });
 
+test('ADMIN-02 name conflict retains the organization draft', async ({ page }) => {
+  const { preview, form } = await adm28Preview(page);
+  const enteredName = await form.locator('[name="organization_name"]').inputValue();
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) =>
+    fulfillJson(route, { detail: 'QUESTIONNAIRE_ORGANIZATION_NAME_CONFLICT' }, 409));
+  await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
+  await expect(preview.locator('[data-operation-status]')).toContainText('Название организации изменилось');
+  await expect(form.locator('[name="organization_name"]')).toHaveValue(enteredName);
+});
+
 test('ADM28 late confirmation cannot replace another selected assessment', async ({ page }) => {
   const { card, preview, form, saved, organization } = await adm28Preview(page);
   let release;
@@ -388,7 +398,10 @@ test('ADM28 late confirmation cannot replace another selected assessment', async
     await delayed; return fulfillJson(route, saved);
   });
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
-  await observeConnectedAssessment(page, organization, 'Another assessment');
+  organization.assessment_program = syntheticAdminProgram('Another assessment', 8);
+  await reopenAdminOrganizations(page);
+  await expect(card).toBeVisible();
+  await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
   await form.locator('[name="purpose"]').fill('Another purpose');
   release();
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue('Another assessment');
@@ -963,24 +976,17 @@ const withConnectedAssessment = (assessmentRef, id = 7) => ({
   ...adminOrganization, assessment_program: syntheticAdminProgram(assessmentRef, id),
 });
 
-// Test setup models an externally authorized server program change. The same
-// organization-admin role observes it through the existing profile response;
-// the UI never receives an editable key or new programme-connection rights.
-async function observeConnectedAssessment(page, organization, assessmentRef, id = 8) {
-  organization.assessment_program = syntheticAdminProgram(assessmentRef, id);
-  const card = page.locator('[data-organization-id="3"]');
-  const currentView = await card.locator('[data-admin-view]:not(.hidden)').getAttribute('data-admin-view');
-  if (currentView !== 'organization-data') {
-    await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
-  }
-  await card.locator('form[data-action="update-profile"]')
-    .getByRole('button', { name: 'Сохранить карточку', exact: true }).click();
-  const hiddenRef = card.locator('[data-action="preview-early-data"] [name="assignment_ref"]');
-  await expect(hiddenRef).toHaveAttribute('type', 'hidden');
-  await expect(hiddenRef).toHaveValue(assessmentRef);
-  if (currentView !== 'organization-data') {
-    await card.locator(`button[data-action="show-admin-view"][data-view="${currentView}"]`).click();
-  }
+async function fillEarlyField(form, name, value) {
+  const field = form.locator(`[name="${name}"]`);
+  if (['case_reality_level', 'organization_name_usage_rules'].includes(name)) await field.selectOption(value);
+  else await field.fill(value);
+}
+
+async function reopenAdminOrganizations(page) {
+  await page.locator('#admin-organizations-back-button').click();
+  await expect(page.locator('#admin-panel')).toBeVisible();
+  await page.locator('#admin-open-organizations-button').click();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
 }
 
 async function openAdminOrganizations(page, invitationHandler, organization = adminOrganization, questionnaireResponse = null, isSuperadmin = false) {
@@ -1780,26 +1786,22 @@ test('F22-07 explains participant acquaintance wait without a false roles action
   await expect(participantRow.getByRole('button', { name: 'Перейти' })).toHaveCount(0);
 });
 
-test('UX-FIX20-04 org-admin edits the attached card and never sees free tenant creation', async ({ page }) => {
+test('ADMIN-02 org-admin edits one organization name and never sees free tenant creation', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
   await expect(page.locator('#admin-organization-create-form')).toBeHidden();
   const card = page.locator('[data-organization-id="3"]');
   await card.locator('.admin-organization-step[data-view="organization-data"]').click();
   const profile = card.locator('[data-action="update-profile"]');
-  await expect(profile).toBeVisible();
+  await expect(profile).toHaveCount(0);
+  const form = card.locator('[data-action="preview-early-data"]');
+  await expect(form.locator('[name="organization_name"]')).toHaveValue(adminOrganization.name);
+  await expect(form.locator('[name="organization_name"]')).toHaveCount(1);
+  await expect(form.locator('[name="code"]')).toHaveCount(0);
   await expect(card).toHaveCSS('border-radius', '8px');
-  await expect(profile).toHaveCSS('border-radius', '8px');
+  await expect(form).toBeVisible();
   await expect(card.locator('.admin-organization-member').first()).toHaveCSS('border-radius', '8px');
-  let submitted;
-  await page.route('**/users/admin/organizations/3', async (route) => {
-    if (route.request().method() !== 'PATCH') return route.fallback();
-    submitted = route.request().postDataJSON();
-    return fulfillJson(route, { is_superadmin: false, items: [adminOrganization] });
-  });
-  await profile.locator('[name="name"]').fill('Закреплённая организация');
-  await profile.locator('[name="code"]').fill('attached-org');
-  await profile.getByRole('button', { name: 'Сохранить карточку' }).click();
-  await expect.poll(() => submitted).toMatchObject({ name: 'Закреплённая организация', code: 'attached-org' });
+  await form.locator('[name="organization_name"]').fill('Закреплённая организация');
+  await expect(form.locator('[name="organization_name"]')).toHaveValue('Закреплённая организация');
 });
 
 test('UX-FIX20-04 keeps readiness separated when org-admin switches assessment', async ({ page }) => {
@@ -1825,7 +1827,10 @@ test('UX-FIX20-04 keeps readiness separated when org-admin switches assessment',
   const panel = card.locator('[data-admin-view="questionnaire"] .admin-readiness-panel');
   await expect(panel).toContainText('Контекст A подтверждён.');
   await expect(assignment).toHaveAttribute('type', 'hidden');
-  await observeConnectedAssessment(page, organization, 'assessment-b');
+  organization.assessment_program = syntheticAdminProgram('assessment-b', 8);
+  await reopenAdminOrganizations(page);
+  await expect(card).toBeVisible();
+  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(assignment).toHaveValue('assessment-b');
   await expect(panel).toContainText('Черновик B не подтверждён.');
   await expect(panel).not.toContainText('Контекст A подтверждён.');
@@ -1858,13 +1863,13 @@ test('AC18-ADM-1A accepted composition stays usable across target widths and key
   await data.press('Enter');
   await expect(card.locator('[data-admin-view="organization-data"]')).toBeVisible();
   await expect(card.getByRole('group', { name: 'Об организации' })).toBeVisible();
-  await expect(card.getByRole('group', { name: 'Условия оценки' })).toBeVisible();
+  await expect(card.getByRole('group', { name: 'Настройки контекста для ситуаций' })).toBeVisible();
   await expect(card.getByRole('button', { name: 'Сохранить черновик и предпросмотр' })).toBeVisible();
   for (const width of [1440, 1280, 768, 390, 320]) {
     await page.setViewportSize({ width, height: width <= 390 ? 844 : 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await expect(card.getByRole('group', { name: 'Об организации' })).toBeVisible();
-    await expect(card.getByRole('group', { name: 'Условия оценки' })).toBeVisible();
+    await expect(card.getByRole('group', { name: 'Настройки контекста для ситуаций' })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath(`adm-1a-data-${width}.png`), fullPage: true });
   }
   await questionnaire.focus();
@@ -1899,7 +1904,10 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
   await expect(form.locator('[name="source_author"]')).toHaveCount(0);
   const assignment = form.locator('[name="assignment_ref"]');
   await expect(assignment).toHaveAttribute('type', 'hidden');
-  await observeConnectedAssessment(page, organization, 'B');
+  organization.assessment_program = syntheticAdminProgram('B', 8);
+  await reopenAdminOrganizations(page);
+  await expect(card).toBeVisible();
+  await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(assignment).toHaveValue('B');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published B');
   await expect(form.locator('[name="organization_name"]')).toHaveValue('Организация B');
@@ -1946,18 +1954,11 @@ test('UX-FIX20-02 preserves named drafts across all management views', async ({ 
 
   const assignment = questionnaire.locator('[name="assignment_ref"]');
   await expect(assignment).toHaveAttribute('type', 'hidden');
-  await observeConnectedAssessment(page, organization, 'Поток B');
+  await expect(assignment).toHaveValue('Поток A');
   await card.getByRole('button', { name: 'Участники оценки' }).click();
   await card.getByRole('button', { name: 'Анкета', exact: true }).click();
   await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
-  await observeConnectedAssessment(page, organization, 'Поток A', 7);
-  await card.getByRole('button', { name: 'Участники оценки' }).click();
-  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
-  await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
-  await observeConnectedAssessment(page, organization, 'Поток B');
-  await card.getByRole('button', { name: 'Участники оценки' }).click();
-  await card.getByRole('button', { name: 'Анкета', exact: true }).click();
-  await expect(questionnaire.locator('[name="source_author"]')).toHaveCount(0);
+  await expect(earlyData.locator('[name="purpose"]')).toHaveValue('Несохранённая цель A');
 });
 
 test('UX-FIX20-02 clears account A drafts and ignores its late preview after account B login', async ({ page }) => {
@@ -1980,11 +1981,11 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
   const valuesA = {
     assignment_ref: 'Поток A', source_author: 'Автор A', organization_name: 'Организация A',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание A', purpose: 'Секрет A',
-    results_usage: 'Развитие', organizer: 'HR',
-    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Развитие',
+    case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название',
   };
   for (const [name, value] of Object.entries(valuesA).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) {
-    await formA.locator(`[name="${name}"]`).fill(value);
+    await fillEarlyField(formA, name, value);
   }
   await formA.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
 
@@ -2046,13 +2047,13 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
   const values = {
     assignment_ref: 'Поток late', source_author: 'Автор', organization_name: 'Организация',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Старая цель',
-    results_usage: 'Развитие', organizer: 'HR',
-    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Развитие',
+    case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
   for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) {
-    await form.locator(`[name="${name}"]`).fill(value);
+    await fillEarlyField(form, name, value);
   }
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await form.locator('[name="purpose"]').fill('Новая цель после отправки');
@@ -2175,12 +2176,12 @@ test('ADM19-01 saves early organization data through the versioned product form 
     assignment_ref: 'Поток октябрь 2026', source_author: 'Анна Петрова',
     organization_name: 'R03 Organization', organization_type: 'Компания', industry: 'ИТ',
     activity_description: 'Разрабатывает корпоративные продукты', purpose: 'Оценить управленческие навыки',
-    results_usage: 'Для индивидуального развития', organizer: 'HR-команда',
-    case_reality_level: 'Реалистичные рабочие ситуации', organization_name_usage_rules: 'Можно использовать название',
+    results_usage: 'Для индивидуального развития',
+    case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
-  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await form.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await fillEarlyField(form, name, value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
 
   await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview'))
@@ -2191,7 +2192,7 @@ test('ADM19-01 saves early organization data through the versioned product form 
     name: values.organization_name, organization_type: values.organization_type,
     industry: values.industry, activity_description: values.activity_description,
   });
-  expect(submittedPayload.answers.C21).toEqual({ organizer: values.organizer });
+  expect(submittedPayload.answers.C21).toBeUndefined();
   expect(submittedPayload.answers.C04).toBeUndefined();
   expect(submittedPayload.idempotency_key).toBeTruthy();
 });
@@ -2212,7 +2213,7 @@ test('REMAIN-02 confirms content preview without recipient controls', async ({ p
         organization_name: payload.answers.C01.name,
         purpose: payload.answers.C02a.participant_text,
         results_usage: payload.answers.C03.participant_text,
-        organizer: payload.answers.C21.organizer,
+        organizer: payload.answers.C21?.organizer || '',
       },
       changes: [{ field: 'purpose', before: 'Старая цель', after: payload.answers.C02a.participant_text }],
       is_first_publication: false,
@@ -2234,12 +2235,12 @@ test('REMAIN-02 confirms content preview without recipient controls', async ({ p
   const values = {
     assignment_ref: 'Поток B', source_author: 'Заказчик', organization_name: 'Организация B',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Новая цель участника',
-    results_usage: 'Для развития', organizer: 'HR',
-    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Для развития',
+    case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
-  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await form.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await fillEarlyField(form, name, value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   const preview = card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview');
   await expect(preview).toContainText('Что увидит участник');
@@ -2295,12 +2296,12 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
   const values = {
     assignment_ref: 'Поток order', source_author: 'Заказчик', organization_name: 'Организация',
     organization_type: 'Компания', industry: 'ИТ', activity_description: 'Описание', purpose: 'Older confirmed 12',
-    results_usage: 'Развитие', organizer: 'HR',
-    case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено',
+    results_usage: 'Развитие',
+    case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название',
   };
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
-  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await form.locator(`[name="${name}"]`).fill(value);
+  for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await fillEarlyField(form, name, value);
   await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
   await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
   await form.locator('[name="purpose"]').fill('Draft after confirm');

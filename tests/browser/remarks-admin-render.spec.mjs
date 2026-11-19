@@ -105,7 +105,7 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
     metrics.push({ width, textScale, longTags, peopleLayout, ...layout });
     expect(layout.document).toBeLessThanOrEqual(width + 1);
     expect(layout.outliers).toEqual([]);
-    expect(layout.groups).toHaveLength(2);
+    expect(layout.groups).toHaveLength(3);
     for (const tag of layout.tags) expect(tag.height).toBeLessThanOrEqual(tag.contentHeight + 34);
     for (const status of layout.statuses) {
       expect(status.width).toBeGreaterThanOrEqual(status.formWidth - 2);
@@ -119,7 +119,7 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
   revisionId = 72; uploader = 'Синтетический администратор Б';
   await page.reload();
   const card = page.locator('[data-organization-id="3"]');
-  await card.locator('[data-action="show-admin-view"][data-view="questionnaire"]').click();
+  await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();
   await expect(card.locator('.admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploader);
   await expect(card.locator('.admin-questionnaire-uploader')).toHaveAttribute('data-questionnaire-revision-id', '72');
   await card.locator('.admin-organization-step[data-view="people"]').click();

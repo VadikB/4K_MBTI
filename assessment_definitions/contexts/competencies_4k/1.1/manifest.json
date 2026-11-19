@@ -1,6 +1,10 @@
 {
   "artifacts": [
     {
+      "name": "admin_context_choices.json",
+      "sha256": "b76cb4b804de2916b074f4070858f7e4fb53e87328ad03191c2b21ace7feaf8a"
+    },
+    {
       "name": "context_contract.json",
       "sha256": "27b3ba3682d5da98264bc2ca2f54230d5231bb0c336f71f26058020483799f3c"
     },

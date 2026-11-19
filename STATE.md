@@ -1,3 +1,9 @@
+# Admin 02 — решение владельца о слиянии, 19.11.2026
+
+PR #252 Ready, base `1c7fcb9c` / 2.1.37, кандидат 2.1.38. Head `e79a55ee` прошёл frontend, pytest, integration, fast browser, четыре runtime shards и итоговый full-verification; GitHub показал 9 PASS, штатный deploy-test SKIP и отсутствие конфликтов. `origin/main` повторно сверен. Владелец ответил «ревью считаем пройденным, продолжаем» после передачи PR с указанием, что следующий шаг — review и отдельное решение о слиянии. Это принято как приёмка результата и разрешение на squash merge с автоматическим deploy на `test`; `branch_push/pr/version_bump/merge/deploy=true`, `artifact_publish=false`. Активно: CI нового документального head, повторная сверка main и слияние PR, затем проверка автоматического deploy. [Отчёт](docs/evc/tasks/admin-organization-02.md).
+
+---
+
 # P4K_ASSESSMENT_REFUSAL_UI_01 — выпуск 2.1.36
 
 Владелец принял локальный результат и поручил создать PR, выполнить полные

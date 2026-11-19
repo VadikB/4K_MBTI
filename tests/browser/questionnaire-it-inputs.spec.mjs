@@ -62,24 +62,24 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     const organizationId = await card.getAttribute('data-organization-id');
     // A real completed card-save/readback provides an explicit initialization
     // boundary. This is NOT a fix or a claimed explanation of the historical race.
-    const profile = card.locator('[data-action="update-profile"]');
-    await profile.locator('[name="name"]').fill(values.organization_name);
-    await profile.getByRole('button', { name: 'Сохранить карточку', exact: true }).click();
-    await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
     await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
     const form = card.locator('[data-action="preview-early-data"]');
     await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
     for (const [name, value] of Object.entries(values)) {
-      if (name !== 'source_author') await form.locator(`[name="${name}"]`).fill(value);
+      if (!['source_author', 'organizer'].includes(name)) {
+        const field = form.locator(`[name="${name}"]`);
+        if (['case_reality_level', 'organization_name_usage_rules'].includes(name)) await field.selectOption(value);
+        else await field.fill(value);
+      }
     }
     const assertValues = async () => {
       for (const [name, value] of Object.entries(values)) {
-        if (name !== 'source_author') await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
+        if (!['source_author', 'organizer'].includes(name)) await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
       }
     };
     await assertValues();
     await capturePathViewports(page, directory, 'it-questionnaire', [
-      { name: 'organizer', locator: form.locator('[name="organizer"]') },
+      { name: 'purpose', locator: form.locator('[name="purpose"]') },
       { name: 'organization-name', locator: form.locator('[name="organization_name"]') },
       { name: 'organization-type', locator: form.locator('[name="organization_type"]') },
       { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }) },
@@ -140,7 +140,7 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     if (process.env.P4K_F05_INCOMPLETE_LATE_SAVE === '1') {
       const incompleteName = values.organization_name + ' — неполный черновик';
       await form.locator('[name="organization_name"]').fill(incompleteName);
-      await form.locator('[name="organizer"]').fill('');
+      await form.locator('[name="purpose"]').fill('');
       let releaseResponse, committedResponse;
       const releaseGate = new Promise((resolve) => { releaseResponse = resolve; });
       const committedGate = new Promise((resolve) => { committedResponse = resolve; });

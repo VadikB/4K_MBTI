@@ -115,9 +115,13 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     const form = userCard.locator('form[data-action="preview-early-data"]');
     const fields = { organization_name: 'Синтетическая организация', organization_type: 'Компания',
       industry: 'ИТ', activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель',
-      results_usage: 'Для развития', organizer: 'Синтетический HR', case_reality_level: 'Реальные',
-      organization_name_usage_rules: 'Разрешено' };
-    for (const [name, value] of Object.entries(fields)) await form.locator(`[name="${name}"]`).fill(value);
+      results_usage: 'Для развития', case_reality_level: 'Близко к реальной работе',
+      organization_name_usage_rules: 'Можно использовать настоящее название' };
+    for (const [name, value] of Object.entries(fields)) {
+      const field = form.locator(`[name="${name}"]`);
+      if (['case_reality_level', 'organization_name_usage_rules'].includes(name)) await field.selectOption(value);
+      else await field.fill(value);
+    }
     await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
     const preview = userCard.locator('.admin-questionnaire-preview');
     await expect(preview).toContainText('Готово к подтверждению');

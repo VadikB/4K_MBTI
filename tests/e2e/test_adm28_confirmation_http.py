@@ -18,7 +18,8 @@ def confirmation_client(monkeypatch):
     class Connection:
         committed = False
         def execute(self, _sql, _params=()):
-            return SimpleNamespace(fetchone=lambda: revision)
+            row = {"name": "Синтетическая организация"} if "SELECT name FROM organizations" in _sql else revision
+            return SimpleNamespace(fetchone=lambda: row)
         def commit(self): self.committed = True
         def rollback(self): pass
     connection = Connection()
@@ -47,6 +48,7 @@ def test_commit_survives_supplementary_readiness_failure(confirmation_client):
     assert response.status_code == 200
     assert connection.committed
     assert response.json()['status'] == 'confirmed'
+    assert response.json()['organization_name_current'] == 'Синтетическая организация'
     assert response.json()['readiness_refresh_required'] is True
     assert 'recipient_user_ids' not in response.json()
 
@@ -56,6 +58,7 @@ def test_exact_revision_check_omits_legacy_recipient_fields_and_checks_scope(con
     saved = client.get('/users/admin/organizations/3/questionnaire/71')
     assert saved.status_code == 200
     assert saved.json()['id'] == 71
+    assert saved.json()['organization_name_current'] == 'Синтетическая организация'
     assert 'recipient_mapping' not in saved.json()
     assert 'recipient_user_ids' not in saved.json()
     assert client.get('/users/admin/organizations/4/questionnaire/71').status_code == 403
