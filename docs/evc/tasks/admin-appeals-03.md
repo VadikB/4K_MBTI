@@ -35,10 +35,12 @@ Expand: добавляются `scope_key`, `assignment_ref`, `assignment_id`, `
 - `git diff --check` — PASS.
 - `npm run lint:js`, `npm run build:web` — PASS; сборка `web/dist` включена в diff.
 - `node --test tests/frontend/*.test.mjs` — 476 PASS после `npm ci --offline` по lockfile. Первые 4 FAIL локализованы: 3 из-за нового параметра фильтра в изолированном VM тесте (исправлено), 1 из-за устаревшего `node_modules` вне worktree (переустановлено по lockfile).
-- `pytest -m 'not integration and not e2e and not llm'` — финальный повтор с разрешённым `ps`: 1299 PASS, 696 deselected. Первый sandbox-прогон: 1290 PASS и 9 FAIL только из-за запрета `ps`; адресный повтор `tests/unit/test_synthetic_limits.py` — 19 PASS.
+- `pytest -m 'not integration and not e2e and not llm'` — финальный повтор после переноса на 2.1.39 с разрешённым `ps`: 1299 PASS, 698 deselected. Первый sandbox-прогон: 1290 PASS и 9 FAIL только из-за запрета `ps`; адресный повтор `tests/unit/test_synthetic_limits.py` — 19 PASS.
 - `pytest -m e2e tests/e2e` — 218 PASS, 15 deselected.
 - `TEST_DATABASE_URL=…p4k_admin03_test… pytest --run-integration` на локальной изолированной PostgreSQL 15 — 7 PASS: миграция старых строк, повторы, HTTP→PG, tenant/owner isolation, concurrent claim, отзыв роли. CI проверит PostgreSQL 16.
-- `npx playwright test tests/browser/admin-appeals.spec.mjs` — 2 PASS: UI карточки, claim, потерянный ответ после commit и readback, отказ сохранения без потери текста. Визуально проверены снимки 1440 и 390 px с проектными CSS; поля и действия не обрезаны. Этот браузерный fixture подменяет API; отдельный HTTP→PG тест покрывает реальный серверный путь. Полный сквозной UI→HTTP→PG на двух сессиях остаётся для Ready/CI. Реальные LLM и внешняя почта не применимы.
+- `npx playwright test tests/browser/admin-appeals.spec.mjs` — 2 PASS: UI карточки, claim, потерянный ответ после commit и readback, отказ сохранения без потери текста. Визуально проверены снимки 1440 и 390 px с проектными CSS; поля и действия не обрезаны.
+- `TEST_DATABASE_URL=…p4k_admin03_test… ADMIN03_PYTHON=…/.venv/bin/python node tests/browser/admin-appeals-live.mjs` — PASS на изолированной PostgreSQL 15: форма участника отправила обращение через реальный POST, карточка администратора выполнила claim и reply через реальные HTTP routes, таблицы показали `answered` и отдельный ответ с автором, новая браузерная сессия участника увидела ответ; чужой участник получил 403. GET готовности знакомства в стенде заменён синтетическим fixture только для входа в форму. Временный HTTP сервер и схема создаются тестовым harness и удаляются после прогона. Реальные LLM и внешняя почта не применимы.
+- Draft PR #256 на `96186c01`: быстрый CI frontend/pytest — 2 PASS, 4 ожидаемых SKIP (full-verification и deploy для draft).
 
 ## Приёмка и продолжение
 
@@ -46,8 +48,8 @@ Expand: добавляются `scope_key`, `assignment_ref`, `assignment_id`, `
 - [x] Текущие права проверяются на сервере; одновременно обращение получает один владелец.
 - [x] Ответ и повтор сохраняются отдельно, автор/время не переписываются; участник читает свой ответ после смены сессии.
 - [x] Визуальный и browser путь карточки с потерянным ответом; HTTP→PG проверен отдельно.
-- [ ] Полный UI→HTTP→PG путь с двумя сессиями перед Ready.
-- [ ] Отдельный draft PR и быстрый CI для точного head.
+- [x] UI→HTTP→PG обращение в двух браузерных сессиях на изолированной БД; синтетический GET готовности использован только для входа в форму.
+- [x] Отдельный draft PR #256 и быстрый CI для head `96186c01`; после документального коммита CI повторяется.
 - [ ] Решение владельца по миграции и версии перед Ready; после него полный CI.
 
 Изменённые предметные артефакты: нет. Отношение «M1 → контракт → код» ограничено инвариантом неизменности фиксированного профиля и оценки; Admin 03 не претендует на соответствие всего продукта M1. Следующая задача зависит от решения о миграции и успешного полного CI; merge/deploy не входят в данный этап.
