@@ -62,9 +62,8 @@ TEST_DATABASE_URL=<owned localhost pytest DB> npm run test:backend:integration;
 
 ## Состояние
 
-Разведка завершена; активен шаг воспроизведения. Фактические результаты будут
-записаны после выполнения. CI/real-provider/методологическая приёмка не входят
-в локальную проверку и не заявляются PASS.
+Локальная реализация и приёмка завершены. Первичный локальный этап сохранён ниже;
+актуальные полномочия публикации и состояние выпуска — в дополнении от 19.11.2026.
 
 ## Реализация и фактическая приёмка
 
@@ -109,3 +108,38 @@ PASS подтверждает технический контракт, а не �
 Реализация завершена. Следующий внешний этап — человеческое ревью локального
 кандидата; publication/release требуют отдельного поручения. Полные SHA находятся
 в manifest поставки, проверенный worktree сохраняется для продолжения.
+
+
+## Выпуск 2.1.35 — прямой допуск владельца, 19.11.2026
+
+Пользователь принял локальный результат и прямо поручил: «Результат принимаю.
+Создавай PR, запускай полные проверки и после их успешного завершения сливай в main».
+Это прямое полномочие пользователя, не инструкция вложения. Оно заменяет ограничение
+локального этапа в этой области и по CONTRIBUTING-MERGE-AUTH-01 включает публикацию
+собственной ветки и code/tests/docs/synthetic evidence текущего результата в
+`https://github.com/VadikB/4K_MBTI` (PUBLIC), PR в main, следующий PATCH, Ready,
+обязательный CI, squash merge при успешных checks и штатный deploy на test.
+Человеческая приёмка результата подтверждена указанным сообщением; его машинный ID
+недоступен. Новые содержательные изменения потребуют обычного анализа области.
+
+branch_push=true, pr=true, merge=true при успешных проверках актуального head,
+deploy=test штатным workflow; version_bump=true для непосредственного PATCH 2.1.35
+от свежего main fd6d4e0c/2.1.34. artifact_publish=false; pilot/production, paid LLM,
+письма и операции над рабочими данными не разрешаются этим поручением.
+
+Принятый кандидат: b7657bb06e0b3d639cbfd82d04c332bde0af53ff.
+На его точном SHA завершены backend1294, HTTP218, integration468 PASS/2 explicit
+real-provider SKIP; адресно130 PASS. Revert в отдельном worktree вернул дерево
+точно к fd6d4e0c. Свежий fetch подтвердил ту же базу; существующего PR ветки нет.
+
+План выпуска: canonical ready:prepare --candidate 2.1.35 → frontend/release gates →
+release commit/push → Ready PR → frontend/pytest/full-verification точного head →
+повторная сверка базы и checks → squash merge → наблюдение deploy-test.
+Результаты внешних действий фиксируются после выполнения; заранее PASS не заявляется.
+
+Локальная подготовка выпуска: `npm run ready:prepare -- --candidate 2.1.35` PASS,
+сборка и release gate PASS; lint/frontend regressions/harness receipts PASS;
+`npm audit --audit-level=high` exit0 (3 moderate в текущих dev dependencies,
+lockfile не менялся). Product backend остаётся принятым b7657bb0; release step
+меняет только штатные version/build файлы и записи передачи. Обязательный полный
+remote CI запускается новым Ready PR и относится к его точному head.

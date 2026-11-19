@@ -1,3 +1,21 @@
+# P4K_CASE_ADMISSION_01 — разрешён PR и merge, 19.11.2026
+
+Прямой ответ владельца: «Результат принимаю. Создавай PR, запускай полные проверки
+и после их успешного завершения сливай в main».
+По CONTRIBUTING-MERGE-AUTH-01: branch_push/pr/version_bump/Ready/merge=true,
+merge только после успешных обязательных checks актуального head; deploy=test
+через штатный workflow. artifact_publish/pilot/production/paid LLM/mail=false.
+Destination: публичный VadikB/4K_MBTI, текущий code/tests/docs/synthetic evidence.
+Принят локальный кандидат b7657bb06e0b3d639cbfd82d04c332bde0af53ff;
+backend1294/HTTP218/integration468 PASS, 2 real-provider SKIP, адресно130 PASS.
+Свежий main fd6d4e0c/2.1.34; следующий PATCH2.1.35 разрешён этим поручением.
+ready:prepare2.1.35/build/release/lint/frontend/harness/audit-high PASS.
+Активно: release commit/push → Ready PR → полный CI → merge → штатный TEST deploy. Прежние false flags ниже относятся к завершённому локальному
+этапу и заменены этим прямым допуском в указанной области.
+Карточка: docs/evc/tasks/p4k-case-admission-01.md.
+
+---
+
 # P4K_CASE_ADMISSION_01 — локальное исправление допуска, 19.11.2026
 
 База: `fd6d4e0c24981246a939199de42672322d1999b5`, Product 4K 2.1.34.
