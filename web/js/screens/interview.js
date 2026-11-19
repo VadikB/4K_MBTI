@@ -127,7 +127,7 @@ const isCurrentInterviewDraftSaved = () => {
 
 export const showInterviewRuntimeError = (error) => {
   if (confirmedProductInterviewSnapshot?.between_situations && confirmedProductInterviewSnapshot?.preparation_operation?.preparation) {
-    renderPreparation(interviewMessages, confirmedProductInterviewSnapshot.preparation_operation.preparation, { readError: true });
+    renderNextPreparation(interviewMessages, confirmedProductInterviewSnapshot.preparation_operation, { readError: true });
     showError(interviewError, '');
     return;
   }
@@ -893,6 +893,14 @@ const productTimeNotice = (snapshot) => productTimePaused(snapshot)
   ? 'Время на ответы сейчас не расходуется. Общий срок завершения оценки продолжает идти'
   : 'Сведения о времени сейчас недоступны. Общий срок завершения оценки продолжает идти';
 
+// Keep the public failure reason with its operation on every preparation refresh.
+const renderNextPreparation = (card, operation, options = {}) => {
+  if (!operation?.preparation) return;
+  renderPreparation(card, operation.preparation, {
+    ...options, failureMessage: operation.status === 'failed' ? operation.error?.message : '',
+  });
+};
+
 // Controls belong to the connected card, which may replace the request's card.
 const syncNextSituationButton = (snapshot) => {
   const button = interviewMessages.querySelector('.next-situation-button');
@@ -1102,7 +1110,7 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
         && existingPreparationCard.dataset.nextRequestKey === nextRequestKey
         && snapshot.preparation_operation?.preparation) {
       existingPreparationCard.dataset.preparationState = snapshot.preparation_operation.status;
-      renderPreparation(existingPreparationCard, snapshot.preparation_operation.preparation);
+      renderNextPreparation(existingPreparationCard, snapshot.preparation_operation);
       const feedback = existingPreparationCard.querySelector('[data-next-preparation-feedback]');
       if (feedback && !nextSituationRequests.has(nextRequestKey)) feedback.textContent = '';
       const timeNotice = existingPreparationCard.querySelector('.preparation-time-notice');
@@ -1132,6 +1140,7 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
     button.textContent = 'Приступить к следующей ситуации';
     const status = document.createElement('p'); status.setAttribute('role', 'status');
     const preparation = snapshot.preparation_operation;
+    let latestOperation = preparation;
     let latestPreparation = preparation?.preparation;
     status.dataset.nextPreparationFeedback = '';
     const scope = productInterviewAnswerScope();
@@ -1139,13 +1148,13 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
     button.dataset.nextRequestKey = nextRequestKey;
     button.dataset.nextUnavailable = String(preparation?.status === 'failed' && preparation.retry_allowed !== true);
     let pendingNext = readProductCommand('next', scope);
-    if (!pendingNext && preparation?.operation_id) {
+    if (preparation?.operation_id && pendingNext?.operationId !== preparation.operation_id) {
       pendingNext = saveProductCommand('next', scope, preparation.operation_id);
     }
     if (preparation?.status === 'failed') {
       status.textContent = preparation.error?.message || 'Не удалось подготовить следующую ситуацию.';
       button.disabled = preparation.retry_allowed !== true;
-      if (!button.disabled) button.textContent = 'Повторить подготовку';
+      button.textContent = preparation.retry_allowed === true ? 'Повторить подготовку' : 'Подготовка недоступна';
     } else if (['queued', 'running'].includes(preparation?.status) || pendingNext) {
       status.textContent = preparation?.status === 'completed'
         ? 'Подготовка завершена. Проверьте переход к следующей ситуации.'
@@ -1164,8 +1173,8 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
       const requestToken = Symbol('next');
       nextSituationRequests.set(nextRequestKey, requestToken);
       productRuntimeMutationGeneration += 1;
-      const latestOperation = confirmedProductInterviewSnapshot?.preparation_operation;
-      latestPreparation = latestOperation?.preparation || latestPreparation;
+      latestOperation = confirmedProductInterviewSnapshot?.preparation_operation;
+      latestPreparation = latestOperation?.preparation;
       const retry = latestOperation?.status === 'failed' && latestOperation.retry_allowed === true;
       let command = retry ? null : readProductCommand('next', scope)
         || (latestOperation?.operation_id ? saveProductCommand('next', scope, latestOperation.operation_id) : null);
@@ -1198,9 +1207,13 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
         const next = accepted.operation_id ? await waitForProductCyclePreparation(accepted, {
           ...(posted ? {} : { maxWaitMs: 0 }),
           isCurrent: () => current() && card.isConnected,
-          onReadError: () => { if (visible()) { renderPreparation(card, latestPreparation, { readError: true }); status.textContent = ''; } },
+          onReadError: () => { if (visible()) { renderNextPreparation(card, latestOperation, { readError: true }); status.textContent = ''; } },
           onStatus: (operation) => {
-            if (visible() && operation.preparation) { latestPreparation = operation.preparation; renderPreparation(card, latestPreparation); }
+            if (visible()) {
+              latestOperation = operation;
+              latestPreparation = operation.preparation;
+              renderNextPreparation(card, operation);
+            }
             if (visible()) status.textContent = operation.preparation ? '' : operation.status === 'running'
               ? 'Подготовка следующей ситуации выполняется…' : 'Подготовка ожидает очереди…';
           },
@@ -1244,14 +1257,14 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
         }
         if (error.name === 'PreparationFailed') {
           if (visible()) {
-            status.textContent = error.message || 'Подготовка завершилась ошибкой.';
+            status.textContent = latestPreparation ? '' : error.message || 'Подготовка завершилась ошибкой.';
             button.dataset.nextUnavailable = String(!error.retryAllowed);
             button.disabled = !error.retryAllowed;
             button.textContent = error.retryAllowed ? 'Повторить подготовку' : 'Подготовка недоступна';
           }
           void loadProductRuntime().catch(showInterviewRuntimeError);
         } else if (visible()) {
-          if (!posted && ![403, 409].includes(Number(error?.status)) && error.name !== 'PreparationWaitLimit') renderPreparation(card, latestPreparation, { readError: true });
+          if (!posted && ![403, 409].includes(Number(error?.status)) && error.name !== 'PreparationWaitLimit') renderNextPreparation(card, latestOperation, { readError: true });
           status.textContent = latestPreparation ? '' : error.name === 'PreparationWaitLimit'
             ? 'Состояние обновлено. Подготовка ещё не завершена.'
             : [403, 409].includes(Number(error?.status))
@@ -1268,7 +1281,7 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
     if (renderedProductMessages) renderedProductMessages.node = card;
     if (preparation?.preparation) {
       if (preservedPreparationRoot) card.append(preservedPreparationRoot);
-      renderPreparation(card, preparation.preparation);
+      renderNextPreparation(card, preparation);
       const root = card.querySelector('[data-preparation-status]');
       root.querySelector('[data-preparation-time]').append(timeNotice);
       root.querySelector('[data-preparation-actions]').append(button, status);

@@ -66,3 +66,18 @@ test('one stage, disclosed number and complete human details in compact markup',
   assert.equal(preparationText(model,{now}).split(model.stage_label).length-1,1);
   assert.match(preparationCopy(model,{now}),/Сведения обновлены:/);
 });
+
+
+test('public Next failure reason replaces generic failure, including after a failed GET', () => {
+  const failed = { ...model, kind: 'next', status: 'failed',
+    explanation: 'Не удалось завершить подготовку. Проверяем материалы ситуации.' };
+  const failureMessage = 'Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки.';
+  for (const readError of [false, true]) {
+    const text = preparationText(failed, { now, failureMessage, readError });
+    assert.equal(text.split(failureMessage).length - 1, 1);
+    assert.doesNotMatch(text, /Не удалось завершить/);
+    assert.equal(text.includes('Не удалось обновить состояние'), readError);
+  }
+  assert.match(preparationText(failed, { now }), /Не удалось завершить подготовку/);
+  assert.doesNotMatch(preparationText(model, { now, failureMessage }), /не прошли обязательную/);
+});

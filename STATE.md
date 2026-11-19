@@ -1,3 +1,14 @@
+# P4K_ASSESSMENT_REFUSAL_UI_01 — выпуск 2.1.36
+
+Владелец принял локальный результат и поручил создать PR, выполнить полные
+проверки и слить в main после успеха. Base `592527e5` (2.1.35).
+Причина отказа Next сохраняется при повторном чтении, reload и возврате
+из «Моих оценок». Ветка `codex/p4k-assessment-refusal-ui-01-release`.
+Готовность к слиянию подтверждают обязательные проверки CI на PR.
+[Карточка задачи](docs/evc/tasks/p4k-assessment-refusal-ui-01.md).
+
+---
+
 # P4K_CASE_ADMISSION_01 / PR251 — исправлена гонка browser-fixture, 19.11.2026
 
 На af4a2918 frontend/pytest/integration/4 runtime shards PASS; fast browser FAIL
