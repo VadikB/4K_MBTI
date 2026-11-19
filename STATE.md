@@ -1,3 +1,9 @@
+# Admin 03 — обращение участника, 19.11.2026
+
+Владелец прямо поручил реализовать Admin 03 из архива SHA-256 `a3c20e10509772bc263c5d6fd44983210dff49d876183e3317d4f0b7b240405d` и подготовить отдельный PR. Ветка `codex/admin-appeals-03` создана от `d17fba64` / main 2.1.38 и перенесена на `302bf576` / main 2.1.39. Реализованы tenant/owner HTTP-доступ, запись обращения в контексте назначения, атомарное взятие в работу, отдельный неизменяемый ответ и readback в «Мои оценки». Старые записи остаются с неизвестным назначением. Адресные integration/HTTP на изолированной PostgreSQL — 7 PASS; frontend — 476 PASS, HTTP — 218 PASS, backend — 1299 PASS; браузерный fixture — 2 PASS, визуальные снимки 1440/390 px проверены. Впереди полный UI→HTTP→PG путь, финальный diff review, draft PR и быстрый CI. Миграция снимает старый unique и требует остановить старые writers; откат одного кода 2.1.39 несовместим. Перед Ready нужен явный допуск владельца на порядок миграции и кандидат версии. `branch_push/pr=true`, `merge/deploy/version_bump/artifact_publish=false`. [Отчёт](docs/evc/tasks/admin-appeals-03.md).
+
+---
+
 # Admin 02 — решение владельца о слиянии, 19.11.2026
 
 PR #252 Ready, base `1c7fcb9c` / 2.1.37, кандидат 2.1.38. Head `e79a55ee` прошёл frontend, pytest, integration, fast browser, четыре runtime shards и итоговый full-verification; GitHub показал 9 PASS, штатный deploy-test SKIP и отсутствие конфликтов. `origin/main` повторно сверен. Владелец ответил «ревью считаем пройденным, продолжаем» после передачи PR с указанием, что следующий шаг — review и отдельное решение о слиянии. Это принято как приёмка результата и разрешение на squash merge с автоматическим deploy на `test`; `branch_push/pr/version_bump/merge/deploy=true`, `artifact_publish=false`. Активно: CI нового документального head, повторная сверка main и слияние PR, затем проверка автоматического deploy. [Отчёт](docs/evc/tasks/admin-organization-02.md).

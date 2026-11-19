@@ -343,6 +343,16 @@ const openDialog = (kind, trigger) => {
     errorNode.hidden = true;
     if (empty) { errorNode.textContent = isAnswers ? 'Заполните ответ. Можно написать «Не знаю».' : 'Опишите неточность.'; errorNode.hidden = false; empty.focus(); return; }
     const message = isAnswers ? '' : 'Поле: ' + field.value + '\n' + inputs[0].value;
+    const showIssueReceipt = () => {
+      issueDrafts.delete(scope);
+      try { window.sessionStorage.removeItem(issueKey); } catch { /* Memory cleared. */ }
+      inputs[0].closest('form').querySelectorAll('label, textarea, select').forEach((node) => { node.hidden = true; });
+      dialog.querySelector('[type="submit"]').hidden = true;
+      const status = dialog.querySelector('[role="status"]'); status.hidden = false;
+      status.textContent = 'Сообщение сохранено в вашей организации. Можно продолжить знакомство. Роль и сведения автоматически не изменились.';
+      dialog.querySelector('[data-cancel]').textContent = 'Продолжить знакомство';
+      dialog.querySelector('[data-cancel]').focus();
+    };
     if (!isAnswers && [...message].length > 2000) {
       errorNode.textContent = 'Сообщение вместе с выбранным полем должно содержать не более 2000 символов. Сейчас: ' + [...message].length + '. Сократите текст — он не был обрезан.';
       errorNode.hidden = false; errorNode.focus(); return;
@@ -363,16 +373,19 @@ const openDialog = (kind, trigger) => {
         const receipt = await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify({ message }) });
         if (!current()) return;
         if (!receipt?.id || !receipt.status) throw new Error('Сохранение сообщения не подтверждено. Ваш текст оставлен для повтора.');
-        issueDrafts.delete(scope);
-        try { window.sessionStorage.removeItem(issueKey); } catch { /* Memory cleared. */ }
-        inputs[0].closest('form').querySelectorAll('label, textarea, select').forEach((node) => { node.hidden = true; });
-        dialog.querySelector('[type="submit"]').hidden = true;
-        const status = dialog.querySelector('[role="status"]'); status.hidden = false;
-        status.textContent = 'Сообщение сохранено в вашей организации. Можно продолжить знакомство. Роль и сведения автоматически не изменились.';
-        dialog.querySelector('[data-cancel]').textContent = 'Продолжить знакомство';
-        dialog.querySelector('[data-cancel]').focus();
+        showIssueReceipt();
       }
     } catch (error) {
+      if (!isAnswers && current()) {
+        try {
+          const readback = await api('/acquaintance/issues');
+          if (current() && readback?.items?.some(item => item.message === message &&
+            item.assignment_ref === (model?.readiness?.assignment_ref ?? null) &&
+            item.assignment_id === (model?.readiness?.assignment_id ?? null))) {
+            showIssueReceipt(); return;
+          }
+        } catch { /* The draft stays available for a later retry. */ }
+      }
       if (current()) { errorNode.textContent = acquaintanceErrorMessage(error); errorNode.hidden = false; errorNode.focus(); }
     } finally {
       if (current() && dialogState) { dialogState.pending = false; dialog.querySelectorAll('button, textarea, select').forEach((node) => { node.disabled = false; }); }

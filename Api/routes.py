@@ -47,6 +47,7 @@ from Api.m6_cycle_aggregation_contracts import CreateAggregationRequest, CreateS
 from Api.profile_access import require_unchanged_email
 from Api import participant_profile
 from Api import acquaintance
+from Api import appeals
 from Api import assessment_assignment_sources, assessment_programs
 from Api.public_origin import build_public_link
 from Api import questionnaire_sources
@@ -1470,6 +1471,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 om.organization_id,
                 om.role,
                 u.id AS user_id,
+                (SELECT COUNT(*) FROM participant_data_issue_reports issue
+                 WHERE issue.organization_id=om.organization_id AND issue.user_id=u.id) AS issue_count,
                 u.email,
                 u.full_name,
                 u.job_description,
@@ -1542,6 +1545,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             members_by_org_list.setdefault(int(row["organization_id"]), []).append(
                 {
                     "user_id": int(row["user_id"]),
+                    "issue_count": int(row["issue_count"]),
                     "email": email,
                     "full_name": row["full_name"],
                     "role": row["role"] or "member",
@@ -3650,6 +3654,75 @@ def report_participant_data_issue(
             return result
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/{user_id}/acquaintance/issues")
+def list_participant_data_issues(user_id: int, request: Request) -> dict:
+    _require_matching_session_user(request, user_id)
+    with get_connection() as connection:
+        visible = ("id", "organization_id", "message", "status", "created_at",
+                   "assignment_ref", "assignment_id", "questionnaire_revision_id",
+                   "reply_message", "reply_author_user_id", "replied_at")
+        return {"items": [{key: item[key] for key in visible} for item in appeals.list_issues(
+            connection, organization_id=None, user_id=user_id)]}
+
+
+class AppealReplyRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+
+
+def _admin_member_issues_scope(connection, request: Request, organization_id: int, user_id: int) -> int:
+    actor = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    scope = _require_organization_admin(connection, actor, organization_id)
+    if not scope.is_superadmin:
+        current_admin = connection.execute(
+            "SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s AND role='admin' FOR SHARE",
+            (organization_id, int(actor.id)),
+        ).fetchone()
+        if not current_admin:
+            raise HTTPException(status_code=403, detail="Organization admin access required")
+    member = connection.execute(
+        "SELECT 1 FROM organization_memberships WHERE organization_id=%s AND user_id=%s",
+        (organization_id, user_id),
+    ).fetchone()
+    if not member:
+        raise HTTPException(status_code=404, detail="Participant not found")
+    return int(actor.id)
+
+
+@router.get("/admin/organizations/{organization_id}/members/{user_id}/issues")
+def list_admin_member_issues(organization_id: int, user_id: int, request: Request) -> dict:
+    with get_connection() as connection:
+        _admin_member_issues_scope(connection, request, organization_id, user_id)
+        return {"items": appeals.list_issues(connection, organization_id=organization_id, user_id=user_id)}
+
+
+@router.post("/admin/organizations/{organization_id}/members/{user_id}/issues/{issue_id}/claim")
+def claim_admin_member_issue(organization_id: int, user_id: int, issue_id: int, request: Request) -> dict:
+    with get_connection() as connection:
+        actor_id = _admin_member_issues_scope(connection, request, organization_id, user_id)
+        result = appeals.claim_issue(connection, organization_id=organization_id, user_id=user_id,
+                                     issue_id=issue_id, actor_id=actor_id)
+        if not result:
+            raise HTTPException(status_code=409, detail="ISSUE_CLAIM_UNAVAILABLE")
+        connection.commit()
+        return result
+
+
+@router.post("/admin/organizations/{organization_id}/members/{user_id}/issues/{issue_id}/reply")
+def reply_admin_member_issue(organization_id: int, user_id: int, issue_id: int,
+                             payload: AppealReplyRequest, request: Request) -> dict:
+    with get_connection() as connection:
+        actor_id = _admin_member_issues_scope(connection, request, organization_id, user_id)
+        try:
+            result = appeals.reply_to_issue(connection, organization_id=organization_id, user_id=user_id,
+                                            issue_id=issue_id, actor_id=actor_id, message=payload.message)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        connection.commit()
+        return result
 
 
 @router.get("/admin/dashboard", response_model=AdminDashboard)

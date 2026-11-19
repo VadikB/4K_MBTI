@@ -43,7 +43,8 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP NOT NULL DEFAULT NOW())""")
         connection.execute("""CREATE TABLE participant_data_issue_reports(
             id BIGSERIAL PRIMARY KEY,user_id BIGINT,organization_id BIGINT,message TEXT,status TEXT DEFAULT 'open',
-            created_at TIMESTAMP DEFAULT NOW(),resolved_at TIMESTAMP,UNIQUE(user_id,organization_id,message))""")
+            scope_key TEXT NOT NULL DEFAULT 'legacy',assignment_ref TEXT,questionnaire_revision_id BIGINT,assignment_id BIGINT,
+            created_at TIMESTAMP DEFAULT NOW(),resolved_at TIMESTAMP,UNIQUE(user_id,organization_id,scope_key,message))""")
         connection.execute('''CREATE TABLE participant_acquaintance_confirmations(
             user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,
             questionnaire_revision_id BIGINT,personalized_profile_id BIGINT)''')

@@ -15,7 +15,46 @@ const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
 const DASHBOARD_RETRY_INTERVAL_MS = 60000;
 let dashboardRefreshTimer = null;
 let dashboardRefreshPending = false;
+let appealsReadGeneration = 0;
 const header = initAppHeader({ root: dashboardPanel.querySelector('[data-app-header]'), onHome: () => openDashboard() });
+
+const refreshAppeals = async () => {
+  const ownerId = state.pendingUser?.id;
+  if (!ownerId) return;
+  const epoch = state.identityEpoch;
+  const generation = ++appealsReadGeneration;
+  let section = dashboardPanel.querySelector('[data-participant-appeals]');
+  if (section && section.dataset.ownerId !== String(ownerId)) { section.remove(); section = null; }
+  try {
+    const response = await fetch(`/users/${encodeURIComponent(ownerId)}/acquaintance/issues`, { credentials: 'same-origin' });
+    const result = await readApiResponse(response, 'Не удалось загрузить обращения');
+    if (generation !== appealsReadGeneration || epoch !== state.identityEpoch || state.pendingUser?.id !== ownerId || state.currentScreen !== 'dashboard') return;
+    const items = Array.isArray(result.items) ? result.items : [];
+    if (!items.length) { section?.remove(); return; }
+    if (!section) { section = document.createElement('section'); section.dataset.participantAppeals = ''; section.dataset.ownerId = String(ownerId); dashboardPanel.append(section); }
+    section.replaceChildren();
+    const heading = document.createElement('h2'); heading.textContent = 'Мои обращения'; section.append(heading);
+    for (const item of items) {
+      const article = document.createElement('article'); article.className = 'card participant-appeal';
+      const context = document.createElement('p'); context.textContent = item.assignment_ref
+        ? `Назначение: ${item.assignment_ref}` : 'Связь с назначением неизвестна';
+      const message = document.createElement('p'); message.textContent = item.message;
+      article.append(context, message);
+      if (item.reply_message) {
+        const title = document.createElement('h3'); title.textContent = 'Ответ по вашему обращению';
+        const reply = document.createElement('p'); reply.textContent = item.reply_message;
+        const attribution = document.createElement('small');
+        attribution.textContent = 'Администратор' + (item.replied_at ? ' · ' + new Date(item.replied_at).toLocaleString('ru-RU') : '');
+        article.append(title, reply, attribution);
+      } else {
+        const status = document.createElement('p');
+        status.textContent = item.status === 'in_progress' ? 'В работе' : item.status === 'resolved' ? 'Обработано ранее' : 'Новое';
+        article.append(status);
+      }
+      section.append(article);
+    }
+  } catch { /* Keep the last confirmed projection for this owner until a successful refresh. */ }
+};
 
 const scheduleDashboardRefresh = (delay = DASHBOARD_REFRESH_INTERVAL_MS) => {
   window.clearTimeout(dashboardRefreshTimer);
@@ -40,6 +79,7 @@ const refreshDashboard = async () => {
     state.dashboard = payload.dashboard || state.dashboard;
     persistAssessmentContext();
     renderDashboard();
+    void refreshAppeals();
     dashboardRefreshStatus.classList.add('hidden');
     scheduleDashboardRefresh();
   } catch (_error) {
@@ -281,6 +321,7 @@ export const openDashboard = () => {
   syncUrlState('dashboard');
   hideAllPanels();
   renderDashboard();
+  void refreshAppeals();
   dashboardPanel.classList.remove('hidden');
   dashboardRefreshStatus.classList.add('hidden');
   scheduleDashboardRefresh();

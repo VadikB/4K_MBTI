@@ -2045,6 +2045,10 @@ if (adminOrganizationsList) {
         module.selectAdminOrganizationView(organizationId, button.dataset.view));
       return;
     }
+    if (button.dataset.action === 'toggle-appeals-filter') {
+      withScreen(loadAdminOrganizations, (module) => module.toggleAppealsFilter());
+      return;
+    }
     if (button.dataset.action === 'open-member-report') {
       const reportId = button.dataset.reportId;
       if (!reportId) return;
@@ -2114,6 +2118,11 @@ if (adminOrganizationsList) {
       document.body.append(dialog);
       dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
       dialog.showModal();
+      if (button.dataset.userId) {
+        void import('./screens/admin/appeals.js').then(module => {
+          if (dialog.isConnected) module.mountMemberAppeals(dialog, organizationId, Number(button.dataset.userId));
+        });
+      }
       dialog.querySelector('.dialog-close')?.focus();
       return;
     }
