@@ -4,15 +4,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import io
 import json
 import re
 import shutil
 import sys
-import zipfile
 from collections import defaultdict
 from pathlib import Path
-from xml.etree import ElementTree as ET
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -20,6 +17,7 @@ if __package__ in (None, ""):
 from Api.assessment_case_contracts import AssessmentSituationV2, C34ExecutionEnvelope, CaseVersionV2
 from Api.m5_case_runtime import checksum
 from Api.m5_package import verify_package_directory
+from Api.xlsx_values import read_xlsx
 ROOT = Path(__file__).resolve().parents[1]
 M2 = ROOT / "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json"
 M3 = ROOT / "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json"
@@ -28,7 +26,6 @@ EXECUTION_RULES = ROOT / "assessment_definitions/cases/competencies_4k/m5-1.1-v0
 ADMISSION_POLICY = ROOT / "assessment_definitions/cases/competencies_4k/m5-1.1-v0.1-authoring/admission-policy.json"
 SOURCE_NAME = "M5_Командное_обсуждение_5_комплексных_кейсов_v0_1_WORKING.xlsx"
 EXPECTED_SOURCE_SHA256 = "06f528d9c9e34c4748979e4d787ce0e069990e9f4051953e395ecb3f454e53fa"
-NS = {"s": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 
 
 def digest(data: bytes) -> str:
@@ -37,41 +34,6 @@ def digest(data: bytes) -> str:
 
 def json_bytes(value) -> bytes:
     return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
-
-
-def read_xlsx(data: bytes) -> dict:
-    """Прочитать значения OOXML; формулы допускаются только с сохранённым значением."""
-    with zipfile.ZipFile(io.BytesIO(data)) as archive:
-        shared = []
-        if "xl/sharedStrings.xml" in archive.namelist():
-            root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
-            shared = ["".join(n.text or "" for n in x.findall(".//s:t", NS)) for x in root.findall("s:si", NS)]
-        rels = {x.attrib["Id"]: x.attrib["Target"] for x in ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))}
-        result = {}
-        workbook = ET.fromstring(archive.read("xl/workbook.xml"))
-        for sheet in workbook.findall("s:sheets/s:sheet", NS):
-            rel = sheet.attrib["{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"]
-            target = rels[rel].lstrip("/")
-            target = target if target.startswith("xl/") else "xl/" + target
-            rows = []
-            for row in ET.fromstring(archive.read(target)).findall("s:sheetData/s:row", NS):
-                cells = {}
-                for cell in row.findall("s:c", NS):
-                    value = cell.findtext("s:v", "", NS)
-                    kind = cell.attrib.get("t")
-                    if kind == "s" and value != "":
-                        value = shared[int(value)]
-                    elif kind == "inlineStr":
-                        value = "".join(n.text or "" for n in cell.findall(".//s:t", NS))
-                    elif value != "" and kind not in ("str", "e", "b"):
-                        number = float(value)
-                        value = int(number) if number.is_integer() else number
-                    if value != "":
-                        cells[re.sub(r"\d", "", cell.attrib["r"])] = value
-                if cells:
-                    rows.append({"row": int(row.attrib["r"]), "cells": cells})
-            result[sheet.attrib["name"]] = rows
-        return result
 
 
 def records(workbook: dict, sheet: str, header_row: int = 1) -> list[dict]:
