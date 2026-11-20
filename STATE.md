@@ -1454,3 +1454,9 @@ Backend1305/HTTP219/frontend476 PASS; integration488 PASS/2 real-LLM SKIPPED;
 Полный журнал и rollback — в карточке; изолированная PG остановлена, .venv-ссылка
 удалена. Далее человеческое review/визуальная приёмка и решение по PR; публикация,
 CI/Ready, version bump и выпуск не выполнялись. Открытых технических блокеров нет.
+
+Продолжение ADM-FIX-03 по «продолжаем»: ветка отправлена в origin;
+через встроенный браузер создан draft PR https://github.com/VadikB/4K_MBTI/pull/261 .
+Base3cc4934c, исходный head9ba9225d; код03dc1e3f не менялся. branch_push/pr=true,
+version_bump/Ready/merge/deploy/artifact_publish=false. Следующий шаг: быстрый CI
+окончательного head и человеческое review/визуальная приёмка; Draft full CI не PASS.
