@@ -3825,7 +3825,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   await expect(page.locator('.interview-message--situation')).toContainText('Не обещать сроки без проверки');
   await expect(page.locator('.interview-message--situation')).toContainText('Письмо клиента: Содержание письма');
   await expect(page.getByRole('button', { name: 'Завершить ситуацию' })).toBeHidden();
-  await expect(page.getByText('После отправки ответ нельзя изменить')).toBeVisible();
+  await expect(page.locator('.interview-your-turn')).toBeVisible();
   await expect(page.locator('[data-speaker-label="Анна"]')).toBeVisible();
   await expect(page.locator('.interview-bubble.bot').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 

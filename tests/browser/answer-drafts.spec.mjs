@@ -124,7 +124,8 @@ async function captureDraft(page, scene, width) {
     const rect = el => { const r = el.getBoundingClientRect(); return { x:r.x, y:r.y, width:r.width, height:r.height, bottom:r.bottom }; };
     const css = el => { const s = getComputedStyle(el); return Object.fromEntries(
       ['backgroundColor','color','opacity','borderRadius','borderColor','outlineWidth','outlineColor','outlineOffset','resize','padding','fontSize','lineHeight','minHeight','maxHeight'].map(k => [k,s[k]])); };
-    return { width: innerWidth, scrollWidth: document.documentElement.scrollWidth, field: rect(field), button: rect(button),
+    return { width: innerWidth, scrollWidth: document.documentElement.scrollWidth, field: rect(field),
+      frame: rect(field.closest('.interview-answer-input')), button: rect(button),
       fieldStyle: css(field), buttonStyle: css(button), disabled: button.disabled, text: field.value,
       status: document.querySelector('#interview-draft-status').textContent,
       timer: css(document.querySelector('#interview-timer-badge')),
@@ -138,15 +139,15 @@ async function captureDraft(page, scene, width) {
   expect(ui.buttonStyle.opacity).toBe('1');
   expect(ui.buttonStyle.backgroundColor).toBe(scene === 'conflict' ? 'rgb(214, 226, 229)' : 'rgb(24, 184, 198)');
   expect(ui.buttonStyle.color).toBe(scene === 'conflict' ? 'rgb(104, 119, 124)' : 'rgb(34, 44, 48)');
-  expect(ui.fieldStyle).toMatchObject({borderRadius:'8px',resize:'none',padding:'12px',fontSize:'16px',lineHeight:'24px',minHeight:'48px',maxHeight:'120px'});
-  expect(ui.field.height).toBe(96);
-  expect(ui.timer).toMatchObject({fontSize:'24px',lineHeight:'32px'});
+  expect(ui.fieldStyle).toMatchObject({resize:'none',padding:'0px 12px',fontSize:'16px',lineHeight:'24px',minHeight:'24px',maxHeight:'96px'});
+  expect(ui.field.height).toBeGreaterThanOrEqual(24);
+  expect(ui.field.height).toBeLessThanOrEqual(96);
+  expect(ui.timer).toMatchObject({fontSize:'13px',lineHeight:'18px'});
   expect(ui.scenarioBody).toMatchObject({fontSize:'16px',lineHeight:'24px'});
   expect(ui.scenarioTitle).toMatchObject({fontSize:width === 1440?'20px':'18px',lineHeight:width === 1440?'28px':'26px'});
-  if (width === 1440) {
-    expect(ui.button.width).toBe(200); expect(Math.abs(ui.button.bottom-ui.field.bottom)).toBeLessThan(1);
-    expect(ui.scenario.width).toBeCloseTo(880, 1);
-  } else { expect(ui.button.width).toBe(ui.field.width); expect(ui.button.y).toBeGreaterThan(ui.field.bottom); }
+  expect(ui.button.x).toBeGreaterThan(ui.frame.x + ui.frame.width);
+  expect(ui.button.bottom).toBeCloseTo(ui.frame.bottom, 0);
+  if (width === 1440) expect(ui.scenario.width).toBeCloseTo(700, 1);
   for (const action of ui.actions) {
     expect(action.rect.height).toBeGreaterThanOrEqual(44); expect(action.style.color).toBe('rgb(0, 125, 137)');
   }
@@ -261,12 +262,12 @@ test('UI B/D: focus, long text, reading position, 320px and reduced keyboard vie
   await page.goto(`${base}/?screen=interview`);
   const field=page.locator('#interview-textarea'), status=page.locator('#interview-draft-status');
   await expect(field).toBeEnabled();
-  const style = () => field.evaluate(n => {const s=getComputedStyle(n); return {radius:s.borderRadius,border:s.borderColor,
-    outline:s.outlineWidth,outlineColor:s.outlineColor,offset:s.outlineOffset,resize:s.resize};});
+  const style = () => field.evaluate(n => {const s=getComputedStyle(n.closest('.interview-answer-input')); return {radius:s.borderRadius,border:s.borderColor,
+    outline:s.outlineWidth,outlineStyle:s.outlineStyle,outlineColor:s.outlineColor,offset:s.outlineOffset,resize:getComputedStyle(n).resize};});
   await page.locator('#interview-case-badge').click(); await page.clock.runFor(250);
-  const blur=await style(); expect(blur).toMatchObject({radius:'8px',outline:'0px',border:'rgba(0, 0, 0, 0)',resize:'none'});
+  const blur=await style(); expect(blur).toMatchObject({radius:'8px',outlineStyle:'none',border:'rgb(203, 213, 225)',resize:'none'});
   await field.click(); await page.clock.runFor(250);
-  const click=await style(); expect(click).toMatchObject({outline:'1px',outlineColor:'rgb(0, 125, 137)',border:'rgb(0, 125, 137)',offset:'0px'});
+  const click=await style(); expect(click).toMatchObject({outline:'1px',outlineStyle:'solid',outlineColor:'rgb(0, 125, 137)',border:'rgb(0, 125, 137)',offset:'0px'});
   await page.keyboard.press('Tab'); await expect(page.locator('#interview-submit-button')).toBeFocused();
   await page.keyboard.press('Shift+Tab'); await expect(field).toBeFocused();
   const tab=await style(); expect(tab).toEqual(click);
@@ -306,7 +307,7 @@ test('UI B/D: focus, long text, reading position, 320px and reduced keyboard vie
   // Reduced viewport emulates the space left by a keyboard, not a physical OS keyboard.
   for (const viewport of [{width:320,height:700},{width:390,height:390},{width:320,height:360}]) {
     await page.setViewportSize(viewport); await field.focus();
-    for (const selector of ['#interview-textarea','#interview-draft-status','#interview-submit-button']) {
+    for (const selector of ['#interview-textarea','.interview-your-turn','#interview-submit-button']) {
       const control=page.locator(selector);await control.scrollIntoViewIfNeeded();
       const b=await control.boundingBox();expect(b.x).toBeGreaterThanOrEqual(0);expect(b.x+b.width).toBeLessThanOrEqual(viewport.width);
       expect(b.y).toBeGreaterThanOrEqual(0);expect(b.y+b.height).toBeLessThanOrEqual(viewport.height+1);
