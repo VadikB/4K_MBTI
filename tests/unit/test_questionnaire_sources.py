@@ -152,15 +152,9 @@ class _ReadinessConnection:
             } if self.confirmed else None)
         if "SELECT status FROM questionnaire_response_revisions" in query:
             return _One({"status": self.latest} if self.latest else None)
-        if "assessment_preparation_jobs" in query:
-            assert _params == (3, "assessment-a", "assessment-a")
-            return _One({"in_progress": self.in_progress})
         if "SELECT DISTINCT u.id AS user_id" in query:
             assert _params == (3, "assessment-a", "assessment-a")
             return _Many([{"user_id": number + 1} for number in range(self.total)])
-        if "participant_acquaintance_confirmations" in query:
-            user_id = int(_params[0])
-            return _One({"personalized_profile_id": user_id} if user_id <= self.ready else None)
         raise AssertionError(query)
 
 
@@ -172,8 +166,21 @@ class _Many:
         return self.value
 
 
-def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monkeypatch):
+@pytest.fixture
+def assigned_sources(monkeypatch):
+    monkeypatch.setattr("Api.assessment_assignment_sources.schema_available", lambda _: True)
+    monkeypatch.setattr("Api.assessment_assignment_sources.participant_binding",
+        lambda connection, **kw: {"assignment_id": kw["user_id"], "questionnaire_revision_id": 7}
+            if connection.confirmed else None)
+    monkeypatch.setattr("Api.admin_assignment_projection.preparation_for_assignment",
+        lambda connection, **kw: {"status": "running" if kw["assignment_id"] <= connection.in_progress else None})
+
+
+def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monkeypatch, assigned_sources):
     def fake_late_readiness(connection, *, user_id, readiness):
+        if readiness["status"] != "ready":
+            return {"status": "waiting_for_assessment_data", "reason": readiness["reason"]}
+        assert readiness["organization_context_version_id"] == 11
         assert readiness["assignment_ref"] == "assessment-a"
         return {
             "status": "ready_to_prepare" if user_id <= connection.ready else "waiting_for_assessment_data",
@@ -190,10 +197,11 @@ def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monke
         organization_id=3, assignment_ref="assessment-a",
     )
     assert draft["early"]["status"] == "draft_unconfirmed"
-    assert draft["roles"] == {
-        "status": "incomplete", "message": "Готовность участников будет проверена после подтверждения ранних сведений.",
-        "ready": 0, "total": 2, "reasons": {}, "action_view": "organization-data",
-    }
+    assert draft["roles"]["status"] == "incomplete"
+    assert draft["roles"]["ready"] == 0
+    assert draft["roles"]["reasons"] == {"profile_binding": 2}
+    assert draft["roles"]["action_view"] == "people"
+
 
     incomplete = admin_assignment_readiness(
         _ReadinessConnection(confirmed=True, total=2, ready=1),
@@ -213,7 +221,7 @@ def test_admin_readiness_distinguishes_missing_draft_roles_and_preparation(monke
     assert ready["status"] == "preparing"
 
 
-def test_admin_readiness_preserves_late_reasons_and_actions(monkeypatch):
+def test_admin_readiness_preserves_late_reasons_and_actions(monkeypatch, assigned_sources):
     reasons = {
         1: "W02_ANSWERS_NOT_BOUND",
         2: "M4_PROFILE_SCOPE_MISMATCH: stale",

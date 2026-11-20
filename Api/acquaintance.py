@@ -632,11 +632,14 @@ def late_readiness(connection, *, user_id: int, readiness: dict | None = None) -
             organization_id=readiness['organization_id'], assignment_ref=readiness['assignment_ref'],
             questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
         if assignment_sources.schema_available(connection) and readiness.get('questionnaire_revision_id') is not None:
-            if binding is None or any(profile[key] != value for key, value in {
+            if (binding is None or readiness.get('organization_context_version_id') is None
+                    or (readiness.get('assignment_id') is not None
+                        and binding['assignment_id'] != readiness['assignment_id'])
+                    or any(profile[key] != value for key, value in {
                 'assessment_configuration_id': binding['assessment_configuration_id'],
                 'role_profile_version_id': binding['role_profile_version_id'],
-                'organization_context_version_id': readiness['organization_context_version_id'],
-            }.items()):
+                'organization_context_version_id': readiness.get('organization_context_version_id'),
+            }.items())):
                 raise ValueError('W02_PROFILE_ASSIGNMENT_SCOPE_MISMATCH')
         return {"status": "ready_to_prepare", "reason": None, "personalized_profile_id": int(profile["id"])}
     except ValueError as exc:

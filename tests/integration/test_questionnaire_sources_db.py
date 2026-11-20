@@ -258,7 +258,8 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         connection.execute("INSERT INTO assessment_preparation_jobs(user_id,status) VALUES(2,'running')")
         direct = admin_assignment_readiness(connection, organization_id=10, assignment_ref="synthetic-assignment")
         assert direct["roles"]["total"] == 2
-        assert direct["preparation"]["status"] == "in_progress"
+        # An unscoped old job cannot prove preparation of this assignment.
+        assert direct["preparation"]["status"] == "idle"
         assert admin_assignment_readiness(connection, organization_id=10,
                                           assignment_ref="second-assignment")["roles"]["total"] == 1
 
@@ -268,3 +269,244 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
                 confirmed_by=2,
             )
         connection.rollback()
+
+
+@pytest.fixture
+def readiness_db(test_database_url):
+    """Real M4 snapshots and questionnaire lifecycle, synthetic isolated records."""
+    import json
+    from Api.database import ensure_role_profile_schema, ensure_assessment_context_schema
+    from Api.assessment_role_profiles import publish_base_roles
+    from Api import assessment_contexts as contexts
+    with psycopg.connect(test_database_url, row_factory=dict_row) as c:
+        schema = 'adm_fix_pytest_' + uuid4().hex
+        c.execute(psycopg.sql.SQL('CREATE SCHEMA {}').format(psycopg.sql.Identifier(schema)))
+        c.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
+        tables = {
+            'user_platform_roles': 'user_id bigint,platform_role_id bigint,revoked_at timestamp',
+            'platform_role_permissions': 'platform_role_id bigint',
+            'assessment_program_definitions': 'id bigint,code text,version text,name text,assignment_ref text,mode text,status text,assessment_configuration_id bigint,catalog_version_id bigint,source_refs_json jsonb,definition_checksum text',
+            'organization_assessment_program_connections': 'id bigint,organization_id bigint,program_definition_id bigint,connected_at timestamp,is_current boolean',
+            'users': 'id bigint PRIMARY KEY,full_name text,email text,selected_role_profile_version_id bigint',
+            'organizations': 'id bigint PRIMARY KEY,code text,name text,is_active boolean,updated_at timestamp',
+            'organization_memberships': 'organization_id bigint,user_id bigint,role text',
+            'organization_invitations': 'id bigint,organization_id bigint,recipient_email text,purpose text,assignment_ref text,created_by_user_id bigint,revoked_at timestamp',
+            'organization_assessment_assignments': 'id bigint PRIMARY KEY,organization_id bigint,recipient_user_id bigint,assignment_ref text,status text,revoked_at timestamp',
+            'organization_assessment_source_bindings': 'id bigint,assignment_id bigint,questionnaire_revision_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint',
+            'participant_acquaintance_confirmations': 'id bigserial PRIMARY KEY,user_id bigint,organization_id bigint,assignment_ref text,questionnaire_revision_id bigint,personalized_profile_id bigint,confirmed_at timestamp DEFAULT NOW()',
+            'assessment_methodologies': 'id bigint PRIMARY KEY',
+            'assessment_methodology_versions': 'id bigint PRIMARY KEY,methodology_id bigint,status text,definition_json jsonb',
+            'assessment_configurations': 'id bigint PRIMARY KEY,methodology_version_id bigint,status text',
+            'user_sessions': 'id bigint PRIMARY KEY,user_id bigint,execution_snapshot_json jsonb,execution_checksum text',
+            'assessment_preparation_jobs': 'id bigint PRIMARY KEY,user_id bigint,operation_id text,status text,created_at timestamp',
+            'product_cycle_preparation_operations': 'id bigint,operation_id text,status text,user_id bigint,request_json jsonb,created_at timestamp,result_json jsonb',
+            'm5_cycles': 'id bigint,cycle_id text,status text,owner_user_id bigint,organization_id bigint,assignment_id bigint,usage_scope text,personalized_profile_id bigint,created_at timestamp,collection_closed_at timestamp',
+        }
+        for table, columns in tables.items():
+            c.execute('CREATE TABLE ' + table + '(' + columns + ')')
+        c.execute("INSERT INTO users VALUES(1,'Участник А','a@example.test',NULL),(2,'Администратор','admin@example.test',NULL),(3,'Участник Б','b@example.test',NULL)")
+        c.execute("INSERT INTO organizations VALUES(10,'synthetic','Синтетическая организация',TRUE,NOW()),(20,'foreign','Чужая',TRUE,NOW())")
+        c.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin'),(10,3,'member')")
+        c.execute('INSERT INTO assessment_methodologies VALUES(1)')
+        c.execute("INSERT INTO assessment_methodology_versions VALUES(1,1,'published','{\"methodology_version\":\"1.1\"}')")
+        c.execute("INSERT INTO assessment_configurations VALUES(1,1,'published')")
+        ensure_role_profile_schema(c)
+        ensure_assessment_context_schema(c)
+        ensure_questionnaire_source_schema(c)
+        package = Path('assessment_definitions/role_profiles/competencies_4k/1.1')
+        roles = publish_base_roles(c, package=json.loads((package/'base_roles.json').read_text()),
+            manifest=json.loads((package/'manifest.json').read_text()), published_by_user_id=2,
+            decision_basis='synthetic ADM-FIX-01 regression')
+        role_id = roles['version_ids'][0]
+        c.execute('UPDATE users SET selected_role_profile_version_id=%s', (role_id,))
+        def preview(key, text=None):
+            return save_preview(c, organization_id=10, assignment_ref='A', channel='csv',
+                template_variant='corporate', template_version='0.2', answers={},
+                raw_text=text or EXAMPLE.read_text(), uploaded_by=2, source_author='', idempotency_key=key)
+        revision = confirm(c, revision_id=preview('initial')['id'], organization_id=10, confirmed_by=2)
+        def assign(user_id, assignment_id, revision):
+            c.execute("INSERT INTO organization_assessment_assignments VALUES(%s,10,%s,'A','active',NULL)", (assignment_id,user_id))
+            c.execute('INSERT INTO organization_assessment_source_bindings VALUES(%s,%s,%s,1,%s)',
+                      (assignment_id,assignment_id,revision['id'],role_id))
+            user_context = contexts.create_user_context_draft(c, user_id=user_id,
+                identity={'full_name': 'Синтетический участник'}, professional={})
+            contexts.confirm_user_context(c, version_id=user_context, user_id=user_id)
+            profile = contexts.create_personalized_profile(c, user_id=user_id, assessment_configuration_id=1,
+                organization_context_version_id=revision['organization_context_version_id'],
+                role_profile_version_id=role_id, user_context_version_id=user_context)
+            c.execute("INSERT INTO participant_acquaintance_confirmations(user_id,organization_id,assignment_ref,questionnaire_revision_id,personalized_profile_id) VALUES(%s,10,'A',%s,%s)",
+                      (user_id,revision['id'],profile['id']))
+            return profile
+        c.commit()
+        try:
+            yield c, revision, assign, preview
+        finally:
+            c.rollback()
+            c.execute('SET search_path TO public')
+            c.execute(psycopg.sql.SQL('DROP SCHEMA {} CASCADE').format(psycopg.sql.Identifier(schema)))
+            c.commit()
+
+
+def test_admin_readiness_uses_frozen_revision_and_real_late_gate(readiness_db):
+    c, original, assign, preview = readiness_db
+    profile_a = assign(1, 41, original)
+    before = c.execute('SELECT * FROM assessment_personalized_profiles ORDER BY id').fetchall()
+    first = admin_assignment_readiness(c, organization_id=10, assignment_ref='A')
+    assert first['roles']['ready'] == 1
+    fresh = confirm(c, revision_id=preview('next')['id'], organization_id=10, confirmed_by=2)
+    assert fresh['organization_context_version_id'] != original['organization_context_version_id']
+    assert admin_assignment_readiness(c, organization_id=10, assignment_ref='A')['roles']['ready'] == 1
+    profile_b = assign(3, 42, fresh)
+    assert admin_assignment_readiness(c, organization_id=10, assignment_ref='A')['roles']['ready'] == 2
+    after = c.execute('SELECT * FROM assessment_personalized_profiles ORDER BY id').fetchall()
+    assert after[0] == before[0]
+    assert after[0]['checksum'] == profile_a['checksum']
+    assert after[1]['checksum'] == profile_b['checksum']
+    # The exact current confirmation points at a profile of another revision.
+    c.execute('UPDATE participant_acquaintance_confirmations SET personalized_profile_id=%s WHERE user_id=3', (profile_a['id'],))
+    mismatch = admin_assignment_readiness(c, organization_id=10, assignment_ref='A')
+    assert mismatch['roles']['ready'] == 1
+    assert mismatch['roles']['reasons']['profile_binding'] == 1
+    c.execute('DELETE FROM participant_acquaintance_confirmations WHERE user_id=1')
+    missing = admin_assignment_readiness(c, organization_id=10, assignment_ref='A')
+    assert missing['roles']['ready'] == 0
+    assert missing['roles']['reasons']['acquaintance_wait'] == 1
+
+
+def test_questionnaire_http_read_save_and_confirm_after_acquaintance(readiness_db, monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+    from Api import org_access
+    c, original, assign, preview = readiness_db
+    @contextmanager
+    def connection():
+        yield c
+    actor = SimpleNamespace(id=2, email='admin@example.test')
+    monkeypatch.setattr(routes, 'get_connection', connection)
+    monkeypatch.setattr(routes.web_session_service, 'get_user_by_token', lambda _: actor)
+    # Empty synthetic configuration; membership checks and program validation are real.
+    for setting in ('superadmin_emails_raw','org_admin_emails_raw','org_member_domains_raw','org_names_raw'):
+        monkeypatch.setattr(org_access.settings, setting, '')
+    app = FastAPI()
+    app.include_router(routes.router)
+    prefix = '/users/admin/organizations/10/questionnaire'
+    with TestClient(app, raise_server_exceptions=False) as http:
+        def save(key):
+            response = http.post(prefix+'/preview', json={'assignment_ref':'A','csv_text':EXAMPLE.read_text(),'idempotency_key':key})
+            assert response.status_code == 201, response.text
+            read = http.get(prefix+'/'+str(response.json()['id']))
+            assert read.status_code == 200
+            assert read.json()['answers_json'] == response.json()['answers_json']
+            return response.json()
+        assert http.get(prefix).status_code == 200
+        save('before-acquaintance')
+        assign(1, 41, original)
+        c.commit()
+        response = http.get(prefix)
+        assert response.status_code == 200, response.text
+        assert response.json()['items'][0]['readiness']['roles']['ready'] == 1
+        saved = save('after-acquaintance')
+        assert saved['readiness']['roles']['ready'] == 1
+        confirmed = http.post(prefix+'/'+str(saved['id'])+'/confirm', json={})
+        assert confirmed.status_code == 200, confirmed.text
+        exact = http.get(prefix+'/'+str(saved['id']))
+        assert exact.status_code == 200 and exact.json()['status'] == 'confirmed'
+        assert exact.json()['answers_json'] == confirmed.json()['answers_json']
+        response = http.get(prefix)
+        assert response.status_code == 200, response.text
+        assert response.json()['items'][0]['readiness']['roles']['ready'] == 1
+        fresh = c.execute('SELECT * FROM questionnaire_response_revisions WHERE id=%s', (saved['id'],)).fetchone()
+        assign(3, 42, fresh)
+        profile_a = c.execute('SELECT personalized_profile_id FROM participant_acquaintance_confirmations WHERE user_id=1').fetchone()['personalized_profile_id']
+        c.execute('UPDATE participant_acquaintance_confirmations SET personalized_profile_id=%s WHERE user_id=3', (profile_a,))
+        c.commit()
+        mismatch = http.get(prefix)
+        assert mismatch.status_code == 200
+        assert mismatch.json()['items'][0]['readiness']['roles']['reasons'] == {'profile_binding':1}
+        c.execute('DELETE FROM participant_acquaintance_confirmations WHERE user_id=3')
+        c.commit()
+        missing = http.get(prefix)
+        assert missing.status_code == 200
+        assert missing.json()['items'][0]['readiness']['roles']['reasons'] == {'acquaintance_wait':1}
+        import json
+        bound = c.execute('SELECT personalized_profile_id FROM participant_acquaintance_confirmations WHERE user_id=1').fetchone()
+        c.execute("INSERT INTO product_cycle_preparation_operations VALUES(1,'http-exact','running',1,%s::jsonb,NOW(),NULL)",
+            (json.dumps({'organization_id':10,'assignment_ref':'A','assignment_id':41,
+                'questionnaire_revision_id':original['id'],'personalized_profile_id':bound['personalized_profile_id']}),))
+        c.commit()
+        for _ in range(2):
+            response = http.get(prefix)
+            assert response.status_code == 200
+            assert response.json()['items'][0]['readiness']['preparation']['status'] == 'in_progress'
+        assert c.execute('SELECT COUNT(*) AS n FROM product_cycle_preparation_operations').fetchone()['n'] == 1
+        # Platform admin uses the same readiness and exact read routes.
+        c.execute("INSERT INTO users VALUES(5,'Суперадминистратор',%s,NULL)", (routes.ADMIN_EMAIL,))
+        c.commit()
+        actor = SimpleNamespace(id=5, email=routes.ADMIN_EMAIL)
+        assert http.get(prefix).status_code == 200
+        super_saved = save('superadmin-after')
+        super_confirmed = http.post(prefix+'/'+str(super_saved['id'])+'/confirm', json={})
+        assert super_confirmed.status_code == 200, super_confirmed.text
+        assert super_confirmed.json()['readiness'] is not None
+        assert http.get(prefix+'/'+str(super_saved['id'])).json()['status'] == 'confirmed'
+        c.execute("INSERT INTO users VALUES(4,'Чужой администратор','foreign@example.test',NULL)")
+        c.execute("INSERT INTO organization_memberships VALUES(20,4,'admin')")
+        c.commit()
+        actor = SimpleNamespace(id=4, email='foreign@example.test')
+        assert http.get(prefix).status_code == 403
+        assert http.post(prefix+'/preview', json={'assignment_ref':'A','csv_text':EXAMPLE.read_text(),'idempotency_key':'foreign'}).status_code == 403
+        assert http.get(prefix+'/'+str(saved['id'])).status_code == 403
+        assert http.post(prefix+'/'+str(saved['id'])+'/confirm', json={}).status_code == 403
+
+
+@pytest.mark.parametrize('status', ['queued', 'running'])
+def test_summary_preparation_is_exact_and_read_only(readiness_db, status):
+    import json
+    from Api.admin_assignment_projection import preparation_for_assignment
+    c, revision, assign, preview = readiness_db
+    previous = assign(1, 40, revision)
+    c.execute("UPDATE organization_assessment_assignments SET status='revoked',revoked_at=NOW() WHERE id=40")
+    profile = assign(1, 41, revision)
+    request = {'organization_id':10,'assignment_ref':'A','assignment_id':41,
+        'questionnaire_revision_id':revision['id'],'personalized_profile_id':profile['id']}
+    c.execute("INSERT INTO product_cycle_preparation_operations VALUES(1,'exact',%s,1,%s::jsonb,NOW(),NULL)", (status,json.dumps(request)))
+    for identifier, changes in enumerate([
+        {'organization_id':20}, {'assignment_id':99}, {'assignment_ref':'B'},
+        {'questionnaire_revision_id':999}, {'personalized_profile_id':999},
+    ], start=2):
+        c.execute("INSERT INTO product_cycle_preparation_operations VALUES(%s,%s,'failed',1,%s::jsonb,NOW()+INTERVAL '1 minute',NULL)",
+                  (identifier,'foreign-'+str(identifier),json.dumps({**request,**changes})))
+    c.execute("INSERT INTO product_cycle_preparation_operations VALUES(9,'other-user','failed',3,%s::jsonb,NOW()+INTERVAL '1 minute',NULL)", (json.dumps(request),))
+    # Previous generation of the same participant has a newer legacy job.
+    c.execute("INSERT INTO assessment_preparation_jobs(id,user_id,operation_id,status,personalized_profile_id,created_at) VALUES(1,1,'old','failed',%s,NOW()+INTERVAL '2 minutes')", (previous['id'],))
+    counts = c.execute('SELECT COUNT(*) AS n FROM product_cycle_preparation_operations').fetchone()
+    assert preparation_for_assignment(c, assignment_id=41) == {'operation_id':'exact','status':status}
+    for _ in range(2):
+        result = admin_assignment_readiness(c, organization_id=10, assignment_ref='A')
+        assert result['roles']['ready'] == 1
+        assert result['preparation']['status'] == 'in_progress'
+        assert result['status'] == 'preparing'
+    assert c.execute('SELECT COUNT(*) AS n FROM product_cycle_preparation_operations').fetchone() == counts
+    c.execute("UPDATE product_cycle_preparation_operations SET status='completed' WHERE id=1")
+    # An unrelated running job never changes this assignment's idle summary.
+    c.execute("UPDATE product_cycle_preparation_operations SET status='running' WHERE id>1")
+    assert admin_assignment_readiness(c, organization_id=10, assignment_ref='A')['preparation']['status'] == 'idle'
+
+
+def test_missing_context_is_a_readiness_reason(readiness_db):
+    from Api.acquaintance import late_readiness
+    c, revision, assign, preview = readiness_db
+    assign(1, 41, revision)
+    result = late_readiness(c, user_id=1, readiness={'status':'ready', 'organization_id':10,
+        'assignment_ref':'A', 'questionnaire_revision_id':revision['id'], 'assignment_id':41})
+    assert result['status'] == 'waiting_for_assessment_data'
+    assert result['reason'] == 'W02_PROFILE_ASSIGNMENT_SCOPE_MISMATCH'
+    unbound = preview('missing-context')
+    # Compatibility fixture: an old confirmed record has no context reference.
+    c.execute("UPDATE questionnaire_response_revisions SET status='confirmed',confirmed_at=NOW() WHERE id=%s", (unbound['id'],))
+    assert assignment_readiness(c, organization_id=10, assignment_ref='A',
+        questionnaire_revision_id=unbound['id']) == {
+        'status':'draft','reason':'organization_context_version','missing':['context']}

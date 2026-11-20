@@ -315,6 +315,8 @@ def assignment_readiness(connection, *, organization_id: int, assignment_ref: st
     ).fetchone()
     if row is None:
         return {"status": "draft", "reason": "confirmed_questionnaire", "missing": ["confirmation"]}
+    if row["organization_context_version_id"] is None:
+        return {"status": "draft", "reason": "organization_context_version", "missing": ["context"]}
     briefing = dict(row["briefing_json"] or {})
     if str(briefing.get("organization_type") or "").strip().lower() in {
         "университет", "вуз", "university",
@@ -381,37 +383,45 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
     total_roles = len(participant_rows)
     ready_roles = 0
     reason_counts: dict[str, int] = {}
-    if early["status"] == "ready":
-        # Reuse the participant late gate with the selected assignment instead of
-        # reconstructing profile readiness from client-facing fields.
-        from Api.acquaintance import late_readiness
-        selected_readiness = {
-            "status": "ready", "reason": None, "organization_id": organization_id,
-            "assignment_ref": normalized_ref,
-            "questionnaire_revision_id": early.get('questionnaire_revision_id'),
-        }
-        for row in participant_rows:
-            late = late_readiness(
-                connection, user_id=int(row["user_id"]), readiness=selected_readiness,
+    in_progress = 0
+    from Api import assessment_assignment_sources as assignment_sources
+    from Api.acquaintance import late_readiness
+    from Api.admin_assignment_projection import preparation_for_assignment
+    managed = assignment_sources.schema_available(connection)
+    for row in participant_rows:
+        user_id = int(row["user_id"])
+        binding = assignment_sources.participant_binding(
+            connection, user_id=user_id, organization_id=organization_id,
+            assignment_ref=normalized_ref,
+        ) if managed else None
+        if managed and binding is None:
+            selected_readiness = {"status": "draft", "reason": "assignment_sources"}
+        else:
+            selected_readiness = assignment_readiness(
+                connection, organization_id=organization_id, assignment_ref=normalized_ref,
+                **({"questionnaire_revision_id": binding["questionnaire_revision_id"]} if binding else {}),
             )
-            if late["status"] == "ready_to_prepare":
-                ready_roles += 1
-                continue
+            selected_readiness.update(organization_id=organization_id,
+                assignment_id=binding["assignment_id"] if binding else None)
+        late = late_readiness(connection, user_id=user_id, readiness=selected_readiness)
+        if late["status"] == "ready_to_prepare":
+            ready_roles += 1
+        else:
             reason = str(late.get("reason") or "READINESS_CHECK_FAILED").split(":", 1)[0]
             category = (
                 "acquaintance_wait" if reason == "W02_ANSWERS_NOT_BOUND" else
-                "profile_binding" if reason.startswith("M4_PROFILE_") else
-                "verification_error"
+                "profile_binding" if reason.startswith(("M4_PROFILE_", "W02_PROFILE_"))
+                    or reason == "assignment_sources" else "verification_error"
             )
             reason_counts[category] = reason_counts.get(category, 0) + 1
+        if binding:
+            preparation = preparation_for_assignment(connection, assignment_id=int(binding["assignment_id"]))
+            if preparation.get("status") in {"queued", "running"}:
+                in_progress += 1
     if total_roles == 0:
         roles_state = "not_started"
         roles_message = "Для выбранной оценки ещё нет назначенных участников."
         roles_action = "people"
-    elif early["status"] != "ready":
-        roles_state = "incomplete"
-        roles_message = "Готовность участников будет проверена после подтверждения ранних сведений."
-        roles_action = "organization-data"
     elif ready_roles < total_roles:
         roles_state = "incomplete"
         waiting = reason_counts.get("acquaintance_wait", 0)
@@ -425,25 +435,14 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         if verification:
             details.append(f"ошибка проверки готовности: {verification}")
         roles_message = (
-            f"К началу готовы {ready_roles} из {total_roles}. " + "; ".join(details) + "."
+            f"К подготовке готовы {ready_roles} из {total_roles}. " + "; ".join(details) + "."
         )
         roles_action = "people" if profile else None
     else:
         roles_state = "ready"
-        roles_message = f"К началу готовы все участники выбранной оценки: {ready_roles}."
+        roles_message = f"К подготовке готовы все участники выбранной оценки: {ready_roles}."
         roles_action = None
 
-    preparation = connection.execute(
-        """SELECT COUNT(*) FILTER (WHERE latest.status IN ('queued','running'))::int AS in_progress
-           FROM (""" + _ASSIGNED_PARTICIPANTS_SQL + """) participant
-           LEFT JOIN LATERAL (
-             SELECT status FROM assessment_preparation_jobs
-             WHERE user_id=participant.user_id ORDER BY created_at DESC LIMIT 1
-           ) latest ON TRUE
-           """,
-        participant_params,
-    ).fetchone() or {"in_progress": 0}
-    in_progress = int(preparation.get("in_progress") or 0)
     context_state = "ready" if early["status"] == "ready" else early_state
     context_message = (
         "Контекст выбранной оценки подтверждён и закреплён сервером."
@@ -451,7 +450,7 @@ def admin_assignment_readiness(connection, *, organization_id: int, assignment_r
         "Контекст появится после подтверждения раннего минимума для выбранной оценки."
     )
     overall = "preparing" if in_progress else (
-        "ready" if early["status"] == "ready" and roles_state == "ready" else "incomplete"
+        "ready" if roles_state == "ready" else "incomplete"
     )
     return {
         "status": overall,
