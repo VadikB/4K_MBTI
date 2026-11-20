@@ -165,8 +165,8 @@ artifact_publish — только подтверждённый контекст 
 - Integration: 469 PASS / 2 SKIP; 25 setup ERROR у двух owned-stand файлов
   из-за строгого требования имени maintenance DB, а не регрессии продукта.
   Повтор этих двух файлов с localhost/agent4k_pytest: 25 PASS, exit 0.
-  Итого применённый integration: 494 PASS / 2 SKIP. Причины двух SKIP не были
-  включены в quiet-log; их нельзя объявлять проверенными.
+  Итого применённый integration: 494 PASS / 2 SKIP. SKIP — два explicit real-provider
+  acceptance теста tests/llm/test_m10_real_cycle_db.py; реальные LLM не запускались.
 - Адресный opaque/admission/project unit+HTTP+DB: 8 PASS, exit 0.
 - lint:js, ready:prepare --candidate 2.1.48, py_compile, diff --check: PASS.
 - Бот: ruff/mypy PASS, 97 unit PASS; 23 integration PASS; уточнение прав — PASS.
@@ -189,3 +189,21 @@ Review: без diff в core acquaintance/M2/M5/M7 и без изменения �
 контакты отклоняются; публикация только точного preview. Два разных bot assignment
 не могут использовать один runtime assignment одного owner. Scope только первого
 Case: дальнейшие завершение/переход/отчёт канала не объявлены реализованными.
+
+### Обновлённая база и кандидат 2.1.49
+
+Пока выполнялся CI, main обновился ADM-FIX-04 (#266), SHA d3f6358e, версия 2.1.48.
+Интегрирован merge без изменений чужой логики. Generated-конфликты web/dist
+разрешены штатной пересборкой из объединённых исходников; ready:prepare для
+непосредственного PATCH 2.1.49 PASS. Политика C17 теперь применяется ко всем каналам.
+Подтверждённое владельцем «кейсы по проекту, с его названием» передаётся действующими
+вариантами «Близко к реальной работе» / «Можно использовать настоящее название».
+Тип контекста остаётся «учебный проект», факты — только из карточки, нормы 4К не меняются.
+SHA-256 обновлённого операционного входа:
+1e0ea35c707ac8b5fe6562b45d5412deb30bd2d86a4fac78099d4f92cd5074c2.
+
+Совместная адресная проверка нового Questionnaire + project adapter + HTTP/DB:
+40 PASS. Повторный probe на полной marker-owned схеме: UUID без auth records,
+preview/confirm/replay проекта PASS, transaction rollback, provider_calls=0.
+HTTP на новой базе: 232 PASS. Backend и полный integration выполняются заново;
+окончательный CI и deploy остаются PENDING до точного head нового кандидата.
