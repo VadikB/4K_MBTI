@@ -1,5 +1,7 @@
 """Shared read-only assignment lineage for admin rows and questionnaire summaries."""
 
+from Api.assessment_assignment_sources import CONFIRMATION_ASSIGNMENT_SCOPE_SQL
+
 PREPARATION_JOINS_SQL = """
 LEFT JOIN LATERAL (
     SELECT runtime.id,runtime.cycle_id,runtime.status,runtime.personalized_profile_id,
@@ -25,11 +27,12 @@ LEFT JOIN LATERAL (
       AND profile.status='ready'
       AND (profile.id=cycle.personalized_profile_id OR (cycle.id IS NULL AND EXISTS (
           SELECT 1 FROM (
-                SELECT * FROM participant_acquaintance_confirmations
+                SELECT * FROM participant_acquaintance_confirmations confirmation
                 WHERE user_id=assignment.recipient_user_id
                   AND organization_id=assignment.organization_id
                   AND assignment_ref=assignment.assignment_ref
                   AND questionnaire_revision_id=binding.questionnaire_revision_id
+                  AND """ + CONFIRMATION_ASSIGNMENT_SCOPE_SQL + """
                 ORDER BY confirmed_at DESC,id DESC LIMIT 1
             ) confirmation
           WHERE confirmation.user_id=assignment.recipient_user_id

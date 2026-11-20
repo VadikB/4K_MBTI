@@ -215,6 +215,7 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
 
 
 test('unknown answer outcome keeps the draft; manual processing check never resends it', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-16T12:00:00Z') });
   const run = await fixture(page);
   run.rejectAnswer = true;
   await page.goto(`${base}/?screen=interview`);

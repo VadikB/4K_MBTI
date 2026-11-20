@@ -292,7 +292,7 @@ def readiness_db(test_database_url):
             'organization_memberships': 'organization_id bigint,user_id bigint,role text',
             'organization_invitations': 'id bigint,organization_id bigint,recipient_email text,purpose text,assignment_ref text,created_by_user_id bigint,revoked_at timestamp',
             'organization_assessment_assignments': 'id bigint PRIMARY KEY,organization_id bigint,recipient_user_id bigint,assignment_ref text,status text,revoked_at timestamp',
-            'organization_assessment_source_bindings': 'id bigint,assignment_id bigint,questionnaire_revision_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint',
+            'organization_assessment_source_bindings': 'id bigint,assignment_id bigint,questionnaire_revision_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint,created_at timestamp DEFAULT NOW()',
             'participant_acquaintance_confirmations': 'id bigserial PRIMARY KEY,user_id bigint,organization_id bigint,assignment_ref text,questionnaire_revision_id bigint,personalized_profile_id bigint,confirmed_at timestamp DEFAULT NOW()',
             'assessment_methodologies': 'id bigint PRIMARY KEY',
             'assessment_methodology_versions': 'id bigint PRIMARY KEY,methodology_id bigint,status text,definition_json jsonb',
@@ -326,7 +326,7 @@ def readiness_db(test_database_url):
         revision = confirm(c, revision_id=preview('initial')['id'], organization_id=10, confirmed_by=2)
         def assign(user_id, assignment_id, revision):
             c.execute("INSERT INTO organization_assessment_assignments VALUES(%s,10,%s,'A','active',NULL)", (assignment_id,user_id))
-            c.execute('INSERT INTO organization_assessment_source_bindings VALUES(%s,%s,%s,1,%s)',
+            c.execute('INSERT INTO organization_assessment_source_bindings(id,assignment_id,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id) VALUES(%s,%s,%s,1,%s)',
                       (assignment_id,assignment_id,revision['id'],role_id))
             user_context = contexts.create_user_context_draft(c, user_id=user_id,
                 identity={'full_name': 'Синтетический участник'}, professional={})

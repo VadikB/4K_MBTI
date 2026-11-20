@@ -13,6 +13,7 @@ import threading
 from uuid import uuid4
 
 import pytest
+from psycopg.errors import RaiseException
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -37,6 +38,7 @@ TABLES = (
     'organization_assessment_program_connections', 'assessment_program_definitions',
     'assessment_program_allowed_roles', 'organization_assessment_assignments',
     'organization_assessment_assignment_operations', 'organization_assessment_source_bindings',
+    'organization_assessment_assignment_operation_results',
     'questionnaire_response_revisions', 'assessment_organization_contexts',
     'assessment_organization_context_versions',
     'assessment_personalized_profiles', 'participant_acquaintance_confirmations',
@@ -98,7 +100,7 @@ def no_write(client, method, path, *, status, detail=None, **kwargs):
     return reply
 
 
-def create_scope():
+def create_scope(*, include_second_role=False):
     suffix = uuid4().hex[:12]
     with get_connection() as c:
         super_id = c.execute("SELECT id FROM users WHERE email='superadmin@example.test'").fetchone()['id']
@@ -115,18 +117,24 @@ def create_scope():
         config = dict(c.execute("SELECT * FROM assessment_configurations WHERE code='e102_controlled_catalog'").fetchone())
         role = c.execute("SELECT v.id FROM assessment_role_profile_versions v JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code='specialist_expert' AND v.status='published'").fetchone()['id']
         student = c.execute("SELECT v.id FROM assessment_role_profile_versions v JOIN assessment_role_profiles r ON r.id=v.role_profile_id WHERE r.code='student' AND v.status='published'").fetchone()['id']
+        second_role = c.execute("""SELECT v.id FROM assessment_role_profile_versions v
+            JOIN assessment_role_profiles r ON r.id=v.role_profile_id
+            WHERE r.code NOT IN ('student','specialist_expert') AND v.status='published'
+              AND v.methodology_version='1.1' AND r.scope='base' ORDER BY v.id LIMIT 1""").fetchone()['id'] if include_second_role else None
+        roles = [role, second_role] if second_role else [role]
         assignment_ref = 'ac0610-' + suffix
         code = 'synthetic-' + suffix
         sources = {'synthetic_test': 'AC06/07/09/10; not human review or pilot admission'}
         checksum = assessment_programs.definition_checksum(code=code, version='test.1', name='Synthetic test program',
             assignment_ref=assignment_ref, mode='dialogue', configuration_id=config['id'],
-            catalog_version_id=config['catalog_version_id'], role_version_ids=[role], source_refs=sources)
+            catalog_version_id=config['catalog_version_id'], role_version_ids=roles, source_refs=sources)
         program = c.execute("""INSERT INTO assessment_program_definitions
             (code,version,name,assignment_ref,mode,status,assessment_configuration_id,catalog_version_id,
              source_refs_json,definition_checksum,published_by_user_id,published_at)
             VALUES(%s,'test.1','Synthetic test program',%s,'dialogue','draft',%s,%s,%s::jsonb,%s,%s,NOW()) RETURNING id""",
             (code, assignment_ref, config['id'], config['catalog_version_id'], json.dumps(sources), checksum, super_id)).fetchone()['id']
-        c.execute('INSERT INTO assessment_program_allowed_roles VALUES(%s,%s,0)', (program, role))
+        for ordinal, role_id in enumerate(roles):
+            c.execute('INSERT INTO assessment_program_allowed_roles VALUES(%s,%s,%s)', (program, role_id, ordinal))
         c.execute("UPDATE assessment_program_definitions SET status='published' WHERE id=%s", (program,))
         c.commit()
     with session(super_id) as client:
@@ -135,7 +143,7 @@ def create_scope():
         assert response.status_code == 200, response.text
     return dict(org=org, foreign=foreign, admin=ids[0], member=ids[1], second=ids[2],
                 foreign_admin=ids[3], super=super_id, role=role, student=student,
-                program=program, ref=assignment_ref, config=config)
+                program=program, ref=assignment_ref, config=config, second_role=second_role)
 
 
 @pytest.fixture
@@ -230,6 +238,185 @@ def test_ac07_confirm_foreign_stale_and_exact_revision(scope):
                        'positive_and_replay': 'PASS'})
 
 
+def confirm_participant_profile(s, suffix=''):
+    prefix = f"/users/{s['member']}/acquaintance"
+    with session(s['member']) as client:
+        current = client.get(prefix)
+        assert current.status_code == 200, current.text
+        consent = current.json()['readiness']['briefing']['consent_version']
+        assert client.post(prefix + '/consent', json={'version': consent}).status_code == 200
+        answers = client.put(prefix + '/answers', json={'confirm': True, 'answers': {
+            'answer_1': 'Синтетические задачи' + suffix, 'answer_2': 'Синтетические решения',
+            'answer_3': 'Синтетические ограничения'}})
+        assert answers.status_code == 200, answers.text
+        resolved = client.post(prefix + '/resolve-profile')
+        assert resolved.status_code == 200, resolved.text
+        assert resolved.json()['late_readiness']['status'] == 'ready_to_prepare', resolved.text
+        return resolved.json()['late_readiness']['personalized_profile_id']
+
+
+@pytest.mark.parametrize('sources', ['same', 'revision', 'role'])
+def test_adm_fix02_reassignment_keeps_command_and_profile_history(sources):
+    s = create_scope(include_second_role=sources == 'role')
+    base = f"/users/admin/organizations/{s['org']}/assessment-assignments"
+    command_a = payload(s, role_profile_version_id=s['role'])
+    with session(s['admin']) as client:
+        ready(client, s)
+        response_a = client.post(base, json=command_a)
+        assert response_a.status_code == 200, response_a.text
+        result_a = response_a.json()
+        a_id = result_a['items'][0]['assignment_id']
+    profile_a = confirm_participant_profile(s)
+    with get_connection() as c:
+        frozen_profile = dict(c.execute('SELECT * FROM assessment_personalized_profiles WHERE id=%s', (profile_a,)).fetchone())
+        frozen_confirmations = c.execute('SELECT * FROM participant_acquaintance_confirmations WHERE personalized_profile_id=%s ORDER BY id', (profile_a,)).fetchall()
+        frozen_binding = c.execute('SELECT * FROM organization_assessment_source_bindings WHERE assignment_id=%s', (a_id,)).fetchall()
+    with session(s['admin']) as client:
+        cancelled = client.post(base + f'/{a_id}/cancel', json={'operation_id': uuid4().hex})
+        assert cancelled.status_code == 200, cancelled.text
+        if sources == 'revision':
+            text = Path('assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv').read_text()
+            confirm(client, s, preview(client, s, text=text.replace('Познакомиться с форматом оценки', 'Повторная синтетическая оценка')))
+        command_b = payload(s, role_profile_version_id=s['second_role'] if sources == 'role' else s['role'])
+        response_b = client.post(base, json=command_b)
+        assert response_b.status_code == 200, response_b.text
+        result_b = response_b.json()
+        b_id = result_b['items'][0]['assignment_id']
+        assert b_id != a_id
+        for command, expected in ((command_a, result_a), (command_b, result_b)):
+            assert client.post(base, json=command).json() == expected
+            recovered = client.get(base + '/operations/' + command['operation_id'], params={
+                'assignment_ref': s['ref'], 'user_ids': str(s['member']),
+                'role_profile_version_id': command['role_profile_version_id']})
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json() == expected
+    with session(s['member']) as client:
+        waiting = client.get(f"/users/{s['member']}/acquaintance")
+        assert waiting.status_code == 200
+        assert waiting.json()['late_readiness']['status'] != 'ready_to_prepare'
+        assert waiting.json()['late_readiness']['personalized_profile_id'] is None
+        assert waiting.json()['mandatory_complete'] is False
+        assert waiting.json()['state']['answers_confirmed_at'] is None
+    from Api.acquaintance import preparation_scope
+    with get_connection() as c, pytest.raises(ValueError, match='W02_'):
+        preparation_scope(c, user_id=s['member'], profile_id=profile_a)
+    profile_b = confirm_participant_profile(s, ' для Б')
+    assert profile_b != profile_a
+    with get_connection() as c:
+        assert dict(c.execute('SELECT * FROM assessment_personalized_profiles WHERE id=%s', (profile_a,)).fetchone()) == frozen_profile
+        assert c.execute('SELECT * FROM participant_acquaintance_confirmations WHERE personalized_profile_id=%s ORDER BY id', (profile_a,)).fetchall() == frozen_confirmations
+        assert c.execute('SELECT * FROM organization_assessment_source_bindings WHERE assignment_id=%s', (a_id,)).fetchall() == frozen_binding
+        bound = c.execute('SELECT * FROM organization_assessment_source_bindings WHERE assignment_id=%s', (b_id,)).fetchone()
+        assert (bound['questionnaire_revision_id'] != frozen_binding[0]['questionnaire_revision_id']) == (sources == 'revision')
+        assert bound['role_profile_version_id'] == command_b['role_profile_version_id']
+    EVENTS.append({'criterion':'ADM-FIX-02', 'sources': sources, 'assignment_a':a_id,
+                   'assignment_b':b_id, 'immutable_history':True, 'exact_receipts':True})
+
+
+def test_adm_fix02_partial_receipt_is_immutable_and_actor_scoped(scope):
+    s = scope
+    base = f"/users/admin/organizations/{s['org']}/assessment-assignments"
+    command = payload(s, user_ids=[s['member'],s['foreign_admin']], role_profile_version_id=s['role'])
+    params = {'assignment_ref':s['ref'], 'user_ids':','.join(map(str, command['user_ids'])),
+              'role_profile_version_id':s['role']}
+    with session(s['admin']) as client:
+        ready(client, s)
+        first = client.post(base, json=command)
+        assert first.status_code == 200, first.text
+        items = {item['user_id']:item for item in first.json()['items']}
+        assert items[s['member']]['status'] == 'assigned'
+        assert items[s['foreign_admin']]['status'] == 'not_assigned'
+        assert items[s['foreign_admin']]['reason_code'] == 'ASSIGNMENT_RECIPIENT_NOT_ELIGIBLE'
+        with get_connection() as c:
+            c.execute('UPDATE organization_memberships SET is_participant=FALSE WHERE organization_id=%s AND user_id=%s', (s['org'],s['member']))
+            c.commit()
+        assert client.post(base, json=command).json() == first.json()
+        assert client.get(base+'/operations/'+command['operation_id'], params=params).json() == first.json()
+        for changed in ({'user_ids':str(s['member'])}, {'role_profile_version_id':s['student']},
+                        {'assessment_configuration_id':s['config']['id']}):
+            assert client.get(base+'/operations/'+command['operation_id'], params={**params,**changed}).status_code == 409
+        assert client.post(base, json={**command, 'user_ids':[s['member']]}).status_code == 409
+        with get_connection() as c:
+            c.execute("UPDATE organization_memberships SET role='member' WHERE organization_id=%s AND user_id=%s", (s['org'],s['admin']))
+            c.commit()
+        assert client.get(base+'/operations/'+command['operation_id'], params=params).status_code == 403
+        assert client.post(base, json=command).status_code == 403
+    for actor, expected in ((s['super'],404),(s['foreign_admin'],403)):
+        with session(actor) as client:
+            assert client.get(base+'/operations/'+command['operation_id'], params=params).status_code == expected
+    with get_connection() as c:
+        assert c.execute('SELECT COUNT(*) AS n FROM organization_assessment_assignment_operation_results WHERE organization_id=%s AND actor_user_id=%s AND operation_id=%s',
+                         (s['org'],s['admin'],command['operation_id'])).fetchone()['n'] == 1
+        with pytest.raises(RaiseException, match='immutable'), c.transaction():
+            c.execute("UPDATE organization_assessment_assignment_operation_results SET result_json='{}' WHERE operation_id=%s", (command['operation_id'],))
+        with pytest.raises(RaiseException, match='immutable'), c.transaction():
+            c.execute('DELETE FROM organization_assessment_assignment_operation_results WHERE operation_id=%s', (command['operation_id'],))
+
+
+def test_adm_fix02_legacy_confirmation_preserves_exact_frozen_profile(scope):
+    from Api import acquaintance, assessment_contexts as contexts
+    s = scope
+    with session(s['admin']) as client:
+        ready(client, s)
+        assigned = client.post(f"/users/admin/organizations/{s['org']}/assessment-assignments", json=payload(s))
+        assert assigned.status_code == 200, assigned.text
+    # Synthetic pre-upgrade confirmation with the former JSON shape, produced
+    # through the real M4 lifecycle. No existing snapshot/checksum is rewritten.
+    with get_connection() as c:
+        readiness = acquaintance.early_readiness(c, user_id=s['member'])
+        acquaintance.accept_consent(c, user_id=s['member'], version=readiness['briefing']['consent_version'])
+        answers = {'answer_1':'Синтетические задачи', 'answer_2':'Синтетические решения',
+                   'answer_3':'Синтетические ограничения'}
+        acquaintance.save_answers(c, user_id=s['member'], answers=answers, confirm=True)
+        saved = c.execute('SELECT * FROM participant_acquaintance_confirmations WHERE user_id=%s ORDER BY id DESC LIMIT 1', (s['member'],)).fetchone()
+        legacy_answers = {key:value for key,value in saved['answers_json'].items() if key != 'assignment_id'}
+        context_id = contexts.create_user_context_draft(c, user_id=s['member'],
+            identity={'full_name':'Synthetic contract subject'}, professional={
+                'regular_tasks':answers['answer_1'], 'decision_situations':answers['answer_2'],
+                'constraints_and_interactions':answers['answer_3'], 'acquaintance_answers':legacy_answers})
+        contexts.confirm_user_context(c, version_id=context_id, user_id=s['member'])
+        profile = contexts.create_personalized_profile(c, user_id=s['member'],
+            assessment_configuration_id=s['config']['id'], role_profile_version_id=s['role'],
+            organization_context_version_id=readiness['organization_context_version_id'], user_context_version_id=context_id)
+        legacy = c.execute('''INSERT INTO participant_acquaintance_confirmations
+            (user_id,organization_id,assignment_ref,questionnaire_revision_id,question_schema_json,
+             answers_json,answers_checksum,user_context_version_id,personalized_profile_id)
+            VALUES(%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s,%s,%s) RETURNING *''',
+            (s['member'],s['org'],s['ref'],readiness['questionnaire_revision_id'],json.dumps(saved['question_schema_json']),
+             json.dumps(legacy_answers),acquaintance._checksum(legacy_answers),context_id,profile['id'])).fetchone()
+        frozen = dict(c.execute('SELECT * FROM assessment_personalized_profiles WHERE id=%s', (profile['id'],)).fetchone())
+        c.commit()
+    with session(s['member']) as client:
+        reply = client.post(f"/users/{s['member']}/acquaintance/resolve-profile")
+        assert reply.status_code == 200, reply.text
+        assert reply.json()['late_readiness']['personalized_profile_id'] == profile['id'], reply.text
+    with get_connection() as c:
+        assert dict(c.execute('SELECT * FROM assessment_personalized_profiles WHERE id=%s', (profile['id'],)).fetchone()) == frozen
+        assert dict(c.execute('SELECT * FROM participant_acquaintance_confirmations WHERE id=%s', (legacy['id'],)).fetchone()) == dict(legacy)
+
+
+def test_adm_fix02_receipt_failure_rolls_back_all_effects(scope):
+    s = scope
+    base = f"/users/admin/organizations/{s['org']}/assessment-assignments"
+    with session(s['admin']) as client:
+        ready(client, s)
+    with get_connection() as c:
+        c.execute('''CREATE FUNCTION adm_fix02_fail_receipt() RETURNS trigger LANGUAGE plpgsql AS $$
+            BEGIN RAISE EXCEPTION 'ADM_FIX02_SYNTHETIC_RECEIPT_FAILURE'; END $$''')
+        c.execute('''CREATE TRIGGER adm_fix02_fail_receipt BEFORE INSERT
+            ON organization_assessment_assignment_operation_results
+            FOR EACH ROW EXECUTE FUNCTION adm_fix02_fail_receipt()''')
+        c.commit()
+    try:
+        with session(s['admin']) as client:
+            no_write(client, 'POST', base, status=500, json=payload(s))
+    finally:
+        with get_connection() as c:
+            c.execute('DROP TRIGGER adm_fix02_fail_receipt ON organization_assessment_assignment_operation_results')
+            c.execute('DROP FUNCTION adm_fix02_fail_receipt()')
+            c.commit()
+
+
 @pytest.mark.parametrize('mode', ['lost_reply', 'same_key_concurrent', 'different_key_concurrent'])
 def test_ac09_assignment_repeats_double_click_lost_reply_and_readback(scope, mode):
     s = scope
@@ -258,6 +445,11 @@ def test_ac09_assignment_repeats_double_click_lost_reply_and_readback(scope, mod
         click()  # Deliberately discard the committed response (lost delivery).
         answers = [click()]
     assert len({r['assignment_id'] for r in answers}) == 1
+    if mode == 'same_key_concurrent':
+        assert answers[0] == answers[1]
+    with get_connection() as c:
+        assert c.execute('SELECT COUNT(*) AS n FROM organization_assessment_assignment_operation_results WHERE organization_id=%s AND actor_user_id=%s',
+            (s['org'],s['admin'])).fetchone()['n'] == (2 if mode == 'different_key_concurrent' else 1)
     before = assignment_counts(s)
     assert len(before['assignments']) == len(before['bindings']) == 1 and before['cycles'] == 0
     # New session (reload), same operation and a new operation key for same intent.
@@ -295,8 +487,8 @@ def test_ac09_late_batch_failure_is_atomic(scope, fault):
                   RAISE EXCEPTION 'AC09_SYNTHETIC_LATE_FAILURE'; END IF; RETURN NEW; END $$""")
             c.execute('CREATE TRIGGER ac09_late_failure BEFORE INSERT ON organization_assessment_source_bindings FOR EACH ROW EXECUTE FUNCTION ac09_fail_second_binding()')
         else:
-            # Same published sources; frozen profile ownership triggers the real
-            # bind() domain refusal for the second recipient, not a mocked error.
+            # A profile freezes its exact existing assignment. A confirmation of
+            # an older generation alone must not reject a new assignment.
             from Api.assessment_contexts import (create_user_context_draft, confirm_user_context,
                                                  create_personalized_profile)
             user_context = create_user_context_draft(c, user_id=s['second'],
@@ -308,6 +500,15 @@ def test_ac09_late_batch_failure_is_atomic(scope, fault):
                 assessment_configuration_id=s['config']['id'], role_profile_version_id=s['role'],
                 organization_context_version_id=revision['organization_context_version_id'],
                 user_context_version_id=user_context)
+            assignment_id = c.execute('''INSERT INTO organization_assessment_assignments
+                (organization_id,recipient_user_id,assignment_ref,created_by_user_id,
+                 questionnaire_revision_id,status,operation_id,request_fingerprint)
+                VALUES(%s,%s,%s,%s,%s,'active',%s,'synthetic-frozen-assignment') RETURNING id''',
+                (s['org'], s['second'], s['ref'], s['admin'], revision['id'], uuid4().hex)).fetchone()['id']
+            from Api.assessment_assignment_sources import bind
+            bind(c, assignment_id=assignment_id, organization_id=s['org'],
+                configuration_id=s['config']['id'], role_version_id=s['role'],
+                questionnaire_revision_id=revision['id'], actor_user_id=s['admin'], operation_id=uuid4().hex)
             c.execute('''INSERT INTO participant_acquaintance_confirmations
                 (user_id,organization_id,assignment_ref,questionnaire_revision_id,
                  question_schema_json,answers_json,answers_checksum,user_context_version_id,personalized_profile_id)
@@ -315,6 +516,11 @@ def test_ac09_late_batch_failure_is_atomic(scope, fault):
                 FROM participant_acquaintance_confirmations ORDER BY id LIMIT 1''',
                 (s['second'], s['org'], s['ref'], revision['id'], user_context, profile['id']))
         c.commit()
+    if fault == 'late_domain_rejection':
+        with session(s['admin']) as client:
+            text = Path('assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv').read_text()
+            fresh = preview(client, s, text=text.replace('Познакомиться с форматом оценки', 'Новая редакция для проверки атомарности'))
+            confirm(client, s, fresh)
     try:
         with session(s['admin']) as client:
             response = no_write(client, 'POST', f"/users/admin/organizations/{s['org']}/assessment-assignments",

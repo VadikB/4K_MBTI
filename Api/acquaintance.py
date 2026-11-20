@@ -49,6 +49,18 @@ def _checksum(value: dict) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def _confirmation_scope(connection, readiness: dict) -> tuple[str, tuple]:
+    if readiness.get('assignment_id') is None:
+        return '', ()
+    return (''' AND EXISTS (SELECT 1 FROM organization_assessment_assignments assignment
+        JOIN LATERAL (SELECT b.* FROM organization_assessment_source_bindings b
+            WHERE b.assignment_id=assignment.id ORDER BY b.id DESC LIMIT 1) binding ON TRUE
+        WHERE assignment.id=%s AND assignment.recipient_user_id=confirmation.user_id
+          AND assignment.organization_id=confirmation.organization_id
+          AND assignment.assignment_ref=confirmation.assignment_ref AND ''' +
+        assignment_sources.confirmation_assignment_scope_sql(connection) + ')', (readiness['assignment_id'],))
+
+
 def early_readiness(connection, *, user_id: int) -> dict:
     memberships = connection.execute(
         """SELECT o.id,o.name,m.role FROM organization_memberships m
@@ -257,6 +269,18 @@ def read_state(connection, *, user_id: int) -> dict:
         "status": "not_started", "current_step": 0, "answers_json": {},
         "answers_confirmed_at": None, "consent_accepted_at": None,
     }
+    if (readiness.get('assignment_id') is not None and state.get('answers_confirmed_at')
+            and late.get('reason') == 'W02_ANSWERS_NOT_BOUND'):
+        scope_sql, scope_params = _confirmation_scope(connection, readiness)
+        confirmed = connection.execute('''SELECT 1 FROM participant_acquaintance_confirmations confirmation
+            WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
+              AND questionnaire_revision_id IS NOT DISTINCT FROM %s''' + scope_sql + ' LIMIT 1',
+            (user_id, readiness['organization_id'], readiness['assignment_ref'],
+             readiness.get('questionnaire_revision_id'), *scope_params)).fetchone()
+        if confirmed is None:
+            # Reused source answers can be a draft for a new assessment. The
+            # former projection's timestamp must not make its form read-only.
+            state.update(status='in_progress', answers_confirmed_at=None)
     if readiness['status'] == 'ready' and not mandatory_complete(readiness, state):
         late = {'status': 'waiting_for_assessment_data', 'reason': 'W02_MANDATORY_STEPS_REQUIRED',
                 'personalized_profile_id': None}
@@ -390,13 +414,17 @@ def save_answers(connection, *, user_id: int, answers: dict, confirm: bool = Fal
         raise ValueError('W02_CONSENT_REQUIRED')
     merged = dict(existing["answers_json"] or {}) if existing else {}
     merged.update(normalized)
-    frozen = connection.execute('''SELECT 1 FROM participant_acquaintance_confirmations
+    scope_sql, scope_params = _confirmation_scope(connection, readiness)
+    confirmation = connection.execute('''SELECT personalized_profile_id FROM participant_acquaintance_confirmations confirmation
         WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
-          AND questionnaire_revision_id IS NOT DISTINCT FROM %s
-          AND personalized_profile_id IS NOT NULL LIMIT 1''',
+          AND questionnaire_revision_id IS NOT DISTINCT FROM %s''' + scope_sql +
+        (' AND personalized_profile_id IS NOT NULL' if not scope_sql else '') +
+        (' ORDER BY confirmed_at DESC,id DESC' if scope_sql else '') + ' LIMIT 1',
         (user_id, readiness['organization_id'], readiness['assignment_ref'],
-         readiness.get('questionnaire_revision_id'))).fetchone()
-    if frozen or existing.get('answers_confirmed_at'):
+         readiness.get('questionnaire_revision_id'), *scope_params)).fetchone()
+    frozen = confirmation and confirmation.get('personalized_profile_id') is not None
+    if frozen or (existing.get('answers_confirmed_at') and
+                  (confirmation is not None or readiness.get('assignment_id') is None)):
         if merged != existing['answers_json']:
             raise ValueError('W02_ANSWERS_FROZEN: Ответы уже подтверждены; для изменения нужно новое назначение.')
         return dict(existing)  # Transport replay must not unconfirm an already frozen profile.
@@ -437,16 +465,27 @@ def _bind_confirmed_answers(connection, *, user_id: int, readiness: dict, answer
     answer_set = {"schema_variant": schema["variant"], "schema_version": schema["version"],
                   "assignment_ref": readiness["assignment_ref"],
                   "questionnaire_revision_id": readiness.get('questionnaire_revision_id'), "items": items}
-    checksum = _checksum(answer_set)
+    legacy_checksum = _checksum(answer_set)
     binding = assignment_sources.current_binding(connection, user_id=user_id,
         organization_id=readiness['organization_id'], assignment_ref=readiness['assignment_ref'],
-        questionnaire_revision_id=readiness.get('questionnaire_revision_id')) if bind_profile else None
-    if binding:
+        questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+    if binding and readiness.get('assignment_id') is not None and binding['assignment_id'] != readiness['assignment_id']:
+        raise ValueError('W02_ASSIGNMENT_SCOPE_MISMATCH')
+    if binding and bind_profile:
         connection.execute('SELECT id FROM organization_assessment_assignments WHERE id=%s FOR UPDATE',
                            (binding['assignment_id'],))
         binding = assignment_sources.current_binding(connection, user_id=user_id,
             organization_id=readiness['organization_id'], assignment_ref=readiness['assignment_ref'],
             questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+        if binding is None or (readiness.get('assignment_id') is not None and binding['assignment_id'] != readiness['assignment_id']):
+            raise ValueError('W02_ASSIGNMENT_SCOPE_MISMATCH')
+    if binding:
+        # A later assessment gets its own confirmation/profile even when answers
+        # and questionnaire revision are reused. Historical checksums stay intact.
+        answer_set['assignment_id'] = int(binding['assignment_id'])
+    checksum = _checksum(answer_set)
+    if not bind_profile:
+        binding = None
     connection.execute("SELECT id FROM users WHERE id=%s FOR UPDATE", (user_id,))
     # Re-read after the common user lock: two resolves must not create two M4s,
     # and an answer edit that won the lock invalidates a stale resolve request.
@@ -455,6 +494,28 @@ def _bind_confirmed_answers(connection, *, user_id: int, readiness: dict, answer
         (user_id, readiness['organization_id'], readiness['assignment_ref'], checksum)).fetchone()
     if prior and prior.get('personalized_profile_id'):
         return dict(prior)
+    if binding:
+        # Preserve a pre-upgrade frozen profile only when its full source scope
+        # and chronology (or exact Cycle pointer) prove this assignment. A later
+        # generation must form its own profile instead of reusing that receipt.
+        legacy = connection.execute('''SELECT confirmation.*
+            FROM participant_acquaintance_confirmations confirmation
+            JOIN organization_assessment_assignments assignment ON assignment.id=%s
+            JOIN organization_assessment_source_bindings binding ON binding.assignment_id=assignment.id
+            JOIN assessment_personalized_profiles profile ON profile.id=confirmation.personalized_profile_id
+              AND profile.user_id=confirmation.user_id AND profile.organization_id=confirmation.organization_id
+            WHERE confirmation.user_id=%s AND confirmation.organization_id=%s
+              AND confirmation.assignment_ref=%s AND confirmation.answers_checksum=%s
+              AND confirmation.questionnaire_revision_id=%s
+              AND profile.assessment_configuration_id=%s AND profile.role_profile_version_id=%s
+              AND profile.organization_context_version_id=%s
+              AND ''' + assignment_sources.confirmation_assignment_scope_sql(connection) + '''
+            ORDER BY confirmation.confirmed_at DESC,confirmation.id DESC LIMIT 1''',
+            (binding['assignment_id'], user_id, readiness['organization_id'], readiness['assignment_ref'],
+             legacy_checksum, readiness.get('questionnaire_revision_id'), binding['assessment_configuration_id'],
+             binding['role_profile_version_id'], readiness['organization_context_version_id'])).fetchone()
+        if legacy:
+            return dict(legacy)
     if bind_profile:
         state = state_store.read(connection, user_id=user_id, readiness=readiness) or {}
         if not mandatory_complete(readiness, state) or state.get('answers_json') != answers:
@@ -524,12 +585,13 @@ def resolve_confirmed_profile(connection, *, user_id: int) -> dict:
             or not state.get('consent_accepted_at') or not state.get('answers_confirmed_at')
             or state.get('consent_version') != readiness['briefing']['consent_version']):
         raise ValueError('W02_CONFIRMATION_REQUIRED')
-    confirmation = connection.execute('''SELECT answers_json FROM participant_acquaintance_confirmations
+    scope_sql, scope_params = _confirmation_scope(connection, readiness)
+    confirmation = connection.execute('''SELECT answers_json FROM participant_acquaintance_confirmations confirmation
         WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
-          AND questionnaire_revision_id IS NOT DISTINCT FROM %s
-        ORDER BY confirmed_at DESC,id DESC LIMIT 1''',
+          AND questionnaire_revision_id IS NOT DISTINCT FROM %s''' + scope_sql +
+        ' ORDER BY confirmed_at DESC,id DESC LIMIT 1',
         (user_id, readiness['organization_id'], readiness['assignment_ref'],
-         readiness.get('questionnaire_revision_id'))).fetchone()
+         readiness.get('questionnaire_revision_id'), *scope_params)).fetchone()
     if not confirmation:
         raise ValueError('W02_CONFIRMATION_REQUIRED')
     items = confirmation['answers_json']['items']
@@ -614,12 +676,13 @@ def late_readiness(connection, *, user_id: int, readiness: dict | None = None) -
     if readiness["status"] != "ready":
         return {"status": "waiting_for_assessment_data", "reason": readiness["reason"],
                 "personalized_profile_id": None}
+    scope_sql, scope_params = _confirmation_scope(connection, readiness)
     confirmation = connection.execute(
-        """SELECT personalized_profile_id FROM participant_acquaintance_confirmations
+        """SELECT personalized_profile_id FROM participant_acquaintance_confirmations confirmation
            WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
-             AND questionnaire_revision_id IS NOT DISTINCT FROM %s
-           ORDER BY confirmed_at DESC,id DESC LIMIT 1""",
-        (user_id, readiness["organization_id"], readiness["assignment_ref"], readiness.get('questionnaire_revision_id')),
+             AND questionnaire_revision_id IS NOT DISTINCT FROM %s""" + scope_sql +
+        ' ORDER BY confirmed_at DESC,id DESC LIMIT 1',
+        (user_id, readiness["organization_id"], readiness["assignment_ref"], readiness.get('questionnaire_revision_id'), *scope_params),
     ).fetchone()
     if confirmation is None or confirmation["personalized_profile_id"] is None:
         return {"status": "waiting_for_assessment_data", "reason": "W02_ANSWERS_NOT_BOUND",

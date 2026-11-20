@@ -31,20 +31,35 @@ class Connection:
         self.rows = []
         self.next_id = 1
         self.operations = {}
+        self.results = {}
         self.bound_assignment_ids = []
 
     def execute(self, sql, params=()):
-        if 'INSERT INTO organization_assessment_assignment_operations' in sql:
-            self.operations.setdefault(tuple(params[:3]), params[3])
+        if 'INSERT INTO organization_assessment_assignment_operation_results' in sql:
+            import json
+            self.results[tuple(params[:3])] = {'request_json':json.loads(params[3]),
+                'result_json':json.loads(params[4]), 'request_fingerprint':params[5]}
             return Result()
+        if 'SELECT request_json,result_json' in sql:
+            return Result(one=self.results.get(tuple(params)))
+        if "to_regclass(current_schema()||'.organization_assessment_assignment_operation_results')" in sql:
+            return Result(one={'relation':'organization_assessment_assignment_operation_results'})
+        if 'INSERT INTO organization_assessment_assignment_operations' in sql:
+            key = tuple(params[:3])
+            if key in self.operations:
+                return Result()
+            self.operations[key] = params[3]
+            return Result(one={'operation_id': params[2]})
         if 'SELECT request_fingerprint FROM organization_assessment_assignment_operations' in sql:
             fingerprint = self.operations.get(tuple(params))
             return Result(one={'request_fingerprint': fingerprint} if fingerprint else None)
         if 'SELECT recipient_user_id,id FROM organization_assessment_assignments' in sql:
-            organization_id, assignment_ref, recipients = params
+            organization_id, actor_id, operation_id, fingerprints, assignment_ref, recipients = params
             return Result(many=[{'recipient_user_id': row['user_id'], 'id': row['id']} for row in self.rows
                                 if row['organization_id'] == organization_id
-                                and row['assignment_ref'] == assignment_ref and row['user_id'] in recipients])
+                                and row['assignment_ref'] == assignment_ref and row['user_id'] in recipients
+                                and row['actor_id'] == actor_id and row['operation_id'] == operation_id
+                                and row['fingerprint'] in fingerprints])
         if "SELECT DISTINCT request_fingerprint" in sql:
             return Result(many=[{"request_fingerprint": row["fingerprint"]} for row in self.rows
                                 if row["organization_id"] == params[0]
@@ -108,9 +123,9 @@ def test_org_admin_assigns_self_and_colleague_idempotently(client):
     second = http.post("/users/admin/organizations/3/assessment-assignments", json=payload)
     assert first.status_code == 200
     assert [item["status"] for item in first.json()["items"]] == ["assigned", "assigned"]
-    assert [item["status"] for item in second.json()["items"]] == ["already_assigned", "already_assigned"]
+    assert second.json() == first.json()
     assert {(row["user_id"], row["assignment_ref"]) for row in connection.rows} == {(18, "assessment-a"), (19, "assessment-a")}
-    assert connection.bound_assignment_ids == [1, 2, 1, 2]
+    assert connection.bound_assignment_ids == [1, 2]
 
 
 def test_assignment_rejects_operation_payload_substitution(client):
@@ -149,7 +164,7 @@ def test_assignment_exact_operation_readback_confirms_committed_scope(client):
     )
     assert response.status_code == 200
     assert [(item["user_id"], item["status"]) for item in response.json()["items"]] == [
-        (18, "already_assigned"), (19, "already_assigned")]
+        (18, "assigned"), (19, "assigned")]
 
 
 def test_assignment_reports_foreign_recipient_without_side_effect(client):
@@ -160,6 +175,23 @@ def test_assignment_reports_foreign_recipient_without_side_effect(client):
     assert response.status_code == 200
     assert response.json()["items"][0]["status"] == "not_assigned"
     assert connection.rows == []
+
+
+def test_assignment_receipt_matches_explicit_configuration_selector(client):
+    http, connection = client
+    base = '/users/admin/organizations/3/assessment-assignments'
+    command = {'user_ids':[18], 'assignment_ref':'assessment-a', 'operation_id':'exact-source-selector',
+               'assessment_configuration_id':81, 'role_profile_version_id':91}
+    first = http.post(base, json=command)
+    assert first.status_code == 200, first.text
+    params = {'user_ids':'18', 'assignment_ref':'assessment-a', 'role_profile_version_id':91,
+              'assessment_configuration_id':81}
+    read = http.get(base+'/operations/'+command['operation_id'], params=params)
+    assert read.status_code == 200
+    assert read.json() == first.json()
+    assert http.post(base, json={**command,'assessment_configuration_id':82}).status_code == 409
+    assert http.get(base+'/operations/'+command['operation_id'], params={**params,'assessment_configuration_id':82}).status_code == 409
+    assert len(connection.rows) == 1
 
 
 def test_org_admin_cancels_exact_assignment_generation(client, monkeypatch):

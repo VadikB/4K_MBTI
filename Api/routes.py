@@ -23,6 +23,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from Api import invitation_outcomes
+from Api import assessment_assignment_operations
 from Api.admin_assignment_projection import ADMIN_ASSIGNMENT_STAGES_SQL
 from Api.invitation_outcomes import InvitationRefusal
 from Api.app_version import get_app_version
@@ -4359,15 +4360,38 @@ def assign_organization_assessment(
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     assignment_ref = str(payload.assignment_ref).strip()
     recipient_ids = sorted(set(int(value) for value in payload.user_ids))
-    fingerprint_payload = {"assignment_ref": assignment_ref, "user_ids": recipient_ids,
-        "role_profile_version_id": payload.role_profile_version_id}
-    fingerprint = hashlib.sha256(json.dumps(
-        fingerprint_payload,
-        sort_keys=True, separators=(",", ":"),
-    ).encode("utf-8")).hexdigest()
+    command = assessment_assignment_operations.command_request(assignment_ref=assignment_ref,
+        user_ids=recipient_ids, role_profile_version_id=payload.role_profile_version_id,
+        assessment_configuration_id=payload.assessment_configuration_id)
+    fingerprint = assessment_assignment_operations.fingerprint(command, legacy=True)
     results: list[AssessmentAssignmentResultItem] = []
     with get_connection() as connection:
         assignment_scope = _require_organization_admin(connection, current_user, organization_id)
+        try:
+            created = assessment_assignment_operations.claim(connection, organization_id=organization_id,
+                actor_user_id=int(current_user.id), operation_id=payload.operation_id, request=command)
+            if not created:
+                saved = assessment_assignment_operations.read(connection, organization_id=organization_id,
+                    actor_user_id=int(current_user.id), operation_id=payload.operation_id, request=command)
+                return AssessmentAssignmentBatchResponse(**saved)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
+        previous = connection.execute(
+            """SELECT DISTINCT request_fingerprint
+               FROM organization_assessment_assignments
+               WHERE organization_id=%s AND created_by_user_id=%s AND operation_id=%s""",
+            (organization_id, int(current_user.id), payload.operation_id),
+        ).fetchall()
+        if previous and any(str(row["request_fingerprint"]) not in {
+                fingerprint, assessment_assignment_operations.fingerprint(command)} for row in previous):
+            raise HTTPException(status_code=409, detail="operation_id уже использован с другим набором назначения.")
+        if previous:
+            # A pre-ledger operation may already own historical assignments.
+            # It must never execute again against a replacement generation.
+            saved = assessment_assignment_operations.read(connection, organization_id=organization_id,
+                actor_user_id=int(current_user.id), operation_id=payload.operation_id, request=command)
+            connection.commit()
+            return AssessmentAssignmentBatchResponse(**saved)
         readiness = questionnaire_sources.assignment_readiness(
             connection, organization_id=organization_id, assignment_ref=assignment_ref,
         )
@@ -4419,19 +4443,6 @@ def assign_organization_assessment(
                 status_code=409,
                 detail="PROGRAM_SOURCE_SELECTION_STALE",
             )
-        previous = connection.execute(
-            """SELECT DISTINCT request_fingerprint
-               FROM organization_assessment_assignments
-               WHERE organization_id=%s AND created_by_user_id=%s AND operation_id=%s""",
-            (organization_id, int(current_user.id), payload.operation_id),
-        ).fetchall()
-        if previous and any(str(row["request_fingerprint"]) != fingerprint for row in previous):
-            raise HTTPException(status_code=409, detail="operation_id уже использован с другим набором назначения.")
-        try:
-            assessment_assignment_sources.record_operation(connection, organization_id=organization_id,
-                actor_user_id=int(current_user.id), operation_id=payload.operation_id, fingerprint=fingerprint)
-        except ValueError as exc:
-            raise HTTPException(409, detail=str(exc)) from exc
         for user_id in recipient_ids:
             member = connection.execute(
                 """SELECT om.user_id
@@ -4446,6 +4457,7 @@ def assign_organization_assessment(
                 results.append(AssessmentAssignmentResultItem(
                     user_id=user_id, status="not_assigned",
                     error="Участник не связан с этой активной организацией.",
+                    reason_code="ASSIGNMENT_RECIPIENT_NOT_ELIGIBLE",
                 ))
                 continue
             row = connection.execute(
@@ -4468,9 +4480,11 @@ def assign_organization_assessment(
                          AND status='active' AND revoked_at IS NULL""",
                     (organization_id, user_id, assignment_ref),
                 ).fetchone()
+                if row is None:
+                    raise HTTPException(409, detail='ASSIGNMENT_STATE_STALE')
                 results.append(AssessmentAssignmentResultItem(
                     user_id=user_id, status="already_assigned",
-                    assignment_id=int(row["id"]) if row else None,
+                    assignment_id=int(row["id"]),
                 ))
             else:
                 results.append(AssessmentAssignmentResultItem(
@@ -4486,6 +4500,10 @@ def assign_organization_assessment(
                         actor_user_id=int(current_user.id), operation_id=payload.operation_id)
                 except ValueError as exc:
                     raise HTTPException(409, detail=str(exc)) from exc
+        response = AssessmentAssignmentBatchResponse(items=results)
+        assessment_assignment_operations.save(connection, organization_id=organization_id,
+            actor_user_id=int(current_user.id), operation_id=payload.operation_id,
+            request=command, result=response.model_dump())
         connection.commit()
     return AssessmentAssignmentBatchResponse(items=results)
 
@@ -4501,6 +4519,7 @@ def read_organization_assessment_assignment_operation(
     user_ids: str,
     request: Request,
     role_profile_version_id: int | None = None,
+    assessment_configuration_id: int | None = None,
 ) -> AssessmentAssignmentBatchResponse:
     """Confirm the exact committed assignment command, never a coincidental stale assignment."""
     current_user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
@@ -4510,35 +4529,19 @@ def read_organization_assessment_assignment_operation(
         raise HTTPException(status_code=400, detail="ASSIGNMENT_READBACK_RECIPIENTS_INVALID") from exc
     if not recipients:
         raise HTTPException(status_code=400, detail="ASSIGNMENT_READBACK_RECIPIENTS_REQUIRED")
-    fingerprint = hashlib.sha256(json.dumps({
-        "assignment_ref": str(assignment_ref).strip(),
-        "user_ids": recipients,
-        "role_profile_version_id": role_profile_version_id,
-    }, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    command = assessment_assignment_operations.command_request(assignment_ref=assignment_ref,
+        user_ids=recipients, role_profile_version_id=role_profile_version_id,
+        assessment_configuration_id=assessment_configuration_id)
     with get_connection() as connection:
         _require_organization_admin(connection, current_user, organization_id)
-        receipt = connection.execute(
-            """SELECT request_fingerprint FROM organization_assessment_assignment_operations
-               WHERE organization_id=%s AND actor_user_id=%s AND operation_id=%s""",
-            (organization_id, int(current_user.id), operation_id),
-        ).fetchone()
-        if receipt is None:
+        try:
+            saved = assessment_assignment_operations.read(connection, organization_id=organization_id,
+                actor_user_id=int(current_user.id), operation_id=operation_id, request=command)
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
+        if saved is None:
             raise HTTPException(status_code=404, detail="ASSIGNMENT_OPERATION_NOT_FOUND")
-        if str(receipt["request_fingerprint"]) != fingerprint:
-            raise HTTPException(status_code=409, detail="ASSIGNMENT_OPERATION_SCOPE_MISMATCH")
-        rows = connection.execute(
-            """SELECT recipient_user_id,id FROM organization_assessment_assignments
-               WHERE organization_id=%s AND assignment_ref=%s
-                 AND recipient_user_id=ANY(%s) AND status='active' AND revoked_at IS NULL""",
-            (organization_id, str(assignment_ref).strip(), recipients),
-        ).fetchall()
-    assignments = {int(row["recipient_user_id"]): int(row["id"]) for row in rows}
-    return AssessmentAssignmentBatchResponse(items=[AssessmentAssignmentResultItem(
-        user_id=user_id,
-        status="already_assigned" if user_id in assignments else "not_assigned",
-        assignment_id=assignments.get(user_id),
-        error=None if user_id in assignments else "Сохранённое назначение не найдено.",
-    ) for user_id in recipients])
+    return AssessmentAssignmentBatchResponse(**saved)
 
 
 @router.post(

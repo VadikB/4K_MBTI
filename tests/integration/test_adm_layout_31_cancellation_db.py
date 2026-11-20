@@ -34,7 +34,8 @@ def _setup(connection, name: str) -> None:
     connection.execute("""CREATE UNIQUE INDEX uq_active_assignment
         ON organization_assessment_assignments(organization_id,recipient_user_id,assignment_ref)
         WHERE status='active' AND revoked_at IS NULL""")
-    connection.execute("CREATE TABLE assessment_personalized_profiles(id BIGINT PRIMARY KEY)")
+    connection.execute("""CREATE TABLE assessment_personalized_profiles(id BIGINT PRIMARY KEY,
+        user_id bigint,organization_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint)""")
     connection.execute("""CREATE TABLE m5_cycles(
         id BIGSERIAL PRIMARY KEY,owner_user_id BIGINT NOT NULL,organization_id BIGINT,
         assignment_id BIGINT REFERENCES organization_assessment_assignments(id),
@@ -48,7 +49,7 @@ def _setup(connection, name: str) -> None:
     connection.execute("""CREATE TABLE participant_acquaintance_confirmations(
         id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,organization_id BIGINT NOT NULL,
         assignment_ref TEXT NOT NULL,questionnaire_revision_id BIGINT,
-        personalized_profile_id BIGINT)""")
+        personalized_profile_id BIGINT,confirmed_at timestamp DEFAULT NOW())""")
     cancellation.ensure_schema(connection)
     connection.commit()
 
@@ -79,26 +80,48 @@ def test_cancel_is_idempotent_and_new_assignment_is_new_generation(test_database
         connection.rollback()
 
 
-def test_reassignment_clones_immutable_sources_into_new_generation(test_database_url):
+@pytest.mark.parametrize('revision_id,role_id', [(71, 91), (72, 91), (71, 92)])
+def test_reassignment_clones_immutable_sources_into_new_generation(test_database_url, monkeypatch, revision_id, role_id):
     schema = "adm31_rebind_pytest_" + uuid4().hex
     with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
         _setup(connection, schema)
+        connection.execute('CREATE TABLE questionnaire_response_revisions(id bigint,organization_id bigint,assignment_ref text,status text)')
+        connection.execute("INSERT INTO questionnaire_response_revisions VALUES(71,10,'assessment-a','confirmed'),(72,10,'assessment-a','confirmed')")
+        monkeypatch.setattr(assessment_assignment_sources, 'options', lambda *a, **kw: {
+            'configurations': [{'id': 81}], 'roles': [{'version_id': 91}, {'version_id': 92}]})
         first_id = _assignment(connection, "assessment-a")
+        connection.execute('INSERT INTO assessment_personalized_profiles VALUES(501,2,10,81,91)')
         connection.execute("""INSERT INTO organization_assessment_source_bindings
             (assignment_id,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
              assigned_by_user_id,operation_id) VALUES(%s,71,81,91,1,'bind-first')""", (first_id,))
         connection.execute("""INSERT INTO participant_acquaintance_confirmations
             (user_id,organization_id,assignment_ref,questionnaire_revision_id,personalized_profile_id)
             VALUES(2,10,'assessment-a',71,501)""")
+        frozen = connection.execute('SELECT * FROM organization_assessment_source_bindings').fetchall()
+        with pytest.raises(ValueError, match='ASSIGNMENT_SOURCES_FROZEN'):
+            assessment_assignment_sources.bind(connection, assignment_id=first_id, organization_id=10,
+                configuration_id=81, role_version_id=92, questionnaire_revision_id=72,
+                actor_user_id=1, operation_id='cannot-change-frozen-A')
+        assert connection.execute('SELECT * FROM organization_assessment_source_bindings').fetchall() == frozen
         cancellation.cancel(connection, organization_id=10, assignment_id=first_id,
                             actor_user_id=1, operation_id="cancel-before-rebind")
         second_id = _assignment(connection, "assessment-a", 2)
         rebound = assessment_assignment_sources.bind(
             connection, assignment_id=second_id, organization_id=10,
-            configuration_id=81, role_version_id=91, questionnaire_revision_id=71,
+            configuration_id=81, role_version_id=role_id, questionnaire_revision_id=revision_id,
             actor_user_id=1, operation_id="bind-second",
         )
         assert rebound["assignment_id"] == second_id
+        assert rebound['questionnaire_revision_id'] == revision_id
+        assert rebound['role_profile_version_id'] == role_id
+        assert connection.execute('SELECT * FROM organization_assessment_source_bindings WHERE assignment_id=%s', (first_id,)).fetchall() == frozen
+        # Reusing an existing binding still requires sources admitted for a new command.
+        monkeypatch.setattr(assessment_assignment_sources, 'options', lambda *a, **kw: {
+            'configurations': [], 'roles': [{'version_id': 91}, {'version_id': 92}]})
+        with pytest.raises(ValueError, match='ASSIGNMENT_CONFIGURATION_NOT_AVAILABLE'):
+            assessment_assignment_sources.bind(connection, assignment_id=second_id, organization_id=10,
+                configuration_id=81, role_version_id=role_id, questionnaire_revision_id=revision_id,
+                actor_user_id=1, operation_id='reuse-retired-configuration')
         assert connection.execute("SELECT status FROM organization_assessment_assignments WHERE id=%s", (first_id,)).fetchone()["status"] == "revoked"
         assert connection.execute("SELECT status FROM organization_assessment_assignments WHERE id=%s", (second_id,)).fetchone()["status"] == "active"
         connection.rollback()
@@ -116,7 +139,7 @@ def test_cancel_rejects_started_cycle_and_unknown_legacy_link(test_database_url)
         connection.rollback()
         _schema(connection, schema)
         legacy_id = _assignment(connection, "legacy")
-        connection.execute("INSERT INTO assessment_personalized_profiles VALUES(501)")
+        connection.execute("INSERT INTO assessment_personalized_profiles(id) VALUES(501)")
         connection.execute("""INSERT INTO organization_assessment_source_bindings
             (assignment_id,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
              assigned_by_user_id,operation_id) VALUES(%s,71,81,91,1,'bind-legacy')""", (legacy_id,))
