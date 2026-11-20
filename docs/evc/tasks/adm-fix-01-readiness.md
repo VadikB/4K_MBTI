@@ -1,0 +1,141 @@
+# ADM-FIX-01 — готовность назначений и подготовка
+
+## Результат и границы
+
+Задание владельца: `/Users/vadim_bogachev/Downloads/P4K_ADM_FIX_01_Readiness_2026-11-20.md`, прочитано целиком.
+База свежего `origin/main`: `e4bc5c88c45b775a6406f034750e75aa1e4c47be`, приложение 2.1.40.
+Ветка `codex/adm-fix-01-readiness`, worktree `/private/tmp/4k-adm-fix-01`.
+Один результат: HTTP чтение/сохранение анкеты после знакомства и точная проекция
+готовности/подготовки назначения. Без изменения схемы, API, сохранённых snapshots,
+методологических артефактов, прав и правил допуска к старту.
+
+Флаги: branch_push=true, pr=true (один draft PR по ТЗ), merge=false, deploy=false,
+version_bump=false, artifact_publish=false. Визуальная приёмка — владелец.
+
+## Источники и решения
+
+Прочитаны README.md, CONTRIBUTING.md, AGENTS.md текущей базы; docs/evc/{agent-workflow,
+verification-matrix,artifact-recipe,task-template,review-checklist,decision-register}.md;
+Product 4K context/Registry, Change 01 README/source.md И-1–3 и И-6 и task manifest от 2026-10-01;
+ADR-002 C-23/C-24, change01-traceability T01; M1 v1.4 README и source.md §M1.4 (FROZEN/CURRENT=NO),
+M4.Context v1.0 зеркало §M4.4; задачи ux-adm01-organization-data-readiness,
+ux-w02-acquaintance, ux-w02-add02-add03; потребители и адресные тесты.
+
+M4.4 → сохранение версий источников → C-23/C-24, PM-02 → точные source bindings,
+confirmation и PersonalizedProfile → late_readiness и административная проекция →
+SQL/HTTP регрессии. PM-03 выполняет подготовку; PM-04 допускает старт по существующему
+плану и первой AS. Нормы M1/Change01 не меняются, CURRENT не назначается.
+Внешний аудит по chatgpt library недоступен из локальных источников; ТЗ содержит
+воспроизводимые симптомы и точные ссылки на код. Для исправления достаточно кода,
+действующих контрактов и регрессии. Новых предметных решений не требуется.
+Все восемь стоп-условий рабочего цикла: нет, область исправления задана владельцем,
+контракты/схема/данные не меняются, откат — revert кода.
+
+## План
+
+1. Разведка — завершена: отсутствует context ID; используется org latest вместо pinned;
+   preparation выбирается по user_id без lineage.
+2. Воспроизведение регрессий на базе — завершено (KeyError/HTTP 500).
+3. Исправление и адресные SQL/HTTP проверки — завершено, 17 PASS.
+4. Backend 1301 PASS, HTTP 218 PASS, review/diff PASS. Полный integration — активно; затем draft PR.
+
+## Проверки
+
+План: `git diff --check`, `npm run test:backend`, `npm run test:backend:http`,
+`npm run test:backend:integration`; адресно test_questionnaire_sources_db.py и
+ test_path_start_assignment_lineage_db.py. PostgreSQL 15.16, новый экземпляр localhost:55481,
+пустые БД adm_fix_01_pytest и agent4k_pytest, dotenv disabled, внешние LLM/почта не используются.
+CI перед merge обязателен; локальный PASS его не заменяет.
+
+## Откат и риски
+
+Revert коммита исправления возвращает прежние чтения. Миграций и изменения конфигурации
+нет, immutable profiles/checksums сохраняются. Возвращаются известные дефекты чтения.
+Уже начатая оценка продолжает использовать прежний snapshot. Управляющие документы
+не меняются; traceability задачи ведётся здесь.
+
+## Идентичность выбранных источников
+
+| Файл | SHA-256 |
+| --- | --- |
+| ТЗ ADM-FIX-01 от 20.11.2026 | `493e574de3544e8986d310df6b4ec85688c9ec5cd12de07fdd6f39f4bbec21dd` |
+| M1 v1.4 source.md | `282e69b87585c28b52327e657d71a620c15842f7ade134467788252829833299` |
+| M4.Context v1.0 m4_context_source.md | `9af86011c1ea1bef12058700bdd345c5cee335bbc6ec4d392fcfc4f3e5709fd1` |
+
+Change01 source.pdf: `dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081`;
+M4.Context оригинал v1.0: `07875e93ae422668b1b30cd60bc1c6140cae91db12b0b80ba4abca441cfe9291`
+(выбранные записи task manifest, оригиналы не изменялись). Ссылка/выбор источника
+отличаются от проверки runtime; техническое соответствие ниже ограничено ADM-FIX-01.
+
+## Изменённые файлы и фактическое поведение
+
+- `Api/questionnaire_sources.py`: для каждого участника читаются закреплённая редакция
+  и полный результат assignment_readiness, включая context version ID и assignment ID;
+  текущая анкета остаётся источником редактирования/будущих назначений. Счётчик профилей
+  независим от нового черновика/публикации. Причины отсутствующих источников сохраняются.
+- `Api/acquaintance.py`: missing context / несовпадающее назначение возвращают
+  W02_PROFILE_ASSIGNMENT_SCOPE_MISMATCH вместо KeyError.
+- `Api/admin_assignment_projection.py`: существующая SQL-проекция строки перенесена
+  из routes; её joins Cycle/profile/legacy job/product operation используются и сводкой.
+  Современная операция требует точные organization/user/assignment/revision/profile;
+  совместимая старая — доказанную confirmation либо Cycle-связь. Более позднее
+  неподвязанное confirmation не позволяет вернуться к прежнему профилю. При общей
+  связке источников нескольких поколений legacy job остаётся неизвестным для
+  назначения: одной profile ref недостаточно. Точный modern assignment_id решает
+  эту неоднозначность; чтение старой операции по ID не меняется.
+- `Api/routes.py`: использует общий SQL; readback routes и форматы API сохранены.
+- `tests/integration/test_questionnaire_sources_db.py`: настоящие M4 snapshot/checksum,
+  late_readiness и HTTP list/preview/read/confirm; реальные права и program validator;
+  подменяется только lookup тестовой identity. Данные участников/confirmation синтетические,
+  M4 создаётся действующим lifecycle, никакие resolver/readiness не заменены.
+- `tests/integration/test_path_start_assignment_lineage_db.py`: общий SQL, современная
+  очередь и legacy linkage, первая AS и запрет возврата к старому confirmation.
+- `tests/unit/test_questionnaire_sources.py`: обновлены границы подставного repository
+  для сводки; сохранено различие profile_binding и verification_error.
+
+## Приёмочные сценарии
+
+| Сценарий | Проверка / факт | Результат |
+| --- | --- | --- |
+| Список/preview после знакомства | На базе новые регрессии падают: KeyError organization_context_version_id; GET возвращает 500. После исправления HTTP list=200, preview=201 до/после confirmation, exact read=200, confirm=200; орган admin, superadmin, foreign=403 | PASS |
+| Закреплённые источники | А готов по старой редакции после новой публикации; Б со своей новой привязкой добавляет второй ready. Профиль/строка/checksum А неизменны; несовпадающий профиль и отсутствие confirmation дают штатные категории | PASS |
+| Подготовка назначения | queued/running exact операции согласуются с SQL строки; чужая организация/user/ref/id/revision/profile исключены; поздний legacy job старой оценки не влияет; два GET не увеличивают очередь | PASS |
+| Допуск старта | completed preparation + prepared Cycle/READY plan без допущенной первой AS = start_blocked, action отсутствует. Существующий start gate не ослаблен | PASS |
+
+## Локальное ревью
+
+Нормы/предметные настройки не добавлены в Python. Миграций/удаления/перезаписи profiles
+нет. Новые чтения не запускают очередь. Права проверяются прежними серверными routes.
+Legacy без доказуемого lineage не объявляется активной подготовкой. Проверка прошлой
+операции и report SQL сохранены; существующие тесты report publication проходят.
+Визуальное представление владельцем пока не принято. Изменения UI/JS отсутствуют,
+локальные frontend lint/build неприменимы; обязательный frontend CI сохраняется.
+
+## Проверки на рабочем diff
+
+Синтетическая PostgreSQL 15.16 поднята с нуля в `/private/tmp/adm-fix-01-pg`,
+localhost:55481, trust только для локального тестового экземпляра, данные UTF8.
+Рабочие БД и `.env` не читались. Исходный Git-каталог с чужими изменениями сохранён.
+
+| Команда | Результат / exit code |
+| --- | --- |
+| `git diff --check` | PASS / 0 |
+| `PYTHON_DOTENV_DISABLED=1 npm run test:backend` | PASS / 0, 1301 passed, 707 deselected; повтор вне sandbox после PermissionError ps. Первые 2 unit failures — устаревшие тестовые adapters; исправлены и проверены |
+| `PYTHON_DOTENV_DISABLED=1 npm run test:backend:http` | PASS / 0, 218 passed, 15 deselected |
+| `PYTHON_DOTENV_DISABLED=1 TEST_DATABASE_URL=postgresql://adm_pytest@127.0.0.1:55481/agent4k_pytest .venv/bin/python -m pytest -q --run-integration tests/integration/test_questionnaire_sources_db.py tests/integration/test_path_start_assignment_lineage_db.py` | PASS / 0, 17 passed |
+| `... .venv/bin/python -m pytest -q tests/unit/test_questionnaire_sources.py` | PASS / 0, 13 passed |
+| Integration, EXEC-FIX-02 additional/retry на agent4k_pytest | PASS / 0, 25 passed. На adm_fix_01_pytest первый запуск остановлен guard фиксированного имени; новые fixtures не ослаблялись |
+
+Один warning Starlette/httpx — существующая deprecation, не ошибка. Финальный полный
+integration запущен на поддерживаемом имени новой БД; результат будет записан перед PR.
+Предыдущий общий прогон на adm_fix_01_pytest не объявляется успешным из-за guard.
+Дополнительно прочитаны path-start-01 (lineage) и p4k-remain-01 TASK/CHECKS:
+повторное назначение с теми же источниками не наследует чужую подготовку.
+
+## Непроверенное и передача
+
+CI для точного head, Ready/release gate, browser/визуальная приёмка и выпуск — пока NOT_RUN.
+Ready требует отдельного допуска на номер приложения; draft не означает выпуск.
+LLM/реальная почта/публикация/merge/deploy не требовались и не выполнялись.
+После локального integration: commit, один draft PR; затем CI/review и решение владельца
+на выпуск/номер и визуальную приёмку. Предметных открытых решений ADM-FIX-01 нет.

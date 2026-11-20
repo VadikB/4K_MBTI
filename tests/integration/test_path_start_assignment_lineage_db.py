@@ -2,24 +2,20 @@
 
 These are negative lineage fixtures, not pre-created data for the primary PATH.
 """
-import ast
-import inspect
 from uuid import uuid4
 
 import psycopg
 from psycopg.rows import dict_row
 import pytest
 
-from Api.routes import _build_admin_organizations
 from Api.acquaintance import _prepared_plan_snapshot
 
 pytestmark = pytest.mark.integration
 
 
 def stage_sql():
-    tree = ast.parse(inspect.getsource(_build_admin_organizations))
-    return next(node.value for node in ast.walk(tree) if isinstance(node, ast.Constant)
-        and isinstance(node.value, str) and 'FROM organization_assessment_assignments assignment' in node.value)
+    from Api.admin_assignment_projection import ADMIN_ASSIGNMENT_STAGES_SQL
+    return ADMIN_ASSIGNMENT_STAGES_SQL
 
 
 @pytest.fixture
@@ -124,3 +120,51 @@ def test_admin_row_opens_same_admissible_publication_as_report_registry(lineage_
     lineage_db.execute("UPDATE m8_reports SET c67_json=%s WHERE id=102",
                        ('{"processing":{"status":"failed"}}',))
     assert project(lineage_db)['A']['report_id'] is None
+
+
+@pytest.mark.parametrize('status', ['queued', 'running'])
+def test_shared_summary_fact_matches_admin_row(lineage_db, status):
+    from Api.admin_assignment_projection import preparation_for_assignment
+    lineage_db.execute('''INSERT INTO product_cycle_preparation_operations
+        (id,operation_id,status,user_id,request_json,created_at) VALUES
+        (1,'exact-B',%s,1,'{"personalized_profile_id":102,"organization_id":10,"assignment_ref":"B","questionnaire_revision_id":22,"assignment_id":42}',NOW())''', (status,))
+    row = project(lineage_db)['B']
+    assert preparation_for_assignment(lineage_db, assignment_id=42) == {
+        'operation_id': row['preparation_operation_id'], 'status': row['preparation_status']}
+    assert row['preparation_status'] == status
+
+
+def test_completed_preparation_without_first_situation_does_not_allow_start(lineage_db):
+    from Api.routes import _project_admin_assessment_stage
+    lineage_db.execute("INSERT INTO m5_cycles(id,cycle_id,status,owner_user_id,organization_id,assignment_id,usage_scope,personalized_profile_id,created_at) VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW())")
+    lineage_db.execute("INSERT INTO m7_cycle_plans VALUES(1,1,'READY')")
+    lineage_db.execute('''INSERT INTO m7_plan_revisions VALUES(1,1,'{"route":[{}]}')''')
+    row = project(lineage_db)['A']
+    assert row['preparation_status'] == 'completed'
+    assert row['admitted_situation'] is False
+    # Even a declared positive decision cannot substitute for an admitted AS.
+    row['start_readiness'] = {'contract':'m7_start_readiness/1','can_start':True,'cycle_id':'cycle-A','reasons':[]}
+    result = _project_admin_assessment_stage(row)
+    assert result['code'] == 'start_blocked'
+    assert result['action'] is None
+
+
+def test_latest_unbound_confirmation_never_reuses_old_legacy_profile(lineage_db):
+    lineage_db.execute("INSERT INTO participant_acquaintance_confirmations VALUES(3,1,10,'B',22,NULL,NOW()+INTERVAL '1 minute')")
+    assert project(lineage_db)['B']['preparation_operation_id'] is None
+
+
+def test_legacy_job_with_shared_sources_cannot_choose_assignment_generation(lineage_db):
+    from Api.admin_assignment_projection import preparation_for_assignment
+    lineage_db.execute("UPDATE organization_assessment_assignments SET status='revoked',revoked_at=NOW() WHERE id=41")
+    lineage_db.execute("INSERT INTO organization_assessment_assignments VALUES(43,10,1,'A','active',NOW(),NULL)")
+    lineage_db.execute('INSERT INTO organization_assessment_source_bindings VALUES(3,43,11,2,21)')
+    assert preparation_for_assignment(lineage_db, assignment_id=43) == {'operation_id':None,'status':None}
+    rows = lineage_db.execute(stage_sql(), ([10],)).fetchall()
+    assert next(row for row in rows if row['assignment_id'] == 43)['preparation_operation_id'] is None
+    # Exact modern identity resolves the ambiguity without mutating the old job.
+    lineage_db.execute('''INSERT INTO product_cycle_preparation_operations
+        (id,operation_id,status,user_id,request_json,created_at) VALUES
+        (1,'new-generation','queued',1,'{"personalized_profile_id":101,"organization_id":10,"assignment_ref":"A","questionnaire_revision_id":21,"assignment_id":43}',NOW())''')
+    assert preparation_for_assignment(lineage_db, assignment_id=43) == {'operation_id':'new-generation','status':'queued'}
+    assert lineage_db.execute("SELECT status FROM assessment_preparation_jobs WHERE operation_id='job-A'").fetchone()['status'] == 'completed'
