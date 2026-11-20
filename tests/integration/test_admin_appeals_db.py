@@ -28,14 +28,17 @@ def test_report_retry_and_same_text_in_new_assignment(test_database_url, monkeyp
         connection.execute("INSERT INTO organizations VALUES(10)")
         connection.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin')")
         ensure_appeals_schema(connection)
+        connection.execute("CREATE TABLE organization_assessment_assignments(id BIGINT,recipient_user_id BIGINT,status TEXT,revoked_at TIMESTAMP)")
+        connection.execute("INSERT INTO organization_assessment_assignments VALUES(11,1,'active',NULL),(12,1,'active',NULL)")
         assignment = {"id": 11}
         monkeypatch.setattr(acquaintance, "early_readiness", lambda *_args, **_kwargs: {
             "status": "ready", "organization_id": 10, "assignment_ref": "program-a",
             "assignment_id": assignment["id"], "questionnaire_revision_id": 3})
-        first = acquaintance.report_issue(connection, user_id=1, message="Неточная роль")
-        assert acquaintance.report_issue(connection, user_id=1, message="Неточная роль")["id"] == first["id"]
+        operation = str(uuid4())
+        first = acquaintance.report_issue(connection, user_id=1, message="Неточная роль", operation_id=operation, assignment_id=11, questionnaire_revision_id=3)
+        assert acquaintance.report_issue(connection, user_id=1, message="Неточная роль", operation_id=operation, assignment_id=11, questionnaire_revision_id=3)["id"] == first["id"]
         assignment["id"] = 12
-        second = acquaintance.report_issue(connection, user_id=1, message="Неточная роль")
+        second = acquaintance.report_issue(connection, user_id=1, message="Неточная роль", operation_id=str(uuid4()), assignment_id=12, questionnaire_revision_id=3)
         assert second["id"] != first["id"]
         assert connection.execute("SELECT COUNT(*) AS n FROM participant_data_issue_reports").fetchone()["n"] == 2
         connection.rollback()
@@ -146,6 +149,8 @@ def test_http_owner_tenant_claim_reply_and_readback(test_database_url, monkeypat
             assert own.status_code == 200
             assert own.json()["items"][0]["reply_message"] == "Исправим запись"
             assert own.json()["items"][0]["assignment_id"] == 11
+            assert own.json()["items"][0]["reply_author_display_name"] is None
+            assert 'reply_author_user_id' not in own.json()['items'][0]
     finally:
         with psycopg.connect(test_database_url) as connection:
             connection.execute(psycopg.sql.SQL("DROP SCHEMA {} CASCADE").format(psycopg.sql.Identifier(schema)))
@@ -224,3 +229,85 @@ def test_claim_reply_retry_and_revoked_owner(test_database_url) -> None:
         assert connection.execute("SELECT COUNT(*) AS n FROM participant_data_issue_replies").fetchone()["n"] == 1
         assert appeals.list_issues(connection, organization_id=10, user_id=1)[1]["reply_message"] == "Исправим запись"
         connection.rollback()
+
+
+@pytest.fixture
+def issue_command_db(test_database_url, monkeypatch):
+    schema = 'appeal_command_' + uuid4().hex
+
+    @contextmanager
+    def connect():
+        with psycopg.connect(test_database_url, row_factory=dict_row) as c:
+            c.execute(psycopg.sql.SQL('SET search_path TO {}').format(psycopg.sql.Identifier(schema)))
+            yield c
+
+    with psycopg.connect(test_database_url) as c:
+        c.execute(psycopg.sql.SQL('CREATE SCHEMA {}').format(psycopg.sql.Identifier(schema)))
+    with connect() as c:
+        c.execute('CREATE TABLE users(id BIGINT PRIMARY KEY)')
+        c.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY)')
+        c.execute('CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)')
+        c.execute("CREATE TABLE organization_assessment_assignments(id BIGINT,recipient_user_id BIGINT,status TEXT,revoked_at TIMESTAMP)")
+        c.execute("INSERT INTO organization_assessment_assignments VALUES(11,1,'active',NULL)")
+        c.execute('INSERT INTO users VALUES(1),(2)')
+        c.execute('INSERT INTO organizations VALUES(10)')
+        c.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin')")
+        ensure_appeals_schema(c)
+    monkeypatch.setattr(acquaintance, 'early_readiness', lambda *_a, **_k: {
+        'status': 'ready', 'organization_id': 10, 'assignment_ref': 'a',
+        'assignment_id': 11, 'questionnaire_revision_id': 3})
+    try:
+        yield connect
+    finally:
+        with psycopg.connect(test_database_url) as c:
+            c.execute(psycopg.sql.SQL('DROP SCHEMA {} CASCADE').format(psycopg.sql.Identifier(schema)))
+
+
+@pytest.mark.integration
+def test_concurrent_issue_command_and_immutable_receipt(issue_command_db):
+    command = dict(user_id=1, message='Same synthetic message', operation_id=str(uuid4()),
+                   assignment_id=11, questionnaire_revision_id=3)
+    gate = Barrier(2)
+
+    def send(_):
+        with issue_command_db() as c:
+            gate.wait(timeout=5)
+            receipt = acquaintance.report_issue(c, **command)
+            c.commit()
+            return receipt
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        receipts = list(pool.map(send, range(2)))
+    assert receipts[0] == receipts[1]
+    with issue_command_db() as c:
+        assert c.execute('SELECT count(*) AS n FROM participant_data_issue_reports').fetchone()['n'] == 1
+        assert c.execute('SELECT count(*) AS n FROM participant_data_issue_operations').fetchone()['n'] == 1
+        # Rollback to Admin 03 code: its existing scoped INSERT still works, and
+        # leaves modern receipts/history untouched. No down migration is needed.
+        c.execute("""INSERT INTO participant_data_issue_reports(user_id,organization_id,scope_key,message)
+            VALUES(1,10,'legacy','Old compatible writer')
+            ON CONFLICT(user_id,organization_id,scope_key,message) DO UPDATE SET message=EXCLUDED.message""")
+        ensure_appeals_schema(c)
+        assert appeals.read_operation(c, user_id=1, operation_id=command['operation_id'],
+            assignment_id=11, questionnaire_revision_id=3) == receipts[0]
+        assert len(appeals.list_issues(c, organization_id=10, user_id=1)) == 2
+        for statement in ('UPDATE participant_data_issue_operations SET receipt_json=receipt_json',
+                          'DELETE FROM participant_data_issue_operations'):
+            with pytest.raises(psycopg.errors.RaiseException), c.transaction():
+                c.execute(statement)
+
+
+@pytest.mark.integration
+def test_issue_receipt_failure_rolls_back_message(issue_command_db):
+    with issue_command_db() as c:
+        c.execute("""CREATE FUNCTION fail_issue_receipt() RETURNS trigger AS $$ BEGIN
+            RAISE EXCEPTION 'synthetic receipt failure'; END $$ LANGUAGE plpgsql""")
+        c.execute("""CREATE TRIGGER fail_issue_receipt BEFORE INSERT ON participant_data_issue_operations
+            FOR EACH ROW EXECUTE FUNCTION fail_issue_receipt()""")
+    with pytest.raises(psycopg.errors.RaiseException):
+        with issue_command_db() as c:
+            acquaintance.report_issue(c, user_id=1, message='Must rollback', operation_id=str(uuid4()),
+                                     assignment_id=11, questionnaire_revision_id=3)
+    with issue_command_db() as c:
+        assert c.execute('SELECT count(*) AS n FROM participant_data_issue_reports').fetchone()['n'] == 0
+        assert c.execute('SELECT count(*) AS n FROM participant_data_issue_operations').fetchone()['n'] == 0

@@ -1435,3 +1435,28 @@ Real-provider smoke оставлен NOT_RUN по отдельному реше�
 ADM-FIX-02: после решения владельца «считаем ревью пройденным, продолжаем»
 ветка опубликована, draft PR #259 создан через встроенный браузер. Точный код
 8784088f; локальный полный набор PASS. Следующий gate — CI; выпуск отдельно.
+
+## ADM-FIX-03 — рабочая реализация 20.11.2026
+
+Ветка codex/adm-fix-03-appeal-binding; база 3cc4934c (main 2.1.43).
+Карточка docs/evc/tasks/adm-fix-03-appeal-binding.md. Владелец разрешил совместимое
+расширение схемы/API/full_name, только ветка + изолированные проверки, без выпуска.
+Дефект воспроизведён реальными HTTP/PG (А23→Б24, старый POST записал Б).
+Реализованы exact pair + immutable command receipt, recovery по ключу, атрибуция ответа.
+Адресные 10 PASS, backend 1305 PASS, frontend 476 PASS, lint/build PASS, browser8 PASS,
+live UI/HTTP/PG PASS. Полные HTTP/integration выполняются; далее отчёт и handoff.
+Push/PR/version/merge/deploy/artifact_publish=false; визуальная приёмка — владелец.
+
+
+Завершение локального ADM-FIX-03: runtime 03dc1e3f, final fetch main=3cc4934c.
+Backend1305/HTTP219/frontend476 PASS; integration488 PASS/2 real-LLM SKIPPED;
+адресный повтор10 PASS, browser8 PASS, live новая сессия/исходный текст/имя/дата PASS.
+Полный журнал и rollback — в карточке; изолированная PG остановлена, .venv-ссылка
+удалена. Далее человеческое review/визуальная приёмка и решение по PR; публикация,
+CI/Ready, version bump и выпуск не выполнялись. Открытых технических блокеров нет.
+
+Продолжение ADM-FIX-03 по «продолжаем»: ветка отправлена в origin;
+через встроенный браузер создан draft PR https://github.com/VadikB/4K_MBTI/pull/261 .
+Base3cc4934c, исходный head9ba9225d; код03dc1e3f не менялся. branch_push/pr=true,
+version_bump/Ready/merge/deploy/artifact_publish=false. Следующий шаг: быстрый CI
+окончательного head и человеческое review/визуальная приёмка; Draft full CI не PASS.

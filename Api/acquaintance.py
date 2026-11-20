@@ -642,13 +642,37 @@ def accept_consent(connection, *, user_id: int, version: int) -> dict:
     })
 
 
-def report_issue(connection, *, user_id: int, message: str) -> dict:
+def report_issue(connection, *, user_id: int, message: str, operation_id=None,
+                 assignment_id: int | None = None, questionnaire_revision_id: int | None = None) -> dict:
+    from Api import appeals
+    normalized = str(message or "").strip()
+    if not normalized or len(normalized) > 2000:
+        raise ValueError("W02_ISSUE_MESSAGE_REQUIRED")
+    if operation_id is not None:
+        operation_id = str(operation_id)
+        # The transaction lock also covers the not-yet-existing receipt. Concurrent
+        # repeats wait for commit and then read the original result, never today's scope.
+        connection.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',
+                           (f'appeal:{user_id}:{operation_id}',))
+        saved = appeals.read_operation(connection, user_id=user_id, operation_id=operation_id,
+            assignment_id=assignment_id, questionnaire_revision_id=questionnaire_revision_id, message=normalized)
+        if saved is not None:
+            return saved
+    if assignment_id is not None:
+        assigned = connection.execute("""SELECT id FROM organization_assessment_assignments
+            WHERE id=%s AND recipient_user_id=%s AND status='active' AND revoked_at IS NULL
+            FOR SHARE""", (assignment_id, user_id)).fetchone()
+        if assigned is None:
+            raise ValueError('W02_ASSIGNMENT_SCOPE_MISMATCH')
     readiness = early_readiness(connection, user_id=user_id)
+    if readiness.get('assignment_id') is not None or readiness.get('questionnaire_revision_id') is not None:
+        if (operation_id is None or assignment_id != readiness.get('assignment_id')
+                or questionnaire_revision_id != readiness.get('questionnaire_revision_id')):
+            raise ValueError('W02_ASSIGNMENT_SCOPE_MISMATCH')
+    elif assignment_id is not None or questionnaire_revision_id is not None:
+        raise ValueError('W02_ASSIGNMENT_SCOPE_MISMATCH')
     if readiness["status"] != "ready":
         raise ValueError("W02_ACQUAINTANCE_NOT_READY")
-    normalized = str(message or "").strip()
-    if not normalized:
-        raise ValueError("W02_ISSUE_MESSAGE_REQUIRED")
     admin = connection.execute(
         "SELECT 1 FROM organization_memberships WHERE organization_id=%s AND role='admin' LIMIT 1",
         (readiness["organization_id"],),
@@ -668,7 +692,14 @@ def report_issue(connection, *, user_id: int, message: str) -> dict:
            RETURNING id,status,created_at""",
         (user_id, readiness["organization_id"], scope_key, assignment_ref, revision_id, assignment_id, normalized),
     ).fetchone()
-    return dict(row)
+    receipt = {**dict(row), 'created_at': row['created_at'].isoformat(),
+               'operation_id': operation_id, 'assignment_ref': assignment_ref,
+               'assignment_id': assignment_id, 'questionnaire_revision_id': revision_id}
+    if operation_id is not None:
+        appeals.save_operation(connection, user_id=user_id, operation_id=operation_id,
+            request={'assignment_id': assignment_id, 'questionnaire_revision_id': revision_id,
+                     'message': normalized}, receipt=receipt)
+    return receipt
 
 
 def late_readiness(connection, *, user_id: int, readiness: dict | None = None) -> dict:

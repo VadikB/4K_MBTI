@@ -3515,8 +3515,26 @@ def report_participant_data_issue(
     _require_matching_session_user(request, user_id)
     try:
         with get_connection() as connection:
-            result = acquaintance.report_issue(connection, user_id=user_id, message=payload.message)
+            result = acquaintance.report_issue(connection, user_id=user_id, message=payload.message,
+                operation_id=payload.operation_id, assignment_id=payload.assignment_id,
+                questionnaire_revision_id=payload.questionnaire_revision_id)
             connection.commit()
+            return result
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/{user_id}/acquaintance/issues/operations/{operation_id}")
+def read_participant_issue_operation(user_id: int, operation_id: str, request: Request,
+                                     assignment_id: int | None = None,
+                                     questionnaire_revision_id: int | None = None) -> dict:
+    _require_matching_session_user(request, user_id)
+    try:
+        with get_connection() as connection:
+            result = appeals.read_operation(connection, user_id=user_id, operation_id=operation_id,
+                assignment_id=assignment_id, questionnaire_revision_id=questionnaire_revision_id)
+            if result is None:
+                raise HTTPException(status_code=404, detail='ISSUE_OPERATION_NOT_FOUND')
             return result
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -3528,7 +3546,7 @@ def list_participant_data_issues(user_id: int, request: Request) -> dict:
     with get_connection() as connection:
         visible = ("id", "organization_id", "message", "status", "created_at",
                    "assignment_ref", "assignment_id", "questionnaire_revision_id",
-                   "reply_message", "reply_author_user_id", "replied_at")
+                   "reply_message", "reply_author_display_name", "replied_at")
         return {"items": [{key: item[key] for key in visible} for item in appeals.list_issues(
             connection, organization_id=None, user_id=user_id)]}
 

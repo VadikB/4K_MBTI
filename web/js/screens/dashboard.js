@@ -44,7 +44,7 @@ const refreshAppeals = async () => {
         const title = document.createElement('h3'); title.textContent = 'Ответ по вашему обращению';
         const reply = document.createElement('p'); reply.textContent = item.reply_message;
         const attribution = document.createElement('small');
-        attribution.textContent = 'Администратор' + (item.replied_at ? ' · ' + new Date(item.replied_at).toLocaleString('ru-RU') : '');
+        attribution.textContent = (item.reply_author_display_name || 'Администратор') + (item.replied_at ? ' · ' + new Date(item.replied_at).toLocaleString('ru-RU') : '');
         article.append(title, reply, attribution);
       } else {
         const status = document.createElement('p');

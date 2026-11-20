@@ -3244,6 +3244,23 @@ def ensure_appeals_schema(connection) -> None:
         message TEXT NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
     )""")
+    connection.execute("""CREATE TABLE IF NOT EXISTS participant_data_issue_operations (
+        user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+        operation_id TEXT NOT NULL,
+        issue_id BIGINT NOT NULL REFERENCES participant_data_issue_reports(id) ON DELETE RESTRICT,
+        request_json JSONB NOT NULL,
+        receipt_json JSONB NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        PRIMARY KEY(user_id,operation_id)
+    )""")
+    connection.execute("""CREATE OR REPLACE FUNCTION prevent_issue_operation_change()
+        RETURNS trigger AS $$ BEGIN
+          RAISE EXCEPTION 'Appeal command receipts are immutable';
+        END $$ LANGUAGE plpgsql""")
+    connection.execute('DROP TRIGGER IF EXISTS issue_operation_immutable ON participant_data_issue_operations')
+    connection.execute("""CREATE TRIGGER issue_operation_immutable
+        BEFORE UPDATE OR DELETE ON participant_data_issue_operations
+        FOR EACH ROW EXECUTE FUNCTION prevent_issue_operation_change()""")
 
 
 def ensure_m5_runtime_schema(connection) -> None:

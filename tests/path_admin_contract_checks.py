@@ -43,6 +43,7 @@ TABLES = (
     'assessment_organization_context_versions',
     'assessment_personalized_profiles', 'participant_acquaintance_confirmations',
     'assessment_preparation_jobs', 'product_cycle_preparation_operations', 'm5_cycles',
+    'participant_data_issue_reports', 'participant_data_issue_replies', 'participant_data_issue_operations',
 )
 
 
@@ -635,3 +636,81 @@ def test_ac10_invalid_program_connection_is_atomic(scope, invalid):
     with session(s['super']) as client:
         no_write(client, 'PUT', f"/users/admin/organizations/{s['org']}/assessment-program", status=409,
                  detail='PROGRAM_NOT_AVAILABLE', json={'program_definition_id': target, 'operation_id': uuid4().hex})
+
+
+def test_adm_fix03_stale_screen_cannot_retarget_appeal():
+    s = create_scope()
+    base = f"/users/admin/organizations/{s['org']}/assessment-assignments"
+    prefix = f"/users/{s['member']}/acquaintance"
+    with session(s['admin']) as admin:
+        ready(admin, s)
+        first = admin.post(base, json=payload(s, role_profile_version_id=s['role']))
+        assert first.status_code == 200, first.text
+        a_id = first.json()['items'][0]['assignment_id']
+    with session(s['member']) as member:
+        shown = member.get(prefix).json()['readiness']
+        command = {'message': 'Synthetic appeal', 'operation_id': str(uuid4()),
+                   'assignment_id': shown['assignment_id'],
+                   'questionnaire_revision_id': shown['questionnaire_revision_id']}
+        accepted = member.post(prefix + '/issues', json=command)
+        assert accepted.status_code == 201, accepted.text
+        receipt = accepted.json()
+        assert member.post(prefix + '/issues', json={**command, 'operation_id': str(uuid4()),
+            'questionnaire_revision_id': shown['questionnaire_revision_id'] + 100000}).status_code == 409
+        assert member.post(prefix + '/issues', json={**command, 'operation_id': str(uuid4()),
+            'assignment_id': a_id + 100000}).status_code == 409
+    with session(s['admin']) as admin:
+        assert admin.post(base + f'/{a_id}/cancel', json={'operation_id': uuid4().hex}).status_code == 200
+        second = admin.post(base, json=payload(s, role_profile_version_id=s['role']))
+        assert second.status_code == 200, second.text
+        b_id = second.json()['items'][0]['assignment_id']
+        assert b_id != a_id
+    with session(s['member']) as member:
+        response = member.post(prefix + '/issues', json={
+            'message': 'Synthetic stale screen', 'operation_id': str(uuid4()),
+            'assignment_id': shown['assignment_id'],
+            'questionnaire_revision_id': shown['questionnaire_revision_id'],
+        })
+    with get_connection() as c:
+        rows = c.execute('SELECT assignment_id,questionnaire_revision_id FROM participant_data_issue_reports WHERE user_id=%s', (s['member'],)).fetchall()
+    assert response.status_code == 409, (response.text, rows, {'shown': a_id, 'current': b_id})
+    assert len(rows) == 1 and rows[0]['assignment_id'] == a_id
+    with session(s['member']) as member:
+        assert member.post(prefix + '/issues', json=command).json() == receipt
+        lookup = prefix + '/issues/operations/' + command['operation_id']
+        pair = {key: command[key] for key in ('assignment_id', 'questionnaire_revision_id')}
+        assert member.get(lookup, params=pair).json() == receipt
+        assert member.get(lookup, params={**pair, 'assignment_id': b_id}).status_code == 409
+        assert member.get(prefix + '/issues/operations/' + str(uuid4()), params=pair).status_code == 404
+        assert member.post(prefix + '/issues', json={**command, 'message': 'changed'}).status_code == 409
+        assert member.post(prefix + '/issues', json={'message': command['message']}).status_code == 409
+        current = member.get(prefix).json()['readiness']
+        second_command = {**command, 'operation_id': str(uuid4()),
+            'assignment_id': current['assignment_id'],
+            'questionnaire_revision_id': current['questionnaire_revision_id']}
+        second_receipt = member.post(prefix + '/issues', json=second_command)
+        assert second_receipt.status_code == 201, second_receipt.text
+        assert second_receipt.json()['id'] != receipt['id']
+        assert second_receipt.json()['assignment_id'] == b_id
+    with session(s['second']) as member:
+        assert member.get(lookup, params=pair).status_code == 403
+        assert member.get(lookup.replace(str(s['member']) + '/acquaintance', str(s['second']) + '/acquaintance'), params=pair).status_code == 404
+    with session(s['foreign_admin']) as foreign:
+        assert foreign.get(lookup, params=pair).status_code == 403
+    issue_base = f"/users/admin/organizations/{s['org']}/members/{s['member']}/issues/{receipt['id']}"
+    with session(s['admin']) as admin:
+        assert admin.post(issue_base + '/claim').status_code == 200
+        reply = admin.post(issue_base + '/reply', json={'message': 'Synthetic reply'})
+        assert reply.status_code == 200, reply.text
+        assert admin.post(issue_base + '/reply', json={'message': 'Synthetic reply'}).json() == reply.json()
+    with session(s['member']) as member:
+        items = member.get(prefix + '/issues').json()['items']
+        item = next(item for item in items if item['id'] == receipt['id'])
+        assert item['reply_author_display_name'] == 'Synthetic contract subject'
+        assert item['replied_at'] == reply.json()['created_at']
+        assert item['reply_message'] == 'Synthetic reply'
+        assert 'reply_author_user_id' not in item
+        assert member.get(lookup, params=pair).json() == receipt
+    with get_connection() as c:
+        assert c.execute('SELECT count(*) AS n FROM participant_data_issue_operations WHERE user_id=%s', (s['member'],)).fetchone()['n'] == 2
+        assert c.execute('SELECT count(*) AS n FROM participant_data_issue_reports WHERE user_id=%s', (s['member'],)).fetchone()['n'] == 2
