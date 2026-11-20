@@ -33,6 +33,18 @@ def test_configuration_options_require_service_token(monkeypatch) -> None:
     ).json() == []
 
 
+def test_configuration_options_are_disabled_without_configured_token(monkeypatch) -> None:
+    monkeypatch.setattr(integration_routes.settings, "tg_bot_integration_token", "")
+    monkeypatch.setattr(integration_routes, "get_connection", connection)
+    app = FastAPI()
+    app.include_router(integration_routes.router)
+    response = TestClient(app).get(
+        "/integration/v1/assessment-configurations",
+        headers={"Authorization": "Bearer synthetic"},
+    )
+    assert response.status_code == 503
+
+
 def test_configuration_options_return_references_only(monkeypatch) -> None:
     monkeypatch.setattr(integration_routes.settings, "tg_bot_integration_token", TOKEN)
     monkeypatch.setattr(integration_routes, "get_connection", connection)

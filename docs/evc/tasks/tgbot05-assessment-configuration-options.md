@@ -2,7 +2,7 @@
 
 ## Результат и граница
 
-`GET /integration/v1/assessment-configurations` возвращает под существующим
+`GET /integration/v1/assessment-configurations` возвращает под отдельным
 `TG_BOT_INTEGRATION_TOKEN` только опубликованные `AssessmentConfiguration`, чьи
 версии методологии и сценария также опубликованы. Ответ содержит `id`, `ref`,
 `code`, `name`, `methodology_ref`, `reference_checksum` и `is_default`.
@@ -28,7 +28,8 @@ AssessmentProgram или готовность Cycle; это проверяет �
 
 ## Проверка и выпуск
 
-- HTTP: запрос без token → 401; с token → только поля ответа; пустой список → `[]`.
+- HTTP: без настроенного token → 503, без Bearer → 401; с token → только поля ответа;
+  пустой список → `[]`.
 - Unit: SQL фильтрует published конфигурацию и версии; отпечаток детерминирован.
 - PostgreSQL integration, общий Telegram путь и CI — отдельная проверка кандидата.
 - Merge/deploy не входят в этот шаг. Student Channel API остаётся отдельным
