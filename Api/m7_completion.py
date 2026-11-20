@@ -8,6 +8,7 @@ from Api import m5_scenario_runtime
 from Api import m5_cycle_runtime
 from Api.m5_cycle_runtime import read_cycle
 from Api import m7_completion_repository as repo
+from Api.participant_dashboard import saved_cycle_plan
 
 TERMINAL_CYCLE={'collection_closed','calculation_pending','calculated','failed'}
 
@@ -382,13 +383,17 @@ def control(connection,*,cycle_id,key,action,reason,initiated_by,participant_com
 def read_status(connection,cycle_id):
     cycle=_cycle(connection,cycle_id,lock=False);state=read_cycle(connection,cycle_id)
     latest=connection.execute('SELECT status FROM m7_c46_revisions WHERE cycle_db_id=%s ORDER BY revision_no DESC LIMIT 1',(cycle['id'],)).fetchone()
-    route_progress=connection.execute("""SELECT COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE state='completed') AS completed
-        FROM m7_route_positions WHERE cycle_db_id=%s""",(cycle['id'],)).fetchone()
+    plan = saved_cycle_plan(connection, cycle)
+    completed, total = None, None
+    if plan is not None:
+        _, route = plan
+        total = len(route)
+        completed = connection.execute("""SELECT COUNT(*) AS completed FROM m7_route_positions
+            WHERE cycle_db_id=%s AND state='completed'""", (cycle['id'],)).fetchone()['completed']
     return {'cycle_id':cycle_id,'collection_status':cycle['status'],'processing_status':('processing' if cycle['status']=='collection_closed' else cycle['status']),
         'remaining_seconds':state['remaining_seconds'],'calendar_deadline':state['calendar_deadline'],'close_reason':cycle['close_reason'],
         'c46_status':latest['status'] if latest else None,'can_continue':cycle['status'] in {'active','paused','interrupted'},
-        'route_progress':{'completed':int(route_progress['completed'] or 0),'total':int(route_progress['total'] or 0)}}
+        'route_progress':{'completed':completed,'total':total}}
 
 def read_c46(connection,cycle_id):
     cycle=_cycle(connection,cycle_id,lock=False);return repo.read_c46(connection,cycle['id'])

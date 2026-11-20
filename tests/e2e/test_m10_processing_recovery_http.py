@@ -102,7 +102,8 @@ def test_owner_status_has_stable_failure_projection_without_retry_button(monkeyp
     assert "Traceback" not in str(value)
 
 
-def test_owner_status_exposes_explicit_new_cycle_action_without_creating_cycle(monkeypatch):
+@pytest.mark.parametrize('completed', [None, 0, 2])
+def test_owner_status_exposes_progress_and_explicit_new_cycle_action_without_creating_cycle(monkeypatch, completed):
     cycle=uuid4()
     class StatusConnection:
         def execute(self, sql, _params):
@@ -115,7 +116,11 @@ def test_owner_status_exposes_explicit_new_cycle_action_without_creating_cycle(m
     monkeypatch.setattr(routes,"get_connection",connection)
     monkeypatch.setattr(routes.web_session_service,"get_user_by_token",lambda _token:SimpleNamespace(id=17))
     monkeypatch.setattr(routes,"_m8_owned_cycle",lambda *_args:SimpleNamespace(id=17))
-    monkeypatch.setattr(routes.m7_completion,"read_status",lambda *_args:{"cycle_id":str(cycle),"collection_status":"calculated"})
+    def read_status(_connection, cycle_id):
+        assert cycle_id == str(cycle)
+        return {"cycle_id": cycle_id, "collection_status": "calculated",
+                "route_progress": {"completed": completed, "total": 8}}
+    monkeypatch.setattr(routes.m7_completion, "read_status", read_status)
     partial={"is_incomplete":True,"progress":{"completed":2,"planned":5}}
     monkeypatch.setattr(routes.m8_results,"read_latest_report",lambda *_args:{"id":"report-2","status":"ready","c67":{"partial_result":partial}})
     app=FastAPI();app.include_router(routes.router)
@@ -123,6 +128,7 @@ def test_owner_status_exposes_explicit_new_cycle_action_without_creating_cycle(m
         response=client.get(f"/users/assessment/m8/cycles/{cycle}/status")
     assert response.status_code==200
     value=response.json()
+    assert value["route_progress"] == {"completed": completed, "total": 8}
     assert value["partial_result"]==partial
     assert value["new_cycle"]["method"]=="POST"
     assert value["processing"]["allowed_actions"]==[value["new_cycle"]]
