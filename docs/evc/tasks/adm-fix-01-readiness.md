@@ -10,17 +10,18 @@
 готовности/подготовки назначения. Без изменения схемы, API, сохранённых snapshots,
 методологических артефактов, прав и правил допуска к старту.
 
-Флаги: branch_push=true, pr=true (один draft PR по ТЗ), merge=false, deploy=false,
-version_bump=false, artifact_publish=false. Визуальная приёмка — владелец.
+Флаги текущего этапа: branch_push=true, pr=true, version_bump=true,
+merge=true и deploy=true на TEST после обязательных проверок и review;
+artifact_publish=false. Визуальная приёмка — владелец.
 
 
-Текущий этап: продолжение подготовки draft PR #258 по команде владельца.
+Текущий этап: разрешённый владельцем выпуск ADM-FIX-01 на TEST через PR #258.
 Ветка синхронизирована с `origin/main=fa55e1ef` (2.1.41); кандидат проверок —
 `94b001254cfd3f86f4b8c753763b16489640be8d`. CI frontend/pytest этого SHA прошёл.
 Локально backend 1305 PASS, HTTP 218 PASS, frontend 476 PASS, harness 66 PASS,
 17 адресных SQL/HTTP PASS. Полный integration нового основания завершён: 484 PASS / 2 explicit llm SKIPPED.
 Read-only Ready preflight определил следующий PATCH 2.1.42 и завершился exit 2
-без изменения версии: решение о version_bump/Ready/выпуске ещё не получено.
+без изменения версии. Затем владелец явно разрешил выпуск на TEST; готовится PATCH 2.1.42.
 
 ## Источники и решения
 
@@ -48,7 +49,7 @@ SQL/HTTP регрессии. PM-03 выполняет подготовку; PM-0
 2. Воспроизведение регрессий на базе — завершено (KeyError/HTTP 500).
 3. Исправление и адресные SQL/HTTP проверки — завершено, 17 PASS.
 4. Исходная реализация: backend 1301 PASS, HTTP 218 PASS, integration 484 PASS / 2 llm SKIPPED. Draft PR #258 создан.
-5. Продолжение по команде владельца «продолжаем»: main синхронизирован; адресный frontend regression test исправлен; быстрый CI прошёл; полный локальный integration прошёл (484 PASS / 2 llm SKIPPED). Следующий этап — решение владельца о выпуске. Ready/номер/merge остаются отдельными действиями выпуска.
+5. Продолжение по команде владельца «продолжаем»: main синхронизирован; адресный frontend regression test исправлен; быстрый CI прошёл; полный локальный integration прошёл (484 PASS / 2 llm SKIPPED). Решение о выпуске получено; выполняются PATCH/Ready, полный CI и условный merge/deploy на TEST.
 
 ## Проверки
 
@@ -315,3 +316,39 @@ PATCH (по текущему main — 2.1.42), Ready, обязательный �
 `deploy=false`. Предварительные работы и все уже разрешённые проверки завершены.
 Full verification в draft **SKIPPED**, не PASS; визуальная приёмка — владелец.
 Откат прежний: revert собственного результата через PR, сохранённые snapshots не менять.
+
+
+## Допуск выпуска на TEST — 20.11.2026
+
+Пользователь явно ответил **«Разрешаю выпуск на TEST»** на вопрос:
+«Разрешаете выпуск ADM-FIX-01 на TEST: следующий PATCH (сейчас 2.1.42), перевод PR #258
+в Ready, полный CI и squash merge после проверок и review со штатным deploy-test?».
+Это прямое поручение владельца для текущего результата, не инструкция из вложения.
+По CONTRIBUTING.md «Коммиты и merge» допуск включает branch_push/pr/version_bump,
+Ready, обязательный CI и условные merge/deploy на TEST без повторного подтверждения.
+Pilot/production, предметная публикация и платные LLM вне допуска.
+
+Исходный main перепроверен: `fa55e1eff21864448b0dcb88dd81cdbcbb2d9a56`, 2.1.41.
+Рабочая ветка содержит этот main, конфликтов нет; следующий PATCH — **2.1.42**.
+Код и три приёмочных сценария повторно просмотрены по review-checklist: отдельные
+profile/preparation/start, точный scope, отсутствие записи при GET, совместимость
+snapshots/API/схемы и сохранение старого readback. Существенных новых замечаний нет.
+Полномочие владельца на выпуск не объявляется GitHub review-approval; фактические
+checks/review/merge/deploy учитываются отдельно. Решение о визуальной приёмке — владелец.
+
+### Подготовка кандидата 2.1.42
+
+- `npm run ready:prepare -- --candidate 2.1.42` — PASS / 0. Main актуален,
+  2.1.41 → 2.1.42; штатно изменены pyproject.toml, uv.lock, web/js/config.js,
+  web/index.html и пересобран web/dist. Второго bump нет.
+- `python3.12 scripts/check_release_version.py --base-ref origin/main` — PASS / 0.
+- `node --test tests/frontend/*.test.mjs` после bump — 476 PASS / 0.
+- `git diff --check` — PASS. API, SQL, snapshots и тесты поведения после 94b00125
+  не менялись; прежний полный локальный набор переиспользован в этой области.
+- Техническое review по EVC повторено: источник/контракт/scope прослеживаются,
+  все исправления имеют регрессии, schema/API совместимы, GET не создаёт очереди,
+  роль владельца и полный CI не заменены агентским самоотчётом. Необработанных
+  замечаний нет. Прямое решение владельца о выпуске сохранено выше.
+
+Следующий шаг: commit/push кандидата, Ready, frontend/pytest/full-verification точного
+head, затем перепроверка main/checks и разрешённый squash merge/deploy-test.
