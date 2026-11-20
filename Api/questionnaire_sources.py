@@ -40,20 +40,109 @@ LEGACY_FIELDS = {("C04", "answer"), ("C21", "responsible_contact")}
 MAX_SOURCE_BYTES = 1_048_576
 ADMIN_CHOICES_PACKAGE = (Path(__file__).resolve().parents[1] / "assessment_definitions" /
                          "contexts" / "competencies_4k" / "1.1")
+LEGACY_CHOICES_PACKAGE = (ADMIN_CHOICES_PACKAGE.parent / "admin_choice_compatibility" / "1.0")
+CONTEXT_CHOICE_FIELDS = ("case_reality_level", "organization_name_usage_rules")
+
+
+def _admin_context_choices() -> tuple[dict, dict]:
+    path = ADMIN_CHOICES_PACKAGE / "admin_context_choices.json"
+    try:
+        content = path.read_bytes()
+        manifest = json.loads((ADMIN_CHOICES_PACKAGE / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise ValueError("ADMIN_CONTEXT_CHOICES_UNAVAILABLE") from exc
+    checksum = hashlib.sha256(content).hexdigest()
+    if not isinstance(manifest, dict):
+        raise ValueError("ADMIN_CONTEXT_CHOICES_IDENTITY_INVALID")
+    try:
+        expected = {item["name"]: item["sha256"] for item in manifest["artifacts"]}.get(path.name)
+    except (KeyError, TypeError) as exc:
+        raise ValueError("ADMIN_CONTEXT_CHOICES_IDENTITY_INVALID") from exc
+    if expected != checksum:
+        raise ValueError("ADMIN_CONTEXT_CHOICES_CHECKSUM_INVALID")
+    try:
+        metadata = json.loads(content)
+    except (ValueError, UnicodeError) as exc:
+        raise ValueError("ADMIN_CONTEXT_CHOICES_IDENTITY_INVALID") from exc
+    if not isinstance(metadata, dict) or metadata.get("status") != "approved_for_admin_form" or metadata.get("version") != "1.0":
+        raise ValueError("ADMIN_CONTEXT_CHOICES_IDENTITY_INVALID")
+    fields = metadata.get("fields")
+    if not isinstance(fields, dict) or any(
+        not isinstance(fields.get(field), list) or not fields[field] or
+        any(not isinstance(value, str) or not value.strip() for value in fields[field])
+        for field in CONTEXT_CHOICE_FIELDS
+    ):
+        raise ValueError("ADMIN_CONTEXT_CHOICES_FIELDS_INVALID")
+    if metadata.get("id") != "admin-organization-context-choices":
+        raise ValueError("ADMIN_CONTEXT_CHOICES_IDENTITY_INVALID")
+    return fields, {"id": metadata["id"], "version": metadata["version"], "sha256": checksum}
 
 
 def _admin_choices_provenance() -> dict:
-    path = ADMIN_CHOICES_PACKAGE / "admin_context_choices.json"
-    content = path.read_bytes()
+    return _admin_context_choices()[1]
+
+
+def _legacy_context_choices(current: dict, approved: dict) -> tuple[dict[str, set[str]], dict]:
+    """Load the owner's explicit compatibility decision, never synthetic examples."""
+    path = LEGACY_CHOICES_PACKAGE / "choices.json"
+    try:
+        content = path.read_bytes()
+        manifest = json.loads((LEGACY_CHOICES_PACKAGE / "manifest.json").read_text(encoding="utf-8"))
+        metadata = json.loads(content)
+    except (OSError, ValueError, UnicodeError) as exc:
+        raise ValueError("QUESTIONNAIRE_LEGACY_CHOICES_UNAVAILABLE") from exc
     checksum = hashlib.sha256(content).hexdigest()
-    manifest = json.loads((ADMIN_CHOICES_PACKAGE / "manifest.json").read_text(encoding="utf-8"))
-    expected = {item["name"]: item["sha256"] for item in manifest["artifacts"]}.get(path.name)
+    if not isinstance(manifest, dict) or not isinstance(metadata, dict):
+        raise ValueError("QUESTIONNAIRE_LEGACY_CHOICES_IDENTITY_INVALID")
+    try:
+        expected = {item["name"]: item["sha256"] for item in manifest["artifacts"]}.get(path.name)
+    except (KeyError, TypeError) as exc:
+        raise ValueError("QUESTIONNAIRE_LEGACY_CHOICES_IDENTITY_INVALID") from exc
     if expected != checksum:
-        raise ValueError("ADMIN_CONTEXT_CHOICES_CHECKSUM_INVALID")
-    metadata = json.loads(content)
-    if metadata.get("status") != "approved_for_admin_form" or metadata.get("version") != "1.0":
-        raise ValueError("ADMIN_CONTEXT_CHOICES_IDENTITY_INVALID")
-    return {"id": metadata["id"], "version": metadata["version"], "sha256": checksum}
+        raise ValueError("QUESTIONNAIRE_LEGACY_CHOICES_CHECKSUM_INVALID")
+    identity = ("admin-organization-context-legacy-compatibility", "1.0", "approved_for_admin_confirmation")
+    if (metadata.get("id"), metadata.get("version"), metadata.get("status")) != identity or (
+        manifest.get("id"), manifest.get("version"), manifest.get("status")) != identity or (
+        metadata.get("approved_choices") != {"id": approved["id"], "version": approved["version"]}
+    ):
+        raise ValueError("QUESTIONNAIRE_LEGACY_CHOICES_IDENTITY_INVALID")
+    equivalents = metadata.get("equivalents")
+    if not isinstance(equivalents, dict) or set(equivalents) != set(CONTEXT_CHOICE_FIELDS):
+        raise ValueError("QUESTIONNAIRE_LEGACY_CHOICES_INVALID")
+    values = {}
+    for field in CONTEXT_CHOICE_FIELDS:
+        mapping = equivalents[field]
+        if not isinstance(mapping, dict) or not mapping or any(
+            not isinstance(old, str) or not old.strip() or new not in current[field]
+            for old, new in mapping.items()
+        ):
+            raise ValueError("QUESTIONNAIRE_LEGACY_CHOICES_INVALID")
+        values[field] = set(mapping)
+    return values, {"id": metadata["id"], "version": metadata["version"], "sha256": checksum}
+
+
+def _context_choice_validation(rows: list[dict]) -> tuple[list[dict], dict]:
+    current, provenance = _admin_context_choices()
+    legacy, legacy_provenance = _legacy_context_choices(current, provenance)
+    errors = []
+    used_legacy = False
+    for row in rows:
+        if row["question_id"] != "C17" or row["field"] not in CONTEXT_CHOICE_FIELDS:
+            continue
+        field, value = row["field"], row["value"]
+        if not value:
+            continue
+        if value in current[field]:
+            continue
+        if value in legacy[field]:
+            used_legacy = True
+            continue
+        errors.append({"line": row["line"], "code": "CONTEXT_CHOICE_UNSUPPORTED",
+                       "question_id": "C17", "field": field})
+    applied = {"admin_context_choices": provenance}
+    if used_legacy:
+        applied["legacy_context_choices"] = legacy_provenance
+    return errors, applied
 
 
 def _load_participant_question_schema() -> dict:
@@ -100,6 +189,7 @@ def parse_csv(text: str) -> dict:
         values: dict[str, dict[str, str]] = {}
         seen: dict[tuple[str, str], str] = {}
         errors = []
+        choice_rows = []
         for line, raw in enumerate(reader, start=2):
             question_id = str(raw.get("question_id") or "").strip()
             field = str(raw.get("field") or "").strip()
@@ -116,12 +206,16 @@ def parse_csv(text: str) -> dict:
             seen[key] = value
             values.setdefault(question_id, {})[field] = value
             rows.append({"question_id": question_id, "field": field, "value": value})
+            choice_rows.append({"question_id": question_id, "field": field, "value": value, "line": line})
     except UnicodeError as exc:
         raise ValueError("QUESTIONNAIRE_ENCODING_INVALID") from exc
+    choice_errors, applied_policy = _context_choice_validation(choice_rows)
+    errors.extend(choice_errors)
     missing = [f"{qid}.{field}" for qid, field in sorted(EARLY_REQUIRED)
                if not values.get(qid, {}).get(field)]
     return {"rows": rows, "answers": values, "errors": errors, "missing": missing,
-            "delimiter": delimiter, "status": "invalid" if errors else "draft" if missing else "ready_for_confirmation"}
+            "delimiter": delimiter, "applied_policy": applied_policy,
+            "status": "invalid" if errors else "draft" if missing else "ready_for_confirmation"}
 
 
 def normalize_answers(*, answers: dict, channel: str) -> dict:
@@ -137,6 +231,14 @@ def normalize_answers(*, answers: dict, channel: str) -> dict:
 
 def _current_revision_validation(row: dict) -> dict:
     """Revalidate old drafts under the current fields without hiding other errors."""
+    if row.get("status") == "confirmed":
+        answers = dict(row.get("answers_json") or {})
+        answers.pop("C04", None)
+        if "C21" in answers:
+            answers["C21"] = {key: value for key, value in answers["C21"].items()
+                              if ("C21", key) not in LEGACY_FIELDS}
+        return {"answers": answers, "errors": [], "missing": [],
+                "status": "confirmed"}
     if row.get("channel") == "csv" and row.get("raw_source_text"):
         return parse_csv(row["raw_source_text"])
     normalized = normalize_answers(answers=dict(row.get("answers_json") or {}), channel=str(row["channel"]))
@@ -193,6 +295,7 @@ def save_preview(connection, *, organization_id: int, assignment_ref: str, chann
         (organization_id, assignment_ref, template_variant, template_version, channel,
          normalized["status"], json.dumps(normalized["answers"], ensure_ascii=False),
          json.dumps({"errors": normalized["errors"], "missing": normalized["missing"],
+                     "applied_policy": normalized["applied_policy"],
                      "expected_organization_name": organization["name"],
                      "expected_context_version_id": published["id"] if published else None}, ensure_ascii=False),
          raw_text, hashlib.sha256((raw_text or "").encode("utf-8")).hexdigest(), uploaded_by,
@@ -275,8 +378,7 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
     source_manifest = {"questionnaire_revision_id": int(row["id"]), "channel": row["channel"],
                        "template_variant": row["template_variant"], "template_version": row["template_version"],
                        "source_checksum": row["source_checksum"]}
-    if row["channel"] == "product_form":
-        source_manifest["admin_context_choices"] = _admin_choices_provenance()
+    source_manifest.update(normalized["applied_policy"])
     version_id = create_organization_context_draft(
         connection, organization_id=organization_id, definition=definition,
         source_manifest=source_manifest,
@@ -288,7 +390,8 @@ def confirm(connection, *, revision_id: int, organization_id: int, confirmed_by:
            answers_json=%s::jsonb,validation_json=%s::jsonb
            WHERE id=%s RETURNING *""",
         (confirmed_by, version_id, json.dumps(participant_briefing, ensure_ascii=False),
-         json.dumps(answers, ensure_ascii=False), json.dumps({"errors": [], "missing": []}),
+         json.dumps(answers, ensure_ascii=False), json.dumps({"errors": [], "missing": [],
+             "applied_policy": normalized["applied_policy"]}, ensure_ascii=False),
          row["id"]),
     ).fetchone()
     return dict(saved)
@@ -498,7 +601,18 @@ def _projection_changes(current: dict, proposed: dict) -> list[dict]:
 def public_revision(row: dict, *, confirmed_row: dict | None = None) -> dict:
     """Admin-safe projection without raw source, checksums or internal request metadata."""
     item = dict(row)
-    normalized = _current_revision_validation(item)
+    try:
+        normalized = _current_revision_validation(item)
+    except ValueError as exc:
+        if not str(exc).startswith(("ADMIN_CONTEXT_CHOICES_", "QUESTIONNAIRE_LEGACY_CHOICES_")):
+            raise
+        answers = dict(item.get("answers_json") or {})
+        answers.pop("C04", None)
+        if "C21" in answers:
+            answers["C21"] = {key: value for key, value in answers["C21"].items()
+                              if ("C21", key) not in LEGACY_FIELDS}
+        normalized = {"answers": answers, "errors": [{"code": str(exc)}],
+                      "missing": [], "status": "invalid"}
     answers = normalized["answers"]
     participant_preview = _participant_projection(answers)
     current_projection = _participant_projection(

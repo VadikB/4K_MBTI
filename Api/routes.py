@@ -4650,27 +4650,7 @@ def create_admin_organization(payload: AdminOrganizationCreateRequest, request: 
     org_code = _normalize_admin_org_code(payload.code)
     org_name = _normalize_admin_org_name(payload.name)
     with get_connection() as connection:
-        scope = _get_admin_scope_or_403(connection, user)
-        if not scope.is_superadmin:
-            if len(scope.organization_ids) != 1:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Первичное оформление доступно только для единственной закреплённой организации.",
-                )
-            try:
-                connection.execute(
-                    """
-                    UPDATE organizations
-                    SET code = %s, name = %s, updated_at = NOW()
-                    WHERE id = %s AND is_active = TRUE
-                    """,
-                    (org_code, org_name, int(scope.organization_ids[0])),
-                )
-                connection.commit()
-            except Exception as exc:
-                connection.rollback()
-                raise HTTPException(status_code=409, detail="Organization with this code already exists") from exc
-            return _build_admin_organizations(connection, scope)
+        scope = _require_superadmin(connection, user)
         try:
             connection.execute(
                 """
@@ -4712,6 +4692,11 @@ def update_admin_organization(organization_id: int, payload: AdminOrganizationUp
         raise HTTPException(status_code=400, detail="Employee count cannot be negative")
     with get_connection() as connection:
         scope = _require_organization_admin(connection, user, organization_id)
+        if not scope.is_superadmin and ({"code", "name"} & payload.model_fields_set):
+            raise HTTPException(
+                status_code=403,
+                detail="Имя организации меняется при подтверждении анкеты; код закреплённой организации недоступен для изменения.",
+            )
         org_row = connection.execute("SELECT id FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
         if org_row is None:
             raise HTTPException(status_code=404, detail="Organization not found")
