@@ -210,7 +210,8 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
         cycle_id: 'projection-cycle', status: { collection_status: 'active', remaining_seconds: remainingSeconds },
         return_policy_enabled: false,
         route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'projection-as' }], progress: { total_positions: 8 } },
-        current_situation: { assessment_situation_id: 'projection-as', status: 'active', participant_payload: payload },
+        current_situation: { assessment_situation_id: 'projection-as', status: 'active', participant_payload: payload,
+          response_format: fixture.response_format },
         trace: { turns: extraTurns, events: [] },
       }); }
       return fulfillJson(route, {}, 404);
@@ -218,6 +219,8 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
     await page.goto(`${base}/?screen=interview`);
     const situation = page.locator('.interview-message--situation');
     await expect(situation).toHaveCount(1);
+    await expect(page.locator('.interview-response-format')).toHaveText(
+      caseId === 'CASE.SPEC.02' ? 'Письменное задание' : 'Диалог');
     await expect(situation).toContainText(payload.introduction);
     for (const item of payload.initial_materials) await expect(situation).toContainText(item.text);
     await expect(situation).not.toContainText('определяются в AS');
@@ -247,13 +250,17 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
       { name: 'answer-input', locator: page.locator('#interview-textarea') },
       { name: 'answer-submit', locator: page.locator('#interview-submit-button') },
     ]);
-    // Desktop intentionally has an inner message scroller. Prove its last
-    // material remains reachable across live polls, not merely present in DOM.
-    const lastMaterial = situation.locator('li').last();
+    // Follow the participant path into the disclosure and keep the material
+    // reachable while the runtime polls.
+    const materials = situation.locator('details');
+    await materials.getByText('Доступные сведения', { exact: true }).click();
+    await expect(materials).toHaveJSProperty('open', true);
+    const lastMaterial = materials.locator('li').last();
     await lastMaterial.scrollIntoViewIfNeeded();
     await expect.poll(async () => (await viewportGeometry(lastMaterial)).visible_ratio).toBeGreaterThan(0);
     const beforeMaterialReads = reads;
     await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeMaterialReads + 2);
+    await expect(materials).toHaveJSProperty('open', true);
     const lastMaterialGeometry = await viewportGeometry(lastMaterial);
     assertViewportGeometry(lastMaterialGeometry, 'last-material-after-poll');
     // fullPage capture resizes the layout viewport and can reset a dvh-sized
