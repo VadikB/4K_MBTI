@@ -1446,3 +1446,11 @@ ADM-FIX-02: после решения владельца «считаем рев
 Адресные 10 PASS, backend 1305 PASS, frontend 476 PASS, lint/build PASS, browser8 PASS,
 live UI/HTTP/PG PASS. Полные HTTP/integration выполняются; далее отчёт и handoff.
 Push/PR/version/merge/deploy/artifact_publish=false; визуальная приёмка — владелец.
+
+
+Завершение локального ADM-FIX-03: runtime 03dc1e3f, final fetch main=3cc4934c.
+Backend1305/HTTP219/frontend476 PASS; integration488 PASS/2 real-LLM SKIPPED;
+адресный повтор10 PASS, browser8 PASS, live новая сессия/исходный текст/имя/дата PASS.
+Полный журнал и rollback — в карточке; изолированная PG остановлена, .venv-ссылка
+удалена. Далее человеческое review/визуальная приёмка и решение по PR; публикация,
+CI/Ready, version bump и выпуск не выполнялись. Открытых технических блокеров нет.

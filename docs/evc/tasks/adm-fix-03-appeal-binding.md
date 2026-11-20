@@ -1,5 +1,24 @@
 # ADM-FIX-03 — точное назначение обращения
 
+## Итог текущего этапа
+
+Локальная реализация и обязательный минимум завершены. Runtime-код зафиксирован
+в 03dc1e3f4a14ea9af9ffbcc8813a8e421523052a; последующий commit содержит только
+итоговый отчёт/STATE, описание будущего PR и дополнительные asserts исходного
+текста/даты в уже прошедшем live browser тесте. База при финальном fetch осталась
+3cc4934c59584ed06fa8ad17f83d85fb2db6c8f9. Версия 2.1.43 не менялась.
+
+Устаревшая новая отправка А после Б получает 409 без записи под Б; принятая
+команда А читается/повторяется со своей квитанцией после Б и после ответа админа.
+Отдельная отправка того же текста в Б имеет своё обращение. Подмены пары/ключа/
+текста и доступ чужого участника/tenant отклоняются. Ответ в новой сессии имеет
+сохранённого автора, время и отдельный исходный текст обращения.
+
+Открыто: человеческое review, визуальная приёмка владельцем; публикация ветки/PR,
+CI и выпуск не входили в допуск этого этапа. Они NOT_RUN, не PASS. Технических
+блокеров реализации нет. Полномочия branch_push/pr/version_bump/merge/deploy/
+artifact_publish=false. Управляющие документы и runtime-артефакты не менялись.
+
 ## Разведка и границы
 
 ТЗ прочитано целиком: /Users/vadim_bogachev/Downloads/P4K_ADM_FIX_03_Appeal_Binding_2026-11-20.md.
@@ -17,7 +36,7 @@ task manifest; отчёт Admin 03. M1 v1.4 FROZEN/CURRENT=NO; оцениван�
 артефакты не меняются. Контекст прошлых ADM-FIX переиспользован только там,
 где документы не менялись. Полные реквизиты и фактические проверки дополняются.
 
-## План совместимости (ожидает решения владельца)
+## Исходный план совместимости (допуск получен ниже)
 
 1. Адресная регрессия HTTP/PG на изолированной новой БД: старый экран А после Б.
 2. Команда получает UUID operation_id и точную пару assignment_id / questionnaire_revision_id.
@@ -40,8 +59,8 @@ task manifest; отчёт Admin 03. M1 v1.4 FROZEN/CURRENT=NO; оцениван�
 
 Локальная реализация/проверки разрешены запросом пользователя. branch_push/pr,
 version_bump/merge/deploy/artifact_publish=false: текст ТЗ не является отдельным
-разрешением на публикацию. Изменение схемы/API и публичного реквизита автора требует
-конкретного допуска по AGENTS и agent-workflow; зависимая реализация ожидает решения.
+разрешением на публикацию. Первоначально расширение схемы/API и публичного реквизита автора ожидало
+конкретного допуска по AGENTS и agent-workflow; решение владельца зафиксировано ниже.
 Остальные стоп-условия: предметные нормы/границы PM/артефакты/production доступ не меняются;
 удаление/миграция старых записей не требуется; откат выше, проверка совместимости обязательна.
 
@@ -136,3 +155,54 @@ Code-only rollback на 2.1.43 сохраняет таблицу и сообще
 Ready/release gate/full CI, человеческое review и отдельный допуск выпуска.
 Штатный account/org purge обнаруживает FK граф динамически и управляет USER triggers
 в своей транзакции; его контур не менялся (проверен scripts/purge_test_organization.py).
+
+## Реквизиты источников и review
+
+Прочитаны M4.Context v1.0 §M4.4–4.5, зеркало
+assessment_definitions/contexts/competencies_4k/1.1/m4_context_source.md,
+SHA256 9af86011c1ea1bef12058700bdd345c5cee335bbc6ec4d392fcfc4f3e5709fd1;
+Change01 §И-1/И-6/И-7, source.pdf SHA256
+ dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081;
+ADR-002: C-23/24 и раздел хранения/повторов/совместимости — технический контекст,
+обращение не становится Dialogue Turn или оценочным Evidence. Применён инвариант
+M4.4 сохранения контекста предыдущей оценки; новый смысл M1 не вводится.
+Отсутствующих предметных оснований для этой административной поправки не выявлено.
+
+Self-review по docs/evc/review-checklist.md: diff ограничен ADM-FIX-03, права owner/
+tenant проверены; публичное имя и расширение имеют явный допуск; прежние snapshots
+не меняются; запрос не запускает LLM, оценивание или исправление профиля; история и
+rollback сохранены. Проверка динамического purge/FK графа — анализ кода, не отдельный
+запуск удаления аккаунта с новой квитанцией. Человеческое review этим не заменено.
+Визуальная приёмка остаётся владельцу; browser asserts подтверждают поведение,
+но не назначают человеческий PASS. Черновик описания PR: adm-fix-03-pr-body.md.
+
+
+## Окончательные проверки и очистка
+
+Для runtime-кода 03dc1e3f и неизменённых потребителей, все команды exit 0:
+
+| Команда | Фактический результат |
+| --- | --- |
+| `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 npm run test:backend` | 1305 PASS, 713 deselected; 130.34 s |
+| `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 npm run test:backend:http` | 219 PASS, 15 deselected; 67.86 s |
+| `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 TEST_DATABASE_URL=… STAND_ADMIN_URL=… npm run test:backend:integration` | 488 PASS / 2 explicit real-provider SKIPPED, 1528 deselected; 925.93 s |
+| `node --test tests/frontend/*.test.mjs` | 476 PASS; 8.02 s |
+| `npm run lint:js`, `npm run build:web` | PASS, 2.1.43 без bump |
+| `npx playwright test tests/browser/w02-acquaintance.spec.mjs tests/browser/admin-appeals.spec.mjs` | 8 PASS; 19.9 s |
+| `.venv/bin/python -m pytest tests/integration/test_admin_appeals_db.py tests/integration/test_w02_acquaintance_db.py tests/integration/test_path_admin_contract_owned_stand.py --run-integration -q` | Финальный адресный повтор на 03dc1e3f: 10 PASS; 20.38 s |
+| `TEST_DATABASE_URL=… ADMIN03_PYTHON=… node tests/browser/admin-appeals-live.mjs` | PASS; финальный повтор дополнительно проверил видимые исходный текст, имя и дату |
+| `git diff --check`, существование локальных ссылок/описанных команд | PASS |
+
+TEST_DATABASE_URL указывал исключительно на
+postgresql://adm_fix_pytest@127.0.0.1:55484/agent4k_pytest,
+STAND_ADMIN_URL — тот же собственный localhost:55484/postgres. Child БД создавались
+и удалялись marker-owned harness. Реальные LLM SKIPPED:
+tests/llm/test_m10_real_cycle_db.py:148 и :338; платных вызовов и почты нет.
+Журналы дополнены /private/tmp/adm-fix-03-targeted-final.log и live-final.log.
+PostgreSQL /private/tmp/adm-fix-03-pg-utf8.l52jAK/data остановлена штатно:
+server stopped / exit 0. Проверенная временная .venv-ссылка удалена; основной
+интерпретатор, чужой dirty root и пользовательские данные сохранены.
+
+Следующий минимальный шаг: человеческое review локального результата и решение о
+передаче одного PR. Уже согласованный допуск схемы/API/full_name повторно не требуется.
+Перед возможным merge нужны разрешённый кандидат, актуальная база, Ready и полный CI.
