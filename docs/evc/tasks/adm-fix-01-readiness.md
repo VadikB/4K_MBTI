@@ -25,7 +25,7 @@ M4.4 → сохранение версий источников → C-23/C-24, P
 confirmation и PersonalizedProfile → late_readiness и административная проекция →
 SQL/HTTP регрессии. PM-03 выполняет подготовку; PM-04 допускает старт по существующему
 плану и первой AS. Нормы M1/Change01 не меняются, CURRENT не назначается.
-Внешний аудит по chatgpt library недоступен из локальных источников; ТЗ содержит
+Внешний аудит по ChatGPT Library не загружался; ТЗ содержит
 воспроизводимые симптомы и точные ссылки на код. Для исправления достаточно кода,
 действующих контрактов и регрессии. Новых предметных решений не требуется.
 Все восемь стоп-условий рабочего цикла: нет, область исправления задана владельцем,
@@ -37,7 +37,7 @@ SQL/HTTP регрессии. PM-03 выполняет подготовку; PM-0
    preparation выбирается по user_id без lineage.
 2. Воспроизведение регрессий на базе — завершено (KeyError/HTTP 500).
 3. Исправление и адресные SQL/HTTP проверки — завершено, 17 PASS.
-4. Backend 1301 PASS, HTTP 218 PASS, review/diff PASS. Полный integration — активно; затем draft PR.
+4. Backend 1301 PASS, HTTP 218 PASS, review/diff PASS. Полный integration 484 PASS / 2 llm SKIPPED; завершено. Публикация draft PR ожидает явного допуска.
 
 ## Проверки
 
@@ -111,7 +111,7 @@ Legacy без доказуемого lineage не объявляется акт�
 Визуальное представление владельцем пока не принято. Изменения UI/JS отсутствуют,
 локальные frontend lint/build неприменимы; обязательный frontend CI сохраняется.
 
-## Проверки на рабочем diff
+## Проверки реализации c4da229888a0fcb591b2e352f285366376a95c47
 
 Синтетическая PostgreSQL 15.16 поднята с нуля в `/private/tmp/adm-fix-01-pg`,
 localhost:55481, trust только для локального тестового экземпляра, данные UTF8.
@@ -120,14 +120,14 @@ localhost:55481, trust только для локального тестовог
 | Команда | Результат / exit code |
 | --- | --- |
 | `git diff --check` | PASS / 0 |
-| `PYTHON_DOTENV_DISABLED=1 npm run test:backend` | PASS / 0, 1301 passed, 707 deselected; повтор вне sandbox после PermissionError ps. Первые 2 unit failures — устаревшие тестовые adapters; исправлены и проверены |
+| `PYTHON_DOTENV_DISABLED=1 npm run test:backend` | PASS / 0, 1301 passed, 708 deselected; повтор вне sandbox после PermissionError ps. Первые 2 unit failures — устаревшие тестовые adapters; исправлены и проверены |
 | `PYTHON_DOTENV_DISABLED=1 npm run test:backend:http` | PASS / 0, 218 passed, 15 deselected |
 | `PYTHON_DOTENV_DISABLED=1 TEST_DATABASE_URL=postgresql://adm_pytest@127.0.0.1:55481/agent4k_pytest .venv/bin/python -m pytest -q --run-integration tests/integration/test_questionnaire_sources_db.py tests/integration/test_path_start_assignment_lineage_db.py` | PASS / 0, 17 passed |
 | `... .venv/bin/python -m pytest -q tests/unit/test_questionnaire_sources.py` | PASS / 0, 13 passed |
 | Integration, EXEC-FIX-02 additional/retry на agent4k_pytest | PASS / 0, 25 passed. На adm_fix_01_pytest первый запуск остановлен guard фиксированного имени; новые fixtures не ослаблялись |
 
 Один warning Starlette/httpx — существующая deprecation, не ошибка. Финальный полный
-integration запущен на поддерживаемом имени новой БД; результат будет записан перед PR.
+integration выполнен на поддерживаемом имени новой БД: 484 PASS / 2 SKIPPED / exit 0 (883.57 s).
 Предыдущий общий прогон на adm_fix_01_pytest не объявляется успешным из-за guard.
 Дополнительно прочитаны path-start-01 (lineage) и p4k-remain-01 TASK/CHECKS:
 повторное назначение с теми же источниками не наследует чужую подготовку.
@@ -137,5 +137,53 @@ integration запущен на поддерживаемом имени ново
 CI для точного head, Ready/release gate, browser/визуальная приёмка и выпуск — пока NOT_RUN.
 Ready требует отдельного допуска на номер приложения; draft не означает выпуск.
 LLM/реальная почта/публикация/merge/deploy не требовались и не выполнялись.
-После локального integration: commit, один draft PR; затем CI/review и решение владельца
+После завершённого локального integration: один draft PR после явного допуска; затем CI/review и решение владельца
 на выпуск/номер и визуальную приёмку. Предметных открытых решений ADM-FIX-01 нет.
+
+Повтор backend на неизменённом implementation commit `c4da229888a0fcb591b2e352f285366376a95c47`:
+1301 PASS / 708 deselected / exit 0 (109.77 s). HTTP на том же commit:
+218 PASS / 15 deselected / exit 0 (60.98 s). Позднейшие изменения этой карточки —
+только запись доказательств; runtime и tests соответствуют этому commit.
+
+## Финальный полный integration
+
+`PYTHON_DOTENV_DISABLED=1 TEST_DATABASE_URL=postgresql://adm_pytest@127.0.0.1:55481/agent4k_pytest STAND_ADMIN_URL=postgresql://adm_pytest@127.0.0.1:55481/postgres npm run test:backend:integration`
+→ **PASS / exit 0: 484 passed, 2 skipped, 1523 deselected**, 883.57 s.
+Результат относится к implementation `c4da229888a0fcb591b2e352f285366376a95c47`;
+пропущены только два explicit real-provider acceptance в tests/llm/test_m10_real_cycle_db.py
+(строки 148/338). Все 17 адресных SQL/HTTP регрессий входят в этот полный прогон.
+Первый общий прогон на неподдерживаемом имени БД: 458 PASS / 2 SKIPPED / 25 fixture
+ERROR / exit 1; последующий адресный повтор 25 PASS и окончательный полный PASS выше
+устранили причину без изменения guards. Первое sandbox-падение ps также устранено
+повтором в разрешённой среде. Неразобранных локальных FAIL/ERROR нет.
+
+## Состояние main и кандидата
+
+В начале и при воспроизведении `origin/main=e4bc5c88c45b775a6406f034750e75aa1e4c47be`.
+При повторном fetch во время проверки main продвинулся до
+`fa55e1eff21864448b0dcb88dd81cdbcbb2d9a56` (PR #257, M1/M6, 2.1.41).
+`git diff e4bc5c88 origin/main -- Api/acquaintance.py Api/questionnaire_sources.py
+Api/routes.py tests/integration/test_questionnaire_sources_db.py
+ tests/integration/test_path_start_assignment_lineage_db.py` пуст: относящиеся к ADM-FIX-01
+код/тесты в новом main не исправлены и не конфликтуют. Ветка сохраняет проверенную
+исходную базу e4bc5c88; результаты локального набора не объявляются проверкой
+непроверенного сочетания с новым M6. Перед Ready необходимы синхронизация main,
+release preflight/номер и обязательный CI нового head/base.
+
+Runtime/checks зафиксированы в c4da2298; следующий коммит содержит только этот отчёт.
+Рабочий каталог: `/private/tmp/4k-adm-fix-01`. Локальная реализация/проверки завершены.
+Следующие зависимости: явное разрешение push/PR, CI, визуальная приёмка владельца,
+решение о Ready/номере/выпуске.
+
+## Блокировка внешней передачи
+
+Автоматическая проверка отклонила команду push рабочей ветки и создания draft PR
+в `https://github.com/VadikB/4K_MBTI`: запрос на реализацию в рабочей ветке не признан
+явным разрешением передать приватный код этому destination. Команда не выполнялась,
+push/PR отсутствуют. Запрашивается явное разрешение владельца на оба действия;
+обход блокировки не предпринимался. Публикация не включала merge/deploy.
+
+Очистка: созданный PostgreSQL `/private/tmp/adm-fix-01-pg` штатно остановлен;
+`pg_ctl status` → `no server running` / exit 3 (ожидаемое подтверждение остановки).
+Временная ссылка `.venv` удалена; рабочее дерево чистое. Текст draft PR подготовлен
+в `/private/tmp/adm-fix-01-pr-body.md`, внешняя передача ожидает разрешения.
