@@ -411,6 +411,11 @@ const checkProductInterviewAnswer = async (operation) => {
   const value = await readProductInterviewAnswerStatus(operation);
   if (!isProductInterviewPresentationCurrent(operation)) return;
   applyProductInterviewAnswerStatus(operation, value, confirmedProductInterviewSnapshot);
+  const pending = readProductInterviewAnswer(operation);
+  if (value.status === 'absent' && pending?.status === 'unknown'
+      && pending.requestId === operation.requestId && pending.turnId === operation.turnId) {
+    saveProductInterviewAnswer({ ...pending, absenceChecked: true });
+  }
   await loadProductRuntime();
 };
 
@@ -464,6 +469,15 @@ const renderProductInterviewNotice = (snapshot) => {
     showProductCommandRecovery(scope, 'Ошибка отправки. Текст сохранён в поле.', { ...options, failed: true,
       ...(couldRetry ? { checkLabel: 'Повторить отправку', onCheck: () => retryRejectedProductAnswer(operation) }
         : { check: unread }) });
+    return true;
+  }
+  if (operation?.status === 'unknown' && operation.absenceChecked && !unread && !receipt
+      && confirmedProductInterviewCanSend && productInterviewSourcePhase(snapshot) === operation.sourcePhase
+      && !durableDraft?.conflicted()) {
+    showProductCommandRecovery(scope, 'Ответ пока не сохранён. Текст остался в поле.', { ...options, failed: true,
+      checkLabel: 'Повторить отправку', onCheck: () => sendProductInterviewAnswer(operation.text, {
+        scope: operation, draftValue: operation.draftValue,
+      }) });
     return true;
   }
   if (['unknown', 'rejected'].includes(operation?.status) && !receipt) {
@@ -667,6 +681,11 @@ const reconcileProductInterviewAnswer = (snapshot) => {
     situationId: snapshot.current_situation?.assessment_situation_id };
   const operation = readProductInterviewAnswer(scope);
   if (!operation) return null;
+  if (operation.status === 'rejected' && operation.rejectionConfirmed
+      && operation.sourcePhase !== productInterviewSourcePhase(snapshot)) {
+    applyProductInterviewAnswerStatus(operation, { status: 'absent' }, snapshot);
+    return null;
+  }
   if (operation.status === 'prepared' && !productInterviewRequests.has(productInterviewRequestKey(operation))) {
     productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
     return null;
@@ -2602,6 +2621,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
     operation.lastPostFresh = operation.status === 'prepared' && Number(operation.attemptCount || 0) === 0;
     operation.attemptCount = Number(operation.attemptCount || 0) + 1;
     operation.status = 'unknown';
+    operation.absenceChecked = false;
     saveProductInterviewAnswer(operation);
     const response = await fetchWithDeadline(operation.endpoint, { method: 'POST',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

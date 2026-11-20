@@ -154,9 +154,10 @@ for (const width of [1440, 390, 320]) {
     await page.route('**/answer-status?**', route => {
       reads++; const q = new URL(route.request().url()).searchParams;
       expect(q.get('request_id')).toBe(body.request_id); expect(q.get('turn_id')).toBe(body.turn_id);
-      return route.fulfill({ json: { status: accepted ? 'accepted' : 'absent', cycle_id: run.model.cycle_id, assessment_situation_id: 'synthetic-as',
+      if (!accepted) return route.abort('failed');
+      return route.fulfill({ json: { status: 'accepted', cycle_id: run.model.cycle_id, assessment_situation_id: 'synthetic-as',
         request_id: body.request_id, turn_id: body.turn_id, clarification_id: null,
-        ...(accepted ? { processing_status: 'applied', turn: run.receipt } : {}) } });
+        processing_status: 'applied', turn: run.receipt } });
     });
     await page.locator('#interview-textarea').fill('Ответ с неизвестным исходом');
     await page.locator('#interview-submit-button').click();

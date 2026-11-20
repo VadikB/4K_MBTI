@@ -678,7 +678,7 @@ test('F08 Finish without ASK closes the AS and waits for explicit Next',async({p
  });
  expect(receipt.report_opened).toBe(true);
 });
-test('F07 known 409 from a closed AS is shown beside the answer without another Turn',async({page,stand})=>{
+test('F07 known 409 from a closed AS preserves the draft and releases its old answer slot',async({page,stand})=>{
  test.setTimeout(240000);
  await login(page,stand);await start(page);await answer(page);
  const first=await runtime(page,stand);
@@ -695,17 +695,16 @@ test('F07 known 409 from a closed AS is shown beside the answer without another 
    && new URL(response.url()).pathname.endsWith(`/situations/${situationId}/turns`));
  await page.locator('#interview-submit-button').click();
  expect((await rejected).status()).toBe(409);
- await expect(page.locator('.interview-message.own').last().locator('.interview-message-delivery-status'))
-   .toContainText('Предыдущее действие ещё обрабатывается');
+ await expect(page.locator('#interview-error')).toContainText('Ошибка отправки. Текст сохранён в поле.');
+ await expect(page.locator('#interview-textarea')).toHaveValue(rejectedText);
+ await expect(page.locator('.interview-message-delivery-status:visible')).toHaveCount(0);
  const server=await (await page.request.get(`${stand.url}/users/assessment/cycles/${first.cycle_id}/runtime`)).json();
  expect(server.trace.turns.filter(turn=>turn.content_text===rejectedText)).toHaveLength(0);
  await page.unroute(runtimePath);
  stand.cli('drain');
  await page.reload();
- const checkRejected=page.locator('.interview-message-retry:visible').last();
- await expect(checkRejected).toHaveText('Проверить состояние');
- await checkRejected.click();
- await expect(page.locator('#interview-submit-button')).toBeEnabled();
+ await expect(page.getByRole('button',{name:'Повторить отправку',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Мои оценки',exact:true})).toBeEnabled();
  const receipt=await completeStartedAssessment({
    page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
    initialSituationId:situationId,advanceWorkers:async()=>stand.cli('drain'),
@@ -727,17 +726,16 @@ test('F07 fresh 403 is explained without persisting the refused Turn',async({pag
  });
  await page.locator('#interview-textarea').fill(rejectedText);
  await page.locator('#interview-submit-button').click();
- await expect(page.locator('.interview-message.own').last().locator('.interview-message-delivery-status'))
-   .toContainText('Сервер запретил отправку ответа');
+ await expect(page.locator('#interview-error')).toContainText('Ошибка отправки. Текст сохранён в поле.');
+ await expect(page.locator('#interview-textarea')).toHaveValue(rejectedText);
  await expect(page.locator('#interview-submit-button')).toBeDisabled();
  expect(refusedPosts).toBe(1);
  const server=await (await page.request.get(`${stand.url}/users/assessment/cycles/${first.cycle_id}/runtime`)).json();
  expect(server.trace.turns.filter(turn=>turn.content_text===rejectedText)).toHaveLength(0);
  await page.unroute(turnPath);
- const check=page.locator('.interview-message-retry:visible').last();
- await expect(check).toHaveText('Проверить состояние');
- await check.click();
- await expect(page.locator('#interview-submit-button')).toBeEnabled();
+ await page.getByRole('button',{name:'Повторить отправку',exact:true}).click();
+ await expect.poll(async()=> (await runtime(page,stand)).trace.turns
+   .filter(turn=>turn.content_text===rejectedText).length).toBe(1);
  const receipt=await completeStartedAssessment({
    page,base:stand.url,cycleId:first.cycle_id,runId:stand.state.run_id,evidenceDir:stand.dir,
    initialSituationId:situationId,advanceWorkers:async()=>stand.cli('drain'),
@@ -1294,8 +1292,16 @@ test('Recovery: lost response, unaccepted request, two tabs and owner boundaries
    }else{
     await expect(page.locator('#interview-error')).toBeVisible();
     await expect(page.locator('#interview-submit-button')).toBeDisabled();
-    const retry=page.locator('.interview-message.own .interview-message-retry:visible');
-    await expect(retry).toHaveCount(1);
+    const status=page.locator('#interview-error');
+    const checking=page.waitForResponse(response=>response.request().method()==='GET'
+      && new URL(response.url()).pathname.endsWith('/answer-status'));
+    await status.getByRole('button',{name:'Проверить отправку',exact:true}).click();
+    const checked=new URL((await checking).url());
+    expect(checked.searchParams.get('turn_id')).toBe(seen[0].turn_id);
+    expect(checked.searchParams.get('request_id')).toBe(seen[0].request_id);
+    const retry=status.getByRole('button',{name:'Повторить отправку',exact:true});
+    await expect(retry).toBeVisible();
+    expect(seen).toHaveLength(1);
     await retry.click();
    }
    await expect(settledAnswerStatus(page)).toBeAttached();
