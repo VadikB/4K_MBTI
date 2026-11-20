@@ -11,7 +11,10 @@ from tests.preparation_assertions import assert_same_operation_readback
 from Api.llm import deepseek_gateway as gateway_module
 from Api import m10_product_flow, m7_cycle_planner
 from Api.product_cycle_preparation_queue import _canonical
-from tests.integration.test_exec_fix02_retry_db import test_database_url, configured_database_url, product_db, retry_env, _post, _process, _first, _close
+from tests.integration.test_exec_fix02_retry_db import (
+    test_database_url, configured_database_url, product_db, retry_env, _post, _process, _first, _close,
+    _present_admitted_next,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -105,6 +108,7 @@ def test_legacy_unscoped_next_failure_keeps_its_retry_classification(retry_env, 
         assert job['request_json']['preparation_key'] == 'legacy-next'
         assert result['status'] == 'completed', result
         second_as = result['result_json']['decision']['assessment_situation_id']
+        _present_admitted_next(env, cycle, second_as)
         _close(env, cycle, second_as)
         third = _post(env, 'post-legacy-next-position', cycle)
         assert third.status_code == 201 and third.json()['status'] == 'queued'

@@ -12,3 +12,11 @@ pytestmark = pytest.mark.integration
 def test_admission01_next_failure_preserves_closed_work_and_safe_http_readback(
         product_db, monkeypatch, tmp_path, outcome):
     functional_path(product_db, monkeypatch, tmp_path, True, False, None, None, next_failure=outcome)
+
+
+
+@pytest.mark.parametrize('case', ['TECHNICAL_RETRY', 'CALENDAR_EXPIRY'])
+def test_asux04_prepared_next_keeps_exact_route_and_time(product_db, monkeypatch, tmp_path, case):
+    functional_path(product_db, monkeypatch, tmp_path, True, False, None, None,
+                    next_failure='TECHNICAL' if case == 'TECHNICAL_RETRY' else None,
+                    next_expiry=case == 'CALENDAR_EXPIRY')

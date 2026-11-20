@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
-import { draftFixture, preparationModel } from './fixtures/postw02-qa.mjs';
+import { draftFixture } from './fixtures/postw02-qa.mjs';
 
 const evidence = process.env.QA03_EVIDENCE || 'docs/evc/tasks/p4k-postw02-qa-03/evidence/browser';
 let server, base;
@@ -31,91 +31,111 @@ const snap = async (page, name, width) => {
   await page.evaluate(() => document.fonts.ready);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
   const action = page.locator('.next-situation-button');
-  if (await action.count()) {
-    const box = await action.boundingBox(); expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  if (await action.isVisible()) {
+    const box = await action.boundingBox(); expect(box).not.toBeNull(); expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
   }
   await page.screenshot({ path: `${evidence}/${name}-${width}.png`, fullPage: true, scale: 'css' });
 };
 
-for (const width of [1440, 390, 320]) test(`R3/R4/R6/R7/R9 current Next, time, focus and recovery ${width}`, async ({ page }) => {
-  test.setTimeout(20000);
-  await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+for (const width of [1440, 390, 320]) test(`ASUX-04 Next, receipt, budget and explicit presentation ${width}`, async ({ page }) => {
+  test.setTimeout(30000);
+  await page.setViewportSize({ width, height: 900 });
   await page.clock.install({ time: new Date('2026-11-17T12:00:00Z') });
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const run = await draftFixture(page), active = structuredClone(run.model);
-  await page.goto(`${base}/?screen=interview`); await expect(page.locator('#interview-textarea')).toBeEnabled();
-  Object.assign(run.model, { current_situation: null, between_situations: true, blocking_system_wait: false,
-    status: { ...run.model.status, collection_status: 'paused' }, trace: { turns: [], events: [] } });
-  await page.clock.runFor(1300);
-  const next = page.locator('.next-situation-button'), timer = page.locator('#interview-timer-badge');
-  await expect(next).toHaveText('Приступить к следующей ситуации');
-  await expect(page.locator('.preparation-time-notice')).toHaveText('Время на ответы сейчас не расходуется. Общий срок завершения оценки продолжает идти');
-  await expect(timer).toHaveText('Время выполнения · 120:00'); await snap(page, 'paused', width);
-  let posts = 0, checks = 0, operationId, phase = 'running';
+  const deadline = '2026-11-20T12:00:00Z';
+  const target = { assessment_situation_id: 'admitted-next', expected_plan_revision_id: 'saved-plan' };
+  const user = { id: 8, email: 'synthetic@example.test', full_name: 'Участник' };
+  const dashboard = { current_assessments: [{ cycle_id: run.model.cycle_id, title: 'Синтетическая оценка',
+    status: 'paused', journey_state: 'between_situations', status_label: 'Между ситуациями',
+    action: 'continue', button_label: 'Продолжить', planned_total: 8 }] };
+  const requests = { prepare: 0, reads: 0, present: 0, effectivePresentations: 0 };
   const entered = deferred(), release = deferred();
-  await page.route('**/users/assessment/m7/cycles/synthetic-cycle/next', async route => {
-    posts++; operationId = route.request().postDataJSON().idempotency_key; entered.resolve(); await release.promise;
-    try { await route.abort('failed'); } catch { /* The controlled deadline may have already aborted this request. */ }
+  const install = async (tab) => {
+    await tab.route('**/users/8/session-bootstrap', route => route.fulfill({ json: { user, dashboard } }));
+    await tab.route('**/users/session/restore', route => route.fulfill({ json: { authenticated: true, user, dashboard } }));
+    await tab.route('**/users/assessment/m7/cycles/synthetic-cycle/next', async route => {
+      requests.prepare++;
+      const { idempotency_key: id, after_assessment_situation_id: after } = route.request().postDataJSON();
+      expect(id).toBe('next:synthetic-as'); expect(after).toBe('synthetic-as');
+      run.model.preparation_operation = { operation_id: id, status: 'running' };
+      entered.resolve();
+      await release.promise;
+      await route.abort('failed');
+    });
+    await tab.route('**/users/assessment/cycles/preparation/**', route => {
+      requests.reads++;
+      expect(route.request().url()).toContain('/preparation/next%3Asynthetic-as');
+      return route.fulfill({ json: run.model.preparation_operation });
+    });
+    await tab.route('**/users/assessment/m7/cycles/synthetic-cycle/present-next', route => {
+      requests.present++;
+      expect(route.request().postDataJSON()).toEqual(target);
+      if (run.model.between_situations) {
+        requests.effectivePresentations++;
+        Object.assign(run.model, active, { between_situations: false, next_presentation: null,
+          current_situation: { ...active.current_situation, assessment_situation_id: target.assessment_situation_id },
+          status: { collection_status: 'active', remaining_seconds: 2719, calendar_deadline: deadline } });
+      }
+      return route.fulfill({ json: { presentation: target } });
+    });
+  };
+  await install(page);
+  await page.route('**/users/assessment/m7/cycles/synthetic-cycle/finish-situation', route => {
+    Object.assign(run.model, { current_situation: null, between_situations: true, blocking_system_wait: false,
+      participant_progress: { planned_total: 8, last_completed_position_no: 1 },
+      route: { ...run.model.route, positions: [{ position_no: 1, state: 'completed', current_assessment_situation_id: 'synthetic-as' }] },
+      status: { collection_status: 'paused', remaining_seconds: 2720, calendar_deadline: deadline }, trace: null });
+    return route.fulfill({ json: { status: 'between_situations', assessment_situation_id: 'synthetic-as' } });
   });
-  await page.route('**/users/assessment/cycles/preparation/**', route => {
-    checks++; expect(new URL(route.request().url()).pathname).toBe('/users/assessment/cycles/preparation/' + operationId);
-    return route.fulfill({ json: { operation_id: operationId, status: phase,
-      preparation: run.model.preparation_operation?.preparation,
-      ...(phase === 'completed' ? { result: { decision: { status: 'SELECTED' } } } : {}) } });
-  });
-  await next.click(); await entered.promise;
-  await page.evaluate(() => { window.qa03OldCard = document.querySelector('.interview-return-card'); });
-  run.model.preparation_operation = { operation_id: operationId, status: 'queued', preparation: { ...preparationModel,
-    operation_id: operationId, kind: 'next', status: 'queued', stage_label: 'Готовим следующую ситуацию',
-    started_at: '2026-11-17T11:30:00Z', stage_started_at: '2026-11-17T11:33:00Z', read_at: '2026-11-17T12:00:00Z' } };
-  await page.clock.runFor(1300); await expect(next).toHaveText('Проверить состояние'); await expect(next).toBeDisabled();
-  expect(await page.evaluate(() => qa03OldCard.isConnected)).toBe(false);
-  run.model.preparation_operation.status = 'running'; run.model.preparation_operation.preparation.status = 'running'; await page.clock.runFor(1300); await expect(next).toBeDisabled();
+  run.model.current_situation.status = 'scenario_ended';
+  run.model.finish_availability = { allowed: true };
+  await page.goto(`${base}/?screen=interview`);
+  await page.locator('#interview-finish-button').click();
+  await entered.promise;
+  const next = page.locator('.next-situation-button'), timer = page.locator('#interview-timer-badge');
+  await expect(next).toHaveText('Проверить состояние');
+  await expect(page.getByText('Ситуация 1 завершена', { exact: true })).toBeVisible();
+  release.resolve();
+  await expect.poll(() => requests.reads).toBe(1);
+  await expect(next).toBeEnabled();
+  await expect(timer).toHaveText('45:20');
   await snap(page, 'running', width);
-  if (width === 390) await page.clock.runFor(30001); // Real production POST deadline, virtual clock.
-  release.resolve(); await expect(next).toBeEnabled(); await snap(page, 'recovered-button', width);
-  await next.evaluate(button => { button.click(); button.click(); }); await expect(next).toBeEnabled();
-  expect(posts).toBe(1); expect(checks).toBe(1);
-  const root = page.locator('#interview-panel [data-preparation-status]');
-  await root.locator('summary').click(); await root.getByRole('button', { name: 'Скопировать сведения' }).focus();
-  await page.evaluate(() => { window.qa03Card = document.querySelector('.interview-return-card'); });
-  const before = await page.evaluate(() => ({ y: scrollY, scroll: document.querySelector('#interview-scroll-area')?.scrollTop }));
-  await page.clock.runFor(1300); await expect(next).toBeEnabled();
-  await expect(root.locator('details')).toHaveAttribute('open', '');
-  await expect(root.getByRole('button', { name: 'Скопировать сведения' })).toBeFocused();
-  expect(await page.evaluate(() => qa03Card === document.querySelector('.interview-return-card'))).toBe(true);
-  expect(await page.evaluate(() => ({ y: scrollY, scroll: document.querySelector('#interview-scroll-area')?.scrollTop }))).toEqual(before);
-  // Successful response with unknown budget, then genuine GET failure, then recovery.
-  run.model.status.remaining_seconds = null; await page.clock.runFor(1300); await expect(timer).toHaveText('Время недоступно');
-  await expect(timer).not.toHaveClass(/is-low-time/); await snap(page, 'unknown', width);
-  run.offline = true; await page.clock.runFor(1300);
-  await expect(page.locator('.preparation-time-notice')).toContainText('Сведения о времени сейчас недоступны');
-  await snap(page, 'read-error', width);
-  run.offline = false; run.model.status.remaining_seconds = 7200; await page.clock.runFor(1300);
-  await expect(timer).toHaveText('Время выполнения · 120:00'); await expect(next).toBeEnabled();
-  // Readback of completed Next can only present the server-selected result.
-  phase = 'completed'; Object.assign(run.model, active, { between_situations: false }); run.model.preparation_operation = undefined;
-  await next.click(); await expect(page.locator('#interview-textarea')).toBeEnabled();
-  expect(posts).toBe(1); expect(checks).toBe(2);
-  expect(run.calls.filter(call => call.method === 'POST' && /\/start$|\/prepare$/.test(call.url))).toEqual([]);
-  expect(run.unexpected).toEqual([]); expect(errors).toEqual([]);
-  await fs.writeFile(`${evidence}/facts-${width}.json`, JSON.stringify({ posts, checks, sameCard: true, focusAndScrollPreserved: true, errors, unexpected: run.unexpected }, null, 2));
-});
-
-test('R1/R2 real polling continues across GETs slower than poll interval without overlapping requests', async ({ page }) => {
-  test.setTimeout(20000); await page.clock.install({ time: new Date('2026-11-17T12:00:00Z') });
-  const run = await draftFixture(page); await page.goto(`${base}/?screen=interview`);
+  await next.focus();
+  await page.clock.runFor(1300);
+  await expect(next).toBeFocused();
+  run.offline = true;
+  await next.click();
+  await expect(page.locator('[data-next-preparation-feedback]')).toContainText('Не удалось');
+  await expect(timer).toHaveText('Время недоступно');
+  run.offline = false;
+  run.model.next_presentation = target;
+  run.model.preparation_operation.status = 'completed';
+  await next.click();
+  await expect(next).toHaveText('Приступить к следующей ситуации');
+  await expect(timer).toHaveText('45:20');
+  await expect(page.locator('#interview-textarea')).toBeDisabled();
+  await page.reload();
+  await expect(next).toHaveText('Приступить к следующей ситуации');
+  await page.locator('#interview-profile-button').click();
+  await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
+  await expect(next).toHaveText('Приступить к следующей ситуации');
+  await expect(next).toBeVisible();
+  await snap(page, 'ready', width);
+  const other = await page.context().newPage();
+  await draftFixture(other, run); await install(other);
+  await other.goto(`${base}/?screen=interview`);
+  const otherNext = other.locator('.next-situation-button');
+  await expect(otherNext).toHaveText('Приступить к следующей ситуации');
+  expect(requests).toEqual({ prepare: 1, reads: 3, present: 0, effectivePresentations: 0 });
+  await Promise.all([next.click(), otherNext.click()]);
   await expect(page.locator('#interview-textarea')).toBeEnabled();
-  const held = [], release = [];
-  await page.route('**/users/assessment/cycles/synthetic-cycle/runtime', async route => {
-    const snapshot = structuredClone(run.model); const gate = deferred(); held.push(snapshot); release.push(gate.resolve); await gate.promise;
-    await route.fulfill({ json: snapshot });
-  });
-  for (let n = 0; n < 3; n++) {
-    run.model.status.remaining_seconds = 7100 - n;
-    await page.clock.runFor(1300); await expect.poll(() => held.length).toBe(n + 1);
-    await page.clock.runFor(2600); expect(held.length).toBe(n + 1);
-    release[n](); await expect(page.locator('#interview-timer-badge')).toContainText(n === 0 ? '118:20' : n === 1 ? '118:19' : '118:18');
-  }
+  await expect(other.locator('#interview-textarea')).toBeEnabled();
+  expect(requests).toEqual({ prepare: 1, reads: 3, present: 2, effectivePresentations: 1 });
+  expect(run.model.status.calendar_deadline).toBe(deadline);
+  expect(errors).toEqual([]);
   expect(run.unexpected).toEqual([]);
+  await other.close();
+  await fs.writeFile(`${evidence}/readback-${width}.json`, JSON.stringify({ ...requests, deadline,
+    savedTimer: '45:20', cabinetReturn: true, reload: true, browserErrors: errors }, null, 2));
 });

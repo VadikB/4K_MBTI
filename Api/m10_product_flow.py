@@ -188,6 +188,8 @@ def start_prepared(connection, *, user_id: int, cycle_id: str, key: str) -> dict
     if open_as["status"] == "active":
         return {"resumed": True, "plan": plan, "decision": None,
                 "presentation": dict(open_as)}
+    if cycle["started_at"] is not None:
+        raise ValueError("M7_EXPLICIT_NEXT_PRESENTATION_REQUIRED")
     presented = m7_cycle_planner.present(
         connection, decision_id=str(open_as["decision_id"]),
         expected_revision=int(open_as["revision_no"]),
@@ -245,7 +247,7 @@ def start_or_resume(connection, *, user_id: int, key: str,
                 )
             return {'resumed':True,**_present_next(connection,plan=current,user_id=user_id,key=f'product-prepared:{key}')}
         return {"resumed": True, "plan": current, "decision": None,
-                "presentation": dict(open_as) if open_as else None}
+                "presentation": dict(open_as) if open_as and open_as["status"] != "admitted" else None}
     profile_id = _owned_profile(connection, user_id, profile_id)
     with connection.transaction():
         observation.progress('plan')
@@ -300,6 +302,15 @@ def require_preparation_cycle(connection, *, cycle_id: str, user_id: int, lock: 
     return dict(cycle)
 
 
+def _last_closed_position(connection, cycle_db_id: int) -> dict | None:
+    return connection.execute(
+        """SELECT p.position_no,s.assessment_situation_id
+           FROM m7_route_positions p JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
+           WHERE p.cycle_db_id=%s AND s.status='closed'
+           ORDER BY p.position_no DESC LIMIT 1""", (cycle_db_id,),
+    ).fetchone()
+
+
 def next_preparation_scope(connection, *, cycle_id: str, user_id: int, check_current: bool = True, lock: bool = True) -> dict:
     """A next step advances only after its current route AS really closes."""
     if check_current:
@@ -310,12 +321,7 @@ def next_preparation_scope(connection, *, cycle_id: str, user_id: int, check_cur
         if not cycle:
             raise ValueError("M7_CYCLE_NOT_FOUND")
     plan = m7_cycle_planner.read_plan(connection, cycle_id)
-    previous = connection.execute(
-        """SELECT p.position_no,s.assessment_situation_id
-           FROM m7_route_positions p JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
-           WHERE p.cycle_db_id=%s AND s.status='closed'
-           ORDER BY p.position_no DESC LIMIT 1""", (cycle["id"],),
-    ).fetchone()
+    previous = _last_closed_position(connection, cycle["id"])
     return {"plan_revision_id": str(plan["revision_id"]),
             "after_position_no": int(previous["position_no"]) if previous else 0,
             "after_assessment_situation_id": str(previous["assessment_situation_id"]) if previous else None}
@@ -333,6 +339,42 @@ def prepare_next_situation(connection, *, cycle_id: str, user_id: int, key: str,
     return _prepare_next(
         connection, plan=plan, user_id=user_id, key=f"product-next:{key}", defer_as=defer_as,
     )
+
+
+def present_owned_next(connection, *, cycle_id: str, user_id: int,
+                       assessment_situation_id: str, expected_plan_revision_id: str) -> dict:
+    """Open only the saved current route AS identified by the participant's command."""
+    cycle = require_preparation_cycle(connection, cycle_id=cycle_id, user_id=user_id)
+    plan = m7_cycle_planner.read_plan(connection, cycle_id)
+    if str(plan["revision_id"]) != expected_plan_revision_id:
+        raise ValueError("M7_STALE_PLAN_REVISION")
+    current = connection.execute(
+        """SELECT s.assessment_situation_id,d.id AS decision_id,d.plan_revision_id
+           FROM m7_route_positions p
+           JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
+           JOIN m7_route_assignments a ON a.assessment_situation_db_id=s.id
+           JOIN m7_route_decisions d ON d.id=a.decision_id
+           WHERE p.cycle_db_id=%s AND p.state IN('not_presented','in_progress')
+             AND s.status IN('admitted','active')
+             AND EXISTS (
+                 SELECT 1 FROM m7_route_positions previous
+                 JOIN m5_assessment_situations closed ON closed.id=previous.current_as_db_id
+                 WHERE previous.cycle_db_id=p.cycle_db_id AND previous.position_no=p.position_no-1
+                   AND closed.status='closed')
+           ORDER BY p.position_no LIMIT 1""", (cycle["id"],),
+    ).fetchone()
+    if not current or str(current["assessment_situation_id"]) != assessment_situation_id:
+        raise ValueError("M7_NEXT_SITUATION_CHANGED")
+    if str(current["plan_revision_id"]) != expected_plan_revision_id:
+        raise ValueError("M7_STALE_PLAN_REVISION")
+    if cycle["status"] == "paused" and not connection.execute(
+        """SELECT 1 FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND ended_at IS NULL
+           AND interval_type='authorized_pause' AND reason='between_situations'""", (cycle["id"],),
+    ).fetchone():
+        raise ValueError("M7_NEXT_PRESENTATION_NOT_ALLOWED")
+    decision = next(d for d in plan["decisions"] if d["id"] == current["decision_id"])
+    result = present_prepared_next(connection, result={"plan": plan, "decision": decision})
+    return {**result, "presentation": {**result["presentation"], "assessment_situation_id": assessment_situation_id}}
 
 
 def uses_functional_generation(connection, *, cycle_id: str) -> bool:
@@ -355,7 +397,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     ).fetchall()
     route_current = connection.execute(
         """SELECT s.id,s.assessment_situation_id,s.status,s.snapshot_json,s.started_at,
-                  s.scenario_ended_at,s.closed_at
+                  s.scenario_ended_at,s.closed_at,p.plan_revision_id,p.position_no
            FROM m7_route_positions p
            JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
            WHERE p.cycle_db_id=%s AND p.state IN('not_presented','in_progress','awaiting_replacement')
@@ -372,13 +414,20 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         current = dict(situations[-1]) if situations else None
     else:
         current = None
-    between_situations = bool(status["collection_status"] in {"active", "paused"} and (
-        (current and current["status"] == "closed") or (not current and connection.execute(
-            """SELECT 1 FROM m7_route_positions p
-               JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
-               WHERE p.cycle_db_id=%s AND s.status='closed' LIMIT 1""", (cycle["id"],),
-        ).fetchone())))
+    from Api.participant_dashboard import cycle_progress
+    participant_progress = cycle_progress(connection, cycle)
+    previous = None
+    if status["collection_status"] in {"active", "paused"} and (
+            not current or current["status"] in {"admitted", "closed"}):
+        previous = _last_closed_position(connection, cycle["id"])
+    between_situations = bool(previous)
+    next_presentation = None
     if between_situations:
+        participant_progress["last_completed_position_no"] = int(previous["position_no"])
+        if (current and current["status"] == "admitted" and current.get("position_no", 0) > 1
+                and current.get("plan_revision_id") == plan["revision_id"]):
+            next_presentation = {"assessment_situation_id": str(current["assessment_situation_id"]),
+                                 "expected_plan_revision_id": str(plan["revision_id"])}
         current = None
     presented = bool(current and current["started_at"] is not None and current["status"] != "admitted")
     trace = participant_trace(
@@ -415,8 +464,6 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     ).fetchone()
     from Api.m7_route_replacement import replacement_metadata
     route = replacement_metadata(connection, cycle["id"])
-    from Api.participant_dashboard import cycle_progress
-    participant_progress = cycle_progress(connection, cycle)
     route["progress"]["total_positions"] = participant_progress["planned_total"]
     attached_ids = {item["assessment_situation_id"] for position in route["positions"]
                     for item in position["history"]}
@@ -445,7 +492,11 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         "continuation": ({"intent_id": str(continuation["id"]), "status": continuation["status"]}
                          if continuation else None),
         "pipeline": dict(pipeline) if pipeline else None,
-        **({"preparation_operation": _next_operation(connection, cycle_id)} if between_situations else {}),
+        **({
+            "preparation_operation": _next_operation(connection, cycle_id),
+            "next_presentation": next_presentation,
+            "next_preparation_after": str(previous["assessment_situation_id"]),
+        } if between_situations else {}),
     }
 
 

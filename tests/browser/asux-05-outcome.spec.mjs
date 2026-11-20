@@ -220,20 +220,23 @@ test('05.3 closing a Cycle, lost read, expiry, processing failure and access den
   run.handlers['/users/assessment/cycles/' + B + '/runtime'] = (route) => route.fulfill({ json: {
     cycle_id: B, status: { collection_status: 'active', remaining_seconds: 1200 }, between_situations: true,
     participant_progress: { planned_total: 8, last_completed_position_no: 2 },
+    next_preparation_after: 'as-closed',
+    preparation_operation: { operation_id: 'next:as-closed', status: 'completed',
+      decision_status: 'NO_ADMISSIBLE_CASE' },
     route: { positions: [], progress: { total_positions: 8, completed_positions: 2 } },
     situations: [], trace: { turns: [], events: [] },
   } });
-  run.handlers[cycleRoute + '/next'] = (route) => route.fulfill({ json: { decision: { status: 'NO_ADMISSIBLE_CASE' } } });
   run.handlers[cycleRoute + '/completion'] = async (route) => {
     expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON().idempotency_key).toBe('complete-after:as-closed');
     await closure.promise;
     await route.fulfill({ json: { cycle_id: B, states: { cycle: 'collection_closed' } } });
   };
   run.status[B] = (route) => route.abort('failed');
   await page.goto(preview.base + '/?screen=interview');
-  await page.getByRole('button', { name: 'Приступить к следующей ситуации', exact: true }).click();
   await expect(outcomeTitle(page)).toHaveText('Проверяем завершение оценки');
   await expect(outcomeButton(page, 'Проверить состояние')).toBeDisabled();
+  expect(run.calls).not.toContain('POST ' + cycleRoute + '/next');
   expect(run.calls).not.toContain('GET ' + statusPath(B));
   closure.release();
   await expect(outcomeTitle(page)).toHaveText('Готовим результат');
@@ -267,9 +270,7 @@ test('05.3 closing a Cycle, lost read, expiry, processing failure and access den
   await expect(outcomeTitle(page)).toHaveText('Нет доступа к этой оценке');
   await expect(outcomeButton(page, 'Посмотреть результат')).toBeHidden();
   await expect(outcomeButton(page, 'Открыть отчёт с ограничениями')).toBeHidden();
-  expect(run.calls.filter((call) => call.startsWith('POST '))).toEqual([
-    'POST ' + cycleRoute + '/next', 'POST ' + cycleRoute + '/completion',
-  ]);
+  expect(run.calls.filter((call) => call.startsWith('POST '))).toEqual(['POST ' + cycleRoute + '/completion']);
   expect(run.calls).not.toContain('GET ' + statusPath(A));
   await test.step('return to B after viewing A, then confirm and open the current report', async () => {
     run.journey = { next_action: 'show_dashboard', report_status: 'ready',

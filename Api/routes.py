@@ -61,7 +61,10 @@ from Api.typst_pdf_renderer import TypstRenderError
 from Api.m8_results_contracts import (CreateResultsRequest, CreateReportRequest,
     PrepareReportCorrectionRequest, PublishReportCorrectionRequest)
 from Api import m10_product_flow, m10_orchestration
-from Api.m10_contracts import ProductCycleStartRequest, ProductCycleActionRequest, ProductNextRequest
+from Api.m10_contracts import (
+    ProductCycleStartRequest, ProductCycleActionRequest, ProductNextRequest,
+    ProductNextPreparationRequest, ProductNextPresentationRequest,
+)
 from scripts.build_m5_case_package import OUTPUT as M5_PACKAGE_DIR
 from Api.assessment_role_profiles import (
     create_organization_role_profile_draft,
@@ -6874,42 +6877,88 @@ def read_owned_assessment_runtime(cycle_id:UUID,request:Request):
 
 
 @router.post('/assessment/m7/cycles/{cycle_id}/next', status_code=201)
-def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,request:Request):
-    user=_m7_owned_cycle(request,str(cycle_id))
+def next_owned_assessment_situation(cycle_id:UUID,payload:ProductNextPreparationRequest,request:Request):
+    user = _m7_owned_cycle(request, str(cycle_id))
+    try:
+        operation = product_cycle_preparation_queue.enqueue(
+            operation_id=payload.idempotency_key, user_id=int(user.id),
+            request={'kind': 'next', 'cycle_id': str(cycle_id), **payload.model_dump(exclude_none=True)},
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail='Нет доступа к операции подготовки Cycle.') from exc
+    except ValueError as exc:
+        if str(exc) == 'PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT':
+            raise HTTPException(status_code=409, detail='Ключ операции уже использован для другого запроса.') from exc
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return public_operation(operation)
+
+
+@router.post('/assessment/m7/cycles/{cycle_id}/present-next', status_code=201)
+def present_owned_assessment_next(cycle_id:UUID,payload:ProductNextPresentationRequest,request:Request):
+    cycle_id = str(cycle_id)
+    user = _m7_owned_cycle(request, cycle_id)
     try:
         with get_connection() as connection:
-            if m10_product_flow.uses_functional_generation(connection,cycle_id=str(cycle_id)):
-                try:
-                    operation=product_cycle_preparation_queue.enqueue(
-                        operation_id=payload.idempotency_key,user_id=int(user.id),request={
-                            'kind':'next','cycle_id':str(cycle_id),'idempotency_key':payload.idempotency_key,
-                        })
-                except PermissionError as exc:
-                    raise HTTPException(status_code=403,detail='Нет доступа к операции подготовки Cycle.') from exc
-                except ValueError as exc:
-                    if str(exc)=='PRODUCT_CYCLE_PREPARATION_IDEMPOTENCY_CONFLICT':
-                        raise HTTPException(status_code=409,detail='Ключ операции уже использован для другого запроса.') from exc
+            connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user.id),))
+            _m7_require_explicit_return(connection, owner_user_id=int(user.id), cycle_id=cycle_id)
+            try:
+                with connection.transaction():
+                    result = m10_product_flow.present_owned_next(
+                        connection, cycle_id=cycle_id, user_id=int(user.id), **payload.model_dump(),
+                    )
+            except ValueError as exc:
+                if str(exc) != 'M7_TIME_LIMIT_REACHED':
                     raise
-                return public_operation(operation)
-            with preparation_observation.synchronous(payload.idempotency_key, 'next', {'user_id': int(user.id), 'cycle_id': str(cycle_id)}, factory=get_connection):
-                result=m10_product_flow.next_situation(connection,cycle_id=str(cycle_id),user_id=int(user.id),
-                    key=payload.idempotency_key)
-                connection.commit()
-            return m10_product_flow.participant_presentation(result)
-    except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+                m7_completion.complete(connection, cycle_id=cycle_id, key='automatic-expiry',
+                    action='time_limit', reason='automatic', initiated_by=int(user.id))
+                result = {}
+            runtime = m10_product_flow.read_runtime(connection, cycle_id=cycle_id)
+            connection.commit()
+            return {**m10_product_flow.participant_presentation(result), 'runtime': runtime}
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post('/assessment/m7/cycles/{cycle_id}/finish-situation')
 def finish_owned_assessment_situation(cycle_id:UUID,payload:ProductNextRequest,request:Request):
     user=_m7_owned_cycle(request,str(cycle_id))
+    prepare_next = False
     try:
         with get_connection() as connection:
             result=m7_completion.finish_current_situation(connection,cycle_id=str(cycle_id),
                 key=payload.idempotency_key,initiated_by=int(user.id))
             if result.get('handoff_id'):
                 m10_orchestration.enqueue_handoff(connection,handoff_id=result['handoff_id'],created_by=int(user.id))
-            connection.commit();return result
+            cycle = connection.execute(
+                "SELECT id,cycle_id,profile_ref_json,status FROM m5_cycles WHERE cycle_id=%s", (cycle_id,),
+            ).fetchone()
+            if cycle["status"] == "paused":
+                from Api.participant_dashboard import cycle_progress
+                progress = cycle_progress(connection, cycle)
+                if (progress["between_situations"] and progress["planned_total"]
+                        and progress["last_completed_position_no"] == progress["planned_total"]):
+                    m7_completion.complete(connection, cycle_id=str(cycle_id),
+                        key='complete-after:' + result["assessment_situation_id"], action='complete',
+                        reason='user_completed_scenario', initiated_by=int(user.id), participant_command=True)
+                else:
+                    prepare_next = progress["between_situations"]
+            connection.commit()
     except ValueError as exc:raise HTTPException(status_code=409,detail=str(exc)) from exc
+
+    if prepare_next:
+        # Commit the AS boundary before taking queue locks. The participant can
+        # recover a missed enqueue by submitting this same boundary command.
+        after_as = result['assessment_situation_id']
+        key = 'next:' + after_as
+        try:
+            product_cycle_preparation_queue.enqueue(operation_id=key, user_id=int(user.id), request={
+                'kind': 'next', 'cycle_id': str(cycle_id), 'idempotency_key': key,
+                'after_assessment_situation_id': after_as,
+            })
+        except ValueError:
+            # The Cycle or active queue scope can change after the boundary commits.
+            pass
+    return result
 
 
 @router.post('/assessment/m7/cycles/{cycle_id}/positions/{position_no}/replacement', status_code=201)

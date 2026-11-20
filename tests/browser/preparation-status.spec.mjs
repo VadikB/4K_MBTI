@@ -151,23 +151,20 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
   await page.route('**/users/assessment/m7/cycles/cabinet-cycle/return-state',route=>route.fulfill({json:{cycle_id:'cabinet-cycle',allowed_action:'connected'}}));
   await page.route('**/users/assessment/cycles/cabinet-cycle/runtime',route=>runtimeReadError?route.abort('failed'):route.fulfill({json:runtime}));
   await page.goto(`${base}/?screen=interview`);
-  const nextRoot=page.locator('#interview-panel [data-preparation-status]');
+  const nextRoot=page.locator('#interview-panel .interview-next-card');
   await expect(nextRoot).toContainText('Готовим следующую ситуацию');
   await expect(page.locator('#interview-panel')).toContainText('Ситуация 2 завершена');
   await expect(page.locator('#interview-section-title')).toBeVisible();
   await expect(page.locator('#interview-profile-button')).toBeVisible();
-  await expect(page.locator('#interview-panel')).toContainText('Время на ответы сейчас не расходуется');
+  await expect(page.locator('#interview-panel')).toContainText('Время на ответы сохранено');
   await snap(page,'next-preparation',width);
-  await details(page,nextRoot,'next-preparation',width);
   runtimeReadError=true;
   await page.clock.fastForward(2100);
-  await expect(nextRoot.locator('[data-preparation-notice]')).toContainText('Не удалось обновить состояние');
+  await expect(nextRoot.locator('[data-next-preparation-feedback]')).toContainText('Не удалось обновить состояние');
   await expect(page.locator('#interview-error')).not.toContainText('Сохранение введённого текста');
-  await expect(page.locator('#interview-panel')).toContainText('Ответы сохранены');
   runtimeReadError=false;
   await page.getByRole('button',{name:'Проверить состояние',exact:true}).click();
-  await expect(nextRoot.locator('[data-preparation-notice]')).not.toContainText('Не удалось обновить состояние');
-  await expect(nextRoot.locator('details')).toHaveAttribute('open','');
+  await expect(nextRoot.locator('[data-next-preparation-feedback]')).not.toContainText('Не удалось обновить состояние');
   expect(run.calls.filter(c=>c.method==='POST')).toEqual([]);
   // The actual report waiting screen; all read states are distinct.
   run.journey.next_action='show_dashboard';

@@ -68,7 +68,9 @@ test.afterAll(async () => {
 const refusal = 'Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки.';
 const between = run => Object.assign(run.model, {
   current_situation: null, between_situations: true, blocking_system_wait: true,
-  participant_progress: { planned_total: 8, last_completed_position_no: 3 },
+  status: { ...run.model.status, collection_status: 'paused', remaining_seconds: 2720 },
+  participant_progress: { planned_total: 8, last_completed_position_no: 1 },
+  route: { ...run.model.route, positions: [{ position_no: 1, state: 'completed', current_assessment_situation_id: 'synthetic-as' }] },
 });
 const failedOperation = (id, message = refusal, retry = false) => ({ operation_id: id, status: 'failed', retry_allowed: retry,
   ...(message ? { error: { code: 'ASSESSMENT_AS_NOT_ADMITTED', message } } : {}),
@@ -76,9 +78,9 @@ const failedOperation = (id, message = refusal, retry = false) => ({ operation_i
     explanation: 'Не удалось завершить подготовку. Проверяем материалы ситуации.', allowed_actions: retry ? ['retry'] : [],
     finished_at: '2026-11-19T12:00:00Z', read_at: '2026-11-19T12:00:00Z' } });
 
-for (const width of [1440, 320]) test(`AC1/AC2 refusal survives polling, failed GET, reload and cabinet ${width}`, async ({ page }) => {
+for (const width of [1440, 390, 320]) test(`AC1/AC2 refusal survives polling, failed GET, reload and cabinet ${width}`, async ({ page }) => {
   test.setTimeout(30000);
-  await page.setViewportSize({ width, height: 1000 });
+  await page.setViewportSize({ width, height: 900 });
   await page.clock.install({ time: new Date('2026-11-19T12:00:00Z') });
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const run = await draftFixture(page); between(run);
@@ -102,21 +104,21 @@ for (const width of [1440, 320]) test(`AC1/AC2 refusal survives polling, failed 
   });
   await page.goto(`${base}/?screen=interview`);
   const card = page.locator('.interview-return-card'), next = page.locator('.next-situation-button');
-  await next.click();
   const assertReason = async () => {
-    await expect(card.locator('[data-preparation-explanation]')).toHaveText(refusal);
+    await expect(card.getByRole('status').first()).toHaveText(refusal);
     await expect(card).not.toContainText('Не удалось завершить подготовку');
     await expect(card.locator('[data-next-preparation-feedback]')).toBeEmpty();
-    await expect(next).toBeDisabled(); await expect(next).toHaveText('Подготовка недоступна');
+    await expect(next).toHaveCount(0);
+    await expect(card).not.toContainText('Готовим следующую ситуацию');
     await expect(card).toHaveAttribute('data-preparation-operation', operationId);
-    await expect(card).toContainText('Ситуация 3 завершена');
+    await expect(card).toContainText('Ситуация 1 завершена');
     await expect(page.locator('#interview-textarea')).toBeDisabled();
     expect((await card.innerText()).split(refusal).length - 1).toBe(1);
   };
   await assertReason();
   await page.clock.runFor(1400); await assertReason();
   run.offline = true; await page.clock.runFor(1400); await assertReason();
-  await expect(card.locator('[data-preparation-notice]')).toContainText('Не удалось обновить состояние');
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Время недоступно');
   run.offline = false; await page.clock.runFor(1400); await assertReason();
   await page.reload(); await assertReason();
   // A dashboard return is a read of the same Cycle, with no extra Next or Turn.
@@ -129,7 +131,7 @@ for (const width of [1440, 320]) test(`AC1/AC2 refusal survives polling, failed 
   expect(run.model.trace).toEqual(savedTrace);
   expect(run.unexpected).toEqual([]); expect(errors).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-  await page.screenshot({ path: path.join(evidence, `refusal-${width}.png`), fullPage: true });
+  await page.screenshot({ path: path.join(evidence, `refusal-${width}.png`), fullPage: true, scale: 'css' });
   fs.writeFileSync(path.join(evidence, `facts-${width}.json`), JSON.stringify({ posts, checks, sameCycle: run.model.cycle_id,
     operationId, traceUnchanged: true, cabinetReturn: true, errors, unexpected: run.unexpected }, null, 2));
 });
@@ -141,11 +143,11 @@ test('AC3/AC4 legacy fallback, text safety, new operation, running, retry and re
   run.model.preparation_operation = failedOperation('old', null);
   await page.goto(`${base}/?screen=interview`);
   const card = page.locator('.interview-return-card'), next = page.locator('.next-situation-button');
-  await expect(card).toContainText('Не удалось завершить подготовку');
+  await expect(card).toContainText('Не удалось подготовить следующую ситуацию. Обратитесь к организатору оценки.');
   const markup = '<img src=x onerror="window.unsafeFailure=true">';
   run.model.preparation_operation = failedOperation('safe-text', markup);
   await page.clock.runFor(1400);
-  await expect(card.locator('[data-preparation-explanation]')).toHaveText(markup);
+  await expect(card.getByRole('status').first()).toHaveText(markup);
   expect(await card.locator('img').count()).toBe(0);
   expect(await page.evaluate(() => window.unsafeFailure)).toBeUndefined();
   run.model.preparation_operation = { operation_id: 'running-new', status: 'running',
@@ -166,9 +168,18 @@ test('AC3/AC4 legacy fallback, text safety, new operation, running, retry and re
     posts++;
     const id = route.request().postDataJSON().idempotency_key;
     expect(id).not.toBe('retryable');
-    Object.assign(run.model, active, { preparation_operation: undefined, between_situations: false });
-    return route.fulfill({ json: { operation_id: id, status: 'completed', result: { decision: { status: 'SELECTED' } } } });
+    run.model.preparation_operation = { operation_id: id, status: 'completed' };
+    run.model.next_presentation = { assessment_situation_id: 'admitted-next', expected_plan_revision_id: 'plan-1' };
+    return route.fulfill({ json: run.model.preparation_operation });
   });
+  await page.route('**/users/assessment/m7/cycles/synthetic-cycle/present-next', route => {
+    expect(route.request().postDataJSON()).toEqual(run.model.next_presentation);
+    Object.assign(run.model, active, { next_presentation: undefined, preparation_operation: undefined, between_situations: false });
+    return route.fulfill({ json: { presentation: { assessment_situation_id: 'admitted-next' } } });
+  });
+  await next.click();
+  await expect(next).toHaveText('Приступить к следующей ситуации');
+  await expect(page.locator('#interview-textarea')).toBeDisabled();
   await next.click(); await expect(page.locator('#interview-textarea')).toBeEnabled();
   await expect(page.locator('#interview-messages')).not.toContainText('Временная безопасная причина.');
   expect(posts).toBe(1); expect(checks).toBe(1);

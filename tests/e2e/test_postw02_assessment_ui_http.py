@@ -45,6 +45,7 @@ def runtime(monkeypatch):
             if any(table in sql for table in ['m7_clarification_decisions', 'm10_pipeline_runs', 'm7_continuation_intents']): return Result()
             raise AssertionError(sql)
     db = Storage()
+    db.situation_id = as_id
     @contextmanager
     def connection(): yield db
     monkeypatch.setattr(routes, 'get_connection', connection)
@@ -105,6 +106,8 @@ def test_paused_between_situations_with_false_blocking_is_a_successful_known_tim
     # Retain the production HTTP route and production runtime projection.
     execute = db.execute
     def closed_as(sql, params=()):
+        if "s.status='closed'" in sql:
+            return Result([{'position_no': 3, 'assessment_situation_id': db.situation_id}])
         result = execute(sql, params)
         if 'FROM m5_assessment_situations WHERE cycle_db_id' in sql or 'p.state IN(' in sql:
             for row in result.rows:

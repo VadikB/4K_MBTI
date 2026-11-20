@@ -30,11 +30,10 @@ test('first start reconciles a lost POST response through read-only runtime', ()
   assert.doesNotMatch(cycleStart, /prepareProductCycle|cycles\/prepare/);
 });
 
-test('functional next situation waits for durable generation and admission', () => {
-  assert.match(interview, /fetch\('\/users\/assessment\/m7\/cycles\/' \+ encodeURIComponent\(state\.productCycleId\) \+ '\/next'/);
-  assert.match(interview, /accepted\.operation_id \? await waitForProductCyclePreparation\(accepted, \{/);
-  assert.match(interview, /if \(accepted\.operation_id\) await waitForProductCyclePreparation\(accepted\)/);
-  assert.match(interview, /next\.decision\?\.status === 'WAITING_CURRENT_AS'/);
-  assert.match(interview, /next\.decision\?\.status === 'COLLECTION_CLOSED'/);
-  assert.match(interview, /\['NO_ADMISSIBLE_CASE', 'OUT_OF_TIME'\]/);
+test('functional next uses a durable preparation and a separate explicit presentation', () => {
+  assert.ok(interview.includes("post(path + '/next',"));
+  assert.ok(interview.includes("after_assessment_situation_id: afterAs"));
+  assert.ok(interview.includes("await read(pending.operationId)"));
+  assert.ok(interview.includes("post(path + '/present-next', snapshot.next_presentation)"));
+  assert.ok(interview.includes("['NO_ADMISSIBLE_CASE', 'OUT_OF_TIME']"));
 });

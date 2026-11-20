@@ -185,11 +185,13 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   await expect(page.locator('#interview-messages')).toContainText('Почему вы выбрали такой порядок');
   expect(run.calls.some((c) => /equivalent|replacement|interrupt/.test(c.url + JSON.stringify(c.body)))).toBe(false);
   run.model.current_situation = null; run.model.between_situations = true;
+  run.model.preparation_operation = { operation_id: 'next:synthetic-as', status: 'running' };
   run.model.participant_progress = { planned_total: 8, current_position_no: null, last_completed_position_no: 3 };
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Ситуация 3 завершена' })).toBeVisible();
   await expect(page.locator('#interview-case-badge')).toBeHidden();
-  await expect(page.getByRole('button', { name: 'Приступить к следующей ситуации' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Проверить состояние', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Приступить к следующей ситуации' })).toHaveCount(0);
   await expect(page.locator('#interview-form')).toBeHidden();
   await screenshot(page, 'between', width);
   const beforeLeave = posts().length;

@@ -56,96 +56,81 @@ test('F08 lost scenario_end response retains command identity and locks input th
   assert.equal(h.storage.has(commandKey('scenario_end')), false);
 });
 
-test('F09 lost Next response and reload check the saved operation without a second POST', async () => {
+const boundary = (h, operation) => ({ ...h.snapshot(), current_situation: null, between_situations: true,
+  participant_progress: { planned_total: 2, last_completed_position_no: 1 },
+  route: { positions: [{ position_no: 1, state: 'completed', current_assessment_situation_id: 'as-a' }] },
+  preparation_operation: operation });
+
+test('F09 lost preparation receipt reads the original operation and keeps opening explicit', async () => {
   const h = createInterviewHarness();
-  const snapshot = { ...h.snapshot(), current_situation: null, between_situations: true };
-  h.subject.renderProductRuntime(snapshot);
-  const card = h.messages.children.find((item) => item.className === 'interview-return-card');
-  const button = card.children.find((item) => item.className.split(' ').includes('primary-button'));
-  h.setFetch(async (_url, options) => {
-    if (options?.method === 'POST') throw new TypeError('lost response');
-    return json({ operation_id: JSON.parse(h.storage.get(commandKey('next', 'between'))).operationId,
-      status: 'queued' });
+  const snapshot = boundary(h);
+  h.subject.renderProductRuntime(snapshot, { fresh: false });
+  const operation = { operation_id: 'next:as-a', status: 'completed' };
+  const next = { assessment_situation_id: 'next-admitted', expected_plan_revision_id: 'plan-2' };
+  const ready = { ...boundary(h, operation), next_presentation: next };
+  h.setFetch(async (url, options) => {
+    if (String(url).endsWith('/next')) {
+      assert.deepEqual(JSON.parse(options.body), { idempotency_key: operation.operation_id, after_assessment_situation_id: 'as-a' });
+      throw new TypeError('lost receipt');
+    }
+    if (String(url).includes('/preparation/')) {
+      assert.ok(String(url).endsWith('/preparation/next%3Aas-a'));
+      return json(operation);
+    }
+    if (String(url).endsWith('/return-state')) return json({ cycle_id: 'cycle-a', allowed_action: 'connected' });
+    if (String(url).endsWith('/runtime')) return json(ready);
+    throw new Error('Unexpected request ' + url);
   });
-  h.context.waitForProductCyclePreparation = async (operation) => {
-    throw Object.assign(new Error('client wait ended'), { name: 'PreparationWaitLimit', operationId: operation.operation_id });
-  };
-  await button.listeners.get('click')();
-  const saved = JSON.parse(h.storage.get(commandKey('next', 'between')));
-  assert.ok(saved.operationId);
+  await h.messages.querySelector('.next-situation-button').listeners.get('click')();
   assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
-  await button.listeners.get('click')();
-  assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
-  assert.ok(h.fetchCalls.some(([url]) => String(url).includes('/cycles/preparation/' + saved.operationId)));
-  h.subject.renderProductRuntime(snapshot);
-  const restored = h.messages.children.find((item) => item.className === 'interview-return-card');
-  assert.equal(restored.children.find((item) => item.className.split(' ').includes('primary-button')).textContent, 'Проверить состояние');
+  assert.equal(h.messages.querySelector('.next-situation-button').textContent, 'Приступить к следующей ситуации');
+  assert.equal(h.controls.textarea.disabled, true);
+  assert.equal(h.storage.has(commandKey('next')), false);
 });
 
-test('F09 server-opened next AS retires the old between-situations command', () => {
+test('F09 rejected enqueue stays read-only and never opens a different situation', async () => {
   const h = createInterviewHarness();
-  const between = { ...h.snapshot(), current_situation: null, between_situations: true };
-  h.subject.renderProductRuntime(between);
-  h.storage.set(commandKey('next', 'between'), JSON.stringify({ cycleId: 'cycle-a',
-    situationId: null, ownerId: '8', operationId: 'old-next' }));
-  h.subject.renderProductRuntime(h.snapshot());
-  assert.equal(h.storage.has(commandKey('next', 'between')), false);
-  h.subject.renderProductRuntime(between);
-  const card = h.messages.children.find((item) => item.className === 'interview-return-card');
-  assert.equal(card.children.find((item) => item.className.split(' ').includes('primary-button')).textContent,
-    'Приступить к следующей ситуации');
-});
-
-test('F09 known Next refusal makes the next click a readback rather than a new POST', async () => {
-  const h = createInterviewHarness();
-  const between = { ...h.snapshot(), current_situation: null, between_situations: true };
-  h.subject.renderProductRuntime(between);
-  const card = h.messages.children.find((item) => item.className === 'interview-return-card');
-  const button = card.children.find((item) => item.className.split(' ').includes('primary-button'));
+  const saved = boundary(h);
+  h.subject.renderProductRuntime(saved, { fresh: false });
   h.setFetch(async (url, options) => {
     if (options?.method === 'POST') return json({ detail: 'M7_COLLECTION_CLOSED' }, 409);
-    if (String(url).endsWith('/return-state')) return json({ cycle_id: 'cycle-a', allowed_action: 'none' });
-    if (String(url).endsWith('/runtime')) return json(between);
-    throw new Error('Unexpected request');
+    if (String(url).endsWith('/return-state')) return json({ cycle_id: 'cycle-a', allowed_action: 'connected' });
+    if (String(url).endsWith('/runtime')) return json(saved);
+    throw new Error('Unexpected request ' + url);
   });
-  await button.listeners.get('click')();
-  assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
-  assert.match(card.children.at(-1).textContent, /отклонил|завершён/);
-  await button.listeners.get('click')();
+  const click = () => h.messages.querySelector('.next-situation-button').listeners.get('click')();
+  await click();
+  assert.match(h.messages.querySelector('[data-next-preparation-feedback]').textContent, /отклонил|завершён/);
+  await click();
   assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
 });
 
-test('AC3 confirmed replacement operation supersedes a stored Next receipt and clears the old reason', async () => {
+test('AC3 confirmed operation supersedes terminal refusal and exposes a read-only check', async () => {
   const h = createInterviewHarness();
-  const between = { ...h.snapshot(), current_situation: null, between_situations: true };
-  h.subject.renderProductRuntime({ ...between, preparation_operation: {
-    operation_id: 'refused-old', status: 'failed', retry_allowed: false,
-    error: { message: 'Старая безопасная причина.' },
-  } });
-  assert.match(h.messages.children[0].children.at(-1).textContent, /Старая безопасная причина/);
-  h.subject.renderProductRuntime({ ...between, preparation_operation: { operation_id: 'confirmed-new', status: 'running' } });
-  const card = h.messages.children[0], button = card.querySelector('.next-situation-button');
-  assert.equal(card.children.at(-1).textContent.includes('Старая безопасная причина'), false);
-  assert.equal(button.disabled, false);
-  h.setFetch(async url => {
-    assert.equal(url, '/users/assessment/cycles/preparation/confirmed-new');
-    return json({ operation_id: 'confirmed-new', status: 'running' });
+  h.subject.renderProductRuntime(boundary(h, { operation_id: 'old', status: 'failed',
+    error: { message: 'Старая безопасная причина.' } }));
+  assert.equal(h.messages.querySelector('.next-situation-button'), null);
+  const running = { operation_id: 'confirmed-new', status: 'running' };
+  h.subject.renderProductRuntime(boundary(h, running));
+  const card = h.messages.querySelector('.interview-next-card');
+  assert.equal(card.querySelector('.interview-next-status').children[0].textContent, 'Готовим следующую ситуацию.');
+  h.setFetch(async (url, options) => {
+    assert.notEqual(options?.method, 'POST');
+    if (String(url).endsWith('/return-state')) return json({ cycle_id: 'cycle-a', allowed_action: 'connected' });
+    if (String(url).endsWith('/runtime')) return json(boundary(h, running));
+    assert.ok(String(url).endsWith('/preparation/confirmed-new'));
+    return json(running);
   });
-  h.context.waitForProductCyclePreparation = async () => {
-    throw Object.assign(new Error('wait ended'), { name: 'PreparationWaitLimit' });
-  };
-  await button.listeners.get('click')();
-  assert.equal(h.fetchCalls.length, 1);
-  assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 0);
-  assert.equal(JSON.parse(h.storage.get(commandKey('next', 'between'))).operationId, 'confirmed-new');
+  await card.querySelector('.next-situation-button').listeners.get('click')();
+  assert.equal(h.fetchCalls.length, 3);
 });
 
-test('AC4 legacy failed operation without details retains safe fallback and denies a new Next', () => {
+test('AC4 legacy failed operation without details retains safe fallback and hides the action', () => {
   const h = createInterviewHarness();
-  h.subject.renderProductRuntime({ ...h.snapshot(), current_situation: null, between_situations: true,
-    preparation_operation: { operation_id: 'legacy-failed', status: 'failed', retry_allowed: false } });
-  const card = h.messages.children[0];
-  assert.equal(card.children.at(-1).textContent, 'Не удалось подготовить следующую ситуацию.');
-  assert.equal(card.querySelector('.next-situation-button').disabled, true);
+  h.subject.renderProductRuntime(boundary(h, { operation_id: 'legacy-failed', status: 'failed', retry_allowed: false }));
+  const status = h.messages.querySelector('.interview-next-status');
+  assert.equal(status.children[0].textContent, 'Следующая ситуация не открылась.');
+  assert.match(status.children[1].textContent, /Не удалось подготовить следующую ситуацию/);
+  assert.equal(h.messages.querySelector('.next-situation-button'), null);
   assert.equal(h.fetchCalls.length, 0);
 });

@@ -49,8 +49,10 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     get lastElementChild() { return this.children.at(-1) || null; }
     setAttribute() {}
     addEventListener(name, handler) { this.listeners.set(name, handler); }
+    contains(element) { return this === element || this.children.some((child) => child.contains(element)); }
     querySelector(selector) {
       for (const child of this.children) {
+        if (selector === '[data-next-preparation-feedback]' && 'nextPreparationFeedback' in child.dataset) return child;
         if (child.className.split(' ').includes(selector.slice(1))) return child;
         const nested = child.querySelector(selector);
         if (nested) return nested;
@@ -92,6 +94,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
       sessionStorage: { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: (key) => storage.delete(key) },
     },
     document: { createElement: () => new Element(), addEventListener() {} },
+    queueMicrotask,
     MutationObserver: class { observe() {} },
     interviewMessages: messages, interviewScrollArea: area, interviewMessagesScroll: button,
     interviewTextarea: textarea, interviewCompactQuery: null, caseSidebarToggle: null,

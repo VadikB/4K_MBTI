@@ -1,4 +1,6 @@
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from datetime import datetime
 import copy
 import json
 import time
@@ -467,7 +469,7 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
 )
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
         product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase,
-        tester_outcome, *, first_case_only=False, next_failure=None):
+        tester_outcome, *, first_case_only=False, next_failure=None, next_expiry=False):
     with product_db() as connection:
         package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
         manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
@@ -866,7 +868,6 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         transition(connection, assessment_situation_id=first_as, action="scenario_end",
                    reason="regression", request_id="functional-cycle-end")
         _resolve_interim_for_finish(connection,product_db,first_as)
-        finish_current_situation(connection, cycle_id=cycle_id, key="functional-cycle-finish", initiated_by=99)
         # The started Cycle keeps its frozen CASE.SPEC route even when the mutable
         # configuration pointer changes before the next position is prepared.
         connection.execute("UPDATE assessment_configurations SET catalog_version_id=NULL WHERE id=1")
@@ -887,13 +888,8 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     monkeypatch.setattr(routes, "product_cycle_preparation_queue", queue)
     app = FastAPI()
     app.include_router(routes.router)
-    second_operation = "functional-cycle-next"
-    if next_failure:
-        with product_db() as connection:
-            before_cycle = read_cycle(connection, cycle_id)
-            before_plan = connection.execute('SELECT content_checksum FROM m7_plan_revisions ORDER BY revision_no').fetchall()
-            before_as = connection.execute('SELECT snapshot_json,execution_payload_json,status FROM m5_assessment_situations').fetchall()
-            before_turns = connection.execute('SELECT * FROM m5_dialogue_turns ORDER BY id').fetchall()
+    second_operation = 'next:' + first_as
+    if next_failure and next_failure != 'TECHNICAL':
         original_chat = FunctionalGateway.chat_with_trace
         review_calls = []
         def rejected_next(self, messages, **kwargs):
@@ -918,13 +914,24 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         monkeypatch.setattr(FunctionalGateway, 'chat_with_trace', rejected_next)
     with TestClient(app) as http:
         http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-owner")
-        next_path = f"/users/assessment/m7/cycles/{cycle_id}/next"
+        cycle_path = f'/users/assessment/m7/cycles/{cycle_id}'
+        finished_first = http.post(cycle_path + '/finish-situation', json={'idempotency_key': 'functional-cycle-finish'})
+        assert finished_first.status_code == 200, finished_first.text
+        with product_db() as connection:
+            paused = read_cycle(connection, cycle_id)
+            if next_failure and next_failure != 'TECHNICAL':
+                before_cycle = paused
+                before_plan = connection.execute('SELECT content_checksum FROM m7_plan_revisions ORDER BY revision_no').fetchall()
+                before_as = connection.execute('SELECT snapshot_json,execution_payload_json,status FROM m5_assessment_situations').fetchall()
+                before_turns = connection.execute('SELECT * FROM m5_dialogue_turns ORDER BY id').fetchall()
+        next_path = cycle_path + '/next'
         status_path = f"/users/assessment/cycles/preparation/{second_operation}"
-        accepted = http.post(next_path, json={"idempotency_key": second_operation})
+        assert http.get(status_path).json()['status'] == 'queued', 'Finish schedules the original Next command'
+        original_request = {'idempotency_key': second_operation, 'after_assessment_situation_id': first_as}
+        accepted = http.post(next_path, json=original_request)
         assert accepted.status_code == 201, accepted.text
         assert_queued_operation(accepted.json(), second_operation, "next")
         if next_failure:
-            from concurrent.futures import ThreadPoolExecutor
             def concurrent_next(index):
                 return queue.enqueue(operation_id=f'parallel-next-{index}', user_id=99,
                     request={'kind': 'next', 'cycle_id': cycle_id, 'idempotency_key': f'parallel-next-{index}'})
@@ -934,15 +941,32 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         claimed = queue._claim()
         assert claimed and claimed["operation_id"] == second_operation
         assert http.get(status_path).json()["status"] == "running"
-        assert http.post(next_path, json={"idempotency_key": second_operation}).json()["operation_id"] == second_operation
+        assert http.post(next_path, json=original_request).json()["operation_id"] == second_operation
         http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-other")
         assert http.get(status_path).status_code == 404
         assert http.post(next_path, json={"idempotency_key": "foreign-next"}).status_code == 403
         http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-owner")
+        if next_failure == 'TECHNICAL':
+            def lose_provider(*args, **kwargs):
+                raise ConnectionError('synthetic transport')
+            with monkeypatch.context() as retry_patch:
+                retry_patch.setattr('Api.m5_functional_generation_service.prepare', lose_provider)
+                queue._process(claimed)
+            failure = http.get(status_path).json()
+            assert failure['status'] == 'failed' and failure['retry_allowed'] is True
+            assert http.get(status_path).json()['operation_id'] == second_operation
+            retry_key = 'functional-cycle-next-retry'
+            retry = http.post(next_path, json={'idempotency_key': retry_key})
+            assert retry.status_code == 201
+            assert http.post(next_path, json={'idempotency_key': retry_key}).json()['operation_id'] == retry_key
+            claimed = queue._claim()
+            assert claimed['request_json']['preparation_key'] == second_operation
+            second_operation = retry_key
+            status_path = f'/users/assessment/cycles/preparation/{second_operation}'
         queue._process(claimed)
         finished = http.get(status_path)
         assert finished.status_code == 200
-        if next_failure:
+        if next_failure and next_failure != 'TECHNICAL':
             from scripts.preparation_diagnostics import lookup
             from Api.preparation_observation import reference
             assert finished.json()['status'] == 'failed'
@@ -966,7 +990,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                 assert runtime_read.json()['situations'] == [{'assessment_situation_id': first_as, 'status': 'closed'}]
                 repeated_reads.append({'operation': operation_read.json(), 'runtime_operation': runtime_operation})
             # Lost response, same command and another tab never create another AS/Turn.
-            assert http.post(next_path, json={'idempotency_key': second_operation}).json()['operation_id'] == second_operation
+            assert http.post(next_path, json=original_request).json()['operation_id'] == second_operation
             assert http.post(next_path, json={'idempotency_key': 'forbidden-next-retry'}).status_code == 409
             assert review_calls == calls_at_failure
             with product_db() as connection:
@@ -995,12 +1019,91 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                 (Path(evidence_dir) / f'http-{next_failure.lower()}.json').write_text(
                     json.dumps(evidence, ensure_ascii=False, indent=2))
             return
-        assert finished.json()["status"] == "completed"
-        assert finished.json()["result"]["decision"]["status"] == "SELECTED"
+        prepared = finished.json()
+        assert prepared["status"] == "completed"
+        assert prepared["result"]["decision"]["status"] == "SELECTED"
+        assert prepared["result"]["presentation"] is None
+        prepared_as = prepared["result"]["decision"]["assessment_situation_id"]
+        runtime_path = f'/users/assessment/cycles/{cycle_id}/runtime'
+        for _ in range(2):
+            runtime = http.get(runtime_path).json()
+            assert runtime["between_situations"] is True
+            assert runtime["current_situation"] is runtime["trace"] is None
+            assert runtime["preparation_operation"]["operation_id"] == second_operation
+            assert runtime["status"]["remaining_seconds"] == paused["remaining_seconds"]
+            assert datetime.fromisoformat(runtime["status"]["calendar_deadline"]) == paused["calendar_deadline"]
+        target = runtime["next_presentation"]
+        assert target["assessment_situation_id"] == prepared_as
+        present_path = f'/users/assessment/m7/cycles/{cycle_id}/present-next'
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-other")
+        assert http.post(present_path, json=target).status_code == 403
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-owner")
+        assert http.post(present_path, json={**target, 'expected_plan_revision_id': str(uuid4())}).status_code == 409
+
+        def read_next_facts(connection):
+            return connection.execute("""SELECT s.status,s.started_at,a.presented_at,
+                (SELECT COUNT(*) FROM product_cycle_preparation_operations
+                 WHERE request_json->>'kind'='next' AND request_json->>'cycle_id'=%s
+                   AND request_json->'next_preparation_scope'->>'after_assessment_situation_id'=%s) AS operations,
+                (SELECT COUNT(*) FROM m7_route_decisions WHERE cycle_db_id=s.cycle_db_id
+                   AND status='SELECTED') AS selected,
+                (SELECT COUNT(*) FROM m5_scenario_events WHERE assessment_situation_db_id=s.id
+                   AND event_type='scenario_started') AS presentations
+                FROM m5_assessment_situations s JOIN m7_route_assignments a ON a.assessment_situation_db_id=s.id
+                WHERE s.assessment_situation_id=%s""", (cycle_id, first_as, prepared_as)).fetchone()
+
         with product_db() as connection:
-            assert connection.execute("SELECT COUNT(*) AS n FROM product_cycle_preparation_operations "
-                                      "WHERE request_json->>'kind'='next' AND request_json->>'cycle_id'=%s",
-                                      (cycle_id,)).fetchone()["n"] == 2  # WAITING_CURRENT_AS + selected Next.
+            before = read_next_facts(connection)
+            assert before == {'status': 'admitted', 'started_at': None, 'presented_at': None,
+                              'operations': 2 if next_failure == 'TECHNICAL' else 1, 'selected': 2,
+                              'presentations': 0}
+            if next_expiry:
+                connection.execute("""UPDATE m5_cycles SET
+                    started_at=clock_timestamp()-make_interval(secs=>calendar_window_seconds)-interval '1 second'
+                    WHERE cycle_id=%s""", (cycle_id,))
+        if next_expiry:
+            response = http.post(present_path, json=target)
+            assert response.status_code == 201, response.text
+            runtime = response.json()['runtime']
+            assert runtime['cycle_id'] == cycle_id
+            assert runtime['status']['collection_status'] == 'collection_closed'
+            assert runtime['status']['close_reason'] == 'calendar_deadline'
+            assert http.post(present_path, json=target).status_code == 409
+            with product_db() as connection:
+                after = read_next_facts(connection)
+                assert after == {**before, 'status': 'closed'}
+        else:
+            def click_next(_):
+                with TestClient(app) as tab:
+                    tab.cookies.set(routes.SESSION_COOKIE_NAME, 'functional-owner')
+                    return tab.post(present_path, json=target)
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                presentations = list(pool.map(click_next, range(2)))
+            assert [r.status_code for r in presentations] == [201, 201]
+            receipts = [r.json()['presentation'] for r in presentations]
+            assert all(receipt['assessment_situation_id'] == prepared_as for receipt in receipts)
+            assert sum(bool(receipt.get('idempotent')) for receipt in receipts) == 1
+            with product_db() as connection:
+                after = read_next_facts(connection)
+                assert after['status'] == 'active' and after['started_at'] and after['presented_at']
+                assert after['presentations'] == 1
+                assert after['operations'] == before['operations'] and after['selected'] == before['selected']
+                assert read_cycle(connection, cycle_id)['calendar_deadline'] == paused['calendar_deadline']
+                connection.execute("""UPDATE m5_cycle_time_intervals
+                    SET started_at=started_at-interval '7 seconds'
+                    WHERE cycle_db_id=(SELECT id FROM m5_cycles WHERE cycle_id=%s)
+                    AND ended_at IS NULL AND interval_type='collecting'""", (cycle_id,))
+                assert read_cycle(connection, cycle_id)['remaining_seconds'] <= paused['remaining_seconds'] - 7
+        import os
+        if evidence_dir := os.getenv('ASUX04_EVIDENCE'):
+            flavor = 'expiry' if next_expiry else 'retry' if next_failure else 'ready'
+            (Path(evidence_dir) / f'http-{flavor}.json').write_text(json.dumps({
+                'synthetic': True, 'cycle_id': cycle_id, 'previous_as': first_as, 'next_as': prepared_as,
+                'before': before, 'after': after, 'calendar_deadline_at_pause': paused['calendar_deadline'],
+                'remaining_seconds_at_pause': paused['remaining_seconds'], 'expiry': next_expiry,
+                'technical_retry': next_failure == 'TECHNICAL',
+                'closed_reason': runtime['status']['close_reason'],
+            }, ensure_ascii=False, indent=2, default=str))
     second = queue.get_status(second_operation)
     assert second["status"] == "completed", second
     assert FunctionalGateway.call_count > generation_calls
@@ -1017,7 +1120,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             second["result_json"]["decision"]["selected_case_id"]
 
 
-def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(product_db):
+def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(product_db, monkeypatch):
     with product_db() as connection:
         started = start_or_resume(connection, user_id=99, key="w02-inter-case")
         cycle_id = str(started["plan"]["cycle_id"])
@@ -1052,6 +1155,35 @@ def test_inter_case_break_closes_only_current_as_and_resumes_on_explicit_next(pr
         assert resumed["status"] == "active"
         assert resumed["sessions"][-1]["status"] == "active"
         assert read_runtime(connection, cycle_id=cycle_id)["current_situation"]["assessment_situation_id"] == second_as
+        assert len(selected["plan"]["plan"]["route"]) == 2
+        _add_turn(connection, second_as, "Синтетический ответ последней ситуации", "last-as-turn")
+        transition(connection, assessment_situation_id=second_as, action="scenario_end",
+                   reason="participant_completed", request_id="last-as-end")
+        _resolve_interim_for_finish(connection, product_db, second_as)
+
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from Api import routes
+    monkeypatch.setattr(routes, "get_connection", product_db)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token", lambda _: SimpleNamespace(id=99))
+    def unexpected_next(**_kwargs):
+        pytest.fail('last position must never enqueue Next')
+    monkeypatch.setattr(routes.product_cycle_preparation_queue, 'enqueue', unexpected_next)
+    app = FastAPI()
+    app.include_router(routes.router)
+    with TestClient(app) as http:
+        http.cookies.set(routes.SESSION_COOKIE_NAME, "synthetic")
+        path = f'/users/assessment/m7/cycles/{cycle_id}'
+        finished = http.post(path + '/finish-situation', json={'idempotency_key': 'last-as-finish'})
+        assert finished.status_code == 200, finished.text
+        runtime = http.get(f'/users/assessment/cycles/{cycle_id}/runtime').json()
+        assert runtime['cycle_id'] == cycle_id
+        assert runtime['status']['collection_status'] == 'collection_closed'
+        assert runtime['between_situations'] is False
+        assert 'next_presentation' not in runtime
+        assert [s['status'] for s in runtime['situations']] == ['closed', 'closed']
+        assert runtime['status']['close_reason'] == 'user_completed_scenario'
+
 
 
 def _drain_product_pipeline(factory):
