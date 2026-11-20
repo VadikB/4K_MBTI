@@ -74,7 +74,7 @@ class AssessmentOutput(Record):
     targets: list[TargetAssessment]
 
 
-def validate_assessment(value: dict, assessment_input: dict) -> dict:
+def validate_assessment(value: dict, assessment_input: dict, *, require_current_bases: bool = False) -> dict:
     output = AssessmentOutput.model_validate(value)
     if output.mode != assessment_input["mode"]:
         raise ValueError("M6_MODE_INVALID")
@@ -107,6 +107,14 @@ def validate_assessment(value: dict, assessment_input: dict) -> dict:
         own_evidence = set(bundle["evidence_ids"])
         if any(ref.kind == "evidence" and ref.id not in own_evidence for ref in item.refs):
             raise ValueError("M6_CROSS_TARGET_REFERENCE")
+        if require_current_bases:
+            if any(ref.kind == "bundle" and ref.id != item.indicator_id for ref in item.refs):
+                raise ValueError("M6_CROSS_TARGET_REFERENCE")
+            if item.outcome in {"L1", "L2", "L3"}:
+                if item.opportunity != "PRESENT":
+                    raise ValueError("M6_LEVEL_REQUIRES_OPPORTUNITY")
+                if not own_evidence or not any(ref.kind in {"bundle", "evidence"} for ref in item.refs):
+                    raise ValueError("M6_LEVEL_REQUIRES_EVIDENCE")
         if item.outcome == "INSUFFICIENT_EVIDENCE" and item.uncertainty is None:
             raise ValueError("M6_IE_UNCERTAINTY_REQUIRED")
         if item.status == "NO_ASSESSMENT" and item.uncertainty is None:
