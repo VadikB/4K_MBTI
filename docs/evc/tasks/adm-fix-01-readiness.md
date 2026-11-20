@@ -197,3 +197,24 @@ push/PR отсутствуют. Запрашивается явное разре
 описанную выше блокировку публикации. Merge/deploy, Ready и номер приложения в этот
 допуск не входят. Изменение после 94b7160f — только эта запись о разрешении;
 implementation и результаты проверок не изменены.
+
+## Фактическая передача после разрешения
+
+- `git push -u origin codex/adm-fix-01-readiness` — PASS / exit 0: ветка создана
+  в `https://github.com/VadikB/4K_MBTI`, исходный опубликованный HEAD `536ec618`.
+- `gh pr create --repo VadikB/4K_MBTI --base main --head codex/adm-fix-01-readiness --draft ...`
+  — FAIL / exit 4: GitHub CLI не авторизован (`gh auth login` required). PR не создан.
+- Проверена доступность GitHub-плагина: `installed=false`. Браузерная попытка не
+  дошла до создания PR: активная вкладка неоднократно менялась пользователем.
+  Учётные данные из Git credential helper/файлов не извлекались.
+- Прямое разрешение пользователя на push и один draft PR сохраняется. Следующий шаг:
+  пользователь авторизует GitHub CLI командой `gh auth login` либо подключит GitHub;
+  затем агент создаёт PR из готового body без повторного вопроса о разрешении.
+  Пока PR отсутствует, CI не запущен. Merge/deploy не выполнялись.
+
+Временный каталог `/private/tmp/4k-adm-fix-01` и временный PR body исчезли между
+действиями. Коммиты не потеряны: worktree восстановлен из опубликованной ветки в
+`/Users/vadim_bogachev/Developer/4K/worktrees/adm-fix-01-readiness`.
+Проверенный runtime и tests не менялись. Текст PR сохранён рядом в
+`docs/evc/tasks/adm-fix-01-pr-body.md`. Повторная тихая проверка `gh auth status`
+вернула exit 1; доступ через GitHub CLI пока не восстановлен.
