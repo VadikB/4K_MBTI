@@ -102,13 +102,19 @@ for (const retryAllowed of [true, false]) {
   test(`EXEC-FIX-02 next preparation respects server retry=${retryAllowed} across reload`, async ({ page }, testInfo) => {
     let posts = 0;
     let nextPrepared = false;
+    let presentations = 0;
     let operation = null;
+    const target = { assessment_situation_id: 'as-next', expected_plan_revision_id: 'revision-next' };
     const runtime = () => ({ cycle_id: 'cycle-next', runtime_kind: 'cycle', return_policy_enabled: false,
-      between_situations: !nextPrepared, status: { collection_status: 'active', remaining_seconds: 2700 },
+      between_situations: presentations === 0,
+      status: { collection_status: presentations ? 'active' : 'paused', remaining_seconds: 2700 },
+      participant_progress: { planned_total: 3, last_completed_position_no: 1 },
+      next_preparation_after: 'as-closed',
+      next_presentation: nextPrepared && !presentations ? target : null,
       route: { positions: [{ position_no: 1, state: 'completed', current_assessment_situation_id: 'as-closed' },
-        { position_no: 2, state: nextPrepared ? 'in_progress' : 'planned', current_assessment_situation_id: nextPrepared ? 'as-next' : null }],
+        { position_no: 2, state: presentations ? 'in_progress' : nextPrepared ? 'not_presented' : 'planned', current_assessment_situation_id: nextPrepared ? 'as-next' : null }],
         progress: { total_positions: 3 } },
-      current_situation: nextPrepared ? { assessment_situation_id: 'as-next', status: 'active',
+      current_situation: presentations ? { assessment_situation_id: 'as-next', status: 'active',
         participant_payload: { title: 'Подготовлена следующая ситуация', situation: 'Synthetic next AS', assessee_task: 'Synthetic task' } } : null,
       preparation_operation: operation,
       trace: { turns: [], events: [] }, clarification: null, continuation: null, pipeline: null });
@@ -123,7 +129,9 @@ for (const retryAllowed of [true, false]) {
       if (pathname === '/users/assessment/cycles/cycle-next/runtime') return json(route, runtime());
       if (pathname === '/users/assessment/m7/cycles/cycle-next/next' && request.method() === 'POST') {
         posts += 1;
+        expect(request.postDataJSON().after_assessment_situation_id).toBe('as-closed');
         if (posts === 1) {
+          expect(request.postDataJSON().idempotency_key).toBe('next:as-closed');
           operation = { operation_id: request.postDataJSON().idempotency_key, status: 'failed',
             retry_allowed: retryAllowed, error: retryAllowed ? technical : admission };
           return json(route, operation, 201);
@@ -131,15 +139,19 @@ for (const retryAllowed of [true, false]) {
         expect(retryAllowed).toBe(true);
         nextPrepared = true;
         operation = { operation_id: request.postDataJSON().idempotency_key, status: 'completed',
-          result: { plan: { cycle_id: 'cycle-next' }, decision: { status: 'SELECTED', assessment_situation_id: 'as-next' } } };
+          result: { plan: { cycle_id: 'cycle-next', revision_id: 'revision-next' }, decision: { status: 'SELECTED', assessment_situation_id: 'as-next' } } };
         return json(route, operation, 201);
+      }
+      if (pathname === '/users/assessment/m7/cycles/cycle-next/present-next' && request.method() === 'POST') {
+        expect(request.postDataJSON()).toEqual(target);
+        presentations++;
+        return json(route, { presentation: target }, 201);
       }
       if (pathname.startsWith('/users/assessment/cycles/preparation/')) return json(route, operation);
       if (pathname === '/users/version') return json(route, { version: 'exec-fix02-component' });
       return json(route, {}, 404);
     });
     await page.goto(`${base}/?screen=interview`);
-    await page.getByRole('button', { name: 'Приступить к следующей ситуации', exact: true }).click();
     await expect(page.locator('#interview-panel')).toContainText((retryAllowed ? technical : admission).message);
     expect(posts).toBe(1);
     await page.reload();
@@ -148,15 +160,22 @@ for (const retryAllowed of [true, false]) {
     await page.screenshot({ path: testInfo.outputPath('next-failure.png'), fullPage: true });
     if (!retryAllowed) {
       const next = page.getByRole('button', { name: /Приступить к следующей ситуации|Повторить подготовку/ });
-      if (await next.count()) await expect(next).toBeDisabled();
+      await expect(next).toHaveCount(0);
+      expect(presentations).toBe(0);
       return;
     }
-    const retry = page.getByRole('button', { name: /Повторить подготовку|Приступить к следующей ситуации/ });
+    const retry = page.getByRole('button', { name: 'Повторить подготовку', exact: true });
     await expect(retry).toBeEnabled();
     await page.setViewportSize({ width: 390, height: 844 });
     await retry.scrollIntoViewIfNeeded(); await expect(retry).toBeInViewport();
     await retry.click();
-    await expect(page.locator('#interview-panel')).toContainText('Подготовлена следующая ситуация');
+    const open = page.getByRole('button', { name: 'Приступить к следующей ситуации', exact: true });
+    await expect(open).toBeEnabled();
+    await expect(page.locator('#interview-textarea')).toBeDisabled();
     expect(posts).toBe(2);
+    expect(presentations).toBe(0);
+    await open.click();
+    await expect(page.locator('#interview-panel')).toContainText('Подготовлена следующая ситуация');
+    expect(presentations).toBe(1);
   });
 }
