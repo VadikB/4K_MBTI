@@ -301,3 +301,17 @@ Review принят владельцем в чате. Быстрые frontend/py
 реальные LLM не входят. Свежий main dcd876f2 = 2.1.42. Штатный
 ready:prepare --candidate 2.1.43 и release gate PASS. Код/tests 8784088f
 не менялись; полный локальный PASS переиспользован в этой области.
+
+
+## Повтор полного CI: стабилизация времени теста
+
+Полный CI кандидата e4513ab2 (run 44752314818): frontend/pytest/integration и
+четыре runtime browser shard PASS; browser fast FAIL (373 PASS, 41 SKIPPED,
+1 FAIL), поэтому aggregate FAIL, merge не выполнялся. Отказ воспроизведён
+локально в postw02-assessment-ui: фиксированные deadline/expires_at 20.11.2026
+истекли относительно реальных часов. Файл не менялся относительно main.
+Во втором тесте установлен тот же page.clock (16.11.2026), что уже используется
+в первом. Runtime, assertions и workflow не изменены. Весь файл с
+--workers=1 --repeat-each=3: 9 PASS, 24.2 s; журнал
+/private/tmp/adm-fix-02-browser-clock.log. Кандидат остаётся 2.1.43;
+полный CI нового head обязателен до merge.
