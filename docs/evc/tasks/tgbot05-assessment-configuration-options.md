@@ -32,9 +32,31 @@ AssessmentProgram или готовность Cycle; это проверяет �
   пустой список → `[]`.
 - Unit: SQL фильтрует published конфигурацию и версии; отпечаток детерминирован.
 - PostgreSQL integration, общий Telegram путь и CI — отдельная проверка кандидата.
-- Merge/deploy не входят в этот шаг. Student Channel API остаётся отдельным
+- Student Channel API остаётся отдельным
   `development_only` контуром до предусмотренного архитектурным контрактом допуска.
 
 ## Откат
 
 Удалить read-only route и сервис. Схема БД и опубликованные артефакты не меняются.
+
+## Допуск выпуска 20.11.2026
+
+Владелец Vadim поручил: «Доведи PR #265 до готовности, выполни обязательные
+проверки и сливай в main. После обновления стенда test проверь API».
+Флаги: branch_push=true, pr=true, version_bump=true (PATCH 2.1.45),
+merge=true, deploy=true (только test), artifact_publish=false.
+Источник полномочия — прямое сообщение владельца; CONTRIBUTING определяет процедуру.
+
+Ready preflight 2.1.45 PASS. Backend-набор выполняется без developer .env;
+HTTP token-контракт проверен адресно ранее. Полный CI на Ready обязателен
+для точного head; integration/browser выполняются на изолированной БД runner.
+Review: новый интерфейс только читает опубликованные ссылки; token обязателен,
+при отсутствии endpoint закрыт (503); схема/содержимое артефактов не меняются.
+Откат выпуска — штатный revert PR и deploy main; миграция данных не нужна.
+Проверка test: версия, наличие route, отказ без token; успешный авторизованный
+список требует отдельно настроенного TG_BOT_INTEGRATION_TOKEN.
+
+Локальный результат выпуска: ready:prepare PASS; адресные HTTP/unit 4 PASS;
+backend 1297 PASS / 9 FAIL из-за запрета sandbox на ps; повтор всего
+test_synthetic_limits.py с разрешённым ps — 19 PASS (все 9 сбоев устранены средой).
+Предметный runtime не изменялся после тестов; git diff --check PASS.
