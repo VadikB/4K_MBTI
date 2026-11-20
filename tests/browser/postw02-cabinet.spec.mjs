@@ -107,8 +107,13 @@ for (const width of [1440, 390, 320]) {
       if (width !== 320) {
         // Opening the selected active Cycle preserves the existing explicit return barrier.
         await page.locator('#assessment-action-button').click();
-        await expect(page.locator('.interview-return-card')).toBeVisible();
+        const returnCard = page.locator('.interview-return-card');
+        await expect(returnCard.getByRole('heading')).toHaveText('Продолжим оценку?');
+        await expect(returnCard).toContainText('Вы остановились на ситуации 3 из 8.');
+        await expect(page.locator('#interview-timer-badge')).toContainText('20:00');
+        await expect(returnCard.getByRole('button', { name: 'Продолжить' })).toBeInViewport();
         await expect(page.locator('#interview-textarea')).toBeDisabled();
+        if (evidence) await page.screenshot({ path: path.join(evidence, `assessment-return-${width}.png`) });
         expect(run.calls.filter((call) => call.pathname.endsWith('/runtime'))).toEqual([]);
         await page.goto(`${base}/?screen=dashboard`);
         await expect(page.locator('#dashboard-panel')).toBeVisible();
@@ -118,7 +123,7 @@ for (const width of [1440, 390, 320]) {
         await page.locator('#dashboard-refresh-button').evaluate((button) => button.click());
         await expect(page.locator('#current-assessments')).toContainText('Готова к началу');
         await page.locator('#assessment-action-button').click();
-        await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+        await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
         await expect(page.locator('.onboarding-metrics')).toContainText('8');
         await expect(page.locator('#feature-list')).toContainText('Сохранённый методологический notice.');
         await page.getByRole('button', { name: 'Мои оценки', exact: true }).click();

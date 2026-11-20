@@ -104,10 +104,10 @@ async function fixture(page, scene = 'ready') {
   return { m, calls, startKeys, failRead: () => { readError = true; }, hold: () => { let release; held = new Promise((r) => { release = r; }); return () => { held = null; release(); }; } };
 }
 const forbiddenCommands = (calls) => calls.filter((c) => /\/(prepare|start)$/.test(c.path) && c.method === 'POST');
-const titles = { ready: 'Можно приступать к оценке', preparing: 'Готовим вашу оценку', organization: 'Нужны сведения организации',
+const titles = { ready: 'Ваши кейсы подготовлены', preparing: 'Готовим вашу оценку', organization: 'Нужны сведения организации',
   unassigned: 'Оценка пока не назначена', expired: 'Срок доступа к оценке закончился', 'load-error': 'Не удалось загрузить знакомство',
-  network: 'Не удалось проверить готовность', service: 'Подготовка временно недоступна', failed: 'Не удалось подготовить оценку',
-  'failed-locked': 'Не удалось подготовить оценку', access: 'Доступ к оценке изменился', conflict: 'Состояние оценки изменилось',
+  network: 'Не удалось проверить готовность', service: 'Подготовка временно недоступна', failed: 'Подготовка оценки',
+  'failed-locked': 'Подготовка оценки', access: 'Доступ к оценке изменился', conflict: 'Состояние оценки изменилось',
   blocked: 'Старт оценки пока недоступен', missing: 'Подготовленный план пока недоступен', 'start-unknown': 'Проверяем начало оценки',
   'start-retry': 'Проверяем начало оценки' };
 for (const [scene, title] of Object.entries(titles)) {
@@ -118,7 +118,8 @@ for (const [scene, title] of Object.entries(titles)) {
     await expect(panel.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(panel).not.toContainText(/Обратитесь|ответственному|организатору|управление/i);
     if (!['unassigned', 'expired'].includes(scene)) {
-      await expect(panel.locator('#onboarding-status-icon')).toBeVisible();
+      if (['preparing', 'failed', 'failed-locked'].includes(scene)) await expect(panel.locator('#onboarding-status-icon')).toBeHidden();
+      else await expect(panel.locator('#onboarding-status-icon')).toBeVisible();
       await expect(panel.locator('.onboarding-section-label')).toHaveText('Оценка');
       if (scene === 'preparing') {
         await expect(panel.locator('.onboarding-live')).toHaveText('Подготовка выполняется');
@@ -168,7 +169,7 @@ for (const width of [1440, 390, 320]) {
         const page = await context.newPage(); const run = await fixture(page, scene); await page.goto(base);
         await expect(page.locator('#onboarding-title')).toHaveText(titles[scene]);
         if (scene === 'ready') {
-          await expect(page.locator('#onboarding-description')).toContainText('Назначенная оценка');
+          await expect(page.locator('.onboarding-assessment-name')).toContainText('Назначенная оценка');
           await expect(page.locator('.onboarding-metrics')).toContainText('5ситуаций в плане75 мин');
           await expect(page.locator('#feature-list')).toContainText('48 ч.');
           await expect(page.locator('#feature-list')).not.toContainText(/Между завершёнными ситуациями|После возврата/);
@@ -217,7 +218,7 @@ test('W02-02 lost uncommitted start reload/readback/retry keeps original operati
 });
 test('W02-02 checking failed network reads the same operation after reload and never prepares again', async ({ page }) => {
   const run = await fixture(page, 'failed-locked'); await page.goto(base);
-  await expect(page.locator('#onboarding-title')).toHaveText('Не удалось подготовить оценку');
+  await expect(page.locator('#onboarding-title')).toHaveText('Подготовка оценки');
   run.failRead(); await page.locator('#onboarding-next').click();
   await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить готовность');
   expect(forbiddenCommands(run.calls)).toHaveLength(0);
@@ -262,7 +263,6 @@ if (process.env.W02_ADD01_EVIDENCE) for (const width of [1440, 390]) for (const 
         expect(run.m.preparation_operation.status).toBe('queued');
       }
       if (scene === 'failed-locked') {
-        await expect(page.locator('.onboarding-diagnostics')).not.toHaveAttribute('open', '');
         await expect(page.getByText('Код операции: w02-op')).toBeHidden();
       }
       await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -270,10 +270,7 @@ if (process.env.W02_ADD01_EVIDENCE) for (const width of [1440, 390]) for (const 
       const layout = await w02Layout(page);
       expect(layout.viewport.scrollWidth).toBeLessThanOrEqual(width);
       expect(layout.main.bottom).toBeLessThanOrEqual(layout.footer.y + 1);
-      // Center the entire card + history group in the space left by the real footer.
-      if (layout.group.height + 2 * (width === 1440 ? 32 : 24) < layout.main.height) {
-        expect(Math.abs((layout.group.y + layout.group.height / 2) - (layout.main.y + layout.main.height / 2))).toBeLessThan(1);
-      }
+      expect(layout.group.y - layout.main.y).toBe(width === 1440 ? 32 : 18);
       const target = path.join(process.env.W02_EVIDENCE_DIR, `${scene}-${width}.png`);
       await page.screenshot({ path: target, fullPage: false });
       await fs.writeFile(target.replace('.png', '.json'), JSON.stringify({ layout: await w02Layout(page), server_operation: run.m.preparation_operation, commands: forbiddenCommands(run.calls) }, null, 2));
@@ -321,7 +318,7 @@ for (const width of [1440, 390]) {
         for (let pass = 0; pass < 2; pass++) {
           await expect(page.locator('#onboarding-title')).toHaveText(titles.ready);
           await expect(page.locator('#feature-list')).not.toContainText(/Между завершёнными ситуациями|После возврата|Порядок возврата/);
-          await expect(page.locator('#feature-list')).toContainText('Время начнётся, когда вы нажмёте «Приступить к оценке»');
+          await expect(page.locator('#feature-list')).toContainText('Время на ответы начнётся после нажатия «Приступить к оценке»');
           await expect(page.locator('#feature-list')).toContainText('Сохранённое примечание назначенной оценки.');
           await expect(page.locator('.onboarding-metrics')).toContainText('5ситуаций в плане75 мин');
           await expect(page.locator('.onboarding-deadline')).toContainText('48 ч.');

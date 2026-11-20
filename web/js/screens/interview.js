@@ -1110,6 +1110,7 @@ const clearUnconfirmedProductTime = () => {
 const returnContinueIdentity = (value) => [
   state.pendingUser?.id, value.cycle_id, value.position_no,
   value.current_assessment_situation_id, value.current_assessment_situation_status,
+  value.generation_operation_id ?? null,
 ];
 
 const pendingReturnContinue = (value) => {
@@ -1117,7 +1118,7 @@ const pendingReturnContinue = (value) => {
   try { saved = JSON.parse(window.sessionStorage.getItem(RETURN_CONTINUE_PENDING_KEY) || 'null'); } catch { /* stale storage */ }
   const identity = returnContinueIdentity(value);
   if (saved?.identity && JSON.stringify(saved.identity) === JSON.stringify(identity) && saved.key) return saved;
-  saved = { identity, key: createOperationId(), generationKey: createOperationId(), generationOperationId: null };
+  saved = { identity, key: createOperationId() };
   window.sessionStorage.setItem(RETURN_CONTINUE_PENDING_KEY, JSON.stringify(saved));
   return saved;
 };
@@ -1452,25 +1453,36 @@ const renderReturnCard = (value) => {
   state.assessmentCaseTitle = 'Продолжение оценки';
   renderInterviewMeta();
   renderCaseProgress(false);
-  const confirmedPause = ['paused', 'interrupted'].includes(value.collection_status)
-    || ['continue_current', 'replace_current'].includes(value.allowed_action);
-  interviewTimerBadge.classList.toggle('is-paused', confirmedPause);
+  interviewTimerBadge.classList.add('is-paused');
   state.assessmentRemainingSeconds = serverRemainingSeconds(value.remaining_seconds);
   updateInterviewTimer();
+  const returnKey = JSON.stringify([returnContinueIdentity(value), state.assessmentCaseNumber,
+    totalPositions, value.allowed_action, value.absence_event_id]);
+  const previousCard = interviewMessages.firstElementChild;
+  if (previousCard?.dataset.returnKey === returnKey && !previousCard.dataset.returnUnconfirmed) return;
   interviewMessages.innerHTML = '';
-  const card = document.createElement('section'); card.className = 'interview-return-card';
-  const title = document.createElement('h3'); title.textContent = 'Продолжение оценки';
-  const copy = document.createElement('p');
-  const remainingSeconds = serverRemainingSeconds(value.remaining_seconds);
-  const remainingCopy = remainingSeconds === null
-    ? 'Остаток времени выполнения уточняется.'
-    : `Остаток времени выполнения: ${Math.ceil(remainingSeconds / 60)} мин.`;
-  copy.textContent = remainingCopy;
+  const card = document.createElement('section'); card.className = 'interview-return-card assessment-state-card';
+  card.dataset.returnKey = returnKey;
+  const title = document.createElement('h3'); title.textContent = 'Продолжим оценку?';
+  title.id = 'interview-return-title'; card.setAttribute('aria-labelledby', title.id);
+  const position = document.createElement('p');
+  const positionNo = state.assessmentCaseNumber;
+  position.textContent = positionNo && totalPositions && positionNo <= totalPositions
+    ? `Вы остановились на ситуации ${positionNo} из ${totalPositions}.`
+    : positionNo && !totalPositions ? `Вы остановились на ситуации ${positionNo}. Всего ситуаций пока неизвестно.`
+      : 'Место остановки пока не подтверждено.';
   const reason = document.createElement('p');
-  reason.textContent = value.allowed_action === 'replace_current'
-    ? 'После продолжения текущая незавершённая ситуация будет обновлена. Частичный диалог не переносится, завершённые ситуации сохраняются.'
-    : 'После продолжения откроется та же незавершённая ситуация и сохранённый диалог.';
-  const button = document.createElement('button'); button.type = 'button'; button.className = 'primary-button'; button.textContent = 'Продолжить';
+  reason.className = 'interview-return-note';
+  const replacing = value.allowed_action === 'replace_current' && Boolean(value.generation_operation_id);
+  const canContinue = value.allowed_action === 'continue_current' || replacing;
+  reason.textContent = replacing
+    ? 'После продолжения незавершённая ситуация будет заменена. Частичный диалог сохранится в истории прежней ситуации и не переносится в новую.'
+    : canContinue ? 'Откроется та же ситуация и сохранённый диалог.'
+      : 'Готовность новой ситуации пока не подтверждена. Обновите состояние перед продолжением.';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = canContinue ? 'primary-button' : 'text-button';
+  button.textContent = canContinue ? 'Продолжить' : 'Проверить состояние';
   const status = document.createElement('p'); status.setAttribute('role', 'status');
   button.addEventListener('click', async () => {
     const cycleId = value.cycle_id;
@@ -1481,29 +1493,24 @@ const renderReturnCard = (value) => {
     const current = () => state.productCycleId === cycleId && state.pendingUser?.id === ownerId
       && state.identityEpoch === identityEpoch && state.productAssessmentSituationId === situationId
       && state.currentScreen === 'interview' && card.isConnected && viewGeneration === getAssessmentViewGeneration();
-    button.disabled = true; status.textContent = value.allowed_action === 'replace_current' ? 'Готовим допустимое обновление ситуации…' : 'Восстанавливаем ситуацию…';
+    button.disabled = true;
+    if (!canContinue) {
+      try { await loadProductRuntime(); }
+      catch (error) { if (current()) showInterviewRuntimeError(error); }
+      finally { if (current()) button.disabled = false; }
+      return;
+    }
+    productRuntimeMutationGeneration += 1;
+    card.dataset.returnPending = 'true';
+    status.textContent = replacing ? 'Открываем новую ситуацию…' : 'Восстанавливаем ситуацию…';
     try {
       const pending = pendingReturnContinue(value);
-      if (value.allowed_action === 'replace_current' && !pending.generationOperationId) {
-        if (!value.provider_config_ref) throw new Error('Подготовка обновлённой ситуации пока недоступна. Обратитесь к организатору.');
-        const generatedResponse = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId)
-          + '/positions/' + encodeURIComponent(value.position_no) + '/equivalent-candidate', {
-          method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expected_assessment_situation_id: value.current_assessment_situation_id,
-            idempotency_key: pending.generationKey, provider_config_ref: value.provider_config_ref }),
-        });
-        const generated = await readApiResponse(generatedResponse, 'Не удалось подготовить допустимое обновление ситуации.');
-        if (!current()) return;
-        pending.generationOperationId = generated.operation_id;
-        window.sessionStorage.setItem(RETURN_CONTINUE_PENDING_KEY, JSON.stringify(pending));
-      }
-      if (!current()) return;
       const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId) + '/return-continue', {
         method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ position_no: value.position_no,
           expected_assessment_situation_id: value.current_assessment_situation_id,
           expected_state: value.current_assessment_situation_status,
-          idempotency_key: pending.key, generation_operation_id: pending.generationOperationId }),
+          idempotency_key: pending.key, generation_operation_id: value.generation_operation_id ?? null }),
       });
       const continued = await readApiResponse(response, 'Не удалось продолжить оценку.');
       if (!current()) return;
@@ -1528,17 +1535,19 @@ const renderReturnCard = (value) => {
           clearPendingReturnContinue(value);
           return;
         }
-        // The newly rendered card reuses the pending key after server readback.
+        // Reuse the pending key after a confirmed return-state read.
+        if (current()) { status.textContent = 'Оценка всё ещё на паузе.'; button.disabled = false; }
       } catch (_readbackError) {
         if (!current()) return;
+        card.dataset.returnUnconfirmed = 'true';
         status.textContent = `${assessmentRuntimeErrorMessage(error, { draftSaved: isCurrentInterviewDraftSaved() })} Результат пока неизвестен. Обновите состояние перед повтором.`;
         return;
       }
-    }
+    } finally { delete card.dataset.returnPending; }
   });
-  card.append(title, copy, reason, button, status); interviewMessages.appendChild(card);
+  card.append(title, position, reason, button, status); interviewMessages.appendChild(card);
   interviewTextarea.disabled = true; interviewSubmitButton.disabled = true; interviewFinishButton.disabled = true;
-  interviewCaseStatus.textContent = 'Пауза. Оценка продолжится только после вашего действия.';
+  interviewCaseStatus.textContent = '';
   scheduleInterviewBottomAlignment();
 };
 
@@ -1568,7 +1577,14 @@ const loadReturnState = async ({ generation = productRuntimePollGeneration, isCu
     }
     const value = await readApiResponse(response, 'Не удалось проверить состояние возврата.');
     if (!current() || value.cycle_id !== cycleId) return false;
-    if (['continue_current', 'replace_current'].includes(value.allowed_action)) { renderReturnCard(value); return true; }
+    if (['collection_closed', 'calculation_pending', 'calculated'].includes(value.collection_status)) {
+      openProcessing();
+      return true;
+    }
+    if (['continue_current', 'replace_current', 'replacement_candidate_required'].includes(value.allowed_action)) {
+      renderReturnCard(value);
+      return true;
+    }
     return false;
   } catch (error) {
     if (!current()) return false;
@@ -2221,9 +2237,10 @@ const renderInterviewMeta = () => {
   const knownTotal = Number.isInteger(total) && total > 0;
   const knownPosition = Number.isInteger(position) && position > 0 && (!knownTotal || position <= total);
   const workspace = interviewPanel.classList.contains('product-answer-screen');
-  const target = interviewPanel.querySelector?.(workspace ? '.interview-title-row' : '.interview-case-heading');
+  const assessmentHeader = workspace || interviewPanel.classList.contains('return-required');
+  const target = interviewPanel.querySelector?.(assessmentHeader ? '.interview-title-row' : '.interview-case-heading');
   if (target && interviewCaseBadge.parentElement !== target) {
-    if (workspace) target.append(interviewCaseBadge);
+    if (assessmentHeader) target.append(interviewCaseBadge);
     else target.prepend(interviewCaseBadge);
   }
   const format = interviewPanel.querySelector?.('.interview-response-format');
@@ -2411,7 +2428,7 @@ const stopAssessmentTransitionLoader = () => {
 const updateInterviewTimer = () => {
   const remainingMs = getRemainingCaseTimeMs();
   const prefix = interviewTimerBadge.classList.contains('is-paused')
-    && !interviewPanel.classList.contains('between-situations') ? 'Пауза · ' : '';
+    && !['between-situations', 'return-required'].some((name) => interviewPanel.classList.contains(name)) ? 'Пауза · ' : '';
   if (remainingMs === null) {
     interviewTimerBadge.textContent = isCycleAssessment() ? 'Время недоступно' : 'Остаток времени выполнения уточняется';
     interviewTimerBadge.title = 'Не удалось получить актуальный остаток времени.';
@@ -2687,6 +2704,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
 export const resumeProductRuntimePolling = () => {
   clearInterviewTimer();
   state.assessmentTimerId = window.setInterval(() => {
+    if (interviewMessages.querySelector('.interview-return-card[data-return-pending]')) return;
     if (!document.hidden && !interviewPanel.classList.contains('hidden') && productRuntimePollAllowed()) {
       void loadProductRuntime({ generation: productRuntimePollGeneration }).catch(showInterviewRuntimeError);
     } else if (!document.hidden && !interviewPanel.classList.contains('hidden')
@@ -2711,7 +2729,8 @@ export const openInterview = () => {
   persistAssessmentContext();
   syncUrlState('interview');
   hideAllPanels();
-  interviewPanel.classList.remove('completed', 'between-situations');
+  interviewPanel.classList.remove('completed', 'between-situations', 'return-required');
+  interviewMessages.querySelector('.interview-return-card[data-return-key]')?.remove();
   interviewCompleteActions.classList.add('hidden');
   interviewPanel.classList.remove('hidden');
   if (isCycleAssessment()) {

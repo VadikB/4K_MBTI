@@ -134,7 +134,7 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
   await page.locator('#onboarding-next').click();
   await expect(root.locator('[data-preparation-notice]')).toContainText('Показаны последние полученные сведения');
   await expect(root.locator('[data-preparation-stage]')).toContainText('Последний известный этап');
-  await expect(page.locator('#onboarding-panel')).toContainText('ваши ответы сохранены');
+  await expect(page.locator('#onboarding-panel')).toContainText(/ваши ответы сохранены/i);
   await snap(page,'preparation-read-error',width);
   await page.unroute('**/users/assessment/cycles/preparation/**');
   await page.locator('#onboarding-next').click();

@@ -1,0 +1,12 @@
+{
+  "synthetic": true,
+  "source": "Chromium, local product HTTP and isolated PostgreSQL",
+  "cycle_id": "3e3d20dc-c79b-4936-bb35-2542b42c6f98",
+  "assessment_situation_id": "410b66c7-75f3-44a1-bd52-348f16f9c220",
+  "position": 1,
+  "remaining_seconds": 3477,
+  "same_as": true,
+  "persistent_draft": true,
+  "assessment_answers": 0,
+  "version": "2.1.52"
+}

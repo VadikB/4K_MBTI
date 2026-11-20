@@ -107,7 +107,7 @@ const onboardingError = (page) => page.locator('#onboarding-error');
 
 async function openReadiness(page) {
   await page.goto(base + '/?screen=onboarding');
-  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
 }
 
 async function attachStartTraffic(testInfo, name, page, { commands, runtimeReads }) {

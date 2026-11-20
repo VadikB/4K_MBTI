@@ -765,7 +765,9 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                     returning = {}  # Legacy Cycle without a saved return policy.
                 if returning.get('allowed_action') in {'continue_current', 'replace_current', 'replacement_candidate_required'}:
                     journey_state, label, description, button = ('return_required', 'Можно продолжить',
-                        'Вернитесь к той же сохранённой ситуации и переписке.', 'Вернуться к оценке →')
+                        ('Вернитесь к той же сохранённой ситуации и переписке.'
+                         if returning['allowed_action'] == 'continue_current'
+                         else 'Проверьте условия продолжения оценки.'), 'Вернуться к оценке →')
         if cycle['status'] != 'prepared' and history.get('status') == 'failed':
             journey_state, label, description = ('runtime_error', 'Не удалось продолжить оценку',
                 'Ваши ответы сохранены. Откройте оценку, чтобы проверить состояние.')

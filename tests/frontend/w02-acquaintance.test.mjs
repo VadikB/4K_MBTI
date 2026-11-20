@@ -32,7 +32,7 @@ test('W02 keeps preparation separate from explicit assessment start', () => {
 
 test('W02 displays server-resolved assignment timing and restores the prepared snapshot', () => {
   assert.match(onboarding, /assigned_timing\?\.status === 'resolved'/);
-  assert.match(onboarding, /на выполнение оценки/);
+  assert.match(onboarding, /на ответы/);
   assert.match(onboarding, /ситуаций в плане/);
   assert.match(onboarding, /Завершить оценку нужно в течение/);
   assert.match(onboarding, /Приступить к оценке/);

@@ -32,14 +32,20 @@ test('P3-B synthetic visual states, progress and Continue are reproducible', asy
         await expect(page.locator('#interview-case-badge')).toHaveText(
           mode === 'pause' ? 'Ситуация 3 из 8' : 'Ситуация 1 из 8');
         await expect(card).not.toContainText('Завершено');
-        await expect(page.locator('#interview-timer-badge')).toContainText(mode === 'unknown' ? 'Время недоступно' : 'Пауза');
+        const savedTime = page.locator('.interview-timer-saved');
+        if (mode === 'unknown') {
+          await expect(page.locator('#interview-timer-badge')).toHaveText('Время недоступно');
+          await expect(savedTime).toBeHidden();
+        } else {
+          await expect(page.locator('#interview-timer-badge')).toHaveText(/^\d+:\d{2}$/);
+          await expect(savedTime).toBeVisible();
+        }
       } else {
         await expect(page.locator('#interview-case-badge')).toHaveText(
           mode === 'active-short' ? 'Ситуация 2 из 5' : 'Ситуация 1 из 8');
         await expect(page.locator('.interview-message--situation')).toBeVisible();
       }
       if (mode === 'unknown') {
-        await expect(card).toContainText('Остаток времени выполнения уточняется');
         if (width === 390) {
           await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
           await expect(card).toContainText('Результат пока неизвестен');
