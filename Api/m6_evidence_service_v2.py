@@ -9,6 +9,13 @@ from Api.m6_package import verify_mechanism
 from Api.m6_validation_retry import call_and_validate
 
 
+def validate_current_analysis(value: dict, material: dict) -> dict:
+    analysis = validate_analysis(value, material)
+    if any(item["type"] == "Simple" and len(item["bs_ids"]) != 1 for item in analysis["evidence"]):
+        raise ValueError("M6_SIMPLE_BASIS")
+    return analysis
+
+
 def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
     verify_mechanism(mechanism, mechanism_hash)
     if mechanism.get("ref") != "m6_evidence/1.0.1":
@@ -26,6 +33,6 @@ def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
     return call_and_validate(
         gateway=resolved, messages=messages, operation=mechanism["operation"],
         routing_key="m6-v2:" + definition_checksum(material),
-        validate=lambda value: validate_analysis(value, material),
+        validate=lambda value: validate_current_analysis(value, material),
         max_attempts=int(mechanism["validation_attempts"]),
     )
