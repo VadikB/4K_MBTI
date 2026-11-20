@@ -1268,6 +1268,7 @@
           <div class="interview-case-header">
             <div class="interview-case-heading">
               <h1 id="interview-case-badge" class="interview-case-badge">Прогресс уточняется</h1>
+              <span class="interview-response-format" hidden></span>
               <h3 id="interview-case-title" class="hidden">Оценочная ситуация</h3>
               <div class="interview-timer"><span class="interview-timer-caption">Осталось на ответы</span><span class="interview-timer-saved" title="Календарный срок продолжает идти">Время на ответы сохранено</span><span id="interview-timer-badge" class="interview-timer-badge">Время уточняется</span></div>
             </div>
@@ -1287,22 +1288,25 @@
             <button id="interview-go-processing-button" type="button" class="primary-button">Перейти к анализу</button>
           </div>
 
-          <p id="interview-error" class="error" role="status" aria-live="polite" hidden></p>
+          <div id="interview-error" class="error" role="status" aria-live="polite" hidden></div>
+          <p class="interview-your-turn" hidden>Ваш ход</p>
           <form id="interview-form" class="interview-form">
             <label for="interview-textarea">Ваше сообщение</label>
-            <textarea
-              id="interview-textarea"
-              aria-label="Ваш ответ или вопрос собеседнику"
-              aria-describedby="interview-error interview-draft-status"
-              maxlength="10000"
-              placeholder="Введите ответ или вопрос собеседнику..."
-              autocomplete="off"
-              autocorrect="off"
-              autocapitalize="off"
-              spellcheck="false"
-              data-form-type="other"
-              disabled
-            ></textarea>
+            <div class="interview-answer-input">
+              <textarea
+                id="interview-textarea"
+                rows="1"
+                aria-describedby="interview-error interview-draft-status"
+                maxlength="10000"
+                placeholder="Введите ответ или вопрос собеседнику..."
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                data-form-type="other"
+                disabled
+              ></textarea>
+            </div>
             <small id="interview-draft-status" class="interview-send-note" role="status" aria-live="polite"></small>
             <div id="interview-draft-actions" class="interview-draft-actions"></div>
             <div class="interview-form-footer">

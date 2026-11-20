@@ -137,17 +137,9 @@ export const showInterviewRuntimeError = (error) => {
     || productInterviewRequests.get(productInterviewRequestKey(productInterviewAnswerScope()));
   if (confirmedProductInterviewSnapshot && (productProcessingPending(confirmedProductInterviewSnapshot)
       || confirmedProductInterviewSnapshot.blocking_system_wait === true || pending?.accepted || pending?.status === 'saved'
-      || pending?.status === 'unknown' || currentProductInterviewReceipt(confirmedProductInterviewSnapshot, pending))) {
+      || ['unknown', 'rejected'].includes(pending?.status) || currentProductInterviewReceipt(confirmedProductInterviewSnapshot, pending))) {
     productInterviewReadFailure = productInterviewNoticeKey();
     renderProductInterviewNotice(confirmedProductInterviewSnapshot);
-    return;
-  }
-  if (pending && pending.status !== 'saved') {
-    interviewSubmitButton.disabled = true;
-    interviewFinishButton.disabled = true;
-    showError(interviewError, pending.status === 'rejected' ? pending.rejectionMessage : pending.accepted
-      ? 'Ответ принят. Не удалось обновить историю; проверьте её кнопкой в сообщении.'
-      : 'Пока не удалось подтвердить исход отправки. Проверьте сохранение кнопкой в сообщении.');
     return;
   }
   if (productProcessingPending(confirmedProductInterviewSnapshot)) {
@@ -158,24 +150,6 @@ export const showInterviewRuntimeError = (error) => {
   showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: isCurrentInterviewDraftSaved() }));
 };
 
-const productInterviewRejectionMessage = (error) => {
-  const reason = String(error?.code || error?.message || '');
-  if (Number(error?.status) === 403) return 'Сервер запретил отправку ответа для этой ситуации. Проверьте доступ и текущее состояние оценки.';
-  if (/M7_TIME_LIMIT_REACHED/.test(reason)) return 'Время оценки истекло. Ответ не принят; обновите состояние оценки.';
-  if (/M5_AS_NOT_ACTIVE|M7_COLLECTION_CLOSED|M7_RETURN_STALE_CURRENT_AS/.test(reason)) {
-    return 'Эта ситуация уже недоступна для ответа. Обновите состояние оценки.';
-  }
-  if (/M5_TURN_OPERATION_IN_PROGRESS/.test(reason)) {
-    return 'Предыдущая отправка ещё обрабатывается. Проверьте сохранение этого ответа.';
-  }
-  if (/M7_BLOCKING_SYSTEM_WAIT/.test(reason)) {
-    return 'Предыдущее действие ещё обрабатывается. Проверьте состояние ситуации перед новым ответом.';
-  }
-  if (/M5_STATE_REVISION_CONFLICT|M5_TURN_ALREADY/.test(reason)) {
-    return 'Состояние ситуации изменилось. Проверьте сохранённые ответы перед следующим действием.';
-  }
-  return 'Сервер отклонил ответ. Проверьте состояние ситуации перед повтором.';
-};
 const productNextRefusalMessage = (error) => {
   const reason = String(error?.code || error?.message || '');
   if (Number(error?.status) === 403) return 'Сервер запретил подготовку следующей ситуации для текущего доступа.';
@@ -298,6 +272,7 @@ const showProductCommandRecovery = (scope, message, { failed = false, detail = '
     interviewSubmitButton.disabled = true;
     interviewFinishButton.disabled = true;
   }
+  const actionFocused = document.activeElement?.parentElement === interviewError;
   interviewError.dataset.tone = failed ? 'failed' : 'neutral';
   interviewError.classList.add('processing-notice');
   showError(interviewError, message);
@@ -326,6 +301,7 @@ const showProductCommandRecovery = (scope, message, { failed = false, detail = '
     }
   });
   interviewError.append(' ', button);
+  if (actionFocused) button.focus({ preventScroll: true });
 };
 
 const isProductInterviewAnswerCurrent = (operation) => state.currentScreen === 'interview'
@@ -396,11 +372,16 @@ const rememberProductInterviewReceipt = (operation) => {
   const previousAnswer = (confirmedProductInterviewSnapshot?.trace?.turns || [])
     .filter(turn => turn.speaker_type === 'assessee').reduce((a, b) => !a || b.sequence_no > a.sequence_no ? b : a, null);
   productInterviewReceipts.set(productInterviewNoticeKey(operation), {
-    turnId: operation.turnId, requestId: operation.requestId, clarificationId: operation.clarificationId,
+    turnId: operation.turnId, requestId: operation.requestId, clarificationId: operation.clarificationId ?? null,
     previousAnswerId: previousAnswer?.turn_id || null,
   });
 };
 const currentProductInterviewReceipt = (snapshot, operation) => {
+  const processing = snapshot.answer_processing;
+  if (processing?.turn_id && processing.request_id && (!operation || operation.turnId === processing.turn_id)) {
+    // The server found the operation attached to the latest saved participant Turn.
+    return { turnId: processing.turn_id, requestId: processing.request_id, clarificationId: null };
+  }
   // An unresolved newer send must never inherit a receipt from an older Turn.
   if (operation) return operation.accepted || operation.status === 'saved' ? operation : null;
   const turns = snapshot.trace?.turns || [];
@@ -417,7 +398,7 @@ const currentProductInterviewReceipt = (snapshot, operation) => {
   const turn = answerId ? turns.find(item => item.turn_id === answerId) : last;
   // On reload only the current last answer or the exact M7 answer is conclusive.
   return turn?.speaker_type === 'assessee' && (turn.request_id || answerId)
-    ? { turnId: turn.turn_id, requestId: turn.request_id } : null;
+    ? { turnId: turn.turn_id, requestId: turn.request_id, clarificationId: answerId ? snapshot.clarification.id : null } : null;
 };
 const clearProductInterviewNotice = () => {
   if (interviewError.dataset.productCommandRecovery !== 'true') return;
@@ -426,49 +407,104 @@ const clearProductInterviewNotice = () => {
   delete interviewError.dataset.tone;
   interviewError.classList.remove('processing-notice');
 };
+const checkProductInterviewAnswer = async (operation) => {
+  const value = await readProductInterviewAnswerStatus(operation);
+  if (!isProductInterviewPresentationCurrent(operation)) return;
+  applyProductInterviewAnswerStatus(operation, value, confirmedProductInterviewSnapshot);
+  const pending = readProductInterviewAnswer(operation);
+  if (value.status === 'absent' && pending?.status === 'unknown'
+      && pending.requestId === operation.requestId && pending.turnId === operation.turnId) {
+    saveProductInterviewAnswer({ ...pending, absenceChecked: true });
+  }
+  await loadProductRuntime();
+};
+
+const retryRejectedProductAnswer = async (operation) => {
+  const snapshot = await loadProductRuntime();
+  const pending = readProductInterviewAnswer(operation);
+  if (!snapshot || !isProductInterviewPresentationCurrent(operation)
+      || pending?.requestId !== operation.requestId || pending.rejectionConfirmed !== true
+      || !confirmedProductInterviewCanSend || productInterviewSourcePhase(snapshot) !== operation.sourcePhase
+      || durableDraft?.conflicted()) return;
+  const draftValue = interviewTextarea.value;
+  if (!draftValue.trim()) {
+    interviewTextarea.focus();
+    return;
+  }
+  productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
+  await sendProductInterviewAnswer(draftValue.trim(), { scope: operation, draftValue });
+};
+
 const renderProductInterviewNotice = (snapshot) => {
   const scope = productInterviewAnswerScope();
   const operation = readProductInterviewAnswer();
+  const sending = productInterviewRequests.get(productInterviewRequestKey(scope));
   const receipt = currentProductInterviewReceipt(snapshot, operation);
   const unread = productInterviewReadFailure === productInterviewNoticeKey();
-  const waiting = productProcessingPending(snapshot) || snapshot.blocking_system_wait === true;
-  const failed = productProcessingFailed(snapshot);
+  const caption = interviewPanel.querySelector('.interview-timer-caption');
+  if (caption) {
+    const lastKnown = unread || (['unknown', 'rejected'].includes(operation?.status) && !receipt && !operation.rejectionConfirmed);
+    caption.textContent = lastKnown && Number.isFinite(state.assessmentRemainingSeconds)
+      ? 'Последний известный остаток' : 'Осталось на ответы';
+  }
+  const processing = snapshot.answer_processing;
+  const waiting = productProcessingPending(snapshot) || snapshot.blocking_system_wait === true
+    || (processing?.status === 'pending' && receipt?.turnId === processing.turn_id);
+  const failed = productProcessingFailed(snapshot)
+    || (['failed', 'rejected_late'].includes(processing?.status) && receipt?.turnId === processing.turn_id);
   const question = snapshot.clarification?.status === 'ASK' && !snapshot.clarification.response_outcome;
   const receiptInTrace = receipt && (snapshot.trace?.turns || []).some(turn => turn.turn_id === receipt.turnId
-    && turn.speaker_type === 'assessee' && (!receipt.requestId || receipt.requestId === turn.request_id));
+    && turn.speaker_type === 'assessee' && (!turn.request_id || !receipt.requestId || receipt.requestId === turn.request_id));
   const options = { lockControls: false };
-  if (operation?.status === 'unknown' && !receipt) {
-    showProductCommandRecovery(scope, 'Не удалось подтвердить сохранение ответа.', { ...options,
-      checkLabel: 'Проверить сохранение', onCheck: async () => {
-        const value = await readProductInterviewAnswerStatus(operation);
-        if (!isProductInterviewPresentationCurrent(operation)) return;
-        applyProductInterviewAnswerStatus(operation, value, confirmedProductInterviewSnapshot);
-        await loadProductRuntime();
-      } });
+  const statusOptions = receipt?.requestId
+    ? { ...options, onCheck: () => checkProductInterviewAnswer({ ...scope, ...receipt }) }
+    : options;
+  if (sending && !receipt) {
+    showProductCommandRecovery(scope, 'Отправляем ответ…', { ...options, check: false });
     return true;
   }
-  if (unread && (waiting || receipt)) {
+  if (operation?.status === 'rejected' && operation.rejectionConfirmed === true && !receipt) {
+    const couldRetry = !unread && confirmedProductInterviewCanSend
+      && productInterviewSourcePhase(snapshot) === operation.sourcePhase && !durableDraft?.conflicted();
+    showProductCommandRecovery(scope, 'Ошибка отправки. Текст сохранён в поле.', { ...options, failed: true,
+      ...(couldRetry ? { checkLabel: 'Повторить отправку', onCheck: () => retryRejectedProductAnswer(operation) }
+        : { check: unread }) });
+    return true;
+  }
+  if (operation?.status === 'unknown' && operation.absenceChecked && !unread && !receipt
+      && confirmedProductInterviewCanSend && productInterviewSourcePhase(snapshot) === operation.sourcePhase
+      && !durableDraft?.conflicted()) {
+    showProductCommandRecovery(scope, 'Ответ пока не сохранён. Текст остался в поле.', { ...options, failed: true,
+      checkLabel: 'Повторить отправку', onCheck: () => sendProductInterviewAnswer(operation.text, {
+        scope: operation, draftValue: operation.draftValue,
+      }) });
+    return true;
+  }
+  if (['unknown', 'rejected'].includes(operation?.status) && !receipt) {
+    showProductCommandRecovery(scope, 'Отправка не подтверждена.', { ...options, failed: true,
+      checkLabel: 'Проверить отправку', onCheck: () => checkProductInterviewAnswer(operation) });
+    return true;
+  }
+  if (unread && (waiting || receipt || failed)) {
     showProductCommandRecovery(scope, receipt ? 'Ответ сохранён. Не удалось обновить состояние.'
-      : 'Не удалось обновить состояние.', { ...options,
-      detail: waiting ? 'Последнее подтверждённое состояние: ожидание обработки.' : '' });
+      : 'Не удалось обновить состояние.', { ...statusOptions, failed: Boolean(receipt) });
     return true;
   }
   if (receipt && operation && !receiptInTrace) {
-    showProductCommandRecovery(scope, 'Ответ сохранён. Состояние обработки уточняется.', options);
+    showProductCommandRecovery(scope, 'Ответ сохранён. Состояние обработки уточняется.', statusOptions);
     return true;
   }
-  if (waiting && !question) {
+  if ((waiting || failed) && !question) {
     const saved = receipt ? 'Ответ сохранён. ' : '';
     const delayed = Date.now() >= productProcessingBudget(snapshot);
-    const message = failed ? saved + 'Не удалось завершить обработку.'
+    const message = failed ? saved + (processing ? 'Сбой обработки.' : 'Не удалось завершить обработку.')
       : receipt && !receiptInTrace ? saved + 'Состояние обработки уточняется.'
       : snapshot.finish_availability?.reason === 'WAIT_TECHNICAL' ? saved + 'Состояние обработки требует проверки.'
       : delayed ? saved + 'Обработка занимает больше времени.'
       : saved + 'Ожидайте завершения обработки.';
-    const detail = [delayed && !failed ? 'Ожидайте завершения или проверьте состояние.' : '',
-      !failed && receiptInTrace && snapshot.blocking_system_wait === true
-        ? 'Время на ответы сейчас не расходуется.' : ''].filter(Boolean).join(' ');
-    showProductCommandRecovery(scope, message, { ...options, failed, detail });
+    const detail = !failed && receiptInTrace && snapshot.blocking_system_wait === true
+      ? 'Время на ответы сейчас не расходуется.' : '';
+    showProductCommandRecovery(scope, message, { ...statusOptions, failed, detail });
     return true;
   }
   const last = (snapshot.trace?.turns || []).reduce((a, b) => !a || b.sequence_no > a.sequence_no ? b : a, null);
@@ -541,7 +577,8 @@ const readProductInterviewAnswerStatus = async (operation) => {
     throw new Error('Сервер не подтвердил идентичность исходной отправки.');
   }
   if (value.status === 'accepted' && (value.turn?.turn_id !== operation.turnId
-      || value.turn.request_id !== operation.requestId || value.turn.content_text !== operation.text
+      || value.turn.request_id !== operation.requestId
+      || (operation.text !== undefined && value.turn.content_text !== operation.text)
       || value.turn.speaker_type !== 'assessee')) throw new Error('Сохранённый ответ отличается от исходной отправки.');
   return value;
 };
@@ -566,11 +603,10 @@ const applyProductInterviewAnswerStatus = (operation, value, snapshot) => {
     return changed;
   }
   if (pending.status === 'rejected' && value.status === 'absent'
-      && snapshot && productInterviewSnapshotMatches(snapshot, operation)
+      && productInterviewSnapshotMatches(snapshot, operation)
       && operation.sourcePhase === productInterviewSourcePhase(snapshot)) {
-    // A definite first-POST refusal plus exact absent receipt and current AS
-    // permits a corrected answer. The original draft remains available.
-    productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
+    if (pending.rejectionConfirmed) return false;
+    saveProductInterviewAnswer({ ...pending, rejectionConfirmed: true });
     return true;
   }
   // An absent receipt is not a rejected write. Only a changed source phase can
@@ -645,6 +681,11 @@ const reconcileProductInterviewAnswer = (snapshot) => {
     situationId: snapshot.current_situation?.assessment_situation_id };
   const operation = readProductInterviewAnswer(scope);
   if (!operation) return null;
+  if (operation.status === 'rejected' && operation.rejectionConfirmed
+      && operation.sourcePhase !== productInterviewSourcePhase(snapshot)) {
+    applyProductInterviewAnswerStatus(operation, { status: 'absent' }, snapshot);
+    return null;
+  }
   if (operation.status === 'prepared' && !productInterviewRequests.has(productInterviewRequestKey(operation))) {
     productAnswerStorage().removeItem(productInterviewAnswerKey(operation));
     return null;
@@ -665,43 +706,24 @@ const reconcileProductInterviewAnswer = (snapshot) => {
   return operation;
 };
 
-const renderProductInterviewAnswerDelivery = (snapshot, canSend, operation) => {
+const renderProductInterviewAnswerDelivery = (snapshot, operation) => {
+  const busy = operation && productInterviewRequests.has(productInterviewRequestKey(operation));
+  const savedRow = operation && [...interviewMessages.children].some((row) => row.dataset.turnId === operation.turnId);
+  const pendingTurnId = busy && !operation.accepted && !savedRow ? operation.turnId : null;
   const localRows = [...interviewMessages.children].filter((row) => row.dataset.pendingTurnId);
-  localRows.filter((row) => row.dataset.pendingTurnId !== operation?.turnId).forEach((row) => row.remove());
-  [...interviewMessages.children].filter((row) => row.dataset.deliveryRequestId
-    && row.dataset.deliveryRequestId !== operation?.requestId).forEach((row) => {
-    setInterviewMessageDeliveryState(row, 'sent');
-    delete row.dataset.deliveryRequestId;
-  });
+  localRows.filter((row) => row.dataset.pendingTurnId !== pendingTurnId).forEach((row) => row.remove());
   if (!operation) return;
-  const busy = productInterviewRequests.has(productInterviewRequestKey(operation));
-  if (!busy && operation.status !== 'rejected') recoverProductInterviewAnswer(operation, snapshot);
-  const savedRow = [...interviewMessages.children].find((row) => row.dataset.turnId === operation.turnId
-    && !row.dataset.pendingTurnId);
-  let row = savedRow || localRows.find((item) => item.dataset.pendingTurnId === operation.turnId);
-  if (!row) {
-    row = addInterviewMessage('user', operation.text, null, { scroll: false });
-    row.dataset.pendingTurnId = operation.turnId;
+  if (!busy && !operation.rejectionConfirmed) recoverProductInterviewAnswer(operation, snapshot);
+  if (pendingTurnId && !localRows.some(row => row.dataset.pendingTurnId === pendingTurnId)) {
+    const row = addInterviewMessage('user', operation.text, null, { scroll: false });
+    row.dataset.pendingTurnId = pendingTurnId;
   }
-  if (savedRow) localRows.forEach((item) => item.remove());
-  row.dataset.deliveryRequestId = operation.requestId;
-  const retry = canSend && !busy ? () => {
-    const pending = readProductInterviewAnswer(operation);
-    if (isProductInterviewPresentationCurrent(operation) && pending?.requestId === operation.requestId
-        && pending.turnId === operation.turnId) {
-      if (pending.status === 'rejected') recoverProductInterviewAnswer(pending, confirmedProductInterviewSnapshot);
-      else void sendProductInterviewAnswer(operation.text, { scope: operation, draftValue: operation.draftValue });
-    }
-  } : null;
-  const delivery = operation.status === 'saved' ? 'saved'
-    : operation.accepted ? 'accepted' : busy ? 'pending' : operation.status === 'rejected' ? 'rejected' : 'unknown';
-  // Receipt and recovery live once, in the status zone above the composer.
-  setInterviewMessageDeliveryState(row, ['accepted', 'saved'].includes(delivery) ? 'sent' : delivery,
-    retry, operation.rejectionMessage);
+  // Keep the source text visible and block only a new submit while its receipt
+  // is uncertain. The status action can check that exact original operation.
   if (busy) interviewTextarea.disabled = true;
+  if (operation.status === 'unknown' && !busy) interviewTextarea.readOnly = true;
   interviewSubmitButton.disabled = true;
-  // A confirmed saved Turn may use the already permitted separate finish action.
-  if (operation.status !== 'saved') interviewFinishButton.disabled = true;
+  if (operation.status !== 'saved' && !operation.rejectionConfirmed) interviewFinishButton.disabled = true;
 };
 
 const createProductInterviewTurnId = () => {
@@ -784,14 +806,19 @@ export const sendProductInterviewAnswer = async (text, { draftValue = interviewT
     }
     if (!operation.accepted && error?.productTurnPostRejected === true && operation.lastPostFresh === true) {
       operation.status = 'rejected';
-      operation.rejectionMessage = productInterviewRejectionMessage(error);
       saveProductInterviewAnswer(operation);
+      // A 409 can also come from processing after the Turn has been committed.
+      // Only the exact readback may upgrade this to a retryable refusal.
+      try {
+        const value = await readProductInterviewAnswerStatus(operation);
+        if (isProductInterviewPresentationCurrent(operation)) {
+          applyProductInterviewAnswerStatus(operation, value, confirmedProductInterviewSnapshot);
+          if (value.status === 'absent') await loadProductRuntime();
+        }
+      } catch { /* Preserve the original operation for a later check. */ }
     }
-    if (isProductInterviewPresentationCurrent(operation)) {
-      showError(interviewError, operation.status === 'rejected' ? operation.rejectionMessage : operation.status === 'prepared'
-        ? assessmentRuntimeErrorMessage(error, { draftSaved: isCurrentInterviewDraftSaved() }) : operation.accepted
-        ? 'Ответ принят. Не удалось обновить историю; проверьте её кнопкой в сообщении.'
-        : 'Пока не удалось подтвердить исход отправки. Проверьте сохранение кнопкой в сообщении.');
+    if (isProductInterviewPresentationCurrent(operation) && operation.status === 'prepared') {
+      showError(interviewError, assessmentRuntimeErrorMessage(error, { draftSaved: isCurrentInterviewDraftSaved() }));
     }
     return { accepted: operation.accepted, pending: operation.status !== 'prepared', error };
   } finally {
@@ -830,7 +857,7 @@ const payloadItems = (payload, keys) => {
   }).filter(Boolean);
 };
 
-const addProductSituationMessage = (payload) => {
+const addProductSituationMessage = (payload, materialsOpen) => {
   const row = document.createElement('div');
   row.className = 'interview-message interview-message--situation';
   const avatar = document.createElement('div');
@@ -842,17 +869,23 @@ const addProductSituationMessage = (payload) => {
 
   const source = typeof payload === 'string' ? { situation: payload } : payload;
   const title = payloadText(source, ['title', 'case_title']);
+  const role = payloadText(source, ['assessee_position', 'role', 'position']);
   const sections = [
-    ['Вводная', payloadText(source, ['introduction'])],
-    ['Ситуация', payloadText(source, ['initial_situation', 'situation', 'context', 'content'])],
-    ['Событие', payloadText(source, ['trigger'])],
-    ['Ваша роль', payloadText(source, ['assessee_position', 'role', 'position'])],
+    ['', payloadText(source, ['introduction'])],
+    ['', payloadText(source, ['initial_situation', 'situation', 'context', 'content'])],
+    ['', payloadText(source, ['trigger'])],
     ['Участники', payloadText(source, ['participants_and_positions'])],
-    ['Задача', payloadText(source, ['assessee_task', 'task', 'question'])],
+    ['Ваша задача', payloadText(source, ['assessee_task', 'task', 'question'])],
     ['Условия', payloadText(source, ['conditions_and_constraints', 'conditions', 'constraints'])],
   ].filter(([, body]) => body);
   const materials = payloadItems(source, ['initial_materials', 'available_materials', 'materials', 'attachments']);
 
+  if (role) {
+    const caption = document.createElement('p');
+    caption.className = 'product-situation-role';
+    caption.textContent = 'Ваша роль в ситуации · ' + role;
+    bubble.append(caption);
+  }
   if (title) {
     const heading = document.createElement('h3');
     heading.className = 'product-situation-title';
@@ -861,9 +894,15 @@ const addProductSituationMessage = (payload) => {
   }
   sections.forEach(([label, body]) => bubble.appendChild(renderInterviewStructuredBlock({ label, body })));
   if (materials.length) {
-    bubble.appendChild(renderInterviewStructuredBlock({ label: 'Материалы', items: materials }));
+    const disclosure = document.createElement('details');
+    disclosure.className = 'product-situation-materials';
+    disclosure.open = Boolean(materialsOpen);
+    const summary = document.createElement('summary');
+    summary.textContent = 'Доступные сведения';
+    disclosure.append(summary, renderInterviewStructuredBlock({ items: materials }));
+    bubble.append(disclosure);
   }
-  if (!title && !sections.length && !materials.length) {
+  if (!title && !role && !sections.length && !materials.length) {
     const error = document.createElement('p');
     error.className = 'product-situation-error';
     error.textContent = 'Не удалось отобразить условия ситуации. Обновите страницу или обратитесь к организатору.';
@@ -1133,6 +1172,7 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
     return confirmedProductInterviewSnapshot;
   }
   interviewPanel.classList.toggle('between-situations', Boolean(snapshot.between_situations));
+  interviewPanel.classList.toggle('product-answer-screen', Boolean(snapshot.current_situation && !snapshot.between_situations));
   const previousSituationId = state.productAssessmentSituationId;
   if (renderedProductCycleId !== snapshot.cycle_id) {
     state.caseOutcomeByNumber = {};
@@ -1199,30 +1239,39 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
         || event.text !== initialMaterialTextById.get(event.material_id)),
   ].sort((a, b) => a.sequence_no - b.sequence_no);
   const clarification = snapshot.clarification;
-  // Polling the same saved AS must not collapse/recreate its long DOM and move
-  // the document back to the message while the participant reads or uses controls.
-  // Include only rendered content; status, time and actionability still refresh.
-  const messageKey = JSON.stringify([snapshot.cycle_id, current?.assessment_situation_id,
-    current?.participant_payload, dialogue, clarification]);
-  const messagesChanged = renderedProductMessages?.key !== messageKey
-    || renderedProductMessages?.node !== interviewMessages.firstChild;
+  if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
+      !dialogue.some((turn) => turn.turn_id === clarification.question_turn_id)) {
+    dialogue.push({ role: 'assistant', speaker_type: 'assessment', text: clarification.question.text });
+  }
+  const rows = dialogue.filter(item => item.text);
+  const cardKey = JSON.stringify(current?.participant_payload);
+  const rowKeys = rows.map(item => JSON.stringify(item));
+  const appendOnly = sameSituation && renderedProductMessages.cardKey === cardKey
+    && renderedProductMessages.rowKeys.every((key, index) => key === rowKeys[index]);
+  const messagesChanged = !appendOnly || renderedProductMessages.rowKeys.length !== rowKeys.length;
   if (messagesChanged) {
     cancelInterviewScrollAlignment();
-    interviewMessages.innerHTML = '';
-    if (current) addProductSituationMessage(current.participant_payload);
-    for (const item of dialogue) {
-      if (item.text) {
-        const label = item.speaker_type === 'character' ? item.speaker_name || 'Персонаж'
-          : item.speaker_type === 'assessment' ? 'Уточнение к вашему ответу' : 'Материал ситуации';
-        const row = addInterviewMessage(item.role, item.text, label, { scroll: false });
-        if (item.turn_id) row.dataset.turnId = item.turn_id;
+    // Append-only polls keep the existing history and its focused disclosure
+    // in the DOM. Other changes preserve the open state on this AS.
+    if (!appendOnly) {
+      const previousMaterials = sameSituation ? interviewMessages.querySelector('.product-situation-materials') : null;
+      const restoreMaterialFocus = document.activeElement && previousMaterials?.contains(document.activeElement);
+      const materialsOpen = previousMaterials?.open;
+      interviewMessages.innerHTML = '';
+      if (current) {
+        const situation = addProductSituationMessage(current.participant_payload, materialsOpen);
+        if (restoreMaterialFocus) situation.querySelector('summary')?.focus({ preventScroll: true });
       }
     }
-    if (clarification?.status === 'ASK' && !clarification.response_outcome && clarification.question?.text &&
-        !(snapshot.trace?.turns || []).some((turn) => turn.turn_id === clarification.question_turn_id)) {
-      addInterviewMessage('assistant', clarification.question.text, 'Уточнение к вашему ответу', { scroll: false });
+    const first = appendOnly ? renderedProductMessages.rowKeys.length : 0;
+    for (const item of rows.slice(first)) {
+      const label = item.role === 'user' ? null : item.speaker_name
+        || (item.speaker_type === 'character' ? 'Собеседник'
+          : item.speaker_type === 'assessment' ? 'Уточнение к вашему ответу' : 'Материал ситуации');
+      const row = addInterviewMessage(item.role, item.text, label, { scroll: false });
+      if (item.turn_id) row.dataset.turnId = item.turn_id;
     }
-    renderedProductMessages = { key: messageKey, node: interviewMessages.firstChild,
+    renderedProductMessages = { cardKey, rowKeys, node: interviewMessages.firstChild,
       cycleId: snapshot.cycle_id, situationId: current?.assessment_situation_id };
   }
   renderInterviewMeta();
@@ -1254,12 +1303,19 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
 
   const cycleStatus = snapshot.status?.collection_status;
   const waitingQuestion = clarification?.status === 'ASK' && !clarification.response_outcome;
+  const format = current?.response_format;
+  const formatLabel = interviewPanel.querySelector('.interview-response-format');
+  if (formatLabel) {
+    formatLabel.hidden = false;
+    formatLabel.textContent = waitingQuestion ? 'Уточнение'
+      : format === 'written' ? 'Письменное задание' : format === 'dialogue' ? 'Диалог' : 'Оценочная ситуация';
+  }
   const closed = ['collection_closed', 'calculation_pending', 'calculated', 'failed'].includes(cycleStatus);
   const suspended = ['paused', 'interrupted'].includes(cycleStatus);
   interviewTimerBadge.classList.toggle('is-paused', productTimePaused(snapshot));
   interviewTextarea.disabled = closed || suspended || !current;
   interviewSubmitButton.disabled = closed || suspended || !current;
-  interviewFinishButton.disabled = closed || suspended || !current || waitingQuestion
+  interviewFinishButton.disabled = closed || suspended || !current || current.status === 'closed' || waitingQuestion
     || (current.status === 'scenario_ended' && snapshot.finish_availability?.allowed !== true);
   // Only recovery of an already saved suspension is available here.
   interviewPauseButton?.classList.toggle('hidden', cycleStatus !== 'paused' || !current);
@@ -1268,28 +1324,16 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
   if (interviewAdditionalButton) interviewAdditionalButton.textContent = 'Продолжить сохранённое прохождение';
   interviewCaseStatus.textContent = cycleStatus === 'interrupted'
     ? 'Прохождение прервано. Ответы сохранены; доступно продолжение в пределах оставшегося времени.'
-    : !current
-    ? 'Нет доступной оценочной ситуации. Для продолжения требуется подготовка назначения.'
-    : closed
-    ? snapshot.pipeline?.status === 'failed'
-      ? 'Обработка завершилась ошибкой. Ответы сохранены.'
-      : 'Сбор завершён. Выполняется итоговая обработка.'
-    : waitingQuestion
-      ? 'Ответьте на уточняющий вопрос.'
-      : current?.status === 'scenario_ended'
-        ? snapshot.finish_availability?.allowed === true
-          ? 'Уточнение завершено. Можно завершить ситуацию.'
-          : productProcessingFailed(snapshot)
-            ? 'Не удалось завершить анализ. Ответы сохранены; ожидаем восстановления обработки.'
-            : 'Анализируем последний ответ. Завершение ситуации пока недоступно.'
-        : '';
+    : !current ? 'Нет доступной оценочной ситуации. Для продолжения требуется подготовка назначения.' : '';
   let preparationPanel = interviewPanel.querySelector('.interview-preparation-status');
   if (snapshot.report_preparation) {
     if (!preparationPanel) { preparationPanel = document.createElement('div'); preparationPanel.id = 'interview-preparation-status'; preparationPanel.className = 'interview-preparation-status'; interviewCaseStatus.after(preparationPanel); }
     renderPreparation(preparationPanel, snapshot.report_preparation);
   } else preparationPanel?.remove();
   const sourceReady = productInterviewSourceReady(snapshot);
-  confirmedProductInterviewCanSend = !interviewSubmitButton.disabled && sourceReady && snapshot.blocking_system_wait !== true;
+  const answerProcessing = snapshot.answer_processing?.status;
+  confirmedProductInterviewCanSend = !interviewSubmitButton.disabled && sourceReady && snapshot.blocking_system_wait !== true
+    && answerProcessing !== 'pending' && answerProcessing !== 'failed';
   interviewTextarea.disabled ||= !sourceReady;
   interviewSubmitButton.disabled = !confirmedProductInterviewCanSend;
   if (interviewTextarea.labels?.[0]) interviewTextarea.labels[0].textContent = waitingQuestion
@@ -1298,8 +1342,11 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
     : suspended ? 'Отправка недоступна до продолжения оценки.'
     : current?.status === 'scenario_ended' && !waitingQuestion
       ? snapshot.finish_availability?.allowed === true ? 'Ответы приняты. Можно завершить ситуацию.' : 'Дождитесь завершения обработки'
-      : waitingQuestion ? 'Поясните ваше решение…' : 'Введите ответ или вопрос собеседнику…';
-  renderProductInterviewAnswerDelivery(snapshot, confirmedProductInterviewCanSend, pendingAnswer);
+      : waitingQuestion ? 'Ответьте на уточнение…'
+        : format === 'dialogue' ? 'Ответьте собеседнику или задайте вопрос…'
+          : 'Напишите свой ответ…';
+  interviewTextarea.readOnly = false;
+  renderProductInterviewAnswerDelivery(snapshot, pendingAnswer);
   if (interviewTextarea.disabled && sourceReady && !closed && !suspended) {
     interviewTextarea.placeholder = 'Дождитесь обновления состояния';
   }
@@ -1311,6 +1358,8 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
   if (!renderProductInterviewNotice(snapshot) && pendingCommand) {
     showProductCommandRecovery(commandScope, 'Итог завершения ситуации пока не подтверждён. Проверьте состояние той же команды.');
   }
+  const yourTurn = interviewPanel.querySelector('.interview-your-turn');
+  if (yourTurn) yourTurn.hidden = interviewSubmitButton.disabled;
   const hasAnswer = (snapshot.trace?.turns || []).some((turn) => turn.speaker_type === 'assessee');
   interviewFinishButton.disabled ||= !hasAnswer;
   interviewFinishButton.classList.toggle('hidden', interviewFinishButton.disabled);
@@ -1318,7 +1367,7 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
   // Align after both server messages and the local pending row have their final
   // layout. Only an explicit own send may pull a reader away from old history.
   const ownSend = productInterviewOwnSendScroll && isProductInterviewPresentationCurrent(productInterviewOwnSendScroll);
-  if (ownSend || messagesChanged) {
+  if (ownSend || (messagesChanged && (!appendOnly || wasNearBottom))) {
     const targetTop = current && previousCaseKey !== current.assessment_situation_id ? 0 : previousScrollTop;
     scheduleInterviewScrollAlignment({ top: sameSituation ? targetTop : 0,
       followBottom: Boolean(ownSend || (sameSituation && wasNearBottom)) });
@@ -1382,6 +1431,7 @@ const renderReturnCard = (value) => {
     renderedProductCycleId = value.cycle_id;
   }
   interviewPanel.classList.remove('between-situations');
+  interviewPanel.classList.remove('product-answer-screen');
   interviewPanel.classList.add('return-required');
   interviewCaseBadge.hidden = false;
   interviewPauseButton?.classList.add('hidden');
@@ -1670,7 +1720,7 @@ export const finishProductAssessment = async () => {
       return;
     }
     if (!isProductInterviewAnswerCurrent(scope)) return;
-    interviewCaseStatus.textContent = 'Анализируем, требуется ли уточнение…';
+    showProductCommandRecovery(scope, 'Проверяем, требуется ли уточнение.', { check: false });
     try {
       snapshot = await waitForProductClarification(snapshot.clarification?.id || null);
       if (!snapshot) return;
@@ -1858,10 +1908,12 @@ const renderInterviewStructuredBlock = ({ label, body = '', items = [], variant 
   section.className =
     'interview-structured-block' + (variant ? ' interview-structured-block--' + variant : '');
 
-  const labelNode = document.createElement('div');
-  labelNode.className = 'interview-structured-block-label';
-  labelNode.textContent = label;
-  section.appendChild(labelNode);
+  if (label) {
+    const labelNode = document.createElement('div');
+    labelNode.className = 'interview-structured-block-label';
+    labelNode.textContent = label;
+    section.appendChild(labelNode);
+  }
 
   if (body) {
     const bodyNode = document.createElement('div');
@@ -2168,8 +2220,18 @@ const renderInterviewMeta = () => {
   const position = state.assessmentCaseNumber;
   const knownTotal = Number.isInteger(total) && total > 0;
   const knownPosition = Number.isInteger(position) && position > 0 && (!knownTotal || position <= total);
+  const workspace = interviewPanel.classList.contains('product-answer-screen');
+  const target = interviewPanel.querySelector?.(workspace ? '.interview-title-row' : '.interview-case-heading');
+  if (target && interviewCaseBadge.parentElement !== target) {
+    if (workspace) target.append(interviewCaseBadge);
+    else target.prepend(interviewCaseBadge);
+  }
+  const format = interviewPanel.querySelector?.('.interview-response-format');
+  if (format && !workspace) format.hidden = true;
+  const caption = interviewPanel.querySelector?.('.interview-timer-caption');
+  if (caption && !workspace) caption.textContent = 'Осталось на ответы';
   interviewCaseBadge.textContent = cycle
-    ? knownPosition && knownTotal ? `${position} ситуация из ${total}`
+    ? knownPosition && knownTotal ? `Ситуация ${position} из ${total}`
       : knownTotal ? `Всего ситуаций: ${total}` : 'Прогресс уточняется'
     : 'Ситуация ' + position + ' из ' + total;
   interviewCaseTitle.textContent = state.assessmentCaseTitle || 'Оценочная ситуация';
@@ -2559,6 +2621,7 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
     operation.lastPostFresh = operation.status === 'prepared' && Number(operation.attemptCount || 0) === 0;
     operation.attemptCount = Number(operation.attemptCount || 0) + 1;
     operation.status = 'unknown';
+    operation.absenceChecked = false;
     saveProductInterviewAnswer(operation);
     const response = await fetchWithDeadline(operation.endpoint, { method: 'POST',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -2579,9 +2642,6 @@ const submitAssessmentMessage = async (text, requestIdentity = null) => {
       }
     }
     if (!isProductInterviewPresentationCurrent(operation)) return { accepted: operation.accepted, stale: true };
-    if (operation.clarificationId && operation.accepted) {
-      interviewCaseStatus.textContent = 'Повторно анализируем ответ на уточнение…';
-    }
     const readbackResponse = await fetchWithDeadline(runtimeUrl, { credentials: 'same-origin' });
     const readback = await readApiResponse(readbackResponse, 'Ответ принят, но историю пока не удалось обновить.');
     if (!isProductInterviewPresentationCurrent(operation)) return { accepted: operation.accepted, stale: true };
@@ -2803,6 +2863,8 @@ export const initInterview = () => {
       onConflictChange: (blocked) => {
         interviewSubmitButton.disabled = blocked || interviewTextarea.disabled || !confirmedProductInterviewCanSend
           || Boolean(readProductInterviewAnswer());
+        const prompt = interviewPanel.querySelector('.interview-your-turn');
+        if (prompt) prompt.hidden = interviewSubmitButton.disabled;
       },
       storage: { getItem: (key) => window.localStorage.getItem(key), setItem: (key, value) => window.localStorage.setItem(key, value),
         removeItem: (key) => window.localStorage.removeItem(key), keys: () => Object.keys(window.localStorage) },
@@ -2848,6 +2910,17 @@ export const initInterview = () => {
       showInterviewRuntimeError(new Error('Не удалось сохранить текущий текст в браузере. Оставьте страницу открытой и проверьте соединение перед отправкой.'));
     }
   });
+  const viewport = window.visualViewport;
+  if (viewport) {
+    const fitViewport = () => {
+      const shell = interviewPanel.closest('.shell');
+      if (viewport.scale === 1 && Math.abs(viewport.height - window.innerHeight) > 1) {
+        shell?.style.setProperty('--interview-viewport-height', viewport.height + 'px');
+      } else shell?.style.removeProperty('--interview-viewport-height');
+    };
+    viewport.addEventListener('resize', fitViewport);
+    fitViewport();
+  }
   placeInterviewTimerBadge();
   interviewCompactQuery?.addEventListener('change', placeInterviewTimerBadge);
 
@@ -2894,6 +2967,8 @@ export const initInterview = () => {
   });
 
   registerLeaveInterviewCleanup(() => {
+    interviewPanel.classList.remove('product-answer-screen');
+    interviewTextarea.readOnly = false;
     advanceAssessmentViewGeneration();
     cancelInterviewScrollAlignment();
     clearInterviewTimer();

@@ -40,5 +40,7 @@ def sample(case_id='CASE.SPEC.02', *, functional=True, case=None, schema_profile
 if __name__ == '__main__':
     # stdout only, consumed by the browser component fixture; no private data.
     value = sample(sys.argv[1] if len(sys.argv) > 1 else 'CASE.SPEC.02')
-    print(json.dumps({'scope': value['scope'], 'participant_payload': value['snapshot']['participant_payload']},
-                     ensure_ascii=False))
+    print(json.dumps({
+        'scope': value['scope'], 'participant_payload': value['snapshot']['participant_payload'],
+        'response_format': 'dialogue' if value['execution']['characters'] else 'written',
+    }, ensure_ascii=False))

@@ -21,7 +21,7 @@ for (const completed of [undefined, null, 0, 2]) test(`shared projection wins wi
   saved.route = { positions: [{ position_no: 1, current_assessment_situation_id: 'as-a' }],
     progress: { total_positions: 1, completed_positions: completed } };
   h.subject.renderProductRuntime(saved);
-  assert.equal(h.context.interviewCaseBadge.textContent, '3 ситуация из 8');
+  assert.equal(h.context.interviewCaseBadge.textContent, 'Ситуация 3 из 8');
   saved.participant_progress.current_position_no = null;
   h.subject.renderProductRuntime(saved);
   assert.equal(h.context.interviewCaseBadge.textContent, 'Всего ситуаций: 8');

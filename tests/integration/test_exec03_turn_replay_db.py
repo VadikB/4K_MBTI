@@ -6,7 +6,10 @@ from uuid import uuid4
 
 import pytest
 
+from Api import m6_repository, m7_clarification_repository, m10_orchestration
 from Api import m5_scenario_runtime as runtime
+from Api.assessment_answer_status import read as answer_status
+from Api.m10_product_flow import read_runtime
 from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
 from tests.integration.test_m7_cycle_planner_db import active_cycle, db
 
@@ -102,3 +105,35 @@ def test_pending_commit_retry_then_late_original_finalization_has_one_turn_and_o
         saved = c.execute('SELECT status,attempt_no FROM m5_turn_operations WHERE request_id=%s',
                           (identity['request_id'],)).fetchone()
         assert saved == {'status': 'applied', 'attempt_no': 1}
+
+
+def test_accepted_failed_turn_has_addressed_readback_without_another_turn(db):
+    identity = setup(db)
+    with db() as c:
+        m6_repository.ensure_schema(c)
+        m7_clarification_repository.ensure_schema(c)
+        m10_orchestration.ensure_schema(c)
+    keys = {key: value for key, value in identity.items() if key != 'content'}
+
+    class FailedProvider(ControlledSemanticAdapter):
+        def decide(self, **_kwargs):
+            raise RuntimeError('Synthetic processing failure')
+
+    with pytest.raises(RuntimeError, match='Synthetic processing failure'):
+        send(db, identity, FailedProvider({}))
+    before = counts(db)
+    with db() as c:
+        for _ in range(2):
+            receipt = answer_status(c, **keys)
+            assert receipt['status'] == 'accepted'
+            assert receipt['processing_status'] == 'failed'
+            assert receipt['turn']['content_text'] == identity['content']
+            value = read_runtime(c, cycle_id=receipt['cycle_id'])
+            assert value['answer_processing'] == {
+                'turn_id': identity['turn_id'], 'request_id': identity['request_id'], 'status': 'failed',
+            }
+            assert value['blocking_system_wait'] is False
+            assert [str(turn['turn_id']) for turn in value['trace']['turns'] if turn['speaker_type'] == 'assessee'] == [
+                identity['turn_id'],
+            ]
+    assert counts(db) == before

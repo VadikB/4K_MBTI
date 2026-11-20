@@ -45,7 +45,11 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
   const storedRevision = (entry) => {
     try { return JSON.parse(storage.getItem(entry.key))?.revision; } catch { return undefined; }
   };
-  const message = (entry, text) => { if (valid(entry)) status.textContent = text; };
+  const message = (entry, text, quiet = false) => {
+    if (!valid(entry)) return;
+    status.dataset.draftRoutine = String(quiet);
+    status.textContent = text;
+  };
   const persist = (entry) => {
     try { storage.setItem(entry.key, JSON.stringify(entry.record)); entry.local = true; }
     catch { entry.local = false; }
@@ -86,7 +90,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
           delete entry.record.alternatives; entry.record.editorId = editorId;
           entry.conflict = false; entry.ready = true; onConflictChange(false);
           persist(entry); actions.replaceChildren(); input.dataset.draftRevision = entry.record.revision;
-          if (keepLocal) await flush(); else message(entry, 'Черновик восстановлен. Ответ ещё не отправлен');
+          if (keepLocal) await flush(); else message(entry, 'Черновик восстановлен. Ответ ещё не отправлен', true);
         } catch { /* keep the conflict and all local alternatives available for retry */ }
         finally {
           if (entry.choice === choice) {
@@ -122,7 +126,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
     if (entry && valid(entry) && !entry.ready && !entry.record.confirmed) { unsaved(entry); return; }
     if (!entry || !valid(entry) || entry.suspended || !entry.ready || entry.conflict || entry.inflight || entry.record.confirmed) return;
     const sent = { ...entry.record }; entry.inflight = true;
-    message(entry, 'Сохраняем черновик…');
+    message(entry, 'Сохраняем черновик…', true);
     try {
       const remote = await request(entry.scope, { slot_id: entry.scope.slotId,
         expected_version: sent.baseVersion, revision: sent.revision, text: sent.text });
@@ -134,7 +138,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
       let stored; try { stored = JSON.parse(storage.getItem(entry.key)); } catch { /* status below */ }
       if (stored && ![sent.revision, entry.record.revision].includes(stored.revision)) { conflict(entry); return; }
       persist(entry);
-      if (entry.record.confirmed) message(entry, 'Черновик сохранён'); else schedule();
+      if (entry.record.confirmed) message(entry, 'Черновик сохранён', true); else schedule();
     } catch (error) {
       if (!valid(entry) || entry.stopped) return;
       if (Number(error?.status) === 409 && /DRAFT_UNAVAILABLE|DRAFT_SLOT_CHANGED|M7_/.test(String(error.code || error.message))) {
@@ -169,7 +173,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
       if (saved && typeof saved.text === 'string' && saved.text.length <= 10000 && saved.expiresAt > Date.now()) {
         entry.record = saved; entry.local = true; input.value = saved.text;
         input.dataset.draftRevision = saved.revision;
-        if (saved.text) message(entry, 'Черновик восстановлен. Ответ ещё не отправлен');
+        if (saved.text) message(entry, 'Черновик восстановлен. Ответ ещё не отправлен', true);
       } else if (saved) storage.removeItem(key);
     } catch { /* remote can still restore/safely save without local storage */ }
     if (previous && !readOnly && (previous.text !== entry.record.text || previous.alternatives?.length)) {
@@ -186,7 +190,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
         entry.record.text = fallbackText; entry.record.revision = fallbackRevision; entry.record.confirmed = false;
         input.value = fallbackText; input.dataset.draftRevision = fallbackRevision;
       }
-      message(entry, 'Исход отправки пока не подтверждён. Прежний текст можно скопировать');
+      message(entry, 'Исход отправки пока не подтверждён. Прежний текст можно скопировать', true);
       const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'text-button';
       copy.textContent = 'Скопировать текст';
       copy.addEventListener('click', async () => {
@@ -224,7 +228,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
       if (entry.record.revision === remote.revision && entry.record.text === remote.text) entry.record.confirmed = true;
       persist(entry);
       if (entry.record.confirmed) {
-        if (remote.text) message(entry, 'Черновик восстановлен. Ответ ещё не отправлен');
+        if (remote.text) message(entry, 'Черновик восстановлен. Ответ ещё не отправлен', true);
       } else void flush();
     }).catch(() => { if (valid(entry) && entry.record.text) unsaved(entry); });
   };
@@ -244,7 +248,7 @@ export const createAnswerDrafts = ({ input, status, actions, request, current,
     // Unconfirmed-runtime local records expire with the known fixed Cycle window.
     entry.record.expiresAt ||= scopeExpiry(entry.scope);
     input.dataset.draftRevision = entry.record.revision; persist(entry);
-    if (entry.conflict) conflict(entry); else { message(entry, 'Сохраняем черновик…'); schedule(); }
+    if (entry.conflict) conflict(entry); else { message(entry, 'Сохраняем черновик…', true); schedule(); }
   };
   const clearAccepted = (operation) => {
     if (!operation?.draftSlotId) return;

@@ -8,26 +8,24 @@ const json = (value, status = 200) => new Response(JSON.stringify(value), {
 const commandKey = (kind, situation = 'as-a') =>
   `agent4k.assessmentCommand:${kind}:cycle-a:${situation}:8`;
 
-test('F07 first known 409 is rejected beside the answer and a status check does not resend the Turn', async () => {
+test('F07 a 409 is a refusal only after the exact status confirms absence', async () => {
   const h = createInterviewHarness();
   const snapshot = h.snapshot();
   h.subject.renderProductRuntime(snapshot); h.flush();
   h.setFetch(async (url, options) => {
-    if (options?.method === 'POST') return json({ detail: 'M5_AS_NOT_ACTIVE' }, 409);
+    if (options?.method === 'POST') return json({ detail: 'M5_STATE_REVISION_CONFLICT' }, 409);
     if (String(url).endsWith('/runtime')) return json(snapshot);
+    if (String(url).endsWith('/return-state')) return json({ cycle_id: 'cycle-a', allowed_action: 'none' });
+    const params = new URL(url, 'https://example.test').searchParams;
     return json({ status: 'absent', cycle_id: 'cycle-a', assessment_situation_id: 'as-a',
-      request_id: h.subject.readProductInterviewAnswer()?.requestId,
-      turn_id: h.subject.readProductInterviewAnswer()?.turnId, clarification_id: null });
+      request_id: params.get('request_id'), turn_id: params.get('turn_id'), clarification_id: null });
   });
   await h.subject.sendProductInterviewAnswer('Синтетический ответ');
   const pending = h.subject.readProductInterviewAnswer();
   assert.equal(pending.status, 'rejected');
-  assert.match(pending.rejectionMessage, /отклон|недоступ/);
-  const row = h.messages.children.find((item) => item.dataset.pendingTurnId === pending.turnId);
-  assert.match(row.querySelector('.interview-message-delivery-status').textContent, /отклон|недоступ/);
-  assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
-  row.querySelector('.interview-message-retry').onclick();
-  await Promise.resolve(); await Promise.resolve();
+  assert.equal(pending.rejectionConfirmed, true);
+  assert.match(h.errors.at(-1), /Ошибка отправки/);
+  assert.equal(h.messages.children.some(item => item.dataset.pendingTurnId), false);
   assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
   assert.equal(h.controls.submit.disabled, true);
 });
