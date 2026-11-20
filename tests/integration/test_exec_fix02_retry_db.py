@@ -232,6 +232,16 @@ def _first(env):
     return cycle, first_as
 
 
+def _present_admitted_next(env, cycle, assessment_situation_id):
+    runtime = env.http.get(f'/users/assessment/cycles/{cycle}/runtime').json()
+    assert runtime['current_situation'] is None
+    target = runtime['next_presentation']
+    assert target['assessment_situation_id'] == assessment_situation_id
+    presented = env.http.post(f'/users/assessment/m7/cycles/{cycle}/present-next', json=target)
+    assert presented.status_code == 201, presented.text
+    assert presented.json()['presentation']['assessment_situation_id'] == assessment_situation_id
+
+
 def test_first_next_capacity_recovery_and_concurrent_retry_fencing(retry_env, tmp_path):
     env = retry_env
     evidence = []
@@ -298,6 +308,7 @@ def test_first_next_capacity_recovery_and_concurrent_retry_fencing(retry_env, tm
             "operation_id": reclaimed["operation_id"], "cycle_id": cycle,
             "as_id": result["decision"]["assessment_situation_id"], "concurrent_retry_deduplicated": True,
             "reclaimed_token_changed": True, "late_workers_no_effect": True})
+    _present_admitted_next(env, cycle, second_as)
     _close(env, cycle, second_as)
     third = _post(env, "third-position", cycle)
     assert third.status_code == 201 and third.json()["status"] == "queued"
