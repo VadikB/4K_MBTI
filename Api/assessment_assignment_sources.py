@@ -6,19 +6,27 @@ from Api.assessment_role_profiles import load_published_role_profile
 
 # Both timestamps use the source/confirmation NOW() clock. An assignment's UTC
 # display timestamp is not interchangeable with that historical provenance.
+CYCLE_CONFIRMATION_PROOF_SQL = """EXISTS (SELECT 1 FROM m5_cycles confirmed_cycle
+            WHERE confirmed_cycle.assignment_id=assignment.id
+              AND confirmed_cycle.personalized_profile_id=confirmation.personalized_profile_id
+              AND confirmed_cycle.owner_user_id=confirmation.user_id
+              AND confirmed_cycle.organization_id=confirmation.organization_id
+              AND confirmed_cycle.usage_scope='assessment')"""
 CONFIRMATION_ASSIGNMENT_SCOPE_SQL = """(
     to_jsonb(confirmation)->'answers_json'->>'assignment_id'=assignment.id::text
     OR (to_jsonb(confirmation)->'answers_json'->>'assignment_id' IS NULL AND (
         (to_jsonb(confirmation)->>'confirmed_at')::timestamp >=
             (to_jsonb(binding)->>'created_at')::timestamp
-        OR EXISTS (SELECT 1 FROM m5_cycles confirmed_cycle
-            WHERE confirmed_cycle.assignment_id=assignment.id
-              AND confirmed_cycle.personalized_profile_id=confirmation.personalized_profile_id
-              AND confirmed_cycle.owner_user_id=confirmation.user_id
-              AND confirmed_cycle.organization_id=confirmation.organization_id
-              AND confirmed_cycle.usage_scope='assessment')
+        OR """ + CYCLE_CONFIRMATION_PROOF_SQL + """
     ))
 )"""
+
+
+def confirmation_assignment_scope_sql(connection) -> str:
+    """PM-02 can run before PM-04 exists; absent Cycle storage proves nothing."""
+    row = connection.execute("SELECT to_regclass(current_schema()||'.m5_cycles') AS relation").fetchone()
+    return (CONFIRMATION_ASSIGNMENT_SCOPE_SQL if row and row.get('relation') else
+            CONFIRMATION_ASSIGNMENT_SCOPE_SQL.replace(CYCLE_CONFIRMATION_PROOF_SQL, 'FALSE'))
 
 
 def ensure_schema(connection) -> None:
@@ -232,7 +240,7 @@ def bind(connection, *, assignment_id: int, organization_id: int, configuration_
           AND profile.assessment_configuration_id=binding.assessment_configuration_id
           AND profile.role_profile_version_id=binding.role_profile_version_id
         WHERE confirmation.user_id=%s AND confirmation.organization_id=%s AND confirmation.assignment_ref=%s
-        AND """ + CONFIRMATION_ASSIGNMENT_SCOPE_SQL + " LIMIT 1",
+        AND """ + confirmation_assignment_scope_sql(connection) + " LIMIT 1",
         (assignment_id, assignment['recipient_user_id'], organization_id, assignment['assignment_ref'])).fetchone():
         raise ValueError('ASSIGNMENT_SOURCES_FROZEN: Создайте новое назначение; подтверждённый профиль неизменяем.')
     return dict(connection.execute("""INSERT INTO organization_assessment_source_bindings

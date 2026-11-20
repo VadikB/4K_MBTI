@@ -123,3 +123,74 @@ SIGINT, второй также прерван; ни один не засчит�
 ТЗ SHA-256: `56241fbb54f43ae4c6c91f14989330aab6475ee26429e15a1a21afa1784163c9`.
 M4 mirror SHA-256: `9af86011c1ea1bef12058700bdd345c5cee335bbc6ec4d392fcfc4f3e5709fd1`.
 Change 01 PDF SHA-256: `dfc868fd8c2b306e2614e0971759850873da22b354dbe94823c8921460a95081`.
+
+## Реализация и проверка требований
+
+Промежуточный кандидат: `956fa0dfb6f5d775695574d7e0e6e3b77a55e604`:
+backend 1305 PASS, HTTP 219 PASS, frontend 476 PASS; полный integration дал
+484 PASS / 2 FAIL / 2 explicit LLM SKIPPED (765.74 s). Оба FAIL — изолированный
+PM-02 без таблицы m5_cycles. Отсутствие optional Cycle witness теперь даёт FALSE
+в соответствующей ветви SQL, а не зависимость создания первого M4 от PM-04.
+Точное назначение в JSON и собственный binding provenance проверяются всегда.
+Изолированные PM-02 тесты не ослаблялись и не заменялись подставным PASS.
+Окончательный кандидат и повтор полного набора фиксируются ниже.
+
+- `Api/assessment_assignment_operations.py`: unique operation INSERT сериализует
+  одинаковые команды; request/result сохраняются одной транзакцией с assignments
+  и bindings. Result immutable на уровне PostgreSQL. Полный fingerprint включает
+  явный configuration selector; старый header fingerprint совместим с прежним кодом.
+- `Api/routes.py`: текущие права проверяются перед replay. Сохранённая квитанция
+  читается до текущих readiness/program checks; существующая историческая команда
+  не назначает текущее поколение повторно. Отсутствующая operation → 404,
+  несовпадающие параметры → 409. Legacy без доказательства → uncertain без ID.
+- `Api/schemas.py`: additive `reason_code`; `uncertain` использует прежнее строковое
+  поле status. Параметр configuration selector добавлен к GET readback. Существующий
+  frontend при uncertain сохраняет неизвестный исход, успех не показывает.
+- `Api/assessment_assignment_sources.py`: sources проверяются перед любым reuse;
+  frozen guard относится к confirmation/profile именно этого назначения. Новое Б
+  не меняет sources А. Общая SQL-проверка scope нужна W02 и admin projection.
+- `Api/acquaintance.py`: новые подтверждения включают assignment_id в свой JSON/
+  checksum; Б проходит W02 и формирует свой профиль. Legacy профиль сохраняется
+  только при доказанном scope; старые JSON/checksum не пересчитываются. Поздний
+  resolve не перескакивает с А на Б. Старый unmanaged W02 остаётся совместимым.
+- `Api/admin_assignment_projection.py`: строка/сводка используют тот же scope
+  confirmation. Даже exact modern operation не подменяет отсутствие профиля Б.
+- Регрессии расширяют существующие suites, а не создают параллельный продуктовый
+  путь: adm1c receipts, adm31 cancellation, questionnaire/lineage и marker-owned
+  path_admin_contract. Для W02 используются настоящие lifecycle M4 и HTTP routes.
+
+| Критерий | Фактическая проверка | Итог адресного набора |
+| --- | --- | --- |
+| А → отмена до старта → Б, readback/replay А и Б | Реальные sessions + HTTP/PG, точные ID и исходный status | PASS |
+| Б со старыми источниками / новой редакцией / новой ролью | Три параметризованных сценария; свои ответы и новый M4; А/profile/confirmation/checksum без изменений | PASS |
+| Ранний допуск Б | HTTP показывает отсутствие собственного profile, preparation_scope отказывает; современная operation сама профиль не заменяет | PASS |
+| Замороженный А и отмена после старта | Существующие cancellation/start/lineage guards и отрицательный bind А | PASS |
+| Запрещённые источники | Реальные AC10 program/role/catalog/tenant/ref negatives; повторное использование недоступного config отклонено | PASS |
+| Lost reply / одновременный same-key | Идентичный ответ и одна запись результата; different-key сохраняет собственный исход already_assigned | PASS |
+| Частичный пакет и последующая смена eligibility | Assigned/not_assigned с reason_code сохраняются при POST/GET replay | PASS |
+| Чужой actor/org, потерянные права, подмена запроса | Реальные 403/404/409; cfg/role/recipient substitution не получает успех | PASS |
+| Атомарность | Реальный поздний bind SQL failure и trigger failure в финальной записи результата; snapshot всех effects неизменён | PASS |
+| Immutable result | UPDATE и DELETE отклоняются PostgreSQL trigger | PASS |
+| Legacy и откат | Unknown без связи; exact historical ID после revocation; readback до/после expand; прежний INSERT при наличии новых квитанций | PASS |
+
+## Review и эксплуатация
+
+Техническое EVC review: один результат, scope/права проверяются сервером;
+fingerprint, status и assignment_id принадлежат команде, GET не создаёт эффектов.
+UI/сценарий, предметная модель и техническое хранение разделены. Новых prompts,
+справочников, thresholds, нормативных fallback или изменений опубликованных
+пакетов нет. Профиль/отмена/подготовка/старт остаются разными условиями.
+Сохранённые snapshots/контрольные суммы и API-маршруты не переписываются.
+Синтетические test fixtures не являются нормой или подтверждением human review.
+
+Миграция — только аддитивный CREATE TABLE в действующем bootstrap sources.
+На рабочие TEST/production БД не применялась. В приложении до expand нельзя
+использовать новую команду: обязательная таблица не подменяется transient fallback.
+GET старой operation совместим и до появления таблицы результатов.
+Откат сохраняет новую таблицу/записи; старый код продолжает читать старые поля и
+fingerprint. Его прежние дефекты readback после отката снова возможны. Исправлять
+историю миграцией либо выдавать текущую assignment за старую receipt запрещено.
+
+Открыто: внешний CI, человеческое review/визуальная приёмка и отдельный допуск
+публикации/выпуска. Предметных неразрешённых решений ADM-FIX-02 нет. Задача не
+объявляет полный продуктовый PATH, методологическое качество M4/AS или baseline.

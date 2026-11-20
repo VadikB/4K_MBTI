@@ -49,7 +49,7 @@ def _checksum(value: dict) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
-def _confirmation_scope(readiness: dict) -> tuple[str, tuple]:
+def _confirmation_scope(connection, readiness: dict) -> tuple[str, tuple]:
     if readiness.get('assignment_id') is None:
         return '', ()
     return (''' AND EXISTS (SELECT 1 FROM organization_assessment_assignments assignment
@@ -58,7 +58,7 @@ def _confirmation_scope(readiness: dict) -> tuple[str, tuple]:
         WHERE assignment.id=%s AND assignment.recipient_user_id=confirmation.user_id
           AND assignment.organization_id=confirmation.organization_id
           AND assignment.assignment_ref=confirmation.assignment_ref AND ''' +
-        assignment_sources.CONFIRMATION_ASSIGNMENT_SCOPE_SQL + ')', (readiness['assignment_id'],))
+        assignment_sources.confirmation_assignment_scope_sql(connection) + ')', (readiness['assignment_id'],))
 
 
 def early_readiness(connection, *, user_id: int) -> dict:
@@ -402,7 +402,7 @@ def save_answers(connection, *, user_id: int, answers: dict, confirm: bool = Fal
         raise ValueError('W02_CONSENT_REQUIRED')
     merged = dict(existing["answers_json"] or {}) if existing else {}
     merged.update(normalized)
-    scope_sql, scope_params = _confirmation_scope(readiness)
+    scope_sql, scope_params = _confirmation_scope(connection, readiness)
     confirmation = connection.execute('''SELECT personalized_profile_id FROM participant_acquaintance_confirmations confirmation
         WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
           AND questionnaire_revision_id IS NOT DISTINCT FROM %s''' + scope_sql +
@@ -497,7 +497,7 @@ def _bind_confirmed_answers(connection, *, user_id: int, readiness: dict, answer
               AND confirmation.questionnaire_revision_id=%s
               AND profile.assessment_configuration_id=%s AND profile.role_profile_version_id=%s
               AND profile.organization_context_version_id=%s
-              AND ''' + assignment_sources.CONFIRMATION_ASSIGNMENT_SCOPE_SQL + '''
+              AND ''' + assignment_sources.confirmation_assignment_scope_sql(connection) + '''
             ORDER BY confirmation.confirmed_at DESC,confirmation.id DESC LIMIT 1''',
             (binding['assignment_id'], user_id, readiness['organization_id'], readiness['assignment_ref'],
              legacy_checksum, readiness.get('questionnaire_revision_id'), binding['assessment_configuration_id'],
@@ -573,7 +573,7 @@ def resolve_confirmed_profile(connection, *, user_id: int) -> dict:
             or not state.get('consent_accepted_at') or not state.get('answers_confirmed_at')
             or state.get('consent_version') != readiness['briefing']['consent_version']):
         raise ValueError('W02_CONFIRMATION_REQUIRED')
-    scope_sql, scope_params = _confirmation_scope(readiness)
+    scope_sql, scope_params = _confirmation_scope(connection, readiness)
     confirmation = connection.execute('''SELECT answers_json FROM participant_acquaintance_confirmations confirmation
         WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
           AND questionnaire_revision_id IS NOT DISTINCT FROM %s''' + scope_sql +
@@ -664,7 +664,7 @@ def late_readiness(connection, *, user_id: int, readiness: dict | None = None) -
     if readiness["status"] != "ready":
         return {"status": "waiting_for_assessment_data", "reason": readiness["reason"],
                 "personalized_profile_id": None}
-    scope_sql, scope_params = _confirmation_scope(readiness)
+    scope_sql, scope_params = _confirmation_scope(connection, readiness)
     confirmation = connection.execute(
         """SELECT personalized_profile_id FROM participant_acquaintance_confirmations confirmation
            WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
