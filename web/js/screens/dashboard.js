@@ -109,8 +109,14 @@ const performCardAction = async (card, event) => {
     return;
   }
   if (card.action === 'open_processing') {
-    const { openProcessingScreen } = await import('../screen-loaders.js');
-    await openProcessingScreen();
+    const ownerId = state.pendingUser?.id;
+    const identityEpoch = state.identityEpoch;
+    const { loadProcessing } = await import('../screen-loaders.js');
+    const module = await loadProcessing();
+    if (state.currentScreen === 'dashboard' && state.pendingUser?.id === ownerId
+        && state.identityEpoch === identityEpoch && state.productCycleId === card.cycle_id) {
+      module.openProcessing({ cycleId: card.cycle_id });
+    }
     return;
   }
   if (card.action === 'open_legacy_acquaintance') {

@@ -277,7 +277,7 @@ const bootApp = async () => {
           await openReportScreen({
             m8CycleId: params.get('cycle_id'), m8ReportId: params.get('report_id'),
             previousReportId: params.get('previous_report_id') || '', comparisonView: params.get('report_view') === 'comparison',
-            returnTarget: params.get('report_id') ? 'reports' : 'home',
+            returnTarget: window.history.state?.reportReturnTarget ?? (params.get('report_id') ? 'reports' : 'home'),
           });
           return;
         }
@@ -288,6 +288,11 @@ const bootApp = async () => {
           notice.setAttribute('role', 'status');
           notice.textContent = 'Старая ссылка не указывает на прохождение. Выберите отчёт по программе и дате.';
           document.getElementById('profile-history-list')?.prepend(notice);
+          return;
+        }
+        const outcomeCycleId = screen === 'processing' && params.get('cycle_id');
+        if (outcomeCycleId) {
+          await openProcessingScreen({ cycleId: outcomeCycleId });
           return;
         }
         const journey = await loadUserJourneyState();
@@ -316,12 +321,7 @@ const bootApp = async () => {
           return;
         }
         if (['show_processing', 'show_assessment_error'].includes(journey?.next_action)) {
-          await openProcessingScreen({
-            initialCycleSnapshot: state.assessmentRuntimeKind === 'cycle' ? {
-              results_status: journey?.assessment?.status === 'failed' ? 'failed' : 'processing',
-              report_status: journey?.report_status || 'not_ready',
-            } : null,
-          });
+          await openProcessingScreen();
           return;
         }
         if (journey?.next_action === 'show_dashboard') {

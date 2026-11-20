@@ -3529,7 +3529,7 @@ test('R03 direct interview URL uses journey and keeps Cycle failure visible', as
   await page.goto(`${base}/?screen=interview&cycle_id=stale-cycle`);
   await expect(page.locator('#processing-panel')).toBeVisible();
   await expect(page.locator('#processing-outcome-title')).toContainText('Не удалось подготовить результат');
-  await expect(page.locator('#processing-panel').getByRole('button', { name: 'Проверить состояние', exact: true })).toBeVisible();
+  await expect(page.locator('#processing-panel').getByRole('button', { name: 'Проверить ещё раз', exact: true })).toBeVisible();
   expect(journeyRead).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem('agent4k.productCycleId'))).toBe('current-cycle');
 });
@@ -3563,7 +3563,7 @@ test('E02 shows ready Cycle without automatic navigation and keeps mobile action
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
-test('E02 falls back to journey polling when detailed Cycle status stalls', async ({ page }) => {
+test('E02 never promotes a stalled Cycle status to journey readiness', async ({ page }) => {
   const user = { id: 8, email: 'person@example.test', full_name: 'Person' };
   let journeyReads = 0;
   await page.addInitScript(({ user }) => localStorage.setItem('agent4k.pendingUser', JSON.stringify(user)), { user });
@@ -3575,9 +3575,9 @@ test('E02 falls back to journey polling when detailed Cycle status stalls', asyn
     if (pathname === '/users/8/journey-state') {
       journeyReads += 1;
       return fulfillJson(route, {
-        next_action: 'show_processing', report_status: journeyReads > 1 ? 'ready' : 'not_ready',
+        next_action: 'show_processing', report_status: 'ready',
         profile: { status: 'complete' }, onboarding: { status: 'completed' },
-        assessment: { status: journeyReads > 1 ? 'report_ready' : 'analyzing', runtime_kind: 'cycle', cycle_id: 'slow-cycle' },
+        assessment: { status: 'report_ready', runtime_kind: 'cycle', cycle_id: 'slow-cycle' },
       });
     }
     if (pathname === '/users/assessment/m8/cycles/slow-cycle/status') {
@@ -3588,8 +3588,9 @@ test('E02 falls back to journey polling when detailed Cycle status stalls', asyn
   });
 
   await page.goto(`${base}/?screen=processing`);
-  await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов', { timeout: 10000 });
-  expect(journeyReads).toBeGreaterThan(1);
+  await expect(page.locator('#processing-outcome-title')).toHaveText('Завершение не подтверждено', { timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Посмотреть результат', exact: true })).toBeHidden();
+  expect(journeyReads).toBe(1);
 });
 
 test('R03 fresh login persists journey assessment identifiers', async ({ page }) => {

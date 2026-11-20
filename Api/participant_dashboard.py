@@ -2,20 +2,28 @@
 from Api import m7_planning_repository
 
 
-def cycle_progress(connection, cycle: dict) -> dict:
-    result = {"planned_total": None, "current_position_no": None,
-              "last_completed_position_no": None, "plan_revision_id": None, "between_situations": False}
+def saved_cycle_plan(connection, cycle: dict) -> tuple[dict, list[dict]] | None:
     try:
         saved = m7_planning_repository.read_plan(connection, str(cycle["cycle_id"]))
     except ValueError:
         # A missing/invalid saved plan is unknown, never a materialized-AS fallback.
-        return result
+        return None
     content = saved["content_json"]
     route = content.get("route") if isinstance(content, dict) else None
     if (saved["cycle_db_id"] != cycle["id"] or not isinstance(route, list) or not route
             or not all(isinstance(item, dict) for item in route)
             or saved["profile_ref_json"] != cycle["profile_ref_json"]):
+        return None
+    return saved, route
+
+
+def cycle_progress(connection, cycle: dict) -> dict:
+    result = {"planned_total": None, "current_position_no": None,
+              "last_completed_position_no": None, "plan_revision_id": None, "between_situations": False}
+    plan = saved_cycle_plan(connection, cycle)
+    if plan is None:
         return result
+    saved, route = plan
     result.update(planned_total=len(route), plan_revision_id=str(saved["revision_id"]))
     positions = connection.execute("""SELECT p.position_no,p.state,p.plan_revision_id,
             p.case_id,p.case_version,s.status AS as_status,s.started_at
