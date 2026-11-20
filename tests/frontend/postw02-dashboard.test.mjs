@@ -28,10 +28,11 @@ test('POSTW02 metadata follows ready, presented, return, between and result stat
   const card = { ...active, organization_name: 'Synthetic', calendar_deadline: '2026-11-19T12:00:00Z' };
   const org = { label: 'Организация', value: 'Synthetic' };
   assert.deepEqual(assessmentMetadata({ ...card, status: 'prepared', journey_state: 'ready' }), [org, { label: 'План оценки', value: '8 ситуаций' }]);
+  const deadline = { label: 'Срок завершения', value: '19 ноября 2026, 15:00 МСК' };
   for (const journey_state of ['active', 'return_required']) {
-    assert.deepEqual(assessmentMetadata({ ...card, journey_state }), [org, { label: 'Текущая ситуация', value: '3 ситуация из 8' }]);
+    assert.deepEqual(assessmentMetadata({ ...card, journey_state }), [org, deadline, { label: 'Текущая ситуация', value: '3 ситуация из 8' }]);
   }
-  assert.deepEqual(assessmentMetadata({ ...card, journey_state: 'between_situations', last_completed_position_no: 3 }), [org, { label: 'Текущая ситуация', value: 'Ситуация 3 завершена' }]);
+  assert.deepEqual(assessmentMetadata({ ...card, journey_state: 'between_situations', last_completed_position_no: 3 }), [org, deadline, { label: 'Текущая ситуация', value: 'Ситуация 3 завершена' }]);
   assert.deepEqual(assessmentMetadata({ ...card, status: 'report_ready', journey_state: 'report_ready', closed_at: '2026-10-17T12:00:00Z' }), [org, { label: 'Дата завершения', value: '17 октября 2026' }]);
 });
 test('POSTW02 missing position and completion date never invent metadata', () => {

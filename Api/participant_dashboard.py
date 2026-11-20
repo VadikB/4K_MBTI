@@ -2,6 +2,31 @@
 from Api import m7_planning_repository
 
 
+def assignment_contact(connection, *, user_id: int, organization_id: int | None) -> dict | None:
+    if organization_id is None:
+        return None
+    row = connection.execute("""SELECT organization.name AS organization_name,
+            NULLIF(BTRIM(contact.full_name), '') AS name, contact.email
+        FROM organization_memberships admin
+        JOIN organizations organization ON organization.id=admin.organization_id AND organization.is_active
+        JOIN users contact ON contact.id=admin.user_id
+        WHERE admin.organization_id=%s AND admin.role='admin'
+          AND EXISTS (SELECT 1 FROM organization_memberships participant
+            WHERE participant.organization_id=organization.id AND participant.user_id=%s)
+        ORDER BY COALESCE(admin.admitted_at,admin.created_at),admin.id
+        LIMIT 1""", (organization_id, user_id)).fetchone()
+    return dict(row) if row else None
+
+
+def assessment_rules(source: dict) -> dict | None:
+    rules = {key: source[key] for key in ('time_budget_seconds', 'calendar_window_seconds')
+             if type(source.get(key)) is int and source[key] > 0}
+    notice = source.get('participant_notice')
+    if isinstance(notice, str) and notice.strip():
+        rules['participant_notice'] = notice
+    return rules or None
+
+
 def saved_cycle_plan(connection, cycle: dict) -> tuple[dict, list[dict]] | None:
     try:
         saved = m7_planning_repository.read_plan(connection, str(cycle["cycle_id"]))
@@ -19,29 +44,42 @@ def saved_cycle_plan(connection, cycle: dict) -> tuple[dict, list[dict]] | None:
 
 def cycle_progress(connection, cycle: dict) -> dict:
     result = {"planned_total": None, "current_position_no": None,
-              "last_completed_position_no": None, "plan_revision_id": None, "between_situations": False}
+              "last_completed_position_no": None, "completed_positions": None,
+              "plan_revision_id": None, "between_situations": False, "rules": None}
     plan = saved_cycle_plan(connection, cycle)
     if plan is None:
         return result
     saved, route = plan
-    result.update(planned_total=len(route), plan_revision_id=str(saved["revision_id"]))
+    content = saved["content_json"]
+    result.update(planned_total=len(route), plan_revision_id=str(saved["revision_id"]),
+                  completed_positions=0, rules=assessment_rules(content))
     positions = connection.execute("""SELECT p.position_no,p.state,p.plan_revision_id,
-            p.case_id,p.case_version,s.status AS as_status,s.started_at
+            p.case_id,p.case_version,s.status AS as_status,s.started_at,s.scenario_ended_at
         FROM m7_route_positions p
-        JOIN m5_assessment_situations s ON s.id=p.current_as_db_id AND s.cycle_db_id=p.cycle_db_id
+        LEFT JOIN m5_assessment_situations s ON s.id=p.current_as_db_id AND s.cycle_db_id=p.cycle_db_id
         WHERE p.cycle_db_id=%s ORDER BY p.position_no""", (cycle["id"],)).fetchall()
     for position in positions:
         number = position["position_no"]
-        if (type(number) is not int or not 1 <= number <= len(route)
-                or str(position["plan_revision_id"]) != result["plan_revision_id"]
-                or position["started_at"] is None):
-            continue
-        planned = route[number - 1]
-        if (position["case_id"], str(position["case_version"])) != (
-                planned.get("case_id"), str(planned.get("case_version"))):
+        valid = (type(number) is int and 1 <= number <= len(route)
+                 and str(position["plan_revision_id"]) == result["plan_revision_id"]
+                 and position["started_at"] is not None)
+        if valid:
+            planned = route[number - 1]
+            valid = (position["case_id"], str(position["case_version"])) == (
+                planned.get("case_id"), str(planned.get("case_version")))
+        if not valid:
+            if position["state"] == "completed":
+                result["completed_positions"] = None
             continue
         if position["as_status"] == "closed":
             result["last_completed_position_no"] = number
+            # Finish closes the AS before the next command advances its route position.
+            confirmed = (position["state"] == "completed" or
+                         (position["state"] == "in_progress" and position["scenario_ended_at"] is not None))
+            if confirmed and result["completed_positions"] is not None:
+                result["completed_positions"] += 1
+        elif position["state"] == "completed":
+            result["completed_positions"] = None
         elif (position["state"] in {"in_progress", "awaiting_replacement"}
               and position["as_status"] in {"active", "paused", "scenario_ended"}
               and result["current_position_no"] is None):

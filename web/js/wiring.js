@@ -398,6 +398,14 @@ const showEmailEntry = () => {
   emailInput?.focus();
 };
 
+window.addEventListener('agent4k:participant-signed-out', () => {
+  authCredentialEmail = '';
+  if (authCredentialEmailInput) authCredentialEmailInput.value = '';
+  renderOrganizationInvitation(null);
+  showEmailEntry();
+  if (authTitle) authTitle.textContent = 'Вы вышли из кабинета';
+});
+
 const syncAuthPasswordVisibility = () => {
   const isRegistration = authCredentialMode === 'password_registration';
   const isPasswordMode = authCredentialMode === 'password' || authCredentialMode === 'password_reset' || isRegistration;

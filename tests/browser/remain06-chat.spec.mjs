@@ -89,8 +89,18 @@ for (const total of [8, 3]) test(`F18/F19 pending, plan${total}, network recover
 test('F21 scope after assessment: native auth/admin/questionnaire input and IME remain available', async ({ page }, info) => {
   const run = await fixture(page, 8); run.release();
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.locator('#interview-textarea')).toBeEnabled();
-  await page.locator('#interview-exit-button').click();
+  const draft = page.locator('#interview-textarea');
+  await expect(draft).toBeEnabled();
+  await draft.fill('Синтетический черновик');
+  const exit = page.locator('#interview-exit-button');
+  const confirmation = page.getByRole('dialog', { name: 'Выйти из кабинета?' });
+  await exit.click();
+  await confirmation.getByRole('button', { name: 'Остаться' }).click();
+  await expect(exit).toBeFocused();
+  await expect(draft).toHaveValue('Синтетический черновик');
+  await exit.click();
+  await confirmation.getByRole('button', { name: 'Выйти' }).click();
+  await expect(page.locator('#auth-title')).toHaveText('Вы вышли из кабинета');
   await expect(page.locator('#auth-panel')).toBeVisible();
   const receipts = [];
   const checkField = async (field, scope, { ime = false } = {}) => {

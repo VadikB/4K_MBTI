@@ -1,0 +1,68 @@
+{
+  "390": {
+    "cycle_id": "213a93da-b365-4cc1-b435-6a5bad5a273e",
+    "completed": 0,
+    "position": 1,
+    "total": 2,
+    "deadline": "2026-11-24T08:19:56.417337+03:00",
+    "contact": {
+      "organization_name": "Синтетическая организация E10.2",
+      "name": "Александра Соколова",
+      "email": "alexandra@example.test"
+    },
+    "history": {
+      "ready": {
+        "cycle_id": "5c087bfb-47c9-4172-8596-c026acda40de",
+        "report_id": "6a5a5731-ac11-4e53-a382-72fd2a0965c6"
+      },
+      "limited": {
+        "cycle_id": "fd46c42f-a62e-4f89-b515-c71659e37ba2",
+        "report_id": "d37c279e-5bb3-4bd5-b987-ab5638b308d5"
+      },
+      "pending": {
+        "cycle_id": "6bee859f-e3db-42cb-ad4a-e82709b4397b",
+        "report_id": null
+      }
+    },
+    "answer_author_distinct": true,
+    "author_display_name": "Ольга Орлова",
+    "historical_role_and_time": true,
+    "cancel_preserved_draft": true,
+    "return_preserved_session": true,
+    "logout_http": 401,
+    "relogin_restored_cycle": true
+  },
+  "1440": {
+    "cycle_id": "213a93da-b365-4cc1-b435-6a5bad5a273e",
+    "completed": 0,
+    "position": 1,
+    "total": 2,
+    "deadline": "2026-11-24T08:19:56.417337+03:00",
+    "contact": {
+      "organization_name": "Синтетическая организация E10.2",
+      "name": "Александра Соколова",
+      "email": "alexandra@example.test"
+    },
+    "history": {
+      "ready": {
+        "cycle_id": "5c087bfb-47c9-4172-8596-c026acda40de",
+        "report_id": "6a5a5731-ac11-4e53-a382-72fd2a0965c6"
+      },
+      "limited": {
+        "cycle_id": "fd46c42f-a62e-4f89-b515-c71659e37ba2",
+        "report_id": "d37c279e-5bb3-4bd5-b987-ab5638b308d5"
+      },
+      "pending": {
+        "cycle_id": "6bee859f-e3db-42cb-ad4a-e82709b4397b",
+        "report_id": null
+      }
+    },
+    "answer_author_distinct": true,
+    "author_display_name": "Ольга Орлова",
+    "historical_role_and_time": true,
+    "cancel_preserved_draft": true,
+    "return_preserved_session": true,
+    "logout_http": 401,
+    "relogin_restored_cycle": true
+  }
+}

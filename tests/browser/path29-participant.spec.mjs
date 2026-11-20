@@ -851,6 +851,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
             expect(nextPostCount).toBeLessThanOrEqual(1);
             expect((await (await fresh.request.get(statusPath)).json()).status).toBe('running');
             await page.locator('#interview-exit-button').click();
+            await page.getByRole('dialog', { name: 'Выйти из кабинета?' }).getByRole('button', { name: 'Выйти' }).click();
             await expect(page.locator('#email-input')).toBeVisible();
             await page.locator('#email-input').fill(state.path29.admin_email);
             await page.locator('#request-magic-link-button').click();

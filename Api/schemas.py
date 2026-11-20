@@ -360,6 +360,18 @@ class AssessmentReport(BaseModel):
     expert_comment: str | None = None
 
 
+class ParticipantAssessmentRules(BaseModel):
+    time_budget_seconds: int | None = None
+    calendar_window_seconds: int | None = None
+    participant_notice: str | None = None
+
+
+class ParticipantAdminContact(BaseModel):
+    organization_name: str
+    name: str | None = None
+    email: str
+
+
 class ParticipantAssessmentCard(BaseModel):
     preparation: dict | None = None
     cycle_id: str | None = None
@@ -374,6 +386,8 @@ class ParticipantAssessmentCard(BaseModel):
     total_cases: int | None = None
     # Additive, scoped to this Cycle's saved plan revision; never inferred from completed.
     planned_total: int | None = Field(default=None, ge=1)
+    completed_positions: int | None = Field(default=None, ge=0)
+    rules: ParticipantAssessmentRules | None = None
     current_position_no: int | None = Field(default=None, ge=1)
     last_completed_position_no: int | None = Field(default=None, ge=1)
     plan_revision_id: str | None = None
@@ -1108,6 +1122,7 @@ class UserDashboard(BaseModel):
     reports: list[AssessmentReport]
     current_assessments: list[ParticipantAssessmentCard] = Field(default_factory=list)
     completed_assessments: list[ParticipantAssessmentCard] = Field(default_factory=list)
+    administrator_contact: ParticipantAdminContact | None = None
 
 
 class CheckOrCreateUserResponse(BaseModel):

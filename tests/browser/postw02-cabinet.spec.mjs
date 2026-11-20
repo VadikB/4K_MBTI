@@ -34,8 +34,10 @@ async function fixture(page) {
   const card = { cycle_id: 'cabinet-cycle', title: 'Оценка универсальных компетенций специалистов по сопровождению сложных межфункциональных проектов и работе с клиентами',
     organization_name: 'Синтетическая организация с длинным названием', status: 'active', journey_state: 'active',
     status_label: 'Оценка начата', description: 'Продолжите с того же места.', action: 'continue', button_label: 'Продолжить',
-    completed_cases: null, total_cases: 8, planned_total: 8, current_position_no: 3, plan_revision_id: 'saved-plan', calendar_deadline: '2026-11-19T12:00:00Z' };
-  const dashboard = { current_assessments: [card], completed_assessments: [{ ...card, cycle_id: 'previous-cycle', current_position_no: null,
+    completed_cases: 6, completed_positions: 2, rules: { participant_notice: 'Правила сохранённого назначения.' }, total_cases: 8, planned_total: 8, current_position_no: 3, plan_revision_id: 'saved-plan', calendar_deadline: '2026-11-19T12:00:00Z' };
+  const dashboard = {
+    administrator_contact: { organization_name: card.organization_name, name: 'Администратор помощи', email: 'help@example.test' },
+    current_assessments: [card], completed_assessments: [{ ...card, cycle_id: 'previous-cycle', current_position_no: null,
     title: 'Предыдущее прохождение', status: 'report_ready', journey_state: 'report_ready', status_label: 'Результат готов',
     description: 'Результат доступен.', action: 'open_report', button_label: 'Посмотреть результат', report_id: 'saved-report', calendar_deadline: null, closed_at: '2026-11-10T12:00:00Z' }] };
   const model = { assignment_id: 91, assessment_name: card.title, readiness: { status: 'ready', organization_id: 10, assignment_ref: 'cabinet', questionnaire_revision_id: 41,
@@ -54,7 +56,10 @@ async function fixture(page) {
     if (pathname === '/users/session/restore') return respond(route, { authenticated: true, user, dashboard });
     if (pathname === '/users/8/session-bootstrap') return journey.readFailure
       ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : respond(route, { user, dashboard });
-    if (pathname === '/users/8/acquaintance/issues' && request.method() === 'GET') return respond(route, { items: [] });
+    if (pathname === '/users/8/acquaintance/issues' && request.method() === 'GET') return respond(route, { items: [
+      { reply_message: 'Ответ из сохранённого обращения.', reply_author_display_name: 'Автор ответа', replied_at: '2026-11-19T12:00:00Z' },
+      { reply_message: 'Исторический ответ.', replied_at: '2026-11-19T10:00:00Z' },
+    ] });
     if (pathname === '/users/8/journey-state') return respond(route, { next_action: journey.next_action, can_open_dashboard: true,
       profile: { status: 'complete' }, onboarding: model.onboarding, assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: card.cycle_id } });
     if (pathname === '/users/8/acquaintance') return respond(route, model);
@@ -82,9 +87,23 @@ for (const width of [1440, 390, 320]) {
     if (evidence && width !== 320) await page.screenshot({ path: path.join(evidence, `${before ? 'before' : 'after'}-${width}.png`), fullPage: true });
     if (!before) {
       await expect(page.locator('#current-assessments')).toContainText('3 ситуация из 8');
-      await expect(page.getByRole('heading', { name: 'Ваш личный раздел' })).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Что покажет оценка' })).toBeVisible();
+      await expect(page.getByRole('progressbar', { name: 'Завершено ситуаций' })).toHaveJSProperty('value', 2);
+      await expect(page.locator('#current-assessments')).toContainText('2 из 8');
+      await expect(page.locator('#current-assessments')).toContainText('19 ноября 2026, 15:00 МСК');
+      await page.getByRole('button', { name: 'Условия прохождения' }).click();
+      await expect(page.getByRole('dialog')).toContainText('Правила сохранённого назначения.');
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('button', { name: 'Условия прохождения' })).toBeFocused();
+      const help = page.getByRole('button', { name: 'Связаться с администратором' });
+      await help.click();
+      await expect(page.getByRole('dialog').getByRole('link', { name: 'help@example.test' })).toHaveAttribute('href', 'mailto:help@example.test');
+      await page.getByRole('dialog').getByRole('button', { name: 'Закрыть' }).click();
+      await expect(help).toBeFocused();
+      await expect(page.locator('.participant-appeal').nth(0)).toContainText('Автор ответа');
+      await expect(page.locator('.participant-appeal').nth(0)).not.toContainText('Администратор помощи');
+      await expect(page.locator('.participant-appeal').nth(1)).toContainText('Администратор ·');
       await expect(page.locator('#completed-assessments article')).toHaveCount(1);
+      await expect(page.locator('#completed-assessments article')).toContainText('Результат готов');
       const geometry = await page.locator('#dashboard-panel').evaluate((node) => {
         const css = getComputedStyle(node), card = node.querySelector('.participant-assessment-card');
         return { background: css.backgroundColor, card: getComputedStyle(card).borderRadius,
@@ -101,8 +120,10 @@ for (const width of [1440, 390, 320]) {
         await expect(page.locator('#dashboard-refresh-status')).toBeVisible();
         await expect(page.locator('#current-assessments')).toContainText('3 ситуация из 8');
         run.journey.readFailure = false;
+        run.card.completed_positions = null;
         await page.locator('#dashboard-refresh-button').click();
         await expect(page.locator('#dashboard-refresh-status')).toBeHidden();
+        await expect(page.getByRole('progressbar', { name: 'Завершено ситуаций' })).toHaveCount(0);
       }
       if (width !== 320) {
         // Opening the selected active Cycle preserves the existing explicit return barrier.
@@ -154,9 +175,9 @@ for (const width of [1440, 390, 320]) {
       if (width !== 320) {
         run.dashboard.current_assessments = [];
         await page.locator('#dashboard-refresh-button').evaluate((button) => button.click());
-        await expect(page.locator('#current-assessments')).toContainText('Предыдущее прохождение');
+        await expect(page.locator('#current-assessments')).toContainText('Пока нет назначенных оценок');
         await expect(page.locator('.participant-assessment-card[data-cycle-id="previous-cycle"]')).toHaveCount(1);
-        await expect(page.locator('#completed-assessments article')).toHaveCount(0);
+        await expect(page.locator('#completed-assessments article')).toHaveCount(1);
       }
       expect(run.calls.filter((call) => /\/assessment\/.+(start|prepare|continue)|resolve-profile/.test(call.pathname))).toEqual([]);
       expect(run.calls.filter((call) => call.method !== 'GET')).toEqual([]);

@@ -30,8 +30,17 @@ export const assessmentMetadata = (card) => {
   const items = [];
   const add = (label, value) => { if (value) items.push({ label, value }); };
   add('Организация', card.organization_name);
+  if (card.calendar_deadline && ['active', 'paused', 'interrupted'].includes(card.status) && !card.closed_at) {
+    const date = formatAssessmentDate(card.calendar_deadline);
+    if (date) {
+      const time = new Intl.DateTimeFormat('ru-RU', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow',
+      }).format(new Date(card.calendar_deadline));
+      add('Срок завершения', `${date}, ${time} МСК`);
+    }
+  }
   const journey = card.journey_state || card.status;
-  if (card.closed_at || ['report_ready', 'processing', 'failed'].includes(journey)) {
+  if (card.closed_at || ['report_ready', 'report_limited', 'processing', 'failed'].includes(journey)) {
     add('Дата завершения', formatAssessmentDate(card.closed_at));
   } else if (journey === 'ready') {
     const total = card.planned_total;
