@@ -330,29 +330,28 @@ def preview_project_context(c, *, assignment_ref: str, terms: dict) -> dict:
     )
     return {
         "revision_id": preview["id"],
-        "source_checksum": preview["source_checksum"],
+        "preview_checksum": checksum(dict(preview["answers_json"])),
         "project_snapshot_checksum": row["snapshot_checksum"],
         "preview": questionnaire_sources.public_revision(preview),
     }
 
 
 def confirm_project_context(
-    c, *, assignment_ref: str, revision_id: int, source_checksum: str
+    c, *, assignment_ref: str, revision_id: int, preview_checksum: str
 ) -> dict:
     row = context(c, assignment_ref)
     preview = c.execute(
         """SELECT * FROM questionnaire_response_revisions
         WHERE id=%s AND organization_id=%s AND assignment_ref=%s
-        AND source_author=%s AND source_checksum=%s FOR UPDATE""",
+        AND source_author=%s FOR UPDATE""",
         (
             revision_id,
             row["organization_id"],
             row["runtime_assignment_ref"],
             "project-snapshot:" + row["snapshot_checksum"],
-            source_checksum,
         ),
     ).fetchone()
-    if not preview:
+    if not preview or checksum(dict(preview["answers_json"])) != preview_checksum:
         raise ValueError("PROJECT_CONTEXT_PREVIEW_MISMATCH")
     confirmed = questionnaire_sources.confirm(
         c,

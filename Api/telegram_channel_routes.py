@@ -59,7 +59,7 @@ class ProjectContextPreview(ContextRef):
 
 class ProjectContextConfirmation(ContextRef):
     revision_id: int = Field(gt=0)
-    source_checksum: str = Field(pattern=r"^[0-9a-f]{64}$")
+    preview_checksum: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class ActionRequest(StrictRequest):

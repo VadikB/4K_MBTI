@@ -11,6 +11,30 @@ def test_project_context_rejects_contact_fields_before_database(field):
                         organization_id=17)
 
 
+def test_changed_project_preview_cannot_be_confirmed(monkeypatch):
+    monkeypatch.setattr(channel, "context", lambda *args: {
+        "organization_id": 17, "runtime_assignment_ref": "canonical", "snapshot_checksum": "a" * 64})
+    old = {"C02a": {"participant_text": "Synthetic reviewed purpose"}}
+    changed = {"C02a": {"participant_text": "Synthetic changed purpose"}}
+
+    class Connection:
+        def execute(self, sql, params):
+            assert params == (21, 17, "canonical", "project-snapshot:" + "a" * 64)
+            return self
+
+        def fetchone(self):
+            return {"answers_json": changed}
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Changed preview must never be published")
+
+    monkeypatch.setattr(channel.questionnaire_sources, "confirm", forbidden)
+    monkeypatch.setattr(channel, "service_actor", forbidden)
+    with pytest.raises(ValueError, match="PROJECT_CONTEXT_PREVIEW_MISMATCH"):
+        channel.confirm_project_context(Connection(), assignment_ref="external", revision_id=21,
+                                        preview_checksum=channel.checksum(old))
+
+
 def test_project_preview_uses_frozen_project_and_explicit_owner_terms(monkeypatch):
     project = {
         "code": "SYNTH-1",
@@ -36,7 +60,7 @@ def test_project_preview_uses_frozen_project_and_explicit_owner_terms(monkeypatc
 
     def save(c, **kwargs):
         calls.append(kwargs)
-        return {"id": 21, "source_checksum": "b" * 64}
+        return {"id": 21, "answers_json": kwargs["answers"]}
 
     monkeypatch.setattr(channel.questionnaire_sources, "save_preview", save)
     monkeypatch.setattr(
