@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from datetime import datetime
 import copy
 import json
 import time
@@ -1030,7 +1031,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             assert runtime["current_situation"] is runtime["trace"] is None
             assert runtime["preparation_operation"]["operation_id"] == second_operation
             assert runtime["status"]["remaining_seconds"] == paused["remaining_seconds"]
-            assert runtime["status"]["calendar_deadline"] == paused["calendar_deadline"].isoformat().replace("+00:00", "Z")
+            assert datetime.fromisoformat(runtime["status"]["calendar_deadline"]) == paused["calendar_deadline"]
         target = runtime["next_presentation"]
         assert target["assessment_situation_id"] == prepared_as
         present_path = f'/users/assessment/m7/cycles/{cycle_id}/present-next'
