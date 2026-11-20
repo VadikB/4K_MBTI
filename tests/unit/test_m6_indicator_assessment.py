@@ -29,13 +29,20 @@ def confidence():
 
 
 def final_output(value, default="L1"):
-    return {"schema_version":1,"mode":"final","targets":[{
+    targets = [{
         "indicator_id":target["indicator_id"],"m2_version":target["m2_version"],"status":"ASSESSED",
         "outcome":default,"descriptor_basis":"candidate descriptor basis","rationale":"candidate rationale",
         "refs":[{"kind":"bundle","id":target["indicator_id"],"meaning":"entire bundle"}],
         "opportunity":"PRESENT","opportunity_basis":"synthetic opportunity","uncertainty":None,
         "contradictions":[],"clarification_history":[],"stop_reason":"AS closed","confidence":confidence()
-    } for target in value["material"]["indicator_targets"]]}
+    } for target in value["material"]["indicator_targets"]]
+    empty_bundles = {bundle["indicator_id"] for bundle in value["evidence_analysis"]["bundles"]
+                     if not bundle["evidence_ids"]}
+    if default == "L1":
+        for target in targets:
+            if target["indicator_id"] in empty_bundles:
+                target.update(outcome="INSUFFICIENT_EVIDENCE", descriptor_basis=None, uncertainty=uncertainty())
+    return {"schema_version":1,"mode":"final","targets":targets}
 
 
 def uncertainty():
@@ -75,7 +82,7 @@ def test_l0_requires_opportunity_and_real_boundary_reference():
     first=value["material"]["turns"][0]["turn_id"]
     output["targets"][0]["refs"].append({"kind":"turn","id":first,"meaning":"checked nonperformance boundary"})
     for item in output["targets"][1:]:
-        item["outcome"]="L1"
+        item.update(outcome="INSUFFICIENT_EVIDENCE", descriptor_basis=None, uncertainty=uncertainty())
     assert validate_assessment(output,value)["targets"][0]["outcome"]=="L0"
 
 
@@ -88,6 +95,35 @@ def test_cross_indicator_evidence_reference_is_rejected():
     output["targets"][0]["refs"].append({"kind":"evidence","id":foreign["id"],"meaning":"foreign"})
     with pytest.raises(ValueError,match="CROSS_TARGET"):
         validate_assessment(output,value)
+
+
+@pytest.mark.parametrize(("outcome", "opportunity"), [
+    ("L1", "ABSENT"), ("L2", "UNKNOWN"), ("L3", "ABSENT"),
+])
+def test_positive_level_requires_actual_opportunity(outcome, opportunity):
+    value = assessment_input()
+    output = final_output(value)
+    output["targets"][0].update(outcome=outcome, opportunity=opportunity)
+    with pytest.raises(ValueError, match="M6_LEVEL_REQUIRES_OPPORTUNITY"):
+        validate_assessment(output, value, require_current_bases=True)
+
+
+def test_positive_level_requires_an_own_evidence_reference():
+    value = assessment_input()
+    output = final_output(value)
+    observed, empty = output["targets"][:2]
+    observed["refs"] = []
+    with pytest.raises(ValueError, match="M6_LEVEL_REQUIRES_EVIDENCE"):
+        validate_assessment(output, value, require_current_bases=True)
+    observed["refs"] = empty["refs"]
+    with pytest.raises(ValueError, match="M6_CROSS_TARGET_REFERENCE"):
+        validate_assessment(output, value, require_current_bases=True)
+    observed["refs"] = [{"kind":"evidence", "id":"ev2", "meaning":"actual manifestation"}]
+    assert validate_assessment(output, value, require_current_bases=True)["targets"][0]["outcome"] == "L1"
+    empty.update(outcome="L1", descriptor_basis="unsubstantiated", uncertainty=None)
+    with pytest.raises(ValueError, match="M6_LEVEL_REQUIRES_EVIDENCE"):
+        validate_assessment(output, value, require_current_bases=True)
+    assert validate_assessment(output, value)["targets"][1]["outcome"] == "L1"
 
 
 def test_mixed_final_package_keeps_target_technical_failure_out_of_person_result():

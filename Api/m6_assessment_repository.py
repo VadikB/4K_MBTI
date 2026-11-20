@@ -155,7 +155,10 @@ def finish(connection, job, output, trace, error=None):
     if row["lease_token"] != job["lease_token"] or row["status"] != "running": return False
     if connection.execute("SELECT %s <= NOW() AS expired", (row["lease_expires_at"],)).fetchone()["expired"]: return False
     if output is not None:
-        output = validate_assessment(output,row["input_json"])
+        output = validate_assessment(
+            output, row["input_json"],
+            require_current_bases=row["mechanism_json"].get("ref") == "m6_indicator_assessment/1.0.1",
+        )
         revision = uuid4()
         connection.execute("""INSERT INTO m6_assessment_revisions
             (id,request_id,as_db_id,accepted_attempt_id,mode,output_json,output_hash)

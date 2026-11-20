@@ -26,6 +26,6 @@ def evaluate(value, mechanism, mechanism_hash, *, gateway=None):
     return call_and_validate(
         gateway=resolved, messages=messages, operation=mechanism["operation"],
         routing_key="m6-assessment-v2:" + definition_checksum(value),
-        validate=lambda output: validate_assessment(output, value),
+        validate=lambda output: validate_assessment(output, value, require_current_bases=True),
         max_attempts=int(mechanism["validation_attempts"]),
     )

@@ -5,6 +5,7 @@ from pydantic import ValidationError
 from Api.m6_contracts import validate_analysis
 from Api.m6_package import load_mechanism, verify_mechanism
 from Api.m6_evidence_service import evaluate
+from Api.m6_evidence_service_v2 import validate_current_analysis
 from Api.assessment_configuration import definition_checksum
 
 pytestmark=pytest.mark.unit
@@ -91,7 +92,12 @@ def test_evidence_context_may_use_later_composite_fragment_but_not_future_after_
     evidence.update(type='Composite', bs_ids=['s1','s2'], fragment_ids=['f1','f2'],
                     composite_basis='ordered change', ordered_turn_ids=['t1','t2'],
                     context_refs=[{'kind':'turn','id':'t2','meaning':'second manifestation'}])
-    assert validate_analysis(result, value)['evidence'][0]['type'] == 'Composite'
+    assert validate_current_analysis(result, value)['evidence'][0]['type'] == 'Composite'
+    evidence['type'] = 'Simple'
+    with pytest.raises(ValueError, match='M6_SIMPLE_BASIS'):
+        validate_current_analysis(result, value)
+    assert validate_analysis(result, value)['evidence'][0]['type'] == 'Simple'
+    evidence['type'] = 'Composite'
     evidence['context_refs'] = [{'kind':'turn','id':'t3','meaning':'future'}]
     with pytest.raises(ValueError, match='M6_CONTEXT_FUTURE'):
         validate_analysis(result, value)
