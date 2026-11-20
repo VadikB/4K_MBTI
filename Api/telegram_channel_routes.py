@@ -163,8 +163,11 @@ def published_role(version_id: int, authorization: str | None = Header(default=N
         except ValueError as exc:
             raise HTTPException(404, detail="ROLE_PROFILE_NOT_AVAILABLE") from exc
     return {
-        key: role[key]
-        for key in ("id", "code", "version", "methodology_version", "checksum")
+        "id": role["id"],
+        "code": role["code"],
+        "version": role["version"],
+        "methodology_version": role["definition"]["methodology_version"],
+        "checksum": role["checksum"],
     }
 
 
