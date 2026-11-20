@@ -17,6 +17,7 @@ from starlette.concurrency import run_in_threadpool
 from Api.database import ensure_core_schema, get_connection, get_connection_pool_stats
 from Api.routes import router as users_router
 from Api.integration_assessment_configuration_routes import router as integration_configurations_router
+from Api.telegram_channel_routes import router as telegram_channel_router
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue
 from Api.assessment_analysis_queue import assessment_analysis_queue
@@ -28,6 +29,7 @@ app = FastAPI(title="Agent_4K API", docs_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.include_router(users_router)
 app.include_router(integration_configurations_router)
+app.include_router(telegram_channel_router)
 logger = logging.getLogger("agent4k")
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -40,6 +42,12 @@ if os.getenv("AGENT4K_ISOLATED_STAND") == "1":
     with get_connection() as connection:
         check_schema(connection)
 ensure_core_schema()
+if settings.tg_student_channel_enabled:
+    from Api.telegram_channel import ensure_schema as ensure_telegram_schema
+    with get_connection() as telegram_schema_connection:
+        ensure_telegram_schema(telegram_schema_connection)
+        telegram_schema_connection.commit()
+
 with get_connection() as connection:
     if settings.deletion_ledger_path:
         from Api.deletion_ledger import assert_reconciled

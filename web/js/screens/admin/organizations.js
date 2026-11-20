@@ -1275,17 +1275,30 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
       try {
         const query = new URLSearchParams({ assignment_ref: assessment, user_ids: selected.join(','),
           ...(roleProfileVersionId ? { role_profile_version_id: String(roleProfileVersionId) } : {}) });
-        const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-assignments/operations/' +
-          encodeURIComponent(operationId) + '?' + query.toString(), { credentials: 'same-origin' });
-        const result = await readApiResponse(response, 'Итог назначения пока неизвестен.');
-        if (!isCurrent()) return false;
-        const items = Array.isArray(result.items) ? result.items : [];
-        if (exactBatch(items, selected, (item) => Number(item?.user_id ?? item), ['assigned', 'already_assigned', 'not_assigned']) &&
-          items.every((item) => item.status !== 'not_assigned')) {
-          assignmentOperationIds.delete(operationKey);
-          setStatus(items.map((item) => participantLabel(organizationId, item) +
-            ': назначение подтверждено точным чтением операции').join('. ') + '.', 'success');
-          return true;
+        const readbackUrl = '/users/admin/organizations/' + organizationId + '/assessment-assignments/operations/' +
+          encodeURIComponent(operationId) + '?' + query.toString();
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          if (!isCurrent()) return false;
+          let response;
+          try {
+            response = await fetch(readbackUrl, { credentials: 'same-origin' });
+          } catch (readError) {
+            if (!(readError instanceof TypeError) || attempt === 3) throw readError;
+          }
+          if (response && response.status !== 404) {
+            const result = await readApiResponse(response, 'Итог назначения пока неизвестен.');
+            if (!isCurrent()) return false;
+            const items = Array.isArray(result.items) ? result.items : [];
+            if (exactBatch(items, selected, (item) => Number(item?.user_id ?? item), ['assigned', 'already_assigned', 'not_assigned']) &&
+              items.every((item) => item.status !== 'not_assigned')) {
+              assignmentOperationIds.delete(operationKey);
+              setStatus(items.map((item) => participantLabel(organizationId, item) +
+                ': назначение подтверждено точным чтением операции').join('. ') + '.', 'success');
+              return true;
+            }
+            break;
+          }
+          if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
         }
         setStatus('Итог назначения пока неизвестен. Обновите список и повторите проверку; новая операция не создаётся.', 'error');
       } catch (_readbackError) {
