@@ -1504,7 +1504,10 @@ const renderReturnCard = (value) => {
       const continued = await readApiResponse(response, 'Не удалось продолжить оценку.');
       if (!current()) return;
       clearPendingReturnContinue(value);
-      if (continued.status === 'collection_closed') { openProcessing(); return; }
+      if (continued.status === 'collection_closed') {
+        openProcessing({ confirmedCollection: { collection_status: continued.status } });
+        return;
+      }
       state.productAssessmentSituationId = continued.assessment_situation_id;
       situationId = state.productAssessmentSituationId;
       await heartbeatProductPresence();
@@ -1636,9 +1639,8 @@ export const loadProductRuntime = async ({ generation = productRuntimePollGenera
       if (terminal && returnPresenceCycleId) {
         stopProductPresence();
       }
-      if (['collection_closed', 'calculation_pending', 'calculated'].includes(snapshot.status?.collection_status) &&
-          !interviewPanel.classList.contains('hidden')) {
-        openProcessing();
+      if (terminal && !interviewPanel.classList.contains('hidden')) {
+        openProcessing({ confirmedCollection: snapshot.status });
       }
       return snapshot;
     } catch (error) {
@@ -1670,36 +1672,15 @@ const waitForProductClarification = async (previousDecisionId = null) => {
   });
 };
 
-const completeProductCycle = async () => {
-  const scope = productInterviewAnswerScope();
+const completeProductCycle = () => {
+  const cycleId = state.productCycleId;
   stopProductPresence();
-  try {
-    const response = await fetch('/users/assessment/m7/cycles/' + encodeURIComponent(state.productCycleId) + '/completion', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'complete', reason: 'user_completed_scenario', idempotency_key: createOperationId() }),
-    });
-    await readApiResponse(response, 'Не удалось завершить сбор оценки.');
-  } catch (error) {
-    // A lost response can follow a committed closure. Read the server before
-    // offering any further action; the closed Cycle must never reopen.
-    try {
-      const response = await fetch('/users/assessment/m8/cycles/' + encodeURIComponent(state.productCycleId) + '/status', {
-        credentials: 'same-origin',
-      });
-      const status = await readApiResponse(response, 'Не удалось проверить завершение оценки.');
-      if (!['collection_closed', 'calculation_pending', 'calculated'].includes(status.collection_status)
-          && status.report_status !== 'ready') throw error;
-    } catch (readError) {
-      if (readError === error) throw error;
-      if (!isProductInterviewAnswerCurrent(scope)) return;
-      safeStorage.setItem(STORAGE_KEYS.completionPending, '1');
-      openProcessing();
-      return;
-    }
-  }
-  if (!isProductInterviewAnswerCurrent(scope)) return;
-  safeStorage.setItem(STORAGE_KEYS.completionPending, '1');
-  openProcessing();
+  const completion = fetchWithDeadline('/users/assessment/m7/cycles/' + encodeURIComponent(cycleId) + '/completion', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'complete', reason: 'user_completed_scenario', idempotency_key: createOperationId() }),
+  }).then((response) => readApiResponse(response, 'Не удалось завершить сбор оценки.'))
+    .catch(() => null); // A lost receipt can follow a committed closure. Read the same Cycle before offering any next step.
+  openProcessing({ cycleId, completion });
 };
 
 export const finishProductAssessment = async () => {
@@ -2772,8 +2753,7 @@ const startAssessmentInterview = async ({ preparedCycleId = null } = {}) => {
     state.assessmentSessionId = null;
     state.preparedAssessmentStartResponse = null;
     if (['collection_closed', 'calculation_pending'].includes(started.runtime?.status?.collection_status)) {
-      persistAssessmentContext();
-      openProcessing();
+      openProcessing({ confirmedCollection: started.runtime.status });
       return;
     }
     openInterview();
@@ -2823,10 +2803,7 @@ export const handleAssessmentEntryClick = async () => {
     } else if (journey.next_action === 'resume_assessment' && state.productCycleId) {
       openInterview();
     } else if (['show_processing', 'show_assessment_error'].includes(journey.next_action)) {
-      openProcessing({ initialCycleSnapshot: state.productCycleId ? {
-        results_status: journey.assessment?.status === 'failed' ? 'failed' : 'processing',
-        report_status: journey.report_status || 'not_ready',
-      } : null });
+      openProcessing();
     } else if (['show_dashboard', 'resume_assessment'].includes(journey.next_action)) {
       openPrechat(); // Only a server-authorized historical route, not a failed lookup fallback.
     } else throw new Error('Текущий этап недоступен. Обновите страницу и повторите действие.');

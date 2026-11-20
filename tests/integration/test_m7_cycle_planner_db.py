@@ -18,7 +18,7 @@ from Api.m5_storage import import_package
 from Api.m5_storage import prepare_assessment_situation
 from Api.m5_scenario_runtime import build_c45,start as start_situation,transition
 from Api.m7_cycle_planner import _facts,choose_next,create_plan,present,read_plan
-from Api.m7_completion import complete,create_additional_session,read_c46,reconcile_c46,expire_due_cycles
+from Api.m7_completion import complete,create_additional_session,read_c46,reconcile_c46,expire_due_cycles,read_status
 from Api.m7_route_replacement import (FixedCaseReplacementProvider,GeneratedCandidateReplacementProvider,
     mark_presented,replace_current,replacement_metadata)
 from Api.m7_return_integration import (continue_return,heartbeat,read_return_state,
@@ -428,6 +428,18 @@ def test_remain06_frozen_plan_progress_with_one_materialized_as(db, total):
         assert returned['progress'] == runtime['route']['progress']
         assert returned['current_assessment_situation_id'] == as_id
         assert c.execute('SELECT count(*) AS n FROM m5_assessment_situations').fetchone()['n'] == 1
+        # A later synthetic catalogue contains only the presented case version.
+        catalogue = c.execute("""INSERT INTO m5_catalogs
+            (catalog_id,catalog_version,usage_scope,package_db_id,manifest_json,manifest_checksum,
+             status,published_by,decision_basis,idempotency_key,request_hash,published_at)
+            SELECT 'asux05-current','1','assessment',cv.package_id,'{}',repeat('0',64),
+                'published',99,'synthetic fixture','asux05-current',repeat('1',64),NOW()
+            FROM m5_assessment_situations s JOIN m5_case_versions cv ON cv.id=s.case_version_id
+            WHERE s.assessment_situation_id=%s RETURNING id""", (as_id,)).fetchone()
+        c.execute("""INSERT INTO m5_catalog_case_versions(catalog_db_id,case_version_id)
+            SELECT %s,case_version_id FROM m5_assessment_situations WHERE assessment_situation_id=%s""",
+            (catalogue['id'], as_id))
+        assert read_status(c, cycle_id)['route_progress'] == {'completed': 0, 'total': total}
         assert read_plan(c, cycle_id)['revision_id'] == saved['revision_id']
 
 

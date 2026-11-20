@@ -338,7 +338,6 @@ export const processingOutcomeCard = document.getElementById('processing-outcome
 export const processingOutcomeTitle = document.getElementById('processing-outcome-title');
 export const processingOutcomeDescription = document.getElementById('processing-outcome-description');
 export const processingOutcomeProgress = document.getElementById('processing-outcome-progress');
-export const processingOutcomeStatus = document.getElementById('processing-outcome-status');
 export const processingOutcomeNotice = document.getElementById('processing-outcome-notice');
 export const processingOutcomeActions = document.getElementById('processing-outcome-actions');
 export const processingOutcomeIndicator = document.getElementById('processing-outcome-indicator');

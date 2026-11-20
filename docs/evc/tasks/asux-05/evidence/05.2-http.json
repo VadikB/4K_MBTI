@@ -1,0 +1,34 @@
+{
+  "requests": [
+    "GET /users/version",
+    "GET /users/session/restore",
+    "GET /users/18/journey-state",
+    "GET /users/18/acquaintance/issues",
+    "GET /users/assessment/m8/cycles/cycle-a/status",
+    "GET /users/assessment/m8/reports/report-a",
+    "GET /users/assessment/m8/cycles/cycle-a/reports/latest",
+    "GET /users/assessment/m8/history",
+    "GET /users/version",
+    "GET /users/18/session-bootstrap",
+    "GET /users/assessment/m8/reports/report-a",
+    "GET /users/assessment/m8/cycles/cycle-a/reports/latest",
+    "GET /users/assessment/m8/history",
+    "GET /users/18/acquaintance/issues",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/reports/report-b",
+    "GET /users/assessment/m8/cycles/cycle-b/reports/latest",
+    "GET /users/assessment/m8/history"
+  ],
+  "report_navigation": [
+    {
+      "cycle_id": "cycle-a",
+      "report_id": "report-a",
+      "status": 200
+    },
+    {
+      "cycle_id": "cycle-b",
+      "report_id": "report-b",
+      "status": 200
+    }
+  ]
+}

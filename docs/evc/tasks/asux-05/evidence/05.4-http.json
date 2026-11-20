@@ -1,0 +1,11 @@
+{
+  "requests": [
+    "GET /users/version",
+    "GET /users/session/restore",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status"
+  ],
+  "report_navigation": []
+}

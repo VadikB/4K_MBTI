@@ -1488,7 +1488,8 @@ export const openReport = (options = {}) => {
     else url.searchParams.delete('report_access');
     if (previousReportId) url.searchParams.set('previous_report_id', previousReportId);
     if (comparisonView && !customerAccess) url.searchParams.set('report_view', 'comparison');
-    window.history.replaceState({}, '', url.pathname + '?' + url.searchParams.toString());
+    window.history.replaceState({ reportReturnTarget: state.reportReturnTarget }, '',
+      url.pathname + '?' + url.searchParams.toString());
     const load = () => {
       if (!isCurrent()) return;
       document.getElementById('m8-report-state').textContent = 'Открываем результат…';

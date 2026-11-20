@@ -1,5 +1,5 @@
 import { renderPreparation } from '../preparation-status.js';
-import { state, setCurrentScreen } from '../state.js';
+import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import {
   processingPanel,
   processingTotalProgress,
@@ -12,7 +12,6 @@ import {
   processingOutcomeTitle,
   processingOutcomeDescription,
   processingOutcomeProgress,
-  processingOutcomeStatus,
   processingOutcomeNotice,
   processingOutcomeActions,
   processingOutcomeIndicator,
@@ -20,24 +19,36 @@ import {
 import { hideAllPanels, syncUrlState } from '../router.js';
 import { clearProcessingTimer, buildProcessingAgentsState } from './chat.js';
 import { tryOpenReportAfterProcessing, loadSkillAssessments, openReport } from './report.js';
-import { readApiResponse } from '../api.js';
+import { fetchWithDeadline, readApiResponse } from '../api.js';
 
 const ANALYSIS_POLL_INTERVAL_MS = 1200;
 const CYCLE_POLL_INTERVAL_MS = 5000;
-let cycleRequestEpoch = 0;
-let lastCycleSnapshot = null;
-let cycleSnapshotScope = '';
-let cyclePollDeadline = 0;
-let cyclePollDelay = CYCLE_POLL_INTERVAL_MS;
-const cycleBudgets = new Map();
+const COLLECTION_CLOSED = new Set(['collection_closed', 'calculation_pending', 'calculated', 'failed']);
+const EXPIRY_REASONS = new Set(['time_budget', 'calendar_deadline']);
+const cycleSnapshotsByScope = new Map();
+let cycleView = null;
+
+const rememberCycleSnapshot = (view, snapshot) => {
+  view.snapshot = snapshot;
+  cycleSnapshotsByScope.set(view.scopeKey, snapshot);
+};
+
+const isCycleSelected = (view) => view.ownerId === state.pendingUser?.id
+  && view.identityEpoch === state.identityEpoch && view.cycleId === state.productCycleId;
+const isCycleViewCurrent = (view) => view === cycleView
+  && state.currentScreen === 'processing' && isCycleSelected(view);
+const canPollCycle = (view) => isCycleViewCurrent(view) && view.polling
+  && !document.hidden && Date.now() < view.deadline;
 
 document.addEventListener('visibilitychange', () => {
-  if (state.currentScreen !== 'processing' || state.assessmentRuntimeKind !== 'cycle') return;
-  if (document.hidden) {
-    clearProcessingTimer();
-  } else if (Date.now() < cyclePollDeadline) {
-    void pollAnalysisStatus();
-  }
+  if (!cycleView || !isCycleViewCurrent(cycleView)) return;
+  if (document.hidden) clearProcessingTimer();
+  else if (canPollCycle(cycleView)) void pollAnalysisStatus();
+});
+window.addEventListener('agent4k:assessment-context-cleared', () => {
+  cycleView?.request?.abort();
+  cycleView = null;
+  cycleSnapshotsByScope.clear();
 });
 const ANALYSIS_STEP_LABELS = {
   queued: 'Ожидаем свободный обработчик',
@@ -145,182 +156,240 @@ export const finishProcessingSequence = () => {
   tryOpenReportAfterProcessing();
 };
 
-export const openProcessing = ({ initialCycleSnapshot = null } = {}) => {
-  const cycleIdFromUrl = new URLSearchParams(window.location.search).get('cycle_id');
-  if (!state.productCycleId && cycleIdFromUrl) state.productCycleId = cycleIdFromUrl;
-  if (state.productCycleId) state.assessmentRuntimeKind = 'cycle';
-  const scope = String(state.pendingUser?.id) + ':' + String(state.productCycleId);
-  if (scope !== cycleSnapshotScope) { lastCycleSnapshot = null; cycleSnapshotScope = scope; }
-  const budgetKey = 'p4k-report-wait:' + state.productCycleId;
-  let budget = cycleBudgets.get(scope);
-  try { budget ??= Number(window.sessionStorage.getItem(budgetKey)) || null; } catch { /* Memory budget. */ }
-  budget ??= Date.now() + 60000;
-  cycleBudgets.set(scope, budget); cyclePollDeadline = budget;
-  try { window.sessionStorage.setItem(budgetKey, String(budget)); } catch { /* Memory budget. */ }
-  cyclePollDelay = CYCLE_POLL_INTERVAL_MS;
-  setCurrentScreen('processing');
-  const recoveryCycleId = state.productCycleId;
-  if (recoveryCycleId) {
-    void import('./interview.js').then((module) => module.recoverCompletedInterviewAnswers(recoveryCycleId))
-      .catch(() => { /* Retain the original pending identity when recovery is unavailable. */ });
+export const openProcessing = ({ cycleId = state.productCycleId, confirmedCollection = null, completion = null } = {}) => {
+  cycleView?.request?.abort();
+  const previous = cycleView && isCycleSelected(cycleView) && cycleView.cycleId === cycleId ? cycleView : null;
+  cycleView = null;
+  if (cycleId) {
+    state.productCycleId = cycleId;
+    state.assessmentRuntimeKind = 'cycle';
+    persistAssessmentContext();
+    const ownerId = state.pendingUser?.id;
+    const scopeKey = JSON.stringify([ownerId, cycleId]);
+    const budgetKey = 'p4k-report-wait:' + scopeKey;
+    let deadline = previous?.deadline;
+    try {
+      deadline ??= Number(window.sessionStorage.getItem(budgetKey)) || null;
+      deadline ??= Date.now() + 60000;
+      window.sessionStorage.setItem(budgetKey, String(deadline));
+    } catch { /* Use the in-memory deadline when storage is unavailable. */ }
+    cycleView = {
+      cycleId, ownerId, scopeKey, identityEpoch: state.identityEpoch,
+      snapshot: cycleSnapshotsByScope.get(scopeKey) ?? null,
+      completionPending: Boolean(completion),
+      deadline: deadline ?? Date.now() + 60000, delay: CYCLE_POLL_INTERVAL_MS, polling: false,
+    };
+    if (hasConfirmedClosure(confirmedCollection) && !hasConfirmedClosure(cycleView.snapshot)) {
+      rememberCycleSnapshot(cycleView, confirmedCollection);
+    }
   }
+
+  setCurrentScreen('processing');
   syncUrlState('processing');
   hideAllPanels();
   processingPanel.classList.remove('hidden');
+  processingPanel.classList.toggle('processing-panel--cycle', Boolean(cycleView));
   clearProcessingTimer();
+  if (cycleView) {
+    const view = cycleView;
+    processingOutcomeCard.classList.remove('hidden');
+    processingLegacy.classList.add('hidden');
+    renderCycleOutcome(view, 'confirming');
+    processingOutcomeTitle.focus();
+    void import('./interview.js').then((module) => {
+      if (isCycleViewCurrent(view)) module.recoverCompletedInterviewAnswers(view.cycleId);
+    }).catch(() => { /* Keep pending receipts for later recovery. */ });
+    if (completion) {
+      void completion.then((receipt) => {
+        if (!isCycleViewCurrent(view)) return;
+        view.completionPending = false;
+        if (receipt?.cycle_id === view.cycleId && COLLECTION_CLOSED.has(receipt.states?.cycle)
+            && !hasConfirmedClosure(view.snapshot)) {
+          rememberCycleSnapshot(view, { collection_status: receipt.states.cycle, close_reason: receipt.reason });
+        }
+        void pollAnalysisStatus();
+      });
+    } else void pollAnalysisStatus();
+    return;
+  }
+
+  processingOutcomeCard.classList.add('hidden');
+  processingLegacy.classList.remove('hidden');
   state.processingStepIndex = 0;
   state.processingAgents = buildProcessingAgentsState();
   state.processingAnimationDone = false;
   state.processingDataLoaded = false;
   state.processingAutoTransitionStarted = false;
   state.processingServerProgress = 0;
-  const restoredCycleSnapshot = initialCycleSnapshot || (
-    state.assessmentRuntimeKind === 'cycle' && state.productReportStatus
-      ? {
-          results_status: state.productReportStatus === 'ready' ? 'ready' : 'processing',
-          report_status: state.productReportStatus,
-        }
-      : null
-  );
-  if (state.assessmentRuntimeKind === 'cycle') {
-    processingOutcomeCard?.classList.remove('hidden');
-    processingLegacy?.classList.add('hidden');
-    if (restoredCycleSnapshot) {
-      lastCycleSnapshot = restoredCycleSnapshot;
-      renderCycleOutcome(cycleOutcomeKind(restoredCycleSnapshot), restoredCycleSnapshot);
-    } else {
-      renderCycleOutcome('confirming');
-    }
-    processingOutcomeTitle?.focus();
-  } else {
-    processingOutcomeCard?.classList.add('hidden');
-    processingLegacy?.classList.remove('hidden');
-  }
   processingStatusText.textContent = 'Подтягиваем итоговые оценки и формируем профиль компетенций.';
   renderProcessingProgress();
-  if (restoredCycleSnapshot?.report_status !== 'ready' && restoredCycleSnapshot?.results_status !== 'failed') {
-    void pollAnalysisStatus();
-  }
+  void pollAnalysisStatus();
 };
 
 const outcomeCopy = {
-  confirming: ['Проверяем завершение оценки…', 'Уточняем состояние вашей оценки'],
-  confirmationError: ['Не удалось подтвердить завершение', 'Сейчас не удалось получить подтверждение от системы. Проверьте подключение и попробуйте ещё раз'],
-  waiting: ['Спасибо за ваши ответы', 'Отчёт появится в «Моих оценках». Можно закрыть страницу и вернуться позже'],
-  expired: ['Время оценки закончилось', 'Ваши сохранённые ответы будут учтены. В результате мы покажем, что удалось оценить'],
-  ready: ['Ваш результат готов', 'Посмотрите, что удалось узнать о ваших навыках'],
-  limited: ['Ваш результат готов', 'Посмотрите, что удалось оценить по вашим ответам. В результате будут объяснены ограничения'],
-  failed: ['Не удалось подготовить результат', 'Ваши ответы сохранены. Повторно проходить оценку не нужно'],
-  accessDenied: ['Нет доступа к этой оценке', 'Доступ к результату ограничен. Вернитесь в личный кабинет'],
-  unavailable: ['Оценка не найдена', 'Не удалось найти запрошенное прохождение. Вернитесь в личный кабинет'],
+  confirming: ['Проверяем завершение оценки', 'Уточняем состояние оценки.'],
+  confirmationError: ['Завершение не подтверждено', 'Не удалось получить подтверждение.'],
+  waiting: ['Спасибо за ваши ответы', 'Готовим результат. Он будет доступен в ваших оценках.'],
+  offline: ['Готовим результат', 'Последнее подтверждённое состояние: сбор ответов завершён.'],
+  expired: ['Время оценки закончилось', 'Сбор новых ответов закрыт. Учтём сохранённые ответы.'],
+  ready: ['Ваш результат готов', 'Вы можете открыть отчёт и радар.'],
+  limited: ['Ваш результат готов', 'В отчёте указано, какие навыки удалось оценить.'],
+  failed: ['Не удалось подготовить результат', 'Ваши ответы сохранены.'],
+  accessDenied: ['Нет доступа к этой оценке', 'Доступ к результату ограничен.'],
+  unavailable: ['Оценка не найдена', 'Не удалось найти запрошенное прохождение.'],
 };
 
-const dashboardAction = () => {
-  void import('../screen-loaders.js').then(async ({ loadDashboard }) => {
-    clearProcessingTimer();
-    const module = await loadDashboard();
-    module.openDashboard();
-  });
+const retryLabels = {
+  confirming: 'Проверить состояние',
+  confirmationError: 'Повторить проверку',
+  waiting: 'Проверить готовность',
+  offline: 'Повторить проверку',
+  expired: 'Проверить готовность',
+  failed: 'Проверить ещё раз',
 };
 
-const addOutcomeButton = (label, primary, handler) => {
+const hasConfirmedClosure = (snapshot) => COLLECTION_CLOSED.has(snapshot?.collection_status);
+const hasFailedProcessing = (snapshot) => snapshot?.processing?.status === 'failed'
+  || snapshot?.results_status === 'failed';
+const availableReport = (snapshot) => ['ready', 'limited'].includes(snapshot?.report_status)
+  ? snapshot.report_id || null : null;
+
+const cycleOutcomeKind = (snapshot) => {
+  if (hasFailedProcessing(snapshot)) return 'failed';
+  if (availableReport(snapshot)) {
+    const partial = snapshot.partial_result;
+    const limited = snapshot.report_status === 'limited' || partial?.plan_completed === false
+      || partial?.is_incomplete === true || partial?.plan_scope_limited === true
+      || partial?.observation_limited === true || partial?.context_limited === true
+      || partial?.source_limited === true || partial?.technical_failure === true
+      || partial?.limitation_reasons?.length > 0;
+    return limited ? 'limited' : 'ready';
+  }
+  if (!hasConfirmedClosure(snapshot)) return 'confirmationError';
+  return EXPIRY_REASONS.has(snapshot.close_reason) ? 'expired' : 'waiting';
+};
+
+const addOutcomeButton = (label, handler) => {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = primary ? 'primary-button' : 'outcome-text-button';
   button.textContent = label;
   button.addEventListener('click', handler);
   processingOutcomeActions.appendChild(button);
+  return button;
 };
 
 const confirmedProgress = (snapshot) => {
-  const completed = Number(snapshot?.route_progress?.completed);
-  const total = Number(snapshot?.route_progress?.total);
-  return Number.isInteger(completed) && Number.isInteger(total) && total > 0
-    ? `Завершено ситуаций: ${completed} из ${total}` : '';
+  const { completed, total } = snapshot?.route_progress ?? {};
+  return Number.isInteger(completed) && Number.isInteger(total) && total > 0 && completed >= 0 && completed <= total
+    ? `Завершено ситуаций: ${completed} из ${total}.` : '';
 };
 
-const renderCycleOutcome = (kind, snapshot = lastCycleSnapshot, { offline = false } = {}) => {
-  const [title, description] = outcomeCopy[kind] || outcomeCopy.waiting;
+const renderCycleOutcome = (view, kind, { readError = false } = {}) => {
+  const snapshot = view.snapshot;
+  const [title, description] = outcomeCopy[kind];
+  const showSnapshot = !['confirming', 'accessDenied', 'unavailable'].includes(kind);
+  const reportId = showSnapshot && !readError ? availableReport(snapshot) : null;
+  const failedWithReport = kind === 'failed' && availableReport(snapshot);
+  const ready = kind === 'ready' || kind === 'limited';
   processingOutcomeTitle.textContent = title;
-  processingOutcomeDescription.textContent = description;
-  processingOutcomeProgress.textContent = confirmedProgress(snapshot);
+  processingOutcomeDescription.textContent = readError && ready
+    ? 'Последняя проверка подтвердила готовность результата.' : description;
+  processingOutcomeProgress.textContent = showSnapshot ? confirmedProgress(snapshot) : '';
   processingOutcomeProgress.classList.toggle('hidden', !processingOutcomeProgress.textContent);
-  const status = kind === 'ready' || kind === 'limited' ? 'Можно посмотреть результат'
-    : kind === 'failed' ? 'Подготовка не завершена'
-      : ['waiting', 'expired'].includes(kind) ? 'Результат готовится' : '';
-  processingOutcomeStatus.textContent = snapshot?.preparation ? '' : status;
-  processingOutcomeNotice.textContent = offline && !snapshot?.preparation
-    ? 'Не удалось проверить готовность. Проверьте подключение и попробуйте ещё раз'
-    : kind === 'failed' && snapshot?.report_status === 'limited'
-      ? 'Ранее созданный ограниченный отчёт не означает, что техническая обработка завершена.' : '';
+  processingOutcomeNotice.textContent = readError && hasConfirmedClosure(snapshot)
+    ? 'Не удалось проверить готовность. Проверьте подключение или повторите проверку.'
+    : failedWithReport ? 'Доступен отчёт с ограничениями из-за сбоя обработки.'
+      : kind === 'failed' ? snapshot?.processing?.message || '' : '';
   processingOutcomeNotice.classList.toggle('hidden', !processingOutcomeNotice.textContent);
-  processingOutcomeIndicator.className = 'processing-outcome-indicator' +
-    (['ready', 'limited'].includes(kind) ? ' is-static' : kind === 'failed' || kind === 'confirmationError' ? ' is-error' : '');
-  processingOutcomeIndicator.textContent = ['ready', 'limited'].includes(kind) ? '✓'
-    : kind === 'failed' || kind === 'confirmationError' ? '!' : kind === 'expired' ? '◷' : '';
+
+  const error = ['confirmationError', 'failed', 'offline'].includes(kind) || readError;
+  processingOutcomeIndicator.classList.toggle('is-error', error);
+  processingOutcomeIndicator.textContent = error ? '!' : ready ? '✓' : '◷';
+
+  const preparation = showSnapshot && !ready ? snapshot?.preparation : null;
   let preparationPanel = processingOutcomeCard.querySelector('.processing-preparation');
-  if (snapshot?.preparation) {
-    if (!preparationPanel) { preparationPanel = document.createElement('div'); preparationPanel.className = 'processing-preparation'; processingOutcomeActions.before(preparationPanel); }
-    renderPreparation(preparationPanel, snapshot.preparation, { readError: offline || snapshot.preparation_stale === true });
+  if (preparation) {
+    if (!preparationPanel) {
+      preparationPanel = document.createElement('div');
+      preparationPanel.className = 'processing-preparation';
+      processingOutcomeActions.before(preparationPanel);
+    }
+    renderPreparation(preparationPanel, preparation, { readError });
     preparationPanel.querySelector('[data-preparation-actions]').append(processingOutcomeActions);
-  } else if (preparationPanel) { preparationPanel.before(processingOutcomeActions); preparationPanel.remove(); }
-  const actionsKey = [kind, offline, snapshot?.report_id].join(':');
-  if (processingOutcomeActions.dataset.preparationActions === actionsKey) return;
-  processingOutcomeActions.dataset.preparationActions = actionsKey;
-  processingOutcomeActions.innerHTML = '';
-  if (['ready', 'limited'].includes(kind)) {
-    addOutcomeButton('Посмотреть результат', true, () => {
-      clearProcessingTimer();
-      openReport({ m8CycleId: state.productCycleId, m8ReportId: snapshot?.report_id });
-    });
-    addOutcomeButton('Мои оценки', false, dashboardAction);
-  } else if (kind === 'failed') {
-    addOutcomeButton('Проверить состояние', false, () => void pollAnalysisStatus());
-    addOutcomeButton('Мои оценки', false, dashboardAction);
-  } else if (kind === 'confirmationError' || offline) {
-    addOutcomeButton('Проверить состояние', false, () => void pollAnalysisStatus());
-    addOutcomeButton('Мои оценки', true, dashboardAction);
-  } else if (['waiting', 'expired'].includes(kind)) {
-    addOutcomeButton('Проверить состояние', false, () => void pollAnalysisStatus());
-    addOutcomeButton('Мои оценки', true, dashboardAction);
-  } else if (['accessDenied', 'unavailable'].includes(kind)) {
-    addOutcomeButton('Мои оценки', true, dashboardAction);
+  } else if (preparationPanel) {
+    preparationPanel.before(processingOutcomeActions);
+    preparationPanel.remove();
   }
-};
 
-const cycleOutcomeKind = (snapshot) => {
-  if (snapshot?.results_status === 'failed' || snapshot?.preparation?.status === 'failed') return 'failed';
-  if (snapshot?.report_status === 'ready') return snapshot?.partial_result?.plan_completed === false || snapshot?.partial_result?.is_incomplete ? 'limited' : 'ready';
-  if (['time_budget', 'calendar_deadline'].includes(snapshot?.close_reason)) return 'expired';
-  return 'waiting';
-};
-
-const readJourneyCycleStatus = async () => {
-  if (!state.pendingUser?.id) throw new Error('Не удалось определить владельца Cycle.');
-  const response = await fetch('/users/' + encodeURIComponent(state.pendingUser.id) + '/journey-state', {
-    credentials: 'same-origin',
-  });
-  const journey = await readApiResponse(response, 'Не удалось получить состояние оценки.');
-  return {
-    results_status: journey?.assessment?.status === 'failed' ? 'failed'
-      : journey?.report_status === 'ready' ? 'ready' : 'processing',
-    report_status: journey?.report_status || 'not_ready',
-  };
-};
-
-const readDetailedCycleStatus = async () => {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 4000);
-  try {
-    const response = await fetch('/users/assessment/m8/cycles/' + encodeURIComponent(state.productCycleId) + '/status', {
-      credentials: 'same-origin',
-      signal: controller.signal,
+  const retry = preparation && kind !== 'offline' ? 'Проверить состояние'
+    : readError && hasConfirmedClosure(snapshot) ? retryLabels.offline : retryLabels[kind];
+  const actionsKey = JSON.stringify([kind, reportId, retry, view.completionPending]);
+  if (view.actionsKey === actionsKey) return;
+  view.actionsKey = actionsKey;
+  processingOutcomeActions.replaceChildren();
+  if (reportId) {
+    addOutcomeButton(failedWithReport ? 'Открыть отчёт с ограничениями' : 'Посмотреть результат', () => {
+      if (!isCycleViewCurrent(view) || availableReport(view.snapshot) !== reportId) return;
+      clearProcessingTimer();
+      view.request?.abort();
+      openReport({ m8CycleId: view.cycleId, m8ReportId: reportId });
     });
-    if (response.status === 403 || response.status === 404) return { response, snapshot: null };
-    const snapshot = await readApiResponse(response, 'Не удалось получить состояние Cycle runtime.');
-    return { response, snapshot };
-  } finally {
-    window.clearTimeout(timeoutId);
+  }
+  if (retry) {
+    const button = addOutcomeButton(retry, () => void pollCycleStatus(view));
+    button.disabled = view.completionPending;
+  }
+  addOutcomeButton('В личный кабинет', () => {
+    clearProcessingTimer();
+    void import('../screen-loaders.js').then(async ({ loadDashboard }) => {
+      const module = await loadDashboard();
+      if (isCycleViewCurrent(view)) {
+        view.request?.abort();
+        module.openDashboard();
+      }
+    });
+  });
+};
+
+const pollCycleStatus = async (view) => {
+  if (!isCycleViewCurrent(view) || view.completionPending) return;
+  clearProcessingTimer();
+  view.request?.abort();
+  const request = new AbortController();
+  view.request = request;
+  const isCurrent = () => isCycleViewCurrent(view) && view.request === request;
+  view.polling = false;
+  try {
+    const response = await fetchWithDeadline('/users/assessment/m8/cycles/' + encodeURIComponent(view.cycleId) + '/status', {
+      credentials: 'same-origin', signal: request.signal,
+    }, 4000);
+    if (!isCurrent()) return;
+    if (response.status === 403 || response.status === 404) {
+      view.snapshot = null;
+      cycleSnapshotsByScope.delete(view.scopeKey);
+      renderCycleOutcome(view, response.status === 403 ? 'accessDenied' : 'unavailable');
+      return;
+    }
+    const snapshot = await readApiResponse(response, 'Не удалось получить состояние оценки.');
+    if (!isCurrent()) return;
+    if (snapshot.cycle_id && snapshot.cycle_id !== view.cycleId) throw new Error('Получен статус другой оценки.');
+    rememberCycleSnapshot(view, snapshot);
+    const kind = cycleOutcomeKind(snapshot);
+    renderCycleOutcome(view, kind);
+    view.polling = ['waiting', 'expired'].includes(kind);
+    if (canPollCycle(view)) {
+      state.processingTimerId = window.setTimeout(() => {
+        if (canPollCycle(view)) void pollCycleStatus(view);
+      }, view.delay);
+      view.delay = Math.min(15000, view.delay * 1.5);
+    }
+  } catch (_error) {
+    if (!isCurrent()) return;
+    const confirmed = hasConfirmedClosure(view.snapshot) || hasFailedProcessing(view.snapshot)
+      || Boolean(availableReport(view.snapshot));
+    const previousKind = cycleOutcomeKind(view.snapshot);
+    const kind = confirmed ? (previousKind === 'waiting' ? 'offline' : previousKind) : 'confirmationError';
+    renderCycleOutcome(view, kind, { readError: true });
   }
 };
 
@@ -403,53 +472,12 @@ const renderAnalysisFailure = (snapshot) => {
 
 const scheduleAnalysisPoll = () => {
   clearProcessingTimer();
-  if (state.assessmentRuntimeKind === 'cycle' && (Date.now() >= cyclePollDeadline || state.currentScreen !== 'processing' || document.hidden)) return;
-  const delay = state.assessmentRuntimeKind === 'cycle' ? cyclePollDelay : ANALYSIS_POLL_INTERVAL_MS;
-  cyclePollDelay = Math.min(15000, cyclePollDelay * 1.5);
-  state.processingTimerId = window.setTimeout(() => {
-    if (state.assessmentRuntimeKind === 'cycle' && (Date.now() >= cyclePollDeadline || state.currentScreen !== 'processing' || document.hidden)) return;
-    void pollAnalysisStatus();
-  }, delay);
+  state.processingTimerId = window.setTimeout(() => void pollAnalysisStatus(), ANALYSIS_POLL_INTERVAL_MS);
 };
 
 export const pollAnalysisStatus = async () => {
-  if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) {
-    const requestEpoch = ++cycleRequestEpoch;
-    try {
-      let response = null;
-      let snapshot = null;
-      let journeySnapshot = null;
-      try { journeySnapshot = await readJourneyCycleStatus(); } catch { /* The explicit Cycle status remains authoritative. */ }
-      if (journeySnapshot?.report_status === 'ready' || journeySnapshot?.results_status === 'failed') {
-        snapshot = journeySnapshot;
-
-      } else {
-        try {
-          ({ response, snapshot } = await readDetailedCycleStatus());
-        } catch (error) {
-          if (error?.name !== 'AbortError' || !journeySnapshot) throw error;
-          snapshot = journeySnapshot;
-        }
-      }
-      if (requestEpoch !== cycleRequestEpoch || state.currentScreen !== 'processing') return;
-      if (response && (response.status === 403 || response.status === 404)) {
-        clearProcessingTimer();
-        renderCycleOutcome(response.status === 403 ? 'accessDenied' : 'unavailable');
-        return;
-      }
-      if (!snapshot) snapshot = await readApiResponse(response, 'Не удалось получить состояние Cycle runtime.');
-      if (requestEpoch !== cycleRequestEpoch || state.currentScreen !== 'processing') return;
-      if (!snapshot.preparation && lastCycleSnapshot?.preparation && snapshot.report_status !== 'ready' && snapshot.results_status !== 'failed') {
-        snapshot = { ...snapshot, preparation: lastCycleSnapshot.preparation, preparation_stale: true };
-      }
-      lastCycleSnapshot = snapshot;
-      renderCycleOutcome(cycleOutcomeKind(snapshot), snapshot);
-      if (snapshot.report_status === 'ready' || snapshot.results_status === 'failed') { clearProcessingTimer(); return; }
-      scheduleAnalysisPoll();
-    } catch (_error) {
-      if (requestEpoch !== cycleRequestEpoch || state.currentScreen !== 'processing') return;
-      renderCycleOutcome(lastCycleSnapshot ? cycleOutcomeKind(lastCycleSnapshot) : 'confirmationError', lastCycleSnapshot, { offline: Boolean(lastCycleSnapshot) });
-    }
+  if (cycleView) {
+    await pollCycleStatus(cycleView);
     return;
   }
   if (!state.pendingUser?.id || !state.assessmentSessionId) {
