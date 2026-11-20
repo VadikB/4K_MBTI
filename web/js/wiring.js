@@ -2879,7 +2879,8 @@ interviewFinishButton.addEventListener('click', async () => {
   let interviewModule;
   showError(interviewError, '');
 
-  if (interviewTextarea.value.trim()) {
+  const draft = interviewTextarea.value.trim();
+  if (draft && !state.productCycleId) {
     showError(interviewError, 'В поле есть неотправленный ответ. Сначала нажмите «Отправить».');
     interviewTextarea.focus();
     return;
@@ -2890,7 +2891,11 @@ interviewFinishButton.addEventListener('click', async () => {
     return;
   }
 
-  if (!window.confirm('Завершить прохождение? Ответы будут зафиксированы. При необходимости сначала появится уточняющий вопрос.')) {
+  const warning = draft
+    ? 'В поле остался черновик. При завершении этот текст не будет отправлен. Всё равно завершить ситуацию?'
+    : 'Завершить прохождение? Ответы будут зафиксированы. При необходимости сначала появится уточняющий вопрос.';
+  if (!window.confirm(warning)) {
+    if (draft) interviewTextarea.focus();
     return;
   }
 

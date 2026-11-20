@@ -89,21 +89,21 @@ test('F08 rejected polling and heartbeat retain unknown answer recovery and its 
     h.storage.set(key, JSON.stringify(pending));
     h.setFetch(async () => { throw new TypeError('Failed to fetch'); });
     h.subject.renderProductRuntime(h.runtime);
-    const row = h.messages.children.find((item) => item.dataset.deliveryRequestId === operation.requestId);
-    assert.ok(row, 'the original operation has its delivery/recovery row');
+    assert.equal(h.messages.children.some(item => item.dataset.pendingTurnId), false);
+    assert.match(h.context.interviewError.textContent, /Проверить отправку/);
     if (channel === 'poll') { h.subject.resumeProductRuntimePolling(); h.poll(); }
     else h.subject.startProductPresence();
     await tick();
-    assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
+    assert.match(h.errors.at(-1), /Отправка не подтверждена/);
     assert.doesNotMatch(h.errors.at(-1), /Текст сохранён|текст сохранён/);
     assert.equal(h.controls.submit.disabled, true);
     assert.equal(h.controls.finish.disabled, true);
     assert.equal(JSON.parse(h.storage.get(key)).requestId, operation.requestId);
     assert.equal(JSON.parse(h.storage.get(key)).turnId, operation.turnId);
-    assert.ok(h.messages.children.includes(row), 'background error retains the recovery action');
+    assert.match(h.context.interviewError.textContent, /Проверить отправку/);
     h.context.window.sessionStorage.getItem = () => { throw new Error('Storage read failed after dispatch'); };
     h.subject.showInterviewRuntimeError(new TypeError('Failed to fetch'));
-    assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
+    assert.match(h.errors.at(-1), /Отправка не подтверждена/);
     assert.equal(h.controls.submit.disabled, true);
     assert.equal(h.controls.finish.disabled, true);
     h.subject.stopProductPresence();
@@ -145,10 +145,10 @@ test('F08 active pending POST retains recovery priority when a poll fails before
   const sending = h.subject.sendProductInterviewAnswer(h.textarea.value); await tick();
   h.setFetch(async () => { throw new TypeError('Failed to fetch'); });
   h.subject.resumeProductRuntimePolling(); h.poll(); await tick();
-  assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
+  assert.match(h.errors.at(-1), /Отправляем ответ/);
   assert.equal(h.controls.submit.disabled, true); assert.equal(h.controls.finish.disabled, true);
   pending.reject(new TypeError('Failed to fetch')); await sending; await tick();
-  assert.match(h.errors.at(-1), /Не удалось подтвердить сохранение ответа/);
+  assert.match(h.errors.at(-1), /Отправка не подтверждена/);
 });
 
 const switches = {

@@ -8,8 +8,8 @@ export async function draftFixture(page, shared = null) {
     status: { collection_status: 'active', remaining_seconds: 7200, deadline: '2026-11-20T12:00:00Z' },
     route: { positions: [{ position_no: 3, state: 'in_progress', current_assessment_situation_id: 'synthetic-as' }],
       progress: { total_positions: 8, completed_positions: null } },
-    current_situation: { assessment_situation_id: 'synthetic-as', status: 'active', participant_payload: {
-      title: 'Рабочая ситуация', introduction: 'Команда готовит запуск сервиса.',
+    current_situation: { assessment_situation_id: 'synthetic-as', status: 'active', response_format: 'dialogue', participant_payload: {
+      assessee_position: 'Руководитель команды', title: 'Рабочая ситуация', introduction: 'Команда готовит запуск сервиса.',
       initial_situation: 'Клиенту нужно согласовать план. Собеседник предлагает обсудить доступные варианты.',
       assessee_task: 'Обсудите запрос и предложите следующий шаг.',
       initial_materials: [{ material_id: 'public-material', title: 'Доступные сведения', text: 'На проверку данных нужен один рабочий день.' }],

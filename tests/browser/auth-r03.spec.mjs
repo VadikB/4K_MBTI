@@ -210,7 +210,8 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
         cycle_id: 'projection-cycle', status: { collection_status: 'active', remaining_seconds: remainingSeconds },
         return_policy_enabled: false,
         route: { positions: [{ position_no: 1, state: 'in_progress', current_assessment_situation_id: 'projection-as' }], progress: { total_positions: 8 } },
-        current_situation: { assessment_situation_id: 'projection-as', status: 'active', participant_payload: payload },
+        current_situation: { assessment_situation_id: 'projection-as', status: 'active', participant_payload: payload,
+          response_format: fixture.response_format },
         trace: { turns: extraTurns, events: [] },
       }); }
       return fulfillJson(route, {}, 404);
@@ -218,6 +219,8 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
     await page.goto(`${base}/?screen=interview`);
     const situation = page.locator('.interview-message--situation');
     await expect(situation).toHaveCount(1);
+    await expect(page.locator('.interview-response-format')).toHaveText(
+      caseId === 'CASE.SPEC.02' ? 'Письменное задание' : 'Диалог');
     await expect(situation).toContainText(payload.introduction);
     for (const item of payload.initial_materials) await expect(situation).toContainText(item.text);
     await expect(situation).not.toContainText('определяются в AS');
@@ -247,13 +250,17 @@ for (const caseId of ['CASE.SPEC.01', 'CASE.SPEC.02']) {
       { name: 'answer-input', locator: page.locator('#interview-textarea') },
       { name: 'answer-submit', locator: page.locator('#interview-submit-button') },
     ]);
-    // Desktop intentionally has an inner message scroller. Prove its last
-    // material remains reachable across live polls, not merely present in DOM.
-    const lastMaterial = situation.locator('li').last();
+    // Follow the participant path into the disclosure and keep the material
+    // reachable while the runtime polls.
+    const materials = situation.locator('details');
+    await materials.getByText('Доступные сведения', { exact: true }).click();
+    await expect(materials).toHaveJSProperty('open', true);
+    const lastMaterial = materials.locator('li').last();
     await lastMaterial.scrollIntoViewIfNeeded();
     await expect.poll(async () => (await viewportGeometry(lastMaterial)).visible_ratio).toBeGreaterThan(0);
     const beforeMaterialReads = reads;
     await expect.poll(() => reads).toBeGreaterThanOrEqual(beforeMaterialReads + 2);
+    await expect(materials).toHaveJSProperty('open', true);
     const lastMaterialGeometry = await viewportGeometry(lastMaterial);
     assertViewportGeometry(lastMaterialGeometry, 'last-material-after-poll');
     // fullPage capture resizes the layout viewport and can reset a dvh-sized
@@ -3644,7 +3651,7 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   await page.goto(`${base}/?screen=interview`);
   await expect(page.locator('.interview-return-card')).toBeVisible();
   await expect(page.locator('.interview-return-card')).not.toContainText('Завершено 2 из 4');
-  await expect(page.locator('#interview-case-badge')).toHaveText('1 ситуация из 4');
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 4');
   await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
   await expect(page.getByText('Календарный срок:', { exact: false })).toBeHidden();
   await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
@@ -3811,7 +3818,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   });
 
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.locator('#interview-case-badge')).toHaveText('1 ситуация из 3');
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 3');
   await expect(page.locator('#interview-section-title')).toHaveText('4К Ассистент');
   await expect(page.locator('.case-sidebar')).toHaveCount(0);
   await expect(page.locator('.interview-message--situation')).toHaveCount(1);
@@ -3825,7 +3832,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   await expect(page.locator('.interview-message--situation')).toContainText('Не обещать сроки без проверки');
   await expect(page.locator('.interview-message--situation')).toContainText('Письмо клиента: Содержание письма');
   await expect(page.getByRole('button', { name: 'Завершить ситуацию' })).toBeHidden();
-  await expect(page.getByText('После отправки ответ нельзя изменить')).toBeVisible();
+  await expect(page.locator('.interview-your-turn')).toBeVisible();
   await expect(page.locator('[data-speaker-label="Анна"]')).toBeVisible();
   await expect(page.locator('.interview-bubble.bot').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 

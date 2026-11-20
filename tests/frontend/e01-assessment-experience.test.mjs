@@ -52,9 +52,9 @@ test('E01 applies accepted conversation tokens and mobile layout', () => {
 
 test('E01 ADD01 presents the admitted situation once inside the chat without raw JSON or a route column', () => {
   assert.doesNotMatch(html, /class="case-sidebar"/);
-  assert.match(interview, /addProductSituationMessage\(current\.participant_payload\)/);
+  assert.match(interview, /addProductSituationMessage\(current\.participant_payload, materialsOpen\)/);
   assert.match(interview, /bubble\.dataset\.speakerLabel = '4К Ассистент'/);
-  assert.match(interview, /\['Вводная',[\s\S]*\['Ситуация',[\s\S]*\['Событие',[\s\S]*\['Ваша роль',[\s\S]*\['Участники',[\s\S]*\['Задача',[\s\S]*\['Условия'/);
+  assert.match(interview, /'assessee_position'[\s\S]*'introduction'[\s\S]*'initial_situation'[\s\S]*'trigger'[\s\S]*'Ваша задача'[\s\S]*'conditions_and_constraints'/);
   assert.match(interview, /\['initial_materials', 'available_materials', 'materials', 'attachments'\]/);
   assert.doesNotMatch(interview, /JSON\.stringify\(payload/);
   assert.match(interview, /previousCaseKey !== current\.assessment_situation_id \? 0 : previousScrollTop/);

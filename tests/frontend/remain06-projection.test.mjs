@@ -17,7 +17,7 @@ for (const completed of [undefined, null, '0']) {
     saved.route.progress = { total_positions: 8, completed_positions: completed };
     saved.participant_progress = { planned_total: 8, current_position_no: 3 };
     h.subject.renderProductRuntime(saved);
-    assert.equal(h.badge.textContent, '3 ситуация из 8');
+    assert.equal(h.badge.textContent, 'Ситуация 3 из 8');
   });
 }
 
@@ -27,7 +27,7 @@ for (const total of [8, 3]) {
     h.subject.renderReturnCard({ cycle_id: 'cycle-a', current_assessment_situation_id: 'as-a',
       position_no: 1, collection_status: 'active', allowed_action: 'continue_current', remaining_seconds: 123,
       progress: { total_positions: total, completed_positions: 0 } });
-    assert.equal(h.badge.textContent, `1 ситуация из ${total}`);
+    assert.equal(h.badge.textContent, `Ситуация 1 из ${total}`);
     assert.doesNotMatch(h.messages.firstChild.children[1].textContent, /Завершено/);
     assert.equal(h.timer.textContent, 'Пауза · 02:03');
   });
@@ -38,12 +38,12 @@ for (const total of [8, 3]) {
     saved.route = { positions: [{ position_no: 1, current_assessment_situation_id: 'as-a', state: 'in_progress' }],
       progress: { total_positions: total, completed_positions: 0 } };
     h.subject.renderProductRuntime(saved);
-    assert.equal(h.badge.textContent, `1 ситуация из ${total}`);
+    assert.equal(h.badge.textContent, `Ситуация 1 из ${total}`);
     // The current position never implies that all earlier positions completed.
     saved.route.positions[0].position_no = 3;
     saved.route.progress.completed_positions = 1;
     h.subject.renderProductRuntime(saved);
-    assert.equal(h.badge.textContent, `3 ситуация из ${total}`);
+    assert.equal(h.badge.textContent, `Ситуация 3 из ${total}`);
     assert.equal(h.context.interviewProgressFill.style.width, undefined);
   });
 }

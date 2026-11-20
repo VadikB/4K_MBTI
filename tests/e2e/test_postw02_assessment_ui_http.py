@@ -42,10 +42,11 @@ def runtime(monkeypatch):
             if 'p.case_id,p.case_version' in sql: return Result([position])
             if 'FROM m5_cycle_time_intervals' in sql: return Result([{'value': 1}]) if self.blocking else Result()
             if 'FROM m7_return_absence_events' in sql: return Result([dict(id=uuid4(), recognized_at=now)])
-            if any(table in sql for table in ['m7_clarification_decisions', 'm10_pipeline_runs', 'm7_continuation_intents']): return Result()
+            if any(table in sql for table in ['m7_clarification_decisions', 'm10_pipeline_runs', 'm7_continuation_intents', 'm5_turn_operations']): return Result()
             raise AssertionError(sql)
     db = Storage()
     db.situation_id = as_id
+    db.situation = situation
     @contextmanager
     def connection(): yield db
     monkeypatch.setattr(routes, 'get_connection', connection)
@@ -125,3 +126,18 @@ def test_paused_between_situations_with_false_blocking_is_a_successful_known_tim
     assert value['current_situation'] is None
     assert value['status'] == {'collection_status': 'paused', 'remaining_seconds': 123}
     assert value['blocking_system_wait'] is False
+
+
+@pytest.mark.parametrize(("characters", "expected"), [
+    ([], "written"),
+    ([{"character_id": "synthetic", "closed_card": "Not participant data"}], "dialogue"),
+    (None, None),
+])
+def test_public_response_format_precedes_turns_and_never_returns_the_roster(runtime, characters, expected):
+    client, db, cycle, _position, _saved, _queries = runtime
+    db.situation["scenario_characters"] = characters
+    response = client.get(f'/users/assessment/cycles/{cycle["cycle_id"]}/runtime')
+    assert response.status_code == 200, response.text
+    assert response.json()["current_situation"]["response_format"] == expected
+    assert response.json()["trace"]["turns"] == []
+    assert "scenario_characters" not in response.text and "closed_card" not in response.text
