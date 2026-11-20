@@ -292,3 +292,12 @@ https://github.com/VadikB/4K_MBTI/pull/259 . Base main dcd876f2, исходны�
 публикуемый head 6867a900; код/tests соответствуют проверенному 8784088f.
 Review принят владельцем в чате. Быстрые frontend/pytest запущены; full CI
 в Draft штатно SKIPPED и не считается PASS. Ready/версия/merge/deploy не выполнены.
+
+## Допуск выпуска 2.1.43
+
+Владелец ответил «делаем» на конкретный следующий этап PATCH/Ready/full CI/выпуск
+на TEST. Review ранее принят. branch_push/pr/version_bump=true; merge/deploy=true
+после обязательного CI актуального head/base; artifact_publish=false. Pilot и
+реальные LLM не входят. Свежий main dcd876f2 = 2.1.42. Штатный
+ready:prepare --candidate 2.1.43 и release gate PASS. Код/tests 8784088f
+не менялись; полный локальный PASS переиспользован в этой области.
