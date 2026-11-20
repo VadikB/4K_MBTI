@@ -100,6 +100,27 @@ def test_subject_contract_has_no_identity_or_login_fields(client, monkeypatch):
     )
 
 
+def test_published_role_route_uses_validated_definition(client, monkeypatch):
+    @contextmanager
+    def connection():
+        yield object()
+
+    monkeypatch.setattr(routes, "get_connection", connection)
+    monkeypatch.setattr(routes, "load_published_role_profile", lambda c, version_id: {
+        "id": version_id, "code": "specialist_expert", "version": 1,
+        "definition": {"methodology_version": "1.1"}, "checksum": "a" * 64,
+    })
+    response = client.get(
+        "/integration/v1/role-profile-versions/2",
+        headers={"Authorization": "Bearer " + TOKEN},
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 2, "code": "specialist_expert", "version": 1,
+        "methodology_version": "1.1", "checksum": "a" * 64,
+    }
+
+
 def test_context_rejects_other_project_before_database(client, monkeypatch):
     def forbidden():
         raise AssertionError("Database must not be opened")
