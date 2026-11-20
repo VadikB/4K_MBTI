@@ -99,7 +99,7 @@ async function login(page,stand,email='participant@example.test',prepare=false,n
  const assessmentAction=page.locator('#assessment-action-button').filter({visible:true});
  const welcomeAction=page.locator('#start-first-assessment').filter({visible:true});
  const dashboard=page.locator('#dashboard-panel').filter({visible:true});
- const completedDashboardAction=page.locator('#processing-panel').getByRole('button',{name:'Мои оценки',exact:true}).filter({visible:true});
+ const completedDashboardAction=page.locator('#processing-panel').getByRole('button',{name:'В личный кабинет',exact:true}).filter({visible:true});
  let routeReady=continueButton.or(confirm).or(onboardingSkip).or(assessmentAction).or(welcomeAction);
  if(allowDashboard)routeReady=routeReady.or(dashboard).or(completedDashboardAction);
  await expect(routeReady.first()).toBeVisible({timeout:15000});
