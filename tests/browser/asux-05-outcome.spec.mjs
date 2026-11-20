@@ -168,7 +168,14 @@ test('05.2 ready statuses open the exact full or limited report', async ({ page 
     expect(selected.get('report_id')).toBe(reportId);
     expect(selected.get('cycle_id')).toBe(cycleId);
     run.navigations.push({ cycle_id: selected.get('cycle_id'), report_id: selected.get('report_id'), status: readback.status() });
-    if (cycleId === A) await page.locator('#report-back-button').click();
+    if (cycleId === A) {
+      await page.reload();
+      await expect(page.locator('#m8-report-state')).toContainText('Результат готов');
+      expect(new URL(page.url()).searchParams.get('report_id')).toBe(reportId);
+      await page.locator('#report-back-button').click();
+      await expect(page.getByRole('heading', { name: 'Мои оценки', exact: true })).toBeVisible();
+      await expect(cardAction(page, B)).toBeVisible();
+    }
   }
   await recordRequests(run, info);
 });

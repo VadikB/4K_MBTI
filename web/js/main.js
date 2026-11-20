@@ -277,7 +277,7 @@ const bootApp = async () => {
           await openReportScreen({
             m8CycleId: params.get('cycle_id'), m8ReportId: params.get('report_id'),
             previousReportId: params.get('previous_report_id') || '', comparisonView: params.get('report_view') === 'comparison',
-            returnTarget: params.get('report_id') ? 'reports' : 'home',
+            returnTarget: window.history.state?.reportReturnTarget ?? (params.get('report_id') ? 'reports' : 'home'),
           });
           return;
         }
