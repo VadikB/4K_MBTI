@@ -152,6 +152,16 @@ test('ADM-FIX-04 explains unsupported saved C17 choice and retains the draft', a
   await expect(form(page).locator('[name="organization_name_usage_rules"]')).toHaveValue('Неизвестный вариант');
   await expect(card(page).locator('[data-action="confirm-questionnaire"]')).toHaveCount(0);
 });
+
+test('ADM-FIX-04 explains unavailable policy on a saved draft', async ({ page }) => {
+  const draft = { ...confirmed, id: 203, status: 'invalid',
+    validation_json: { errors: [{ code: 'ADMIN_CONTEXT_CHOICES_UNAVAILABLE' }], missing: [] } };
+  const f = await fixture(page, { items: [draft] });
+  await finishRead(page, f);
+  await expect(card(page).locator('[data-context-choice-warning]')).toContainText(
+    'не удалось проверить утверждённые варианты');
+  await expect(card(page).locator('[data-action="confirm-questionnaire"]')).toHaveCount(0);
+});
 test('Q-DRAFT live input wins over a delayed confirmed revision in the same scope', async ({ page }) => {
   const f = await fixture(page, { items: [confirmed] });
   await fill(page, fields('черновик')); await finishRead(page, f);

@@ -207,6 +207,11 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert "questionnaire_revision_id" not in projection["participant_preview"]
         confirm(connection, revision_id=fresh["id"], organization_id=10,
                 confirmed_by=2)
+        historical = connection.execute(
+            "SELECT definition_json,checksum,source_manifest_json FROM assessment_organization_context_versions WHERE id=%s",
+            (version["id"],),
+        ).fetchone()
+        assert historical == {key: version[key] for key in historical}
         with pytest.raises(ValueError, match="QUESTIONNAIRE_REVISION_CONFLICT"):
             confirm(connection, revision_id=stale["id"], organization_id=10,
                     confirmed_by=2)

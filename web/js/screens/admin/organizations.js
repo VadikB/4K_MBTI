@@ -2522,10 +2522,14 @@ export const renderAdminOrganizations = () => {
       const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(assessmentKey(orgId, selectedRef));
       const confirmationOutcome = questionnaireConfirmOutcomes.get(assessmentKey(orgId, selectedRef));
       const savedChoiceError = (currentRevision?.validation_json?.errors || []).find(
-        (error) => error.code === 'CONTEXT_CHOICE_UNSUPPORTED');
+        (error) => error.code === 'CONTEXT_CHOICE_UNSUPPORTED' ||
+          String(error.code).startsWith('ADMIN_CONTEXT_CHOICES_') ||
+          String(error.code).startsWith('QUESTIONNAIRE_LEGACY_CHOICES_'));
       const savedChoiceIssue = savedChoiceError
-        ? 'неподдерживаемое значение: ' + (savedChoiceError.field === 'case_reality_level'
-          ? 'близость ситуаций к реальной работе' : 'использование названия организации')
+        ? (savedChoiceError.code === 'CONTEXT_CHOICE_UNSUPPORTED'
+          ? 'неподдерживаемое значение: ' + (savedChoiceError.field === 'case_reality_level'
+            ? 'близость ситуаций к реальной работе' : 'использование названия организации')
+          : 'не удалось проверить утверждённые варианты; повторите после восстановления правил')
         : '';
       const savedChoiceWarning = savedChoiceIssue && !questionnairePreview
         ? '<p class="form-status error" role="alert" data-context-choice-warning>Проверьте: ' +
