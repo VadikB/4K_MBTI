@@ -422,7 +422,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect.poll(
       async () => page.locator('#onboarding-title').innerText(),
       { timeout: realProvider ? 600000 : 45000 },
-    ).toMatch(/^(Можно приступать к оценке|Не удалось подготовить оценку)$/);
+    ).toMatch(/^(Ваши кейсы подготовлены|Подготовка оценки)$/);
     const preparationReceipt = fullPath
       ? await (await page.request.get(base + '/__pytest__/path-receipt')).json()
       : null;
@@ -433,13 +433,13 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         path: path.join(dir, 'source-to-runtime-receipt.json'), contentType: 'application/json',
       });
     }
-    expect(await page.locator('#onboarding-title').innerText()).toBe('Можно приступать к оценке');
+    expect(await page.locator('#onboarding-title').innerText()).toBe('Ваши кейсы подготовлены');
     if (fullPath) {
       if (state.path29.input_mode === 'published-pilot') verifyPublishedProgram(preparationReceipt, selectedRelease);
       verifyPreparation(preparationReceipt, { controlledProvider });
     }
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
-    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await page.reload(); await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     const freshContext = await pathBrowser.newContext(); extraContexts.push(freshContext);
     const fresh = await freshContext.newPage(); await fresh.goto(base);
     await fresh.locator('#email-input').fill(state.path29.participant_email);
@@ -447,12 +447,12 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await fresh.locator('#magic-token-input').fill(state.password);
     await fresh.locator('#verify-magic-link-button').click();
     await expect(fresh.locator('#onboarding-panel')).toBeVisible();
-    await expect(fresh.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await expect(fresh.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     await fresh.getByRole('button', { name: 'Посмотреть знакомство', exact: true }).click();
     await expect(fresh.locator('#onboarding-title')).toHaveText('Знакомство завершено');
     await expect(fresh.locator('.onboarding-summary-answer')).toHaveText(text);
     await fresh.getByRole('button', { name: 'Вернуться к готовности оценки', exact: true }).click();
-    await expect(fresh.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await expect(fresh.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.locator('#onboarding-home').click();
     await expect(page.locator('#dashboard-panel')).toBeVisible();
@@ -465,7 +465,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await expect(next).toBeDisabled();
     await expect.poll(() => typeof releaseAcquaintance).toBe('function');
     await releaseAcquaintance(); await page.unroute('**/users/*/acquaintance');
-    await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 0, operations: 1 });
     await page.screenshot({ path: path.join(dir, 'ready.png'), fullPage: true });
     if (!boundedPath) await capturePathViewports(page, dir, 'participant-ready', [
@@ -505,14 +505,14 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await page.unroute('**/users/assessment/cycles/prepare');
       await expect(page.locator('#onboarding-title')).toHaveText('Не удалось проверить готовность');
       await page.reload();
-      await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке', { timeout: 45000 });
+      await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены', { timeout: 45000 });
       const newCycleId = (await savedAcquaintance()).prepared_plan?.cycle_id;
       expect(newCycleId).toBeTruthy();
       expect(newCycleId).not.toBe(oldCycleId);
       await second.reload();
-      await expect(second.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+      await expect(second.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
       await fresh.reload();
-      await expect(fresh.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+      await expect(fresh.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
       const bStart = page.waitForResponse((response) => response.request().method() === 'POST'
         && response.url().endsWith('/users/assessment/cycles/start'));
       await next.dblclick();
@@ -549,11 +549,31 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     }
     step = 'explicit_start_and_first_as';
     const beforeExplicitStart = await savedAcquaintance();
-    const startResponse = page.waitForResponse((response) => response.request().method() === 'POST'
-      && response.url().endsWith('/users/assessment/cycles/start'));
-    await next.dblclick();
-    const started = await startResponse;
-    expect(started.status()).toBe(201);
+    const stopAtFirstAS = process.env.P4K_STOP_AFTER_FIRST_AS === '1';
+    const startPath = '**/users/assessment/cycles/start';
+    let acceptedStarts = 0;
+    if (stopAtFirstAS) {
+      const prepared = beforeExplicitStart.prepared_plan;
+      const pendingRuntime = await page.request.get(base + '/users/assessment/cycles/' + prepared.cycle_id + '/runtime');
+      expect(pendingRuntime.status()).toBe(200);
+      const pending = await pendingRuntime.json();
+      expect(pending.status.remaining_seconds).toBe(prepared.plan.time_budget_seconds);
+      expect(pending.current_situation).toEqual({
+        assessment_situation_id: prepared.start_readiness.assessment_situation_id, status: 'admitted',
+      });
+      await page.route(startPath, async (route) => {
+        const result = await route.fetch();
+        expect(result.status()).toBe(201);
+        acceptedStarts += 1;
+        await route.abort('failed'); // The server committed; Chromium lost the receipt.
+      });
+      await next.dblclick();
+    } else {
+      const startResponse = page.waitForResponse((response) => response.request().method() === 'POST'
+        && response.url().endsWith('/users/assessment/cycles/start'));
+      await next.dblclick();
+      expect((await startResponse).status()).toBe(201);
+    }
     await expect(page.locator('#interview-panel')).toBeVisible();
     await expect(page.locator('.interview-message--situation').first()).toBeVisible();
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
@@ -571,7 +591,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     ]);
     // Resizing/reading must not start another Cycle or create assessment answers.
     expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });
-    if (process.env.P4K_STOP_AFTER_FIRST_AS === '1') {
+    if (stopAtFirstAS) {
+      expect(acceptedStarts).toBe(1);
+      await page.reload();
+      await expect(page.locator('.interview-message--situation').first()).toBeVisible();
+      expect(acceptedStarts).toBe(1);
       const receipt = await (await page.request.get(base + '/__pytest__/path-receipt')).json();
       expect(receipt.assessment_answers).toBe(0);
       expect(receipt.cycle.cycle_id).toBe(beforeExplicitStart.prepared_plan.cycle_id);
@@ -581,6 +605,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       expect(receipt.sessions).toHaveLength(1);
       expect(receipt.sessions[0].started_at).toBeTruthy();
       save('w02-first-as-stop', { scope: 'SYNTHETIC component plan; actual browser/HTTP/SQL; no real LLM',
+        start_receipt_lost: true, accepted_starts: acceptedStarts,
         assessment_answers: receipt.assessment_answers, cycle: receipt.cycle,
         assignment_lineage: receipt.assignment_lineage, plan: receipt.plan, sessions: receipt.sessions,
         assessment_situation: receipt.assessment_situation, participant_state: await snapshot() });

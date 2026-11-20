@@ -236,3 +236,30 @@
 }
 #onboarding-panel #onboarding-dashboard[hidden] { display: none; }
 #onboarding-panel #onboarding-dashboard:focus-visible { outline: 3px solid var(--participant-focus); outline-offset: 2px; }
+
+#onboarding-panel.onboarding-standalone:has(.assessment-state-card) .onboarding-thread {
+    max-width: 640px;
+    margin: 0 auto;
+}
+#onboarding-panel.onboarding-standalone .assessment-state-card {
+    padding: var(--assessment-state-padding);
+    border: 1px solid var(--assessment-state-border);
+}
+#onboarding-panel.onboarding-standalone .assessment-state-card h2 { font: var(--assessment-state-heading); }
+#onboarding-panel.onboarding-standalone .assessment-state-card .onboarding-status-title {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+#onboarding-panel .assessment-state-card .onboarding-metrics { margin: 20px 0; }
+#onboarding-panel .assessment-state-card .onboarding-assessment-name,
+#onboarding-panel .assessment-state-card .onboarding-deadline { color: var(--w02-muted); font-size: 14px; }
+#onboarding-panel .assessment-state-card .onboarding-failure-reason { color: var(--w02-error); }
+#onboarding-panel .assessment-state-card .onboarding-actions .primary-button {
+    align-self: flex-start;
+    min-width: 0;
+    width: auto;
+}
+@media (max-width: 650px) {
+    #onboarding-panel.onboarding-standalone:has(.assessment-state-card) .onboarding-history { padding: 18px 12px 28px; }
+}

@@ -3644,7 +3644,7 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
       cycle_id: 'cycle-p03', position_no: 1, current_assessment_situation_id: 'as-old', current_assessment_situation_status: 'active',
       allowed_action: 'replace_current', recognized_absence_seconds: 180, remaining_seconds: 1200,
       calendar_deadline: '2026-10-18T12:00:00Z', progress: { completed_positions: 2, total_positions: 4 },
-      provider_config_ref: null,
+      generation_operation_id: 'admitted-equivalent-operation',
     });
     return fulfillJson(route, {}, 404);
   });
@@ -3654,7 +3654,7 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 4');
   await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
   await expect(page.getByText('Календарный срок:', { exact: false })).toBeHidden();
-  await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
+  await expect(page.locator('.interview-timer-saved')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Продолжить', exact: true })).toBeVisible();
   await expect(page.locator('#interview-textarea')).toBeDisabled();
   expect(runtimeReads).toBe(0);
@@ -3717,14 +3717,13 @@ test('P3-B return card keeps unknown time distinct from known zero', async ({ pa
     return fulfillJson(route, {}, 404);
   });
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.getByText('Остаток времени выполнения уточняется.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Продолжим оценку?' })).toBeVisible();
   await expect(page.locator('#interview-timer-badge')).toHaveText('Время недоступно');
   await expect(page.getByText('0 мин.', { exact: false })).toBeHidden();
   await expect(page.getByText('Без лимита', { exact: false })).toBeHidden();
   remainingSeconds = 0;
   await page.reload();
-  await expect(page.getByText('Остаток времени выполнения: 0 мин.')).toBeVisible();
-  await expect(page.locator('#interview-timer-badge')).toHaveText('Пауза · 00:00');
+  await expect(page.locator('#interview-timer-badge')).toHaveText('00:00');
 });
 
 test('P3-B reads server state after a lost Continue response without a second command', async ({ page }) => {
@@ -4099,7 +4098,7 @@ test('R08 shows the frozen program budget instead of the planned duration sum', 
     return fulfillJson(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('.onboarding-metrics')).toContainText('на выполнение оценки');
+  await expect(page.locator('.onboarding-metrics')).toContainText('на ответы');
   await expect(page.getByText('120 мин', { exact: true })).toBeVisible();
   await expect(page.getByText('189 мин', { exact: true })).toBeHidden();
 });
@@ -4174,7 +4173,7 @@ test('AC18-FIX-02 reconciles a committed first start after the POST response is 
   });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(base);
-  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
   await page.getByRole('button', { name: 'Приступить к оценке' }).click();
   await expect(page.locator('#interview-panel')).toBeVisible();
   await expect(page.locator('#interview-case-title')).toHaveText('Синтетическая первая ситуация');
@@ -4237,7 +4236,7 @@ test('AC18-FIX-02 reload resolves unknown first start by owned GET without anoth
     return fulfillJson(route, {}, 404);
   });
   await page.goto(`${base}/?screen=onboarding`);
-  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
   await page.getByRole('button', { name: 'Приступить к оценке' }).click();
   await expect(page.locator('#onboarding-panel')).toContainText('Состояние не подтверждено');
   await expect(page.locator('#onboarding-title')).toHaveText('Проверяем начало оценки');
@@ -4308,7 +4307,7 @@ test('AC18-FIX-02 reload reads a preparation with lost POST response before any 
   expect(preparePosts).toBe(1);
   await expect(page.locator('#onboarding-title')).toHaveText('Подготовка временно недоступна');
   await page.getByRole('button', { name: 'Проверить состояние' }).click();
-  await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+  await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
   expect(statusReads).toBe(2);
   expect(preparePosts).toBe(1);
 });
@@ -4345,10 +4344,10 @@ test('AC18-FIX-02 visual readiness states survive reload without another prepara
   });
   const states = [
     ['waiting', 'Готовим вашу оценку', 'Проверить состояние'],
-    ['failed', 'Не удалось подготовить оценку', 'Проверить состояние'],
-    ['technical_failed', 'Не удалось подготовить оценку', 'Повторить подготовку'],
+    ['failed', 'Подготовка оценки', 'Проверить состояние'],
+    ['technical_failed', 'Подготовка оценки', 'Повторить подготовку'],
     ['unknown', 'Не удалось проверить готовность', 'Повторить проверку'],
-    ['ready', 'Можно приступать к оценке', 'Приступить к оценке'],
+    ['ready', 'Ваши кейсы подготовлены', 'Приступить к оценке'],
   ];
   for (const [stateName, title, action] of states) {
     phase = stateName;
@@ -4441,7 +4440,7 @@ test('R03 reset request locks every visible credential action', async ({ page })
 for (const [failure, expected] of [
   [403, 'Доступ к оценке изменился'], [409, 'Состояние оценки изменилось'],
   [503, 'Подготовка временно недоступна'], ['network', 'Не удалось проверить готовность'],
-  ['failed', 'Не удалось подготовить оценку'], ['organization', 'Нужны сведения организации'],
+  ['failed', 'Подготовка оценки'], ['organization', 'Нужны сведения организации'],
 ]) {
   test(`PATH29 readiness distinguishes ${failure} without a fake ready plan`, async ({ page }) => {
     const user = { id: 8, email: 'person@example.test', full_name: 'Synthetic' };

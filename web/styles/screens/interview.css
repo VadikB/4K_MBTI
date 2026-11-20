@@ -1454,7 +1454,7 @@
     border-bottom: 1px solid var(--participant-border);
 }
 
-.interview-panel.between-situations .interview-timer {
+.interview-panel:is(.between-situations, .return-required) .interview-timer {
     display: flex;
     align-items: baseline;
     gap: 6px;
@@ -1464,16 +1464,17 @@
     line-height: 18px;
 }
 
-.interview-panel.between-situations .interview-timer-caption {
+.interview-panel:is(.between-situations, .return-required) .interview-timer-caption {
     display: none;
 }
 
-.interview-panel.between-situations .interview-timer-saved {
+.interview-panel.between-situations .interview-timer-saved,
+.interview-panel.return-required .interview-timer:has(.is-paused[title=""]) .interview-timer-saved {
     display: inline;
     color: var(--participant-caption);
 }
 
-.interview-panel.between-situations .interview-timer-badge {
+.interview-panel:is(.between-situations, .return-required) .interview-timer-badge {
     margin: 0;
     font-size: inherit;
     line-height: inherit;
@@ -1617,22 +1618,22 @@
     padding: 0 12px;
     gap: 0;
 }
-.product-answer-screen .interview-topbar {
+:is(.product-answer-screen, .return-required) .interview-topbar {
     flex: 0 0 auto;
     min-height: 60px;
     margin: 0 -12px;
     padding: 8px max(12px, calc((100vw - 1312px) / 2));
     border-bottom: 1px solid var(--participant-border);
 }
-.product-answer-screen .interview-topbar-head {
+:is(.product-answer-screen, .return-required) .interview-topbar-head {
     max-width: 1312px;
 }
-.product-answer-screen .interview-title-row {
+:is(.product-answer-screen, .return-required) .interview-title-row {
     justify-content: flex-start;
     flex-wrap: wrap;
     gap: 4px 16px;
 }
-.product-answer-screen .interview-case-badge {
+:is(.product-answer-screen, .return-required) .interview-case-badge {
     flex: 0 0 auto;
     margin: 0;
     padding: 2px 8px;
@@ -1819,16 +1820,16 @@
     font-size: 11px;
 }
 @media (max-width: 550px) {
-    .product-answer-screen .interview-title-row {
+    :is(.product-answer-screen, .return-required) .interview-title-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 0;
     }
-    .product-answer-screen .interview-title-row strong {
+    :is(.product-answer-screen, .return-required) .interview-title-row strong {
         font-size: 16px;
         line-height: 22px;
     }
-    .product-answer-screen .interview-topbar-head {
+    :is(.product-answer-screen, .return-required) .interview-topbar-head {
         gap: 6px;
     }
     .product-answer-screen .interview-form {
@@ -1888,4 +1889,40 @@
 .product-answer-screen .processing-notice-detail {
     display: inline;
     margin: 0 0 0 4px;
+}
+
+/* Return uses the assessment header and saved-time row. */
+.interview-panel.return-required {
+    min-height: 0;
+    padding-inline: 12px;
+    gap: 0;
+}
+.interview-panel.return-required .interview-main { gap: 32px; }
+.interview-panel.return-required .interview-layout { max-width: 860px; }
+.interview-panel.return-required .interview-case-header { border-bottom: 1px solid var(--participant-border); }
+.interview-panel.return-required .interview-case-heading { min-height: 43px; }
+.interview-panel.return-required .interview-scroll-area { padding-inline: 0; }
+.interview-panel.return-required .assessment-state-card {
+    width: 100%;
+    max-width: var(--assessment-state-width);
+    margin: 0 auto;
+    padding: var(--assessment-state-padding);
+    border: 1px solid var(--assessment-state-border);
+}
+.interview-panel.return-required .assessment-state-card h3 { font: var(--assessment-state-heading); }
+.interview-panel.return-required .assessment-state-card .interview-return-note {
+    font-size: 14px;
+    color: var(--participant-caption);
+}
+.interview-panel.return-required .assessment-state-card .primary-button {
+    justify-self: start;
+    width: auto;
+    min-width: 0;
+    margin-top: 10px;
+    padding-inline: 22px;
+}
+.interview-panel.return-required .assessment-state-card [role="status"]:empty { display: none; }
+@media (max-width: 650px) {
+    .interview-panel.return-required .interview-main { gap: 18px; }
+    .interview-panel.return-required .interview-case-heading { min-height: 34px; }
 }

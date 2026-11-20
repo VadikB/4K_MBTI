@@ -476,3 +476,14 @@ textarea {
     .app-header--participant .dashboard-mobile-exit-button { display: none; }
     .app-header--participant .app-header-mobile-name { display: block; padding: 8px 10px; font-size: 13px; }
 }
+
+/* Centered participant states inside the assessment shell. */
+.assessment-state-card {
+    --assessment-state-width: 640px;
+    --assessment-state-padding: 24px;
+    --assessment-state-border: var(--participant-border);
+    --assessment-state-heading: 700 22px/1.3 var(--font-body);
+}
+@media (max-width: 650px) {
+    .assessment-state-card { --assessment-state-padding: 16px; }
+}

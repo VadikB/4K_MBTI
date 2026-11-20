@@ -266,6 +266,7 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
     limit_reached = (cycle["status"] in TERMINAL_CYCLE or timing["remaining_seconds"] <= 0 or
                      bool(timing["calendar_deadline"] and now >= timing["calendar_deadline"]))
     same_as = policy["algorithm"] == "m7-return-r1"
+    candidate = None
     if limit_reached:
         action, absence_seconds, event_id = "time_limit_reached", None, str(event["id"]) if event else None
     elif not event:
@@ -279,28 +280,20 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
                 latest = None
         if latest and latest<=now and not _open_incident_overlaps(connection,latest):
             absence_seconds=max(0,int((now-latest).total_seconds()))
-            if same_as or absence_seconds < policy["replacement_threshold_seconds"]:
-                action = "continue_current"
-            else:
-                ready = connection.execute("""SELECT 1 FROM m5_equivalent_generation_operations
-                    WHERE cycle_db_id=%s AND position_id=%s AND expected_as_db_id=%s
-                      AND status='completed' ORDER BY completed_at DESC LIMIT 1""",
-                    (cycle["id"], position["id"], situation["id"])).fetchone()
-                action = "replace_current" if ready else "replacement_candidate_required"
-        else:
-            action,absence_seconds=("connected",0) if latest and latest>now else ("dependency_unavailable",None)
-        event_id = None
-    else:
-        absence_seconds = max(0, int((now - event["recognized_at"]).total_seconds()))
-        if same_as or absence_seconds < policy["replacement_threshold_seconds"]:
             action = "continue_current"
         else:
-            ready = connection.execute("""SELECT 1 FROM m5_equivalent_generation_operations
-                WHERE cycle_db_id=%s AND position_id=%s AND expected_as_db_id=%s
-                  AND status='completed' ORDER BY completed_at DESC LIMIT 1""",
-                (cycle["id"], position["id"], situation["id"])).fetchone()
-            action = "replace_current" if ready else "replacement_candidate_required"
+            action, absence_seconds = ("connected", 0) if latest and latest > now else ("dependency_unavailable", None)
+        event_id = None
+    else:
+        action = "continue_current"
+        absence_seconds = max(0, int((now - event["recognized_at"]).total_seconds()))
         event_id = str(event["id"])
+    if action == "continue_current" and not same_as and absence_seconds >= policy["replacement_threshold_seconds"]:
+        candidate = connection.execute("""SELECT id FROM m5_equivalent_generation_operations
+            WHERE cycle_db_id=%s AND position_id=%s AND expected_as_db_id=%s
+              AND status='completed' ORDER BY completed_at DESC, id DESC LIMIT 1""",
+            (cycle["id"], position["id"], situation["id"])).fetchone()
+        action = "replace_current" if candidate else "replacement_candidate_required"
     progress = {**route["progress"]}
     progress["total_positions"] = planned_positions
     return {"cycle_id": cycle_id, "collection_status": cycle["status"],
@@ -309,6 +302,7 @@ def read_return_state(connection, *, cycle_id: str, owner_user_id: int,
             "current_assessment_situation_status": situation["status"],
             "absence_event_id": event_id, "recognized_absence_seconds": absence_seconds,
             "allowed_action": action, "remaining_seconds": timing["remaining_seconds"],
+            **({"generation_operation_id": str(candidate["id"])} if candidate else {}),
             "calendar_deadline": timing["calendar_deadline"], "progress": progress,
             "participant_progress": participant_progress,
             "planned_positions": planned_positions,

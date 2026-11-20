@@ -62,7 +62,7 @@ async function fixture(page) {
       cycle_id: model.cycle_id, current_assessment_situation_id: 'synthetic-as', current_assessment_situation_status: 'scenario_ended',
       position_no: 3, participant_progress: model.participant_progress,
       collection_status: 'active', allowed_action: 'continue_current', remaining_seconds: 7200,
-      progress: { total_positions: 8 },
+      progress: { total_positions: 8 }, ...run.returnState,
     } : { cycle_id: model.cycle_id, allowed_action: 'connected' });
     if (url.endsWith('/draft')) {
       const slot = draftSlot(model); run.drafts ||= {};
@@ -83,13 +83,24 @@ async function fixture(page) {
     }
     if (url.endsWith('/return-continue')) {
       run.returning = false;
-      return json({ status: 'continued', assessment_situation_id: 'synthetic-as' });
+      const replacement = run.returnState?.generation_operation_id;
+      if (replacement) {
+        expect(req.postDataJSON()).toMatchObject({
+          expected_assessment_situation_id: 'synthetic-as', generation_operation_id: replacement,
+        });
+        model.current_situation.assessment_situation_id = 'replacement-as';
+        model.current_situation.participant_payload.title = 'Новая ситуация';
+        model.route.positions[0].current_assessment_situation_id = 'replacement-as';
+        model.trace.turns = [];
+      }
+      return json({ status: 'active', assessment_situation_id: model.current_situation.assessment_situation_id });
     }
     if (url.endsWith('/presence')) return json({ heartbeat_interval_seconds: 10 });
     if (url.endsWith('/turns') && req.method() === 'POST' && run.rejectAnswer) return route.abort('failed');
     if (url.includes('/turns/') && url.endsWith('/outcome')) return json({ status: 'absent' });
     // Cabinet navigation is read-only; production dashboard may request history.
     if (url === '/users/8/assessment-cycle-history') return json({ cycles: [], reports: [] });
+    if (url === '/users/8/acquaintance/issues' && req.method() === 'GET') return json({ items: [] });
     run.unexpected.push(url);
     return json({ detail: `Unexpected ${url}` }, 500);
   });
@@ -237,4 +248,63 @@ test('unknown answer outcome keeps the draft; manual processing check never rese
   await expect(page.locator('#interview-error')).not.toContainText('Ответ сохранён');
   await page.getByRole('button', { name: 'Проверить отправку', exact: true }).click();
   expect(run.calls.filter((c) => c.method === 'POST' && c.url.endsWith('/turns'))).toHaveLength(1);
+});
+
+test('ASUX-01 return uses the admitted replacement and waits if preparation is unconfirmed', async ({ page }) => {
+  const run = await fixture(page);
+  run.returning = true;
+  run.returnState = { allowed_action: 'replacement_candidate_required',
+    participant_progress: { planned_total: 8, current_position_no: null }, remaining_seconds: null };
+  await page.goto(`${base}/?screen=interview`);
+  const card = page.getByRole('region', { name: 'Продолжим оценку?' });
+  await expect(card).toContainText('Место остановки пока не подтверждено.');
+  await expect(page.locator('#interview-timer-badge')).toHaveText('Время недоступно');
+  await expect(card.getByRole('button', { name: 'Продолжить', exact: true })).toHaveCount(0);
+  expect(run.calls.filter(call => call.url.endsWith('/runtime'))).toHaveLength(0);
+
+  run.returnState = { allowed_action: 'replace_current', generation_operation_id: 'admitted-operation' };
+  await card.getByRole('button', { name: 'Проверить состояние' }).click();
+  await expect(card).toContainText('Вы остановились на ситуации 3 из 8.');
+  await expect(card).toContainText('Частичный диалог сохранится в истории прежней ситуации и не переносится в новую.');
+  expect(run.calls.filter(call => call.method === 'POST')).toHaveLength(0);
+  await card.getByRole('button', { name: 'Продолжить', exact: true }).click();
+  await expect(page.locator('.product-situation-title')).toHaveText('Новая ситуация');
+  await expect(page.locator('#interview-messages')).not.toContainText('Сначала уточню приоритеты');
+  expect(run.calls.filter(call => call.url.endsWith('/return-continue'))).toHaveLength(1);
+  expect(run.calls.filter(call => call.url.endsWith('/equivalent-candidate'))).toHaveLength(0);
+});
+
+test('ASUX-01 Continue restores saved dialogue and the draft for the same AS', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-16T12:00:00Z') });
+  const run = await fixture(page);
+  const draftText = 'Сохранённый черновик ответа';
+  run.drafts = { [draftSlot(run.model)]: { version: 1, revision: 'saved-draft', text: draftText } };
+  run.returning = true;
+  run.returnState = { current_assessment_situation_status: 'active', remaining_seconds: 2720 };
+  await page.goto(`${base}/?screen=interview`);
+  const card = page.getByRole('region', { name: 'Продолжим оценку?' });
+  await expect(card).toContainText('Вы остановились на ситуации 3 из 8.');
+  await expect(page.locator('#interview-timer-badge')).toHaveText('45:20');
+  await expect(page.locator('.interview-timer-saved')).toBeVisible();
+  await expect(page.locator('#interview-form')).toBeHidden();
+  expect(run.calls.filter(call => call.url.endsWith('/runtime'))).toHaveLength(0);
+  await card.getByRole('button', { name: 'Продолжить', exact: true }).click();
+  await expect(page.locator('#interview-textarea')).toHaveValue(draftText);
+  await expect(page.locator('#interview-messages')).toContainText('Сначала уточню приоритеты');
+  const commands = run.calls.filter(call => call.url.endsWith('/return-continue'));
+  expect(commands).toHaveLength(1);
+  expect(commands[0].body).toMatchObject({ expected_assessment_situation_id: 'synthetic-as', generation_operation_id: null });
+  expect(run.calls.filter(call => call.url.endsWith('/turns') && call.method === 'POST')).toHaveLength(0);
+});
+
+test('ASUX-01 does not offer Continue for a closed Cycle', async ({ page }) => {
+  const run = await fixture(page);
+  run.returning = true;
+  run.returnState = { collection_status: 'collection_closed', allowed_action: 'time_limit_reached' };
+  await page.route('**/users/assessment/cycles/synthetic-cycle/outcome',
+    route => route.fulfill({ json: { results_status: 'processing', report_status: 'not_created' } }));
+  await page.goto(`${base}/?screen=interview`);
+  await expect(page.locator('#processing-panel')).toBeVisible();
+  await expect(page.locator('#interview-panel')).toBeHidden();
+  expect(run.calls.filter(call => call.url.endsWith('/return-continue'))).toHaveLength(0);
 });

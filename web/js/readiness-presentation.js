@@ -53,12 +53,12 @@ export const readinessPresentation = (status, { retryAllowed = false, pendingSta
     organization: { title: 'Нужны сведения организации',
       description: 'Организация ещё завершает настройку вашей оценки. Ваши ответы сохранены, повторно заполнять их не потребуется.',
       detail: 'Когда сведения будут готовы, здесь появится следующий шаг.', button: 'Проверить готовность' },
-    failed: { title: 'Не удалось подготовить оценку', description: 'Подготовка завершилась с ошибкой. Ваши ответы сохранены.',
+    failed: { title: 'Подготовка оценки', description: 'Ваши ответы сохранены.',
       detail: retryAllowed ? 'Вы можете повторить подготовку. Повторно проходить знакомство не нужно.' :
         'Повторная подготовка пока недоступна. Вы можете проверить, изменилось ли состояние.',
       action: retryAllowed ? 'retry' : action, button: retryAllowed ? 'Повторить подготовку' : base.button },
-    preparing: { title: 'Готовим вашу оценку', description: 'Знакомство завершено, ваши ответы сохранены. Готовим план и первую ситуацию с учётом ваших сведений.',
-      detail: 'Вы можете закрыть страницу и вернуться позже. Знакомство повторять не потребуется.', button: 'Проверить готовность' },
+    preparing: { title: 'Готовим вашу оценку', description: 'Готовим план и первую ситуацию.',
+      detail: 'Вы можете вернуться позже. Ваши ответы сохранены.', button: 'Проверить готовность' },
   };
   if (status === 'ready') {
     if (pendingStart) return readbackAdmitted ? {
@@ -68,7 +68,7 @@ export const readinessPresentation = (status, { retryAllowed = false, pendingSta
       title: 'Проверяем начало оценки', description: 'Ответ на нажатие «Приступить к оценке» не получен. Оценка могла уже начаться.',
       detail: 'Сначала проверьте состояние. Если начало подтверждено, вы перейдёте к текущей ситуации.', action: 'check_start', button: base.button,
     };
-    return { title: 'Можно приступать к оценке', description: 'План и первая ситуация подготовлены. Следующие ситуации будут готовиться по ходу оценки.',
+    return { title: 'Ваши кейсы подготовлены', description: 'Прочитайте условия каждой ситуации и отвечайте так, как поступили бы на работе.',
       action: 'start', button: 'Приступить к оценке' };
   }
   return { ...base, ...(copy[status] || copy.preparing) };
@@ -87,3 +87,13 @@ export const readinessIcon = (status) => {
     : ['failed', 'network', 'service', 'load-error'].includes(status) ? 'error' : ['access', 'plan_blocked'].includes(status) ? 'lock' : 'info';
   return '<svg viewBox="0 0 24 24">' + icons[kind] + '</svg>';
 };
+
+// Only the public preparation error projection is suitable for participant copy.
+const preparationFailureCodes = new Set([
+  'ASSESSMENT_CYCLE_PREPARATION_FAILED',
+  'ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE',
+  'ASSESSMENT_VERIFICATION_INCOMPLETE',
+  'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE',
+  'ASSESSMENT_AS_NOT_ADMITTED',
+]);
+export const preparationFailureMessage = (error) => preparationFailureCodes.has(error?.code) ? error.message : '';

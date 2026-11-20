@@ -6,7 +6,7 @@ import { hideAllPanels, syncUrlState, openAcquaintanceWaiting } from '../router.
 import { readApiResponse, createOperationId, fetchWithDeadline as fetch } from '../api.js';
 import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
 import { hasPendingPreparedStart, readPendingPreparedStart } from '../product-cycle-start.js';
-import { readinessPresentation, readinessIcon } from '../readiness-presentation.js';
+import { preparationFailureMessage, readinessPresentation, readinessIcon } from '../readiness-presentation.js';
 import { acquaintanceErrorMessage } from '../acquaintance-errors.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../onboarding-flow.js';
 
@@ -160,33 +160,31 @@ const readinessStep = () => {
     pendingStart: hasPendingPreparedStart(model?.prepared_plan?.cycle_id), readbackAdmitted: startReadbackAdmitted,
   });
   if (status === 'preparing' && model?.preparation_operation?.operation_id) step.button = 'Проверить состояние';
-  if (hasObservation && ['preparing', 'failed'].includes(status)) {
-    step.description = 'Знакомство завершено, ваши ответы сохранены. Можно закрыть страницу и вернуться позже.';
-    step.detail = '';
-    step.button = status === 'failed' && model.preparation_operation.retry_allowed ? 'Повторить подготовку' : 'Проверить состояние';
-  }
+  const failureMessage = status === 'failed' ? preparationFailureMessage(model.preparation_operation?.error) : '';
   let body = step.detail ? paragraph(step.detail) : '';
   if (status === 'ready' && !hasPendingPreparedStart(model?.prepared_plan?.cycle_id)) {
-    const plan = timing();
-    const preparationCopy = step.description;
-    if (model?.assessment_name) step.description = model.assessment_name;
-    body = (model?.assessment_name ? paragraph(preparationCopy) : '') +
-      '<div class="onboarding-metrics"><div><strong>' +
-      Number(Array.isArray(plan?.route) ? plan.route.length : 0) + '</strong><span>ситуаций в плане</span></div><div><strong>' +
-      Math.ceil(Number(plan?.time_budget_seconds || 0) / 60) + ' мин</strong><span>на выполнение оценки</span></div></div>' +
-      paragraph('Читайте условия и отвечайте так, как поступили бы сами. При необходимости поясняйте ход своего решения.') +
-      (Number(plan?.calendar_window_seconds) > 0 ? '<p class="onboarding-deadline">Завершить оценку нужно в течение ' +
-        Number(plan.calendar_window_seconds) / 3600 + ' ч. после её начала.</p>' : '') +
-      '<p class="onboarding-summary-note">Время начнётся, когда вы нажмёте «Приступить к оценке». Чтение инструкции и ожидание подготовки его не расходуют.</p>' +
-      (plan?.participant_notice ? paragraph(plan.participant_notice) : '');
+    const plan = model.prepared_plan.plan;
+    const caseCount = plan.route.length;
+    const caseLabel = { one: 'ситуация в плане', few: 'ситуации в плане', many: 'ситуаций в плане' };
+    const caseCountForm = new Intl.PluralRules('ru-RU').select(caseCount);
+    body = '<div class="onboarding-metrics"><div><strong>' +
+      caseCount + '</strong><span>' + caseLabel[caseCountForm] + '</span></div><div><strong>' +
+      Math.ceil(plan.time_budget_seconds / 60) + ' мин</strong><span>на ответы</span></div></div>' +
+      paragraph('Первая ситуация готова к открытию.') +
+      '<p class="onboarding-deadline">Завершить оценку нужно в течение ' +
+      plan.calendar_window_seconds / 3600 + ' ч. после её начала. Время на ответы начнётся после нажатия «Приступить к оценке».</p>' +
+      (plan.participant_notice ? paragraph(plan.participant_notice) : '');
+    if (model.assessment_name) body = '<p class="onboarding-assessment-name">' + escape(model.assessment_name) + '</p>' + body;
   } else {
+    if (status === 'failed' && !hasObservation) {
+      body = '<p class="onboarding-failure-reason">' + escape(failureMessage || 'Не удалось подготовить оценку.') + '</p>' + body;
+    }
     if (model?.preparation_operation?.preparation) body += preparationHtml(model.preparation_operation.preparation);
     else if (status === 'preparing') body += '<p class="onboarding-live" role="status"><span class="onboarding-spinner" aria-hidden="true"></span>' +
       'Подготовка выполняется</p>';
     if (step.timeNotice) body += '<p class="onboarding-time-notice">Время выполнения ещё не идёт.</p>';
-
   }
-  return { ...step, body, status };
+  return { ...step, body, status, failureMessage };
 };
 
 const steps = () => {
@@ -424,6 +422,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
       : reviewMode ? { title: 'Знакомство завершено', description: 'Вы можете прочитать сохранённые сообщения и ответы.', button: 'Вернуться к готовности оценки', body: '' } : all[index];
   const standalone = loading || loadFailed || (!reviewMode && index === readinessIndex());
   onboardingPanel.classList.toggle('onboarding-standalone', standalone);
+  onboardingPanel.querySelector('.onboarding-bubble').classList.toggle('assessment-state-card', standalone && !loading && !loadFailed);
   onboardingPanel.dataset.readiness = standalone ? step.status || (loading ? 'loading' : 'load-error') : '';
   onboardingPanel.dataset.step = String(index < 2 ? 1 : index <= summaryIndex() ? 2 : 3);
   stepBadgeLabel.textContent = standalone ? 'Оценка' : reviewMode ? 'История знакомства' : 'Знакомство';
@@ -432,9 +431,8 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   onboardingTitle.textContent = step.title;
   onboardingDescription.textContent = step.description;
   onboardingDescription.hidden = !step.description;
-  onboardingDescription.classList.toggle('onboarding-assessment-name', standalone && step.status === 'ready' && step.description === model?.assessment_name);
   const statusIcon = document.getElementById('onboarding-status-icon');
-  statusIcon.hidden = !standalone;
+  statusIcon.hidden = !standalone || ['preparing', 'failed'].includes(step.status);
   statusIcon.innerHTML = standalone ? readinessIcon(step.status || (loading ? 'loading' : 'load-error')) : '';
   statusIcon.classList.toggle('is-error', ['failed', 'service', 'network', 'load-error'].includes(step.status || (loadFailed ? 'load-error' : '')));
   onboardingDescription.classList.toggle('onboarding-question-hint', Boolean(step.answerKey));
@@ -450,7 +448,7 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   if (featureList.contains(readinessActions)) bubble.append(readinessActions);
   featureList.innerHTML = step.body || '';
   if (!loading && !loadFailed && !reviewMode && index === readinessIndex() && step.status !== 'ready') {
-    renderPreparation(featureList, model?.preparation_operation?.preparation, { readError: Boolean(preparationError && ['read', 'network', 'service'].includes(preparationError.kind)) });
+    renderPreparation(featureList, model?.preparation_operation?.preparation, { failureMessage: step.failureMessage, readError: Boolean(preparationError && ['read', 'network', 'service'].includes(preparationError.kind)) });
     const preparationRoot = featureList.querySelector('[data-preparation-status]');
     if (preparationRoot) {
       preparationRoot.querySelector('details').open = Boolean(preparationOpen && previousReference === preparationRoot.dataset.preparationReferenceId);
@@ -564,9 +562,18 @@ const beginPreparation = ({ retry = false } = {}) => {
       if (model.prepared_plan && (!accepted || accepted.status === 'completed')) { renderOnboarding(); return; }
       const callbacks = { signal: controller.signal, isCurrent: current,
         onRequested: (operation) => { if (current()) storeOperation(operation); },
-        onAccepted: (operation) => { if (current()) storeOperation(operation); },
-        onStatus: (operation) => { if (current()) { preparationError = null; errorMessage = ''; storeOperation(operation); if (state.onboardingIndex === readinessIndex()) renderPreparation(document.querySelector('#onboarding-panel'), operation.preparation); } },
-        onReadError: () => { if (current()) { preparationError = { kind: 'read' }; renderPreparation(document.querySelector('#onboarding-panel'), model?.preparation_operation?.preparation, { readError: true }); } },
+        onStatus: (operation) => {
+          if (!current()) return;
+          preparationError = null; errorMessage = '';
+          const previous = model.preparation_operation;
+          storeOperation(operation);
+          if (state.onboardingIndex !== readinessIndex()) return;
+          if (previous?.status !== operation.status || previous?.preparation?.reference !== operation.preparation?.reference) {
+            renderOnboarding();
+          } else {
+            renderPreparation(featureList, model.preparation_operation.preparation, { failureMessage: preparationFailureMessage(operation.error) });
+          }
+        },
       };
       // A lost command response has an operation ID: reconcile it through owned GET,
       // never send another preparation command merely because the page reloaded.
@@ -592,6 +599,7 @@ const beginPreparation = ({ retry = false } = {}) => {
       preparationError = error.name === 'PreparationWaitLimit' ? null : error.name === 'PreparationFailed' ? { kind: 'failed' }
         : error.status === 403 ? { kind: 'access' } : error.status === 409 ? { kind: 'conflict' }
           : error.status >= 500 ? { kind: 'service' } : { kind: 'network' };
+      if (error.lastOperation?.preparation && ![403, 409].includes(error.status)) preparationError = { kind: 'read' };
       if (error.status === 404 && localOperation) storeOperation({ ...localOperation, status: 'unknown' });
       if (error.name === 'PreparationFailed') storeOperation({ ...model?.preparation_operation, operation_id: error.operationId, status: 'failed', error: error.operationError, retry_allowed: error.retryAllowed === true });
       renderOnboarding();

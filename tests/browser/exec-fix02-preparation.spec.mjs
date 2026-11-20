@@ -70,12 +70,12 @@ for (const retryAllowed of [true, false]) {
       return json(route, {}, 404);
     });
     await page.goto(base);
-    await expect(page.locator('#onboarding-title')).toHaveText('Не удалось подготовить оценку');
-    await expect(page.locator('#onboarding-panel')).toContainText('Подготовка завершилась с ошибкой. Ваши ответы сохранены.');
-    await expect(page.locator('#onboarding-panel')).not.toContainText('обратитесь к ответственному');
+    await expect(page.locator('#onboarding-title')).toHaveText('Подготовка оценки');
+    await expect(page.locator('#onboarding-panel')).toContainText((retryAllowed ? technical : admission).message);
+    await expect(page.getByRole('button', { name: 'Приступить к оценке', exact: true })).toHaveCount(0);
     await expect(page.locator('.onboarding-spinner')).toHaveCount(0);
     await page.reload();
-    await expect(page.locator('#onboarding-title')).toHaveText('Не удалось подготовить оценку');
+    await expect(page.locator('#onboarding-title')).toHaveText('Подготовка оценки');
     expect(posts).toBe(0);
     await page.screenshot({ path: testInfo.outputPath('first-failure.png'), fullPage: true });
     if (!retryAllowed) {
@@ -90,10 +90,10 @@ for (const retryAllowed of [true, false]) {
     await page.setViewportSize({ width: 390, height: 844 });
     await retry.scrollIntoViewIfNeeded(); await expect(retry).toBeInViewport();
     await retry.click();
-    await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     expect(posts).toBe(1);
     await page.reload();
-    await expect(page.locator('#onboarding-title')).toHaveText('Можно приступать к оценке');
+    await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     expect(posts).toBe(1);
   });
 }

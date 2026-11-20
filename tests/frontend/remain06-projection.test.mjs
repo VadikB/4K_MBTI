@@ -29,7 +29,7 @@ for (const total of [8, 3]) {
       progress: { total_positions: total, completed_positions: 0 } });
     assert.equal(h.badge.textContent, `Ситуация 1 из ${total}`);
     assert.doesNotMatch(h.messages.firstChild.children[1].textContent, /Завершено/);
-    assert.equal(h.timer.textContent, 'Пауза · 02:03');
+    assert.equal(h.timer.textContent, '02:03');
   });
   test(`F18 frozen plan${total}, catalog9, materialized1: current and completed use server facts`, () => {
     const h = createInterviewHarness({ meta: true });

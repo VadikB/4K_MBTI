@@ -560,8 +560,9 @@ def test_controlled_return_180_replaces_presents_once_and_keeps_deadline(db):
             candidate=candidate,policy=policy)
         state=read_return_state(c,cycle_id=cycle_id,owner_user_id=99,evaluated_at=evaluated)
         assert state['allowed_action']=='replace_current' and state['recognized_absence_seconds']==180
+        assert state['generation_operation_id'] == str(operation['id'])
         result=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,expected_state='active',
-            key='return-180',owner_user_id=99,generation_operation_id=str(operation['id']),evaluated_at=evaluated)
+            key='return-180',owner_user_id=99,generation_operation_id=state['generation_operation_id'],evaluated_at=evaluated)
         replay=continue_return(c,cycle_id=cycle_id,position_no=1,expected_as_id=old_as,expected_state='active',
             key='return-180',owner_user_id=99,generation_operation_id=str(operation['id']),evaluated_at=evaluated)
         assert replay==result and result['branch']=='replaced_current'

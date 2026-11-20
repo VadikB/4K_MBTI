@@ -1,0 +1,21 @@
+{
+  "synthetic": true,
+  "profile": "PATH29 first-AS stop",
+  "version": "2.1.52",
+  "start_response_lost_after_http_201": true,
+  "start_requests_accepted": 1,
+  "cycle_id": "3e3d20dc-c79b-4936-bb35-2542b42c6f98",
+  "assessment_situation_id": "410b66c7-75f3-44a1-bd52-348f16f9c220",
+  "assessment_situation_status": "active",
+  "assignment_id": 1,
+  "answer_budget_seconds": 3600,
+  "calendar_window_seconds": 259200,
+  "sessions": 1,
+  "population_counts": {
+    "profiles": 1,
+    "cycles": 1,
+    "started": 1,
+    "operations": 1
+  },
+  "assessment_answers": 0
+}

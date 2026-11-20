@@ -14,9 +14,9 @@ export const initAppFooter = ({ root = document, now = new Date() } = {}) => {
 
   const syncVisibility = () => {
     const visiblePanel = findVisiblePanel(root);
-    const visible = shouldShowAppFooter(visiblePanel?.id, visiblePanel?.matches('.onboarding-standalone, .product-answer-screen'));
+    const interview = Boolean(visiblePanel?.matches('.product-answer-screen, .return-required'));
+    const visible = shouldShowAppFooter(visiblePanel?.id, interview || visiblePanel?.matches('.onboarding-standalone'));
     footer.classList.toggle('hidden', !visible);
-    const interview = Boolean(visiblePanel?.classList.contains('product-answer-screen'));
     footer.classList.toggle('app-footer--participant', interview || visiblePanel?.id === 'dashboard-panel');
     footer.classList.toggle('app-footer--interview', interview);
     footer.setAttribute('aria-hidden', visible ? 'false' : 'true');
