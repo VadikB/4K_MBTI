@@ -4,6 +4,23 @@ from __future__ import annotations
 from Api.assessment_role_profiles import load_published_role_profile
 
 
+# Both timestamps use the source/confirmation NOW() clock. An assignment's UTC
+# display timestamp is not interchangeable with that historical provenance.
+CONFIRMATION_ASSIGNMENT_SCOPE_SQL = """(
+    to_jsonb(confirmation)->'answers_json'->>'assignment_id'=assignment.id::text
+    OR (to_jsonb(confirmation)->'answers_json'->>'assignment_id' IS NULL AND (
+        (to_jsonb(confirmation)->>'confirmed_at')::timestamp >=
+            (to_jsonb(binding)->>'created_at')::timestamp
+        OR EXISTS (SELECT 1 FROM m5_cycles confirmed_cycle
+            WHERE confirmed_cycle.assignment_id=assignment.id
+              AND confirmed_cycle.personalized_profile_id=confirmation.personalized_profile_id
+              AND confirmed_cycle.owner_user_id=confirmation.user_id
+              AND confirmed_cycle.organization_id=confirmation.organization_id
+              AND confirmed_cycle.usage_scope='assessment')
+    ))
+)"""
+
+
 def ensure_schema(connection) -> None:
     connection.execute('''CREATE TABLE IF NOT EXISTS organization_assessment_pilot_bindings (
         organization_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE RESTRICT,
@@ -209,12 +226,13 @@ def bind(connection, *, assignment_id: int, organization_id: int, configuration_
         JOIN organization_assessment_source_bindings binding
           ON binding.assignment_id=%s
          AND binding.questionnaire_revision_id=confirmation.questionnaire_revision_id
+        JOIN organization_assessment_assignments assignment ON assignment.id=binding.assignment_id
         JOIN assessment_personalized_profiles profile ON profile.id=confirmation.personalized_profile_id
           AND profile.user_id=confirmation.user_id AND profile.organization_id=confirmation.organization_id
           AND profile.assessment_configuration_id=binding.assessment_configuration_id
           AND profile.role_profile_version_id=binding.role_profile_version_id
         WHERE confirmation.user_id=%s AND confirmation.organization_id=%s AND confirmation.assignment_ref=%s
-        LIMIT 1""",
+        AND """ + CONFIRMATION_ASSIGNMENT_SCOPE_SQL + " LIMIT 1",
         (assignment_id, assignment['recipient_user_id'], organization_id, assignment['assignment_ref'])).fetchone():
         raise ValueError('ASSIGNMENT_SOURCES_FROZEN: Создайте новое назначение; подтверждённый профиль неизменяем.')
     return dict(connection.execute("""INSERT INTO organization_assessment_source_bindings

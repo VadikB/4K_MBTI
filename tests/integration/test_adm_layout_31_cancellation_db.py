@@ -49,7 +49,7 @@ def _setup(connection, name: str) -> None:
     connection.execute("""CREATE TABLE participant_acquaintance_confirmations(
         id BIGSERIAL PRIMARY KEY,user_id BIGINT NOT NULL,organization_id BIGINT NOT NULL,
         assignment_ref TEXT NOT NULL,questionnaire_revision_id BIGINT,
-        personalized_profile_id BIGINT)""")
+        personalized_profile_id BIGINT,confirmed_at timestamp DEFAULT NOW())""")
     cancellation.ensure_schema(connection)
     connection.commit()
 

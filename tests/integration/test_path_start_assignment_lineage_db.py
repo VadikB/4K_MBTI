@@ -26,7 +26,7 @@ def lineage_db(test_database_url):
         c.execute(psycopg.sql.SQL('SET LOCAL search_path TO {}').format(psycopg.sql.Identifier(schema)))
         tables = {
             'organization_assessment_assignments': 'id bigint,organization_id bigint,recipient_user_id bigint,assignment_ref text,status text,created_at timestamp,revoked_at timestamp',
-            'organization_assessment_source_bindings': 'id bigint,assignment_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint,questionnaire_revision_id bigint',
+            'organization_assessment_source_bindings': 'id bigint,assignment_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint,questionnaire_revision_id bigint,created_at timestamp',
             'questionnaire_response_revisions': 'id bigint,organization_context_version_id bigint',
             'assessment_personalized_profiles': 'id bigint,user_id bigint,organization_id bigint,assessment_configuration_id bigint,role_profile_version_id bigint,organization_context_version_id bigint,status text,frozen_at timestamp',
             'participant_acquaintance_confirmations': 'id bigint,user_id bigint,organization_id bigint,assignment_ref text,questionnaire_revision_id bigint,personalized_profile_id bigint,confirmed_at timestamp',
@@ -50,7 +50,7 @@ def lineage_db(test_database_url):
             (id,organization_id,recipient_user_id,assignment_ref,status,created_at,revoked_at)
             VALUES(41,10,1,'A','active',NOW()-INTERVAL '2 hours',NULL),
                   (42,10,1,'B','active',NOW()-INTERVAL '1 hour',NULL)""")
-        c.execute('INSERT INTO organization_assessment_source_bindings VALUES(1,41,11,2,21),(2,42,11,2,22)')
+        c.execute("INSERT INTO organization_assessment_source_bindings VALUES(1,41,11,2,21,NOW()-INTERVAL '2 hours'),(2,42,11,2,22,NOW()-INTERVAL '1 hour')")
         c.execute('INSERT INTO questionnaire_response_revisions VALUES(21,31),(22,32)')
         c.execute("INSERT INTO assessment_personalized_profiles VALUES(101,1,10,11,2,31,'ready',NOW()-INTERVAL '2 hours'),(102,1,10,11,2,32,'ready',NOW()-INTERVAL '1 hour'),(999,1,99,11,2,99,'ready',NOW())")
         c.execute("INSERT INTO participant_acquaintance_confirmations VALUES(1,1,10,'A',21,101,NOW()-INTERVAL '2 hours'),(2,1,10,'B',22,102,NOW()-INTERVAL '1 hour')")
@@ -158,13 +158,20 @@ def test_legacy_job_with_shared_sources_cannot_choose_assignment_generation(line
     from Api.admin_assignment_projection import preparation_for_assignment
     lineage_db.execute("UPDATE organization_assessment_assignments SET status='revoked',revoked_at=NOW() WHERE id=41")
     lineage_db.execute("INSERT INTO organization_assessment_assignments VALUES(43,10,1,'A','active',NOW(),NULL)")
-    lineage_db.execute('INSERT INTO organization_assessment_source_bindings VALUES(3,43,11,2,21)')
+    lineage_db.execute('INSERT INTO organization_assessment_source_bindings VALUES(3,43,11,2,21,NOW())')
     assert preparation_for_assignment(lineage_db, assignment_id=43) == {'operation_id':None,'status':None}
     rows = lineage_db.execute(stage_sql(), ([10],)).fetchall()
     assert next(row for row in rows if row['assignment_id'] == 43)['preparation_operation_id'] is None
-    # Exact modern identity resolves the ambiguity without mutating the old job.
+    # A new generation first needs its own confirmed profile. Merely naming its
+    # assignment in an operation cannot recycle the old generation's profile.
+    lineage_db.execute('''INSERT INTO assessment_personalized_profiles
+        SELECT 103,user_id,organization_id,assessment_configuration_id,role_profile_version_id,
+               organization_context_version_id,status,NOW()
+        FROM assessment_personalized_profiles WHERE id=101''')
     lineage_db.execute('''INSERT INTO product_cycle_preparation_operations
         (id,operation_id,status,user_id,request_json,created_at) VALUES
-        (1,'new-generation','queued',1,'{"personalized_profile_id":101,"organization_id":10,"assignment_ref":"A","questionnaire_revision_id":21,"assignment_id":43}',NOW())''')
+        (1,'new-generation','queued',1,'{"personalized_profile_id":103,"organization_id":10,"assignment_ref":"A","questionnaire_revision_id":21,"assignment_id":43}',NOW())''')
+    assert preparation_for_assignment(lineage_db, assignment_id=43) == {'operation_id':None,'status':None}
+    lineage_db.execute("INSERT INTO participant_acquaintance_confirmations VALUES(4,1,10,'A',21,103,NOW()+INTERVAL '1 minute')")
     assert preparation_for_assignment(lineage_db, assignment_id=43) == {'operation_id':'new-generation','status':'queued'}
     assert lineage_db.execute("SELECT status FROM assessment_preparation_jobs WHERE operation_id='job-A'").fetchone()['status'] == 'completed'

@@ -238,7 +238,7 @@ def test_ac07_confirm_foreign_stale_and_exact_revision(scope):
                        'positive_and_replay': 'PASS'})
 
 
-def confirm_participant_profile(s):
+def confirm_participant_profile(s, suffix=''):
     prefix = f"/users/{s['member']}/acquaintance"
     with session(s['member']) as client:
         current = client.get(prefix)
@@ -246,7 +246,7 @@ def confirm_participant_profile(s):
         consent = current.json()['readiness']['briefing']['consent_version']
         assert client.post(prefix + '/consent', json={'version': consent}).status_code == 200
         answers = client.put(prefix + '/answers', json={'confirm': True, 'answers': {
-            'answer_1': 'Синтетические задачи', 'answer_2': 'Синтетические решения',
+            'answer_1': 'Синтетические задачи' + suffix, 'answer_2': 'Синтетические решения',
             'answer_3': 'Синтетические ограничения'}})
         assert answers.status_code == 200, answers.text
         resolved = client.post(prefix + '/resolve-profile')
@@ -290,7 +290,15 @@ def test_adm_fix02_reassignment_keeps_command_and_profile_history(sources):
                 'role_profile_version_id': command['role_profile_version_id']})
             assert recovered.status_code == 200, recovered.text
             assert recovered.json() == expected
-    profile_b = confirm_participant_profile(s)
+    with session(s['member']) as client:
+        waiting = client.get(f"/users/{s['member']}/acquaintance")
+        assert waiting.status_code == 200
+        assert waiting.json()['late_readiness']['status'] != 'ready_to_prepare'
+        assert waiting.json()['late_readiness']['personalized_profile_id'] is None
+    from Api.acquaintance import preparation_scope
+    with get_connection() as c, pytest.raises(ValueError, match='W02_'):
+        preparation_scope(c, user_id=s['member'], profile_id=profile_a)
+    profile_b = confirm_participant_profile(s, ' для Б')
     assert profile_b != profile_a
     with get_connection() as c:
         assert dict(c.execute('SELECT * FROM assessment_personalized_profiles WHERE id=%s', (profile_a,)).fetchone()) == frozen_profile
