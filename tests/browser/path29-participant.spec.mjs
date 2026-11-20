@@ -419,10 +419,18 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     preparationReceiptRequired = fullPath;
     await page.request.post(base + '/__pytest__/release-preparation');
     step = 'real_llm_preparation';
-    await expect.poll(
-      async () => page.locator('#onboarding-title').innerText(),
-      { timeout: realProvider ? 600000 : 45000 },
-    ).toMatch(/^(Ваши кейсы подготовлены|Подготовка оценки)$/);
+    // The product stops automatic polling after a minute and offers an explicit
+    // status check. A real provider can finish later, so exercise that UI path.
+    const preparationStatusPath = base + '/users/assessment/cycles/preparation/' + encodeURIComponent(code);
+    await expect.poll(async () => {
+      const response = await page.request.get(preparationStatusPath);
+      expect(response.ok()).toBe(true);
+      return (await response.json()).status;
+    }, { timeout: realProvider ? 600000 : 45000 }).toBe('completed');
+    if (await page.locator('#onboarding-title').innerText() === 'Готовим вашу оценку') {
+      await page.getByRole('button', { name: 'Проверить состояние' }).click();
+    }
+    await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     const preparationReceipt = fullPath
       ? await (await page.request.get(base + '/__pytest__/path-receipt')).json()
       : null;
