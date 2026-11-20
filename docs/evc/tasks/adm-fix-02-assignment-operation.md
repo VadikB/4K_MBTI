@@ -194,3 +194,43 @@ fingerprint. Его прежние дефекты readback после откат
 Открыто: внешний CI, человеческое review/визуальная приёмка и отдельный допуск
 публикации/выпуска. Предметных неразрешённых решений ADM-FIX-02 нет. Задача не
 объявляет полный продуктовый PATH, методологическое качество M4/AS или baseline.
+
+## Окончательная проверка
+
+Промежуточные runtime/tests: `c2a451f03b6d5098875feb7e815ed1b987a07514`.
+Адресный повтор после optional Cycle fix: 43 PASS / exit 0 (16.51 s).
+Полные backend: 1305 PASS / exit 0 (91.41 s); HTTP: 219 PASS / exit 0 (50.53 s);
+frontend: 476 PASS / exit 0 (2968 ms). Его полный integration прерван после
+дополнительной проверки действующего frontend: readonly формы опирается на
+mandatory_complete. На c2a451f0 HTTP-модель Б наследовала этот признак А:
+same/role — 2 FAIL / 22 PASS внутри owned suite. Это не засчитывается как PASS.
+
+Исправлен только read-model: при отсутствии собственного confirmation timestamp
+старой active projection не означает подтверждение Б. Значения ответов остаются
+доступным draft, GET ничего не сохраняет, API shape не меняется. Непривязанный
+собственный confirmation после явного confirm при этом считается подтверждённым
+и может штатно разрешиться в M4. Адресный набор после исправления: 43 PASS / 0,
+18.28 s, включая actual HTTP mandatory_complete=false/новые ответы Б/новый M4.
+Следующий полный прогон выполняется на новом зафиксированном SHA.
+
+Фактические команды из worktree (dotenv отключён):
+
+```sh
+PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 npm run test:backend
+PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 npm run test:backend:http
+PYTHON_DOTENV_DISABLED=1 TEST_DATABASE_URL=postgresql://adm_fix_pytest@127.0.0.1:55483/agent4k_pytest STAND_ADMIN_URL=postgresql://adm_fix_pytest@127.0.0.1:55483/postgres npm run test:backend:integration
+node --test tests/frontend/*.test.mjs
+git diff --check
+```
+
+Изолированный собственный PostgreSQL 15.16 создан для задачи с нуля:
+`/private/tmp/adm-fix-02-pg.6fY5qN/data`, localhost:55483, только синтетические записи.
+Временная ссылка `.venv` ведёт на существующий интерпретатор рабочей среды;
+`.env`/рабочие БД/секреты не читались. Два explicit real-provider acceptance не
+входят в стандартный фактический LLM-прогон; настоящих LLM/писем не было.
+Логи финальных прогонов: `/private/tmp/adm-fix-02-{backend,http,integration,frontend}-verified.log`.
+
+Следующий шаг: полный повтор на новом SHA, затем остановить только свой PostgreSQL,
+удалить только свою ссылку .venv, перепроверить Git/diff/ссылки, закоммитить отчёт
+и текст PR. Незавершённые/failed промежуточные прогоны сохранены отдельно.
+Новых push/PR/версии/Ready/merge/deploy по текущему допуску нет.

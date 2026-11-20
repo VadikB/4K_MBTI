@@ -269,6 +269,18 @@ def read_state(connection, *, user_id: int) -> dict:
         "status": "not_started", "current_step": 0, "answers_json": {},
         "answers_confirmed_at": None, "consent_accepted_at": None,
     }
+    if (readiness.get('assignment_id') is not None and state.get('answers_confirmed_at')
+            and late.get('reason') == 'W02_ANSWERS_NOT_BOUND'):
+        scope_sql, scope_params = _confirmation_scope(connection, readiness)
+        confirmed = connection.execute('''SELECT 1 FROM participant_acquaintance_confirmations confirmation
+            WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
+              AND questionnaire_revision_id IS NOT DISTINCT FROM %s''' + scope_sql + ' LIMIT 1',
+            (user_id, readiness['organization_id'], readiness['assignment_ref'],
+             readiness.get('questionnaire_revision_id'), *scope_params)).fetchone()
+        if confirmed is None:
+            # Reused source answers can be a draft for a new assessment. The
+            # former projection's timestamp must not make its form read-only.
+            state.update(status='in_progress', answers_confirmed_at=None)
     if readiness['status'] == 'ready' and not mandatory_complete(readiness, state):
         late = {'status': 'waiting_for_assessment_data', 'reason': 'W02_MANDATORY_STEPS_REQUIRED',
                 'personalized_profile_id': None}

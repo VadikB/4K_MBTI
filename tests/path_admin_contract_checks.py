@@ -295,6 +295,8 @@ def test_adm_fix02_reassignment_keeps_command_and_profile_history(sources):
         assert waiting.status_code == 200
         assert waiting.json()['late_readiness']['status'] != 'ready_to_prepare'
         assert waiting.json()['late_readiness']['personalized_profile_id'] is None
+        assert waiting.json()['mandatory_complete'] is False
+        assert waiting.json()['state']['answers_confirmed_at'] is None
     from Api.acquaintance import preparation_scope
     with get_connection() as c, pytest.raises(ValueError, match='W02_'):
         preparation_scope(c, user_id=s['member'], profile_id=profile_a)
