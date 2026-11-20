@@ -227,3 +227,13 @@ base main 3cc4934c. Код соответствует локально пров�
 Быстрый CI окончательного head отслеживается в PR; full-verification в Draft
 штатно не выполняется и не считается PASS. Человеческое review, визуальная
 приёмка и отдельный допуск версии/Ready/merge/deploy остаются открытыми.
+
+## Допуск выпуска на TEST
+
+20.11.2026 владелец явно ответил «Review принят, разрешаю выпуск на TEST» на
+вопрос PATCH2.1.44/Ready/full CI/squash merge/штатный deploy-test PR #261.
+Человеческое review принято в чате; это не формальный GitHub approval.
+branch_push/pr/version_bump=true; merge/deploy=true после обязательного CI
+актуального head/base. artifact_publish=false; pilot/production и реальные LLM
+не входят. Прежнее ограничение этапа draft завершено этим отдельным допуском.
+Runtime-код 03dc1e3f не менялся; локальные PASS сохраняют область применимости.
