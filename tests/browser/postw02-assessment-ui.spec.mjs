@@ -120,7 +120,7 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   const run = await fixture(page);
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.locator('#interview-case-badge')).toHaveText('3 ситуация из 8');
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 3 из 8');
   await expect(page.locator('.interview-message--situation')).toHaveCount(1);
   await expect(page.locator('#interview-pause-button')).toBeHidden();
   await expect(page.locator('#interview-additional-button')).toBeHidden();
@@ -226,7 +226,8 @@ test('unknown answer outcome keeps the draft; manual processing check never rese
   await page.locator('#interview-textarea').fill(text);
   await page.locator('#interview-submit-button').click();
   await expect(page.locator('#interview-textarea')).toHaveValue(text);
-  await expect(page.locator('.interview-message-delivery-status').last()).toContainText(/не подтвержд|Проверить|исход/i);
+  await expect(page.locator('#interview-error')).toContainText('Отправка не подтверждена');
+  await expect(page.locator('.interview-message-delivery-status:visible')).toHaveCount(0);
   const sent = run.calls.filter((c) => c.method === 'POST' && c.url.endsWith('/turns'));
   expect(sent).toHaveLength(1);
   run.model.current_situation.status = 'scenario_ended';
@@ -234,6 +235,6 @@ test('unknown answer outcome keeps the draft; manual processing check never rese
   await page.reload();
   await expect(page.locator('#interview-textarea')).toHaveValue(text);
   await expect(page.locator('#interview-error')).not.toContainText('Ответ сохранён');
-  await page.getByRole('button', { name: 'Проверить сохранение', exact: true }).click();
+  await page.getByRole('button', { name: 'Проверить отправку', exact: true }).click();
   expect(run.calls.filter((c) => c.method === 'POST' && c.url.endsWith('/turns'))).toHaveLength(1);
 });

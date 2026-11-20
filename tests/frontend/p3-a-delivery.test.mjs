@@ -102,7 +102,7 @@ test('P3-A known POST receipt survives failed readback/reload and is never resen
   assert.equal(result.pending, true);
   assert.equal(h.textarea.value, '');
   assert.equal(h.storage.has('agent4k.assessmentDraft:cycle-a:as-a'), false);
-  assert.equal(pendingRow(h).querySelector('.interview-message-delivery').hidden, true);
+  assert.equal(pendingRow(h), undefined);
   assert.match(h.context.interviewError.textContent, /Ответ сохранён\. Не удалось обновить состояние/);
   assert.equal(h.controls.submit.disabled, true);
   const operation = h.subject.readProductInterviewAnswer();
@@ -256,7 +256,7 @@ test('P3-A stale retained retry callback cannot turn an old answer into a new AS
     return json(h.runtime);
   });
   await h.subject.sendProductInterviewAnswer('Ответ A');
-  const oldRetry = pendingRow(h).querySelector('.interview-message-retry').onclick;
+  const oldRetry = h.context.interviewError.children.at(-1).listeners.get('click');
   h.subject.renderProductRuntime(h.snapshot(0, 'as-b')); draft(h, 'Черновик B');
   const reads = h.fetchCalls.length;
   oldRetry(); await tick();
@@ -315,7 +315,7 @@ test('P3-A a retained retry callback cannot resurrect a resolved operation in th
   });
   await h.subject.sendProductInterviewAnswer('Первый ответ');
   const original = h.subject.readProductInterviewAnswer();
-  const oldRetry = pendingRow(h).querySelector('.interview-message-retry').onclick;
+  const oldRetry = h.context.interviewError.children.at(-1).listeners.get('click');
   h.setFetch(async (_url, options) => {
     if (_url.includes('/answer-status?')) return json({ status: 'absent', cycle_id: original.cycleId,
       assessment_situation_id: original.situationId, request_id: original.requestId, turn_id: original.turnId, clarification_id: null });
@@ -376,7 +376,7 @@ test('P3-A receipt validation distinguishes M5 turn and M7 answer; empty/foreign
     assert.equal(result.accepted, false);
     assert.equal(h.subject.readProductInterviewAnswer().accepted, false);
     assert.equal(h.textarea.value, 'Ответ');
-    assert.ok(deliveryText(pendingRow(h)).includes('неизвестен'));
+    assert.match(h.context.interviewError.textContent, /Отправка не подтверждена/);
   }
   const h = setup();
   h.runtime.current_situation.status = 'scenario_ended';

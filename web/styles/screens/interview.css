@@ -1603,3 +1603,289 @@
         grid-column: 2;
     }
 }
+
+/* Participant answer workspace. The history takes the remaining viewport
+   height; the composer and its current action stay outside the scroller. */
+.shell:has(.product-answer-screen:not(.hidden)) {
+    min-height: 0;
+    height: var(--interview-viewport-height, 100dvh);
+}
+.interview-panel.product-answer-screen {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    padding: 0 12px;
+    gap: 0;
+}
+.product-answer-screen .interview-topbar {
+    flex: 0 0 auto;
+    min-height: 60px;
+    margin: 0 -12px;
+    padding: 8px max(12px, calc((100vw - 1312px) / 2));
+    border-bottom: 1px solid var(--participant-border);
+}
+.product-answer-screen .interview-topbar-head {
+    max-width: 1312px;
+}
+.product-answer-screen .interview-title-row {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+}
+.product-answer-screen .interview-case-badge {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--user-bubble);
+    font: 600 13px/20px var(--font-body);
+}
+.product-answer-screen .interview-layout {
+    flex: 1 1 auto;
+    max-width: 860px;
+    grid-template-rows: minmax(0, 1fr);
+}
+.product-answer-screen .interview-main {
+    min-height: 0;
+    gap: 0;
+}
+.product-answer-screen .interview-case-header {
+    flex: 0 0 auto;
+    gap: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--participant-border);
+}
+.product-answer-screen .interview-case-heading {
+    justify-content: space-between;
+    gap: 0 8px;
+    min-height: 40px;
+    font: 400 13px/18px var(--font-body);
+}
+.interview-response-format[hidden],
+.interview-your-turn[hidden],
+.interview-panel:not(.product-answer-screen) .interview-your-turn {
+    display: none;
+}
+.product-answer-screen .interview-timer,
+.product-answer-screen .interview-timer-caption,
+.product-answer-screen .interview-timer-badge {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+}
+.product-answer-screen .interview-timer {
+    margin-left: auto;
+    text-align: right;
+}
+.product-answer-screen .interview-timer-badge {
+    margin-left: 4px;
+}
+.product-answer-screen .interview-messages-shell {
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+}
+.product-answer-screen .interview-scroll-area {
+    overflow-anchor: none;
+    scroll-behavior: auto;
+    padding: 12px 0 4px;
+}
+.product-answer-screen .interview-messages {
+    gap: 14px;
+}
+.product-answer-screen .interview-bubble {
+    padding: 12px 18px;
+    margin-top: 22px;
+}
+.product-answer-screen .product-situation-message {
+    gap: 8px;
+    width: min(700px, 100%);
+    border-radius: var(--radius-sm);
+}
+.product-answer-screen .product-situation-title {
+    margin: 0;
+}
+.product-answer-screen .product-situation-message .interview-structured-block-label {
+    color: var(--participant-text);
+}
+.product-situation-role {
+    margin: 0;
+    font: 400 13px/18px var(--font-body);
+}
+.product-situation-materials {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--participant-border);
+}
+.product-situation-materials summary {
+    color: var(--participant-focus);
+    cursor: pointer;
+    text-decoration: underline;
+}
+.product-answer-screen .interview-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    padding: 12px;
+}
+.product-answer-screen .interview-form label {
+    position: absolute;
+    clip-path: inset(50%);
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+.interview-answer-input {
+    display: contents;
+}
+.product-answer-screen .interview-answer-input {
+    display: flex;
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+    min-height: 48px;
+    padding: 8px 0;
+    border: 1px solid var(--participant-border);
+    border-radius: var(--radius-sm);
+}
+.product-answer-screen .interview-answer-input:focus-within {
+    border-color: var(--participant-focus);
+    outline: 1px solid var(--participant-focus);
+}
+.product-answer-screen .interview-form textarea {
+    field-sizing: content;
+    height: auto;
+    min-height: 24px;
+    max-height: calc(4 * 24px);
+    padding: 0 12px;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+}
+.product-answer-screen .interview-form-footer {
+    grid-column: 2;
+    grid-row: 2;
+}
+.product-answer-screen .interview-form .primary-button {
+    width: auto;
+    min-width: 120px;
+}
+.product-answer-screen .interview-form > .interview-send-note:not(#interview-draft-status) {
+    display: none;
+}
+.interview-panel.product-answer-screen .interview-secondary-actions {
+    flex: 0 0 auto;
+    min-height: 0;
+    justify-content: flex-end;
+    padding: 0 0 6px;
+}
+.product-answer-screen .interview-secondary-actions .text-button {
+    width: auto;
+    min-height: 32px;
+    padding: 6px 0;
+}
+.product-answer-screen .interview-your-turn {
+    margin: 0;
+    padding: 5px 0 8px;
+    color: var(--participant-caption);
+    font: 400 13px/18px var(--font-body);
+}
+.product-answer-screen #interview-error:not([hidden]) + .interview-your-turn {
+    display: none;
+}
+.product-answer-screen .interview-your-turn::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--participant-focus);
+}
+.app-footer.app-footer--interview {
+    flex-flow: row wrap;
+    justify-content: center;
+    gap: 0 18px;
+    padding: 4px 12px calc(4px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--participant-border);
+    color: var(--participant-caption);
+}
+.app-footer--interview .app-footer-documents {
+    gap: 0 12px;
+    letter-spacing: 0;
+}
+.app-footer--interview .app-footer-copyright {
+    font-size: 11px;
+}
+@media (max-width: 550px) {
+    .product-answer-screen .interview-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+    }
+    .product-answer-screen .interview-title-row strong {
+        font-size: 16px;
+        line-height: 22px;
+    }
+    .product-answer-screen .interview-topbar-head {
+        gap: 6px;
+    }
+    .product-answer-screen .interview-form {
+        gap: 4px 7px;
+        padding: 10px;
+    }
+    .product-answer-screen .interview-form .primary-button {
+        min-width: 0;
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+    .product-answer-screen .interview-bubble {
+        padding: 10px 12px;
+    }
+    .app-footer--interview .app-footer-documents {
+        flex: 0 0 100%;
+    }
+}
+
+.product-answer-screen #interview-draft-status[data-draft-routine="true"] {
+    display: none;
+}
+.product-answer-screen #interview-error.processing-notice {
+    margin: 0;
+    padding: 5px 0 8px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--participant-caption);
+    font: 400 13px/18px var(--font-body);
+}
+.product-answer-screen #interview-error.processing-notice::before {
+    content: '';
+    display: inline-block;
+    position: static;
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--participant-focus);
+}
+.product-answer-screen #interview-error[data-tone="failed"],
+.product-answer-screen #interview-error[data-tone="failed"] .text-button {
+    color: var(--danger);
+}
+.product-answer-screen #interview-error[data-tone="failed"]::before {
+    background: currentColor;
+}
+.product-answer-screen #interview-error .text-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    margin: 0 0 0 6px;
+    padding: 4px 0;
+    font: inherit;
+}
+.product-answer-screen .processing-notice-detail {
+    display: inline;
+    margin: 0 0 0 4px;
+}

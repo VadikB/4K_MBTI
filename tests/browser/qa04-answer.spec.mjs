@@ -125,7 +125,7 @@ for (const width of [1440, 390, 320]) {
     await notice.getByRole('button', { name: 'Проверить состояние' }).click();
     await expect(notice).toContainText('Ответ сохранён. Не удалось завершить обработку.');
     expect(await notice.evaluate(n => getComputedStyle(n).fontFamily.startsWith('Onest'))).toBe(true);
-    await expect(notice).toHaveCSS('border-radius', '8px');
+    await expect(notice).toHaveCSS('border-radius', '0px');
     await expect(page.locator('#interview-finish-button')).toBeHidden();
     await capture(page, 'failed', width);
     run.model.pipeline.status = 'running'; run.model.blocking_system_wait = false;
@@ -160,9 +160,10 @@ for (const width of [1440, 390, 320]) {
     });
     await page.locator('#interview-textarea').fill('Ответ с неизвестным исходом');
     await page.locator('#interview-submit-button').click();
-    const notice = page.locator('#interview-error'); await expect(notice).toContainText('Не удалось подтвердить сохранение ответа.');
+    const notice = page.locator('#interview-error'); await expect(notice).toContainText('Отправка не подтверждена.');
+    await expect(page.locator('.interview-timer-caption')).toHaveText('Последний известный остаток');
     await expect(notice).not.toContainText('Ответ сохранён'); await capture(page, 'unknown-receipt', width);
-    await notice.getByRole('button', { name: 'Проверить сохранение' }).click();
+    await notice.getByRole('button', { name: 'Проверить отправку' }).click();
     await expect(notice.getByRole('button')).toBeEnabled(); expect(reads).toBeGreaterThan(0); expect(posts).toBe(1);
     await expect(page.locator('#interview-textarea')).toHaveValue('Ответ с неизвестным исходом');
     // Later exact receipt/trace reconciles the lost ACK without carrying its
@@ -170,7 +171,7 @@ for (const width of [1440, 390, 320]) {
     accepted = true;
     run.receipt = { turn_id: body.turn_id, request_id: body.request_id, speaker_type: 'assessee', sequence_no: 40, content_text: body.content };
     run.model.trace.turns.push(run.receipt);
-    await notice.getByRole('button', { name: 'Проверить сохранение' }).click();
+    await notice.getByRole('button', { name: 'Проверить отправку' }).click();
     await expect(page.locator('#interview-textarea')).toHaveValue(''); expect(posts).toBe(1);
     expect(errors).toEqual([]); expect(run.unexpected).toEqual([]);
   });
@@ -193,4 +194,176 @@ test('C8 reference v10 zones use the same notice palette, radius and composer ac
     await capture(page, 'reference-waiting', width);
   }
   await fs.writeFile(`${evidence}/reference-zones.json`, JSON.stringify(facts, null, 2));
+});
+
+test('ASUX 02.1 shows the public format before the first Turn and then uses the actual ASK', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-18T09:00:00Z') });
+  const { model } = await draftFixture(page);
+  const current = model.current_situation;
+  const input = page.locator('#interview-textarea');
+  const format = page.locator('.interview-response-format');
+  const yourTurn = page.locator('.interview-your-turn');
+  model.trace.turns = [];
+  current.response_format = 'written';
+  current.participant_payload = {
+    ...current.participant_payload, case_id: 'CASE.SPEC.02',
+    assessee_position: 'Специалист', assessee_task: 'Сопоставьте материалы и напишите свою рекомендацию.',
+  };
+  await page.goto(`${base}/?screen=interview`);
+  await expect(format).toHaveText('Письменное задание');
+  await expect(input).toHaveAttribute('placeholder', 'Напишите свой ответ…');
+  await expect(yourTurn).toBeVisible();
+  await expect(page.locator('.product-situation-role')).toContainText('Специалист');
+  await expect(page.locator('.product-situation-message')).toContainText(current.participant_payload.assessee_task);
+  current.response_format = 'dialogue';
+  await page.clock.runFor(1600);
+  await expect(format).toHaveText('Диалог');
+  await expect(input).toHaveAttribute('placeholder', /собеседнику/);
+  current.response_format = null;
+  await page.clock.runFor(1600);
+  await expect(format).toHaveText('Оценочная ситуация');
+  await expect(input).toHaveAttribute('placeholder', 'Напишите свой ответ…');
+  current.status = 'scenario_ended';
+  model.clarification = { id: 'ask-1', status: 'ASK', question_turn_id: 'q-1', question: { text: 'Почему?' } };
+  await page.clock.runFor(1600);
+  await expect(format).toHaveText('Уточнение');
+  await expect(input).toHaveAttribute('placeholder', 'Ответьте на уточнение…');
+  await expect(yourTurn).toBeVisible();
+  model.clarification.response_outcome = 'answered';
+  await page.clock.runFor(1600);
+  await expect(yourTurn).toBeHidden();
+});
+
+for (const width of [1440, 390, 320]) {
+  test(`ASUX 02.2 eight lines, keyboard and history at ${width}`, async ({ page }) => {
+    const { run } = await boot(page, width);
+    const input = page.locator('#interview-textarea');
+    const submit = page.locator('#interview-submit-button');
+    const materials = page.locator('.product-situation-materials');
+    const history = page.locator('#interview-scroll-area');
+    await materials.locator('summary').click();
+    await expect(materials).toHaveJSProperty('open', true);
+    await input.fill('Одна строка.');
+    const initialHeight = (await input.boundingBox()).height;
+    const text = Array.from({ length: 8 }, (_, i) => `Строка ${i + 1}.`).join('\n');
+    await input.fill(text);
+    const geometry = await input.evaluate(element => {
+      const style = getComputedStyle(element);
+      const number = name => Number.parseFloat(style[name]);
+      return { height: element.clientHeight, scroll: element.scrollHeight,
+        lines: (element.clientHeight - number('paddingTop') - number('paddingBottom')) / number('lineHeight') };
+    });
+    expect(geometry.lines).toBe(4);
+    expect(geometry.height).toBeGreaterThan(initialHeight);
+    expect(geometry.scroll).toBeGreaterThan(geometry.height);
+    if (width <= 390) {
+      // Chromium headless has no system IME. Exercise the same visualViewport
+      // resize event with the keyboard-sized visible area and the field focused.
+      await page.evaluate(() => {
+        Object.defineProperty(visualViewport, 'height', { configurable: true, value: 450 });
+        visualViewport.dispatchEvent(new Event('resize'));
+      });
+    }
+    const action = await submit.boundingBox();
+    expect(action.y + action.height).toBeLessThanOrEqual(width <= 390 ? 450 : 1000);
+    await page.keyboard.press('Tab');
+    await expect(submit).toBeFocused();
+    await expect(input).toHaveValue(text);
+    // Let the preceding draft PUT finish before the fixture advances its
+    // server-owned dialogue slot to the newly published character Turn.
+    await page.clock.runFor(1200);
+    await expect(page.locator('#interview-draft-status')).toHaveText('Черновик сохранён');
+    await history.evaluate(node => node.scrollTo({ top: 280, behavior: 'instant' }));
+    await page.clock.runFor(300);
+    const readingPosition = await history.evaluate(node => node.scrollTop);
+    expect(readingPosition).toBeGreaterThan(0);
+    run.model.trace.turns.push({ turn_id: 'new-background', sequence_no: 60,
+      speaker_type: 'character', speaker_name: 'Марина', content_text: 'Поступила новая вводная.' });
+    await page.clock.runFor(1600);
+    await expect(materials).toHaveJSProperty('open', true);
+    await expect(input).toHaveValue(text);
+    await expect(submit).toBeFocused();
+    await expect(page.locator('.interview-messages')).toContainText('Поступила новая вводная.');
+    await page.clock.runFor(300);
+    expect(await history.evaluate(node => node.scrollTop)).toBe(readingPosition);
+  });
+}
+
+test('ASUX 03.1 proven rejection, retry and cancel finish with a draft', async ({ page }) => {
+  const { run } = await boot(page, 390);
+  const input = page.locator('#interview-textarea'), notice = page.locator('#interview-error');
+  const answer = 'Повторите этот синтетический ответ.';
+  const attempts = [];
+  await page.route('**/users/assessment/m5/situations/synthetic-as/turns', async route => {
+    const data = route.request().postDataJSON();
+    attempts.push(data);
+    if (attempts.length === 1) return route.fulfill({ status: 409, json: { detail: 'M5_STATE_REVISION_CONFLICT' } });
+    run.receipt = { turn_id: data.turn_id, request_id: data.request_id, content_text: data.content,
+      speaker_type: 'assessee', sequence_no: 50 };
+    run.model.trace.turns.push(run.receipt);
+    await route.fulfill({ json: { turn: run.receipt } });
+  });
+  // The standard fixture accepts dialogs, so replace its listener for this check.
+  page.removeAllListeners('dialog');
+  page.once('dialog', async dialog => {
+    expect(dialog.message()).toContain('остался черновик');
+    await dialog.dismiss();
+  });
+  await input.fill(answer);
+  await page.locator('#interview-finish-button').click();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue(answer);
+  expect(run.calls.some(call => call.url.endsWith('/transitions'))).toBe(false);
+  await page.locator('#interview-submit-button').click();
+  await expect(notice).toContainText('Ошибка отправки. Текст сохранён в поле.');
+  await expect(input).toHaveValue(answer);
+  await expect(page.locator('.interview-message-delivery:visible')).toHaveCount(0);
+  const retry = notice.getByRole('button', { name: 'Повторить отправку' });
+  await retry.click();
+  await expect(notice).toHaveText('Ответ сохранён.');
+  expect(attempts.map(attempt => attempt.content)).toEqual([answer, answer]);
+  expect(run.model.trace.turns.filter(turn => turn.content_text === answer)).toHaveLength(1);
+  run.model.current_situation.status = 'closed';
+  await page.clock.runFor(1600);
+  await expect(input).toBeDisabled();
+  await expect(page.locator('#interview-finish-button')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Мои оценки' })).toBeEnabled();
+});
+
+test('ASUX 03.3 known Turn uses only addressed status reads after a lost read or failed processing', async ({ page }) => {
+  const { run } = await boot(page, 390);
+  const input = page.locator('#interview-textarea'), notice = page.locator('#interview-error');
+  const reads = [];
+  let original;
+  const answer = 'Сохранённый ответ с неуспешной обработкой.';
+  await page.route('**/answer-status?**', route => {
+    const params = new URL(route.request().url()).searchParams;
+    reads.push(Object.fromEntries(params));
+    return route.fulfill({ json: { status: 'accepted', cycle_id: run.model.cycle_id, assessment_situation_id: 'synthetic-as',
+      request_id: original.request_id, turn_id: original.turn_id, clarification_id: null,
+      processing_status: run.model.answer_processing?.status || 'pending', turn: run.receipt } });
+  });
+  await page.route('**/users/assessment/m5/situations/synthetic-as/turns', async route => {
+    original = route.request().postDataJSON();
+    run.receipt = { turn_id: original.turn_id, request_id: original.request_id, content_text: original.content,
+      speaker_type: 'assessee', sequence_no: 50 };
+    run.model.trace.turns.push(run.receipt);
+    run.model.blocking_system_wait = true;
+    run.offline = true;
+    await route.fulfill({ json: { turn: run.receipt } });
+  });
+  await input.fill(answer);
+  await page.locator('#interview-submit-button').click();
+  await expect(notice).toContainText('Ответ сохранён. Не удалось обновить состояние.');
+  run.offline = false;
+  run.model.blocking_system_wait = false;
+  run.model.answer_processing = { turn_id: original.turn_id, request_id: original.request_id, status: 'failed' };
+  await notice.getByRole('button', { name: 'Проверить состояние' }).click();
+  await expect(notice).toContainText('Ответ сохранён. Сбой обработки.');
+  await notice.getByRole('button', { name: 'Проверить состояние' }).click();
+  await expect(notice).toContainText('Ответ сохранён. Сбой обработки.');
+  expect(reads.length).toBeGreaterThanOrEqual(2);
+  expect(reads.every(read => read.turn_id === original.turn_id && read.request_id === original.request_id)).toBe(true);
+  expect(run.model.trace.turns.filter(turn => turn.content_text === answer)).toHaveLength(1);
+  await expect(notice.getByRole('button', { name: /повторить/i })).toHaveCount(0);
 });

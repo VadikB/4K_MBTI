@@ -392,12 +392,14 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     status = m7_completion.read_status(connection, cycle_id)
     cycle = connection.execute("SELECT id,cycle_id,profile_ref_json FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
     situations = connection.execute(
-        """SELECT id,assessment_situation_id,status,snapshot_json,started_at,scenario_ended_at,closed_at
+        """SELECT id,assessment_situation_id,status,snapshot_json,started_at,scenario_ended_at,closed_at,
+                  execution_payload_json->'characters' AS scenario_characters
            FROM m5_assessment_situations WHERE cycle_db_id=%s ORDER BY id""", (cycle["id"],)
     ).fetchall()
     route_current = connection.execute(
         """SELECT s.id,s.assessment_situation_id,s.status,s.snapshot_json,s.started_at,
-                  s.scenario_ended_at,s.closed_at,p.plan_revision_id,p.position_no
+                  s.scenario_ended_at,s.closed_at,p.plan_revision_id,p.position_no,
+                  s.execution_payload_json->'characters' AS scenario_characters
            FROM m7_route_positions p
            JOIN m5_assessment_situations s ON s.id=p.current_as_db_id
            WHERE p.cycle_db_id=%s AND p.state IN('not_presented','in_progress','awaiting_replacement')
@@ -433,6 +435,21 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
     trace = participant_trace(
         m5_scenario_runtime.trace(connection, str(current["assessment_situation_id"]))
     ) if presented else None
+    answer_processing = None
+    if presented:
+        operation = connection.execute(
+            """SELECT o.turn_id::text AS turn_id,o.request_id,o.status
+               FROM m5_turn_operations o
+               WHERE o.assessment_situation_db_id=%s
+                 AND o.status IN ('pending','failed','rejected_late')
+                 AND o.turn_id=(
+                     SELECT turn_id FROM m5_dialogue_turns
+                     WHERE assessment_situation_db_id=%s AND speaker_type='assessee'
+                     ORDER BY sequence_no DESC LIMIT 1
+                 )""",
+            (current["id"], current["id"]),
+        ).fetchone()
+        answer_processing = dict(operation) if operation else None
     clarification = None
     if current:
         row = connection.execute(
@@ -486,9 +503,13 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         "current_situation": ({
             "assessment_situation_id": str(current["assessment_situation_id"]),
             "status": current["status"],
-            **({"participant_payload": current["snapshot_json"]["participant_payload"]} if presented else {}),
+            **({
+                "participant_payload": current["snapshot_json"]["participant_payload"],
+                "response_format": _participant_response_format(current.get("scenario_characters")),
+            } if presented else {}),
         } if current else None),
         "trace": trace, "clarification": clarification, "finish_availability": availability,
+        "answer_processing": answer_processing,
         "continuation": ({"intent_id": str(continuation["id"]), "status": continuation["status"]}
                          if continuation else None),
         "pipeline": dict(pipeline) if pipeline else None,
@@ -498,6 +519,17 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
             "next_preparation_after": str(previous["assessment_situation_id"]),
         } if between_situations else {}),
     }
+
+
+def _participant_response_format(characters: object) -> str | None:
+    # The admitted scenario freezes its active character roster before the
+    # first Turn. Only the format is public; character cards stay server-side.
+    if not isinstance(characters, list):
+        return None
+    if not characters:
+        return "written"
+    return "dialogue" if all(isinstance(character, dict) and character.get("character_id")
+                             for character in characters) else None
 
 
 def _next_operation(connection, cycle_id: str) -> dict | None:

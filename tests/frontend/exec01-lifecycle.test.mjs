@@ -15,7 +15,7 @@ for (const reason of ['INTERIM_PENDING','WAIT_TECHNICAL','DECISION_STALE','ANALY
     assert.equal(h.controls.finish.disabled,true);
     assert.equal(h.controls.submit.disabled,true);
     assert.equal(h.controls.textarea.disabled,true);
-    assert.ok(h.context.interviewCaseStatus.textContent?.length > 0);
+    assert.ok(h.errors.at(-1)?.length > 0);
   });
 }
 

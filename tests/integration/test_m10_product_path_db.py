@@ -839,6 +839,9 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             response = http.get(f"/users/assessment/cycles/{cycle_id}/runtime")
             assert response.status_code == 200, response.text
             assert response.json()["current_situation"]["participant_payload"] == frozen_public
+            assert response.json()["current_situation"]["response_format"] == (
+                "dialogue" if situation["execution_payload_json"]["characters"] else "written"
+            )
             assert not [turn for turn in response.json()['trace']['turns'] if turn['speaker_type'] == 'assessee']
             # Allowlisted primary readback saved before fixture DROP SCHEMA.
             # Source QA/provider/start permission are synthetic substitutions;

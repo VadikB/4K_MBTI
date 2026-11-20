@@ -71,10 +71,12 @@ test('P3-A hides only the identical initial material mirror and retains later sa
 test('P3-A new saved dialogue preserves the reader position and unchanged polls never reposition it', () => {
   const h = harness();
   h.subject.renderProductRuntime(h.snapshot(3)); h.flush();
+  const initialCard = h.messages.firstChild;
   h.area.scrollTop = 420;
   h.calls.length = 0;
   h.subject.renderProductRuntime(h.snapshot(5));
-  assert.equal(h.calls.length, 1);
+  assert.equal(h.messages.firstChild, initialCard);
+  assert.equal(h.calls.length, 0);
   h.flush();
   assert.equal(h.area.scrollTop, 420);
   assert.equal(h.button.hidden, false);

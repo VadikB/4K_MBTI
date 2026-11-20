@@ -525,7 +525,7 @@ test('F08 late Finish receipt cannot restore a closed AS or restart the timer',a
    // Finish stops polling while its response is pending. The late receipt must
    // read the server's current AS and render position 2 before we inspect storage.
    releaseReceipt();
-   await expect(page.locator('#interview-case-badge')).toContainText('2 ситуация из', {timeout:15000});
+   await expect(page.locator('#interview-case-badge')).toContainText('Ситуация 2 из', {timeout:15000});
    await page.waitForTimeout(500);
    expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))
      .toBe(secondSituationId);
@@ -868,7 +868,7 @@ test('F07 late Turn receipt cannot redraw an AS advanced in another tab',async({
    expect(secondSituationId).not.toBe(firstSituationId);
    // The other tab can write this shared storage key before this page renders
    // the new AS. Synchronize on this page's visible position before late receipt.
-   await expect(page.locator('#interview-case-badge')).toContainText('2 ситуация из', {timeout:15000});
+   await expect(page.locator('#interview-case-badge')).toContainText('Ситуация 2 из', {timeout:15000});
    releaseReceipt();
    await page.waitForTimeout(500);
    expect(await page.evaluate(()=>localStorage.getItem('agent4k.productAssessmentSituationId')))
@@ -917,7 +917,7 @@ test('F07 committed Turn with stalled body stays pending until exact readback',a
  await page.locator('#interview-submit-button').click();
  await expect.poll(async()=>page.evaluate(()=>window.__f07BodyStallCount)).toBe(1);
  await expect(page.locator('#interview-error'))
-   .toContainText(/Не удалось подтвердить сохранение ответа|Ответ сохранён/,{timeout:40000});
+   .toContainText(/Отправка не подтверждена|Ответ сохранён/,{timeout:40000});
  expect(Date.now()-startedAt).toBeLessThan(40000);
  expect(await page.evaluate(()=>window.__f07BodyStallCount)).toBe(1);
  await expect(page.locator('#interview-submit-button')).toBeDisabled();

@@ -3644,7 +3644,7 @@ test('P03 return card hides stopped AS and keeps explicit continue in the same c
   await page.goto(`${base}/?screen=interview`);
   await expect(page.locator('.interview-return-card')).toBeVisible();
   await expect(page.locator('.interview-return-card')).not.toContainText('Завершено 2 из 4');
-  await expect(page.locator('#interview-case-badge')).toHaveText('1 ситуация из 4');
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 4');
   await expect(page.getByText('Нельзя показывать до Continue')).toBeHidden();
   await expect(page.getByText('Календарный срок:', { exact: false })).toBeHidden();
   await expect(page.locator('#interview-timer-badge')).toContainText('Пауза');
@@ -3811,7 +3811,7 @@ test('E01 renders accepted active assessment copy, colors and AS-scoped draft', 
   });
 
   await page.goto(`${base}/?screen=interview`);
-  await expect(page.locator('#interview-case-badge')).toHaveText('1 ситуация из 3');
+  await expect(page.locator('#interview-case-badge')).toHaveText('Ситуация 1 из 3');
   await expect(page.locator('#interview-section-title')).toHaveText('4К Ассистент');
   await expect(page.locator('.case-sidebar')).toHaveCount(0);
   await expect(page.locator('.interview-message--situation')).toHaveCount(1);
