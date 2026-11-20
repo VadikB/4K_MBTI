@@ -102,9 +102,13 @@ fingerprint; при отсутствии доказательства возвр
 
 ## Текущее состояние
 
-Реализация и адресные проверки выполнены. Первый общий прогон остановлен штатным
-SIGINT после доработки совместимости; он не объявляется PASS. Полный набор будет
-повторён на зафиксированном кандидате. Публикации/CI/выпуска нет.
+Реализация, адресный и полный локальный набор, техническое review завершены.
+Проверенный код/tests: `8784088f54630336989b32955f7a3fbf1fb8a6a4`.
+Backend 1305 PASS, HTTP 219 PASS, integration 486 PASS / 2 explicit LLM SKIPPED,
+frontend 476 PASS; все exit 0. PostgreSQL задачи остановлен, ссылка .venv удалена.
+Main финально перепроверен: `dcd876f23036d0750b516e9eccf60f54daaae224`.
+Подготовлен текст одного PR; внешних push/PR/CI/выпуска нет по текущим полномочиям.
+История промежуточных отказов и исправлений ниже сохраняется, не подменяет итог.
 
 На промежуточном `d3b0ed72e9106b78290b3f5d5da382ca092bd691` дополнительно
 обнаружен обход: до собственного confirmation Б мог получить ready через профиль А.
@@ -228,9 +232,47 @@ git diff --check
 Временная ссылка `.venv` ведёт на существующий интерпретатор рабочей среды;
 `.env`/рабочие БД/секреты не читались. Два explicit real-provider acceptance не
 входят в стандартный фактический LLM-прогон; настоящих LLM/писем не было.
-Логи финальных прогонов: `/private/tmp/adm-fix-02-{backend,http,integration,frontend}-verified.log`.
+Логи промежуточных прогонов: `/private/tmp/adm-fix-02-{backend,http,integration,frontend}-verified.log`.
 
-Следующий шаг: полный повтор на новом SHA, затем остановить только свой PostgreSQL,
+На этом промежуточном этапе требовался полный повтор на новом SHA, затем остановка PostgreSQL,
 удалить только свою ссылку .venv, перепроверить Git/diff/ссылки, закоммитить отчёт
 и текст PR. Незавершённые/failed промежуточные прогоны сохранены отдельно.
 Новых push/PR/версии/Ready/merge/deploy по текущему допуску нет.
+
+## Итоговый полный набор и передача
+
+Код и тесты: `8784088f54630336989b32955f7a3fbf1fb8a6a4`. После него изменяется
+только документация. `git diff --exit-code 8784088f -- Api tests pyproject.toml
+uv.lock web` → PASS / 0. Финальный fetch подтверждает прежний main dcd876f2.
+
+| Проверка | Фактический результат |
+| --- | --- |
+| `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 npm run test:backend` | PASS / 0: 1305 passed, 711 deselected; 89.26 s |
+| `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 npm run test:backend:http` | PASS / 0: 219 passed, 15 deselected; 46.79 s |
+| `PYTHON_DOTENV_DISABLED=1 TEST_DATABASE_URL=... STAND_ADMIN_URL=... npm run test:backend:integration` | PASS / 0: 486 passed, 2 explicit LLM skipped, 1528 deselected; 722.64 s |
+| Адресный SQL/HTTP повтор восьми suites | PASS / 0: 43 passed; 18.28 s; включён в полный integration |
+| `node --test tests/frontend/*.test.mjs` | PASS / 0: 476 passed, 0 failed, 0 skipped; 3069 ms |
+| `git diff --check`, ссылки карточки/PR body | PASS / 0 |
+
+Полные переменные подключения — в блоке команд выше; оба URL относятся только к
+собственному localhost:55483. LLM SKIPPED: tests/llm/test_m10_real_cycle_db.py,
+explicit real-provider acceptance (строки 148/338). Реальный LLM не запускался;
+стандартный набор не подменяется заявлением о методологическом качестве AS.
+Один существующий Starlette/httpx deprecation warning не является FAIL.
+
+Финальные логи: `/private/tmp/adm-fix-02-{backend,http,integration,frontend}-accepted.log`.
+Это локальное имя файла, не заявление о человеческой приёмке. Первый frontend
+прогон без node_modules отказал по отсутствующей зависимости; `npm ci` → PASS,
+после установки существующего lockfile весь frontend повторён успешно. JS/CSS/
+HTML/dependency lock не менялись; lint/build/bundle-регенерация неприменимы.
+Управляющие документы, CI, версия приложения и опубликованные пакеты не изменялись.
+
+Очистка: собственный `pg_ctl -D /private/tmp/adm-fix-02-pg.6fY5qN/data -m fast -w stop`
+→ `server stopped` / exit 0. Удалена только проверенная временная .venv-ссылка
+этого worktree; основной интерпретатор и пользовательская рабочая копия сохранены.
+Схема/записи рабочих TEST/production БД не читались и не менялись.
+
+Следующий этап: человеческое review и отдельное решение о публикации ветки/PR.
+Перед merge обязательны полный CI актуального head/base, разрешённый номер,
+Ready/release gate и допуск выпуска. Текущее разрешение заканчивается локальным
+проверенным результатом; BASELINE/CURRENT не назначены.
