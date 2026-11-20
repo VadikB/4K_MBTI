@@ -1,0 +1,185 @@
+{
+  "ready": {
+    "synthetic": true,
+    "cycle_id": "6a546252-7162-427d-ac0d-4bc452a0e057",
+    "previous_as": "ee47a172-9ef7-4b85-855f-53f4393f8734",
+    "next_as": "71c38992-8137-44f1-9af5-e0fbcae2c887",
+    "before": {
+      "status": "admitted",
+      "started_at": null,
+      "presented_at": null,
+      "operations": 1,
+      "selected": 2,
+      "presentations": 0
+    },
+    "after": {
+      "status": "active",
+      "started_at": "2026-11-20 19:05:09.649376+03:00",
+      "presented_at": "2026-11-20 19:05:09.649376+03:00",
+      "operations": 1,
+      "selected": 2,
+      "presentations": 1
+    },
+    "calendar_deadline_at_pause": "2026-11-23 19:05:04.544559+03:00",
+    "remaining_seconds_at_pause": 3600,
+    "expiry": false,
+    "technical_retry": false,
+    "closed_reason": "between_situations"
+  },
+  "retry": {
+    "synthetic": true,
+    "cycle_id": "68c5d6b9-79a3-4ea2-aad1-39690c230c9b",
+    "previous_as": "e7578418-9f21-4d90-8f02-c0eb98bab1f2",
+    "next_as": "80124522-6b72-407b-847e-32b5ce099978",
+    "before": {
+      "status": "admitted",
+      "started_at": null,
+      "presented_at": null,
+      "operations": 2,
+      "selected": 2,
+      "presentations": 0
+    },
+    "after": {
+      "status": "active",
+      "started_at": "2026-11-20 19:01:27.335484+03:00",
+      "presented_at": "2026-11-20 19:01:27.335484+03:00",
+      "operations": 2,
+      "selected": 2,
+      "presentations": 1
+    },
+    "calendar_deadline_at_pause": "2026-11-23 19:01:26.055715+03:00",
+    "remaining_seconds_at_pause": 3600,
+    "expiry": false,
+    "technical_retry": true,
+    "closed_reason": "between_situations"
+  },
+  "expiry": {
+    "synthetic": true,
+    "cycle_id": "4f2b8307-9168-4f74-a059-f99b9f0a9ea6",
+    "previous_as": "26835ac0-9e0f-4c6c-992e-8d13f2be8f87",
+    "next_as": "db288383-ef2e-4fde-ada5-16961e71419d",
+    "before": {
+      "status": "admitted",
+      "started_at": null,
+      "presented_at": null,
+      "operations": 1,
+      "selected": 2,
+      "presentations": 0
+    },
+    "after": {
+      "status": "closed",
+      "started_at": null,
+      "presented_at": null,
+      "operations": 1,
+      "selected": 2,
+      "presentations": 0
+    },
+    "calendar_deadline_at_pause": "2026-11-23 19:03:25.841764+03:00",
+    "remaining_seconds_at_pause": 3600,
+    "expiry": true,
+    "technical_retry": false,
+    "closed_reason": "calendar_deadline"
+  },
+  "refusal": {
+    "synthetic": true,
+    "cycle_id": "1c4359da-949e-4d17-9ff2-5d9119756678",
+    "closed_as": "546406fa-a2c7-46df-b26e-435397cc9419",
+    "operation_id": "next:546406fa-a2c7-46df-b26e-435397cc9419",
+    "error": {
+      "code": "ASSESSMENT_AS_NOT_ADMITTED",
+      "message": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки."
+    },
+    "retry_allowed": false,
+    "readbacks": 2,
+    "new_situations": 0,
+    "unchanged_plan_as_turns_budget": true
+  },
+  "browser": [
+    {
+      "synthetic": true,
+      "cycle": "1c4359da-949e-4d17-9ff2-5d9119756678",
+      "status": "running",
+      "width": 1440,
+      "timer": "60:00",
+      "noPresentation": true,
+      "deadline": "2026-11-23T19:05:11.444127+03:00",
+      "reloadAndCabinet": false,
+      "postRequests": [],
+      "operation_id": "next:546406fa-a2c7-46df-b26e-435397cc9419",
+      "timer_above_card": true,
+      "horizontal_overflow": 0
+    },
+    {
+      "synthetic": true,
+      "cycle": "1c4359da-949e-4d17-9ff2-5d9119756678",
+      "status": "running",
+      "width": 390,
+      "timer": "60:00",
+      "noPresentation": true,
+      "deadline": "2026-11-23T19:05:11.444127+03:00",
+      "reloadAndCabinet": false,
+      "postRequests": [],
+      "operation_id": "next:546406fa-a2c7-46df-b26e-435397cc9419",
+      "timer_above_card": true,
+      "horizontal_overflow": 0
+    },
+    {
+      "synthetic": true,
+      "cycle": "6a546252-7162-427d-ac0d-4bc452a0e057",
+      "status": "completed",
+      "width": 1440,
+      "timer": "60:00",
+      "noPresentation": true,
+      "deadline": "2026-11-23T19:05:04.544559+03:00",
+      "reloadAndCabinet": true,
+      "postRequests": [],
+      "operation_id": "next:ee47a172-9ef7-4b85-855f-53f4393f8734",
+      "timer_above_card": true,
+      "horizontal_overflow": 0
+    },
+    {
+      "synthetic": true,
+      "cycle": "6a546252-7162-427d-ac0d-4bc452a0e057",
+      "status": "completed",
+      "width": 390,
+      "timer": "60:00",
+      "noPresentation": true,
+      "deadline": "2026-11-23T19:05:04.544559+03:00",
+      "reloadAndCabinet": true,
+      "postRequests": [],
+      "operation_id": "next:ee47a172-9ef7-4b85-855f-53f4393f8734",
+      "timer_above_card": true,
+      "horizontal_overflow": 0
+    },
+    {
+      "synthetic": true,
+      "cycle": "1c4359da-949e-4d17-9ff2-5d9119756678",
+      "status": "failed",
+      "width": 1440,
+      "timer": "60:00",
+      "noPresentation": true,
+      "deadline": "2026-11-23T19:05:11.444127+03:00",
+      "reloadAndCabinet": true,
+      "postRequests": [],
+      "operation_id": "next:546406fa-a2c7-46df-b26e-435397cc9419",
+      "timer_above_card": true,
+      "horizontal_overflow": 0,
+      "reason": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки."
+    },
+    {
+      "synthetic": true,
+      "cycle": "1c4359da-949e-4d17-9ff2-5d9119756678",
+      "status": "failed",
+      "width": 390,
+      "timer": "Время недоступно",
+      "noPresentation": true,
+      "deadline": "2026-11-23T19:05:11.444127+03:00",
+      "reloadAndCabinet": true,
+      "postRequests": [],
+      "operation_id": "next:546406fa-a2c7-46df-b26e-435397cc9419",
+      "timer_above_card": true,
+      "horizontal_overflow": 0,
+      "reason": "Материалы ситуации не прошли обязательную проверку. Обратитесь к организатору оценки."
+    }
+  ]
+}

@@ -514,7 +514,7 @@ test('F08 late Finish receipt cannot restore a closed AS or restart the timer',a
    expect((await finish).ok()).toBe(true);
    stand.cli('drain');
    const next=second.waitForResponse(response=>response.request().method()==='POST'
-     && new URL(response.url()).pathname.endsWith('/next'));
+     && new URL(response.url()).pathname.endsWith('/present-next'));
    await second.getByRole('button',{name:'Приступить к следующей ситуации'}).click();
    expect((await next).ok()).toBe(true);
    const after=await runtime(second,stand);
@@ -666,7 +666,7 @@ test('F08 Finish without ASK closes the AS and waits for explicit Next',async({p
  expect(between.current_situation).toBeNull();
  expect(between.clarification?.status).not.toBe('ASK');
  const selected=page.waitForResponse(response=>response.request().method()==='POST'
-   && new URL(response.url()).pathname.endsWith('/next'));
+   && new URL(response.url()).pathname.endsWith('/present-next'));
  await nextButton.click();
  expect((await selected).status()).toBe(201);
  const second=await runtime(page,stand);
@@ -860,7 +860,7 @@ test('F07 late Turn receipt cannot redraw an AS advanced in another tab',async({
    expect((await finish).ok()).toBe(true);
    stand.cli('drain');
    const next=second.waitForResponse(response=>response.request().method()==='POST'
-     && new URL(response.url()).pathname.endsWith('/next'));
+     && new URL(response.url()).pathname.endsWith('/present-next'));
    await second.getByRole('button',{name:'Приступить к следующей ситуации'}).click();
    expect((await next).ok()).toBe(true);
    const after=await runtime(second,stand);
@@ -931,7 +931,7 @@ test('F07 committed Turn with stalled body stays pending until exact readback',a
  });
  expect(receipt.report_opened).toBe(true);
 });
-test('F09 committed Next with lost response opens the new AS after reload without duplicate preparation',async({page,stand})=>{
+test('F09 lost presentation response reads the same opened AS without duplicate preparation',async({page,stand})=>{
  test.setTimeout(240000);
  await login(page,stand);await start(page);await answer(page);
  const first=await runtime(page,stand);
@@ -952,44 +952,19 @@ test('F09 committed Next with lost response opens the new AS after reload withou
  const nextButton=page.getByRole('button',{name:'Приступить к следующей ситуации'});
  await nextButton.waitFor({state:'visible'});
  let nextPosts=0;
- const nextPattern=`**/users/assessment/m7/cycles/${first.cycle_id}/next`;
+ const nextPattern=`**/users/assessment/m7/cycles/${first.cycle_id}/present-next`;
  await page.route(nextPattern,async route=>{
    nextPosts+=1;
    const committed=await route.fetch();
    expect(committed.status()).toBe(201);
    await route.abort('failed');
  });
+ const ready=await runtime(page,stand);
+ expect(ready.current_situation).toBeNull();
+ expect(ready.next_presentation.assessment_situation_id).not.toBe(firstSituationId);
  await nextButton.click();
- await expect(page.locator('.interview-return-card [role="status"]'))
-   .toContainText('Проверьте состояние той же операции');
+ await expect(page.locator('#interview-textarea')).toBeEnabled();
  expect(nextPosts).toBe(1);
- const layoutEvidence=path.resolve('docs/evc/tasks/p4k-f05-f09-one/evidence');
- fs.mkdirSync(layoutEvidence,{recursive:true});
- for(const [name,width,zoom] of [
-   ['desktop-1440',1440,1],['mobile-390',390,1],
-   ['mobile-320',320,1],['mobile-320-text-200',320,2],
- ]){
-   await page.setViewportSize({width,height:900});
-   await page.evaluate(scale=>{document.documentElement.style.zoom=String(scale);},zoom);
-   const check=page.getByRole('button',{name:'Проверить состояние'});
-   await expect(check).toBeVisible();
-   await check.focus();
-   await expect(check).toBeFocused();
-   await expect(page.locator('.interview-return-card [role="status"]')).toBeVisible();
-   await expect(page.locator('#interview-textarea')).toBeHidden();
-   await expect(page.locator('#interview-textarea')).toBeDisabled();
-   const geometry=await page.evaluate(()=>({
-     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
-     button:document.querySelector('.interview-return-card button').getBoundingClientRect().toJSON(),
-     card:document.querySelector('.interview-return-card').getBoundingClientRect().toJSON(),
-   }));
-   expect(geometry.overflow,`${name}: horizontal overflow`).toBeLessThanOrEqual(1);
-   expect(geometry.button.width,`${name}: button width`)
-     .toBeGreaterThan(Math.min(350,geometry.card.width*0.8));
-   expect(geometry.button.right,`${name}: button within card`).toBeLessThanOrEqual(geometry.card.right+1);
-   await page.screenshot({path:path.join(layoutEvidence,`f09-runtime-${name}.png`),fullPage:true});
- }
- await page.evaluate(()=>{document.documentElement.style.zoom='1';});
  await page.unroute(nextPattern);
  await page.reload();
  const second=await runtime(page,stand);
@@ -1004,7 +979,7 @@ test('F09 committed Next with lost response opens the new AS after reload withou
  expect(receipt.report_opened).toBe(true);
  expect(nextPosts).toBe(1);
 });
-test('F09 committed Next with stalled headers reaches bounded recovery for the same operation',async({page,stand})=>{
+test('F09 committed presentation with stalled headers recovers through the saved runtime',async({page,stand})=>{
  test.setTimeout(240000);
  await login(page,stand);await start(page);await answer(page);
  const first=await runtime(page,stand);
@@ -1024,7 +999,7 @@ test('F09 committed Next with stalled headers reaches bounded recovery for the s
  stand.cli('drain');
  const nextButton=page.getByRole('button',{name:'Приступить к следующей ситуации'});
  await nextButton.waitFor({state:'visible'});
- const nextPattern=`**/users/assessment/m7/cycles/${first.cycle_id}/next`;
+ const nextPattern=`**/users/assessment/m7/cycles/${first.cycle_id}/present-next`;
  let nextPosts=0;
  let releaseHeaders;
  const heldHeaders=new Promise(resolve=>{releaseHeaders=resolve;});
@@ -1038,10 +1013,8 @@ test('F09 committed Next with stalled headers reaches bounded recovery for the s
  try{
    const startedAt=Date.now();
    await nextButton.click();
-   await expect(page.locator('.interview-return-card [role="status"]'))
-     .toContainText('Проверьте состояние той же операции',{timeout:40000});
+   await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:40000});
    expect(Date.now()-startedAt).toBeLessThan(40000);
-   await expect(page.getByRole('button',{name:'Проверить состояние'})).toBeEnabled();
    expect(nextPosts).toBe(1);
  }finally{
    releaseHeaders();
@@ -1085,7 +1058,7 @@ test('F09 two tabs converge on one next AS without duplicate preparation',async(
  const between=await runtime(page,stand);
  expect(between.between_situations).toBe(true);
  const runtimePath=`**/users/assessment/cycles/${first.cycle_id}/runtime`;
- const nextPath=`**/users/assessment/m7/cycles/${first.cycle_id}/next`;
+ const nextPath=`**/users/assessment/m7/cycles/${first.cycle_id}/present-next`;
  let releaseFirst;
  const firstGate=new Promise(resolve=>{releaseFirst=resolve;});
  let committedFirst;
@@ -1109,9 +1082,9 @@ test('F09 two tabs converge on one next AS without duplicate preparation',async(
    await firstNext.click();
    await firstCommitted;
    const secondResponse=second.waitForResponse(response=>response.request().method()==='POST'
-     && new URL(response.url()).pathname.endsWith('/next'));
+     && new URL(response.url()).pathname.endsWith('/present-next'));
    await secondNext.click();
-   expect([201,409]).toContain((await secondResponse).status());
+   expect((await secondResponse).status()).toBe(201);
    expect(firstPosts).toBe(1);
    expect(secondPosts).toBe(1);
    const advanced=await runtime(second,stand);

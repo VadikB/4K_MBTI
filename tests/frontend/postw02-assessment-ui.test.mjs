@@ -28,7 +28,7 @@ for (const completed of [undefined, null, 0, 2]) test(`shared projection wins wi
   saved.current_situation = null; saved.between_situations = true;
   saved.participant_progress.last_completed_position_no = 3;
   h.subject.renderProductRuntime(saved);
-  assert.equal(h.messages.firstChild.children[0].textContent, 'Ситуация 3 завершена');
+  assert.equal(h.messages.firstChild.children[1].textContent, 'Ситуация 3 завершена');
   assert.equal(h.state.assessmentCaseNumber, 3, 'next position is not presented implicitly');
 });
 
@@ -131,12 +131,15 @@ test('interrupted recovery after a lost additional-session receipt reuses its co
   h.setFetch(async (url, options) => {
     if (String(url).endsWith('/return-state')) return json({ cycle_id: 'cycle-a', allowed_action: 'none' });
     if (String(url).endsWith('/runtime')) return json(saved);
-    assert.ok(String(url).endsWith('/next'));
     assert.equal(options.method, 'POST');
-    return json({ decision: { status: 'SELECTED' } });
+    if (String(url).endsWith('/next')) return json({ decision: { status: 'SELECTED',
+      assessment_situation_id: 'next-as' }, plan: { revision_id: 'saved-plan' } });
+    assert.ok(String(url).endsWith('/present-next'));
+    assert.deepEqual(JSON.parse(options.body), { assessment_situation_id: 'next-as', expected_plan_revision_id: 'saved-plan' });
+    return json({ presentation: { assessment_situation_id: 'next-as' } });
   });
   await h.subject.createProductAdditionalSession();
-  assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 1);
+  assert.equal(h.fetchCalls.filter(([, options]) => options?.method === 'POST').length, 2);
   assert.equal(h.fetchCalls.some(([url]) => String(url).endsWith('/additional-sessions')), false);
 });
 

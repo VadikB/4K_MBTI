@@ -16,9 +16,13 @@ for (const closure of ['before', 'after', 'unconfirmed']) test(`completion requi
     current_situation: { assessment_situation_id: 'as-1', status: 'scenario_ended' },
     finish_availability: { allowed: true }, between_situations: false };
   const closed = { ...ended, between_situations: true,
-    current_situation: { assessment_situation_id: 'as-1', status: 'closed' } };
+    current_situation: { assessment_situation_id: 'as-1', status: 'closed' },
+    preparation_operation: { operation_id: 'next-1', status: 'completed' } };
+  const ready = { ...closed, next_presentation: { assessment_situation_id: 'as-2' } };
+  const presented = { ...ended, current_situation: { assessment_situation_id: 'as-2', status: 'active', participant_payload: {} } };
   const snapshots = closure === 'unconfirmed' ? [ended, ended, ended, ended, ended]
-    : closesAfterRead ? [ended, ended, ended, ended, closed, closed] : [ended, ended, ended, closed];
+    : closesAfterRead ? [ended, ended, ended, ended, closed, closed, closed, ready, presented]
+      : [ended, ended, ended, closed, closed, ready, presented];
   const requests = [];
   const clicks = [];
   let finishAttempts = 0;
@@ -49,8 +53,8 @@ for (const closure of ['before', 'after', 'unconfirmed']) test(`completion requi
         url: () => 'http://fixture.invalid/users/assessment/cycles/cycle-1/finish-situation' };
       if (predicate(finish)) throw new Error('no local Finish receipt after another tab closed the AS');
       const receipt = { request: () => ({ method: () => 'POST' }),
-        url: () => 'http://fixture.invalid/users/assessment/cycles/cycle-1/next' };
-      assert.equal(predicate(receipt), true, 'only explicit Next is permitted');
+        url: () => 'http://fixture.invalid/users/assessment/cycles/cycle-1/present-next' };
+      assert.equal(predicate(receipt), true, 'only explicit presentation is permitted');
       requests.push('next');
       return response({ operation_id: 'next-1' });
     },
@@ -58,8 +62,7 @@ for (const closure of ['before', 'after', 'unconfirmed']) test(`completion requi
   try {
     const completion = completeStartedAssessment({ page, base: 'http://fixture.invalid',
       cycleId: 'cycle-1', runId: 'run-1', evidenceDir: dir, initialSituationId: 'as-1',
-      stopAfterFirstNext: true,
-      onNextAccepted: async () => ({ ownershipChanged: true, nextSituationId: 'as-2' }) });
+      stopAfterFirstNext: true });
     if (closure === 'unconfirmed') {
       await assert.rejects(completion, /synthetic hidden Finish/);
       assert.deepEqual(clicks, []);

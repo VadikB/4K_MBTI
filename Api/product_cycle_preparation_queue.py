@@ -68,7 +68,8 @@ def latest_next_operation(connection, *, cycle_id: str, user_id: int) -> dict | 
         return None
     scope = m10_product_flow.next_preparation_scope(connection, cycle_id=cycle_id, user_id=user_id, check_current=False)
     row = connection.execute(
-        """SELECT operation_id,status,attempt_token,error_code,error_message,request_json,created_at,updated_at,completed_at
+        """SELECT operation_id,status,attempt_token,error_code,error_message,request_json,created_at,updated_at,completed_at,
+                  result_json#>>'{decision,status}' AS decision_status
            FROM product_cycle_preparation_operations op WHERE user_id=%s
              AND request_json->>'kind'='next' AND request_json->>'cycle_id'=%s
              AND (((request_json->'next_preparation_scope') - 'plan_revision_id')=(%s::jsonb - 'plan_revision_id')
@@ -139,6 +140,8 @@ def public_operation(operation: dict) -> dict:
         payload["error"] = dict(next((value for prefix, value in PUBLIC_FAILURES_BY_PREFIX.items()
                                       if internal_message.startswith(prefix)),
                                      PUBLIC_TECHNICAL_FAILURE if payload["retry_allowed"] else PUBLIC_FAILURE))
+    if operation.get("decision_status"):
+        payload["decision_status"] = operation["decision_status"]
     if operation.get('preparation'):
         payload['preparation'] = {**operation['preparation'], 'allowed_actions':
             ['check'] if operation['status'] in {'queued','running'} else ['retry'] if payload.get('retry_allowed') else []}
@@ -207,6 +210,9 @@ class ProductCyclePreparationQueue:
                 request["next_preparation_scope"] = m10_product_flow.next_preparation_scope(
                     connection, cycle_id=str(request["cycle_id"]), user_id=user_id,
                 )
+                after_as = request.get("after_assessment_situation_id")
+                if after_as and after_as != request["next_preparation_scope"]["after_assessment_situation_id"]:
+                    raise ValueError("PRODUCT_CYCLE_PREPARATION_POSITION_CHANGED")
             existing = connection.execute(
                 """SELECT operation_id,status,result_json,error_code,error_message,request_json,
                           request_checksum,created_at,updated_at,completed_at
@@ -658,8 +664,6 @@ class ProductCyclePreparationQueue:
             with get_connection() as connection:
                 self._assert_current_attempt(connection, job, lock=True)
                 self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))
-                if next_cycle_id and result["decision"]["status"] == "SELECTED":
-                    result = m10_product_flow.present_prepared_next(connection, result=result)
                 runtime = m10_product_flow.read_runtime(connection, cycle_id=str(result["plan"]["cycle_id"]))
                 participant_result = {**m10_product_flow.participant_presentation(result), "runtime": runtime}
                 connection.execute(

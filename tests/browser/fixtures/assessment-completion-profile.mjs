@@ -298,16 +298,11 @@ export async function completeStartedAssessment({
       await page.goto(`${base}/?screen=interview&cycle_id=${encodeURIComponent(cycleId)}`);
     }
     budget.step(situationId);
-    const next = page.getByRole('button', { name: 'Приступить к следующей ситуации' });
-    await next.waitFor({ state: 'visible', timeout: 15000 });
-    const nextResponse = page.waitForResponse((item) => item.request().method() === 'POST'
-      && new URL(item.url()).pathname.endsWith('/next'), { timeout: 30000 });
-    await next.click({ timeout: 15000 });
-    const nextReceipt = await nextResponse;
-    if (!nextReceipt.ok()) throw new Error('NEXT_REJECTED');
-    const nextOperation = await nextReceipt.json();
-    const hooked = await onNextAccepted({ page, base, cycleId, position, situationId,
-      operation: nextOperation });
+    snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
+      || Boolean(value.preparation_operation?.operation_id));
+    if (collectionClosed(snapshot)) break;
+    const nextOperation = snapshot.preparation_operation;
+    const hooked = await onNextAccepted({ page, base, cycleId, position, situationId, operation: nextOperation });
     if (hooked?.ownershipChanged && stopAfterFirstNext) {
       stages.push({ stage: 'explicit_next_presented', status: 'completed', cycle_id: cycleId,
         previous_assessment_situation_id: situationId,
@@ -315,11 +310,18 @@ export async function completeStartedAssessment({
         operation_id: nextOperation.operation_id,
         stale_owner_result_ignored: true });
       return { contract: 'assessment-first-next/1', run_id: runId,
-        scope: 'synthetic_technical', cycle_id: cycleId,
-        initial_assessment_situation_id: initialSituationId,
+        scope: 'synthetic_technical', cycle_id: cycleId, initial_assessment_situation_id: initialSituationId,
         next_assessment_situation_id: hooked.nextSituationId, stages };
     }
     await advanceWorkers();
+    snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value) || !!value.next_presentation);
+    if (collectionClosed(snapshot)) break;
+    const next = page.getByRole('button', { name: 'Приступить к следующей ситуации' });
+    await next.waitFor({ state: 'visible', timeout: 15000 });
+    const nextResponse = page.waitForResponse((item) => item.request().method() === 'POST'
+      && new URL(item.url()).pathname.endsWith('/present-next'), { timeout: 30000 });
+    await next.click({ timeout: 15000 });
+    if (!(await nextResponse).ok()) throw new Error('NEXT_PRESENTATION_REJECTED');
     snapshot = await waitRuntime(page, base, cycleId, (value) => collectionClosed(value)
       || (value.current_situation?.assessment_situation_id !== situationId && presented(value)));
     if (collectionClosed(snapshot)) break;

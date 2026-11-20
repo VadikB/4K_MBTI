@@ -23,3 +23,13 @@ class ProductCycleActionRequest(StrictModel):
 
 class ProductNextRequest(StrictModel):
     idempotency_key: str = Field(min_length=1, max_length=200)
+
+
+
+class ProductNextPreparationRequest(ProductNextRequest):
+    after_assessment_situation_id: str | None = Field(default=None, min_length=1, max_length=80)
+
+
+class ProductNextPresentationRequest(StrictModel):
+    assessment_situation_id: str = Field(min_length=1, max_length=80)
+    expected_plan_revision_id: str = Field(min_length=1, max_length=80)

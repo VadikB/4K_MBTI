@@ -1438,3 +1438,168 @@
     .interview-timer { text-align: left; }
     .interview-case-heading { flex-wrap: wrap; }
 }
+
+.interview-timer-saved {
+    display: none;
+}
+
+.interview-panel.between-situations,
+.interview-panel.between-situations .interview-main {
+    gap: 0;
+}
+
+.interview-panel.between-situations .interview-case-header {
+    width: min(100%, 860px);
+    margin: 0 auto 32px;
+    border-bottom: 1px solid var(--participant-border);
+}
+
+.interview-panel.between-situations .interview-timer {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-left: auto;
+    padding-block: 8px;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.interview-panel.between-situations .interview-timer-caption {
+    display: none;
+}
+
+.interview-panel.between-situations .interview-timer-saved {
+    display: inline;
+    color: var(--participant-caption);
+}
+
+.interview-panel.between-situations .interview-timer-badge {
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.interview-panel.between-situations .interview-next-card {
+    width: min(100%, 640px);
+    margin-inline: auto;
+    padding: 24px;
+    gap: 8px;
+    border: 1px solid var(--participant-border);
+}
+
+.interview-next-confirmed {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: var(--palette-cyan-050);
+    color: var(--participant-focus);
+    font-size: 25px;
+}
+
+.interview-next-card h3 {
+    font-size: 22px;
+    line-height: 29px;
+}
+
+.interview-next-status {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 5px;
+    align-items: baseline;
+    font-size: 14px;
+    line-height: 21px;
+}
+
+.interview-next-status::before {
+    grid-row: 1 / span 2;
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--participant-focus);
+}
+
+.interview-next-status[data-failed="true"] {
+    color: var(--danger);
+}
+
+.interview-next-status[data-failed="true"]::before {
+    background: currentColor;
+}
+
+.interview-next-status:not([data-failed="true"]) {
+    min-height: 32px;
+    font-size: 13px;
+}
+
+.interview-next-status:not([data-failed="true"]):has(.text-button) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.interview-next-status .text-button {
+    justify-self: start;
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--participant-focus);
+    text-align: left;
+    text-decoration: underline;
+    font: inherit;
+    cursor: pointer;
+}
+
+.interview-next-card .primary-button {
+    width: fit-content;
+    max-width: 100%;
+    min-height: 48px;
+    margin-top: 14px;
+}
+
+.interview-next-card [data-next-preparation-feedback] {
+    font-size: 14px;
+    color: var(--participant-caption);
+}
+
+.interview-next-card [data-next-preparation-feedback]:empty {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .interview-panel.between-situations {
+        padding-inline: 12px;
+    }
+
+    .interview-panel.between-situations .interview-topbar {
+        margin-inline: -12px;
+    }
+
+    .interview-panel.between-situations .interview-case-header {
+        margin-bottom: 18px;
+    }
+
+    .interview-panel.between-situations .interview-next-card {
+        padding: 16px;
+    }
+
+    .interview-next-status:not([data-failed="true"]) {
+        font-size: 12px;
+    }
+
+    .interview-next-card .primary-button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 360px) {
+    .interview-next-status:not([data-failed="true"]):has(.text-button) {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .interview-next-status .text-button {
+        grid-column: 2;
+    }
+}

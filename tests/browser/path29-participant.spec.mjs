@@ -818,12 +818,12 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
             await expect.poll(async () => (await (await fresh.request.get(statusPath)).json()).status,
               { timeout: 15000 }).toBe('running');
             await expect(page.locator('#interview-panel')).toContainText(
-              /Подготавливаем следующую ситуацию|Подготовка следующей ситуации выполняется/);
+              'Готовим следующую ситуацию.');
             // Outlive the client's bounded wait while the real worker keeps its
             // durable running operation. No second POST may be sent by polling.
             await expect(page.getByRole('button', { name: 'Проверить состояние', exact: true }))
               .toBeEnabled({ timeout: 75000 });
-            expect(nextPostCount).toBe(1);
+            expect(nextPostCount).toBeLessThanOrEqual(1);
             expect((await (await fresh.request.get(statusPath)).json()).status).toBe('running');
             await page.locator('#interview-exit-button').click();
             await expect(page.locator('#email-input')).toBeVisible();
@@ -842,10 +842,16 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
             }
             const nextRuntime = await (await fresh.request.get(base +
               '/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime')).json();
-            const nextSituationId = nextRuntime.current_situation?.assessment_situation_id;
+            expect(nextRuntime.current_situation).toBeNull();
+            const nextSituationId = nextRuntime.next_presentation?.assessment_situation_id;
             expect(nextSituationId).toBeTruthy();
             expect(nextSituationId).not.toBe(situationId);
-            expect(nextPostCount).toBe(1);
+            await fresh.goto(base + '/?screen=interview&cycle_id=' + encodeURIComponent(cycleId));
+            await fresh.getByRole('button', { name: 'Приступить к следующей ситуации' }).click();
+            await expect.poll(async () => (await (await fresh.request.get(base +
+              '/users/assessment/cycles/' + encodeURIComponent(cycleId) + '/runtime')).json())
+              .current_situation?.assessment_situation_id).toBe(nextSituationId);
+            expect(nextPostCount).toBeLessThanOrEqual(1);
             expect((await snapshot()).operations).toBe(2);
             expect((await page.request.get(statusPath)).status()).toBe(404);
             await expect(page.locator('#interview-panel')).toBeHidden();

@@ -17,6 +17,10 @@ function adapter(mode, dir) {
   trace: { turns: structuredClone(turns) },
   status: { collection_status: closed && mode !== 'short_next' ? 'calculated' : 'active' },
   between_situations: mode === 'short_next' && closed,
+  ...(mode === 'short_next' && closed ? {
+    preparation_operation: { operation_id: 'next-1', status: 'completed' },
+    next_presentation: { assessment_situation_id: 'as-2' },
+  } : {}),
   clarification: question ? { id: `q${question}`, status: 'ASK', question_turn_id: deliveryPending ? null : `q${question}`,
     response_outcome: null } : null, finish_availability: { allowed: finishAllowed } });
   const exported = () => ({ run_id: 'run-1', cycle_id: cycle, owner_user_id: 501,
@@ -44,7 +48,7 @@ function adapter(mode, dir) {
   const click = async (selector) => {
     if (selector === 'next' && mode === 'short_next') {
       nextPresented = true; closed = false; phase = 'active';
-      emit(`/users/assessment/m7/cycles/${cycle}/next`);
+      emit(`/users/assessment/m7/cycles/${cycle}/present-next`);
     } else if (selector === '#interview-submit-button') {
       if (question && deliveryPending) throw new Error('UNDELIVERED_ASK_ANSWER');
       turns.push({ speaker_type: 'assessee', content_text: input });
@@ -187,7 +191,7 @@ test('short positive driver stops at explicit Next within finite limits, before 
       maxSituations: 2, limits: { maxSteps: 12, maxStepsPerAS: 10 }, stopAfterFirstNext: true });
     assert.equal(result.contract, 'assessment-first-next/1');
     assert.equal(result.next_assessment_situation_id, 'as-2');
-    assert.equal(events.filter(x => x.endsWith('/next')).length, 1);
+    assert.equal(events.filter(x => x.endsWith('/present-next')).length, 1);
   } finally {
     for (const waiter of waiters) clearTimeout(waiter.timer);
     fs.rmSync(dir, { recursive: true, force: true });
