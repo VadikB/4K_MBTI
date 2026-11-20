@@ -277,6 +277,7 @@ class AssessmentAssignmentResultItem(BaseModel):
     status: str
     assignment_id: int | None = None
     error: str | None = None
+    reason_code: str | None = None
 
 
 class AssessmentAssignmentBatchResponse(BaseModel):

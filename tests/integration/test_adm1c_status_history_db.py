@@ -30,7 +30,7 @@ def test_exact_assignment_readback_requires_committed_operation(test_database_ur
             PRIMARY KEY(organization_id,actor_user_id,operation_id))""")
         connection.execute("""CREATE TABLE organization_assessment_assignments(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,recipient_user_id BIGINT,assignment_ref TEXT,
-            status TEXT,revoked_at TIMESTAMP)""")
+            status TEXT,revoked_at TIMESTAMP,created_by_user_id BIGINT,operation_id TEXT,request_fingerprint TEXT)""")
         connection.execute("""CREATE TABLE organization_invitations(
             id BIGSERIAL PRIMARY KEY,organization_id BIGINT,created_by_user_id BIGINT,purpose TEXT,
             request_id TEXT,assignment_ref TEXT,recipient_email TEXT,expires_at TIMESTAMP,
@@ -65,8 +65,74 @@ def test_exact_assignment_readback_requires_committed_operation(test_database_ur
         exact = http.get("/users/admin/organizations/3/assessment-assignments/operations/committed-op",
                          params={"assignment_ref": "assessment-a", "user_ids": "8"})
         assert exact.status_code == 200
-        assert exact.json()["items"] == [{"user_id": 8, "status": "already_assigned",
-                                           "assignment_id": 1, "error": None}]
+        assert exact.json()['items'][0]['status'] == 'uncertain'
+        assert exact.json()['items'][0]['assignment_id'] is None
+        assert exact.json()['items'][0]['reason_code'] == 'ASSIGNMENT_OPERATION_RESULT_UNKNOWN'
+        # A legacy assignment created by the exact command is evidence even after
+        # revocation. A later active generation is never this command's result.
+        with get_connection() as connection:
+            connection.execute('INSERT INTO organization_assessment_assignment_operations VALUES(3,18,%s,%s)',
+                               ('proved-old-op', fingerprint))
+            old_id = connection.execute("""INSERT INTO organization_assessment_assignments
+                (organization_id,recipient_user_id,assignment_ref,status,revoked_at,
+                 created_by_user_id,operation_id,request_fingerprint)
+                VALUES(3,8,'assessment-a','revoked',NOW(),18,'proved-old-op',%s) RETURNING id""",
+                (fingerprint,)).fetchone()['id']
+            connection.commit()
+        historical = http.get('/users/admin/organizations/3/assessment-assignments/operations/proved-old-op',
+                              params={'assignment_ref':'assessment-a','user_ids':'8'})
+        assert historical.status_code == 200
+        assert historical.json()['items'][0]['status'] == 'assigned'
+        assert historical.json()['items'][0]['assignment_id'] == old_id
+        # Expand is additive: old fingerprints/rows remain unchanged. The old
+        # application's operation INSERT still works while ignoring result rows.
+        from Api import assessment_assignment_sources as sources
+        from Api import assessment_assignment_operations as operations
+        with get_connection() as connection:
+            before_expand = connection.execute('SELECT * FROM organization_assessment_assignment_operations ORDER BY operation_id').fetchall()
+            for table in ('users', 'organizations', 'assessment_configurations',
+                          'assessment_role_profile_versions', 'questionnaire_response_revisions'):
+                connection.execute('CREATE TABLE ' + table + '(id bigint PRIMARY KEY)')
+            connection.execute('INSERT INTO users VALUES(18)')
+            connection.execute('INSERT INTO organizations VALUES(3)')
+            sources.ensure_schema(connection)
+            sources.ensure_schema(connection)
+            assert connection.execute('SELECT * FROM organization_assessment_assignment_operations ORDER BY operation_id').fetchall() == before_expand
+            assert connection.execute('SELECT COUNT(*) AS n FROM organization_assessment_assignment_operation_results').fetchone()['n'] == 0
+            sources.record_operation(connection, organization_id=3, actor_user_id=18,
+                operation_id='old-application-after-expand', fingerprint=fingerprint)
+            connection.commit()
+        for operation, expected in (('committed-op', exact.json()), ('proved-old-op', historical.json())):
+            after_expand = http.get('/users/admin/organizations/3/assessment-assignments/operations/'+operation,
+                                   params={'assignment_ref':'assessment-a','user_ids':'8'})
+            assert after_expand.json() == expected
+        with get_connection() as connection:
+            command = operations.command_request(assignment_ref='assessment-a', user_ids=[8])
+            assert operations.claim(connection, organization_id=3, actor_user_id=18,
+                operation_id='modern-result-op', request=command)
+            result = {'items':[{'user_id':8,'status':'already_assigned','assignment_id':1,'error':None}]}
+            operations.save(connection, organization_id=3, actor_user_id=18,
+                operation_id='modern-result-op', request=command, result=result)
+            # Legacy code's compatible INSERT does not mutate the saved result.
+            sources.record_operation(connection, organization_id=3, actor_user_id=18,
+                operation_id='modern-result-op', fingerprint=operations.fingerprint(command, legacy=True))
+            assert operations.read(connection, organization_id=3, actor_user_id=18,
+                operation_id='modern-result-op', request=command) == result
+            connection.commit()
+        with get_connection() as connection:
+            before_ledger_id = connection.execute('''INSERT INTO organization_assessment_assignments
+                (organization_id,recipient_user_id,assignment_ref,status,revoked_at,
+                 created_by_user_id,operation_id,request_fingerprint)
+                VALUES(3,8,'assessment-a','revoked',NOW(),18,'before-ledger-op',%s) RETURNING id''',
+                (fingerprint,)).fetchone()['id']
+            connection.commit()
+        # No readiness/program tables are needed to replay a proven historical
+        # action. The current generation and current source admission are irrelevant.
+        replay = http.post('/users/admin/organizations/3/assessment-assignments', json={
+            'user_ids':[8], 'assignment_ref':'assessment-a', 'operation_id':'before-ledger-op'})
+        assert replay.status_code == 200, replay.text
+        assert replay.json()['items'][0]['assignment_id'] == before_ledger_id
+        assert replay.json()['items'][0]['status'] == 'assigned'
         with get_connection() as connection:
             connection.execute("""INSERT INTO organization_invitations
                 (organization_id,created_by_user_id,purpose,request_id,assignment_ref,recipient_email,

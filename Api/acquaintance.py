@@ -437,16 +437,23 @@ def _bind_confirmed_answers(connection, *, user_id: int, readiness: dict, answer
     answer_set = {"schema_variant": schema["variant"], "schema_version": schema["version"],
                   "assignment_ref": readiness["assignment_ref"],
                   "questionnaire_revision_id": readiness.get('questionnaire_revision_id'), "items": items}
-    checksum = _checksum(answer_set)
+    legacy_checksum = _checksum(answer_set)
     binding = assignment_sources.current_binding(connection, user_id=user_id,
         organization_id=readiness['organization_id'], assignment_ref=readiness['assignment_ref'],
-        questionnaire_revision_id=readiness.get('questionnaire_revision_id')) if bind_profile else None
-    if binding:
+        questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+    if binding and bind_profile:
         connection.execute('SELECT id FROM organization_assessment_assignments WHERE id=%s FOR UPDATE',
                            (binding['assignment_id'],))
         binding = assignment_sources.current_binding(connection, user_id=user_id,
             organization_id=readiness['organization_id'], assignment_ref=readiness['assignment_ref'],
             questionnaire_revision_id=readiness.get('questionnaire_revision_id'))
+    if binding:
+        # A later assessment gets its own confirmation/profile even when answers
+        # and questionnaire revision are reused. Historical checksums stay intact.
+        answer_set['assignment_id'] = int(binding['assignment_id'])
+    checksum = _checksum(answer_set)
+    if not bind_profile:
+        binding = None
     connection.execute("SELECT id FROM users WHERE id=%s FOR UPDATE", (user_id,))
     # Re-read after the common user lock: two resolves must not create two M4s,
     # and an answer edit that won the lock invalidates a stale resolve request.
@@ -455,6 +462,30 @@ def _bind_confirmed_answers(connection, *, user_id: int, readiness: dict, answer
         (user_id, readiness['organization_id'], readiness['assignment_ref'], checksum)).fetchone()
     if prior and prior.get('personalized_profile_id'):
         return dict(prior)
+    if binding:
+        # Preserve a pre-upgrade frozen profile only when its full source scope
+        # and chronology (or exact Cycle pointer) prove this assignment. A later
+        # generation must form its own profile instead of reusing that receipt.
+        legacy = connection.execute('''SELECT confirmation.*
+            FROM participant_acquaintance_confirmations confirmation
+            JOIN organization_assessment_assignments assignment ON assignment.id=%s
+            JOIN assessment_personalized_profiles profile ON profile.id=confirmation.personalized_profile_id
+              AND profile.user_id=confirmation.user_id AND profile.organization_id=confirmation.organization_id
+            WHERE confirmation.user_id=%s AND confirmation.organization_id=%s
+              AND confirmation.assignment_ref=%s AND confirmation.answers_checksum=%s
+              AND confirmation.questionnaire_revision_id=%s
+              AND profile.assessment_configuration_id=%s AND profile.role_profile_version_id=%s
+              AND profile.organization_context_version_id=%s
+              AND (confirmation.confirmed_at>=assignment.created_at OR EXISTS (
+                  SELECT 1 FROM m5_cycles cycle WHERE cycle.assignment_id=assignment.id
+                    AND cycle.personalized_profile_id=profile.id AND cycle.owner_user_id=confirmation.user_id
+                    AND cycle.organization_id=confirmation.organization_id AND cycle.usage_scope='assessment'))
+            ORDER BY confirmation.confirmed_at DESC,confirmation.id DESC LIMIT 1''',
+            (binding['assignment_id'], user_id, readiness['organization_id'], readiness['assignment_ref'],
+             legacy_checksum, readiness.get('questionnaire_revision_id'), binding['assessment_configuration_id'],
+             binding['role_profile_version_id'], readiness['organization_context_version_id'])).fetchone()
+        if legacy:
+            return dict(legacy)
     if bind_profile:
         state = state_store.read(connection, user_id=user_id, readiness=readiness) or {}
         if not mandatory_complete(readiness, state) or state.get('answers_json') != answers:

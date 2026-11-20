@@ -50,6 +50,8 @@ def ensure_schema(connection) -> None:
     connection.execute('''CREATE TRIGGER assignment_operation_immutable
         BEFORE UPDATE OR DELETE ON organization_assessment_assignment_operations
         FOR EACH ROW EXECUTE FUNCTION prevent_assignment_source_binding_change()''')
+    from Api.assessment_assignment_operations import ensure_schema as ensure_operation_results
+    ensure_operation_results(connection)
 
 
 def record_operation(connection, *, organization_id: int, actor_user_id: int,
@@ -180,38 +182,7 @@ def bind(connection, *, assignment_id: int, organization_id: int, configuration_
         FOR UPDATE""", (assignment_id, organization_id)).fetchone()
     if not assignment:
         raise ValueError('ASSIGNMENT_NOT_AVAILABLE')
-    prior = connection.execute("""SELECT * FROM organization_assessment_source_bindings
-        WHERE assignment_id=%s AND operation_id=%s""", (assignment_id, operation_id)).fetchone()
-    if prior:
-        if (prior['assessment_configuration_id'], prior['role_profile_version_id'], prior['questionnaire_revision_id']) != (
-                configuration_id, role_version_id, questionnaire_revision_id):
-            raise ValueError('ASSIGNMENT_SOURCE_IDEMPOTENCY_CONFLICT')
-        return dict(prior)
-    latest = current_binding(connection, user_id=assignment['recipient_user_id'],
-        organization_id=organization_id, assignment_ref=assignment['assignment_ref'],
-        questionnaire_revision_id=questionnaire_revision_id)
-    if latest and (latest['assessment_configuration_id'], latest['role_profile_version_id']) == (configuration_id, role_version_id):
-        return latest
-    historical = connection.execute("""SELECT b.* FROM organization_assessment_source_bindings b
-        JOIN organization_assessment_assignments a ON a.id=b.assignment_id
-        WHERE a.recipient_user_id=%s AND a.organization_id=%s AND a.assignment_ref=%s
-          AND b.questionnaire_revision_id=%s
-        ORDER BY b.id DESC LIMIT 1""",
-        (assignment['recipient_user_id'], organization_id, assignment['assignment_ref'],
-         questionnaire_revision_id)).fetchone()
-    if historical and (
-        historical['assessment_configuration_id'], historical['role_profile_version_id']
-    ) == (configuration_id, role_version_id):
-        return dict(connection.execute("""INSERT INTO organization_assessment_source_bindings
-            (assignment_id,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
-             assigned_by_user_id,operation_id) VALUES(%s,%s,%s,%s,%s,%s) RETURNING *""",
-            (assignment_id, questionnaire_revision_id, configuration_id, role_version_id,
-             actor_user_id, operation_id)).fetchone())
-    if connection.execute("""SELECT 1 FROM participant_acquaintance_confirmations
-        WHERE user_id=%s AND organization_id=%s AND assignment_ref=%s
-          AND personalized_profile_id IS NOT NULL LIMIT 1""",
-        (assignment['recipient_user_id'], organization_id, assignment['assignment_ref'])).fetchone():
-        raise ValueError('ASSIGNMENT_SOURCES_FROZEN: Создайте новое назначение; подтверждённый профиль неизменяем.')
+    # A new command must validate admission even when it reuses historical refs.
     available = options(connection, organization_id=organization_id)
     if configuration_id not in {row['id'] for row in available['configurations']}:
         raise ValueError('ASSIGNMENT_CONFIGURATION_NOT_AVAILABLE')
@@ -222,6 +193,30 @@ def bind(connection, *, assignment_id: int, organization_id: int, configuration_
         (questionnaire_revision_id, organization_id, assignment['assignment_ref'])).fetchone()
     if not revision:
         raise ValueError('ASSIGNMENT_QUESTIONNAIRE_SCOPE_MISMATCH')
+    prior = connection.execute("""SELECT * FROM organization_assessment_source_bindings
+        WHERE assignment_id=%s AND operation_id=%s""", (assignment_id, operation_id)).fetchone()
+    if prior:
+        if (prior['assessment_configuration_id'], prior['role_profile_version_id'], prior['questionnaire_revision_id']) != (
+                configuration_id, role_version_id, questionnaire_revision_id):
+            raise ValueError('ASSIGNMENT_SOURCE_IDEMPOTENCY_CONFLICT')
+        return dict(prior)
+    latest = connection.execute("""SELECT * FROM organization_assessment_source_bindings
+        WHERE assignment_id=%s ORDER BY id DESC LIMIT 1""", (assignment_id,)).fetchone()
+    if latest and (latest['assessment_configuration_id'], latest['role_profile_version_id'],
+                   latest['questionnaire_revision_id']) == (configuration_id, role_version_id, questionnaire_revision_id):
+        return dict(latest)
+    if connection.execute("""SELECT 1 FROM participant_acquaintance_confirmations confirmation
+        JOIN organization_assessment_source_bindings binding
+          ON binding.assignment_id=%s
+         AND binding.questionnaire_revision_id=confirmation.questionnaire_revision_id
+        JOIN assessment_personalized_profiles profile ON profile.id=confirmation.personalized_profile_id
+          AND profile.user_id=confirmation.user_id AND profile.organization_id=confirmation.organization_id
+          AND profile.assessment_configuration_id=binding.assessment_configuration_id
+          AND profile.role_profile_version_id=binding.role_profile_version_id
+        WHERE confirmation.user_id=%s AND confirmation.organization_id=%s AND confirmation.assignment_ref=%s
+        LIMIT 1""",
+        (assignment_id, assignment['recipient_user_id'], organization_id, assignment['assignment_ref'])).fetchone():
+        raise ValueError('ASSIGNMENT_SOURCES_FROZEN: Создайте новое назначение; подтверждённый профиль неизменяем.')
     return dict(connection.execute("""INSERT INTO organization_assessment_source_bindings
         (assignment_id,questionnaire_revision_id,assessment_configuration_id,role_profile_version_id,
          assigned_by_user_id,operation_id) VALUES(%s,%s,%s,%s,%s,%s) RETURNING *""",
