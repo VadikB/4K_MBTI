@@ -3,7 +3,7 @@
 ## Результат и границы
 
 Задание владельца: `/Users/vadim_bogachev/Downloads/P4K_ADM_FIX_01_Readiness_2026-11-20.md`, прочитано целиком.
-База свежего `origin/main`: `e4bc5c88c45b775a6406f034750e75aa1e4c47be`, приложение 2.1.40.
+Исходная база свежего `origin/main`: `e4bc5c88c45b775a6406f034750e75aa1e4c47be`, приложение 2.1.40.
 Ветка `codex/adm-fix-01-readiness`, текущий worktree
 `/Users/vadim_bogachev/Developer/4K/worktrees/adm-fix-01-readiness`.
 Один результат: HTTP чтение/сохранение анкеты после знакомства и точная проекция
@@ -12,6 +12,15 @@
 
 Флаги: branch_push=true, pr=true (один draft PR по ТЗ), merge=false, deploy=false,
 version_bump=false, artifact_publish=false. Визуальная приёмка — владелец.
+
+
+Текущий этап: продолжение подготовки draft PR #258 по команде владельца.
+Ветка синхронизирована с `origin/main=fa55e1ef` (2.1.41); кандидат проверок —
+`94b001254cfd3f86f4b8c753763b16489640be8d`. CI frontend/pytest этого SHA прошёл.
+Локально backend 1305 PASS, HTTP 218 PASS, frontend 476 PASS, harness 66 PASS,
+17 адресных SQL/HTTP PASS. Полный integration нового основания завершён: 484 PASS / 2 explicit llm SKIPPED.
+Read-only Ready preflight определил следующий PATCH 2.1.42 и завершился exit 2
+без изменения версии: решение о version_bump/Ready/выпуске ещё не получено.
 
 ## Источники и решения
 
@@ -39,7 +48,7 @@ SQL/HTTP регрессии. PM-03 выполняет подготовку; PM-0
 2. Воспроизведение регрессий на базе — завершено (KeyError/HTTP 500).
 3. Исправление и адресные SQL/HTTP проверки — завершено, 17 PASS.
 4. Исходная реализация: backend 1301 PASS, HTTP 218 PASS, integration 484 PASS / 2 llm SKIPPED. Draft PR #258 создан.
-5. Продолжение по команде владельца «продолжаем»: main синхронизирован; исправляется адресный frontend regression test; проверяются новое основание и CI. Ready/номер/merge остаются отдельными действиями выпуска.
+5. Продолжение по команде владельца «продолжаем»: main синхронизирован; адресный frontend regression test исправлен; быстрый CI прошёл; полный локальный integration прошёл (484 PASS / 2 llm SKIPPED). Следующий этап — решение владельца о выпуске. Ready/номер/merge остаются отдельными действиями выпуска.
 
 ## Проверки
 
@@ -134,7 +143,7 @@ integration выполнен на поддерживаемом имени нов
 Дополнительно прочитаны path-start-01 (lineage) и p4k-remain-01 TASK/CHECKS:
 повторное назначение с теми же источниками не наследует чужую подготовку.
 
-## Непроверенное и передача
+## Непроверенное на исходном implementation c4da2298
 
 CI для точного head, Ready/release gate, browser/визуальная приёмка и выпуск — пока NOT_RUN.
 Ready требует отдельного допуска на номер приложения; draft не означает выпуск.
@@ -159,7 +168,7 @@ ERROR / exit 1; последующий адресный повтор 25 PASS и 
 устранили причину без изменения guards. Первое sandbox-падение ps также устранено
 повтором в разрешённой среде. Неразобранных локальных FAIL/ERROR нет.
 
-## Состояние main и кандидата
+## История main и кандидата до синхронизации
 
 В начале и при воспроизведении `origin/main=e4bc5c88c45b775a6406f034750e75aa1e4c47be`.
 При повторном fetch во время проверки main продвинулся до
@@ -257,3 +266,52 @@ Frontend regression tests: 475 PASS / 1 FAIL. Причина —
 HTTP, integration и CI. Для frontend устанавливаются lockfile dependencies в собственном
 worktree; первый локальный запуск без node_modules дополнительно дал MODULE_NOT_FOUND,
 это недостаток локальной установки, а не отдельный дефект продукта.
+
+
+### Проверки продолжения на 94b00125
+
+- `npm ci` — PASS / 0 в собственном worktree, lockfile не изменён.
+- `node --test tests/frontend/arch30-member-stage.test.mjs` — 5 PASS / 0.
+- Адресные questionnaire/lineage на новой agent4k_pytest — 17 PASS / 0.
+- `PYTHON_DOTENV_DISABLED=1 npm run test:backend` — 1305 PASS / 0, 110.08 s.
+- `PYTHON_DOTENV_DISABLED=1 npm run test:backend:http` — 218 PASS / 0, 59.57 s.
+- `npm audit --audit-level=high`, `npm run lint:js` — PASS / 0.
+- `node --test tests/frontend/*.test.mjs` — 476 PASS / 0.
+- Harness receipts — 66 PASS / 0.
+- `npm run build:web`, `git diff --exit-code -- web/dist` — PASS / 0; bundle
+  совпадает с текущим main, продуктовый JS не менялся.
+- CI run `44694381565`, head 94b00125: frontend PASS, pytest PASS. Full verification
+  run `44694381613` ожидаемо SKIPPED для draft; это не PASS полного CI.
+- `npm run ready:prepare` без --candidate — exit 2, ожидаемый запрос разрешения
+  PATCH 2.1.41 → 2.1.42; версия/артефакты не изменены.
+
+Основание запроса будущего допуска: CONTRIBUTING.md «Коммиты и merge» — отдельные
+флаги этапов; прежнее разрешение push и draft PR не включает merge/version_bump.
+Все уже разрешённые локальные проверки и исправления выполняются до такого запроса.
+
+
+### Итог продолжения и передача владельцу
+
+Полный повтор на кандидате `94b001254cfd3f86f4b8c753763b16489640be8d` и основании
+`fa55e1eff21864448b0dcb88dd81cdbcbb2d9a56`:
+
+`PYTHON_DOTENV_DISABLED=1 TEST_DATABASE_URL=postgresql://adm_fix_pytest@127.0.0.1:55482/agent4k_pytest STAND_ADMIN_URL=postgresql://adm_fix_pytest@127.0.0.1:55482/postgres npm run test:backend:integration`
+→ **PASS / exit 0, 484 passed, 2 explicit llm skipped, 1527 deselected**, 810.65 s.
+Новая owned БД создана в отдельном PostgreSQL 15.16, `/private/tmp/adm-fix-01-followup-pg`,
+localhost:55482. После окончания сервер остановлен: `pg_ctl status` →
+`no server running` / exit 3 (ожидаемое подтверждение остановки). Ссылка .venv удалена.
+
+Подтверждённый общий результат: backend 1305 PASS, HTTP 218 PASS, integration
+484 PASS / 2 SKIPPED; frontend 476 PASS, harness 66 PASS, audit/lint/build/diff PASS.
+CI на 94b00125: **frontend PASS, pytest PASS**, run
+https://github.com/VadikB/4K_MBTI/actions/runs/44694381565 . Причина прежнего frontend
+FAIL устранена без отключения проверки. Относительно main нет несвязанных продуктовых
+изменений; синхронизация не добавляет M6-изменения в diff PR. Ни один runtime/source
+артефакт ADM-FIX-01 после проверенного implementation не переписывался.
+
+Следующий этап требует решения владельца: выпуск ADM-FIX-01 на TEST со следующим
+PATCH (по текущему main — 2.1.42), Ready, обязательный полный CI, review и squash merge
+со штатным deploy-test. До такого решения `version_bump=false`, `merge=false`,
+`deploy=false`. Предварительные работы и все уже разрешённые проверки завершены.
+Full verification в draft **SKIPPED**, не PASS; визуальная приёмка — владелец.
+Откат прежний: revert собственного результата через PR, сохранённые snapshots не менять.
