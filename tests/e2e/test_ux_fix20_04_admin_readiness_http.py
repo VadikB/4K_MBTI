@@ -36,6 +36,8 @@ class _Connection:
 
     def execute(self, query, params=()):
         self.statements.append((query, params))
+        if "SELECT id FROM organizations" in query:
+            return _Result(one={"id": params[0]})
         if "FROM questionnaire_response_revisions" in query:
             rows = [row for row in self.revisions if row["organization_id"] == params[0]]
             if "status='confirmed'" in query:
@@ -70,16 +72,45 @@ def _client(monkeypatch, connection, scope):
     return TestClient(app)
 
 
-def test_org_admin_initial_setup_updates_only_the_single_attached_card(monkeypatch):
+def test_org_admin_initial_setup_cannot_change_attached_card(monkeypatch):
     connection = _Connection()
     response = _client(monkeypatch, connection, AdminScope(organization_ids=(3,))).post(
         "/users/admin/organizations", json={"code": "new-code", "name": "Новое название"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 403
     writes = [(query, params) for query, params in connection.statements if query.lstrip().startswith(("UPDATE", "INSERT"))]
-    assert len(writes) == 1
-    assert writes[0][0].lstrip().startswith("UPDATE organizations")
-    assert writes[0][1] == ("new-code", "Новое название", 3)
+    assert writes == []
+
+
+def test_superadmin_can_still_create_organization(monkeypatch):
+    connection = _Connection()
+    response = _client(monkeypatch, connection, AdminScope(is_superadmin=True)).post(
+        "/users/admin/organizations", json={"code": "new-code", "name": "Новое название"},
+    )
+    assert response.status_code == 200
+    assert any("INSERT INTO organizations" in query for query, _ in connection.statements)
+
+
+@pytest.mark.parametrize("payload", [
+    {"code": "new-code"}, {"name": "Другое название"},
+    {"code": "new-code", "name": "Другое название", "website": "https://example.test"},
+])
+def test_org_admin_patch_rejects_independent_identity_edits(monkeypatch, payload):
+    connection = _Connection()
+    response = _client(monkeypatch, connection, AdminScope(organization_ids=(3,))).patch(
+        "/users/admin/organizations/3", json=payload,
+    )
+    assert response.status_code == 403
+    assert not any(query.lstrip().startswith(("UPDATE", "INSERT")) for query, _ in connection.statements)
+
+
+def test_org_admin_patch_retains_nonidentity_profile_fields(monkeypatch):
+    connection = _Connection()
+    response = _client(monkeypatch, connection, AdminScope(organization_ids=(3,))).patch(
+        "/users/admin/organizations/3", json={"website": "https://example.test"},
+    )
+    assert response.status_code == 200
+    assert any(query.lstrip().startswith("UPDATE organizations") for query, _ in connection.statements)
 
 
 @pytest.mark.parametrize("organization_ids", [(), (3, 4)])

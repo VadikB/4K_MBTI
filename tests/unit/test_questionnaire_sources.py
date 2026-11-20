@@ -6,6 +6,7 @@ from Api.questionnaire_sources import (
     PARTICIPANT_QUESTIONS, PARTICIPANT_QUESTION_SCHEMA, admin_assignment_readiness,
     normalize_answers, parse_csv, public_revision, template_csv,
 )
+from Api import questionnaire_sources
 
 
 EXAMPLE = Path("assessment_definitions/questionnaires/corporate/0.2/example.synthetic.csv")
@@ -73,6 +74,61 @@ def test_all_adapters_use_same_normalized_contract():
     external = normalize_answers(answers=csv_result["answers"], channel="external_form")
     product = normalize_answers(answers=csv_result["answers"], channel="product_form")
     assert external["answers"] == product["answers"] == csv_result["answers"]
+
+
+@pytest.mark.parametrize("field", ["case_reality_level", "organization_name_usage_rules"])
+@pytest.mark.parametrize("channel", ["csv", "product_form", "external_form"])
+def test_unknown_context_choice_is_invalid_and_preserves_answer(field, channel):
+    source = EXAMPLE.read_text()
+    original = parse_csv(source)["answers"]["C17"][field]
+    invalid = "Неизвестный вариант"
+    if channel == "csv":
+        result = parse_csv(source.replace("C17," + field + "," + original,
+                                          "C17," + field + "," + invalid))
+    else:
+        answers = parse_csv(source)["answers"]
+        answers["C17"][field] = invalid
+        result = normalize_answers(answers=answers, channel=channel)
+    assert result["status"] == "invalid"
+    assert result["answers"]["C17"][field] == invalid
+    assert any(error["code"] == "CONTEXT_CHOICE_UNSUPPORTED" and error["field"] == field
+               for error in result["errors"])
+
+
+def test_approved_and_legacy_context_choices_have_verified_provenance(monkeypatch):
+    answers = parse_csv(EXAMPLE.read_text())["answers"]
+    assert parse_csv(EXAMPLE.read_text())["applied_policy"]["legacy_context_choices"]["version"] == "1.0"
+    answers["C17"] = {
+        "case_reality_level": "Близко к реальной работе",
+        "organization_name_usage_rules": "Использовать условное название",
+    }
+    result = normalize_answers(answers=answers, channel="product_form")
+    assert result["status"] == "ready_for_confirmation"
+    assert "legacy_context_choices" not in result["applied_policy"]
+    monkeypatch.setattr(questionnaire_sources, "ADMIN_CHOICES_PACKAGE", Path("/nonexistent-policy"))
+    with pytest.raises(ValueError, match="ADMIN_CONTEXT_CHOICES_UNAVAILABLE"):
+        normalize_answers(answers=answers, channel="product_form")
+
+
+def test_missing_legacy_compatibility_policy_rejects_new_preview(monkeypatch):
+    answers = parse_csv(EXAMPLE.read_text())["answers"]
+    monkeypatch.setattr(questionnaire_sources, "LEGACY_CHOICES_PACKAGE", Path("/nonexistent-policy"))
+    with pytest.raises(ValueError, match="QUESTIONNAIRE_LEGACY_CHOICES_UNAVAILABLE"):
+        normalize_answers(answers=answers, channel="product_form")
+
+
+def test_historical_confirmed_revision_remains_readable_without_current_policy(monkeypatch):
+    answers = parse_csv(EXAMPLE.read_text())["answers"]
+    answers["C04"] = {"answer": "Историческое поле"}
+    answers["C21"]["responsible_contact"] = "old@example.test"
+    monkeypatch.setattr(questionnaire_sources, "ADMIN_CHOICES_PACKAGE", Path("/nonexistent-policy"))
+    row = {"id": 5, "assignment_ref": "old", "status": "confirmed", "channel": "csv",
+           "answers_json": answers, "confirmed_at": "2026-11-01T10:00:00Z"}
+    saved = public_revision(row)
+    assert saved["status"] == "confirmed"
+    assert saved["answers_json"]["C17"]["case_reality_level"] == "обобщённый"
+    assert "C04" not in saved["answers_json"]
+    assert "responsible_contact" not in saved["answers_json"]["C21"]
 
 
 def test_header_must_be_exact():
