@@ -284,3 +284,11 @@ Review результата принят владельцем в чате; эт�
 Следующий этап — push ветки и один draft PR в VadikB/4K_MBTI через встроенный
 браузер: branch_push=true, pr=true. Версия/Ready/merge/deploy остаются false;
 прежний выпуск ADM-FIX-01 не переносится на ADM-FIX-02.
+
+## Фактическая публикация
+
+Ветка отправлена в origin, через встроенный браузер создан один draft PR #259:
+https://github.com/VadikB/4K_MBTI/pull/259 . Base main dcd876f2, исходный
+публикуемый head 6867a900; код/tests соответствуют проверенному 8784088f.
+Review принят владельцем в чате. Быстрые frontend/pytest запущены; full CI
+в Draft штатно SKIPPED и не считается PASS. Ready/версия/merge/deploy не выполнены.
