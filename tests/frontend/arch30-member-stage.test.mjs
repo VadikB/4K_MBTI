@@ -5,6 +5,7 @@ import test from 'node:test';
 const organizations = readFileSync('web/js/screens/admin/organizations.js', 'utf8');
 const wiring = readFileSync('web/js/wiring.js', 'utf8');
 const routes = readFileSync('Api/routes.py', 'utf8');
+const assignmentProjection = readFileSync('Api/admin_assignment_projection.py', 'utf8');
 const styles = readFileSync('web/styles/screens/admin-organizations.css', 'utf8');
 const api = readFileSync('web/js/api.js', 'utf8');
 
@@ -26,9 +27,11 @@ test('ADM-STATUS-01 shows one current participant stage and keeps secondary sign
     'Отчёт готов',
   ]) assert.match(routes, new RegExp(label));
   assert.match(organizations, /assessment_stages\?\.\[selectedAssessmentRef\]/);
-  assert.match(routes, /job\.personalized_profile_id=profile\.id/);
-  assert.match(routes, /runtime\.organization_id=assignment\.organization_id/);
-  assert.match(routes, /acquaintance\.assignment_ref=assignment\.assignment_ref/);
+  assert.match(routes, /from Api\.admin_assignment_projection import ADMIN_ASSIGNMENT_STAGES_SQL/);
+  assert.match(routes, /connection\.execute\(\s*ADMIN_ASSIGNMENT_STAGES_SQL,/);
+  assert.match(assignmentProjection, /job\.personalized_profile_id=profile\.id/);
+  assert.match(assignmentProjection, /runtime\.organization_id=assignment\.organization_id/);
+  assert.match(assignmentProjection, /acquaintance\.assignment_ref=assignment\.assignment_ref/);
   assert.match(organizations, /data-action="open-member-card"/);
   assert.match(organizations, /class="admin-organization-member-stage"/);
   assert.match(organizations, /aria-label="Другие действия"/);

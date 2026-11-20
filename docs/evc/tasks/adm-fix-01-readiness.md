@@ -4,7 +4,8 @@
 
 Задание владельца: `/Users/vadim_bogachev/Downloads/P4K_ADM_FIX_01_Readiness_2026-11-20.md`, прочитано целиком.
 База свежего `origin/main`: `e4bc5c88c45b775a6406f034750e75aa1e4c47be`, приложение 2.1.40.
-Ветка `codex/adm-fix-01-readiness`, worktree `/private/tmp/4k-adm-fix-01`.
+Ветка `codex/adm-fix-01-readiness`, текущий worktree
+`/Users/vadim_bogachev/Developer/4K/worktrees/adm-fix-01-readiness`.
 Один результат: HTTP чтение/сохранение анкеты после знакомства и точная проекция
 готовности/подготовки назначения. Без изменения схемы, API, сохранённых snapshots,
 методологических артефактов, прав и правил допуска к старту.
@@ -37,7 +38,8 @@ SQL/HTTP регрессии. PM-03 выполняет подготовку; PM-0
    preparation выбирается по user_id без lineage.
 2. Воспроизведение регрессий на базе — завершено (KeyError/HTTP 500).
 3. Исправление и адресные SQL/HTTP проверки — завершено, 17 PASS.
-4. Backend 1301 PASS, HTTP 218 PASS, review/diff PASS. Полный integration 484 PASS / 2 llm SKIPPED; завершено. Публикация draft PR ожидает явного допуска.
+4. Исходная реализация: backend 1301 PASS, HTTP 218 PASS, integration 484 PASS / 2 llm SKIPPED. Draft PR #258 создан.
+5. Продолжение по команде владельца «продолжаем»: main синхронизирован; исправляется адресный frontend regression test; проверяются новое основание и CI. Ready/номер/merge остаются отдельными действиями выпуска.
 
 ## Проверки
 
@@ -234,3 +236,24 @@ Implementation/tests соответствуют проверенному `c4da22
 документальные записи. Перед Ready сохраняются зависимости: синхронизация main,
 номер приложения, release preflight, обязательный CI и review; визуальная приёмка —
 владелец. Merge/deploy/publication не выполнялись.
+
+
+## Продолжение 20.11.2026: синхронизация и CI
+
+Владелец: «продолжаем» после создания draft PR #258. Продолжены проверка CI,
+синхронизация рабочей ветки и исправление обнаруженной регрессии теста. Флаги
+merge/deploy/version_bump/artifact_publish не изменены.
+
+На head `5f5ba56d` CI run `44692593290`: pytest PASS, frontend FAIL (18 s),
+Frontend regression tests: 475 PASS / 1 FAIL. Причина —
+`tests/frontend/arch30-member-stage.test.mjs` ищет перенесённые SQL predicates
+в routes.py. Обновляется чтение общего admin_assignment_projection.py с сохранением
+проверок user/profile/organization/assignment и проверкой подключения SQL в routes.
+Ни тест, ни assertions не отключаются.
+
+`git merge --no-edit origin/main` — PASS, без конфликтов. Новое основание:
+`fa55e1eff21864448b0dcb88dd81cdbcbb2d9a56` (2.1.41). Предыдущее доказательство
+на c4da2298 сохраняется как история; для сочетания с новым M6 повторяются backend,
+HTTP, integration и CI. Для frontend устанавливаются lockfile dependencies в собственном
+worktree; первый локальный запуск без node_modules дополнительно дал MODULE_NOT_FOUND,
+это недостаток локальной установки, а не отдельный дефект продукта.
