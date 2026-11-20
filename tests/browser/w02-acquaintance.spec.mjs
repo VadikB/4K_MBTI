@@ -62,9 +62,10 @@ async function fixture(page) {
       if (body.confirm) { model.mandatory_complete = true; model.state.answers_confirmed_at = 'synthetic'; }
       return json(route, model.state);
     }
+    if (pathname.startsWith('/users/8/acquaintance/issues/operations/')) return json(route, {detail: 'ISSUE_OPERATION_NOT_FOUND'}, 404);
     if (pathname === '/users/8/acquaintance/issues') {
       if (failIssue) { failIssue = false; return route.abort('failed'); }
-      return json(route, { id: 42, status: 'new', created_at: '2026-11-14T12:00:00Z' }, 201);
+      return json(route, { id: 42, status: 'new', ...req.postDataJSON(), created_at: '2026-11-14T12:00:00Z' }, 201);
     }
     if (pathname === '/users/version') return json(route, { version: 'w02-controlled' });
     unexpected.push(`${req.method()} ${pathname}`); return json(route, {}, 404);
@@ -270,7 +271,7 @@ test('W02 FIX issue total length, retry draft reload, assignment isolation and d
   let release; const held = new Promise((resolve) => { release = resolve; }); let posts = 0, message;
   await page.route('**/users/8/acquaintance/issues', async (route) => {
     posts++; message = route.request().postDataJSON().message;
-    await held; return json(route, { id: 99, status: 'new' }, 201);
+    await held; return json(route, { id: 99, status: 'new', ...route.request().postDataJSON() }, 201);
   });
   await send().click(); await expect(send()).toBeDisabled(); await expect(field()).toBeDisabled();
   await dialog(page).locator('form').evaluate((form) => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
@@ -280,4 +281,69 @@ test('W02 FIX issue total length, retry draft reload, assignment isolation and d
   await dialog(page).getByRole('button', { name: 'Продолжить знакомство', exact: true }).click();
   await open(); await expect(input()).toHaveValue('');
   await page.keyboard.press('Escape'); await expect(page.locator('#onboarding-report-issue')).toBeFocused();
+});
+
+
+test('ADM-FIX-03 form pins the shown pair and recovers only its original command after a lost reply', async ({page}) => {
+  const run = await fixture(page);
+  run.model.readiness.assignment_id = 91;
+  let command, reads = 0;
+  await page.route('**/users/8/acquaintance/issues**', async route => {
+    if (route.request().method() === 'POST') {
+      command = route.request().postDataJSON();
+      expect(command.assignment_id).toBe(91);
+      expect(command.questionnaire_revision_id).toBe(41);
+      expect(command.operation_id).toBeTruthy();
+      // Server committed A; B becomes active before the original receipt is read.
+      run.model.readiness.assignment_id = 92;
+      run.model.readiness.questionnaire_revision_id = 43;
+      return route.abort('failed');
+    }
+    reads++;
+    const url = new URL(route.request().url());
+    expect(url.pathname).toBe('/users/8/acquaintance/issues/operations/' + command.operation_id);
+    expect(url.searchParams.get('assignment_id')).toBe('91');
+    expect(url.searchParams.get('questionnaire_revision_id')).toBe('41');
+    return json(route, {id: 301, status: 'open', ...command});
+  });
+  await page.goto(base); await next(page).click();
+  await page.locator('#onboarding-report-issue').click();
+  await dialog(page).getByLabel('Что нужно уточнить?').fill('Исходное обращение А');
+  await dialog(page).getByRole('button', {name:'Отправить', exact:true}).click();
+  await expect(dialog(page).getByRole('status')).toContainText('Сообщение сохранено');
+  expect(reads).toBe(1);
+});
+
+
+test('ADM-FIX-03 stale conflict and substituted receipt keep the draft and command across reload', async ({page}) => {
+  const run = await fixture(page);
+  run.model.readiness.assignment_id = 91;
+  const commands = [];
+  let wrongReceipt = false;
+  await page.route('**/users/8/acquaintance/issues**', async route => {
+    if (route.request().method() === 'POST') {
+      commands.push(route.request().postDataJSON());
+      return json(route, {detail:'W02_ASSIGNMENT_SCOPE_MISMATCH'}, 409);
+    }
+    if (!wrongReceipt) return json(route, {detail:'ISSUE_OPERATION_NOT_FOUND'}, 404);
+    return json(route, {id:301,status:'open',...commands.at(-1),operation_id:'other-command'});
+  });
+  await page.goto(base); await next(page).click();
+  const open = () => page.locator('#onboarding-report-issue').click();
+  const input = () => dialog(page).getByLabel('Что нужно уточнить?');
+  const send = () => dialog(page).getByRole('button', {name:'Отправить',exact:true});
+  await open(); await input().fill('Сохранить исходный текст'); await send().click();
+  await expect(dialog(page).getByRole('alert')).toContainText('Назначение изменилось');
+  await expect(input()).toHaveValue('Сохранить исходный текст');
+  wrongReceipt = true;
+  await page.reload(); await open();
+  await expect(input()).toHaveValue('Сохранить исходный текст'); await send().click();
+  await expect(dialog(page).getByRole('alert')).toBeVisible();
+  await expect(dialog(page).getByRole('status')).toBeHidden();
+  expect(commands).toHaveLength(2);
+  expect(commands[1]).toEqual(commands[0]);
+  // A different assignment cannot reuse A's draft/key.
+  await dialog(page).getByRole('button',{name:'Отмена',exact:true}).click();
+  run.model.readiness.assignment_id = 92; run.model.assignment_id = 92;
+  await page.reload(); await open(); await expect(input()).toHaveValue('');
 });

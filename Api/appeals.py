@@ -1,4 +1,26 @@
 """Participant data appeals. Authorization is performed by the HTTP boundary."""
+import json
+
+
+def read_operation(connection, *, user_id, operation_id, assignment_id,
+                   questionnaire_revision_id, message=None):
+    row = connection.execute("""SELECT request_json,receipt_json FROM participant_data_issue_operations
+        WHERE user_id=%s AND operation_id=%s""", (user_id, operation_id)).fetchone()
+    if row is None:
+        return None
+    request = row['request_json']
+    if (request['assignment_id'] != assignment_id
+            or request['questionnaire_revision_id'] != questionnaire_revision_id
+            or (message is not None and request['message'] != message)):
+        raise ValueError('W02_ISSUE_OPERATION_MISMATCH')
+    return dict(row['receipt_json'])
+
+
+def save_operation(connection, *, user_id, operation_id, request, receipt):
+    connection.execute("""INSERT INTO participant_data_issue_operations
+        (user_id,operation_id,issue_id,request_json,receipt_json) VALUES(%s,%s,%s,%s::jsonb,%s::jsonb)""",
+        (user_id, operation_id, receipt['id'], json.dumps(request, ensure_ascii=False),
+         json.dumps(receipt, ensure_ascii=False)))
 
 
 def list_issues(connection, *, organization_id: int | None, user_id: int) -> list[dict]:
@@ -13,9 +35,11 @@ def list_issues(connection, *, organization_id: int | None, user_id: int) -> lis
                     WHERE owner.organization_id=issue.organization_id
                       AND owner.user_id=issue.claimed_by_user_id AND owner.role='admin') AS claimed_by_active_admin,
                   reply.author_user_id AS reply_author_user_id,
+                  NULLIF(BTRIM(to_jsonb(author)->>'full_name'), '') AS reply_author_display_name,
                   reply.created_at AS replied_at
            FROM participant_data_issue_reports issue
            LEFT JOIN participant_data_issue_replies reply ON reply.issue_id=issue.id
+           LEFT JOIN users author ON author.id=reply.author_user_id
            WHERE issue.user_id=%s {organization_filter}
            ORDER BY issue.created_at DESC, issue.id DESC""",
         params,

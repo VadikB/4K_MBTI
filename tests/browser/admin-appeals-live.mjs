@@ -103,6 +103,12 @@ try {
   });
   await readPage.getByRole('heading', {name: 'Ответ по вашему обращению'}).waitFor();
   await readPage.getByText('Синтетическая запись проверена').waitFor();
+  await readPage.getByText('Тестовый администратор', {exact: false}).waitFor();
+  await readPage.getByText('Поле: Роль\nПроверьте синтетическую запись', {exact: true}).waitFor();
+  const attribution = await readPage.locator('.participant-appeal small').innerText();
+  if (!/Тестовый администратор · \d{2}\.\d{2}\.\d{4}/.test(attribution)) {
+    throw Error(`Missing saved reply attribution/time: ${attribution}`);
+  }
   console.log(JSON.stringify({result: 'PASS', created_id: created.id, issue: evidence.issue, reply: evidence.reply, owner_isolation: denied, participant_readback: true}));
   await Promise.all([participant.close(), admin.close(), other.close(), newSession.close()]);
 } finally {

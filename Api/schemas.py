@@ -1505,6 +1505,9 @@ class AcquaintanceConsentRequest(BaseModel):
 
 class AcquaintanceIssueRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
+    operation_id: str | None = Field(default=None, min_length=1, max_length=200)
+    assignment_id: int | None = Field(default=None, gt=0)
+    questionnaire_revision_id: int | None = Field(default=None, gt=0)
 
 
 class JourneyAssessmentState(BaseModel):
