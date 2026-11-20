@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "admin-organization-context-legacy-compatibility",
+  "version": "1.0",
+  "status": "approved_for_admin_confirmation",
+  "artifacts": [
+    {
+      "name": "choices.json",
+      "sha256": "84e7f8f3e44626d5783d325b426dc7e7f92be043d651d986a085cb1f04e5dad0"
+    }
+  ]
+}
