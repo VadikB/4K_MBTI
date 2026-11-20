@@ -2421,7 +2421,7 @@ export const renderAdminOrganizations = () => {
           : questionnaireLoadState?.status === 'empty'
             ? '<div class="admin-questionnaire-load-state">Для этой организации ещё нет сохранённых анкет.</div>' : '';
       const questionnaireValidation = questionnairePreview?.validation_json || {};
-      const questionnaireProblems = [...(questionnaireValidation.errors || []).map((item) => item.code),
+      const questionnaireProblems = [...(questionnaireValidation.errors || []),
         ...(questionnaireValidation.missing || [])];
       const activeView = organizationViews.get(orgId) || 'people';
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
@@ -2521,6 +2521,15 @@ export const renderAdminOrganizations = () => {
         '" aria-pressed="' + String(activeView === view) + '">' + label + '</button>';
       const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(assessmentKey(orgId, selectedRef));
       const confirmationOutcome = questionnaireConfirmOutcomes.get(assessmentKey(orgId, selectedRef));
+      const savedChoiceError = (currentRevision?.validation_json?.errors || []).find(
+        (error) => error.code === 'CONTEXT_CHOICE_UNSUPPORTED');
+      const savedChoiceIssue = savedChoiceError
+        ? 'неподдерживаемое значение: ' + (savedChoiceError.field === 'case_reality_level'
+          ? 'близость ситуаций к реальной работе' : 'использование названия организации')
+        : '';
+      const savedChoiceWarning = savedChoiceIssue && !questionnairePreview
+        ? '<p class="form-status error" role="alert" data-context-choice-warning>Проверьте: ' +
+          escapeHtml(savedChoiceIssue) + '.</p>' : '';
       const revisionAttribution = (revision) => '<p class="admin-questionnaire-uploader" data-questionnaire-revision-id="' +
         Number(revision.id) + '">Внёс данные: ' + escapeHtml(revision.uploaded_by_name || revision.uploaded_by_email ||
           (Number(revision.uploaded_by_user_id) > 0 ? 'аккаунт #' + Number(revision.uploaded_by_user_id) : 'сведения не сохранены')) + '</p>';
@@ -2553,8 +2562,18 @@ export const renderAdminOrganizations = () => {
           escapeHtml(fieldLabels[change.field] || change.field) + ':</strong> «' + escapeHtml(change.before || 'не указано') +
           '» → «' + escapeHtml(change.after || 'не указано') + '»</li>').join('') + '</ul>' :
           '<p>Изменений относительно текущей подтверждённой редакции нет.</p>');
-      const humanProblems = questionnaireProblems.map((item) => validationLabels[item] ||
-        (String(item).includes('duplicate') ? 'повторяющиеся поля' : 'некорректно заполненные поля'));
+      const choiceLabels = { case_reality_level: 'близость ситуаций к реальной работе',
+        organization_name_usage_rules: 'использование названия организации' };
+      const humanProblems = questionnaireProblems.map((item) => {
+        if (item?.code === 'CONTEXT_CHOICE_UNSUPPORTED')
+          return 'неподдерживаемое значение: ' + (choiceLabels[item.field] || 'правила кейсов');
+        const code = typeof item === 'string' ? item : item?.code;
+        if (String(code).startsWith('ADMIN_CONTEXT_CHOICES_') ||
+            String(code).startsWith('QUESTIONNAIRE_LEGACY_CHOICES_'))
+          return 'не удалось проверить утверждённые варианты; повторите после восстановления правил';
+        return validationLabels[code] ||
+          (String(code).includes('duplicate') ? 'повторяющиеся поля' : 'некорректно заполненные поля');
+      });
       const nameMismatch = questionnairePreview && participant.organization_name && participant.organization_name !== org.name;
       const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" role="status" data-draft-action="questionnaire-preview" data-assessment-ref="' +
         escapeHtml(selectedRef) + '" data-preview-action="' +
@@ -2684,7 +2703,7 @@ export const renderAdminOrganizations = () => {
         '<label><span>Близость ситуаций к реальной работе</span>' + contextChoiceSelect('case_reality_level', revisionAnswers?.C17?.case_reality_level) + '</label>' +
         '<label><span>Название организации в ситуациях</span>' + contextChoiceSelect('organization_name_usage_rules', revisionAnswers?.C17?.organization_name_usage_rules) + '</label></fieldset>' +
         '<button class="primary-button compact-primary" type="submit"' + (programConfirmed ? '' : ' disabled') + '>Сохранить черновик и предпросмотр</button></form>' +
-        (activeView === 'organization-data' ? confirmationMarkup + previewMarkup : '') + '</section>' +
+        (activeView === 'organization-data' ? confirmationMarkup + savedChoiceWarning + previewMarkup : '') + '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + currentReadinessMarkup + '<h4>Корпоративная анкета</h4>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire" data-assessment-ref="' + escapeHtml(selectedRef) + '">' +
         assessmentFieldMarkup +

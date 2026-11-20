@@ -137,6 +137,21 @@ test('ADMIN-02 offers approved context choices to a new organization draft', asy
   await expect(reality).toHaveValue('Близко к реальной работе');
   await expect(nameUsage).toHaveValue('Использовать условное название');
 });
+
+test('ADM-FIX-04 explains unsupported saved C17 choice and retains the draft', async ({ page }) => {
+  const draft = { ...confirmed, id: 202, status: 'invalid',
+    effective_confirmed: { id: 201, assignment_ref: 'pilot-11', confirmed_at: '2026-11-19T10:00:00Z' },
+    answers_json: { ...confirmed.answers_json,
+      C17: { ...confirmed.answers_json.C17, organization_name_usage_rules: 'Неизвестный вариант' } },
+    validation_json: { errors: [{ code: 'CONTEXT_CHOICE_UNSUPPORTED', question_id: 'C17',
+      field: 'organization_name_usage_rules', line: 12 }], missing: [] } };
+  const f = await fixture(page, { items: [draft] });
+  await finishRead(page, f);
+  await expect(card(page).locator('[data-context-choice-warning]')).toContainText(
+    'неподдерживаемое значение: использование названия организации');
+  await expect(form(page).locator('[name="organization_name_usage_rules"]')).toHaveValue('Неизвестный вариант');
+  await expect(card(page).locator('[data-action="confirm-questionnaire"]')).toHaveCount(0);
+});
 test('Q-DRAFT live input wins over a delayed confirmed revision in the same scope', async ({ page }) => {
   const f = await fixture(page, { items: [confirmed] });
   await fill(page, fields('черновик')); await finishRead(page, f);

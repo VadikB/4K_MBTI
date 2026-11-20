@@ -73,6 +73,38 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert public_revision(preview)["effective_confirmed"] is None
         assert admin_assignment_readiness(connection, organization_id=10,
                                           assignment_ref="synthetic-assignment")["early"]["status"] == "draft_unconfirmed"
+        for channel in ("csv", "product_form"):
+            for field in ("case_reality_level", "organization_name_usage_rules"):
+                invalid_answers = parse_csv(EXAMPLE.read_text())["answers"]
+                old_value = invalid_answers["C17"][field]
+                invalid_answers["C17"][field] = "Неизвестный вариант"
+                invalid = save_preview(connection, **{
+                    **kwargs, "channel": channel, "answers": invalid_answers,
+                    "raw_text": EXAMPLE.read_text().replace(
+                        f"C17,{field},{old_value}", f"C17,{field},Неизвестный вариант",
+                    ) if channel == "csv" else None,
+                    "idempotency_key": f"invalid-{channel}-{field}",
+                })
+                projected = public_revision(invalid)
+                assert projected["status"] == "invalid"
+                assert projected["answers_json"]["C17"][field] == "Неизвестный вариант"
+                assert any(error["field"] == field and error["code"] == "CONTEXT_CHOICE_UNSUPPORTED"
+                           for error in projected["validation_json"]["errors"])
+                with pytest.raises(ValueError, match="QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION"):
+                    confirm(connection, revision_id=invalid["id"], organization_id=10, confirmed_by=2)
+        assert connection.execute("SELECT name FROM organizations WHERE id=10").fetchone()["name"] == "Организация А"
+        assert connection.execute("SELECT COUNT(*) AS n FROM assessment_organization_context_versions").fetchone()["n"] == 0
+        old_form = save_preview(connection, **{
+            **kwargs, "channel": "product_form", "raw_text": None,
+            "answers": parse_csv(EXAMPLE.read_text())["answers"], "idempotency_key": "old-form-draft",
+        })
+        connection.execute("""UPDATE questionnaire_response_revisions
+            SET answers_json=jsonb_set(answers_json,'{C17,case_reality_level}',
+                '"Неизвестный вариант"'::jsonb),validation_json='{"errors":[],"missing":[]}'::jsonb,
+                status='ready_for_confirmation' WHERE id=%s""", (old_form["id"],))
+        with pytest.raises(ValueError, match="QUESTIONNAIRE_NOT_READY_FOR_CONFIRMATION"):
+            confirm(connection, revision_id=old_form["id"], organization_id=10, confirmed_by=2)
+        assert connection.execute("SELECT COUNT(*) AS n FROM assessment_organization_context_versions").fetchone()["n"] == 0
         # The product form supplies the early minimum, without optional C02b.
         connection.execute("UPDATE questionnaire_response_revisions SET answers_json=answers_json-'C02b' WHERE id=%s", (preview['id'],))
 
@@ -99,6 +131,9 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
         assert "responsible_contact" not in confirmed["briefing_json"]
         assert confirmed["briefing_json"]["assignment_ref"] == "synthetic-assignment"
         assert version["source_manifest_json"]["questionnaire_revision_id"] == preview["id"]
+        assert version["source_manifest_json"]["channel"] == "csv"
+        assert version["source_manifest_json"]["admin_context_choices"]["version"] == "1.0"
+        assert version["source_manifest_json"]["legacy_context_choices"]["version"] == "1.0"
         assert confirm(
             connection, revision_id=preview["id"], organization_id=10,
             confirmed_by=2,
@@ -202,6 +237,10 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
                 confirmed_by=2)
         without_organizer = parse_csv(EXAMPLE.read_text())["answers"]
         without_organizer.pop("C21")
+        without_organizer["C17"].update({
+            "case_reality_level": "Близко к реальной работе",
+            "organization_name_usage_rules": "Использовать условное название",
+        })
         manual = save_preview(connection, **{
             **kwargs, "assignment_ref": "manual-assignment", "channel": "product_form",
             "raw_text": None, "answers": without_organizer,
@@ -219,6 +258,7 @@ def test_csv_preview_confirmation_is_idempotent_and_publishes_provenance(test_da
             "id": "admin-organization-context-choices", "version": "1.0",
             "sha256": "b76cb4b804de2916b074f4070858f7e4fb53e87328ad03191c2b21ace7feaf8a",
         }
+        assert "legacy_context_choices" not in manual_version["source_manifest_json"]
         assert manual_confirmed["briefing_json"]["organizer"] == ""
         assert assignment_readiness(connection, organization_id=10,
                                     assignment_ref="manual-assignment")["status"] == "ready"
@@ -410,6 +450,22 @@ def test_questionnaire_http_read_save_and_confirm_after_acquaintance(readiness_d
         assert response.json()['items'][0]['readiness']['roles']['ready'] == 1
         saved = save('after-acquaintance')
         assert saved['readiness']['roles']['ready'] == 1
+        invalid_csv = EXAMPLE.read_text().replace('C17,case_reality_level,обобщённый',
+                                                   'C17,case_reality_level,Неизвестный вариант')
+        invalid = http.post(prefix+'/preview', json={
+            'assignment_ref': 'A', 'csv_text': invalid_csv, 'idempotency_key': 'invalid-http-csv',
+        })
+        assert invalid.status_code == 201, invalid.text
+        assert invalid.json()['status'] == 'invalid'
+        assert invalid.json()['answers_json']['C17']['case_reality_level'] == 'Неизвестный вариант'
+        assert http.post(prefix+'/'+str(invalid.json()['id'])+'/confirm', json={}).status_code == 409
+        from Api import questionnaire_sources
+        original_package = questionnaire_sources.ADMIN_CHOICES_PACKAGE
+        monkeypatch.setattr(questionnaire_sources, 'ADMIN_CHOICES_PACKAGE', Path('/nonexistent-policy'))
+        unavailable = http.post(prefix+'/'+str(saved['id'])+'/confirm', json={})
+        assert unavailable.status_code == 409
+        assert unavailable.json()['detail'] == 'ADMIN_CONTEXT_CHOICES_UNAVAILABLE'
+        monkeypatch.setattr(questionnaire_sources, 'ADMIN_CHOICES_PACKAGE', original_package)
         confirmed = http.post(prefix+'/'+str(saved['id'])+'/confirm', json={})
         assert confirmed.status_code == 200, confirmed.text
         exact = http.get(prefix+'/'+str(saved['id']))

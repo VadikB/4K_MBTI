@@ -1,0 +1,19 @@
+{
+  "id": "admin-organization-context-legacy-compatibility",
+  "version": "1.0",
+  "status": "approved_for_admin_confirmation",
+  "scope": "C17_previous_formats",
+  "source": "Решение владельца в чате Codex от 2026-11-20 по ADM-FIX-04; только два подтверждённых исторических эквивалента",
+  "approved_choices": {
+    "id": "admin-organization-context-choices",
+    "version": "1.0"
+  },
+  "equivalents": {
+    "case_reality_level": {
+      "обобщённый": "Обобщённые рабочие ситуации"
+    },
+    "organization_name_usage_rules": {
+      "не использовать название организации": "Использовать условное название"
+    }
+  }
+}
