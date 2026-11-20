@@ -80,6 +80,9 @@ def reject_contacts(value) -> None:
                 "telegram_id",
                 "telegram_user_id",
                 "agent4k_user_id",
+                "phone",
+                "phone_number",
+                "contacts",
             }:
                 raise ValueError("EDUCATIONAL_CONTEXT_CONTACT_IDENTITY_FORBIDDEN")
             reject_contacts(nested)
@@ -138,6 +141,8 @@ def prepare(c, *, snapshot: dict, snapshot_checksum: str, organization_id: int) 
         raise ValueError("EDUCATIONAL_CONTEXT_SCHEMA_UNSUPPORTED")
     if checksum(snapshot) != snapshot_checksum:
         raise ValueError("EDUCATIONAL_CONTEXT_CHECKSUM_MISMATCH")
+    if set(snapshot.get("participant") or {}) - {"local_ref", "external_subject_ref"}:
+        raise ValueError("EDUCATIONAL_CONTEXT_CONTACT_IDENTITY_FORBIDDEN")
     subject = telegram_subjects.load(
         c, snapshot["participant"]["external_subject_ref"], organization_id
     )

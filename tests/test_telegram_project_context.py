@@ -1,4 +1,14 @@
 from Api import telegram_channel as channel
+import pytest
+
+
+@pytest.mark.parametrize("field", ["email", "phone", "contacts", "agent4k_user_id"])
+def test_project_context_rejects_contact_fields_before_database(field):
+    value = {"schema_version": 1, "kind": "educational_project_assessment_context",
+             "participant": {field: "synthetic-forbidden"}}
+    with pytest.raises(ValueError, match="CONTACT_IDENTITY_FORBIDDEN"):
+        channel.prepare(None, snapshot=value, snapshot_checksum=channel.checksum(value),
+                        organization_id=17)
 
 
 def test_project_preview_uses_frozen_project_and_explicit_owner_terms(monkeypatch):
