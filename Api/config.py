@@ -25,6 +25,11 @@ DEPLOYMENT_PUBLIC_ORIGIN = (None if os.getenv("AGENT4K_ISOLATED_STAND") == "1"
 
 
 class Settings:
+    tg_student_channel_enabled: bool = os.getenv("TG_STUDENT_CHANNEL_ENABLED", "false").lower() == "true"
+    tg_student_allowed_project_code: str = os.getenv("TG_STUDENT_ALLOWED_PROJECT_CODE", "").strip()
+    tg_student_organization_id: int = int(os.getenv("TG_STUDENT_ORGANIZATION_ID", "0"))
+    tg_student_allowed_subjects: frozenset[str] = frozenset(
+        x.strip() for x in os.getenv("TG_STUDENT_ALLOWED_SUBJECTS", "").split(",") if x.strip())
     tg_bot_integration_token: str = os.getenv("TG_BOT_INTEGRATION_TOKEN", "").strip()
     # UX threshold only; no later than five minutes, independent of worker leases.
     preparation_delay_notice_seconds: int = int(os.getenv("PREPARATION_DELAY_NOTICE_SECONDS", "300"))
