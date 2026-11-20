@@ -3,13 +3,14 @@
 Основание — карточка `P4K_PR03_ASUX-02-03_Answer_Screen.md`, редакция 1.1
 от 20.11.2026, и приложенный HTML-эталон v2. База работы — `origin/main`
 `052a9be5f1704fcc67d01cf0f6f7063cd638a52f` (2.1.47), после интеграции ASUX‑04
-в PR #263. В одном PR сдаются ASUX‑02 и ASUX‑03. Ветка `codex/asux-02-03-answer`.
+в PR #263. Рабочая ветка обновлена от `d3f6358e` (2.1.48, ADM-FIX-04, #266).
+В одном PR сдаются ASUX‑02 и ASUX‑03. Ветка `codex/asux-02-03-answer`.
 
 Владелец разрешил push рабочей ветки, PR, следующий PATCH, Ready и CI.
 Последующим сообщением разрешил squash merge в `main`, затем явно разрешил
 его штатный автоматический деплой на `test`. Флаги выпуска
 `branch_push=true`, `pr=true`, `version_bump=true`, `merge=true`, `deploy=true`
-для `test`, `artifact_publish=false`. Кандидат 2.1.48.
+для `test`, `artifact_publish=false`. Кандидат 2.1.49.
 
 ## Основания и границы
 
