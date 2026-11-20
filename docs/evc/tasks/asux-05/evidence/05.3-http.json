@@ -14,7 +14,28 @@
     "GET /users/version",
     "GET /users/18/session-bootstrap",
     "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/version",
+    "GET /users/18/session-bootstrap",
+    "GET /users/18/journey-state",
+    "GET /users/18/acquaintance/issues",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/18/acquaintance/issues",
+    "GET /users/assessment/m8/cycles/cycle-a/status",
+    "GET /users/18/acquaintance/issues",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/reports/report-b-confirmed",
+    "GET /users/assessment/m8/cycles/cycle-b/reports/latest",
+    "GET /users/assessment/m8/history",
+    "GET /users/18/acquaintance/issues",
     "GET /users/assessment/m8/cycles/cycle-b/status"
   ],
-  "report_navigation": []
+  "report_navigation": [
+    {
+      "cycle_id": "cycle-b",
+      "report_id": "report-b-confirmed",
+      "status": 200
+    }
+  ]
 }

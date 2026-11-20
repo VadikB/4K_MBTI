@@ -180,6 +180,36 @@ test('05.2 ready statuses open the exact full or limited report', async ({ page 
   await recordRequests(run, info);
 });
 
+async function captureOfflineComparison(page) {
+  const card = page.locator('#processing-outcome-card');
+  const reference = referenceFile ? await page.context().newPage() : null;
+  if (evidenceDir) await fs.mkdir(evidenceDir, { recursive: true });
+  try {
+    for (const width of [1440, 390]) {
+      const viewport = { width, height: width === 1440 ? 900 : 844 };
+      await page.setViewportSize(viewport);
+      for (const element of [outcomeTitle(page), progress(page), notice(page), outcomeButton(page, 'Повторить проверку')]) {
+        await expect(element).toBeInViewport({ ratio: 1 });
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await page.evaluate(() => document.fonts.ready);
+      if (evidenceDir) await card.screenshot({ path: path.join(evidenceDir, `returned-offline-product-${width}.png`) });
+      if (reference) {
+        await reference.setViewportSize(viewport);
+        await reference.goto(pathToFileURL(referenceFile).href + '?scene=outcome-offline');
+        const referenceCard = reference.locator('.center-card');
+        await expect(referenceCard.getByRole('heading')).toHaveText('Готовим результат');
+        await expect(referenceCard).toContainText('Не удалось проверить готовность.');
+        await expect(referenceCard.getByRole('button', { name: 'Повторить проверку' })).toBeInViewport({ ratio: 1 });
+        await reference.evaluate(() => document.fonts.ready);
+        if (evidenceDir) await referenceCard.screenshot({ path: path.join(evidenceDir, `returned-offline-reference-${width}.png`) });
+      }
+    }
+  } finally {
+    await reference?.close();
+  }
+}
+
 test('05.3 closing a Cycle, lost read, expiry, processing failure and access denial', async ({ page }, info) => {
   const run = await fixture(page);
   run.journey = { next_action: 'resume_assessment',
@@ -241,6 +271,72 @@ test('05.3 closing a Cycle, lost read, expiry, processing failure and access den
     'POST ' + cycleRoute + '/next', 'POST ' + cycleRoute + '/completion',
   ]);
   expect(run.calls).not.toContain('GET ' + statusPath(A));
+  await test.step('return to B after viewing A, then confirm and open the current report', async () => {
+    run.journey = { next_action: 'show_dashboard', report_status: 'ready',
+      assessment: { runtime_kind: 'cycle', cycle_id: A, status: 'report_ready' } };
+    run.status[A] = { ...ready, report_id: 'report-a', route_progress: { completed: 3, total: 3 } };
+    run.status[B] = { ...waiting, route_progress: { completed: 2, total: 8 } };
+    await openCabinet(page);
+    const visitStart = run.calls.length;
+    await cardAction(page, B).click();
+    await expect(outcomeTitle(page)).toHaveText('Спасибо за ваши ответы');
+    await expect(progress(page)).toHaveText('Завершено ситуаций: 2 из 8.');
+    await outcomeButton(page, 'В личный кабинет').click();
+    await cardAction(page, A).click();
+    await expect(outcomeTitle(page)).toHaveText('Ваш результат готов');
+    await expect(progress(page)).toHaveText('Завершено ситуаций: 3 из 3.');
+    await outcomeButton(page, 'В личный кабинет').click();
+
+    run.status[B] = (route) => route.abort('failed');
+    await cardAction(page, B).click();
+    await expect(outcomeTitle(page)).toHaveText('Готовим результат', { timeout: 2000 });
+    await expect(progress(page)).toHaveText('Завершено ситуаций: 2 из 8.');
+    await expect(notice(page)).toContainText('Не удалось проверить готовность');
+    await expect(outcomeButton(page, 'Посмотреть результат')).toBeHidden();
+    await expect(outcomeButton(page, 'Открыть отчёт с ограничениями')).toBeHidden();
+    expect(run.calls.slice(visitStart).filter((call) => call.endsWith('/status'))).toEqual([
+      'GET ' + statusPath(B), 'GET ' + statusPath(A), 'GET ' + statusPath(B),
+    ]);
+    await captureOfflineComparison(page);
+
+    const retry = delayed();
+    const reportId = 'report-b-confirmed';
+    const partialResult = { plan_completed: false, is_incomplete: true, progress: { completed: 2, planned: 8 } };
+    saveReport(run, B, reportId, partialResult);
+    run.status[B] = async (route) => {
+      await retry.promise;
+      return route.fulfill({ json: { ...ready, cycle_id: B, report_id: reportId,
+        route_progress: { completed: 2, total: 8 }, partial_result: partialResult } });
+    };
+    const retryStart = run.calls.length;
+    await outcomeButton(page, 'Повторить проверку').click();
+    try {
+      await expect.poll(() => run.calls.slice(retryStart)).toEqual(['GET ' + statusPath(B)]);
+      await expect(outcomeTitle(page)).toHaveText('Готовим результат');
+      await expect(outcomeButton(page, 'Посмотреть результат')).toBeHidden();
+    } finally {
+      retry.release();
+    }
+    await expect(outcomeTitle(page)).toHaveText('Ваш результат готов');
+    await expect(notice(page)).toBeHidden();
+    expect(run.calls.slice(retryStart)).toEqual(['GET ' + statusPath(B)]);
+    const reportResponse = page.waitForResponse((value) => new URL(value.url()).pathname === reportPath(reportId));
+    await outcomeButton(page, 'Посмотреть результат').click();
+    const opened = await reportResponse;
+    expect(opened.ok()).toBe(true);
+    await expect(page.locator('#m8-report-state')).toHaveText('Результат готов');
+    const selected = new URL(page.url()).searchParams;
+    expect(selected.get('cycle_id')).toBe(B);
+    expect(selected.get('report_id')).toBe(reportId);
+    run.navigations.push({ cycle_id: B, report_id: reportId, status: opened.status() });
+
+    await page.locator('#report-back-button').click();
+    run.status[B] = (route) => route.abort('failed');
+    await cardAction(page, B).click();
+    await expect(notice(page)).toContainText('Не удалось проверить готовность');
+    await expect(progress(page)).toHaveText('Завершено ситуаций: 2 из 8.');
+    await expect(outcomeButton(page, 'Посмотреть результат')).toBeHidden();
+  });
   await recordRequests(run, info);
 });
 

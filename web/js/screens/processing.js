@@ -25,7 +25,13 @@ const ANALYSIS_POLL_INTERVAL_MS = 1200;
 const CYCLE_POLL_INTERVAL_MS = 5000;
 const COLLECTION_CLOSED = new Set(['collection_closed', 'calculation_pending', 'calculated', 'failed']);
 const EXPIRY_REASONS = new Set(['time_budget', 'calendar_deadline']);
+const cycleSnapshotsByScope = new Map();
 let cycleView = null;
+
+const rememberCycleSnapshot = (view, snapshot) => {
+  view.snapshot = snapshot;
+  cycleSnapshotsByScope.set(view.scopeKey, snapshot);
+};
 
 const isCycleSelected = (view) => view.ownerId === state.pendingUser?.id
   && view.identityEpoch === state.identityEpoch && view.cycleId === state.productCycleId;
@@ -42,6 +48,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('agent4k:assessment-context-cleared', () => {
   cycleView?.request?.abort();
   cycleView = null;
+  cycleSnapshotsByScope.clear();
 });
 const ANALYSIS_STEP_LABELS = {
   queued: 'Ожидаем свободный обработчик',
@@ -157,7 +164,9 @@ export const openProcessing = ({ cycleId = state.productCycleId, confirmedCollec
     state.productCycleId = cycleId;
     state.assessmentRuntimeKind = 'cycle';
     persistAssessmentContext();
-    const budgetKey = 'p4k-report-wait:' + JSON.stringify([state.pendingUser?.id, cycleId]);
+    const ownerId = state.pendingUser?.id;
+    const scopeKey = JSON.stringify([ownerId, cycleId]);
+    const budgetKey = 'p4k-report-wait:' + scopeKey;
     let deadline = previous?.deadline;
     try {
       deadline ??= Number(window.sessionStorage.getItem(budgetKey)) || null;
@@ -165,11 +174,14 @@ export const openProcessing = ({ cycleId = state.productCycleId, confirmedCollec
       window.sessionStorage.setItem(budgetKey, String(deadline));
     } catch { /* Use the in-memory deadline when storage is unavailable. */ }
     cycleView = {
-      cycleId, ownerId: state.pendingUser?.id, identityEpoch: state.identityEpoch,
-      snapshot: previous?.snapshot ?? confirmedCollection,
+      cycleId, ownerId, scopeKey, identityEpoch: state.identityEpoch,
+      snapshot: cycleSnapshotsByScope.get(scopeKey) ?? null,
       completionPending: Boolean(completion),
       deadline: deadline ?? Date.now() + 60000, delay: CYCLE_POLL_INTERVAL_MS, polling: false,
     };
+    if (hasConfirmedClosure(confirmedCollection) && !hasConfirmedClosure(cycleView.snapshot)) {
+      rememberCycleSnapshot(cycleView, confirmedCollection);
+    }
   }
 
   setCurrentScreen('processing');
@@ -193,7 +205,7 @@ export const openProcessing = ({ cycleId = state.productCycleId, confirmedCollec
         view.completionPending = false;
         if (receipt?.cycle_id === view.cycleId && COLLECTION_CLOSED.has(receipt.states?.cycle)
             && !hasConfirmedClosure(view.snapshot)) {
-          view.snapshot = { collection_status: receipt.states.cycle, close_reason: receipt.reason };
+          rememberCycleSnapshot(view, { collection_status: receipt.states.cycle, close_reason: receipt.reason });
         }
         void pollAnalysisStatus();
       });
@@ -309,7 +321,7 @@ const renderCycleOutcome = (view, kind, { readError = false } = {}) => {
     preparationPanel.remove();
   }
 
-  const retry = preparation ? 'Проверить состояние'
+  const retry = preparation && kind !== 'offline' ? 'Проверить состояние'
     : readError && hasConfirmedClosure(snapshot) ? retryLabels.offline : retryLabels[kind];
   const actionsKey = JSON.stringify([kind, reportId, retry, view.completionPending]);
   if (view.actionsKey === actionsKey) return;
@@ -354,13 +366,14 @@ const pollCycleStatus = async (view) => {
     if (!isCurrent()) return;
     if (response.status === 403 || response.status === 404) {
       view.snapshot = null;
+      cycleSnapshotsByScope.delete(view.scopeKey);
       renderCycleOutcome(view, response.status === 403 ? 'accessDenied' : 'unavailable');
       return;
     }
     const snapshot = await readApiResponse(response, 'Не удалось получить состояние оценки.');
     if (!isCurrent()) return;
     if (snapshot.cycle_id && snapshot.cycle_id !== view.cycleId) throw new Error('Получен статус другой оценки.');
-    view.snapshot = snapshot;
+    rememberCycleSnapshot(view, snapshot);
     const kind = cycleOutcomeKind(snapshot);
     renderCycleOutcome(view, kind);
     view.polling = ['waiting', 'expired'].includes(kind);

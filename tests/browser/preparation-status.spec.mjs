@@ -202,7 +202,7 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
   reportReadError=false;reportPreparation.freshness='unconfirmed';
   // Refresh timestamps with controlled time while preserving operation start.
   reportPreparation.read_at=await page.evaluate(()=>new Date().toISOString());
-  await check.click();
+  await page.getByRole('button',{name:'Повторить проверку',exact:true}).click();
   await expect(reportRoot.locator('[data-preparation-notice]')).toHaveText('Сейчас не можем подтвердить, что подготовка продолжается');
   await snap(page,'report-unconfirmed',width);
   reportPreparation.freshness='confirmed';reportPreparation.delayed=false;
