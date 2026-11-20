@@ -287,6 +287,10 @@ const transcript = (step, userText, user = false) => '<section class="onboarding
   '</div><div class="onboarding-bubble">' + (user ? escape(userText) : (step.questionNumber ? '<p class="onboarding-question-number">' + escape(step.questionNumber) + '</p>' : '') + '<h3>' + escape(step.title) +
     '</h3><p' + (step.answerKey ? ' class="onboarding-question-hint"' : '') + '>' + escape(step.description) + '</p>' + (step.body || '')) + '</div></section>';
 
+const matchesIssueReceipt = (receipt, command) => Boolean(receipt?.id && receipt.status &&
+  receipt.operation_id === command.operation_id && receipt.assignment_id === command.assignment_id &&
+  receipt.questionnaire_revision_id === command.questionnaire_revision_id);
+
 const closeDialog = () => {
   const dialog = document.getElementById('onboarding-dialog');
   dialog.close(); dialogState = null;
@@ -300,6 +304,10 @@ const openDialog = (kind, trigger) => {
   dialogReturnFocus = trigger;
   dialogState = { kind, pending: false };
   const isAnswers = kind === 'answers';
+  const issueContext = {
+    assignment_id: model?.readiness?.assignment_id ?? model?.assignment_id ?? null,
+    questionnaire_revision_id: model?.readiness?.questionnaire_revision_id ?? null,
+  };
   dialog.innerHTML = '<form><button type="button" class="onboarding-dialog-close" aria-label="Закрыть">×</button>' +
     '<h2 id="onboarding-dialog-title">' + (isAnswers ? 'Ваши ответы' : 'Сообщить о неточности') + '</h2>' +
     (isAnswers ? answerLabels().map((label, index) => '<label for="onboarding-edit-' + index + '">' + escape(label) +
@@ -322,7 +330,9 @@ const openDialog = (kind, trigger) => {
   }
   if (field) field.value = ['ФИО', 'Организация', 'Должность', 'Роль'].includes(issueDraft?.field) ? issueDraft.field : 'ФИО';
   const saveIssueDraft = () => {
-    const draft = { field: field.value, text: inputs[0].value };
+    const prior = issueDrafts.get(scope) || issueDraft;
+    const draft = { field: field.value, text: inputs[0].value,
+      command: prior?.field === field.value && prior?.text === inputs[0].value ? prior.command : null };
     issueDrafts.set(scope, draft);
     try { window.sessionStorage.setItem(issueKey, JSON.stringify(draft)); } catch { /* Memory fallback. */ }
   };
@@ -370,19 +380,30 @@ const openDialog = (kind, trigger) => {
         model.state = result; savedAnswers = { ...result.answers_json }; answers = { ...savedAnswers }; writeDraft();
         closeDialog(); renderOnboarding(); document.getElementById('onboarding-edit-answers')?.focus();
       } else {
-        const receipt = await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify({ message }) });
+        const prior = issueDrafts.get(scope) || issueDraft;
+        const command = prior?.command?.message === message ? prior.command
+          : { message, operation_id: createOperationId(), ...issueContext };
+        const draft = { field: field.value, text: inputs[0].value, command };
+        issueDrafts.set(scope, draft);
+        try { window.sessionStorage.setItem(issueKey, JSON.stringify(draft)); } catch { /* Memory fallback. */ }
+        const receipt = await api('/acquaintance/issues', { method: 'POST', body: JSON.stringify(command) });
         if (!current()) return;
-        if (!receipt?.id || !receipt.status) throw new Error('Сохранение сообщения не подтверждено. Ваш текст оставлен для повтора.');
+        if (!matchesIssueReceipt(receipt, command)) throw new Error('Сохранение сообщения не подтверждено. Ваш текст оставлен для повтора.');
         showIssueReceipt();
       }
     } catch (error) {
       if (!isAnswers && current()) {
         try {
-          const readback = await api('/acquaintance/issues');
-          if (current() && readback?.items?.some(item => item.message === message &&
-            item.assignment_ref === (model?.readiness?.assignment_ref ?? null) &&
-            item.assignment_id === (model?.readiness?.assignment_id ?? null))) {
-            showIssueReceipt(); return;
+          const command = issueDrafts.get(scope)?.command;
+          if (command) {
+            const query = new URLSearchParams();
+            for (const key of ['assignment_id', 'questionnaire_revision_id']) {
+              if (command[key] != null) query.set(key, command[key]);
+            }
+            const readback = await api('/acquaintance/issues/operations/' + encodeURIComponent(command.operation_id) + '?' + query);
+            if (current() && matchesIssueReceipt(readback, command)) {
+              showIssueReceipt(); return;
+            }
           }
         } catch { /* The draft stays available for a later retry. */ }
       }

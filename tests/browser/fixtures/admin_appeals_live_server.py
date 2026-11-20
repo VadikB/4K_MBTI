@@ -33,12 +33,14 @@ with psycopg.connect(DB_URL, row_factory=dict_row) as connection:
     connection.execute(sql.SQL('CREATE SCHEMA {}').format(sql.Identifier(SCHEMA)))
     connection.commit()
 with connect() as connection:
-    connection.execute('CREATE TABLE users(id BIGINT PRIMARY KEY)')
+    connection.execute('CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT)')
     connection.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY)')
     connection.execute('CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)')
-    connection.execute('INSERT INTO users VALUES(1),(2),(3)')
+    connection.execute("INSERT INTO users VALUES(1,'Тестовый участник'),(2,'Тестовый администратор'),(3,'Другой участник')")
     connection.execute('INSERT INTO organizations VALUES(10)')
     connection.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin'),(10,3,'member')")
+    connection.execute("CREATE TABLE organization_assessment_assignments(id BIGINT,recipient_user_id BIGINT,status TEXT,revoked_at TIMESTAMP)")
+    connection.execute("INSERT INTO organization_assessment_assignments VALUES(11,1,'active',NULL)")
     ensure_appeals_schema(connection)
     connection.commit()
 

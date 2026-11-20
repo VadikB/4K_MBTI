@@ -113,7 +113,10 @@ def test_w02_readiness_answers_consent_and_tenant_issue_are_independent_from_m4(
             "answer_1": "Ответ 1", "answer_2": "Не знаю", "answer_3": "Ответ 3",
         }
         assert confirmed["answers_confirmed_at"] is not None
-        issue = report_issue(connection, user_id=1, message="Неточно указано подразделение")
+        from Api.database import ensure_appeals_schema
+        ensure_appeals_schema(connection)
+        readiness = early_readiness(connection, user_id=1)
+        issue = report_issue(connection, user_id=1, message="Неточно указано подразделение", operation_id=str(uuid4()), questionnaire_revision_id=readiness["questionnaire_revision_id"])
         stored = connection.execute(
             "SELECT organization_id FROM participant_data_issue_reports WHERE id=%s", (issue["id"],),
         ).fetchone()

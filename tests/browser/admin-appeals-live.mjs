@@ -103,6 +103,7 @@ try {
   });
   await readPage.getByRole('heading', {name: 'Ответ по вашему обращению'}).waitFor();
   await readPage.getByText('Синтетическая запись проверена').waitFor();
+  await readPage.getByText('Тестовый администратор', {exact: false}).waitFor();
   console.log(JSON.stringify({result: 'PASS', created_id: created.id, issue: evidence.issue, reply: evidence.reply, owner_isolation: denied, participant_readback: true}));
   await Promise.all([participant.close(), admin.close(), other.close(), newSession.close()]);
 } finally {
