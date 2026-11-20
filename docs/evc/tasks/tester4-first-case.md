@@ -207,3 +207,27 @@ SHA-256 обновлённого операционного входа:
 preview/confirm/replay проекта PASS, transaction rollback, provider_calls=0.
 HTTP на новой базе: 232 PASS. Backend и полный integration выполняются заново;
 окончательный CI и deploy остаются PENDING до точного head нового кандидата.
+
+### Финальная база ASUX-02/03, кандидат 2.1.50
+
+Main повторно обновился (#267), SHA db7ffbf0, версия 2.1.49. Сохранён merge его
+изменений; generated bundle пересобран, ready:prepare --candidate 2.1.50 PASS.
+В M10 добавлены response_format и answer_processing; существующие participant_payload,
+trace и progress не изменены. Канал читает прежнюю безопасную проекцию, закрытые
+карточки персонажей не передаёт. Собственные API/предметная логика после merge
+не менялись. Повторяются backend/HTTP, затронутые M10 PostgreSQL тесты и frontend;
+полный CI требуется для нового head. Предыдущий полный local integration:
+494 PASS / 2 explicit real-provider SKIP; тесты незатронутых потребителей переиспользуются.
+
+Финальный project preview подтверждается по checksum нормализованных answers_json,
+а не по checksum отсутствующего CSV. Отдельная регрессия отклоняет изменение
+preview до публикации; canonical full-schema probe preview/confirm/replay PASS,
+rollback, provider_calls=0. Финальный backend до ASUX merge: 1321 PASS; HTTP 232 PASS;
+frontend после обоих merge: 472 PASS. Ветка бота PR #8: opaque UUID, явные кнопки,
+читаемый Case; transport key не содержит и не хеширует Telegram ID.
+
+После ASUX merge: backend 1321 PASS, HTTP 235 PASS, frontend 472 PASS;
+затронутые M10 path/Turn replay + opaque/project unit/HTTP/PostgreSQL — 45 PASS.
+Новые поля main совместимы с каналом; собственные Api/telegram_* не изменены.
+Полный CI выполняется для финального commit 2.1.50. Изменение только номера
+после продвижения main не считается новым предметным выпуском/допуском.
