@@ -290,6 +290,11 @@ const bootApp = async () => {
           document.getElementById('profile-history-list')?.prepend(notice);
           return;
         }
+        const outcomeCycleId = screen === 'processing' && params.get('cycle_id');
+        if (outcomeCycleId) {
+          await openProcessingScreen({ cycleId: outcomeCycleId });
+          return;
+        }
         const journey = await loadUserJourneyState();
         applyJourneyAssessmentContext(journey);
         if (journey?.next_action === 'wait_for_acquaintance_data') {
@@ -316,12 +321,7 @@ const bootApp = async () => {
           return;
         }
         if (['show_processing', 'show_assessment_error'].includes(journey?.next_action)) {
-          await openProcessingScreen({
-            initialCycleSnapshot: state.assessmentRuntimeKind === 'cycle' ? {
-              results_status: journey?.assessment?.status === 'failed' ? 'failed' : 'processing',
-              report_status: journey?.report_status || 'not_ready',
-            } : null,
-          });
+          await openProcessingScreen();
           return;
         }
         if (journey?.next_action === 'show_dashboard') {

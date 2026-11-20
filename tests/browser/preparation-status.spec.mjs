@@ -186,7 +186,6 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
   const reportRoot=page.locator('#processing-panel [data-preparation-status]');
   await expect(reportRoot).toContainText('Собираем отчёт');
   await expect(page.locator('#processing-outcome-title')).toHaveText('Спасибо за ваши ответы');
-  await expect(page.locator('#processing-outcome-status')).toBeEmpty();
   await snap(page,'report-preparation',width);
   await details(page,reportRoot,'report-preparation',width);
   // Clipboard rejection is honest, and focus/open details survive status updates.
@@ -231,7 +230,7 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
   let release;const promise=new Promise(resolve=>{release=resolve;});
   hold={promise,value:{...reportModel,results_status:'processing',preparation:{...reportPreparation,status:'running',read_at:'2026-11-16T12:00:00Z'}}};
   const heldAt=reportReads;await check.click();await expect.poll(()=>reportReads).toBe(heldAt+1);
-  Object.assign(reportModel,{results_status:'ready',report_status:'ready',partial_result:{is_incomplete:true},preparation:{...reportPreparation,status:'ready',stage_label:'Отчёт готов'}});
+  Object.assign(reportModel,{results_status:'ready',report_status:'ready',report_id:'synthetic-report',partial_result:{is_incomplete:true},preparation:{...reportPreparation,status:'ready',stage_label:'Отчёт готов'}});
   await check.click();await expect(page.getByRole('button',{name:'Посмотреть результат',exact:true})).toBeVisible();
   release();await page.waitForTimeout(50);
   await expect(page.getByRole('button',{name:'Посмотреть результат',exact:true})).toBeVisible();

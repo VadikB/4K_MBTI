@@ -75,7 +75,6 @@ export const state = {
   productAssessmentSituationId: null,
   productClarificationDecisionId: null,
   productCycleStatus: null,
-  productReportStatus: null,
   skillAssessments: [],
   reportCompetencyTab: 'Коммуникация',
   reportReturnTarget: 'home',
@@ -275,7 +274,6 @@ export const applyJourneyAssessmentContext = (journey) => {
   state.assessmentRuntimeKind = assessment.runtime_kind || null;
   state.productCycleId = assessment.cycle_id || null;
   state.productAssessmentSituationId = assessment.assessment_situation_id || null;
-  state.productReportStatus = journey?.report_status || null;
   persistAssessmentContext();
 };
 

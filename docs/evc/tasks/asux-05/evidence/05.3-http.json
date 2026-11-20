@@ -1,0 +1,20 @@
+{
+  "requests": [
+    "GET /users/version",
+    "GET /users/session/restore",
+    "GET /users/18/journey-state",
+    "GET /users/assessment/m7/cycles/cycle-b/return-state",
+    "GET /users/assessment/cycles/cycle-b/runtime",
+    "POST /users/assessment/m7/cycles/cycle-b/next",
+    "POST /users/assessment/m7/cycles/cycle-b/completion",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/reports/report-b",
+    "GET /users/version",
+    "GET /users/18/session-bootstrap",
+    "GET /users/assessment/m8/cycles/cycle-b/status",
+    "GET /users/assessment/m8/cycles/cycle-b/status"
+  ],
+  "report_navigation": []
+}
