@@ -46,3 +46,14 @@
 - Каркас карточки 02 остаётся зависимостью визуальной интеграции. Скриншоты, измерения и конкретные отличия собраны в приложении «P4K-SUP-UX-03 · Визуальная сверка». После принятия 02 нужно повторить визуальный прогон на объединённой базе. CI проверяется на точном кандидате перед слиянием.
 
 Браузерный стенд остановлен. Команда `scripts/test_stand.py destroy` подтвердила владение, удаление временной PostgreSQL-базы и удаление локального файла состояния.
+
+## Обновление draft PR #280 от main, 21.11.2026
+
+По поручению владельца ветка обновлена от `dea4d565b637ad2bda15075aef94ecbacaf47f39` / 2.1.58 (P4K-SUP-UX-01, #279). Предыдущий head `2af50394` сохранён в истории. Конфликты относились к `web/dist`. Сборка заново получена из объединённых исходников, повторная сборка совпала с Git-индексом. Серверный код и регрессии карточки совпадают с предыдущим head. Версия 2.1.58 унаследована от базы.
+
+- `npm run lint:js`, `npm run build:web`, `git diff --exit-code -- web/dist` после повторной сборки, `git diff --cached --check` — PASS.
+- `node --test tests/frontend/*.test.mjs tests/unit/test_assessment_preparation_receipt.mjs tests/unit/test_assessment_receipt_file.mjs` — 539 PASS.
+- `npx playwright test tests/browser/auth-r03.spec.mjs --grep 'P4K-SUP-UX-01|ADM-STATUS-01' --workers=1` — 4 PASS на синтетических ответах, включая навигацию кабинета и мобильную вёрстку.
+- `python -m pytest -q tests/e2e/{test_arch30_membership_http,test_f01_role_isolation_http,test_m8_report_access_http}.py tests/unit/test_org_admission.py` — 34 PASS. Профиль `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0`.
+- Снимки из исходного отчёта относятся к `2af50394`. Зависимость экранной интеграции от карточки 02 сохраняется. Полный integration/browser CI и release gate относятся к этапу Ready. Результат быстрого CI актуального head фиксируется в [PR #280](https://github.com/VadikB/4K_MBTI/pull/280).
+- `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`. Для восстановления рабочего состояния есть прежний коммит `2af50394`. Обновление ветки выполняется без переписывания истории.

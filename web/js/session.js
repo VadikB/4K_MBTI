@@ -102,7 +102,8 @@ export const restoreServerSession = async () => {
   if (!data.authenticated || !data.user) {
     return false;
   }
-  restoreAssessmentArea = restoreAssessmentArea && Number(state.pendingUser?.id) === Number(data.user.id);
+  restoreAssessmentArea = restoreAssessmentArea && !data.admin_dashboard?.is_superadmin &&
+    Number(state.pendingUser?.id) === Number(data.user.id);
   if (state.pendingUser?.id !== data.user.id) { clearAssessmentContext(); clearProfileDisplay(); }
   advanceSessionGeneration({ broadcast: false });
   state.pendingUser = data.user;
@@ -118,7 +119,7 @@ export const restoreServerSession = async () => {
     state.pendingRoleOptions = [];
     state.pendingNoChangesQuickReply = false;
     if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) {
-      state.currentScreen = state.adminDashboard?.is_superadmin ? 'admin' : 'admin-organizations';
+      state.currentScreen = 'admin-organizations';
     }
   } else if (!state.currentScreen || state.currentScreen === 'auth') {
     state.currentScreen = 'auth';
@@ -146,14 +147,14 @@ export const restoreLocalUserSession = async () => {
     state.canAdmin = state.isAdmin;
     state.adminDashboard = data.admin_dashboard || null;
     if (state.isAdmin) {
-      state.activeArea = restoreAssessmentArea ? 'assessment' : 'management';
-      state.isAdmin = !restoreAssessmentArea;
+      state.activeArea = restoreAssessmentArea && !state.adminDashboard?.is_superadmin ? 'assessment' : 'management';
+      state.isAdmin = state.activeArea === 'management';
       state.sessionId = null;
       state.pendingAgentMessage = null;
       state.pendingRoleOptions = [];
       state.pendingNoChangesQuickReply = false;
       if (!restoreAssessmentArea && !state.currentScreen?.startsWith('admin')) {
-        state.currentScreen = state.adminDashboard?.is_superadmin ? 'admin' : 'admin-organizations';
+        state.currentScreen = 'admin-organizations';
       }
     } else if (!state.currentScreen || state.currentScreen === 'auth') {
       state.currentScreen = 'auth';
