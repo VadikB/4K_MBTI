@@ -33,6 +33,7 @@ class Decision:
     controlled_test: bool = False
     prompt_ref: dict | None = None
     ai_trace: dict | None = None
+    details: dict | None = None
 
     def as_dict(self) -> dict:
         return {
@@ -41,6 +42,7 @@ class Decision:
             "adapter": self.adapter, "model": self.model, "controlled_test": self.controlled_test,
             "prompt_ref": self.prompt_ref,
             "ai_trace": self.ai_trace,
+            **({"details": self.details} if self.details is not None else {}),
         }
 
 
@@ -266,8 +268,14 @@ class ControlledSemanticAdapter:
 
     def decide(self, *, rule: dict, text: str, turn_id: str, context: dict) -> Decision:
         value = self.outcomes.get(rule["rule_id"], "UNKNOWN")
-        outcome = RuleOutcome(value)
-        return Decision(outcome, rule.get("decision_code", "CONTROLLED"), "controlled fixture",
+        if value in rule.get("allowed_codes", ()):
+            code = value
+            outcome = RuleOutcome.TRUE if value in rule.get("true_codes", (rule.get("true_code", "MATCH"),)) else (
+                RuleOutcome.UNKNOWN if value == "UNKNOWN" else RuleOutcome.FALSE)
+        else:
+            code = rule.get("decision_code", "CONTROLLED")
+            outcome = RuleOutcome(value)
+        return Decision(outcome, code, "controlled fixture",
                         (turn_id,), adapter="controlled", controlled_test=True)
 
 
@@ -294,9 +302,14 @@ class DeepSeekSemanticAdapter:
             "message": text, "factual_context": context,
         }
         ai_trace = None
+        system_prompt = self.prompt
+        detail_codes = rule.get("detail_codes", ())
+        if detail_codes:
+            system_prompt += ("\nДля кодов " + ", ".join(detail_codes)
+                              + " также верни объект details по переданному условию.")
         try:
             raw, ai_trace = _call_with_trace(
-                self.gateway, [{"role": "system", "content": self.prompt},
+                self.gateway, [{"role": "system", "content": system_prompt},
                                {"role": "user", "content": json.dumps(prompt, ensure_ascii=False)}],
                 operation=self.operation,
                 routing_key="m5-semantic:" + hashlib.sha256(json.dumps(prompt, sort_keys=True).encode()).hexdigest(),
@@ -311,10 +324,16 @@ class DeepSeekSemanticAdapter:
                 return Decision(RuleOutcome.ERROR, "SEMANTIC_OUTPUT_INVALID", "code outside enum",
                                 (turn_id,), adapter="deepseek", model=self.operation["model"], prompt_ref=self.prompt_ref,
                                 ai_trace=ai_trace)
-            outcome = RuleOutcome.TRUE if code == rule.get("true_code", "MATCH") else (
+            outcome = RuleOutcome.TRUE if code in rule.get("true_codes", (rule.get("true_code", "MATCH"),)) else (
                 RuleOutcome.UNKNOWN if code == "UNKNOWN" else RuleOutcome.FALSE)
+            details = value.get("details") if code in detail_codes else None
+            if code in detail_codes and not isinstance(details, dict):
+                return Decision(RuleOutcome.ERROR, "SEMANTIC_OUTPUT_INVALID", "details must be an object",
+                                (turn_id,), adapter="deepseek", model=self.operation["model"],
+                                prompt_ref=self.prompt_ref, ai_trace=ai_trace)
             return Decision(outcome, code, str(value.get("basis") or ""), (turn_id,),
-                            adapter="deepseek", model=self.operation["model"], prompt_ref=self.prompt_ref, ai_trace=ai_trace)
+                            adapter="deepseek", model=self.operation["model"], prompt_ref=self.prompt_ref,
+                            ai_trace=ai_trace, details=details)
         except Exception as exc:
             return Decision(RuleOutcome.ERROR, "SEMANTIC_ADAPTER_ERROR", type(exc).__name__,
                             (turn_id,), adapter="deepseek", model=self.operation["model"], prompt_ref=self.prompt_ref,

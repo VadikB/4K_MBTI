@@ -132,3 +132,36 @@ def test_semantic_adapter_rejects_sent_model_different_from_snapshot():
     )
     assert result.outcome == RuleOutcome.ERROR
     assert result.code == "M5_AI_SENT_CONFIG_MISMATCH"
+
+
+@pytest.mark.parametrize("details,expected", [
+    ('{"recipient_ids":["COLLEAGUE_3"],"text":"Новая граница"}', RuleOutcome.TRUE),
+    ("null", RuleOutcome.ERROR),
+])
+def test_semantic_adapter_requires_structured_transfer_details(details, expected):
+    operation = build_m5_ai_operations_snapshot()["semantic_decision"]
+
+    class Gateway:
+        enabled = True
+        model = operation["model"]
+        base_url = operation["endpoint"].removesuffix("/chat/completions")
+
+        def chat_with_trace(self, messages, **kwargs):
+            assert "объект details" in messages[0]["content"]
+            return LlmResponse(
+                '{"code":"DELEGATE","basis":"confirmed","details":' + details + '}',
+                {"model": operation["model"]},
+                {"provider": operation["provider"], "endpoint": operation["endpoint"],
+                 "model": operation["model"], "parameters": operation_parameters(operation), "messages": messages},
+            )
+
+    decision = DeepSeekSemanticAdapter(Gateway(), operation=operation).decide(
+        rule={"rule_id": "E02_TRANSFER", "allowed_codes": ["DIRECT", "DELEGATE", "UNKNOWN"],
+              "true_codes": ["DIRECT", "DELEGATE"], "detail_codes": ["DIRECT", "DELEGATE"]},
+        text="Передайте Рите новое условие.", turn_id="turn", context={},
+    )
+    assert decision.outcome == expected
+    if expected == RuleOutcome.TRUE:
+        assert decision.details == {"recipient_ids": ["COLLEAGUE_3"], "text": "Новая граница"}
+    else:
+        assert decision.code == "SEMANTIC_OUTPUT_INVALID"

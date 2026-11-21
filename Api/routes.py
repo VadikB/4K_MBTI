@@ -6663,7 +6663,7 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
         return m5_scenario_runtime.submit_turn_detached(
             assessment_situation_id=str(assessment_situation_id), request_id=payload.request_id,
             turn_id=str(payload.turn_id), content=payload.content, semantic_adapter=semantic_adapter,
-            character_adapter=character_adapter, connection_factory=get_connection,
+            character_adapter=character_adapter, connection_factory=get_connection, enqueue_interim_by=int(user.id),
         )
     except ValueError as exc:
         if str(exc)=='M7_TIME_LIMIT_REACHED':_persist_time_expiry_for_situation(str(assessment_situation_id))

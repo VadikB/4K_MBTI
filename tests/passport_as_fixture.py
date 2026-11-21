@@ -1,6 +1,6 @@
 """Small synthetic AS values for transport and persistence tests."""
 
-def synthetic_as(payload: dict) -> dict:
+def synthetic_as(payload: dict, *, variant: int = 0) -> dict:
     case = payload["case"]
     passport = case["Паспорт"]
     scenario = passport["17 Сценарий Dialogue"]
@@ -15,7 +15,7 @@ def synthetic_as(payload: dict) -> dict:
         speakers = characters if not updates else []
         function = "material_update" if updates else "character_reaction" if speakers else "facilitator_action"
         bindings[event["EventID"]] = {"function": function, "speaker_ids": speakers, "material_ids": updates}
-    return {
+    candidate = {
         "AssessmentSituationID": "AS-SYNTHETIC:" + case["CaseID"], "Version": "1",
         "CaseID": case["CaseID"], "CaseVersion": case["Version"],
         "CaseTypeIDs": passport["3 CaseTypeIDs"], "BaseRole": payload["requirements"]["base_role"],
@@ -39,3 +39,7 @@ def synthetic_as(payload: dict) -> dict:
             "character_refs": characters[:1], "authority_refs": ["participant"],
         } for indicator_id in targets["Точный перечень"]],
     }
+    if design := payload.get("scenario_contract"):
+        from tests.spec03_fixture import adapt_spec03
+        return adapt_spec03(candidate, design, variant)
+    return candidate
