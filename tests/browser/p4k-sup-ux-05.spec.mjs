@@ -1,8 +1,12 @@
+import { readFile } from 'node:fs/promises';
 import { test, expect } from '@playwright/test';
 import { startAdminProgramPreview } from '../../scripts/adm-program-ui-preview.mjs';
 
 const reference = 'P4K-AB0123456789CD0123456789';
 const endpoint = '/users/admin/support/preparation';
+const release = (await readFile(new URL('../../web/js/config.js', import.meta.url), 'utf8'))
+  .match(/APP_RELEASE = "([^"]+)";/)?.[1];
+if (!release) throw new Error('web/js/config.js must define APP_RELEASE');
 const failure = {
   reference, organization_id: 3, assignment_id: 41, previous_position: 1, state: 'admission_denied', operation_status: 'failed',
   source: 'product_cycle_preparation_operations', stage_source: 'preparation_observations', stage: 'checking',
@@ -24,7 +28,7 @@ for (const width of [1440, 390, 320]) {
     const packet = [
       'Подготовка следующей ситуации',
       'Контур: local · ' + preview.base,
-      'Версия продукта при чтении: 2.1.58',
+      'Версия продукта при чтении: ' + release,
       'Организация: #3 · ' + preview.base + '/?screen=admin-organizations&org=3',
       'Поколение назначения: #41',
       'Номер подготовки: ' + reference,
