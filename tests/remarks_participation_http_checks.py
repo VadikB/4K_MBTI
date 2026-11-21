@@ -183,8 +183,19 @@ def main(base):
     superadmin.request('POST', f'/users/admin/users/{candidate_id}/transfer-organization', expected=410,
         code='ORGANIZATION_TRANSFER_REMOVED', payload={'expected_source_organization_id': org,
             'target_organization_id': foreign_org, 'target_role': 'member', 'operation_id': 'removed-transfer-test'})
-    # Revoking authority remains a distinct action and keeps participation.
+    # Preserve one organization administrator, then revoke the dual role.
+    superadmin.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'},
+        expected=409, code='LAST_ORGANIZATION_ADMIN')
+    replacement_email = 'replacement-admin@example.test'
+    changed = superadmin.request('POST', org_path + '/admins', payload={
+        'email': replacement_email, 'full_name': 'Synthetic replacement admin'})
+    current = next(item for item in changed['items'] if item['id'] == org)
+    assert current['members_count'] == 3
+    assert {item['email']: item['is_participant'] for item in current['admins']} == {
+        'other@example.test': True, replacement_email: False,
+    }
     superadmin.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'})
+    admin.request('GET', org_path + '/assessment-source-options', expected=403)
     with get_connection() as connection:
         assert connection.execute('''SELECT role,is_participant FROM organization_memberships
             WHERE user_id=%s''', (admin_id,)).fetchone() == {'role': 'member', 'is_participant': True}

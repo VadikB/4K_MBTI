@@ -339,10 +339,13 @@ const membershipErrorMessage = (error, fallback) => {
   if (message.includes('ORGANIZATION_MEMBERSHIP_CONFLICT:')) {
     return message.split('ORGANIZATION_MEMBERSHIP_CONFLICT:', 2)[1].trim();
   }
+  if (message === 'ORGANIZATION_ACCESS_PAUSED') return 'Организация неактивна. Изменение доступа станет доступно после восстановления.';
+  if (message === 'LAST_ORGANIZATION_ADMIN') return 'Чтобы снять права у последнего администратора, сначала добавьте другого сотрудника.';
+  if (message === 'ADMIN_EMAIL_ALREADY_LINKED') return 'Эта почта уже привязана к другому аккаунту. Укажите отдельную именную почту.';
   if (error?.status === 401) return 'Сессия истекла. Войдите снова; введённые данные формы сохранены в этой вкладке.';
   if (error?.name === 'RequestDeadlineError') return 'Не удалось подтвердить результат операции. Обновите список перед безопасным повтором.';
   if (error instanceof TypeError) return 'Не удалось связаться с сервером. Проверьте соединение.';
-  if (Number(error?.status) >= 500) return 'Не удалось добавить пользователя. Произошла ошибка сервиса.';
+  if (Number(error?.status) >= 500) return fallback + ' Произошла ошибка сервиса.';
   return message || fallback;
 };
 
@@ -760,7 +763,7 @@ const trackOperation = (event) => {
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
   if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
-    'open-member-card', 'open-member-report'].includes(button.dataset.action))) return;
+    'open-member-card', 'open-member-report', 'view-admin-access'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -768,11 +771,12 @@ const trackOperation = (event) => {
   const selector = form ? 'form[data-action="' + CSS.escape(form.dataset.action) + '"]'
     : root.matches('.admin-questionnaire-preview')
       ? '.admin-questionnaire-preview[data-questionnaire-revision-id="' + root.dataset.questionnaireRevisionId + '"]'
-      : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
+      : root.closest('[data-organization-admins]') ? '[data-organization-admins]'
+        : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
   // Keep the result anchor, but a confirmation dialog is not a running command.
   if (form?.dataset.action !== 'preview-early-data' &&
-      !['cancel-member-assignment', 'revoke-member-invitation', 'purge-account',
+      !['cancel-member-assignment', 'revoke-member-invitation', 'purge-account', 'delete-admin',
         'confirm-questionnaire', 'check-questionnaire-confirmation', 'open-organization-reports'].includes(button?.dataset.action)) {
     setStatus('Выполняем действие…', 'loading');
   }
@@ -1103,42 +1107,52 @@ export const deleteAdminOrganizationDomain = async (organizationId, domain) => {
   }
 };
 
-export const addAdminOrganizationAdmin = async (organizationId, email) => {
+const organizationAdminSection = (organizationId) => adminOrganizationsList?.querySelector(
+  '[data-organization-id="' + Number(organizationId) + '"] [data-organization-admins]',
+);
+
+export const addAdminOrganizationAdmin = async (organizationId, { email, full_name }) => {
   const normalizedEmail = String(email || '').trim();
-  if (!normalizedEmail) {
-    setStatus('Укажите email администратора.', 'error');
-    return;
-  }
+  if (!normalizedEmail) return false;
+  const fallback = 'Не удалось добавить администратора.';
   try {
     const identityEpoch = state.identityEpoch;
     const identityKey = currentIdentityKey();
     await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/admins',
-      { method: 'POST', body: JSON.stringify({ email: normalizedEmail }) },
-      'Не удалось добавить администратора.',
+      { method: 'POST', body: JSON.stringify({ email: normalizedEmail, full_name: full_name || null }) },
+      fallback,
     );
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
-        !await refreshAdminOrganizationsSafely()) return;
-    setStatus('Администратор добавлен.', 'success');
+        !await refreshAdminOrganizationsSafely()) return false;
+    const section = organizationAdminSection(organizationId);
+    const form = section?.querySelector('form[data-action="add-admin"]');
+    if (form?.elements.email.value.trim() === normalizedEmail &&
+        form.elements.full_name.value.trim() === full_name) form.reset();
+    setStatus('Администратор добавлен.', 'success', section);
+    return true;
   } catch (error) {
-    setStatus(membershipErrorMessage(error, 'Не удалось добавить администратора.'), 'error');
+    setStatus(membershipErrorMessage(error, fallback), 'error', organizationAdminSection(organizationId));
+    return false;
   }
 };
 
 export const deleteAdminOrganizationAdmin = async (organizationId, email) => {
+  const fallback = 'Не удалось снять права администратора.';
+  setStatus('Снимаем права администратора…', 'loading', organizationAdminSection(organizationId));
   try {
     const identityEpoch = state.identityEpoch;
     const identityKey = currentIdentityKey();
     await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/admins?email=' + encodeURIComponent(email),
       { method: 'DELETE', headers: {} },
-      'Не удалось снять права администратора.',
+      fallback,
     );
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         !await refreshAdminOrganizationsSafely()) return;
-    setStatus('Права администратора сняты.', 'success');
+    setStatus('Права администратора сняты.', 'success', organizationAdminSection(organizationId));
   } catch (error) {
-    setStatus(error.message || 'Не удалось снять права администратора.', 'error');
+    setStatus(membershipErrorMessage(error, fallback), 'error', organizationAdminSection(organizationId));
   }
 };
 
@@ -2401,33 +2415,52 @@ export const mountAdminMemberPurge = (dialog, organizationId, userId) => {
   }
 };
 
-const renderTagList = (items, emptyText, className, deleteAction, { canDeletePerson = false } = {}) => {
-  if (!items.length) {
-    return '<p class="admin-organizations-empty">' + escapeHtml(emptyText) + '</p>';
-  }
-  return (
-    '<div class="admin-organizations-tags">' +
-    items
-      .map((item) => {
-        const label = typeof item === 'string' ? item : item.email;
-        return (
-          '<span class="admin-organizations-tag ' + className + '">' +
-          '<span>' +
-          escapeHtml(label) +
-          '</span>' + (deleteAction ?
-          '<button type="button" data-action="' +
-          deleteAction +
-          '" data-value="' +
-          escapeHtml(label) +
-          '" aria-label="' + (deleteAction === 'delete-admin' ? 'Снять права администратора' : 'Удалить домен') + '">' +
-          (deleteAction === 'delete-admin' ? 'Снять права' : '×') + '</button>' : '') +
-          (className === 'admin' ? renderAccountPurgeButton(item, { available: canDeletePerson }) : '') +
-          '</span>'
-        );
-      })
-      .join('') +
-    '</div>'
-  );
+const renderOrganizationDomains = (domains) => domains.length
+  ? '<div class="admin-organizations-tags">' + domains.map((domain) =>
+    '<span class="admin-organizations-tag domain"><span>' + escapeHtml(domain) + '</span>' +
+    '<button type="button" data-action="delete-domain" data-value="' + escapeHtml(domain) +
+    '" aria-label="Удалить домен">×</button></span>').join('') + '</div>'
+  : '<p class="admin-organizations-empty">Домены не заданы.</p>';
+
+const renderOrganizationAdmins = (org, canDeletePerson) => {
+  const admins = org.admins || [];
+  const active = org.is_active !== false;
+  const canRevoke = active && admins.length > 1;
+  const note = !active ? 'Организация неактивна. Изменение доступа станет доступно после восстановления.'
+    : admins.length === 1 ? 'Чтобы снять права у последнего администратора, сначала добавьте другого сотрудника.' : '';
+  const rows = admins.map((item) => {
+    const name = escapeHtml(item.full_name || item.email);
+    const email = escapeHtml(item.email);
+    const participation = item.is_participant === true ? 'Также участник оценки'
+      : item.is_participant === false ? 'Только административный доступ' : 'Участие не указано';
+    const accessData = ' data-value="' + email + '" data-participant="' + String(item.is_participant) +
+      '" data-person-name="' + name + '"';
+    const viewAccessData = ' type="button" data-action="view-admin-access"' + accessData + ' data-active="' + active + '"';
+    const identity = '<button class="text-button admin-access-name"' + viewAccessData + '>' + name + '</button>';
+    const view = '<button class="text-button admin-access-link"' + viewAccessData +
+      ' aria-label="Права доступа · ' + name + '">Права доступа</button>';
+    const revoke = canRevoke ? '<button class="ghost-button compact-ghost" type="button" data-action="delete-admin"' +
+      accessData + '>Снять права</button>' : '';
+    const purge = renderAccountPurgeButton(item, { available: canDeletePerson });
+    const actions = revoke + purge;
+    return '<li class="admin-access-row"><div>' + identity +
+      (item.full_name ? '<p>' + email + '</p>' : '') + '</div>' +
+      '<div><strong class="admin-access-role' + (active ? '' : ' is-paused') + '">' +
+      (active ? 'Администратор' : 'Доступ приостановлен') + '</strong><p>' + participation + '</p></div>' +
+      '<div class="admin-access-actions">' + view +
+      (actions ? renderMemberMenu(actions, 'Другие действия · ' + (item.full_name || item.email)) : '') + '</div></li>';
+  }).join('');
+  return '<section class="admin-access-workspace' + (active ? '' : ' is-paused') + '" data-organization-admins>' +
+    '<div class="admin-access-panel"><h4>Администраторы организации</h4>' +
+    (rows ? '<ul class="admin-access-list">' + rows + '</ul>'
+      : '<p class="admin-organizations-empty">Администраторов пока нет.</p>') +
+    (note ? '<p class="admin-access-note">' + note + '</p>' : '') + '</div>' +
+    (active ? '<form class="admin-access-panel admin-access-form" data-action="add-admin">' +
+      '<h4>Добавить администратора</h4><label><span>Рабочая почта</span>' +
+      '<input type="email" name="email" placeholder="name@example.test" maxlength="254" required></label>' +
+      '<label><span>ФИО, если известно</span><input name="full_name" maxlength="180"></label>' +
+      '<p class="admin-access-note">Укажите именную почту сотрудника. Ему будут доступны анкета и все отчёты организации, включая прежние.</p>' +
+      '<button class="primary-button compact-primary" type="submit">Добавить</button></form>' : '') + '</section>';
 };
 
 const stageLabels = {
@@ -3213,18 +3246,11 @@ export const renderAdminOrganizations = () => {
         '<label><span>Штаб-квартира</span><input name="headquarters" type="text" value="' + escapeHtml(org.headquarters || '') + '" placeholder="Город, страна"></label>' +
         '<label class="admin-organization-profile-wide"><span>Прочая существенная информация</span><textarea name="notes" placeholder="Структура, география, культура и другие важные сведения">' + escapeHtml(org.notes || '') + '</textarea></label>' +
         '</form>' : '') +
-        (isSuperadmin ? '<div class="admin-organization-columns">' +
-        '<section><h4>Домены</h4>' +
-        renderTagList(org.domains || [], 'Домены не заданы.', 'domain', isSuperadmin ? 'delete-domain' : '') +
-        (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-domain"><input type="text" placeholder="company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
-        '</section>' +
-        '<section><h4>Администраторы</h4>' +
-        renderTagList(org.admins || [], 'Администраторы не заданы.', 'admin', isSuperadmin ? 'delete-admin' : '', {
-          canDeletePerson: purgePreviewAvailable,
-        }) +
-        (isSuperadmin ? '<form class="admin-organization-inline-form" data-action="add-admin"><input type="email" placeholder="admin@company.ru"><button class="ghost-button compact-ghost" type="submit">Добавить</button></form>' : '') +
-        '</section>' +
-        '</div>' : '') +
+        (isSuperadmin ? '<div class="admin-organization-columns"><section><h4>Домены</h4>' +
+        renderOrganizationDomains(org.domains || []) +
+        '<form class="admin-organization-inline-form" data-action="add-domain"><input type="text" placeholder="company.ru">' +
+        '<button class="ghost-button compact-ghost" type="submit">Добавить</button></form></section></div>' +
+        renderOrganizationAdmins(org, purgePreviewAvailable) : '') +
         (isSuperadmin ? tabsMarkup : '') +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people">' +
         (isSuperadmin

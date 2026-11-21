@@ -22,7 +22,7 @@ const setup = ({ actorId = 1, pending = [], canPreview = true } = {}) => {
     savedInvitation: (item) => ({ email: item.email, delivery_status: 'not_sent' }),
     pendingInvitationOperations: () => [],
   });
-  vm.runInContext(renderSource + '\nthis.members = renderMemberList; this.tags = renderTagList; this.mount = mountAdminMemberPurge;', context);
+  vm.runInContext(renderSource + '\nthis.members = renderMemberList; this.admins = renderOrganizationAdmins; this.mount = mountAdminMemberPurge;', context);
   return context;
 };
 const member = { user_id: 20, email: 'owned@example.test', full_name: 'Synthetic person', is_admin: true };
@@ -52,11 +52,29 @@ test('F02 permission availability is explicit and self is hidden even for supera
 });
 
 test('F02 current administrator has separate named revoke-rights and whole-account controls', () => {
-  const markup = setup().tags([member], '', 'admin', 'delete-admin', { canDeletePerson: true });
+  const markup = setup().admins({ admins: [member, {
+    user_id: 21, email: 'participant@example.test', is_participant: true,
+  }] }, true);
   assert.match(markup, /data-action="delete-admin"[^>]+>Снять права<\/button>/);
   assert.match(markup, /data-action="purge-account"[^>]+>Удалить человека<\/button>/);
-  assert.ok(wiring.includes('Снять административный доступ у '));
-  assert.ok(wiring.includes('Участие в оценке и аккаунт сохранятся.'));
+  assert.ok(wiring.includes('Снять права администратора?'));
+  assert.ok(wiring.includes("participant === 'true' ? ' Участие сотрудника в оценке сохранится.'"));
+});
+
+test('P4K-SUP-UX-03 renders participation from the projected boolean and gates mutations', () => {
+  const adminOnly = { ...member, is_participant: false, assessment_stages: { saved: { code: 'assigned' } } };
+  const participant = { user_id: 21, email: 'participant@example.test', is_participant: true };
+  const active = setup().admins({ admins: [adminOnly, participant] }, false);
+  assert.match(active, /Только административный доступ/);
+  assert.match(active, /Также участник оценки/);
+  assert.match(active, /data-action="add-admin"/);
+  const paused = setup().admins({ is_active: false, admins: [adminOnly, participant] }, false);
+  assert.match(paused, /Доступ приостановлен/);
+  assert.doesNotMatch(paused, /data-action="(?:add-admin|delete-admin)"/);
+  const last = setup().admins({ admins: [adminOnly] }, false);
+  assert.match(last, /последнего администратора/);
+  assert.doesNotMatch(last, /data-action="delete-admin"/);
+  assert.match(setup().admins({ admins: [] }, false), /Администраторов пока нет/);
 });
 
 test('F02 known pending command takes recovery priority over a fresh preview or unavailable capability', () => {

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from threading import Barrier
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -138,10 +141,10 @@ def test_assessment_role_alone_does_not_grant_admin_scope(
         assert not org_access.get_admin_scope(connection, user).can_admin
 
 
-def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(
-    test_database_url, isolation_schema, monkeypatch
-):
+@pytest.fixture
+def role_http(test_database_url, isolation_schema, monkeypatch):
     monkeypatch.setattr(org_access.settings, "superadmin_emails_raw", "")
+    monkeypatch.setattr(org_access, "ensure_configured_organizations", lambda _connection: None)
     with _connect(test_database_url, isolation_schema) as connection:
         connection.execute("""CREATE TABLE configured_access_suppressions (
             email TEXT NOT NULL, access_kind TEXT NOT NULL, organization_code TEXT NOT NULL,
@@ -149,13 +152,6 @@ def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(
             UNIQUE(email, access_kind, organization_code))""")
         connection.execute("""CREATE TABLE configured_organization_membership_suppressions (
             user_id INTEGER NOT NULL, organization_id INTEGER NOT NULL)""")
-        connection.execute("INSERT INTO organizations VALUES (5,'control','Контрольная Б',TRUE)")
-        connection.execute("""INSERT INTO organization_memberships
-            (organization_id,user_id,role,is_participant,admitted_at,updated_at)
-            VALUES(4,72,'member',TRUE,'2025-01-01','2025-01-01')""")
-        connection.commit()
-
-    from contextlib import contextmanager
 
     @contextmanager
     def get_connection():
@@ -164,20 +160,32 @@ def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(
 
     monkeypatch.setattr(routes, "get_connection", get_connection)
     monkeypatch.setattr(routes.web_session_service, "get_user_by_token",
-                        lambda _token: SimpleNamespace(id=18, email="actor@example.test"))
-    monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: org_access.AdminScope(is_superadmin=True))
+                        lambda _token: SimpleNamespace(id=18, email=org_access.LOCAL_SUPERADMIN_EMAIL))
     monkeypatch.setattr(routes, "_build_admin_organizations", lambda *_args: AdminOrganizationsResponse(
         title="Организации", subtitle="", is_superadmin=True, items=[]))
     app = FastAPI()
     app.include_router(routes.router)
+    return app, get_connection
+
+
+def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(role_http):
+    app, get_connection = role_http
+    with get_connection() as connection:
+        connection.execute("INSERT INTO organizations VALUES (5,'control','Контрольная Б',TRUE)")
+        connection.execute("""INSERT INTO organization_memberships
+            (organization_id,user_id,role,is_participant,admission_source,admitted_at,updated_at)
+            VALUES(4,72,'member',TRUE,'csv_import','2025-01-01','2025-01-01')""")
     with TestClient(app) as http:
+        assert http.post("/users/admin/organizations/4/admins", json={"email": "other@example.test"}).status_code == 200
         for attempt in range(2):
             assert http.post("/users/admin/organizations/4/admins", json={
                 "email": "existing@example.test"}).status_code == 200
-            with _connect(test_database_url, isolation_schema) as connection:
-                row = connection.execute("""SELECT role,is_participant,admitted_at,updated_at
+            with get_connection() as connection:
+                row = connection.execute("""SELECT role,is_participant,admission_source,admitted_at,updated_at
                     FROM organization_memberships WHERE user_id=72""").fetchone()
                 assert row["role"] == "admin" and row["is_participant"] is True
+                assert row["admission_source"] == "csv_import"
+                assert row["admitted_at"].year == 2025
                 if attempt == 0:
                     granted = row
                 else:
@@ -185,7 +193,7 @@ def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(
         for attempt in range(2):
             assert http.delete("/users/admin/organizations/4/admins", params={
                 "email": "existing@example.test"}).status_code == 200
-            with _connect(test_database_url, isolation_schema) as connection:
+            with get_connection() as connection:
                 row = connection.execute("""SELECT role,is_participant,updated_at
                     FROM organization_memberships WHERE user_id=72""").fetchone()
                 suppression = connection.execute("""SELECT reason,created_by_user_id,created_at
@@ -197,6 +205,72 @@ def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(
                 else:
                     assert row == revoked
                     assert suppression == first_suppression
-        with _connect(test_database_url, isolation_schema) as connection:
+        with get_connection() as connection:
             assert connection.execute("SELECT COUNT(*) AS n FROM organization_memberships WHERE organization_id=5"
                                      ).fetchone()["n"] == 0
+
+
+def test_last_admin_is_preserved_by_two_concurrent_revoke_requests(role_http):
+    app, get_connection = role_http
+    path = "/users/admin/organizations/4/admins"
+    addrs = ["first@example.test", "second@example.test"]
+    with TestClient(app) as http:
+        for email in addrs:
+            assert http.post(path, json={"email": email}).status_code == 200
+
+    start = Barrier(2, timeout=10)
+
+    def revoke(email):
+        with TestClient(app) as http:
+            start.wait()
+            return http.delete(path, params={"email": email})
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        responses = list(pool.map(revoke, addrs))
+    assert sorted(response.status_code for response in responses) == [200, 409]
+    refused = next(response for response in responses if response.status_code == 409)
+    assert refused.json()["detail"] == "LAST_ORGANIZATION_ADMIN"
+    with get_connection() as connection:
+        rows = connection.execute("SELECT role,is_participant FROM organization_memberships").fetchall()
+        assert rows == [{"role": "admin", "is_participant": False}]
+        assert connection.execute("SELECT COUNT(*) AS n FROM configured_access_suppressions").fetchone()["n"] == 1
+
+
+def test_configured_admin_is_administrative_only_and_stays_revoked(role_http, monkeypatch):
+    app, get_connection = role_http
+    email = "existing@example.test"
+    monkeypatch.setattr(org_access.settings, "org_admin_emails_raw", "synthetic:" + email)
+    actor = SimpleNamespace(id=72, email=email)
+    path = "/users/admin/organizations/4/admins"
+    with get_connection() as connection:
+        assert org_access.email_has_organization_access(connection, email=email)
+        assert org_access.get_admin_scope(connection, actor).organization_ids == (4,)
+        assert connection.execute(
+            "SELECT role,is_participant,admission_source FROM organization_memberships WHERE user_id=72"
+        ).fetchone() == {"role": "admin", "is_participant": False, "admission_source": "configured_admin"}
+
+    with TestClient(app) as http:
+        assert http.delete(path, params={"email": email}).json()["detail"] == "LAST_ORGANIZATION_ADMIN"
+        assert http.post(path, json={"email": "replacement@example.test"}).status_code == 200
+        assert http.delete(path, params={"email": email}).status_code == 200
+    with get_connection() as connection:
+        assert not org_access.get_admin_scope(connection, actor).can_admin
+        assert not org_access.email_has_organization_access(connection, email=email)
+        assert connection.execute("SELECT role FROM organization_memberships WHERE user_id=72").fetchone() is None
+
+
+def test_admin_grant_keeps_email_identity_with_its_existing_account(role_http):
+    app, get_connection = role_http
+    alias = "alias@example.test"
+    with get_connection() as connection:
+        connection.execute("""INSERT INTO user_identities
+            (user_id,provider,provider_subject,email,is_verified)
+            VALUES(72,'email_magic_link',%s,%s,TRUE)""", (alias, alias))
+    with TestClient(app) as http:
+        response = http.post("/users/admin/organizations/4/admins", json={"email": alias})
+        assert response.status_code == 409
+        assert response.json()["detail"] == "ADMIN_EMAIL_ALREADY_LINKED"
+    with get_connection() as connection:
+        assert connection.execute("SELECT user_id FROM user_identities WHERE email=%s", (alias,)).fetchone()["user_id"] == 72
+        assert connection.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"] == 1
+        assert connection.execute("SELECT COUNT(*) AS n FROM organization_memberships").fetchone()["n"] == 0
