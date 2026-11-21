@@ -36,8 +36,8 @@ class _Connection:
     def execute(self, query, params=None):
         normalized = " ".join(query.split())
         self.queries.append(normalized)
-        if "SELECT id FROM organizations" in normalized or "SELECT id,code FROM organizations" in normalized:
-            return _Result({"id": 4, "code": "synthetic"})
+        if "SELECT id FROM organizations" in normalized or "SELECT code, is_active FROM organizations" in normalized:
+            return _Result({"id": 4, "code": "synthetic", "is_active": True})
         if "LEFT JOIN organization_memberships membership" in normalized:
             return _Result({"user_id": 72, "organization_id": None} if self.existing else None)
         if "JOIN user_platform_roles assignment" in normalized:

@@ -191,17 +191,20 @@ def assign_user_organization_from_email(connection, *, user_id: int, email: str 
             continue
         if is_platform_protected_account(connection, email=normalized_email, user_id=user_id):
             return
+        # Account purge locks memberships before locking the organization.
+        connection.execute("SELECT pg_advisory_xact_lock_shared(%s)", (8_044_001,))
+        # Read suppression after taking the same lock as grant, revoke and deactivation.
+        org_row = connection.execute(
+            "SELECT id FROM organizations WHERE code = %s AND is_active = TRUE FOR NO KEY UPDATE",
+            (org_code,),
+        ).fetchone()
+        if org_row is None:
+            continue
         if configured_access_suppressed(
             connection, email=normalized_email, access_kind="organization_admin",
             organization_code=org_code,
         ):
             return
-        org_row = connection.execute(
-            "SELECT id FROM organizations WHERE code = %s AND is_active = TRUE LIMIT 1",
-            (org_code,),
-        ).fetchone()
-        if org_row is None:
-            continue
         suppressed = connection.execute(
             """
             SELECT 1 FROM configured_organization_membership_suppressions
@@ -212,12 +215,24 @@ def assign_user_organization_from_email(connection, *, user_id: int, email: str 
         ).fetchone()
         if suppressed:
             return
-        _upsert_membership(
-            connection,
-            organization_id=int(org_row["id"]),
-            user_id=user_id,
-            role=ORG_ADMIN_ROLE,
-            admission_source="configured_admin",
+        organization_id = int(org_row["id"])
+        connection.execute(
+            """
+            INSERT INTO organization_memberships (
+                organization_id, user_id, role, is_participant, admission_source, admitted_at
+            )
+            VALUES (%s, %s, 'admin', FALSE, 'configured_admin', NOW())
+            ON CONFLICT DO NOTHING
+            """,
+            (organization_id, user_id),
+        )
+        connection.execute(
+            """
+            UPDATE organization_memberships
+            SET role = 'admin', updated_at = NOW()
+            WHERE organization_id = %s AND user_id = %s AND role <> 'admin'
+            """,
+            (organization_id, user_id),
         )
         return
 
@@ -235,6 +250,10 @@ def email_has_organization_access(connection, *, email: str | None) -> bool:
 
     for org_code, emails in configured_org_admin_emails().items():
         if normalized_email not in emails:
+            continue
+        if configured_access_suppressed(
+            connection, email=normalized_email, access_kind="organization_admin", organization_code=org_code,
+        ):
             continue
         configured_access = connection.execute(
             """
@@ -276,35 +295,6 @@ def email_has_organization_access(connection, *, email: str | None) -> bool:
         if row["role"] == ORG_MEMBER_ROLE and row["admission_source"] in EXPLICIT_MEMBER_ADMISSION_SOURCES
     ]
     return len(member_rows) == 1
-
-
-def _upsert_membership(
-    connection,
-    *,
-    organization_id: int,
-    user_id: int,
-    role: str,
-    admission_source: str,
-    admitted_by_user_id: int | None = None,
-) -> None:
-    connection.execute(
-        """
-        INSERT INTO organization_memberships (
-            organization_id, user_id, role, admission_source, admitted_by_user_id, admitted_at
-        )
-        VALUES (%s, %s, %s, %s, %s, NOW())
-        ON CONFLICT (organization_id, user_id) DO UPDATE
-        SET role = CASE
-                WHEN organization_memberships.role = 'admin' THEN organization_memberships.role
-                ELSE EXCLUDED.role
-            END,
-            admission_source = EXCLUDED.admission_source,
-            admitted_by_user_id = EXCLUDED.admitted_by_user_id,
-            admitted_at = EXCLUDED.admitted_at,
-            updated_at = NOW()
-        """,
-        (organization_id, user_id, role, admission_source, admitted_by_user_id),
-    )
 
 
 def has_superadmin_access(connection, user) -> bool:
