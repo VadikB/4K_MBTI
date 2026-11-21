@@ -65,3 +65,10 @@
 - `npm run ready:prepare -- --candidate 2.1.59` — PASS. Версии обновлены в `pyproject.toml`, `uv.lock`, `web/js/config.js` и `web/index.html`, `web/dist` пересобран.
 - `python3.12 scripts/check_release_version.py --base-ref origin/main` и `pytest -q tests/unit/test_release_version.py` — PASS, 11 тестов. `npm run lint:js` и объединённый frontend/harness — PASS, 539 тестов.
 - Полный CI точного head и review ведутся в [PR #280](https://github.com/VadikB/4K_MBTI/pull/280). Схема и сохранённые данные совпадают с предыдущим head. Откат этапа подготовки использует состояние `5cc53762`; решение о выпуске остаётся за владельцем.
+
+### Полный CI кандидата и адресное исправление
+
+- [Быстрый CI](https://github.com/VadikB/4K_MBTI/actions/runs/44925531614) для `55661589` на `dea4d565`: release gate, frontend и pytest — PASS.
+- [Полный CI](https://github.com/VadikB/4K_MBTI/actions/runs/44925531620): интеграция и четыре runtime-шарда — PASS. `browser (fast)` — 396 PASS, 41 SKIP, 1 FAIL в F23/F10/F11. Старый сценарий ожидал отзыв у единственного администратора и системный confirm.
+- Сценарий F23/F10/F11 теперь проверяет защиту единственного администратора, добавляет второго через UI и подтверждает отзыв в меню строки. Проверки сохранённого назначения, binding и Cycle сохранены. Адресный Playwright на выделенной PostgreSQL 15 — 1 PASS. Изменение касается теста.
+- После запуска CI `main` продвинулась до `db4abf7e` (PR #281, продукт 2.1.59). `python3.12 scripts/check_release_version.py --base-ref origin/main` для 2.1.59 вернул exit 1: номер кандидата совпал с версией базы. Следующий кандидат требует решения владельца.
