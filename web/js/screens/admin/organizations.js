@@ -2403,7 +2403,8 @@ const renderMemberList = (items, {
           ? item.invitation_link_status : invitation.link_status || item.invitation_link_status;
         const registered = link === 'used' || item.registration_status === 'registered' || item.has_password === true;
         const delivery = invitationFacts(invitation).outcome;
-        const invitationId = Number(invitation.invitation_id || item.invitation_id || 0);
+        const linkInvitation = invitation.invitation_id ? invitation : saved;
+        const invitationId = Number(linkInvitation.invitation_id || 0);
         const linkClosed = ['revoked', 'expired', 'used'].includes(link);
         const checkInvitation = (!linkClosed && ['unknown', 'pending', 'not_attempted'].includes(delivery)
           ? pendingCheck : '') || savedCheck;
@@ -2418,7 +2419,7 @@ const renderMemberList = (items, {
         const acquaintanceStarted = scopedStage?.acquaintance_status &&
           !['not_started', 'unknown'].includes(scopedStage.acquaintance_status);
         const revoke = !linkClosed && !acquaintanceStarted && invitationId &&
-          ['accepted', 'queued', 'sending'].includes(invitation.delivery_status || invitationStatus)
+          ['accepted', 'queued', 'sending'].includes(linkInvitation.delivery_status || invitationStatus)
           ? '<button type="button" data-action="revoke-member-invitation" data-participant-name="' + escapeHtml(participantName) +
             '" data-invitation-id="' + invitationId + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>' : '';
         const assign = canAssign && !hasAssignment && (!scopedStage || preparationStatus === 'cancelled')

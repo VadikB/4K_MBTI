@@ -141,6 +141,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       .getByRole('button', { name: 'Отозвать приглашение' }).click();
     expect((await revoked).status()).toBe(200);
     await expect(sent.getByRole('button', { name: 'Пригласить снова' })).toBeVisible();
+    await expect(panel.locator('#admin-organizations-status')).toHaveText('Приглашение отозвано.');
 
     const old = fixture.invitations.unknown;
     expect(old.ref).not.toBe(fixture.ref);
@@ -171,6 +172,8 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(invitationRow.locator('.admin-organization-member-invitation').first()).toHaveText(beforeLink);
     await expect(row('unverified_invitation')).toContainText('Не удалось подтвердить, к какой оценке относится отправка.');
     await expect(row('unverified_invitation').getByRole('button', { name: 'Проверить отправку' })).toHaveCount(0);
+    await expect(row('unverified_invitation').getByRole('button', { name: 'Отозвать приглашение' }))
+      .toHaveAttribute('data-invitation-id', String(fixture.invitations.unverified_invitation.id));
     expect(requests.slice(beforeReceipt).filter((request) => request.method() !== 'GET')).toEqual([]);
 
     const assign = row('assign').getByRole('button', { name: 'Назначить оценку' });

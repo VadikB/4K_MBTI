@@ -976,7 +976,7 @@ const adminOrganization = {
   members_count: 1, reports_count: 0,
   members: [{ user_id: 8, email: 'person@example.test', full_name: 'Person', has_password: false,
     registration_status: 'pending', invitation_id: 1, invitation_status: 'queued',
-    invitation_delivery_status: 'queued', invitation_link_status: 'active' }],
+    invitation_assignment_ref: 'competencies_4k', invitation_delivery_status: 'queued', invitation_link_status: 'active' }],
 };
 
 const withConnectedAssessment = (assessmentRef, id = 7) => ({
@@ -1324,6 +1324,7 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
 test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acquaintance starts', async ({ page }) => {
   const organization = structuredClone(adminOrganization);
   organization.members[0].full_name = 'Иван Иванов';
+  organization.members[0].invitation_assignment_ref = null;
   await openAdminOrganizations(page, (route) => {
     return fulfillJson(route, { items: [] });
   }, organization);
@@ -1343,7 +1344,8 @@ test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acqua
     .toContainText('приглашение нельзя отозвать после начала знакомства');
   await expect(menu).toHaveCount(0);
   await expect(page.locator('[data-action="revoke-member-invitation"]')).toHaveCount(0);
-  await expect(page.locator('.admin-organization-member-invitation')).toContainText('использована');
+  await expect(page.locator('.admin-organization-member-invitation').filter({ hasText: 'Ссылка использована' }))
+    .toContainText('Регистрация: завершена');
 });
 
 test('PROGRAM01 R06 marks a confirmed cancellation stale when readback fails and restores the action', async ({ page }) => {
