@@ -2240,7 +2240,12 @@ const assessmentStageView = (stage, hasAssignment, includeObservation = true) =>
     stage || hasAssignment ? 'Ожидаем следующего действия участника или системы.' : 'Для выбранной оценки назначения нет.');
   const critical = ['preparation_failed', 'start_blocked', 'failed'].includes(stage?.code) || preparation?.failed;
   if (preparation?.failed && model.kind === 'next') {
-    return { label: 'Не удалось подготовить следующую ситуацию', description: stage.description || preparation.explanation, critical };
+    const progress = stage.progress;
+    const summary = [
+      stage.code === 'paused' ? 'Оценка приостановлена.' : '',
+      progress ? 'Завершено ' + progress.completed + ' из ' + progress.planned + ' ситуаций.' : '',
+    ].filter(Boolean).join(' ');
+    return { label: 'Не удалось подготовить следующую ситуацию', description: summary || preparation.explanation, critical };
   }
   if (preparation?.uncertain) {
     return { label: preparation.stage, description: preparation.notices[0] || preparation.explanation, critical };

@@ -1459,6 +1459,11 @@
     gap: 12px;
 }
 .admin-member-incident > * + *, .admin-member-delete > * + * { margin-top: 8px; }
+.admin-member-incident > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
 .admin-member-incident button { min-height: 44px; }
 .admin-member-assignment-dialog label {
     display: grid;

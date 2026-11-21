@@ -168,6 +168,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(row('active').locator('.admin-organization-current-stage')).toHaveText('Оценка выполняется');
     await expect(row('failed').locator('.admin-organization-current-stage')).toHaveText('Не удалось подготовить следующую ситуацию');
     await memberCard('failed').click();
+    await expect(dialog.locator('[data-card-description]')).toHaveText('Оценка приостановлена. Завершено 0 из 2 ситуаций.');
     await expect(dialog).toContainText('Последний подтверждённый этап · Проверяем материалы ситуации');
     await expect(dialog.locator('[data-card-case]')).toContainText(fixture.cases.failed);
     await dialog.getByRole('button', { name: 'Скопировать номер' }).click();
