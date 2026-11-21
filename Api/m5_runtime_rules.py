@@ -22,9 +22,9 @@ def load_runtime_rule_package(
     manifest_raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(manifest_raw)
     identity = tuple(manifest.get(key) for key in ("schema_version", "id", "status", "owner"))
-    if identity != (1, "m5-functional-personalization-runtime", "draft", "PM-04") or not re.fullmatch(
-        r"\d+\.\d+\.\d+", str(manifest.get("version", ""))
-    ):
+    if (identity[0] not in {1, 2} or identity[1:] != ("m5-functional-personalization-runtime", "draft", "PM-04")
+            or not re.fullmatch(
+        r"\d+\.\d+\.\d+", str(manifest.get("version", "")))):
         raise ValueError("M5_RUNTIME_RULE_MANIFEST_INVALID")
     source = manifest.get("source") or {}
     if (expected_case_package_version is not None
@@ -37,6 +37,12 @@ def load_runtime_rule_package(
     if hashlib.sha256(artifact_path.read_bytes()).hexdigest() != artifacts[0].get("sha256"):
         raise ValueError("M5_RUNTIME_RULE_ARTIFACT_CHECKSUM_MISMATCH")
     bindings = load_event_bindings(artifact_path, cases, expected_version=manifest["version"])
+    if bindings["schema_version"] != manifest["schema_version"]:
+        raise ValueError("M5_RUNTIME_RULE_ARTIFACT_INVALID")
+    if manifest["schema_version"] == 2 and any(
+        case.get("as_contract_ref") != source.get("as_contract_ref") for case in cases
+    ):
+        raise ValueError("M5_RUNTIME_RULE_AS_CONTRACT_MISMATCH")
     return {
         "manifest": manifest,
         "manifest_checksum": hashlib.sha256(manifest_raw).hexdigest(),
@@ -49,7 +55,7 @@ def load_event_bindings(path: Path, cases: list[dict[str, Any]], *, expected_ver
     value = json.loads(raw)
     identity = tuple(value.get(key) for key in ("schema_version", "id", "status", "owner"))
     version = str(value.get("version", ""))
-    if (identity != (1, "m5-functional-personalization-runtime", "draft", "PM-04")
+    if (identity[0] not in {1, 2} or identity[1:] != ("m5-functional-personalization-runtime", "draft", "PM-04")
             or not re.fullmatch(r"\d+\.\d+\.\d+", version)
             or (expected_version is not None and version != expected_version)):
         raise ValueError("M5_RUNTIME_RULE_ARTIFACT_INVALID")
@@ -61,6 +67,11 @@ def load_event_bindings(path: Path, cases: list[dict[str, Any]], *, expected_ver
         binding = bindings[case_id]
         if binding.get("case_version") != case["version"] or binding.get("case_checksum") != checksum(case):
             raise ValueError(f"M5_RUNTIME_RULE_CASE_REF_MISMATCH:{case_id}")
+        if identity[0] == 2:
+            if (case.get("schema_version") != 4 or binding.get("as_contract_ref") != case.get("as_contract_ref")
+                    or binding.get("event_ids") != [item["step_id"] for item in case["scenario"]]):
+                raise ValueError(f"M5_RUNTIME_RULE_PREPARATION_REF_MISMATCH:{case_id}")
+            continue
         events = binding.get("events")
         expected_events = {item["step_id"] for item in case["scenario"]}
         if not isinstance(events, dict) or set(events) != expected_events:
@@ -152,3 +163,27 @@ def resolve_runtime_rules(connection, *, case_version_id: int, case_id: str,
         "version": row["artifact_version"], "manifest_checksum": row["manifest_checksum"],
         "rules_checksum": row["rules_checksum"],
     }
+
+
+def resolve_preparation_binding(connection, case_row: dict) -> dict | None:
+    """Validate the catalog's sealed passport/rule association before generation."""
+    case = case_row["content_json"]
+    if case.get("schema_version") != 4:
+        return None
+    label = f"{case['case_id']}:{case['version']}"
+    row = connection.execute(
+        """SELECT v.artifact_id,v.artifact_version,v.manifest_checksum,b.binding_json,b.binding_checksum
+           FROM m5_runtime_rule_case_bindings b JOIN m5_runtime_rule_versions v ON v.id=b.runtime_rule_version_id
+           WHERE b.runtime_rule_version_id=%s AND b.case_version_id=%s""",
+        (case_row["runtime_rule_version_id"], case_row["id"]),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"M5_PASSPORT_RUNTIME_BINDING_REQUIRED:{label}")
+    binding = row["binding_json"]
+    if (checksum(binding) != row["binding_checksum"] or binding.get("case_version") != case["version"]
+            or binding.get("case_checksum") != case_row["content_checksum"]
+            or binding.get("event_ids") != [item["step_id"] for item in case["scenario"]]
+            or binding.get("as_contract_ref") != case["as_contract_ref"]):
+        raise ValueError(f"M5_PASSPORT_RUNTIME_BINDING_MISMATCH:{label}")
+    return {"id": row["artifact_id"], "version": row["artifact_version"],
+            "checksum": row["manifest_checksum"], "binding_checksum": row["binding_checksum"]}

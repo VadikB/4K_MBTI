@@ -66,7 +66,7 @@ def test_specialist_cli_publishes_after_working_import_and_preserves_snapshots(
     connection = specialist_release_connection
 
     def run_cli(*args):
-        monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", *args])
+        monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", "--historical-0.5", *args])
         assert release.main() == 0
         return json.loads(capsys.readouterr().out)["database"]
 
@@ -97,7 +97,7 @@ def test_specialist_cli_publishes_after_working_import_and_preserves_snapshots(
 
     publish = ("--publish-admitted-catalog", "--published-by", "99", "--usage-scope", "qa",
                "--organization-id", "11", "--catalog-id", "aud-01", "--idempotency-key", "aud-01")
-    monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", *publish, "--decision-basis", " "])
+    monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", "--historical-0.5", *publish, "--decision-basis", " "])
     with pytest.raises(ValueError, match="SPECIALIST_ADMISSION_DECISION_BASIS_REQUIRED"):
         release.main()
     assert connection.execute("SELECT count(*) AS n FROM m5_catalogs").fetchone()["n"] == 0
@@ -419,3 +419,70 @@ def test_versioned_runtime_rules_execute_all_nine_functional_cases(test_database
                     assert target["adaptation_constraints"] == source["Что сохранить при адаптации"]
                     assert target["invariant_refs"] == source["Связанные инварианты"]
         connection.rollback()
+
+
+@pytest.mark.integration
+def test_passport_bank_cli_build_import_publish_and_replay(specialist_release_connection, monkeypatch, capsys):
+    from Api.m5_passport_generation import BANK_PACKAGE
+    from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as passport_rules
+
+    connection = specialist_release_connection
+
+    def cli(*options):
+        monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", *options])
+        assert release.main() == 0
+        return json.loads(capsys.readouterr().out)["database"]
+
+    previous = cli("--historical-0.5", "--apply-import")
+    old_case = previous["readback"]["cases"][0]
+    old_id = str(uuid4())
+    cycle, session = create_cycle_session_for_case(
+        connection, personalized_profile_id=7, case_id=old_case["case_id"], case_version=old_case["case_version"],
+        created_by=99, usage_scope="qa",
+    )
+    prepare_assessment_situation(
+        connection, assessment_situation_id=old_id, case_id=old_case["case_id"], case_version=old_case["case_version"],
+        personalized_profile_id=7, cycle_db_id=cycle["id"], session_db_id=session["id"], substitutions=[],
+        usage_scope="qa", qa_authorized_by=99, runtime_rule_version_id=previous["runtime"]["id"],
+        policy={"id": "history-fixture", "version": "1", "allowed_case_statuses": ["WORKING"],
+                "required_evidence_scopes": ["case_format", "case_dialogue", "assessment_situation"]},
+    )
+    old_trace = trace(connection, old_id)
+    draft = cli("--apply-import")
+    assert draft["import"]["created"] and draft["runtime"]["created"]
+    assert len(draft["readback"]["cases"]) == 9
+    assert not cli("--apply-import")["import"]["created"]
+    assert read_rules_version(connection, draft["runtime"]["id"]) == "1.3.0"
+    assert load_runtime_rule_package(passport_rules, json.loads(
+        (BANK_PACKAGE / "case-package.json").read_bytes())["cases"])["manifest"]["schema_version"] == 2
+    common = ("--publish-admitted-catalog", "--published-by", "99", "--organization-id", "11",
+              "--catalog-id", "passport-bank-fixture", "--decision-basis", "isolated synthetic test")
+    monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", *common])
+    with pytest.raises(ValueError, match="M5_PASSPORT_BANK_ASSESSMENT_EVIDENCE_REQUIRED"):
+        release.main()
+    published = cli(*common, "--usage-scope", "qa")
+    repeat = cli(*common, "--usage-scope", "qa")
+    assert published["catalog"]["catalog_db_id"] == repeat["catalog"]["catalog_db_id"]
+    assert not repeat["import"]["created"] and not repeat["runtime"]["created"]
+    assert read_rules_version(connection, published["runtime"]["id"]) == "1.3.1-qa"
+    for case in published["readback"]["cases"]:
+        content = connection.execute("SELECT content_json FROM m5_case_versions WHERE id=%s",
+                                     (case["id"],)).fetchone()["content_json"]
+        assert content["schema_version"] == 4
+        assert "author_assessment_situation" not in content
+        assert content["case_type_ids"]
+        assert case["content_checksum"] == checksum(content)
+    saved = package_readback(connection, previous["import"]["package_db_id"])
+    assert saved["package"]["package_checksum"] == previous["readback"]["package"]["package_checksum"]
+    assert [row["id"] for row in saved["cases"]] == [row["id"] for row in previous["readback"]["cases"]]
+    assert trace(connection, old_id) == old_trace
+    readback = published["catalog_readback"]
+    assert readback["manifest_checksum"] == checksum(readback["manifest"])
+    assert len(readback["manifest"]["case_version_ids"]) == 9
+    assert readback["manifest"]["case_type_catalog_ref"] == load_case_type_catalog().ref.model_dump()
+
+
+def read_rules_version(connection, runtime_version_id):
+    return connection.execute(
+        "SELECT artifact_version FROM m5_runtime_rule_versions WHERE id=%s", (runtime_version_id,)
+    ).fetchone()["artifact_version"]

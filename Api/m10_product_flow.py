@@ -378,12 +378,19 @@ def present_owned_next(connection, *, cycle_id: str, user_id: int,
 
 
 def uses_functional_generation(connection, *, cycle_id: str) -> bool:
-    """Return whether the frozen Cycle route contains functional CASE.SPEC CaseVersions."""
+    """Resolve deferred preparation for historic functional cases and passport banks."""
     plan = m7_cycle_planner.read_plan(connection, cycle_id)
-    return any(
-        str(position.get("case_id", "")).startswith("CASE.SPEC.")
-        for position in plan["plan"].get("route", [])
-    )
+    route = plan["plan"].get("route", [])
+    if any(str(position.get("case_id", "")).startswith("CASE.SPEC.") for position in route):
+        return True
+    return bool(route and connection.execute(
+        """SELECT 1
+           FROM m5_cycles cycle
+           JOIN m5_catalog_case_versions member ON member.catalog_db_id=(cycle.catalog_ref_json->>'db_id')::bigint
+           JOIN m5_case_versions cv ON cv.id=member.case_version_id
+           WHERE cycle.cycle_id=%s AND cv.case_id=ANY(%s) AND cv.content_json->>'schema_version'='4'
+           LIMIT 1""", (cycle_id, [position["case_id"] for position in route]),
+    ).fetchone())
 
 
 def read_runtime(connection, *, cycle_id: str) -> dict:

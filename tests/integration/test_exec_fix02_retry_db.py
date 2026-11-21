@@ -19,9 +19,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from Api import routes, m10_product_flow
 from Api.llm import deepseek_gateway as gateway_module
+from tests.passport_as_fixture import synthetic_as
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from Api.m5_case_runtime import checksum
-from Api.m5_functional_generation_service import checksum as functional_checksum
 from Api.m5_catalog_integrity import publication_plan, publish_catalog
 from Api.m5_runtime_rules import import_runtime_rule_version, load_runtime_rule_package
 from Api.m5_storage import import_package
@@ -143,16 +143,8 @@ class TechnicalTransport:
         self.sent += 1
         messages = json.loads(req.data)["messages"]
         payload = json.loads(next(x["content"] for x in reversed(messages) if x["role"] == "user"))
-        if "author_as_example" in payload and "protected_checks" not in payload and "applicability_plan" not in payload:
-            candidate = copy.deepcopy(payload["author_as_example"])
-            materials = [x["MaterialID"] for x in candidate["Материалы"]]
-            events = [x["EventID"] for x in candidate["События"]]
-            characters = [x["CharacterID"] for x in candidate["Активные персонажи"]]
-            for index, target in enumerate(candidate["IndicatorObservability"]):
-                target.update(material_refs=materials[:1], event_refs=events[:1], character_refs=characters[:1],
-                    authority_refs=["participant"], author_mapping={"source_pointer": f"/IndicatorObservability/{index}",
-                    "source_checksum": functional_checksum(payload["author_as_example"]["IndicatorObservability"][index])})
-            content = candidate
+        if "protected_checks" not in payload and "applicability_plan" not in payload:
+            content = synthetic_as(payload)
         else:
             required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
             content = {"candidate_checksum": payload.get("candidate_checksum"), "checks": [

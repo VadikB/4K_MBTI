@@ -31,6 +31,19 @@ def _frozen_cycle_base_role(selected_role: dict, profile: dict, resolved_numeric
     return str(profile.get("base_role") or profile.get("base_role_code") or role_profile.get("code") or "")
 
 
+def resolve_cycle_base_role(connection, cycle: dict, profile: dict) -> str:
+    selected_role = dict(cycle["selected_role_ref_json"] or {})
+    selected_id = str(selected_role.get("id", ""))
+    resolved_numeric_code = None
+    if selected_id.isdigit() and connection.execute(
+        "SELECT to_regclass('assessment_role_profile_versions') AS name"
+    ).fetchone()["name"] is not None:
+        resolved_numeric_code = resolve_profile_base_role(
+            connection, role_profile_version_id=int(selected_id)
+        )["code"]
+    return _frozen_cycle_base_role(selected_role, profile, resolved_numeric_code)
+
+
 def resolve_legacy_base_role(*values: object) -> str:
     """Разрешает технические коды и отображаемые имена legacy-ролей в M3 base role."""
     aliases = {
@@ -354,16 +367,7 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     session = connection.execute("SELECT * FROM m5_cycle_sessions WHERE id=%s AND cycle_db_id=%s", (session_db_id, cycle_db_id)).fetchone()
     if not cycle or not session:
         raise ValueError("M7_CYCLE_SESSION_OWNERSHIP_MISMATCH")
-    selected_role = dict(cycle["selected_role_ref_json"] or {})
-    selected_id = str(selected_role.get("id", ""))
-    resolved_numeric_code = None
-    if selected_id.isdigit() and connection.execute(
-        "SELECT to_regclass('assessment_role_profile_versions') AS name"
-    ).fetchone()["name"] is not None:
-        resolved_numeric_code = resolve_profile_base_role(
-            connection, role_profile_version_id=int(selected_id)
-        )["code"]
-    base_role = _frozen_cycle_base_role(selected_role, profile, resolved_numeric_code)
+    base_role = resolve_cycle_base_role(connection, cycle, profile)
     catalog_ref = dict(cycle["catalog_ref_json"] or {})
     catalog_db_id = int(catalog_ref["db_id"]) if catalog_ref.get("db_id") is not None else None
     legacy_unbound = catalog_ref.get("id") == "legacy-unbound-test-catalog"
@@ -444,7 +448,7 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
             raise ValueError("M5_GENERATED_RUNTIME_TRACE_REQUIRED")
         runtime_rules, runtime_rule_ref = runtime_rules_override, {
             "source": "functional_generation", "candidate_checksum": generation_trace.get("candidate_checksum")}
-    if int(case_value.get("schema_version", 2)) == 3:
+    if int(case_value.get("schema_version", 2)) in {3, 4}:
         case_rules = (runtime_rules.get("cases") or {}).get(case_id)
         if not isinstance(case_rules, dict) or str(case_rules.get("case_version")) != str(case_version):
             raise ValueError("M5_SALES_RUNTIME_RULES_UNAVAILABLE")

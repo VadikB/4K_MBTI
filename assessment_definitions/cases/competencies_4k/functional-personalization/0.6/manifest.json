@@ -1,0 +1,86 @@
+{
+  "artifacts": [
+    {
+      "name": "case-package.json",
+      "sha256": "7c82fbe61ee91640c12ce4b2da3e1b689803e0f24309218af87e715940316edb"
+    },
+    {
+      "name": "case.schema.json",
+      "sha256": "1d40767cc8cd2119057bcb6cdd576b8330f2df7f742e3ec5beeb4a08f3619fb4"
+    },
+    {
+      "name": "execution-rules.json",
+      "sha256": "55f21af7c60038dca567b78b584f5243bed078dd7a4d694fa1b191cfdf5b408e"
+    },
+    {
+      "name": "passport-index.json",
+      "sha256": "93c8c63efae6b543cf6a99a4ac6995886ee30b1e3231ce2be5d58c3cc89ce842"
+    },
+    {
+      "name": "sources/CASE.SPEC.01.json",
+      "sha256": "52cf0579a04aec67d34acddf6e802f2b679ada4c84846bb87307e02a7307dc1d"
+    },
+    {
+      "name": "sources/CASE.SPEC.02.json",
+      "sha256": "532c03915912d0e9e10d32e727e1f6b45a0244c9b60c41f4ce88c4017f7b529f"
+    },
+    {
+      "name": "sources/CASE.SPEC.03.json",
+      "sha256": "affdd16e1f82211040d1cb09518cc82b676846e7a392782adeddb1e64fba207e"
+    },
+    {
+      "name": "sources/CASE.SPEC.04.json",
+      "sha256": "e60a57ce48bc841395b7d4079ae6d1050d2aa7ec4eb85ad561857599e9a27d56"
+    },
+    {
+      "name": "sources/CASE.SPEC.05.json",
+      "sha256": "db1f6d3355bea5d6fd8441e70ffa8a31b1dd1f8ebf0a118dc8ebc8315d760723"
+    },
+    {
+      "name": "sources/CASE.SPEC.06.json",
+      "sha256": "381eebc6012d85b501fc4f49490c7672ad11d74675f2f680588b2d6b43cdadd3"
+    },
+    {
+      "name": "sources/CASE.SPEC.07.json",
+      "sha256": "b10133ee0d3ac81fd0537e8385419a401ddad5d3ae2a7d450a09982a55d8031e"
+    },
+    {
+      "name": "sources/CASE.SPEC.08.json",
+      "sha256": "3fd938fb3fdf094397962d39f469aaea1d3cfdd8083256519870cb8bb789320e"
+    },
+    {
+      "name": "sources/CASE.SPEC.09.json",
+      "sha256": "9d740f7a90fd8b6913efd3a9e8eb3dfe4e422ec4ab3da4194d3d6de15cdee323"
+    },
+    {
+      "name": "verification-report.json",
+      "sha256": "73d2db560b6f969678966c7c0c4352249726bc8b20a04a393c49b0dc5a65fd0b"
+    }
+  ],
+  "as_contract_ref": {
+    "checksum": "c07a8800bfd7228a4c4b91e55dfff4901505821fcf8d8a85b9df7fb3eebd1655",
+    "id": "m5-functional-as",
+    "version": "1.0.0"
+  },
+  "compiler": {
+    "id": "m5-functional-json-compiler",
+    "source_schema_profile": "functional-passport-v1",
+    "version": "0.6.0"
+  },
+  "dependencies": {
+    "m2": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "m3": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+  },
+  "id": "m5-functional-personalization-cases",
+  "prompt_package": {
+    "checksum": "ccb8506db9cd5c88476511e2212433845ee8ce7d9f67ec661522bcf1abb12698",
+    "id": "m5-functional-passport",
+    "path": "assessment_definitions/prompts/m5_functional_passport/v1",
+    "version": "1.0.0"
+  },
+  "runtime_enabled": false,
+  "schema_version": 5,
+  "source_status": "WORKING",
+  "status": "draft",
+  "version": "0.6"
+}

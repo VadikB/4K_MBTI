@@ -8,7 +8,7 @@ import pytest
 from Api.assessment_case_contracts import CaseVersionV3
 from Api.m5_case_runtime import build_assessment_situation, checksum
 from Api.m5_package import verify_package_directory
-from Api.m5_functional_generation_service import build_input_snapshot, deterministic_checks
+from Api.m5_functional_generation_service import build_historical_input_snapshot, deterministic_checks
 from Api.m5_runtime_rules import load_runtime_rule_package
 from scripts.build_m5_functional_package import OUTPUT, build
 
@@ -123,7 +123,7 @@ def test_builder_rejects_corrupted_required_indicator_content(tmp_path, field):
 @pytest.mark.parametrize("field", ["Конкретное условие", "Материалы и факты", "Что сохранить при адаптации"])
 def test_pre_admission_check_rejects_changed_author_indicator_content(field):
     case = _package()["cases"][0]
-    snapshot = build_input_snapshot(
+    snapshot = build_historical_input_snapshot(
         case_id=case["case_id"], profile={"base_role": "specialist_expert"},
         operation_id="a01-negative", case_value=case["author_case"],
         author_as_example=case["author_assessment_situation"],

@@ -176,7 +176,7 @@ def retest_saved_failure(row: dict[str, Any], position: dict[str, Any], existing
             candidate.pop(field, None)
     if candidate == original:
         raise ValueError("SAVED_NEGATIVE_ONLY_CHANGED_VALIDATION_CONTRACT")
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id=row["CaseID"], profile=saved["profile"],
         operation_id=f"negative-v2-retest:{row['NegativeID']}", synthetic=True,
         source_root=_source_root(position),
@@ -199,7 +199,7 @@ def retest_saved_failure(row: dict[str, Any], position: dict[str, Any], existing
 def run_one(row: dict[str, Any], position: dict[str, Any], gateway: Any) -> dict[str, Any]:
     saved = read_json(ROOT / position["assessment_situation_ref"]["artifact_path"])
     original = saved["candidate_as"]
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id=row["CaseID"], profile=saved["profile"],
         operation_id=f"negative-v2:{row['NegativeID']}", synthetic=True,
         source_root=_source_root(position),

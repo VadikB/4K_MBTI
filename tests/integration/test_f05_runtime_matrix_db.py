@@ -37,6 +37,8 @@ pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = FUNCTIONAL_OUTPUT / "sources/functional-v0.2"
 PLAN = SOURCE / "08_qa/Scenario_regression_plan_v0.2.json"
+from tests.passport_as_fixture import synthetic_as
+
 GLOBAL_CASES = [f"CASE.SPEC.{number:02d}" for number in range(1, 9)]
 SCOPE_CASES = {
     "R_SCOPE_PRICE": "CASE.SPEC.02", "R_SCOPE_NEW_PROFESSION": "CASE.SPEC.04",
@@ -52,22 +54,7 @@ class FunctionalGateway:
     def chat_with_trace(self, messages, **kwargs):
         payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
         if ":generation:" in kwargs["routing_key"]:
-            candidate = copy.deepcopy(payload["author_as_example"])
-            material_ids = [item["MaterialID"] for item in candidate["Материалы"]]
-            event_ids = [item["EventID"] for item in candidate["События"]]
-            character_ids = [item["CharacterID"] for item in candidate["Активные персонажи"]]
-            for index, target in enumerate(candidate["IndicatorObservability"]):
-                target.update({
-                    "material_refs": material_ids[:1], "event_refs": event_ids[:1],
-                    "character_refs": character_ids[:1], "authority_refs": ["participant"],
-                    "author_mapping": {
-                        "source_pointer": f"/IndicatorObservability/{index}",
-                        "source_checksum": functional_checksum(
-                            payload["author_as_example"]["IndicatorObservability"][index]
-                        ),
-                    },
-                })
-            content = json.dumps(candidate, ensure_ascii=False)
+            content = json.dumps(synthetic_as(payload), ensure_ascii=False)
         else:
             required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
             content = json.dumps({"candidate_checksum": payload.get("candidate_checksum"), "checks": [{

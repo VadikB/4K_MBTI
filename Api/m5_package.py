@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from Api.assessment_case_contracts import CaseVersionV2, CaseVersionV3, validate_case_version
+from Api.assessment_case_contracts import CaseVersionV2, CaseVersionV3, CaseVersionV4, validate_case_version
 from Api.m5_case_type_catalog import load_case_type_catalog
 
 
@@ -17,7 +17,7 @@ def json_bytes(value: object) -> bytes:
     return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
 
 
-def validate_package_cases(package: dict) -> list[CaseVersionV2 | CaseVersionV3]:
+def validate_package_cases(package: dict) -> list[CaseVersionV2 | CaseVersionV3 | CaseVersionV4]:
     catalog = load_case_type_catalog()
     cases = [validate_case_version(raw) for raw in package["cases"]]
     for index, case in enumerate(cases):
