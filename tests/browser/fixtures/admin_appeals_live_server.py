@@ -36,9 +36,9 @@ with connect() as connection:
     connection.execute('CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT)')
     connection.execute('CREATE TABLE organizations(id BIGINT PRIMARY KEY)')
     connection.execute('CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)')
-    connection.execute("INSERT INTO users VALUES(1,'Тестовый участник'),(2,'Тестовый администратор'),(3,'Другой участник')")
-    connection.execute('INSERT INTO organizations VALUES(10)')
-    connection.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin'),(10,3,'member')")
+    connection.execute("INSERT INTO users VALUES(1,'Тестовый участник'),(2,'Тестовый администратор'),(3,'Другой участник'),(4,'Другой администратор')")
+    connection.execute('INSERT INTO organizations VALUES(10),(20)')
+    connection.execute("INSERT INTO organization_memberships VALUES(10,1,'member'),(10,2,'admin'),(10,3,'member'),(20,4,'admin')")
     connection.execute("CREATE TABLE organization_assessment_assignments(id BIGINT,recipient_user_id BIGINT,status TEXT,revoked_at TIMESTAMP)")
     connection.execute("INSERT INTO organization_assessment_assignments VALUES(11,1,'active',NULL)")
     ensure_appeals_schema(connection)
@@ -50,14 +50,19 @@ def get_connection():
         yield connection
 
 routes.get_connection = get_connection
+session_users = {'participant': 1, 'participant-reentry': 1, 'admin': 2, 'other': 3, 'foreign-admin': 4}
 routes.web_session_service.get_user_by_token = lambda token: (
-    SimpleNamespace(id={'participant': 1, 'admin': 2, 'other': 3}[token], email=f'{token}@example.test')
-    if token in ('participant', 'admin', 'other') else None
+    SimpleNamespace(id=session_users[token], email=f'user-{session_users[token]}@example.test')
+    if token in session_users else None
 )
-routes._require_organization_admin = lambda _connection, user, organization_id: (
-    SimpleNamespace(is_superadmin=False) if user and user.id == 2 and organization_id == 10
-    else (_ for _ in ()).throw(HTTPException(status_code=403))
-)
+
+def admin_scope(_connection, user):
+    organization_id = {2: 10, 4: 20}.get(user.id) if user else None
+    if organization_id is None:
+        raise HTTPException(status_code=403)
+    return routes.AdminScope(organization_ids=(organization_id,), actor_user_id=user.id)
+
+routes._get_admin_scope_or_403 = admin_scope
 acquaintance.early_readiness = lambda *_args, **_kwargs: {
     'status': 'ready', 'organization_id': 10, 'assignment_ref': 'program-a',
     'assignment_id': 11, 'questionnaire_revision_id': 3,

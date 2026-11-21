@@ -2155,7 +2155,7 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'toggle-appeals-filter') {
-      withScreen(loadAdminOrganizations, (module) => module.toggleAppealsFilter());
+      withScreen(loadAdminOrganizations, (module) => module.toggleAppealsFilter(organizationId));
       return;
     }
     if (button.dataset.action === 'open-member-report') {
@@ -2196,7 +2196,15 @@ if (adminOrganizationsList) {
       dialog.querySelector('.dialog-close')?.focus();
       return;
     }
-    if (button.dataset.action === 'open-member-card') {
+    if (['open-member-card', 'open-member-appeals'].includes(button.dataset.action)) {
+      const entry = button.dataset.action;
+      const focusAppeals = entry === 'open-member-appeals';
+      const member = focusAppeals
+        ? button.closest('[data-member-user-id]')?.querySelector('[data-action="open-member-card"]')
+        : button;
+      if (!member) return;
+      const { dataset: facts } = member;
+      const cardEpoch = state.identityEpoch;
       const dialog = document.createElement('dialog');
       dialog.className = 'admin-member-card-dialog';
       dialog.setAttribute('aria-labelledby', 'admin-member-card-title');
@@ -2219,50 +2227,59 @@ if (adminOrganizationsList) {
         (isSuperadmin ? '<button type="submit" class="primary-button">Закрыть</button>' :
           '<footer class="admin-member-card-footer"><section class="admin-member-delete" data-card-delete hidden></section>' +
           '<button type="submit" class="primary-button">Закрыть</button></footer>') + '</form>';
-      dialog.querySelector('#admin-member-card-title').textContent = button.dataset.participantName || value;
-      dialog.querySelector('[data-card-email]').textContent = button.dataset.email || 'Не указан';
-      dialog.querySelector('[data-card-position]').textContent = button.dataset.position || 'Не указана';
-      dialog.querySelector('[data-card-stage]').textContent = button.dataset.stage || 'Нет данных';
-      dialog.querySelector('[data-card-description]').textContent = button.dataset.stageDescription || 'Нет пояснения';
-      dialog.querySelector('[data-card-assignment-history]').textContent = button.dataset.assignmentHistory || 'История неизвестна';
-      dialog.querySelector('[data-card-admission]').textContent = button.dataset.admission || 'Нет данных';
-      if (button.dataset.canResetPassword === 'true') {
+      dialog.querySelector('#admin-member-card-title').textContent = facts.participantName || value;
+      dialog.querySelector('[data-card-email]').textContent = facts.email || 'Не указан';
+      dialog.querySelector('[data-card-position]').textContent = facts.position || 'Не указана';
+      dialog.querySelector('[data-card-stage]').textContent = facts.stage || 'Нет данных';
+      dialog.querySelector('[data-card-description]').textContent = facts.stageDescription || 'Нет пояснения';
+      dialog.querySelector('[data-card-assignment-history]').textContent = facts.assignmentHistory || 'История неизвестна';
+      dialog.querySelector('[data-card-admission]').textContent = facts.admission || 'Нет данных';
+      if (facts.canResetPassword === 'true') {
         const reset = document.createElement('button');
         reset.type = 'button';
         reset.className = 'ghost-button';
         reset.textContent = 'Сбросить пароль';
         reset.addEventListener('click', () => {
-          if (!window.confirm('Сбросить пароль пользователя ' + (button.dataset.email || '') + '? При следующем входе он задаст новый пароль.')) return;
+          if (!window.confirm('Сбросить пароль пользователя ' + (facts.email || '') + '? При следующем входе он задаст новый пароль.')) return;
           dialog.close();
-          withScreen(loadAdminOrganizations, (module) => module.resetAdminOrganizationMemberPassword(organizationId, button.dataset.email));
+          withScreen(loadAdminOrganizations, (module) => module.resetAdminOrganizationMemberPassword(organizationId, facts.email));
         });
         dialog.querySelector('[data-card-actions]').append(reset);
       }
       let invitationInfo = {};
-      try { invitationInfo = JSON.parse(button.dataset.invitationInfo || '{}'); } catch { /* no raw fallback */ }
+      try { invitationInfo = JSON.parse(facts.invitationInfo || '{}'); } catch { /* no raw fallback */ }
       if (invitationInfo.invitation_id || invitationInfo.operation_id) {
         withScreen(loadAdminOrganizations, module => {
           if (dialog.isConnected) module.mountAdminInvitationDetails(dialog, organizationId,
-            button.dataset.email || '', button.dataset.invitationAssessment || '', invitationInfo);
+            facts.email || '', facts.invitationAssessment || '', invitationInfo);
         });
       }
-      const userId = Number(button.dataset.userId);
+      const userId = Number(facts.userId);
       document.body.append(dialog);
       dialog.addEventListener('close', () => {
+        const focused = document.activeElement;
         dialog.remove();
-        (button.isConnected ? button : memberRow(organizationId, userId)?.querySelector('[data-action="open-member-card"]'))?.focus();
+        if (cardEpoch !== state.identityEpoch) return;
+        if (focused && focused !== document.body && focused !== document.documentElement && !dialog.contains(focused)) return;
+        const row = memberRow(organizationId, userId);
+        (button.isConnected ? button : row?.querySelector('[data-action="' + entry + '"]') ||
+          row?.querySelector('[data-action="open-member-card"]') ||
+          adminOrganizationsList.querySelector('[data-organization-id="' + organizationId + '"] [data-action="toggle-appeals-filter"]'))?.focus();
       }, { once: true });
+      button.focus({ preventScroll: true });
       dialog.showModal();
       if (!isSuperadmin) {
         withScreen(loadAdminOrganizations, (module) => {
           if (!dialog.open) return;
-          module.mountAdminMemberAssessment(dialog, organizationId, button);
+          module.mountAdminMemberAssessment(dialog, organizationId, member);
           module.mountAdminMemberPurge(dialog, organizationId, userId);
         });
       }
-      if (button.dataset.userId) {
+      if (userId) {
         void import('./screens/admin/appeals.js').then(module => {
-          if (dialog.isConnected) module.mountMemberAppeals(dialog, organizationId, Number(button.dataset.userId));
+          if (dialog.open && cardEpoch === state.identityEpoch) {
+            module.mountMemberAppeals(dialog, organizationId, userId, { focus: focusAppeals });
+          }
         });
       }
       dialog.querySelector('.dialog-close')?.focus();

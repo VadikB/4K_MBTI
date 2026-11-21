@@ -1,11 +1,11 @@
 // Use the native modal for focus containment and Escape. Restore the actual invoker.
-export const showParticipantDialog = (trigger, { title, body, cancel = 'Закрыть', confirm }) => {
+export const showParticipantDialog = (trigger, { title, body, cancel = 'Закрыть', confirm, describeContents = true }) => {
   const existing = document.querySelector('.participant-dialog[open]');
   if (existing) return Promise.resolve(false);
   const dialog = document.createElement('dialog');
   dialog.className = 'participant-dialog';
   dialog.setAttribute('aria-labelledby', 'participant-dialog-title');
-  dialog.setAttribute('aria-describedby', 'participant-dialog-body');
+  if (describeContents) dialog.setAttribute('aria-describedby', 'participant-dialog-body');
   dialog.innerHTML = '<form method="dialog"><h2 id="participant-dialog-title"></h2>' +
     '<div id="participant-dialog-body"></div><div class="participant-dialog-actions">' +
     '<button type="submit" value="cancel" class="ghost-button" autofocus></button></div></form>';

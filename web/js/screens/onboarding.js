@@ -9,6 +9,9 @@ import { hasPendingPreparedStart, readPendingPreparedStart } from '../product-cy
 import { participantReportAudience, preparationFailureMessage, readinessPresentation, readinessIcon } from '../readiness-presentation.js';
 import { acquaintanceErrorMessage } from '../acquaintance-errors.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../onboarding-flow.js';
+import { openParticipantReplies } from '../components/participant-appeals.js';
+
+const repliesLink = onboardingPanel?.querySelector('#onboarding-appeals');
 
 let model = null;
 let answers = {};
@@ -522,6 +525,10 @@ export const renderOnboarding = ({ focus = false } = {}) => {
   document.getElementById('onboarding-home').disabled = loading || busy;
   const dashboardLink = document.getElementById('onboarding-dashboard');
   dashboardLink.hidden = !standalone; dashboardLink.disabled = loading || busy;
+  if (repliesLink) {
+    repliesLink.hidden = standalone || !state.pendingUser?.id;
+    repliesLink.disabled = busy;
+  }
   showMessages();
   if (focus) window.requestAnimationFrame(() => {
     const current = onboardingPanel.querySelector('.onboarding-copy');
@@ -757,6 +764,7 @@ const advance = async (override = null) => {
 
 export const initOnboarding = () => {
   onboardingNext.addEventListener('click', () => { void advance(); });
+  repliesLink?.addEventListener('click', () => { void openParticipantReplies(repliesLink); });
   const input = onboardingPanel.querySelector('.onboarding-answer');
   input.addEventListener('input', () => {
     const key = steps()[state.onboardingIndex]?.answerKey;
