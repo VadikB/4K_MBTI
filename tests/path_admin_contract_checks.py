@@ -695,10 +695,20 @@ def test_adm_fix03_stale_screen_cannot_retarget_appeal():
     with session(s['second']) as member:
         assert member.get(lookup, params=pair).status_code == 403
         assert member.get(lookup.replace(str(s['member']) + '/acquaintance', str(s['second']) + '/acquaintance'), params=pair).status_code == 404
+        assert member.get(prefix + '/issues').status_code == 403
+    issue_list = f"/users/admin/organizations/{s['org']}/members/{s['member']}/issues"
+    issue_base = f"{issue_list}/{receipt['id']}"
     with session(s['foreign_admin']) as foreign:
         assert foreign.get(lookup, params=pair).status_code == 403
-    issue_base = f"/users/admin/organizations/{s['org']}/members/{s['member']}/issues/{receipt['id']}"
+        assert foreign.get(issue_list).status_code == 403
+        assert foreign.post(issue_base + '/claim').status_code == 403
+        assert foreign.post(issue_base + '/reply', json={'message': 'Foreign reply'}).status_code == 403
     with session(s['admin']) as admin:
+        roster = admin.get('/users/admin/organizations')
+        assert roster.status_code == 200, roster.text
+        organization = next(item for item in roster.json()['items'] if item['id'] == s['org'])
+        counts = {member['user_id']: member['issue_count'] for member in organization['members']}
+        assert counts[s['member']] == 2 and counts[s['second']] == 0
         assert admin.post(issue_base + '/claim').status_code == 200
         reply = admin.post(issue_base + '/reply', json={'message': 'Synthetic reply'})
         assert reply.status_code == 200, reply.text

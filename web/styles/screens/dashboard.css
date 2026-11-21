@@ -946,8 +946,8 @@
 }
 
 [data-participant-appeals] { display: grid; gap: 16px; margin-block: 24px; }
-.participant-appeal { display: grid; gap: 10px; }
-.participant-appeal p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.participant-appeal { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; overflow-wrap: anywhere; }
+.participant-appeal p { margin: 0; white-space: pre-wrap; }
 
 #dashboard-panel .dashboard-hero {
     display: grid;
@@ -1044,6 +1044,7 @@
     color: var(--participant-caption);
 }
 #dashboard-panel .participant-appeal summary { cursor: pointer; }
+#dashboard-panel .participant-appeal .participant-appeal-assessment { color: var(--participant-caption); font-size: 13px; }
 #dashboard-panel [data-participant-appeals] { margin: 0; }
 #dashboard-panel #dashboard-appeals:empty { display: none; }
 .participant-dialog {

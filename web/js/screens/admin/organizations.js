@@ -22,7 +22,7 @@ import { questionnaireAssignmentState } from './questionnaire-assignment-state.j
 import adminContextChoices from '../../../../assessment_definitions/contexts/competencies_4k/1.1/admin_context_choices.json' with { type: 'json' };
 
 let selectedOrganizationId = null;
-let appealsOnly = false;
+const appealsFilterOrganizations = new Set();
 const invitationRequestsInFlight = new Set();
 const invitationResults = new Map();
 const invitationReadbacks = new Map();
@@ -492,6 +492,7 @@ const restoreAdminOrganizationsDraft = () => {
 const clearAdminOrganizationsSessionState = () => {
   assignmentViewGeneration += 1;
   selectedOrganizationId = null;
+  appealsFilterOrganizations.clear();
   invitationRequestsInFlight.clear();
   invitationResults.clear();
   invitationReadbacks.clear();
@@ -760,7 +761,7 @@ const trackOperation = (event) => {
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
   if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
-    'open-member-card', 'open-member-report'].includes(button.dataset.action))) return;
+    'open-member-card', 'open-member-appeals', 'open-member-report', 'toggle-appeals-filter'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -2498,6 +2499,11 @@ const renderMemberList = (items, {
         const email = String(item.email || '');
         const hasPassword = item.has_password === true;
         const participantName = item.full_name || email;
+        const issueCount = Number(item.issue_count || 0);
+        const issueButton = issueCount > 0
+          ? '<button class="admin-organization-member-issues" type="button" data-action="open-member-appeals" aria-haspopup="dialog">' +
+            (issueCount === 1 ? 'Есть обращение' : 'Обращения · ' + issueCount) + '</button>'
+          : '';
         const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
         const scopedStage = item.assessment_stages?.[selectedAssessmentRef] || null;
         const preparationStatus = String(scopedStage?.code || '');
@@ -2649,8 +2655,8 @@ const renderMemberList = (items, {
           '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-user-id="' + Number(item.user_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(isSuperadmin ? currentStage : invitationStage || currentStage) + '" data-stage-description="' +
             escapeHtml(isSuperadmin ? stageDescription : cardDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-invitation-info="' + escapeHtml(JSON.stringify(invitation)) + '" data-invitation-assessment="' + escapeHtml(selectedAssessmentRef) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
           '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
-          (item.issue_count ? '<span class="admin-organization-member-issues">С обращениями · ' + Number(item.issue_count) + '</span>' : '') +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
+          issueButton +
           (isSuperadmin ? '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
           escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
           (['failed', 'unknown', 'pending'].includes(invitationFacts(invitation).outcome) && invitation.delivery_status !== 'not_sent' && invitationMessage(invitation, { compact: true }) !== deliveryLabel
@@ -2878,6 +2884,7 @@ export const renderAdminOrganizations = () => {
   const preparationRoots = new Map(Array.from(adminOrganizationsList.querySelectorAll('[data-preparation-status]'), (node) => [node.dataset.preparationReferenceId, node]));
   const focusedPreparationControl = document.activeElement?.closest?.('[data-preparation-status]') ? document.activeElement : null;
   const focusedCheckUser = document.activeElement?.matches?.('[data-action="check-member-preparation"]') ? document.activeElement.closest('.admin-organization-member')?.querySelector('[data-user-id]')?.dataset.userId : null;
+  const focusedAppealControl = document.activeElement?.closest?.('[data-action="toggle-appeals-filter"], [data-action="open-member-appeals"]');
   const focusedConfirmation = document.activeElement?.matches?.('[data-organization-confirmed]');
   const focusedMenu = !isSuperadmin && document.activeElement?.closest?.('.admin-organization-member-menu');
   // Replacing the list can dispatch focusout and close the old menu synchronously.
@@ -3135,8 +3142,10 @@ export const renderAdminOrganizations = () => {
       const programLine = programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram
         ? escapeHtml(programIdentity(currentProgram)) + ' · версия ' + escapeHtml(currentProgram.program_version)
         : 'Не подключена';
-      const appealsFilter = '<button type="button" class="ghost-button compact-ghost" data-action="toggle-appeals-filter" aria-pressed="' +
+      const appealsOnly = appealsFilterOrganizations.has(orgId);
+      const appealsFilter = '<button type="button" class="ghost-button compact-ghost admin-appeals-filter" data-action="toggle-appeals-filter" aria-pressed="' +
         appealsOnly + '">С обращениями</button>';
+      const peopleTitle = appealsOnly ? 'Участники с обращениями' : 'Участники';
       const participantTools = '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +
         '<div class="admin-organization-bulk-actions" data-bulk-actions hidden><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
         '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit"' +
@@ -3228,11 +3237,11 @@ export const renderAdminOrganizations = () => {
         (isSuperadmin ? tabsMarkup : '') +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people">' +
         (isSuperadmin
-          ? '<h4>Участники оценки</h4>' + appealsFilter + '<dl class="admin-people-context"><div><dt>Программа оценки</dt><dd>' +
+          ? '<h4>' + (appealsOnly ? peopleTitle : 'Участники оценки') + '</h4>' + appealsFilter + '<dl class="admin-people-context"><div><dt>Программа оценки</dt><dd>' +
             programLine + '</dd></div><div><dt>Роль в оценке</dt><dd>' + escapeHtml(assignmentRoleLabel) + '</dd></div></dl>' +
             '<p>Назначение не запускает оценку.</p>' + assignmentReadinessMarkup + participantTools + members + addMemberForm + importMembersForm
           : '<section class="admin-people-list" aria-labelledby="admin-people-title-' + orgId + '"><div class="admin-people-list-heading">' +
-            '<h4 id="admin-people-title-' + orgId + '">Участники</h4>' + appealsFilter + '</div>' +
+            '<h4 id="admin-people-title-' + orgId + '">' + peopleTitle + '</h4>' + appealsFilter + '</div>' +
             assignmentReadinessMarkup + participantTools + members + '</section>' +
             '<aside class="admin-people-add">' + addMemberForm + importMembersForm + '</aside>') +
         '</section>' +
@@ -3289,6 +3298,13 @@ export const renderAdminOrganizations = () => {
     ?.querySelector('[data-organization-confirmed]:not([hidden])')?.focus({ preventScroll: true });
   else if (focusedPreparationControl?.isConnected) focusedPreparationControl.focus({ preventScroll: true });
   else if (focusedCheckUser) adminOrganizationsList.querySelector('[data-user-id="' + CSS.escape(focusedCheckUser) + '"]')?.closest('.admin-organization-member')?.querySelector('[data-action="check-member-preparation"]')?.focus({ preventScroll: true });
+  else if (focusedAppealControl) {
+    const organizationId = Number(focusedAppealControl.closest('[data-organization-id]')?.dataset.organizationId);
+    const userId = Number(focusedAppealControl.closest('[data-member-user-id]')?.dataset.memberUserId);
+    const scope = '[data-organization-id="' + organizationId + '"] ' + (userId ? '[data-member-user-id="' + userId + '"] ' : '');
+    adminOrganizationsList.querySelector(scope + '[data-action="' + focusedAppealControl.dataset.action + '"]')
+      ?.focus({ preventScroll: true });
+  }
   adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')
     .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));
   if (state.currentScreen === 'admin-organizations' && window.history.state?.screen === 'admin-organizations') {
@@ -3299,9 +3315,13 @@ export const renderAdminOrganizations = () => {
   }
 };
 
-export const toggleAppealsFilter = () => {
-  appealsOnly = !appealsOnly;
+export const toggleAppealsFilter = (organizationId) => {
+  if (Number(selectedOrganizationId) !== organizationId) return;
+  captureAdminOrganizationsDraft();
+  if (!appealsFilterOrganizations.delete(organizationId)) appealsFilterOrganizations.add(organizationId);
   renderAdminOrganizations();
+  adminOrganizationsList.querySelector('[data-organization-id="' + organizationId + '"] [data-action="toggle-appeals-filter"]')
+    ?.focus({ preventScroll: true });
 };
 
 export const saveAdminOrganizationsNavigation = () => {
