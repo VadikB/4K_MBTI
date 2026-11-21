@@ -88,13 +88,13 @@ test('blocked persistence prevents sending an unrecoverable delete', async () =>
 });
 
 const wiring = fs.readFileSync('web/js/wiring.js', 'utf8');
-const start = wiring.indexOf("    if (['purge-account', 'recover-purge-account'].includes(button.dataset.action)) {");
-const end = wiring.indexOf('    if (!organizationId)', start);
+const start = wiring.indexOf('const confirmAdminAccountPurge =');
+const end = wiring.indexOf('const memberRow =', start);
 const handler = wiring.slice(start, end);
 const click = async ({ module, action = 'purge-account', state = { pendingUser: { id: 1 } } }) => {
-  const button = { dataset: { action, userId: '20', email: 'owned@example.test' }, disabled: false };
+  const button = { closest: () => null, dataset: { action, userId: '20', email: 'owned@example.test' }, disabled: false };
   const alerts = [];
-  vm.runInNewContext('(function () {' + handler + '})()', {
+  vm.runInNewContext(handler + '\nconfirmAdminAccountPurge(button);', {
     button, state, loadAdminOrganizations: async () => module, accountPurgeErrorMessage,
     window: { alert: (message) => alerts.push(message), prompt: () => 'owned@example.test', confirm: () => true },
   });

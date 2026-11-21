@@ -970,6 +970,7 @@ class AdminOrganizationMemberItem(BaseModel):
     invitation_delivery_status: str = "not_sent"
     invitation_reason: dict = Field(default_factory=dict)
     invitation_operation_id: str | None = None
+    invitation_assignment_ref: str | None = None
     invitation_link_status: str = "not_created"
     invitation_expires_at: datetime | None = None
     invitation_created_at: datetime | None = None

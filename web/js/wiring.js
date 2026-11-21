@@ -1460,7 +1460,7 @@ adminLogoutButton.addEventListener('click', (event) => {
 
 if (adminOpenReportsButton) {
   adminOpenReportsButton.addEventListener('click', () => {
-    withScreen(loadAdminReports, (module) => module.openAdminReports());
+    withScreen(loadAdminReports, (module) => module.openAdminReports({ returnToManagement: false }));
   });
 }
 
@@ -1510,6 +1510,10 @@ if (adminOpenMethodologyButton) {
 
 if (adminReportsBackButton) {
   adminReportsBackButton.addEventListener('click', () => {
+    if (window.history.state?.returnToManagement === true) {
+      withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations({ preserveView: true }));
+      return;
+    }
     withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
   });
 }
@@ -1618,6 +1622,103 @@ const openAdminSubjectConfirmation = ({
   }, { once: true });
   dialog.showModal();
   cancelButton.focus();
+};
+
+const confirmAdminAccountPurge = (button) => {
+  const userId = Number(button.dataset.userId);
+  const email = String(button.dataset.email || '').trim();
+  const actorId = Number(state.pendingUser?.id);
+  button.disabled = true;
+  void (async () => {
+    let module;
+    let phase = 'preview';
+    try {
+      module = await loadAdminOrganizations();
+      if (Number(state.pendingUser?.id) !== actorId) return;
+      // A disappeared target must be recoverable before any new preview is requested.
+      const pending = module.pendingAdminAccountPurges().find((item) => item.targetUserId === userId);
+      if (pending || button.dataset.action === 'recover-purge-account') {
+        phase = 'execute';
+        button.closest('dialog')?.close();
+        await module.recoverAdminAccountPurge(userId);
+        return;
+      }
+      const preview = await module.previewAdminAccountPurge(userId);
+      if (Number(state.pendingUser?.id) !== actorId) return;
+      const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
+        .map(([name, count]) => name + ': ' + Number(count)).join(', ');
+      const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
+        'Все функции участника и администратора, доступ, оценки и отчёты этого человека будут удалены. ' +
+        'Общие методологические материалы останутся. Для подтверждения введите email: ' + email);
+      if (typed === null) return;
+      if (String(typed).trim().toLowerCase() !== email.toLowerCase()) {
+        window.alert('Email подтверждения не совпадает. Удаление отменено.');
+        return;
+      }
+      if (!window.confirm('Удалить человека «' + email + '» и его аккаунт? Действие необратимо.')) return;
+      phase = 'execute';
+      button.closest('dialog')?.close();
+      await module.purgeAdminAccount(userId, email, preview.fingerprint);
+    } catch (error) {
+      if (Number(state.pendingUser?.id) !== actorId) return;
+      if (typeof module?.showAdminAccountPurgeError === 'function') module.showAdminAccountPurgeError(error, phase, actorId);
+      else window.alert(accountPurgeErrorMessage(error, { phase }));
+    } finally {
+      button.disabled = false;
+    }
+  })();
+};
+
+const memberRow = (organizationId, userId) => adminOrganizationsList.querySelector(
+  '[data-organization-id="' + organizationId + '"] [data-member-user-id="' + userId + '"]',
+);
+
+const openAdminMemberAssignment = (trigger, card, organizationId) => {
+  const userId = Number(trigger.dataset.userId);
+  const assessmentRef = trigger.dataset.assessmentRef;
+  const member = memberRow(organizationId, userId)?.querySelector('[data-action="open-member-card"]');
+  const program = state.adminOrganizations?.items?.find((item) => Number(item.id) === organizationId)?.assessment_program;
+  const signaledRoles = card.querySelector('form[data-action="assign-member-assessment"] select[name="role_profile_version_id"]');
+  if (!member || !signaledRoles || !program || program.assignment_ref !== assessmentRef) return;
+  const epoch = state.identityEpoch;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'admin-member-card-dialog admin-member-assignment-dialog';
+  dialog.setAttribute('aria-labelledby', 'admin-member-assignment-title');
+  dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-assignment-title">Назначить оценку</h3>' +
+    '<button type="button" class="dialog-close" aria-label="Закрыть диалог">×</button></div>' +
+    '<p data-assignment-subject></p><dl><dt>Программа</dt><dd data-assignment-program></dd></dl>' +
+    '<label data-assignment-role>Роль в оценке</label><div class="admin-subject-confirmation-actions">' +
+    '<button type="button" class="ghost-button" data-assignment-back>Назад</button>' +
+    '<button type="submit" class="primary-button">Назначить оценку</button></div></form>';
+  dialog.querySelector('[data-assignment-subject]').textContent = member.dataset.participantName + ' · ' + member.dataset.email;
+  dialog.querySelector('[data-assignment-program]').textContent = program.program_name || 'Программа оценки';
+  const roles = signaledRoles.cloneNode(true);
+  dialog.querySelector('[data-assignment-role]').append(roles);
+  const close = () => dialog.close();
+  dialog.querySelector('.dialog-close').addEventListener('click', close);
+  dialog.querySelector('[data-assignment-back]').addEventListener('click', close);
+  dialog.querySelector('form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const role = Number(roles.value);
+    if (!role || roles.selectedOptions[0]?.disabled) return;
+    close();
+    withScreen(loadAdminOrganizations, (module) => {
+      const currentTrigger = memberRow(organizationId, userId)?.querySelector('[data-action="open-member-assignment"]');
+      const currentProgram = state.adminOrganizations?.items?.find((item) => Number(item.id) === organizationId)?.assessment_program;
+      if (epoch !== state.identityEpoch || state.currentScreen !== 'admin-organizations' ||
+        currentTrigger?.dataset.assessmentRef !== assessmentRef ||
+        currentProgram?.program_definition_id !== program.program_definition_id) return;
+      return module.assignAdminOrganizationAssessment(organizationId, [userId], assessmentRef, role);
+    });
+  });
+  document.body.append(dialog);
+  dialog.addEventListener('close', () => {
+    dialog.remove();
+    const row = memberRow(organizationId, userId);
+    (row?.querySelector('[data-action="open-member-assignment"]') || row?.querySelector('[data-action="open-member-card"]'))?.focus();
+  }, { once: true });
+  dialog.showModal();
+  roles.focus();
 };
 
 if (adminOrganizationsList) {
@@ -1800,25 +1901,45 @@ if (adminOrganizationsList) {
   adminOrganizationsList.addEventListener('toggle', (event) => {
     const menu = event.target instanceof HTMLDetailsElement && event.target.matches('.admin-organization-member-menu')
       ? event.target : null;
-    if (!menu?.open) return;
+    if (!menu) return;
+    menu.querySelector('summary')?.setAttribute('aria-expanded', String(menu.open));
+    if (!menu.open) return;
     adminOrganizationsList.querySelectorAll('.admin-organization-member-menu[open]').forEach((candidate) => {
-      if (candidate !== menu) candidate.removeAttribute('open');
+      if (candidate !== menu) candidate.open = false;
     });
-    menu.querySelector('[role="menu"] button:not([disabled])')?.focus();
+    const items = menu.querySelector('[role="menu"]');
+    if (!items?.contains(document.activeElement)) items?.querySelector('button:not([disabled])')?.focus();
   }, true);
 
   adminOrganizationsList.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
     const menu = event.target instanceof Element ? event.target.closest('.admin-organization-member-menu[open]') : null;
     if (!menu) return;
-    event.preventDefault();
-    menu.removeAttribute('open');
-    menu.querySelector('summary')?.focus();
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      menu.querySelector('summary')?.focus();
+      menu.open = false;
+    } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      const items = [...menu.querySelectorAll('[role="menuitem"]:not(:disabled)')];
+      const current = items.indexOf(document.activeElement);
+      const offset = event.key === 'ArrowUp' ? -1 : 1;
+      const index = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 :
+        (current + offset + items.length) % items.length;
+      event.preventDefault();
+      items[index]?.focus();
+    }
+  });
+
+  adminOrganizationsList.addEventListener('focusout', (event) => {
+    const menu = event.target instanceof Element ? event.target.closest('.admin-organization-member-menu[open]') : null;
+    if (menu && !menu.contains(event.relatedTarget)) menu.open = false;
   });
 
   document.addEventListener('click', (event) => {
-    if (event.target instanceof Element && event.target.closest('.admin-organization-member-menu')) return;
-    adminOrganizationsList.querySelectorAll('.admin-organization-member-menu[open]').forEach((menu) => menu.removeAttribute('open'));
+    if (!(event.target instanceof Element)) return;
+    const purge = event.target.closest('dialog [data-card-delete] button[data-action]');
+    if (purge && ['purge-account', 'recover-purge-account'].includes(purge.dataset.action)) confirmAdminAccountPurge(purge);
+    if (event.target.closest('.admin-organization-member-menu')) return;
+    adminOrganizationsList.querySelectorAll('.admin-organization-member-menu[open]').forEach((menu) => { menu.open = false; });
   });
 
   const markQuestionnairePreviewStale = (event) => {
@@ -1857,7 +1978,10 @@ if (adminOrganizationsList) {
     }
     const actionMenu = button.closest('.admin-organization-member-menu[open]');
     const returnControl = actionMenu?.querySelector('summary') || button;
-    actionMenu?.removeAttribute('open');
+    if (actionMenu) {
+      returnControl?.focus();
+      actionMenu.open = false;
+    }
     const card = button.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
     const value = button.getAttribute('data-value') || '';
@@ -1868,8 +1992,15 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'check-member-invitation') {
-      withScreen(loadAdminOrganizations, module => module.checkAdminInvitation(organizationId,
-        button.dataset.value, button.dataset.assignmentRef, button.dataset.operationId));
+      button.disabled = true;
+      withScreen(loadAdminOrganizations, async (module) => {
+        try {
+          await module.checkAdminInvitation(organizationId, button.dataset.value, button.dataset.assignmentRef,
+            button.dataset.operationId, Number(button.dataset.invitationId));
+        } finally {
+          button.disabled = false;
+        }
+      });
       return;
     }
     if (button.dataset.action === 'review-invitation-organization') {
@@ -1879,51 +2010,12 @@ if (adminOrganizationsList) {
     if (button.dataset.action === 'recover-member-invitation') {
       button.disabled = true;
       withScreen(loadAdminOrganizations, (module) => module.recoverAdminOrganizationInvitation(
-        button.dataset.requestKey,
+        button.dataset.requestKey, { readOnly: button.hasAttribute('data-receipt-only') },
       ));
       return;
     }
     if (['purge-account', 'recover-purge-account'].includes(button.dataset.action)) {
-      const userId = Number(button.dataset.userId);
-      const email = String(button.dataset.email || '').trim();
-      const actorId = Number(state.pendingUser?.id);
-      button.disabled = true;
-      void (async () => {
-        let module;
-        let phase = 'preview';
-        try {
-          module = await loadAdminOrganizations();
-          if (Number(state.pendingUser?.id) !== actorId) return;
-          // A disappeared target must be recoverable before any new preview is requested.
-          const pending = module.pendingAdminAccountPurges().find((item) => item.targetUserId === userId);
-          if (pending || button.dataset.action === 'recover-purge-account') {
-            phase = 'execute';
-            await module.recoverAdminAccountPurge(userId);
-            return;
-          }
-          const preview = await module.previewAdminAccountPurge(userId);
-          if (Number(state.pendingUser?.id) !== actorId) return;
-          const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
-            .map(([name, count]) => name + ': ' + Number(count)).join(', ');
-          const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
-            'Все функции участника и администратора, доступ, оценки и отчёты этого человека будут удалены. ' +
-            'Общие методологические материалы останутся. Для подтверждения введите email: ' + email);
-          if (typed === null) return;
-          if (String(typed).trim().toLowerCase() !== email.toLowerCase()) {
-            window.alert('Email подтверждения не совпадает. Удаление отменено.');
-            return;
-          }
-          if (!window.confirm('Удалить человека «' + email + '» и его аккаунт? Действие необратимо.')) return;
-          phase = 'execute';
-          await module.purgeAdminAccount(userId, email, preview.fingerprint);
-        } catch (error) {
-          if (Number(state.pendingUser?.id) !== actorId) return;
-          if (typeof module?.showAdminAccountPurgeError === 'function') module.showAdminAccountPurgeError(error, phase, actorId);
-          else window.alert(accountPurgeErrorMessage(error, { phase }));
-        } finally {
-          button.disabled = false;
-        }
-      })();
+      confirmAdminAccountPurge(button);
       return;
     }
     if (!organizationId) {
@@ -2044,8 +2136,24 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'show-admin-view') {
-      withScreen(loadAdminOrganizations, (module) =>
-        module.selectAdminOrganizationView(organizationId, button.dataset.view));
+      withScreen(loadAdminOrganizations, (module) => {
+        module.selectAdminOrganizationView(organizationId, button.dataset.view);
+        adminOrganizationsList.querySelector('.admin-organization-step.current')?.focus({ preventScroll: true });
+      });
+      return;
+    }
+    if (button.dataset.action === 'open-organization-reports') {
+      withScreen(loadAdminOrganizations, (module) => {
+        const managementNavigation = module.saveAdminOrganizationsNavigation();
+        withScreen(loadAdminReports, (reports) => reports.openAdminReports({
+          organizationId, programDefinitionId: Number(button.dataset.programDefinitionId),
+          programLabel: button.dataset.programLabel, managementNavigation, returnToManagement: true,
+        }));
+      });
+      return;
+    }
+    if (button.dataset.action === 'open-member-assignment') {
+      openAdminMemberAssignment(button, card, organizationId);
       return;
     }
     if (button.dataset.action === 'toggle-appeals-filter') {
@@ -2055,17 +2163,23 @@ if (adminOrganizationsList) {
     if (button.dataset.action === 'open-member-report') {
       const reportId = button.dataset.reportId;
       if (!reportId) return;
-      withScreen(loadReport, (module) => module.openReport({
-        returnTarget: 'admin-organizations',
-        m8CycleId: button.dataset.cycleId || null,
-        m8ReportId: reportId,
-        customerAccess: button.dataset.reportAccess === 'customer',
-      }));
+      withScreen(loadAdminOrganizations, (module) => {
+        const managementNavigation = module.saveAdminOrganizationsNavigation();
+        withScreen(loadReport, (report) => report.openReport({
+          returnTarget: state.adminOrganizations?.is_superadmin ? 'home' : 'admin-organizations',
+          managementNavigation,
+          m8CycleId: button.dataset.cycleId || null,
+          m8ReportId: reportId,
+          customerAccess: button.dataset.reportAccess === 'customer',
+        }));
+      });
       return;
     }
     if (button.dataset.action === 'check-member-preparation') {
-      // Reuse the authorized tenant projection; never prepare/start as the member.
-      withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
+      const userId = Number(button.closest('[data-member-user-id]')?.dataset.memberUserId);
+      withScreen(loadAdminOrganizations, (module) => state.adminOrganizations?.is_superadmin
+        ? module.refreshAdminOrganizationsSafely()
+        : module.checkAdminMemberPreparation(organizationId, userId));
       return;
     }
     if (button.dataset.action === 'open-member-processing') {
@@ -2088,9 +2202,25 @@ if (adminOrganizationsList) {
       const dialog = document.createElement('dialog');
       dialog.className = 'admin-member-card-dialog';
       dialog.setAttribute('aria-labelledby', 'admin-member-card-title');
+      const isSuperadmin = state.adminOrganizations?.is_superadmin === true;
+      dialog.classList.toggle('org-admin-member-card', !isSuperadmin);
+      const history = '<dt>История оценки</dt><dd data-card-assignment-history></dd><dt>Допуск в организацию</dt><dd data-card-admission></dd>';
       dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-card-title"></h3><button type="submit" class="dialog-close" aria-label="Закрыть карточку">×</button></div>' +
-        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd><dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd><dt>История оценки</dt><dd data-card-assignment-history></dd><dt>Допуск</dt><dd data-card-admission></dd></dl>' +
-        '<div data-card-actions></div><button type="submit" class="primary-button">Закрыть</button></form>';
+        '<dl><dt>Email</dt><dd data-card-email></dd><dt>Должность</dt><dd data-card-position></dd>' +
+        '<dt>Основной этап</dt><dd data-card-stage></dd><dt>Пояснение</dt><dd data-card-description></dd>' +
+        (isSuperadmin ? history + '</dl>' : '</dl>' +
+          '<section class="admin-member-incident" data-card-incident hidden><h4>Сведения о подготовке</h4>' +
+          '<p data-card-last-stage hidden></p><p data-card-case hidden>Номер случая <code></code></p>' +
+          '<div><button type="button" class="text-button" data-card-copy hidden>Скопировать номер</button>' +
+          '<button type="button" class="text-button" data-card-check hidden>Проверить состояние</button></div></section>' +
+          '<p data-card-check-feedback role="status"></p>' +
+          '<details class="admin-member-history"><summary>История и сведения об оценке</summary><dl>' + history +
+          '<dt>Сведения профиля</dt><dd data-card-profile></dd><dt>Допуск к старту</dt><dd data-card-start></dd></dl>' +
+          '<section data-card-technical hidden></section></details>') +
+        '<div data-card-actions></div>' +
+        (isSuperadmin ? '<button type="submit" class="primary-button">Закрыть</button>' :
+          '<footer class="admin-member-card-footer"><section class="admin-member-delete" data-card-delete hidden></section>' +
+          '<button type="submit" class="primary-button">Закрыть</button></footer>') + '</form>';
       dialog.querySelector('#admin-member-card-title').textContent = button.dataset.participantName || value;
       dialog.querySelector('[data-card-email]').textContent = button.dataset.email || 'Не указан';
       dialog.querySelector('[data-card-position]').textContent = button.dataset.position || 'Не указана';
@@ -2118,9 +2248,20 @@ if (adminOrganizationsList) {
             button.dataset.email || '', button.dataset.invitationAssessment || '', invitationInfo);
         });
       }
+      const userId = Number(button.dataset.userId);
       document.body.append(dialog);
-      dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        (button.isConnected ? button : memberRow(organizationId, userId)?.querySelector('[data-action="open-member-card"]'))?.focus();
+      }, { once: true });
       dialog.showModal();
+      if (!isSuperadmin) {
+        withScreen(loadAdminOrganizations, (module) => {
+          if (!dialog.open) return;
+          module.mountAdminMemberAssessment(dialog, organizationId, button);
+          module.mountAdminMemberPurge(dialog, organizationId, userId);
+        });
+      }
       if (button.dataset.userId) {
         void import('./screens/admin/appeals.js').then(module => {
           if (dialog.isConnected) module.mountMemberAppeals(dialog, organizationId, Number(button.dataset.userId));

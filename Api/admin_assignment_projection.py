@@ -1,6 +1,7 @@
 """Shared read-only assignment lineage for admin rows and questionnaire summaries."""
 
 from Api.assessment_assignment_sources import CONFIRMATION_ASSIGNMENT_SCOPE_SQL
+from Api.m8_report_access import CUSTOMER_REPORT_FOR_CYCLE_SQL
 
 PREPARATION_JOINS_SQL = """
 LEFT JOIN LATERAL (
@@ -15,7 +16,7 @@ LEFT JOIN LATERAL (
     LIMIT 1
 ) cycle ON TRUE
 LEFT JOIN LATERAL (
-    SELECT profile.id
+    SELECT profile.id, profile.status
     FROM assessment_personalized_profiles profile
     JOIN questionnaire_response_revisions revision
       ON revision.id=binding.questionnaire_revision_id
@@ -24,7 +25,7 @@ LEFT JOIN LATERAL (
       AND profile.organization_id=assignment.organization_id
       AND profile.assessment_configuration_id=binding.assessment_configuration_id
       AND profile.role_profile_version_id=binding.role_profile_version_id
-      AND profile.status='ready'
+      AND profile.frozen_at IS NOT NULL
       AND (profile.id=cycle.personalized_profile_id OR (cycle.id IS NULL AND EXISTS (
           SELECT 1 FROM (
                 SELECT * FROM participant_acquaintance_confirmations confirmation
@@ -49,6 +50,7 @@ LEFT JOIN LATERAL (
     FROM assessment_preparation_jobs job
     WHERE job.user_id=assignment.recipient_user_id
       AND job.personalized_profile_id=profile.id
+      AND profile.status='ready'
       -- A legacy job has no assignment ID. Shared sources across generations
       -- cannot prove which assignment owns it; keep the operation readable by ID.
       AND NOT EXISTS (
@@ -69,6 +71,7 @@ LEFT JOIN LATERAL (
     SELECT job.operation_id,job.status
     FROM product_cycle_preparation_operations job
     WHERE job.user_id=assignment.recipient_user_id
+      AND profile.status='ready'
       AND job.request_json->>'personalized_profile_id'=profile.id::text
       AND job.request_json->>'organization_id'=assignment.organization_id::text
       AND job.request_json->>'assignment_ref'=assignment.assignment_ref
@@ -87,6 +90,7 @@ SELECT assignment.organization_id, assignment.recipient_user_id,
        assignment.status AS assignment_status, assignment.created_at AS assignment_created_at,
        assignment.revoked_at,
        acquaintance.status AS acquaintance_status,
+       profile.id AS personalized_profile_id, profile.status AS profile_status,
        COALESCE(product_preparation.operation_id,preparation.operation_id) AS preparation_operation_id,
        COALESCE(product_preparation.status,preparation.status) AS preparation_status,
        cycle.cycle_id, cycle.status AS cycle_status,
@@ -96,10 +100,13 @@ SELECT assignment.organization_id, assignment.recipient_user_id,
        plan.status AS plan_status,
        COALESCE(plan_progress.planned_positions, 0) AS planned_positions,
        COALESCE(plan_progress.completed_positions, 0) AS completed_positions,
-       result_revision.payload_json AS results_payload,
+       CASE WHEN ready_report.can_open AND cycle.collection_closed_at IS NOT NULL
+            THEN ready_report.payload_json END AS results_payload,
        pipeline.status AS pipeline_status,
        CASE WHEN ready_report.can_open AND cycle.collection_closed_at IS NOT NULL
             THEN ready_report.id END AS report_id,
+       CASE WHEN ready_report.can_open AND cycle.collection_closed_at IS NOT NULL
+            THEN ready_report.status END AS report_status,
        COALESCE(ready_report.can_open AND cycle.collection_closed_at IS NOT NULL,FALSE) AS report_ready,
        COALESCE(ready_report.can_open AND cycle.collection_closed_at IS NOT NULL,FALSE) AS report_access,
        'customer' AS report_access_kind
@@ -108,19 +115,8 @@ JOIN LATERAL (
     SELECT b.* FROM organization_assessment_source_bindings b
     WHERE b.assignment_id=assignment.id ORDER BY b.id DESC LIMIT 1
 ) binding ON TRUE
-""" + PREPARATION_JOINS_SQL + """LEFT JOIN LATERAL (
-    SELECT report.id,
-           report.status IN ('ready','limited','no_result')
-             AND COALESCE(report.c67_json->'processing'->>'status','') <> 'failed' AS can_open
-    FROM m8_results result
-    JOIN m8_result_revisions revision ON revision.results_id=result.id
-    JOIN m8_reports report ON report.result_revision_id=revision.id
-    WHERE result.cycle_db_id=cycle.id AND report.audience='assessee'
-    ORDER BY (report.id=(SELECT published.report_id FROM m8_published_reports published
-                         WHERE published.cycle_db_id=cycle.id)) DESC,
-             revision.revision_no DESC,report.revision_no DESC
-    LIMIT 1
-) ready_report ON TRUE
+""" + PREPARATION_JOINS_SQL + f"""
+LEFT JOIN LATERAL ({CUSTOMER_REPORT_FOR_CYCLE_SQL}) ready_report ON TRUE
 LEFT JOIN m7_cycle_plans plan ON plan.cycle_db_id=cycle.id
 LEFT JOIN LATERAL (
     SELECT
@@ -141,14 +137,6 @@ LEFT JOIN LATERAL (
     ORDER BY revision.revision_no DESC
     LIMIT 1
 ) plan_progress ON TRUE
-LEFT JOIN LATERAL (
-    SELECT revision.payload_json
-    FROM m8_results result
-    JOIN m8_result_revisions revision ON revision.results_id=result.id
-    WHERE result.cycle_db_id=cycle.id
-    ORDER BY revision.revision_no DESC
-    LIMIT 1
-) result_revision ON TRUE
 LEFT JOIN LATERAL (
     SELECT run.status
     FROM m10_pipeline_runs run

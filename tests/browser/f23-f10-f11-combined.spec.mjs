@@ -129,7 +129,7 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     await expect(userCard.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
     await userCard.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await userCard.locator('input[name="invitation_email"][value="participant@example.test"]').check();
-    await userCard.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+    await userCard.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(userCard.locator('[data-operation-status]')).toContainText('оценка назначена');
     const afterAssignment = fixture('readback');
     expect(afterAssignment.assignment).toBeTruthy();

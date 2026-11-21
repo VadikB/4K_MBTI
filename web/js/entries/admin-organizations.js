@@ -1,6 +1,10 @@
 export {
   checkAdminInvitation,
   mountAdminInvitationDetails,
+  mountAdminMemberAssessment,
+  mountAdminMemberPurge,
+  saveAdminOrganizationsNavigation,
+  checkAdminMemberPreparation,
   reviewInvitationOrganization,
   checkAdminOrganizationProgram,
   openAdminOrganizations,
