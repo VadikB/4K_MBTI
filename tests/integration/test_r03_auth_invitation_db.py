@@ -301,3 +301,89 @@ def test_invitation_expiry_boundary_and_consumed_history_are_timezone_stable(inv
         assert client.get(f"/users/organization-invitations/{active_token}").status_code == 200
     assert routes._public_invitation_by_id(consumed_id).organization_id == organization_id
     assert routes._public_invitation_by_id(exact_id) is None
+
+
+def test_platform_invitation_case_reads_original_delivery_without_sending(invitation_database, monkeypatch):
+    from threading import Event
+
+    database_url, schema, organization_id, app = invitation_database
+    original_actor = routes.web_session_service.get_user_by_token(None)
+    foreign_actor = SimpleNamespace(id=original_actor.id + 100, email="another-admin@example.test")
+    platform = SimpleNamespace(id=original_actor.id + 101, email=routes.ADMIN_EMAIL)
+    actors = {"owner": original_actor, "foreign": foreign_actor, "platform": platform}
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token", actors.get)
+
+    dispatched, release = Event(), Event()
+    sends = []
+
+    def transport(**payload):
+        sends.append(payload)
+        dispatched.set()
+        assert release.wait(15)
+
+    monkeypatch.setattr(routes, "send_auth_action_email", transport)
+    operation = str(uuid.uuid4())
+    send_path = f"/users/admin/organizations/{organization_id}/personal-invitations"
+    owner_path = f"{send_path}/operations/{operation}"
+    queue = "/users/admin/support/invitations"
+    scope = {"assignment_ref": "competencies_4k"}
+
+    def send():
+        with TestClient(app, cookies={routes.SESSION_COOKIE_NAME: "owner"}) as client:
+            return client.post(send_path, json={"emails": ["person@example.test"], "operation_id": operation})
+
+    with ThreadPoolExecutor(max_workers=1) as executor, TestClient(app) as client:
+        pending = executor.submit(send)
+        try:
+            assert dispatched.wait(10)
+            assert client.get(queue).status_code == 401
+            client.cookies.set(routes.SESSION_COOKIE_NAME, "owner")
+            owned = client.get(owner_path, params=scope)
+            assert owned.status_code == 200
+            item = owned.json()["items"][0]
+            assert item["operation_id"] == operation and item["outcome"] == "unknown"
+            case = "INV-" + str(item["invitation_id"])
+            assert client.get(f"{queue}/{case}").status_code == 403
+            client.cookies.set(routes.SESSION_COOKIE_NAME, "foreign")
+            assert client.get(owner_path, params=scope).status_code == 404
+            assert client.get(queue).status_code == 403
+            client.cookies.set(routes.SESSION_COOKIE_NAME, "platform")
+            assert client.get(owner_path, params=scope).status_code == 404
+            listed = client.get(queue, params={"organization_id": organization_id})
+            assert listed.headers["Cache-Control"] == "no-store"
+            assert [entry["reference"] for entry in listed.json()["items"]] == [case]
+            assert client.get(queue, params={"organization_id": organization_id + 100}).json()["items"] == []
+            detail = client.get(f"{queue}/{case}")
+            assert detail.status_code == 200 and detail.headers["Cache-Control"] == "no-store"
+            assert detail.json()["outcome"] == "unknown" and detail.json()["link_status"] == "active"
+            assert detail.json()["assignment_ref"] == "competencies_4k"
+            assert detail.json()["organization_id"] == organization_id
+            assert client.post(f"{queue}/{case}").status_code == 405
+            assert client.get(f"{queue}/INV-9999999999999999999").status_code == 404
+            for forbidden in ("person@example.test", "token_hash", "action_url", "recipient_email", operation):
+                assert forbidden not in detail.text
+        finally:
+            release.set()
+
+        # Simulate a lost POST response: the support page reconciles only with repeated GETs.
+        assert pending.result(timeout=15).status_code == 200
+        for _ in range(2):
+            confirmed = client.get(f"{queue}/{case}").json()
+            assert confirmed["reference"] == case and confirmed["outcome"] == "accepted"
+            assert confirmed["link_status"] == "active" and confirmed["sent_at"]
+            assert "Номер приглашения: " + case in confirmed["handoff_text"]
+        assert client.get(queue).json()["items"] == []
+        with psycopg.connect(database_url, row_factory=dict_row) as connection:
+            connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+            connection.execute("""UPDATE organization_invitations
+                SET expires_at=(CURRENT_TIMESTAMP AT TIME ZONE 'UTC')-INTERVAL '1 minute' WHERE id=%s""",
+                (item["invitation_id"],))
+        expired = client.get(f"{queue}/{case}").json()
+        assert expired["outcome"] == "accepted" and expired["link_status"] == "expired"
+        with psycopg.connect(database_url, row_factory=dict_row) as connection:
+            connection.execute(sql.SQL("SET search_path TO {}, public").format(sql.Identifier(schema)))
+            connection.execute("UPDATE organization_invitations SET used_at=created_at WHERE id=%s", (item["invitation_id"],))
+            assert connection.execute("SELECT count(*) AS n FROM organization_invitations").fetchone()["n"] == 1
+        used = client.get(f"{queue}/{case}").json()
+        assert used["outcome"] == "accepted" and used["link_status"] == "used"
+        assert len(sends) == 1
