@@ -33,6 +33,13 @@
 `deploy=false`, `artifact_publish=false`. Передача в draft сохраняет версию базы.
 Рабочая ветка `codex/adm-ui-01-cabinet` в отдельном клоне.
 
+21.11.2026 владелец поручил назначить следующий PATCH от свежего main,
+перевести PR #272 в Ready и дождаться полного CI. Для этого этапа
+`branch_push=true`, `pr=true`, `version_bump=true`, `merge=false`,
+`deploy=false`, `artifact_publish=false`. База `869c88e1` (2.1.53),
+кандидат `2.1.54`. `npm run ready:prepare -- --candidate 2.1.54` прошла.
+Результаты быстрого и полного CI фиксируются для SHA в PR #272.
+
 ## План и приёмка
 
 1. Собрать шапку, вкладки, контекст и колонки. Проверить 1440, 390 и 320 px,
