@@ -4,13 +4,16 @@ const time = value => value ? new Date(value).toLocaleString('ru-RU', { timeZone
 export const mountInvitationDetails = (dialog, initial, refresh = null) => {
   const details = document.createElement('details');
   details.className = 'admin-invitation-details';
-  details.innerHTML = '<summary>Сведения о приглашении</summary><dl><dt>ID попытки</dt><dd data-invite-id></dd><dt>Время</dt><dd data-invite-time></dd><dt>Диагностика</dt><dd data-invite-diagnostic></dd></dl><p data-invite-read-status role="status"></p><button type="button" data-invite-copy>Копировать сведения</button>';
+  details.innerHTML = '<summary>Сведения о приглашении</summary><dl><dt>ID попытки</dt><dd data-invite-id></dd><dt data-invite-case-label>Номер случая</dt><dd data-invite-case></dd><dt>Время</dt><dd data-invite-time></dd><dt>Диагностика</dt><dd data-invite-diagnostic></dd></dl><p data-invite-read-status role="status"></p><button type="button" data-invite-copy>Копировать сведения</button>';
   let current = initial;
   const render = item => {
     // Read the live open state at response time: toggles during I/O are authoritative.
     if (attemptKey(current) !== attemptKey(item)) details.open = false;
     current = item;
     details.querySelector('[data-invite-id]').textContent = item.operation_id || (item.invitation_id ? 'Запись ' + item.invitation_id : 'Попытка не сохранена');
+    const caseNumber = details.querySelector('[data-invite-case]');
+    caseNumber.textContent = item.invitation_id ? 'INV-' + item.invitation_id : '';
+    caseNumber.hidden = details.querySelector('[data-invite-case-label]').hidden = !item.invitation_id;
     details.querySelector('[data-invite-time]').textContent = time(item.created_at);
     details.querySelector('[data-invite-diagnostic]').textContent = invitationMessage(item);
   };
@@ -19,7 +22,7 @@ export const mountInvitationDetails = (dialog, initial, refresh = null) => {
     const label = details.querySelector('[data-invite-read-status]');
     try {
       await navigator.clipboard.writeText([details.querySelector('[data-invite-id]').textContent,
-        time(current.created_at), invitationMessage(current)].join('\n'));
+        details.querySelector('[data-invite-case]').textContent, time(current.created_at), invitationMessage(current)].filter(Boolean).join('\n'));
       label.textContent = 'Сведения скопированы';
     } catch { label.textContent = 'Не удалось скопировать сведения. Выделите текст вручную'; }
   });

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-const evidence='docs/evc/tasks/p4k-postw02-qa-02/evidence';
+const evidence=process.env.QA02_EVIDENCE || 'docs/evc/tasks/p4k-postw02-qa-02/evidence';
 let server,base;
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};};
 test.beforeAll(async()=>{
@@ -64,6 +64,7 @@ for(const width of [1440,390,320])test(`QA02 details and common failure at ${wid
   await page.locator('[data-action="open-member-card"]').first().click();
   const dialog=page.locator('.admin-member-card-dialog'),details=dialog.locator('.admin-invitation-details');
   await expect(details).toBeVisible();await expect(details).not.toHaveAttribute('open','');
+  await expect(details.locator('[data-invite-case]')).toHaveText('INV-1');
   await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');
   const gate=deferred();run.refreshGate=gate;
   await details.getByRole('button',{name:'Обновить сведения'}).click();
@@ -114,4 +115,28 @@ test('QA02 late detail response never updates another participant card',async({p
   await expect(next.locator('.admin-invitation-details')).not.toHaveAttribute('open','');
   await next.locator('.admin-invitation-details summary').click();
   await expect(next.locator('[data-invite-diagnostic]')).toContainText('сервис отправки не настроен');
+});
+
+test('UX-06 sent invitation actions stay with the organization administrator', async ({ page }) => {
+  const run = await setup(page);
+  const participant = page.locator('[data-member-user-id="10"]');
+  const menu = participant.locator('.admin-organization-member-menu');
+  const trigger = menu.locator('summary');
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(menu.getByRole('menuitem', { name: 'Отправить письмо повторно' })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Отозвать приглашение' })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    const bounds = await menu.getByRole('menu').boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width + 1);
+    await page.screenshot({ path: `${evidence}/menu-sent-${width}.png`, fullPage: true, scale: 'css' });
+    await page.keyboard.press('Escape');
+    await expect(menu).not.toHaveAttribute('open', '');
+    await expect(trigger).toBeFocused();
+  }
+  expect(run.posts).toHaveLength(0);
 });
