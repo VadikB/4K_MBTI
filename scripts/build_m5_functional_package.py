@@ -1,4 +1,4 @@
-"""Build the immutable M5 functional-personalization v0.5 draft package."""
+"""Build the passport bank; retain an explicit replay entry point for package 0.5."""
 from __future__ import annotations
 
 import argparse
@@ -201,15 +201,23 @@ def write_package(source_root: Path, destination: Path = OUTPUT) -> dict:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    from Api.m5_passport_generation import BANK_PACKAGE
+    from scripts.build_m5_passport_bank import RUNTIME_PACKAGE, build_bank
+
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_root", type=Path, nargs="?")
-    parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--runtime-output", type=Path, default=RUNTIME_PACKAGE)
     parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--historical-0.5", dest="historical_0_5", action="store_true")
     args = parser.parse_args()
+    output = args.output or (OUTPUT if args.historical_0_5 else BANK_PACKAGE)
     if args.verify_only:
-        result = verify_package_directory(args.output)
+        result = verify_package_directory(output)
     elif args.source_root is None:
         parser.error("source_root is required unless --verify-only is used")
+    elif args.historical_0_5:
+        result = write_package(args.source_root, output)
     else:
-        result = write_package(args.source_root, args.output)
+        result = build_bank(args.source_root, output, args.runtime_output)
     print(json.dumps(result, ensure_ascii=False, indent=2))

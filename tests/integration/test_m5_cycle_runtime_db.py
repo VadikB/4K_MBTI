@@ -84,7 +84,7 @@ def test_old_cycle_keeps_v1_runtime_dependencies_after_v2_defaults(test_database
             assert new_ops["semantic_decision"]["prompt_ref"]["version"] == "v2"
             assert new_ops["character_response"]["prompt_ref"]["version"] == "v2"
             assert old_cycle["execution_manifest_json"]["dependencies"]["m5_functional_runtime"]["path"].endswith("1.1.0")
-            assert new_cycle["execution_manifest_json"]["dependencies"]["m5_functional_runtime"]["path"].endswith("1.2.0")
+            assert new_cycle["execution_manifest_json"]["dependencies"]["m5_functional_as"]["path"].endswith("m5_functional_passport/v1")
             assert "api_key" not in json.dumps(old_ops).lower()
             assert old_ops["semantic_decision"]["provider_contract"]["checksum"] == new_ops["semantic_decision"]["provider_contract"]["checksum"]
             connection.rollback()

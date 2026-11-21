@@ -29,6 +29,7 @@ from Api.m10_product_flow import prepare, start_prepared, start_or_resume, read_
 from Api.m10_product_flow import next_situation
 from Api.product_cycle_preparation_queue import ProductCyclePreparationQueue
 from Api.m7_cycle_planner import create_plan
+from tests.passport_as_fixture import synthetic_as
 from tests.m6_admission_fixture import RecordedAdmissionGateway as AdmissionOnlyGateway
 from Api.m10_test_gateway import BrowserAcceptanceGateway
 from Api import m10_orchestration
@@ -469,26 +470,40 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
 )
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
         product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase,
-        tester_outcome, *, first_case_only=False, next_failure=None, next_expiry=False):
+        tester_outcome, *, first_case_only=False, next_failure=None, next_expiry=False, passport_bank=False,
+        refresh_profile_before_recovery=False):
+    if not passport_bank:
+        from Api.cycle_execution_manifest import DEFAULT_DEPENDENCIES
+        monkeypatch.delitem(DEFAULT_DEPENDENCIES, "m5_functional_as")
     with product_db() as connection:
-        package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_text())
-        manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_text())
-        legacy_rules = json.loads((FUNCTIONAL_OUTPUT / "execution-rules.json").read_text())
-        runtime_package = FUNCTIONAL_OUTPUT.parent.parent / "functional-personalization-runtime/1.2.0"
-        loaded = load_runtime_rule_package(
-            runtime_package, package["cases"], expected_case_package_version="0.5"
-        )
-        fixture_package = copy.deepcopy(package)
-        fixture_bindings = copy.deepcopy(loaded)
-        for case in fixture_package["cases"]:
-            case["status"] = "FROZEN"
-            case["author_case"]["Status"] = "FROZEN"
-            fixture_bindings["bindings"]["case_bindings"][case["case_id"]]["case_checksum"] = checksum(case)
-        # Only the isolated fixture simulates completed human admission. Repository
-        # package/runtime artifacts remain unchanged WORKING/draft sources.
-        imported = import_package(connection, package=fixture_package, manifest=manifest, execution_rules=legacy_rules)
-        runtime = import_runtime_rule_version(connection, fixture_bindings,
-            build_execution_rules(fixture_package["cases"], fixture_bindings["bindings"]))
+        if passport_bank:
+            from Api.m5_passport_generation import BANK_PACKAGE
+            from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as passport_rules
+            from scripts.plan_specialist_program_release import build_release_artifacts
+            fixture_package = json.loads((BANK_PACKAGE / "case-package.json").read_bytes())
+            fixture_bindings = load_runtime_rule_package(passport_rules, fixture_package["cases"],
+                                                         expected_case_package_version="0.6")
+            for case in fixture_package["cases"]:
+                case["status"] = "FROZEN"
+            manifest, rules = build_release_artifacts(fixture_package, fixture_bindings, usage_scope="assessment",
+                                                      package_dir=BANK_PACKAGE)
+            source_rules = rules
+        else:
+            fixture_package = json.loads((FUNCTIONAL_OUTPUT / "case-package.json").read_bytes())
+            manifest = json.loads((FUNCTIONAL_OUTPUT / "manifest.json").read_bytes())
+            source_rules = json.loads((FUNCTIONAL_OUTPUT / "execution-rules.json").read_bytes())
+            runtime_package = FUNCTIONAL_OUTPUT.parent.parent / "functional-personalization-runtime/1.2.0"
+            fixture_bindings = load_runtime_rule_package(
+                runtime_package, fixture_package["cases"], expected_case_package_version="0.5"
+            )
+            for case in fixture_package["cases"]:
+                case["status"] = "FROZEN"
+                case["author_case"]["Status"] = "FROZEN"
+                fixture_bindings["bindings"]["case_bindings"][case["case_id"]]["case_checksum"] = checksum(case)
+            rules = build_execution_rules(fixture_package["cases"], fixture_bindings["bindings"])
+        # Only the isolated fixture simulates completed human admission.
+        imported = import_package(connection, package=fixture_package, manifest=manifest, execution_rules=source_rules)
+        runtime = import_runtime_rule_version(connection, fixture_bindings, rules, package_db_id=imported["package_db_id"])
         cases = connection.execute(
             "SELECT * FROM m5_case_versions WHERE package_id=%s ORDER BY case_id", (imported["package_db_id"],)
         ).fetchall()
@@ -583,22 +598,7 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                                          ORDER BY created_at DESC LIMIT 1)"""
                         )
                     type(self).cycle_closed = True
-                candidate = json.loads(json.dumps(payload["author_as_example"], ensure_ascii=False))
-                material_ids = [item["MaterialID"] for item in candidate["Материалы"]]
-                event_ids = [item["EventID"] for item in candidate["События"]]
-                character_ids = [item["CharacterID"] for item in candidate["Активные персонажи"]]
-                for index, target in enumerate(candidate["IndicatorObservability"]):
-                    target.update({
-                        "material_refs": material_ids[:1], "event_refs": event_ids[:1],
-                        "character_refs": character_ids[:1], "authority_refs": ["participant"],
-                        "author_mapping": {
-                            "source_pointer": f"/IndicatorObservability/{index}",
-                            "source_checksum": functional_checksum(
-                                payload["author_as_example"]["IndicatorObservability"][index]
-                            ),
-                        },
-                    })
-                content = json.dumps(candidate, ensure_ascii=False)
+                content = json.dumps(synthetic_as(payload), ensure_ascii=False)
             else:
                 required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
                 content = json.dumps({"candidate_checksum": payload.get("candidate_checksum"),
@@ -658,6 +658,16 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         crashed = queue.get_status("functional-cycle")
         assert crashed["status"] == "running"
         with product_db() as connection:
+            if refresh_profile_before_recovery:
+                later_profile = participant_profile.confirm(
+                    connection, user_id=99,
+                    selection=PersonalizedProfileSelection(
+                        organization_context_version_id=organization_context,
+                        role_profile_version_id=specialist_role, assessment_configuration_id=1,
+                    ),
+                    full_name="Synthetic specialist", position="Новая должность", duties="Новые задачи",
+                )
+                assert later_profile["id"] != specialist_profile["id"]
             connection.execute(
                 """UPDATE product_cycle_preparation_operations
                    SET locked_at=NOW() - INTERVAL '11 minutes' WHERE id=%s""",
@@ -666,6 +676,9 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         recovered_claim = queue._claim()
         assert recovered_claim is not None
         assert recovered_claim["attempt_token"] != first_claim["attempt_token"]
+        # A previously claimed operation cannot attach or overwrite the new attempt.
+        queue._process(first_claim)
+        assert queue.get_status("functional-cycle")["status"] == "running"
         queue._process(recovered_claim)
     else:
         queue._process(first_claim)
@@ -752,11 +765,17 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         assert generated_ref == {"source": "functional_generation",
                                  "candidate_checksum": generated_trace["candidate_checksum"]}
         assert generated_trace["admitted_for_participant"] is True
-        assert generated_trace["schema_version"] == 3
+        assert generated_trace["schema_version"] == 2
         assert functional_checksum(generated_trace["accepted_as"]) == generated_trace["candidate_checksum"]
         assert generated_trace["tester_input_checksum"] == generated_trace["tester"]["provider_operation"]["input_checksum"]
-        assert generated_trace["source_snapshot"]["author_as_example"]["CaseID"] == decision["selected_case_id"]
+        assert generated_trace["source_snapshot"]["case"]["CaseID"] == decision["selected_case_id"]
+        assert generated_trace["accepted_as"]["CaseVersion"] == decision["selected_case_version"]
+        assert not set(generated_trace["source_snapshot"]) & {"author_as_example"}
+        if passport_bank:
+            assert generated_trace["source_snapshot"]["refs"]["runtime_rule"]["version"] == "1.3.1"
         assert generated_trace["source_snapshot"]["profile_checksum"] == situation["snapshot_json"]["profile_ref"]["checksum"]
+        if refresh_profile_before_recovery:
+            assert generated_trace["source_snapshot"]["profile_checksum"] == specialist_profile["checksum"]
         # AS-PRESENTATION-DIAG-01: real persisted snapshot from the existing
         # controlled-provider pipeline, not an injected successful resolver.
         public = situation["snapshot_json"]["participant_payload"]
@@ -1117,9 +1136,9 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             (second["result_json"]["decision"]["assessment_situation_id"],),
         ).fetchone()["execution_payload_json"]
         second_trace = second_payload["ai_operations"]["functional_personalization"]
-        assert second_trace["schema_version"] == 3
+        assert second_trace["schema_version"] == 2
         assert functional_checksum(second_trace["accepted_as"]) == second_trace["candidate_checksum"]
-        assert second_trace["source_snapshot"]["author_as_example"]["CaseID"] == \
+        assert second_trace["source_snapshot"]["case"]["CaseID"] == \
             second["result_json"]["decision"]["selected_case_id"]
 
 

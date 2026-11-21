@@ -134,7 +134,7 @@ def test_a06_controlled_generation_tester_admission_compiles_all_27_rows():
             "Данные": "SYNTHETIC_TEST_PROFILE; ARCH-A06; controlled",
         }
         inputs = load_inputs(source_row)
-        snapshot = functional_service.build_input_snapshot(
+        snapshot = functional_service.build_historical_input_snapshot(
             case_id=row["case_id"], profile=inputs["profile"],
             operation_id=row["id"], synthetic=True,
             profile_checksum=inputs["profile"]["checksum"],

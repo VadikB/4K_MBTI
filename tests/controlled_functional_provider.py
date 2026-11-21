@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
-from Api.m5_functional_generation_service import checksum
+from tests.passport_as_fixture import synthetic_as
 
 
 class ControlledFunctionalProvider:
@@ -26,20 +26,7 @@ class ControlledFunctionalProvider:
         payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
         routing_key = str(kwargs["routing_key"])
         if ":generation:" in routing_key or ":generation_repair:" in routing_key:
-            candidate = json.loads(json.dumps(payload["author_as_example"], ensure_ascii=False))
-            material_ids = [item["MaterialID"] for item in candidate["Материалы"]]
-            event_ids = [item["EventID"] for item in candidate["События"]]
-            character_ids = [item["CharacterID"] for item in candidate["Активные персонажи"]]
-            for index, target in enumerate(candidate["IndicatorObservability"]):
-                target.update({
-                    "material_refs": material_ids[:1], "event_refs": event_ids[:1],
-                    "character_refs": character_ids[:1], "authority_refs": ["participant"],
-                    "author_mapping": {
-                        "source_pointer": f"/IndicatorObservability/{index}",
-                        "source_checksum": checksum(payload["author_as_example"]["IndicatorObservability"][index]),
-                    },
-                })
-            content = json.dumps(candidate, ensure_ascii=False)
+            content = json.dumps(synthetic_as(payload), ensure_ascii=False)
         else:
             required = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
             content = json.dumps({

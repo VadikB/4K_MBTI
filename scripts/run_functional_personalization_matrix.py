@@ -20,13 +20,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Api.llm.deepseek_gateway import DeepSeekGateway
-from Api.m5_functional_personalization import extract_candidate_as
 from Api import m5_functional_generation_service as functional_service
+from Api.m5_passport_generation import load_bank_case
 
 
 PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.2"
 SOURCE = PACKAGE / "sources/functional-v0.2"
 DEFAULT_OUTPUT = ROOT / "docs/evc/evidence/pers-functional-personalization"
+PASSPORT_OUTPUT = ROOT / "docs/evc/evidence/m5-passport-qa"
 
 
 def canonical(value: Any) -> bytes:
@@ -55,18 +56,23 @@ def build_synthetic_profile(row: dict[str, Any]) -> dict[str, Any]:
         "base_role": "specialist_expert",
         "organization_context": {
             "name": "Синтетическая организация PERS-06",
-            "operating_context": "Изолированный продуктовый тест функциональной персонализации",
-            "constraints": ["Не приписывать учебные факты реальной организации"],
+            "activity_description": "Изолированный продуктовый тест функциональной персонализации",
+            "general_rules": ["Не приписывать учебные факты реальной организации"],
         },
         "role_profile": {
             "code": "specialist_expert",
             "position_or_status": row["Профессиональный контекст"],
-            "responsibility_object": row["Подтверждённая для учебного теста деятельность"],
-            "authority": "Анализировать сведения, готовить решение и согласовывать его; не распоряжаться чужими ресурсами без согласия.",
+            "description": {"name": row["Профессиональный контекст"]},
+            "card": {
+                "responsibility_object": row["Подтверждённая для учебного теста деятельность"],
+                "independent_authority": "Анализировать сведения и готовить решение.",
+                "approval_required": "Согласовывать распоряжение чужими ресурсами.",
+            },
         },
         "user_context": {
+            "position_or_status": row["Профессиональный контекст"],
             "regular_tasks": row["Подтверждённая для учебного теста деятельность"],
-            "decision_situations": row["Возможное отображение"],
+            "additional_information": row["Возможное отображение"],
             "constraints_and_interactions": "Рабочие решения принимаются в пределах подтверждённого мандата и требуют взаимодействия с коллегами или заказчиками.",
         },
         "source": {"test_id": row["TestID"], "marker": row["Данные"]},
@@ -90,6 +96,7 @@ def _case_source(case_id: str) -> Path:
 
 
 def load_inputs(row: dict[str, Any]) -> dict[str, Any]:
+    """Read PERS-06 v0.2 evidence for historical report reproduction."""
     case_path, as_path = _case_source(row["CaseID"]), _as_source(row["CaseID"])
     profile = build_synthetic_profile(row)
     return {
@@ -161,11 +168,17 @@ def _provider_record(response: Any, *, operation_id: str, kind: str, input_check
     }
 
 
-def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any]:
-    inputs = load_inputs(row)
-    snapshot = functional_service.build_input_snapshot(
-        case_id=row["CaseID"], profile=inputs["profile"], operation_id=row["TestID"], synthetic=True,
+def _passport_snapshot(case_id: str, profile: dict, test_id: str) -> dict:
+    case, package = load_bank_case(case_id)
+    return functional_service.build_passport_snapshot(
+        case_version=case, package_ref=package, profile=profile, operation_id=test_id, synthetic=True,
+        profile_checksum=profile["checksum"],
     )
+
+
+def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any]:
+    profile = build_synthetic_profile(row)
+    snapshot = _passport_snapshot(row["CaseID"], profile, row["TestID"])
     generated = functional_service.generate(snapshot, gateway)
     return {
         "schema_version": 1,
@@ -173,8 +186,8 @@ def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any
         "case_id": row["CaseID"],
         "synthetic_test_data": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "input_refs": inputs["refs"],
-        "profile": inputs["profile"],
+        "input_refs": snapshot["refs"],
+        "profile": profile,
         "candidate_as": generated["candidate_as"],
         "candidate_checksum": generated["candidate_checksum"],
         "response_envelope_depth": generated["response_envelope_depth"],
@@ -184,10 +197,9 @@ def generate_one(row: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any
 
 
 def test_one(generation: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, Any]:
-    snapshot = functional_service.build_input_snapshot(
-        case_id=generation["case_id"], profile=generation["profile"],
-        operation_id=generation["test_id"], synthetic=True,
-    )
+    snapshot = _passport_snapshot(generation["case_id"], generation["profile"], generation["test_id"])
+    if generation["input_refs"] != snapshot["refs"]:
+        raise ValueError("M5_QA_SNAPSHOT_MISMATCH")
     tested = functional_service.test_candidate(snapshot, generation, gateway)
     aggregation = tested["aggregation"]
     conclusion = {"status": aggregation["status"], "checks": tested["checks"],
@@ -207,40 +219,10 @@ def test_one(generation: dict[str, Any], gateway: DeepSeekGateway) -> dict[str, 
 
 
 def repair_one(generation: dict[str, Any], tested: dict[str, Any], gateway: DeepSeekGateway, attempt_no: int) -> dict[str, Any]:
-    """Исправить только локализованные дефекты, не меняя Case/цели/нагрузку."""
-    instruction = (SOURCE / "07_generation/Generator_instruction_v0.2.txt").read_text(encoding="utf-8")
-    payload = {
-        "profile": generation["profile"],
-        "candidate_as": generation["candidate_as"],
-        "tester_conclusion": tested["conclusion"],
-        "repair_constraints": {
-            "change_all_dependent_fragments": True,
-            "preserve_case_id_version_indicators_character_count_and_information_load": True,
-            "do_not_resolve_intentional_case_uncertainty": True,
-            "do_not_create_evidence_scores_or_participant_answers": True,
-            "output": "Верни только исправленный полный JSON-объект AS с теми же верхнеуровневыми полями.",
-        },
-    }
-    messages = [
-        {"role": "system", "content": instruction},
-        {"role": "system", "content": "Это ограниченное исправление после независимой проверки. Не создавай новый сюжет и не скрывай дефекты декларацией."},
-        {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-    ]
-    input_checksum = digest(messages)
-    operation_id = f"repair:{generation['test_id']}:{attempt_no}:{input_checksum[:12]}"
-    response = gateway.chat_with_trace(
-        messages, temperature=0.1, timeout_seconds=300, max_tokens=32768,
-        routing_key=operation_id, response_format={"type": "json_object"},
-    )
-    candidate, envelope_depth = extract_candidate_as(json.loads(response.content))
-    inputs = load_inputs({
-        "TestID": generation["test_id"], "CaseID": generation["case_id"],
-        "BaseRole": "specialist_expert",
-        "Профессиональный контекст": generation["profile"]["role_profile"]["position_or_status"],
-        "Подтверждённая для учебного теста деятельность": generation["profile"]["user_context"]["regular_tasks"],
-        "Возможное отображение": generation["profile"]["user_context"]["decision_situations"],
-        "Данные": generation["profile"]["source"]["marker"],
-    })
+    snapshot = _passport_snapshot(generation["case_id"], generation["profile"], generation["test_id"])
+    if generation["input_refs"] != snapshot["refs"]:
+        raise ValueError("M5_QA_SNAPSHOT_MISMATCH")
+    repaired = functional_service.repair_candidate(snapshot, generation, tested, gateway)
     history = list(generation.get("repair_history", []))
     history.append({
         "attempt_no": attempt_no,
@@ -252,11 +234,7 @@ def repair_one(generation: dict[str, Any], tested: dict[str, Any], gateway: Deep
     return {
         **generation,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "candidate_as": candidate,
-        "candidate_checksum": digest(candidate),
-        "response_envelope_depth": envelope_depth,
-        "deterministic_validation": deterministic_checks(inputs, candidate),
-        "provider_operation": _provider_record(response, operation_id=operation_id, kind="repair", input_checksum=input_checksum),
+        **repaired,
         "repair_history": history,
     }
 def write_json(path: Path, value: Any) -> None:
@@ -320,7 +298,8 @@ def run_profile(row: dict[str, Any], output: Path, gateway: DeepSeekGateway, for
         write_json(generated_path, generation)
     tested = read_json(tested_path) if tested_path.exists() and not force else test_one(generation, gateway)
     attempt_no = len(generation.get("repair_history", []))
-    while tested["conclusion"].get("status") != "PASS" and attempt_no < max_repairs:
+    while (attempt_no < max_repairs and
+           (tested["aggregation"]["blocking_failures"] or tested["aggregation"]["deterministic_failures"])):
         audit = output / "attempts" / stem
         write_json(audit / f"{attempt_no + 1:02d}-generation.json", generation)
         write_json(audit / f"{attempt_no + 1:02d}-tester.json", tested)
@@ -342,7 +321,7 @@ def run_profile(row: dict[str, Any], output: Path, gateway: DeepSeekGateway, for
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--output", type=Path, default=PASSPORT_OUTPUT)
     parser.add_argument("--profile", action="append", default=[])
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--max-repairs", type=int, default=2)

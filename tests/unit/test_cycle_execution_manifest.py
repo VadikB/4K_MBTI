@@ -104,4 +104,4 @@ def test_functional_protocol_prompt_package_is_complete(directory, version):
         for name in ("challenger.md", "json-retry.md", "tester-addendum.md")
     ]
     if directory == "v2":
-        assert DEFAULT_DEPENDENCIES["m5_functional_protocol"] == str(package.relative_to(Path(__file__).resolve().parents[2]))
+        assert DEFAULT_DEPENDENCIES["m5_functional_as"] == "assessment_definitions/prompts/m5_functional_passport/v1"

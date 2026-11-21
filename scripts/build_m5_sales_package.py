@@ -475,8 +475,13 @@ def build_execution_rules(cases: list[dict], event_bindings: dict | None = None)
             if material["material_id"] in initial_ids or material["material_id"] == "P00":
                 continue
             content = material["content"]
-            stage_id = str(content.get("Предъявление") or "")
-            stage = next((item for item in stages if item["step_id"] in stage_id), None)
+            if case["schema_version"] == 4:
+                explicit_events = event_bindings["case_bindings"][case["case_id"]]["events"]
+                stage = next(item for item in stages if material["material_id"] in
+                             explicit_events[item["step_id"]]["material_ids"])
+            else:
+                stage_id = str(content.get("Предъявление") or "")
+                stage = next((item for item in stages if item["step_id"] in stage_id), None)
             materials.append({
                 "material_id": material["material_id"], "kind": "mandatory_update",
                 "speaker_id": None, "participant_payload": content,

@@ -1,4 +1,4 @@
-"""Файловые контракты M5 v1.1, совместимые schema v2/v3."""
+"""Файловые контракты M5 v1.1, совместимые schema v2/v3/v4."""
 from __future__ import annotations
 import re
 from typing import Annotated, Any, Literal
@@ -197,10 +197,9 @@ class ParticipantPresentationV3(Contract):
     initial_materials: list[ParticipantMaterialV3]
     substitution_targets: list[SubstitutionTargetV3] = Field(default_factory=list)
 
-class CaseVersionV3(Contract):
-    """JSON-native author package; original author objects remain immutable snapshots."""
-    schema_version: Literal[3] = 3
-    case_id: Annotated[str, Field(pattern=r"^CASE\.SPEC\.\d{2}$")]
+class PassportCase(Contract):
+    """Shared Case identity and indexed projections for selection and execution."""
+    case_id: Text
     version: Text
     status: Literal["WORKING", "REVIEW", "FROZEN"]
     title: Text
@@ -214,17 +213,12 @@ class CaseVersionV3(Contract):
     applicability: Annotated[list[Applicability], Field(min_length=1)]
     indicator_targets: Annotated[list[IndicatorTargetV3], Field(min_length=1)]
     characters: list[CaseCharacterV3]
-    materials: Annotated[list[CaseMaterialV3], Field(min_length=1)]
+    materials: list[CaseMaterialV3]
     scenario: Annotated[list[ScenarioStepV3], Field(min_length=1)]
-    participant_presentation: ParticipantPresentationV3
-    author_case: dict[str, Any]
-    author_assessment_situation: dict[str, Any]
-    author_case_source: JsonSourceRefV3
-    author_as_source: JsonSourceRefV3
     unresolved_decisions: list[Text] = []
 
     @model_validator(mode="after")
-    def check_v3(self):
+    def check_passport_case(self):
         unique(self.case_type_ids, "CaseTypeID")
         unique([x.indicator_id for x in self.indicator_targets], "Case IndicatorID")
         unique([x.character_id for x in self.characters], "CharacterID")
@@ -237,12 +231,40 @@ class CaseVersionV3(Contract):
             raise ValueError("Indicator target is outside Applicability")
         return self
 
-def validate_case_version(value: dict[str, Any]) -> CaseVersionV2 | CaseVersionV3:
+class CaseVersionV3(PassportCase):
+    """Historical JSON package with immutable original objects."""
+    schema_version: Literal[3] = 3
+    case_id: Annotated[str, Field(pattern=r"^CASE\.SPEC\.\d{2}$")]
+    materials: Annotated[list[CaseMaterialV3], Field(min_length=1)]
+    participant_presentation: ParticipantPresentationV3
+    author_case: dict[str, Any]
+    author_assessment_situation: dict[str, Any]
+    author_case_source: JsonSourceRefV3
+    author_as_source: JsonSourceRefV3
+
+
+class CaseVersionV4(PassportCase):
+    """Versioned normative passport; concrete content is attached only after AS admission."""
+    schema_version: Literal[4]
+    passport_version: Text
+    passport_source: JsonSourceRefV3
+    as_contract_ref: VersionRef
+
+
+class PreparedCaseV4(CaseVersionV4):
+    participant_presentation: ParticipantPresentationV3
+    materials: Annotated[list[CaseMaterialV3], Field(min_length=1)]
+
+
+def validate_case_version(value: dict[str, Any]) -> CaseVersionV2 | CaseVersionV3 | CaseVersionV4:
     schema_version = value.get("schema_version")
     if schema_version == 2:
         return CaseVersionV2.model_validate(value)
     if schema_version == 3:
         return CaseVersionV3.model_validate(value)
+    if schema_version == 4:
+        model = PreparedCaseV4 if "participant_presentation" in value else CaseVersionV4
+        return model.model_validate(value)
     raise ValueError(f"Unsupported M5 Case schema_version: {schema_version!r}")
 
 class QAEvidenceV2(Contract):
