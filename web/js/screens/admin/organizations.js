@@ -60,6 +60,26 @@ const currentIdentityKey = () => String(state.pendingUser?.id || '');
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
 const assessmentKey = (organizationId, assessmentRef = '') =>
   organizationKey(organizationId) + ':' + String(assessmentRef || '').trim();
+const confirmationStorageKey = (scope) => 'agent4k.questionnaire.confirmation.' + scope;
+const readQuestionnaireOperation = (key) => {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch { return null; }
+};
+const writeQuestionnaireOperation = (key, value) => {
+  if (!key) return;
+  try {
+    if (value === null) window.sessionStorage.removeItem(key);
+    else window.sessionStorage.setItem(key, String(value));
+  } catch { /* Recovery within the current page remains available. */ }
+};
+const previewOperationStorageKey = async (scope, payload) => {
+  try {
+    const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
+    const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return 'agent4k.questionnaire.preview.' + scope + ':' + fingerprint;
+  } catch { return null; }
+};
 const invitationStorageKey = (identityKey = currentIdentityKey()) => 'agent4k.pendingInvitations.' + identityKey;
 const pendingInvitationOperations = (identityKey = currentIdentityKey()) => {
   if (!identityKey) return [];
@@ -1776,7 +1796,6 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     const answers = JSON.stringify(payload.answers);
     attempt = { answers, idempotencyKey: previous?.answers === answers ? previous.idempotencyKey : createOperationId(), inFlight: true };
     earlyDataPreviewAttempts.set(scopeKey, attempt);
-    payload = { ...payload, idempotency_key: attempt.idempotencyKey };
     updateOrganizationDataForm(organizationDataForm(organizationId));
     setOrganizationDataStatus(organizationId, submittedRef, '', 'muted');
   }
@@ -1789,19 +1808,32 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
   const identityKey = currentIdentityKey();
   const requestGeneration = (questionnairePreviewRequestGenerations.get(scopeKey) || 0) + 1;
   questionnairePreviewRequestGenerations.set(scopeKey, requestGeneration);
+  const isCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
+    questionnairePreviewRequestGenerations.get(scopeKey) === requestGeneration;
+  let storageKey;
   try {
+    if (attempt) {
+      storageKey = await previewOperationStorageKey(scopeKey, payload);
+      if (!isCurrent() || questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied ||
+          !requireOrganizationProgramScope(organizationId, submittedRef)) return;
+      const storedKey = storageKey && readQuestionnaireOperation(storageKey);
+      attempt.idempotencyKey = storedKey || attempt.idempotencyKey;
+      writeQuestionnaireOperation(storageKey, attempt.idempotencyKey);
+      payload = { ...payload, idempotency_key: attempt.idempotencyKey };
+    }
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/preview', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const preview = await readApiResponse(response, 'Не удалось распознать анкету.');
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
-    if (questionnairePreviewRequestGenerations.get(scopeKey) !== requestGeneration ||
-        questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return;
+    if (!isCurrent() || questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return;
     if (!(Number(preview?.id) > 0) || preview.assignment_ref !== submittedRef) {
       throw new Error('Не удалось проверить ответ сервера по этой редакции.');
     }
-    if (attempt && earlyDataPreviewAttempts.get(scopeKey) === attempt) earlyDataPreviewAttempts.delete(scopeKey);
+    if (attempt && earlyDataPreviewAttempts.get(scopeKey) === attempt) {
+      earlyDataPreviewAttempts.delete(scopeKey);
+      writeQuestionnaireOperation(storageKey, null);
+    }
     const connection = organizationProgramState(organizationId);
     if (connection.status !== 'confirmed' || connection.assessmentRef !== submittedRef) return;
     const currentForm = adminOrganizationsList.querySelector(
@@ -1834,9 +1866,11 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
         'Черновик сохранён. Исправьте перечисленные ошибки или заполните обязательные поля.',
     !inputChanged && ready ? 'success' : 'error');
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
-    if (questionnairePreviewRequestGenerations.get(scopeKey) !== requestGeneration) return;
-    if (attempt && error?.status && error.status < 500) earlyDataPreviewAttempts.delete(scopeKey);
+    if (!isCurrent()) return;
+    if (attempt && error?.status && error.status < 500) {
+      earlyDataPreviewAttempts.delete(scopeKey);
+      writeQuestionnaireOperation(storageKey, null);
+    }
     const message = error instanceof TypeError || error?.name === 'RequestDeadlineError'
       ? 'Не удалось получить ответ. Повторите проверку сведений.'
       : questionnaireErrorMessage(error, 'Не удалось проверить сведения.');
@@ -1879,6 +1913,8 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
   }
   const requestGeneration = (questionnaireConfirmRequestGenerations.get(requestKey) || 0) + 1;
   questionnaireConfirmRequestGenerations.set(requestKey, requestGeneration);
+  const storageKey = confirmationStorageKey(requestKey);
+  writeQuestionnaireOperation(storageKey, revisionId);
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId + '/confirm', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
@@ -1892,8 +1928,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     if (Number(confirmed?.id) !== Number(revisionId) || confirmed.status !== 'confirmed' || confirmedRef !== submittedRef) {
       throw new Error('Не удалось проверить ответ подтверждения.');
     }
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
-    if (questionnaireConfirmRequestGenerations.get(requestKey) !== requestGeneration) return;
+    writeQuestionnaireOperation(storageKey, null);
     const changedActions = new Set();
     const currentCard = adminOrganizationsList.querySelector(
       '[data-organization-id="' + Number(organizationId) + '"]',
@@ -1942,6 +1977,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     if (questionnaireConfirmRequestGenerations.get(requestKey) !== requestGeneration) return;
     const status = !error?.status || error.status >= 500 ? 'unknown' :
       error.status === 409 ? 'conflict' : 'rejected';
+    if (status !== 'unknown') writeQuestionnaireOperation(storageKey, null);
     const message = status === 'unknown'
       ? 'Ответ сервера не получен. Проверьте, сохранилась ли эта редакция.'
       : questionnaireErrorMessage(error, 'Не удалось подтвердить сведения.');
@@ -2000,10 +2036,11 @@ const refreshConfirmedReadiness = async (organizationId, outcome, context) => {
 };
 
 export const checkAdminOrganizationConfirmation = async (organizationId, revisionId) => {
-  const requestKey = [...questionnaireConfirmOutcomes.keys()].find((key) => key.startsWith(organizationKey(organizationId) + ':') &&
-    Number(questionnaireConfirmOutcomes.get(key).revisionId) === Number(revisionId));
+  const connection = organizationProgramState(organizationId);
+  if (connection.status !== 'confirmed' || questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return;
+  const requestKey = assessmentKey(organizationId, connection.assessmentRef);
   const outcome = questionnaireConfirmOutcomes.get(requestKey);
-  if (!outcome || questionnaireConfirmRequestsInFlight.has(requestKey)) return;
+  if (outcome?.revisionId !== revisionId || questionnaireConfirmRequestsInFlight.has(requestKey)) return;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const requestGeneration = questionnaireConfirmRequestGenerations.get(requestKey);
@@ -2015,16 +2052,27 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
     const saved = await readApiResponse(response, 'Не удалось проверить подтверждение.');
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
       questionnaireConfirmOutcomes.get(requestKey) !== outcome) return;
-    if (Number(saved.id) !== Number(revisionId) || saved.assignment_ref !== outcome.assignmentRef) throw new Error('Ответ относится к другой редакции.');
+    if (Number(saved.id) !== revisionId || saved.assignment_ref !== outcome.assignmentRef ||
+        !['confirmed', 'ready_for_confirmation', 'draft', 'invalid'].includes(saved.status)) {
+      throw new Error('Не удалось проверить состояние этой редакции.');
+    }
+    writeQuestionnaireOperation(confirmationStorageKey(requestKey), null);
     captureAdminOrganizationsDraft();
     reflectConfirmedOrganizationName(organizationId, saved);
     if (saved.status !== 'confirmed') {
+      if (outcome.status === 'conflict') {
+        await loadQuestionnaireRevisions(organizationId, { render: false });
+        if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
+        captureAdminOrganizationsDraft();
+      }
       questionnaireConfirmOutcomes.delete(requestKey);
       if (outcome.status === 'conflict' || saved.status !== 'ready_for_confirmation') {
         staleQuestionnairePreviews.add(requestKey);
+      } else if (outcome.restored && !managementDrafts.has(organizationKey(organizationId) + ':preview-early-data:' + outcome.assignmentRef)) {
+        const latest = questionnaireRevisions.get(organizationKey(organizationId))
+          ?.find((revision) => revision.assignment_ref === saved.assignment_ref);
+        if (!isQuestionnaireRevisionNewer(latest, saved)) questionnairePreviews.set(requestKey, saved);
       }
-      if (outcome.status === 'conflict') await loadQuestionnaireRevisions(organizationId, { render: false });
-      if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
       renderAdminOrganizations();
       setOrganizationDataStatus(organizationId, outcome.assignmentRef,
         outcome.status === 'conflict' ? 'Редакция не сохранена. Сверьте текущие сведения и подтвердите черновик заново.' :
@@ -2834,6 +2882,7 @@ export const renderAdminOrganizations = () => {
   const focusedMenu = !isSuperadmin && document.activeElement?.closest?.('.admin-organization-member-menu');
   // Replacing the list can dispatch focusout and close the old menu synchronously.
   const menuFocus = focusedMenu ? { control: document.activeElement, wasOpen: focusedMenu.open } : null;
+  let confirmationToRestore;
   adminOrganizationsList.innerHTML = purgeRecoveryMarkup + invitationRecoveryMarkup + staleMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
@@ -2983,7 +3032,20 @@ export const renderAdminOrganizations = () => {
         '" aria-pressed="' + String(activeView === view) + '">' + label + '</button>';
       const key = assessmentKey(orgId, selectedRef);
       const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(key);
-      const confirmationOutcome = questionnaireConfirmOutcomes.get(key);
+      let confirmationOutcome = questionnaireConfirmOutcomes.get(key);
+      if (!confirmationOutcome && state.currentScreen === 'admin-organizations' && activeView === 'organization-data' &&
+          programConfirmed && currentIdentityKey() &&
+          !questionnaireLoadState?.accessDenied && !questionnaireConfirmRequestsInFlight.has(key)) {
+        const revisionId = Number(readQuestionnaireOperation(confirmationStorageKey(key)));
+        if (Number.isSafeInteger(revisionId) && revisionId > 0) {
+          confirmationOutcome = {
+            revisionId, assignmentRef: selectedRef, status: 'unknown', restored: true,
+            message: 'Проверьте, сохранилась ли эта редакция.',
+          };
+          questionnaireConfirmOutcomes.set(key, confirmationOutcome);
+          confirmationToRestore = { organizationId: orgId, revisionId, assessmentRef: selectedRef };
+        }
+      }
       const requiresReadback = confirmationNeedsReadback(confirmationOutcome);
       const savedChoiceError = (currentRevision?.validation_json?.errors || []).find(
         (error) => error.code === 'CONTEXT_CHOICE_UNSUPPORTED' ||
@@ -3231,6 +3293,9 @@ export const renderAdminOrganizations = () => {
     .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));
   if (state.currentScreen === 'admin-organizations' && window.history.state?.screen === 'admin-organizations') {
     window.history.replaceState({ ...window.history.state, managementNavigation: managementNavigation() }, '');
+  }
+  if (confirmationToRestore && organizationDataIsVisible(confirmationToRestore.organizationId, confirmationToRestore.assessmentRef)) {
+    void checkAdminOrganizationConfirmation(confirmationToRestore.organizationId, confirmationToRestore.revisionId);
   }
 };
 

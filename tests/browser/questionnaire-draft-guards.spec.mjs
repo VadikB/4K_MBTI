@@ -68,8 +68,11 @@ async function fixture(page, { status = 200, items = [] } = {}) {
     if (request.method() !== 'GET') state.mutations.push({ method: request.method(), path: pathname });
     if (pathname === '/users/version') return json(route, { version: 'synthetic-questionnaire-guards' });
     if (pathname === '/users/session/restore') return json(route, state.authenticated ? auth() : { authenticated: false });
+    if (pathname === `/users/${state.userId}/session-bootstrap` && state.authenticated) return json(route, auth());
     if (pathname === '/users/session/logout') { state.authenticated = false; return json(route, { ok: true }); }
-    if (pathname === '/users/auth/email/request-link') return json(route, { email: 'admin-28@example.test', auth_mode: 'password' });
+    if (pathname === '/users/auth/email/request-link') {
+      return json(route, { email: `admin-${state.loginId}@example.test`, auth_mode: 'password' });
+    }
     if (pathname === '/users/auth/email/password-login') {
       state.userId = state.loginId; state.authenticated = true; return json(route, auth());
     }
@@ -240,6 +243,80 @@ test('Q-DRAFT pending read cannot clone a draft into a different connected asses
   await expect(connect).toContainText('Подключено: Synthetic pilot 11');
   await assertValues(page, fields('A'));
 });
+test('ADM-UI-02 restores pending confirmation only for its account, organization and assessment', async ({ page }) => {
+  const f = await fixture(page);
+  await finishRead(page, f);
+  const originalRef = 'pilot-11';
+  const proposedName = 'Новое имя из исходного запроса';
+  const stored = { id: 301, assignment_ref: originalRef, status: 'ready_for_confirmation', channel: 'product_form' };
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
+    stored.answers_json = route.request().postDataJSON().answers;
+    return json(route, stored, 201);
+  });
+  let confirmPosts = 0;
+  await page.route('**/users/admin/organizations/3/questionnaire/301/confirm', async (route) => {
+    confirmPosts += 1;
+    await route.abort('connectionreset');
+  });
+  const exactReads = [];
+  await page.route('**/users/admin/organizations/*/questionnaire/301', (route) => {
+    const organizationId = Number(new URL(route.request().url()).pathname.split('/')[4]);
+    exactReads.push({ account: f.state.userId, organizationId, program: f.state.programs[organizationId] });
+    return json(route, stored);
+  });
+
+  await fill(page, { organization_name: proposedName, purpose: 'Исходная цель' });
+  await form(page).locator('[data-early-data-submit]').click();
+  await form(page).locator('[data-action="confirm-questionnaire"]').click();
+  await expect(form(page).locator('.admin-data-confirmation-recovery')).toBeVisible();
+
+  const openData = async (org, assessmentRef) => {
+    const landing = page.locator('#admin-open-organizations-button');
+    const management = page.locator('#admin-organizations-panel');
+    await expect.poll(async () => await landing.isVisible() || await management.isVisible()).toBe(true);
+    if (await landing.isVisible()) await landing.click();
+    await page.locator('#admin-organization-select').selectOption(String(org));
+    await card(page, org).getByRole('button', { name: 'Данные организации', exact: true }).click();
+    await expect(form(page, org).locator('[name="assignment_ref"]')).toHaveValue(assessmentRef);
+  };
+  const signInAs = async (id) => {
+    f.state.loginId = id;
+    await page.locator('#admin-organizations-account-name').click();
+    await page.locator('#admin-organizations-logout-button').click();
+    await expect(page.locator('#auth-panel')).toBeVisible();
+    await page.locator('#email-input').fill(`admin-${id}@example.test`);
+    await page.locator('#request-magic-link-button').click();
+    await page.locator('#magic-token-input').fill('synthetic-password');
+    await page.locator('#verify-magic-link-button').click();
+    await expect.poll(() => f.state.userId).toBe(id);
+  };
+
+  f.state.programs[3] = 12;
+  await page.reload();
+  await openData(3, 'pilot-12');
+  await expect(form(page).locator('[data-early-data-submit]')).toBeEnabled();
+  expect(exactReads).toEqual([]);
+
+  await openData(4, originalRef);
+  await expect(form(page, 4).locator('[data-early-data-submit]')).toBeEnabled();
+  expect(exactReads).toEqual([]);
+
+  f.state.programs[3] = 11;
+  await signInAs(28);
+  await openData(3, originalRef);
+  await expect(form(page).locator('[data-early-data-submit]')).toBeEnabled();
+  expect(exactReads).toEqual([]);
+
+  await signInAs(18);
+  await openData(3, originalRef);
+  const retry = form(page).locator('[data-action="confirm-questionnaire"]');
+  await expect(retry).toBeEnabled();
+  await expect(retry).toHaveAttribute('data-value', '301');
+  await expect(form(page).locator('[name="purpose"]')).toHaveValue('Исходная цель');
+  expect(exactReads).toEqual([{ account: 18, organizationId: 3, program: 11 }]);
+  expect(confirmPosts).toBe(1);
+});
+
 test('Q-DRAFT old account read cannot erase or restore drafts after re-login', async ({ page }) => {
   const f = await fixture(page); await fill(page, fields('A'));
   await page.locator('#admin-organizations-account-name').click();

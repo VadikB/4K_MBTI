@@ -379,9 +379,28 @@ test('REMAIN-02 removes recipient controls and keeps confirmation available afte
   await expect(recovery).toBeVisible();
   await expect(recovery).toContainText('уже подтверждена более новая');
   await expect(form.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toHaveCount(0);
-  await recovery.getByRole('button', { name: 'Проверить результат' }).click();
+  let listRequested, releaseList;
+  const listStarted = new Promise((resolve) => { listRequested = resolve; });
+  const listResponse = new Promise((resolve) => { releaseList = resolve; });
+  await page.route('**/users/admin/organizations/3/questionnaire', async (route) => {
+    listRequested();
+    await listResponse;
+    return fulfillJson(route, { items: [] });
+  });
+  try {
+    await recovery.getByRole('button', { name: 'Проверить результат' }).click();
+    await listStarted;
+    await form.locator('[name="purpose"]').fill('Цель во время сверки');
+    await form.locator('[name="results_usage"]').fill('Использование во время сверки');
+  } finally {
+    releaseList();
+  }
+  await expect(form.locator('[data-operation-status]')).toContainText('Редакция не сохранена');
   await expect(form.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
-  await expect(form.locator('[name="purpose"]')).toHaveValue('Synthetic purpose');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Цель во время сверки');
+  await expect(form.locator('[name="results_usage"]')).toHaveValue('Использование во время сверки');
+  await expect(card.locator('[data-preview-value="purpose"]')).toHaveText('Цель во время сверки');
+  await expect(card.locator('[data-preview-value="results_usage"]')).toHaveText('Использование во время сверки');
   expect(revisionReads).toBe(1);
   expect(confirmationPosts).toBe(1);
 });
