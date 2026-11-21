@@ -144,8 +144,11 @@ class Semantics(ControlledSemanticAdapter):
         if key == "E01_UPDATE" and self.on_update:
             self.on_update()
         parsed = super().decide(rule=rule, text=text, turn_id=turn_id, context=context)
+        details = self.details.get(key)
+        if key == "E03_REPLY" and details and "fragments" in rule["details_by_code"]["MATCH"]["required"]:
+            details = {**details, "fragments": [_fragment(text, details["speaker_ids"])]}
         return Decision(parsed.outcome, parsed.code, parsed.basis, parsed.turn_ids, adapter="controlled",
-                        controlled_test=True, details=self.details.get(key))
+                        controlled_test=True, details=details)
 
 
 class Characters:
@@ -164,7 +167,7 @@ def _owner(http):
 def _rules(semantics, *, update="NO_MATCH", transfer="NO_MATCH", reply=None, intent="CONTINUE"):
     semantics.outcomes = {"SCENARIO_CONTROL": intent, "E01_UPDATE": update, "E02_TRANSFER": transfer,
                           "E03_REPLY": "MATCH" if reply else "NO_MATCH"}
-    semantics.details = {"E03_REPLY": {"speaker_ids": reply, "recipient_ids": reply}} if reply else {}
+    semantics.details = {"E03_REPLY": {"speaker_ids": reply}} if reply else {}
 
 
 def _public_path(cycle_id):
@@ -334,21 +337,33 @@ def _choice(code, **details):
     return {"code": code, **({"details": details} if details else {})}
 
 
+def _fragment(text, recipients):
+    return {"text": text, "recipient_ids": recipients}
+
+
 def _deliver_update(http, as_id, gateway):
     gateway.feed(_choice("CONTINUE"), _choice("MATCH"))
     receipt = _post(http, as_id, _command("proposal", PROPOSAL))
     assert len(_effect(receipt, "E01_UPDATE")) == 1
 
 
-@pytest.mark.parametrize("legacy", [False, True], ids=["saved_audience", "missing_legacy_audience"])
-def test_private_question_does_not_reach_other_colleagues_on_later_turn(
-    product_db, product_path, semantic_gateway, legacy,
+@pytest.mark.parametrize("legacy", [False, True], ids=["saved_fragments", "legacy_recipient_list"])
+@pytest.mark.parametrize("mixed", [False, True], ids=["private_question", "mixed_questions"])
+def test_private_fragment_does_not_reach_other_colleagues(
+    product_db, product_path, semantic_gateway, legacy, mixed,
 ):
     app, _, cycle_id, as_id, _ = product_path(["CASE.SPEC.03"])
     gateway, characters = semantic_gateway
-    roster = ["COLLEAGUE_1", "COLLEAGUE_2", "COLLEAGUE_3"]
-    shared_text = "Коллеги, когда ждут общий статус?"
+    sender, arthur, rita = roster = ["COLLEAGUE_1", "COLLEAGUE_2", "COLLEAGUE_3"]
+    shared_start = "Коллеги, сверим общий статус."
+    shared_end = "Когда ждут общий статус?"
+    shared_text = f"{shared_start} " + "Нужно согласовать сроки и ответственных. " * 55 + shared_end
     private_text = f"Ирина, уточню лично: {FACT}. Я правильно прочитал?"
+    rita_text = "Рита, когда вам удобно сверить журнал?"
+    question_text = f"{private_text} {rita_text}" if mixed else private_text
+    fragments = [_fragment(private_text, [sender])]
+    if mixed:
+        fragments.append(_fragment(rita_text, [rita]))
     with TestClient(app) as http:
         _owner(http)
         _deliver_update(http, as_id, gateway)
@@ -356,30 +371,46 @@ def test_private_question_does_not_reach_other_colleagues_on_later_turn(
         assert not _post(http, as_id, _command("uncertain", "Попробуем уточнить позже."))["events"]
 
         gateway.feed(_choice("CONTINUE"), _choice("NO_MATCH"),
-                     _choice("MATCH", speaker_ids=["COLLEAGUE_2"], recipient_ids=roster))
+                     _choice("MATCH", speaker_ids=[arthur], fragments=[
+                         {**_fragment(shared_start, roster), "end_text": shared_end},
+                     ]))
         shared = _command("public-question", shared_text)
         _post(http, as_id, shared)
+        assert characters.inputs[arthur][-1]["text"] == shared_text
         gateway.feed(_choice("CONTINUE"), _choice("NO_MATCH"),
-                     _choice("MATCH", speaker_ids=roster[:2], recipient_ids=roster[:1]))
-        private = _command("private-question", private_text)
-        receipt = _post(http, as_id, private)
+                     _choice("MATCH", speaker_ids=roster, fragments=list(reversed(fragments))))
+        question = _command("addressed-question", question_text)
+        receipt = _post(http, as_id, question)
         assert not _effect(receipt, "E02_TRANSFER")
-        assert [event["payload_json"]["speaker_id"] for event in _effect(receipt, "E03_REPLY")] == roster[:1]
-        assert characters.inputs["COLLEAGUE_1"][-1]["text"] == private_text
-        assert f"{FACT}. {DETAIL}" in characters.inputs["COLLEAGUE_1"][-1]["facts"]
-        assert len(characters.inputs["COLLEAGUE_2"]) == 1
+        assert [event["payload_json"]["speaker_id"] for event in _effect(receipt, "E03_REPLY")] == (
+            [sender, rita] if mixed else [sender]
+        )
+        sender_input = characters.inputs[sender][-1]
+        assert sender_input["text"] == private_text
+        assert f"{FACT}. {DETAIL}" in sender_input["facts"]
+        assert rita_text not in json.dumps(sender_input, ensure_ascii=False)
+        assert len(characters.inputs[arthur]) == 1
+        if mixed:
+            assert characters.inputs[rita][-1]["text"] == rita_text
+            assert FACT not in json.dumps(characters.inputs[rita][-1], ensure_ascii=False)
+        else:
+            assert not characters.inputs[rita]
 
     with product_db() as connection:
         saved = runtime.trace(connection, as_id)
-        audiences = saved["state"]["state_json"]["turn_audiences"]
-        assert audiences[private["turn_id"]] == roster[:1]
-        assert audiences[shared["turn_id"]] == roster
+        saved_fragments = saved["state"]["state_json"]["turn_fragments"][question["turn_id"]]
+        assert [(question_text[item["start"]:item["end"]], item["recipient_ids"]) for item in saved_fragments] == [
+            (fragment["text"], fragment["recipient_ids"]) for fragment in fragments
+        ]
         if legacy:
-            # Simulate the pre-fix snapshot, with the original Turn still present.
+            # The old snapshot knows the overall audience, without individual boundaries.
             connection.execute(
-                """UPDATE m5_scenario_states SET state_json=state_json #- %s::text[]
+                """UPDATE m5_scenario_states SET state_json=jsonb_set(
+                       state_json #- %s::text[], '{turn_audiences}', %s::jsonb)
                    WHERE assessment_situation_db_id=%s""",
-                (["turn_audiences", private["turn_id"]], saved["state"]["assessment_situation_db_id"]),
+                (["turn_fragments", question["turn_id"]],
+                 json.dumps({question["turn_id"]: [sender, rita] if mixed else [sender]}),
+                 saved["state"]["assessment_situation_db_id"]),
             )
         control(connection, cycle_id=cycle_id, key="privacy-pause", action="pause",
                 reason="operator_pause", initiated_by=99)
@@ -390,31 +421,61 @@ def test_private_question_does_not_reach_other_colleagues_on_later_turn(
     with TestClient(app) as reopened:
         _owner(reopened)
         trace = reopened.get(_public_path(cycle_id)).json()["trace"]
-        assert any(turn["turn_id"] == private["turn_id"] and turn["content_text"] == private_text
+        assert any(turn["turn_id"] == question["turn_id"] and turn["content_text"] == question_text
                    for turn in trace["turns"])
+        followup = "Коллеги, когда вы свободны?"
         gateway.feed(_choice("CONTINUE"), _choice("NO_MATCH"),
-                     _choice("MATCH", speaker_ids=roster[1:], recipient_ids=roster[1:]))
-        _post(reopened, as_id, _command("another-colleague", "Артур и Рита, когда вы свободны?"))
-        for colleague in roster[1:]:
+                     _choice("MATCH", speaker_ids=roster, fragments=[_fragment(followup, roster)]))
+        _post(reopened, as_id, _command("followup", followup))
+        expected_history = {sender: private_text, arthur: None, rita: rita_text if mixed else None}
+        for colleague in roster:
             inputs = characters.inputs[colleague][-1]
-            history = inputs["context"]["dialogue_history"]
-            assert any(item["turn_id"] == shared["turn_id"] and item["content_text"] == shared_text for item in history)
-            assert all(item["turn_id"] != private["turn_id"] for item in history)
-            assert FACT not in json.dumps(inputs, ensure_ascii=False)
-        gateway.feed(_choice("CONTINUE"), _choice("NO_MATCH"),
-                     _choice("MATCH", speaker_ids=roster[:1], recipient_ids=roster[:1]))
-        _post(reopened, as_id, _command("sender-again", "Ирина, уточните границы своего вклада."))
-        sender_history = characters.inputs["COLLEAGUE_1"][-1]["context"]["dialogue_history"]
-        assert any(item["turn_id"] == private["turn_id"] for item in sender_history) is (not legacy)
+            history = {item["turn_id"]: item["content_text"] for item in inputs["context"]["dialogue_history"]}
+            assert history[shared["turn_id"]] == shared_text
+            assert history.get(question["turn_id"]) == (None if legacy else expected_history[colleague])
+            if colleague != sender:
+                assert FACT not in json.dumps(inputs, ensure_ascii=False)
 
     with product_db() as connection:
         runtime.transition(connection, assessment_situation_id=as_id, action="scenario_end",
                            reason="completed", request_id="privacy-end")
         envelope = runtime.build_c45(connection, as_id, mode="interim")["envelope_json"]
-        assert any(turn["turn_id"] == private["turn_id"] and turn["content"] == private_text
-                   for turn in envelope["dialogue"]["turns"])
+        assert [turn["content"] for turn in envelope["dialogue"]["turns"] if turn["turn_id"] == question["turn_id"]] == [
+            question_text,
+        ]
         assert not any(event["event_type"] == "information_transferred" for event in envelope["dialogue"]["events"])
-        assert envelope["runtime_state"]["turn_audiences"].get(private["turn_id"]) == (None if legacy else roster[:1])
+
+
+@pytest.mark.parametrize("invalid", ["overlap", "unknown_recipient", "changed_text", "repeated_text"])
+def test_unconfirmed_fragment_bounds_keep_m04_private(product_db, product_path, semantic_gateway, invalid):
+    app, _, _, as_id, _ = product_path(["CASE.SPEC.03"])
+    gateway, characters = semantic_gateway
+    private = f"Ирина, уточню лично: {FACT}?"
+    group = "Рита, когда ждут статус?"
+    text = f"{private} {group}"
+    excerpt = private
+    recipient = "COLLEAGUE_1"
+    if invalid == "overlap":
+        group = text
+    elif invalid == "unknown_recipient":
+        recipient = "OUTSIDE_AS"
+    elif invalid == "changed_text":
+        excerpt += " Изменено"
+    else:
+        text += f" {private}"
+    with TestClient(app) as http:
+        _owner(http)
+        _deliver_update(http, as_id, gateway)
+        gateway.feed(_choice("CONTINUE"), _choice("NO_MATCH"), _choice(
+            "MATCH", speaker_ids=["COLLEAGUE_3"],
+            fragments=[_fragment(excerpt, [recipient]), _fragment(group, ["COLLEAGUE_3"])],
+        ))
+        command = _command("unconfirmed", text)
+        assert not _post(http, as_id, command)["events"]
+        assert not characters.inputs
+    with product_db() as connection:
+        state = runtime.trace(connection, as_id)["state"]["state_json"]
+        assert state["turn_fragments"][command["turn_id"]] == []
 
 
 @pytest.mark.parametrize("failure", ["E02_TRANSFER", "E03_REPLY"])
@@ -448,9 +509,10 @@ def test_failed_semantic_output_retries_original_http_turn_once(
         with product_db() as connection:
             state = runtime.trace(connection, as_id)
             operation = connection.execute("""
-                SELECT status, error_code, attempt_no, result_json
+                SELECT status, error_code, attempt_no, attempt_token, result_json
                 FROM m5_turn_operations WHERE request_id=%s
             """, (command["request_id"],)).fetchone()
+            failed_token = str(operation.pop("attempt_token"))
             assert operation == {"status": "failed", "error_code": "SEMANTIC_OUTPUT_INVALID",
                                  "attempt_no": 1, "result_json": None}
             assert len(state["turns"]) == len(before["turns"]) + 1
@@ -458,6 +520,34 @@ def test_failed_semantic_output_retries_original_http_turn_once(
             assert state["events"] == before["events"]
             assert state["decisions"] == before["decisions"]
             assert state["state"]["revision"] == before["state"]["revision"]
+            failed_attempts = state["ai_attempts"][len(before["ai_attempts"]):]
+            steps = ["SCENARIO_CONTROL", "E02_TRANSFER", "E03_REPLY"]
+            failed_steps = steps[:steps.index(failure) + 1]
+            assert [row["validation_json"]["rule_id"] for row in failed_attempts] == failed_steps
+            assert [row["outcome"] for row in failed_attempts] == ["accepted"] * (len(failed_steps) - 1) + ["rejected"]
+            for row, step in zip(failed_attempts, failed_steps):
+                validation = row["validation_json"]
+                assert row["action_key"] == f"{command['request_id']}:{step}"
+                assert row["attempt_no"] == 1 and validation["turn_attempt_token"] == failed_token
+                assert row["boundary_sequence"] == state["turns"][-1]["sequence_no"]
+                assert validation["turn_id"] == command["turn_id"] and validation["request_id"] == command["request_id"]
+                assert validation["result"]["handler_version"] == "m5-rule-engine/2"
+                sent = row["sent_json"]
+                prompt = json.loads(sent["messages"][1]["content"])
+                assert command["content"] == prompt["message"]
+                assert row["intended_json"]["response_contract"] == prompt["response_contract"]
+                for key in ("model", "provider", "endpoint"):
+                    assert sent[key] == row["intended_json"][key]
+                assert row["accepted_result_ref"] is None
+            failed = failed_attempts[-1]
+            assert json.loads(failed["response_json"]["content"])["code"] == (
+                "DIRECT" if failure == "E02_TRANSFER" else "MATCH"
+            )
+            assert failed["validation_json"]["code"] == "SEMANTIC_OUTPUT_INVALID"
+            assert failed["validation_json"]["result"] == {
+                "outcome": "ERROR", "code": "SEMANTIC_OUTPUT_INVALID",
+                "basis": "details fields do not match the response contract", "handler_version": "m5-rule-engine/2",
+            }
 
         gateway.feed(_choice("CONTINUE"), valid_transfer, _choice("MATCH", speaker_ids=["COLLEAGUE_2"]))
         applied = _post(http, as_id, command)
@@ -481,6 +571,14 @@ def test_failed_semantic_output_retries_original_http_turn_once(
         final = runtime.trace(connection, as_id)
         assert sum(str(turn["turn_id"]) == command["turn_id"] for turn in final["turns"]) == 1
         assert sum(event["event_type"] == "information_transferred" for event in final["events"]) == 1
+        attempts = final["ai_attempts"][len(before["ai_attempts"]):]
+        assert attempts[:len(failed_attempts)] == failed_attempts
+        retry_attempts = attempts[len(failed_attempts):]
+        assert [row["validation_json"]["rule_id"] for row in retry_attempts] == steps
+        assert len({row["attempt_id"] for row in attempts}) == len(attempts)
+        retry_tokens = {row["validation_json"]["turn_attempt_token"] for row in retry_attempts}
+        assert len(retry_tokens) == 1 and failed_token not in retry_tokens
+        assert all(row["attempt_no"] == 2 and row["accepted_result_ref"] for row in retry_attempts)
 
 
 @pytest.mark.parametrize("intent", ["FINAL", "STOP"])

@@ -9,6 +9,10 @@ from Api.m5_rule_engine import CharacterReply, Decision, RuleOutcome, evaluate_r
 class SemanticTurnError(ValueError):
     """The turn is saved and can be classified again with the same identity."""
 
+    def __init__(self, code: str, decisions: dict[str, tuple[dict, Decision]]):
+        super().__init__(code)
+        self.decisions = decisions
+
 
 @dataclass(frozen=True)
 class Transfer:
@@ -24,7 +28,7 @@ class TurnPlan:
     ending: str | None = None
     update: bool = False
     transfer: Transfer | None = None
-    recipient_ids: tuple[str, ...] = ()
+    fragments: list[dict] | None = None
 
 
 def scenario_contract(payload: dict) -> dict | None:
@@ -53,6 +57,44 @@ def _transfer(decision: Decision, *, text: str, update_text: str, sender_id: str
     return Transfer("assessee" if direct else sender_id, tuple(recipients), message)
 
 
+def _unique_start(text: str, quote: str) -> int:
+    start = text.find(quote)
+    return start if start >= 0 and text.find(quote, start + 1) < 0 else -1
+
+
+def _fragment_bounds(fragments: object, text: str, roles: set[str]) -> list[dict]:
+    if not isinstance(fragments, list):
+        return []
+    bounds = []
+    for fragment in fragments:
+        if not isinstance(fragment, dict) or not _ids(fragment.get("recipient_ids"), roles):
+            return []
+        quote = fragment.get("text")
+        if not isinstance(quote, str) or not quote.strip():
+            return []
+        start = _unique_start(text, quote)
+        if start < 0:
+            return []
+        end = start + len(quote)
+        if "end_text" in fragment:
+            end_quote = fragment["end_text"]
+            if not isinstance(end_quote, str) or not end_quote.strip():
+                return []
+            end_start = _unique_start(text, end_quote)
+            if end_start < end:
+                return []
+            end = end_start + len(end_quote)
+        bounds.append({"start": start, "end": end, "recipient_ids": fragment["recipient_ids"]})
+    bounds.sort(key=lambda item: item["start"])
+    if any(left["end"] > right["start"] for left, right in zip(bounds, bounds[1:])):
+        return []
+    return bounds
+
+
+def _character_text(text: str, fragments: list[dict], speaker_id: str) -> str:
+    return "\n".join(text[item["start"]:item["end"]] for item in fragments if speaker_id in item["recipient_ids"])
+
+
 def _character_history(state: dict, speaker_id: str, turn_id: str, plan: TurnPlan,
                        update_sequence: int | None) -> tuple[list[dict], list[str]]:
     shares = {item["message_turn_id"]: item for item in state.get("addressed_transfers", [])}
@@ -63,7 +105,7 @@ def _character_history(state: dict, speaker_id: str, turn_id: str, plan: TurnPla
     if transfer and transfer.sender_id != "assessee" and speaker_id in transfer.recipient_ids:
         facts.append(transfer.text)
 
-    audiences = {**state.get("turn_audiences", {}), turn_id: plan.recipient_ids}
+    saved_fragments = state.get("turn_fragments", {})
     withheld = set(state.get("withheld_turn_ids", ()))
     history = []
     for item in state["dialogue_history"]:
@@ -75,13 +117,12 @@ def _character_history(state: dict, speaker_id: str, turn_id: str, plan: TurnPla
             if speaker_id in share["recipient_ids"]:
                 history.append({**item, "content_text": share["text"]})
         elif item["speaker_type"] == "assessee":
-            recipients = audiences.get(item_id)
-            if recipients is not None:
-                visible = speaker_id in recipients
-            else:
-                # Before the first delivery there is no closed M04 in the dialogue.
-                visible = update_sequence is None or item["sequence_no"] < update_sequence
-            if visible:
+            fragments = plan.fragments if item_id == turn_id else saved_fragments.get(item_id)
+            if fragments is not None:
+                content = _character_text(item["content_text"], fragments, speaker_id)
+                if content:
+                    history.append({**item, "content_text": content})
+            elif update_sequence is None or item["sequence_no"] < update_sequence:
                 history.append(item)
         elif item["speaker_id"] == speaker_id:
             history.append(item)
@@ -98,20 +139,20 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
     update = events["E01_UPDATE"]
     material_id = update["material_ids"][0]
     disclosed = material_id in state["disclosed_materials"]
-    if not disclosed:
-        plan.recipient_ids = tuple(cards)
+    if disclosed:
+        plan.fragments = []
     public_state = {key: state[key] for key in ("status", "current_stage", "dialogue_history", "events")}
     public_state.update(roster=roster, update_delivered=disclosed)
 
     def decide(event_id, condition, codes, true_codes, *, details_by_code=None, data=None):
-        rule = {"rule_id": event_id, "version": "2", "type": "semantic_decision",
+        rule = {"rule_id": event_id, "version": "3" if event_id == "E03_REPLY" else "2", "type": "semantic_decision",
                 "condition": condition, "allowed_codes": list(codes), "true_codes": list(true_codes),
                 "details_by_code": details_by_code or {}}
         result = evaluate_rule(rule, state=public_state, data=data or {}, text=text, turn_id=turn_id,
                                semantic_adapter=semantic)
-        if result.outcome == RuleOutcome.ERROR:
-            raise SemanticTurnError(result.code)
         plan.decisions[event_id] = rule, result
+        if result.outcome == RuleOutcome.ERROR:
+            raise SemanticTurnError(result.code, plan.decisions)
         return result
 
     control = design["control"]
@@ -142,10 +183,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
                           details_by_code={code: {"required": ["recipient_ids", "text"]} for code in transfer_codes},
                           data={"delivered_text": update_text, "sender_id": sender_id})
         plan.transfer = _transfer(decision, text=text, update_text=update_text, sender_id=sender_id, roles=set(cards))
-        if plan.transfer:
-            if plan.transfer.sender_id != "assessee":
-                plan.recipient_ids = (sender_id,)
-        elif (decision.code, decision.outcome) != ("NO_MATCH", RuleOutcome.FALSE):
+        if not plan.transfer and (decision.code, decision.outcome) != ("NO_MATCH", RuleOutcome.FALSE):
             return plan
 
     reply = events["E03_REPLY"]
@@ -153,35 +191,40 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
     reply_details = {"MATCH": {"required": ["speaker_ids"]}}
     condition = {"condition": reply["condition"], "output": reply["classification"]}
     if classify_audience:
-        reply_details["MATCH"]["required"].append("recipient_ids")
-        reply_details.update({code: {"optional": ["recipient_ids"]} for code in ("NO_MATCH", "UNKNOWN")})
+        reply_details["MATCH"]["required"].append("fragments")
+        reply_details.update({code: {"optional": ["fragments"]} for code in ("NO_MATCH", "UNKNOWN")})
         condition["audience"] = (
-            "Определи отдельно фактических адресатов последней реплики. Для общего чата со всеми "
-            "перечисли весь состав roster. Для адресной реплики укажи только её адресатов, включая "
-            "личное уточнение отправителю. recipient_ids показывают, кто получил реплику, "
-            "speaker_ids показывают, кто отвечает. При неясной аудитории верни UNKNOWN без recipient_ids."
+            "Раздели последнее message на непересекающиеся точные цитаты по фактическим адресатам. "
+            "Для каждой части верни её text и recipient_ids из roster. Для длинной части допустимо вернуть "
+            "в text её точное начало, а в end_text её точный конец. Начало и конец должны встречаться в message "
+            "ровно по одному разу. recipient_ids относятся ко всей части от начала до конца. "
+            "Отдели личное уточнение от соседних вопросов. Для действительно общей части укажи весь roster. "
+            "Пропусти части с неясной аудиторией. speaker_ids означает персонажей, которые отвечают."
         )
     choice = decide("E03_REPLY", condition, ("MATCH", "NO_MATCH", "UNKNOWN"), ("MATCH",),
                     details_by_code=reply_details)
     details = choice.details if isinstance(choice.details, dict) else {}
-    recipients = details.get("recipient_ids")
-    if classify_audience and _ids(recipients, set(cards)):
-        plan.recipient_ids = tuple(recipients)
+    if classify_audience:
+        plan.fragments = _fragment_bounds(details.get("fragments"), text, set(cards))
     speakers = details.get("speaker_ids")
     if choice.code != "MATCH" or choice.outcome != RuleOutcome.TRUE or not _ids(speakers, set(reply["speaker_ids"])):
         return plan
-    reply_recipients = plan.transfer.recipient_ids if plan.transfer else plan.recipient_ids
     for material in payload["materials"]:
         speaker_id = material.get("speaker_id")
         if material["kind"] != "character_reaction" or speaker_id not in speakers:
             continue
-        if speaker_id not in reply_recipients:
+        if plan.transfer:
+            current = plan.transfer.text if speaker_id in plan.transfer.recipient_ids else ""
+        elif plan.fragments is None:
+            current = text
+        else:
+            current = _character_text(text, plan.fragments, speaker_id)
+        if not current:
             continue
         history, facts = _character_history(state, speaker_id, turn_id, plan, update_sequence)
         card = cards[speaker_id]
         if disclosed and speaker_id == sender_id:
             facts.append(update_text)
-        current = plan.transfer.text if plan.transfer else text
         plan.replies[material["material_id"]] = character.respond(
             material=material,
             character={"character_id": speaker_id, "role_card": card, "public_position": card["Текст"],

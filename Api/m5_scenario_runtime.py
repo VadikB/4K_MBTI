@@ -241,7 +241,8 @@ def _save_state(connection, saved: dict, value: dict) -> dict:
     return dict(updated)
 
 
-def _record_decision(connection, *, row: dict, saved: dict, key: str, rule: dict, decision) -> dict:
+def _record_decision(connection, *, row: dict, saved: dict, key: str, rule: dict, decision,
+                     ai_attempt_no: int | None = None) -> dict:
     existing = connection.execute(
         "SELECT * FROM m5_rule_decisions WHERE assessment_situation_db_id=%s AND decision_key=%s",
         (row["id"], key),
@@ -262,12 +263,14 @@ def _record_decision(connection, *, row: dict, saved: dict, key: str, rule: dict
     connection.execute("""
         UPDATE m5_ai_attempts SET accepted_result_ref=%s
         WHERE assessment_situation_db_id=%s AND action_key=%s AND outcome='accepted'
-    """, (f"m5_rule_decisions:{recorded['decision_id']}", row["id"], key))
+          AND (%s::integer IS NULL OR attempt_no=%s)
+    """, (f"m5_rule_decisions:{recorded['decision_id']}", row["id"], key, ai_attempt_no, ai_attempt_no))
     return recorded
 
 
 def _record_ai_attempt(connection, *, row: dict, action_key: str, action_type: str,
-                       boundary_sequence: int, input_value: dict, result: object) -> dict | None:
+                       boundary_sequence: int, input_value: dict, result: object,
+                       attempt_no: int | None = None, validation_details: dict | None = None) -> dict | None:
     ai_trace = getattr(result, "ai_trace", None)
     if not isinstance(ai_trace, dict):
         return None
@@ -287,10 +290,12 @@ def _record_ai_attempt(connection, *, row: dict, action_key: str, action_type: s
     else:
         outcome = "rejected"
         code = getattr(result, "code", None) or "OUTPUT_REJECTED"
-    attempt_no = int(connection.execute(
-        "SELECT count(*) AS n FROM m5_ai_attempts WHERE assessment_situation_db_id=%s AND action_key=%s",
-        (row["id"], action_key),
-    ).fetchone()["n"]) + 1
+    if attempt_no is None:
+        attempt_no = int(connection.execute(
+            "SELECT count(*) AS n FROM m5_ai_attempts WHERE assessment_situation_db_id=%s AND action_key=%s",
+            (row["id"], action_key),
+        ).fetchone()["n"]) + 1
+    validation = {"code": code, "identity_status": identity_status, **(validation_details or {})}
     return dict(connection.execute("""
         INSERT INTO m5_ai_attempts
             (assessment_situation_db_id,action_key,action_type,request_id,attempt_id,boundary_sequence,
@@ -301,7 +306,7 @@ def _record_ai_attempt(connection, *, row: dict, action_key: str, action_type: s
           json.dumps(ai_trace.get("sent") or {}, ensure_ascii=False),
           json.dumps(ai_trace.get("provider") or {}, ensure_ascii=False),
           json.dumps(ai_trace.get("response") or {}, ensure_ascii=False), outcome,
-          json.dumps({"code": code, "identity_status": identity_status}, ensure_ascii=False), attempt_no)).fetchone())
+          json.dumps(validation, ensure_ascii=False), attempt_no)).fetchone())
 
 
 def _evaluate(connection, *, row: dict, saved: dict, operation_key: str, rule: dict, state: dict,
@@ -574,24 +579,48 @@ def _candidate_rules(payload: dict, *, include_qa_unresolved: bool,
     return result
 
 
-def _fail_detached_turn(connection_factory, *, as_db_id: int, request_id: str,
-                        attempt_token, cycle_db_id: int, session_db_id: int,
-                        operation_ref: str, error_code: str) -> None:
+def _record_addressed_attempts(connection, *, row: dict, turn: dict, attempt: dict, decisions: dict) -> None:
+    for event_id, (rule, decision) in decisions.items():
+        _record_ai_attempt(
+            connection, row=row, action_key=f"{turn['request_id']}:{event_id}", action_type="semantic_decision",
+            boundary_sequence=turn["sequence_no"], attempt_no=attempt["attempt_no"],
+            input_value={"rule": rule, "turn_id": str(turn["turn_id"]), "state_revision": attempt["input_revision"]},
+            result=decision, validation_details={
+                "request_id": turn["request_id"],
+                "turn_id": str(turn["turn_id"]),
+                "turn_attempt_token": str(attempt["attempt_token"]),
+                "input_revision": attempt["input_revision"],
+                "rule_id": event_id,
+                "rule_version": rule["version"],
+                "result": {"outcome": decision.outcome.value, "code": decision.code, "basis": decision.basis,
+                           "handler_version": decision.handler_version},
+            },
+        )
+
+
+def _fail_detached_turn(connection_factory, *, row: dict, turn: dict, attempt: dict,
+                        operation_ref: str, error: Exception) -> None:
     with connection_factory() as connection:
-        connection.execute("SELECT id FROM m5_cycles WHERE id=%s FOR UPDATE", (cycle_db_id,))
-        operation = connection.execute(
+        connection.execute("SELECT id FROM m5_cycles WHERE id=%s FOR UPDATE", (row["cycle_db_id"],))
+        current = connection.execute(
             "SELECT * FROM m5_turn_operations WHERE assessment_situation_db_id=%s AND request_id=%s FOR UPDATE",
-            (as_db_id, request_id),
+            (row["id"], turn["request_id"]),
         ).fetchone()
-        if not operation or str(operation["attempt_token"]) != str(attempt_token) or operation["status"] != "pending":
+        if isinstance(error, m5_addressed_scenario.SemanticTurnError):
+            _record_addressed_attempts(connection, row=row, turn=turn, attempt=attempt, decisions=error.decisions)
+            code = str(error)
+        else:
+            code = type(error).__name__
+        if not current or current["attempt_token"] != attempt["attempt_token"] or current["status"] != "pending":
+            connection.commit()
             return
         m5_cycle_runtime.end_blocking_wait(
-            connection, cycle_db_id=cycle_db_id, session_db_id=session_db_id,
+            connection, cycle_db_id=int(row["cycle_db_id"]), session_db_id=int(row["session_db_id"]),
             operation_ref=operation_ref, reason="m5_turn_provider_failed",
         )
         connection.execute(
             "UPDATE m5_turn_operations SET status='failed',error_code=%s,completed_at=NOW() WHERE id=%s",
-            (error_code[:200], operation["id"]),
+            (code[:200], current["id"]),
         )
         connection.commit()
 
@@ -663,16 +692,16 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
                     raise ValueError("M5_STATE_REVISION_CONFLICT")
             if existing_operation["status"] == "pending" and existing_operation["locked_at"] > datetime.now(existing_operation["locked_at"].tzinfo) - timedelta(minutes=2):
                 raise ValueError("M5_TURN_OPERATION_IN_PROGRESS")
-            connection.execute("""
+            attempt = connection.execute("""
                 UPDATE m5_turn_operations SET status='pending',attempt_token=%s,attempt_no=attempt_no+1,
-                    input_revision=%s,locked_at=NOW(),error_code=NULL WHERE id=%s
-            """, (attempt_token, saved["revision"], existing_operation["id"]))
+                    input_revision=%s,locked_at=NOW(),error_code=NULL WHERE id=%s RETURNING *
+            """, (attempt_token, saved["revision"], existing_operation["id"])).fetchone()
         else:
-            connection.execute("""
+            attempt = connection.execute("""
                 INSERT INTO m5_turn_operations
                     (assessment_situation_db_id,request_id,turn_id,request_checksum,input_revision,status,attempt_token)
-                VALUES (%s,%s,%s,%s,%s,'pending',%s)
-            """, (row["id"], request_id, UUID(turn_id), request_checksum, saved["revision"], attempt_token))
+                VALUES (%s,%s,%s,%s,%s,'pending',%s) RETURNING *
+            """, (row["id"], request_id, UUID(turn_id), request_checksum, saved["revision"], attempt_token)).fetchone()
         turn = connection.execute(
             "SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s AND request_id=%s",
             (row["id"], request_id),
@@ -707,12 +736,8 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
         else:
             decisions, replies = _plan_legacy_provider_turn(payload, factual_state, content, turn_id, adapter, responder)
     except Exception as exc:
-        _fail_detached_turn(
-            connection_factory, as_db_id=int(row["id"]), request_id=request_id,
-            attempt_token=attempt_token, cycle_db_id=int(row["cycle_db_id"]),
-            session_db_id=int(row["session_db_id"]), operation_ref=operation_ref,
-            error_code=str(exc) if isinstance(exc, m5_addressed_scenario.SemanticTurnError) else type(exc).__name__,
-        )
+        _fail_detached_turn(connection_factory, row=row, turn=turn, attempt=attempt,
+                            operation_ref=operation_ref, error=exc)
         raise
 
     with connection_factory() as connection:
@@ -721,7 +746,11 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
             "SELECT * FROM m5_turn_operations WHERE assessment_situation_db_id=%s AND request_id=%s FOR UPDATE",
             (row["id"], request_id),
         ).fetchone()
-        if not operation or str(operation["attempt_token"]) != str(attempt_token) or operation["status"] != "pending":
+        if addressed_plan is not None:
+            _record_addressed_attempts(connection, row=row, turn=turn, attempt=attempt,
+                                       decisions=addressed_plan.decisions)
+        if not operation or operation["attempt_token"] != attempt["attempt_token"] or operation["status"] != "pending":
+            connection.commit()
             raise ValueError("M5_TURN_ATTEMPT_SUPERSEDED")
         m5_cycle_runtime.end_blocking_wait(
             connection, cycle_db_id=int(row["cycle_db_id"]),
@@ -736,6 +765,7 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
                     semantic_adapter=adapter if is_addressed else _DecisionReplayAdapter(decisions),
                     character_adapter=responder if is_addressed else _CharacterReplayAdapter(replies),
                     expected_revision=int(operation["input_revision"]), addressed_plan=addressed_plan,
+                    addressed_attempt_no=attempt["attempt_no"] if is_addressed else None,
                     enqueue_interim_by=enqueue_interim_by,
                 )
         except Exception as exc:
@@ -816,6 +846,7 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
                 character_adapter: CharacterResponseAdapter | None = None,
                 expected_revision: int | None = None,
                 addressed_plan: m5_addressed_scenario.TurnPlan | None = None,
+                addressed_attempt_no: int | None = None,
                 enqueue_interim_by: int | None = None) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
     m5_cycle_runtime.assert_collecting(
@@ -848,7 +879,7 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
         return _submit_addressed_turn(
             connection, row=row, saved=saved, state=state, turn=turn, existing=bool(existing),
             plan=addressed_plan, semantic=adapter, character=responder, detached=expected_revision is not None,
-            enqueue_interim_by=enqueue_interim_by,
+            ai_attempt_no=addressed_attempt_no, enqueue_interim_by=enqueue_interim_by,
         )
     for material in payload["materials"]:
         condition = material["disclosure_condition"]
@@ -921,7 +952,7 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
 
 def _submit_addressed_turn(connection, *, row: dict, saved: dict, state: dict, turn: dict,
                            existing: bool, plan, semantic, character, detached: bool,
-                           enqueue_interim_by: int | None) -> dict:
+                           ai_attempt_no: int | None, enqueue_interim_by: int | None) -> dict:
     turn_id = str(turn["turn_id"])
     request_id = turn["request_id"]
     if existing and not detached:
@@ -949,11 +980,13 @@ def _submit_addressed_turn(connection, *, row: dict, saved: dict, state: dict, t
     decisions = {}
     for event_id, (rule, decision) in plan.decisions.items():
         key = f"{request_id}:{event_id}"
-        _record_ai_attempt(connection, row=row, action_key=key, action_type="semantic_decision",
-                           boundary_sequence=turn["sequence_no"], input_value={
-                               "rule": rule, "turn_id": turn_id, "state_revision": saved["revision"],
-                           }, result=decision)
-        decisions[event_id] = _record_decision(connection, row=row, saved=saved, key=key, rule=rule, decision=decision)
+        if not detached:
+            _record_ai_attempt(connection, row=row, action_key=key, action_type="semantic_decision",
+                               boundary_sequence=turn["sequence_no"], input_value={
+                                   "rule": rule, "turn_id": turn_id, "state_revision": saved["revision"],
+                               }, result=decision)
+        decisions[event_id] = _record_decision(connection, row=row, saved=saved, key=key, rule=rule,
+                                               decision=decision, ai_attempt_no=ai_attempt_no)
 
     if plan.ending:
         result = transition(
@@ -968,7 +1001,8 @@ def _submit_addressed_turn(connection, *, row: dict, saved: dict, state: dict, t
         return {"turn": dict(turn), "events": [result["event"]], "idempotent": False}
 
     events = []
-    state.setdefault("turn_audiences", {})[turn_id] = list(plan.recipient_ids)
+    if plan.fragments is not None:
+        state.setdefault("turn_fragments", {})[turn_id] = plan.fragments
     materials = {item["material_id"]: item for item in payload["materials"]}
     update = design["events"]["E01_UPDATE"]
     material_id = update["material_ids"][0]
