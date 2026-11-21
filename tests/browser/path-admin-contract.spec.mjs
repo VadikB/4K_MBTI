@@ -62,7 +62,7 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
       for (const checkbox of await card.locator('input[name="invitation_email"]').all()) await checkbox.uncheck();
       await card.locator(`input[name="invitation_email"][value="${email}"]`).check();
     };
-    const assign = card.getByRole('button', { name: 'Назначить оценку', exact: true });
+    const assign = card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true });
     await select(emails[0]);
     const response = page.waitForResponse((r) => r.url() === url && r.request().method() === 'POST');
     await assign.dblclick();

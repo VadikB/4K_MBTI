@@ -25,8 +25,10 @@ export const renderAdminReports = () => {
   if (!data) return;
   adminReportsSearch.value = state.adminReportsSearch || '';
   organization.innerHTML = (data.organizations || []).map((item) => option(item.id, item.name, data.organization_id)).join('');
+  const programs = new Set(data.programs || []);
+  if (state.adminReportsProgram) programs.add(state.adminReportsProgram);
   program.innerHTML = option('', 'Все программы', state.adminReportsProgram || '') +
-    (data.programs || []).map((item) => option(item, item, state.adminReportsProgram)).join('');
+    [...programs].map((item) => option(item, item, state.adminReportsProgram)).join('');
   status.value = state.adminReportsStatus || '';
   adminReportsFound.textContent = 'Найдено: ' + data.total;
   adminReportsList.innerHTML = '';
@@ -51,7 +53,8 @@ export const renderAdminReports = () => {
       open.addEventListener('click', async () => {
         const module = await import('../report.js');
         module.openReport({ m8CycleId: item.cycle_id, m8ReportId: item.report_id,
-          customerAccess: true, returnTarget: 'admin-reports' });
+          customerAccess: true, returnTarget: 'admin-reports',
+          returnToManagement: window.history.state?.returnToManagement === true });
       });
       const pdf = document.createElement('button');
       pdf.type = 'button';
@@ -109,9 +112,23 @@ export const changeAdminReportsPage = (direction) => {
   refresh();
 };
 
-export const openAdminReports = async () => {
+export const openAdminReports = async ({
+  organizationId, programName = '', returnToManagement = window.history.state?.returnToManagement === true,
+} = {}) => {
+  clearTimeout(searchTimer);
+  if (organizationId) {
+    state.adminReportsOrganizationId = organizationId;
+    state.adminReportsProgram = programName;
+    state.adminReportsPage = 1;
+    state.adminReportsSearch = '';
+    state.adminReportsStatus = '';
+    state.adminReports = null;
+    persistAssessmentContext();
+  }
   setCurrentScreen('admin-reports');
   syncUrlState('admin-reports');
+  window.history.replaceState({ ...window.history.state, returnToManagement }, '');
+  document.getElementById('admin-reports-back-button').textContent = returnToManagement ? 'К управлению' : 'Назад';
   hideAllPanels();
   adminReportsPanel.classList.remove('hidden');
   refresh();

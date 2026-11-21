@@ -82,6 +82,7 @@ const fits = async (page, width) => {
     expect(rect.x).toBeGreaterThanOrEqual(0); expect(rect.x+rect.width).toBeLessThanOrEqual(width+1);
   }
 };
+const infoPath = (role,name,width) => evidence + '/' + role + '-' + name + '-' + width + '.png';
 const snap = async (page, name, width) => {
   await fits(page,width);
   await page.screenshot({path:`${evidence}/${name}-${width}.png`,fullPage:true,scale:'css'});
@@ -257,31 +258,48 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
       const card=page.locator('[data-organization-id="3"]');await expect(card).toBeVisible();
       await card.locator('.admin-organization-step[data-view="people"]').click();
       const member=card.locator('.admin-organization-member').filter({hasText:'member@example.test'});
-      const adminRoot=member.locator('[data-preparation-status]');
       await expect(member).not.toContainText('назначения нет');
       await expect(card.locator('.admin-organization-member').filter({hasText:'absent@example.test'})).toContainText('Для выбранной оценки назначения нет');
       await expect(card.locator('.admin-organization-member').filter({hasText:'absent@example.test'}).locator('[data-preparation-status]')).toHaveCount(0);
       const cancelled=card.locator('.admin-organization-member').filter({hasText:'cancelled@example.test'});
       await expect(cancelled).toContainText('Назначение отменено');
       await expect(cancelled.locator('[data-preparation-status]')).toHaveCount(0);
-      await expect(adminRoot).toHaveClass(/preparation-status--compact/);
       await snap(page,role,width);
-      await member.screenshot({path:`${evidence}/${role}-card-${width}.png`,scale:'css'});
-      await details(page,adminRoot,role,width);
-      await member.screenshot({path:`${evidence}/${role}-card-details-${width}.png`,scale:'css'});
-      const detailBox=await adminRoot.locator('.preparation-details').boundingBox(),memberBox=await member.boundingBox();
-      expect(detailBox.width).toBeGreaterThan(memberBox.width*0.7);
-      await adminRoot.getByRole('button',{name:'Скопировать сведения'}).focus();
-      // Refresh uses existing tenant GET and preserves intentional disclosure/focus.
-      await page.evaluate(async(entry)=>{const m=await import('/web/dist/'+entry);await m.refreshAdminOrganizationsSafely();},(await fs.readdir('web/dist')).find(name=>name.startsWith('admin-organizations-')));
-      await expect(adminRoot.locator('details')).toHaveAttribute('open','');
-      await expect(adminRoot.getByRole('button',{name:'Скопировать сведения'})).toBeFocused();
-      adminError=true;
-      await member.locator('[data-action="check-member-preparation"]').click();
-      await expect(adminRoot.locator('[data-preparation-notice]')).toContainText('Не удалось обновить состояние');
-      adminError=false;
-      await member.locator('[data-action="check-member-preparation"]').click();
-      await expect(adminRoot.locator('[data-preparation-notice]')).not.toContainText('Не удалось обновить состояние');
+      await member.screenshot({path:infoPath(role,'card',width),scale:'css'});
+      if (role==='admin') {
+        await expect(member.locator('[data-preparation-status]')).toHaveCount(0);
+        await member.locator('[data-action="open-member-card"]').click();
+        const dialog=page.locator('.org-admin-member-card');
+        await dialog.locator('.admin-member-history > summary').click();
+        const adminRoot=dialog.locator('[data-preparation-status]');
+        await details(page,adminRoot,role,width);
+        await dialog.screenshot({path:infoPath(role,'card-details',width),scale:'css'});
+        adminError=true;
+        const refresh=dialog.getByRole('button',{name:'Проверить состояние',exact:true});
+        await refresh.click();
+        await expect(dialog.locator('[data-card-check-feedback]')).toContainText('Не удалось обновить состояние');
+        adminError=false;
+        await refresh.click();
+        await expect(dialog.locator('[data-card-check-feedback]')).toHaveText('Состояние обновлено.');
+        await expect(adminRoot.locator('details')).toHaveAttribute('open','');
+        await page.keyboard.press('Escape');
+        await expect(member.locator('[data-action="open-member-card"]')).toBeFocused();
+      } else {
+        const adminRoot=member.locator('[data-preparation-status]');
+        await expect(adminRoot).toHaveClass(/preparation-status--compact/);
+        await details(page,adminRoot,role,width);
+        await member.screenshot({path:infoPath(role,'card-details',width),scale:'css'});
+        await adminRoot.getByRole('button',{name:'Скопировать сведения'}).focus();
+        await page.evaluate(async(entry)=>{const m=await import('/web/dist/'+entry);await m.refreshAdminOrganizationsSafely();},(await fs.readdir('web/dist')).find(name=>name.startsWith('admin-organizations-')));
+        await expect(adminRoot.locator('details')).toHaveAttribute('open','');
+        await expect(adminRoot.getByRole('button',{name:'Скопировать сведения'})).toBeFocused();
+        adminError=true;
+        await member.locator('[data-action="check-member-preparation"]').click();
+        await expect(adminRoot.locator('[data-preparation-notice]')).toContainText('Не удалось обновить состояние');
+        adminError=false;
+        await member.locator('[data-action="check-member-preparation"]').click();
+        await expect(adminRoot.locator('[data-preparation-notice]')).not.toContainText('Не удалось обновить состояние');
+      }
       expect((await(await page.request.get(`${admin.base}/__preview/requests`)).json()).filter(r=>r.method!=='GET')).toEqual([]);
       for(const tab of await card.locator('.admin-organization-step').all()) {
         await tab.scrollIntoViewIfNeeded();await expect(tab).toBeVisible();

@@ -205,7 +205,7 @@ test('REMAIN-03 unknown invitation survives reload and reads the same operation'
   await page.reload();
   await expect(page.locator('.admin-invitation-recovery')).toBeVisible();
   state.invitationReadStatus = 200;
-  await page.locator('[data-action="recover-member-invitation"]').click();
+  await page.getByRole('button', { name: 'Проверить отправку', exact: true }).click();
   await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
   expect(state.invitationPosts).toBe(1);
   expect(state.requests.some((request) => request.path.includes('/personal-invitations/operations/' +
@@ -227,7 +227,10 @@ test('REMAIN-03 precommit loss retries the same identity after reload', async ({
   await page.reload();
   await expect(page.locator('.admin-invitation-recovery')).toBeVisible();
   state.invitationLoseBeforeCommit = false;
-  await page.locator('[data-action="recover-member-invitation"]').click();
+  await page.getByRole('button', { name: 'Проверить отправку', exact: true }).click();
+  await expect(page.locator('#admin-organizations-status')).toContainText('Результат этой попытки пока не найден');
+  expect(state.invitationPosts).toBe(1);
+  await page.locator('.admin-invitation-recovery [data-action="recover-member-invitation"]').click();
   await expect(page.locator('.admin-invitation-recovery')).toHaveCount(0);
   const posts = state.requests.filter((request) => request.path.endsWith('/personal-invitations') && request.method === 'POST');
   expect(posts).toHaveLength(2);

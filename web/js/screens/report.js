@@ -39,6 +39,7 @@ import { hideAllPanels, syncUrlState, navigateToScreen } from '../router.js';
 import { projectReportRadar, radarPoint, summarizeReportScores } from '../utils/report-radar.js';
 import { reportHeader } from '../components/report-header.js';
 import { mountReportComparison } from '../utils/report-comparison.js';
+import { openAdminOrganizationsScreen } from '../screen-loaders.js';
 import { openHomePage } from './ai-welcome.js';
 import { openReports } from './reports.js';
 
@@ -1414,7 +1415,7 @@ export const downloadSelectedReportPdf = () => {
 };
 
 export const openReport = (options = {}) => {
-  const { returnTarget = 'home', m8CycleId = null, m8ReportId = null, customerAccess = false,
+  const { returnTarget = 'home', returnToManagement = false, m8CycleId = null, m8ReportId = null, customerAccess = false,
     previousReportId = '', comparisonView = false } = options;
   const comparisonState = new URLSearchParams(window.location.search);
   if (!m8CycleId) {
@@ -1426,7 +1427,7 @@ export const openReport = (options = {}) => {
   const identityEpoch = state.identityEpoch;
   const ownerId = state.pendingUser?.id;
   const isCurrent = () => state.reportRequestEpoch === requestEpoch && state.identityEpoch === identityEpoch && state.pendingUser?.id === ownerId && state.currentScreen === 'report';
-  state.reportReturnTarget = ['reports', 'admin-reports'].includes(returnTarget) ? returnTarget : 'home';
+  state.reportReturnTarget = ['reports', 'admin-reports', 'admin-organizations'].includes(returnTarget) ? returnTarget : 'home';
   setCurrentScreen('report');
   syncUrlState('report');
   hideAllPanels();
@@ -1488,7 +1489,7 @@ export const openReport = (options = {}) => {
     else url.searchParams.delete('report_access');
     if (previousReportId) url.searchParams.set('previous_report_id', previousReportId);
     if (comparisonView && !customerAccess) url.searchParams.set('report_view', 'comparison');
-    window.history.replaceState({ reportReturnTarget: state.reportReturnTarget }, '',
+    window.history.replaceState({ reportReturnTarget: state.reportReturnTarget, returnToManagement }, '',
       url.pathname + '?' + url.searchParams.toString());
     const load = () => {
       if (!isCurrent()) return;
@@ -2056,6 +2057,7 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
         update.classList.remove('hidden');
         update.querySelector('button')?.addEventListener('click', () => openReport({
           m8CycleId: cycleId, m8ReportId: latest.id, returnTarget: state.reportReturnTarget, customerAccess,
+          returnToManagement: window.history.state?.returnToManagement === true,
         }), { once: true });
       } catch { /* The saved view remains stable when freshness is unavailable. */ }
     };
@@ -2142,6 +2144,10 @@ export const resolveAssessmentSessionIdByCode = async () => {
 
 export const handleReportBack = () => {
   if (comparisonViewActive) { closeM8Comparison(); return; }
+  if (state.reportReturnTarget === 'admin-organizations') {
+    void openAdminOrganizationsScreen({ preserveView: true });
+    return;
+  }
   if (state.reportReturnTarget === 'admin-reports') {
     void import('./admin/reports.js').then((module) => module.openAdminReports());
     return;

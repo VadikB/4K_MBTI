@@ -23,9 +23,11 @@ test('full deletion shows exact preview and keeps production execution gated', (
   assert.match(wiring, /Действие необратимо/);
 });
 
-test('deleting a person uses the full account operation from the current list', () => {
+test('deleting a person uses the same full account operation from the member card and superadmin list', () => {
   assert.match(organizations, /Удалить человека/);
-  assert.match(organizations, /const removeButton = renderAccountPurgeButton\(item, \{ available: canDeletePerson \}\)/);
+  assert.match(organizations, /const removeButton = isSuperadmin \? renderAccountPurgeButton/);
+  assert.match(organizations, /mountAdminMemberPurge[\s\S]+renderAccountPurgeButton\(item, \{ available: state\.adminOrganizations\?\.purge_preview_available === true/);
+  assert.match(wiring, /closest\('dialog \[data-card-delete\] button\[data-action\]'\)/);
   assert.doesNotMatch(organizations, /Аккаунт сохранится; повторная регистрация не потребуется|Убрать из участников/);
 });
 

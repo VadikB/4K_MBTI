@@ -230,12 +230,14 @@ const bootApp = async () => {
         m8CycleId: params.get('cycle_id'),
         m8ReportId: params.get('report_id'),
         customerAccess: true,
-        returnTarget: 'admin-reports',
+        returnTarget: window.history.state?.reportReturnTarget === 'admin-organizations'
+          ? 'admin-organizations' : 'admin-reports',
+        returnToManagement: window.history.state?.returnToManagement === true,
       });
       return;
     }
     if (state.currentScreen === 'admin-organizations' && state.isAdmin) {
-      void openAdminOrganizationsScreen();
+      void openAdminOrganizationsScreen({ preserveView: state.adminDashboard?.is_superadmin !== true });
       return;
     }
     if (state.currentScreen === 'admin-regression-tests' && state.isAdmin) {

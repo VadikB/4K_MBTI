@@ -101,7 +101,7 @@ test('QA02 mixed lost response recovers the same command without duplicate',asyn
 test('QA02 late detail response never updates another participant card',async({page})=>{
   test.setTimeout(20000);const run=await setup(page);
   await page.locator('[data-action="open-member-card"]').first().click();
-  const old=page.locator('.admin-member-card-dialog');await old.locator('summary').click();
+  const old=page.locator('.admin-member-card-dialog');await old.locator('.admin-invitation-details summary').click();
   const gate=deferred();run.refreshGate=gate;
   await old.getByRole('button',{name:'Обновить сведения'}).click();
   await expect(old.locator('[data-invite-read-status]')).toHaveText('Проверяем эту попытку');
@@ -111,6 +111,6 @@ test('QA02 late detail response never updates another participant card',async({p
   const next=page.locator('.admin-member-card-dialog');
   await expect(next.locator('h3')).toHaveText('Участник 2');
   await expect(next.locator('.admin-invitation-details')).not.toHaveAttribute('open','');
-  await next.locator('summary').click();
+  await next.locator('.admin-invitation-details summary').click();
   await expect(next.locator('[data-invite-diagnostic]')).toContainText('сервис отправки не настроен');
 });

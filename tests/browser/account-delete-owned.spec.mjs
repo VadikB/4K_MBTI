@@ -43,10 +43,8 @@ test('F02 current people → HTTP → PostgreSQL, full graph, scope guards, rece
     const users = prepared.users;
     const purge = (user) => page.locator(`button[data-action="purge-account"][data-user-id="${user.id}"]`);
     const clickPurge = async (user) => {
-      const button = purge(user);
-      const menu = button.locator('xpath=ancestor::details');
-      if (await menu.count() && (await menu.getAttribute('open')) === null) await menu.locator('summary').click();
-      await button.click();
+      await page.locator('[data-action="open-member-card"][data-user-id="' + user.id + '"]').click();
+      await purge(user).click();
     };
     let confirmEmail = users.member.email;
     page.on('dialog', async (dialog) => dialog.type() === 'prompt' ? dialog.accept(confirmEmail) : dialog.accept());

@@ -990,7 +990,9 @@ async function fillEarlyField(form, name, value) {
 }
 
 async function reopenAdminOrganizations(page) {
-  await page.locator('#admin-organizations-back-button').click();
+  const back = page.locator('#admin-organizations-back-button');
+  if (!await back.isVisible()) await page.locator('#admin-organizations-account-name').click();
+  await back.click();
   await expect(page.locator('#admin-panel')).toBeVisible();
   await page.locator('#admin-open-organizations-button').click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
@@ -1282,7 +1284,7 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
     cancelled = true;
     return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
   });
-  await expect(page.locator('.admin-people-context')).toContainText('Специалист 4К · версия 1.0');
+  await expect(page.locator('.admin-organization-head')).toContainText('Специалист 4К · версия 1.0');
   await expect(page.locator('[data-bulk-actions]')).toBeHidden();
   await page.locator('input[name="invitation_email"]').check();
   await expect(page.locator('[data-bulk-actions]')).toBeVisible();
@@ -1332,8 +1334,8 @@ test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acqua
   });
 
   const menu = page.locator('.admin-organization-member-menu');
-  await menu.locator('summary').click();
-  await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
+  const revoke = page.locator('[data-action="revoke-member-invitation"]');
+  await revoke.click();
   await page.getByRole('dialog', { name: 'Отозвать приглашение?' })
     .getByRole('button', { name: 'Отозвать приглашение', exact: true }).click();
 
@@ -1394,8 +1396,7 @@ test('PROGRAM01 R06 refreshes an exact assignment after 409 and removes an inval
   await page.getByRole('dialog', { name: 'Отменить назначение?' })
     .getByRole('button', { name: 'Отменить назначение', exact: true }).click();
   await expect(page.locator('[data-operation-status]')).toContainText('больше не может быть отменено');
-  await page.locator('.admin-organization-member-menu summary').click();
-  await expect(page.getByRole('menuitem', { name: 'Отменить назначение оценки' })).toHaveCount(0);
+  await expect(page.locator('[data-action="cancel-member-assignment"]')).toHaveCount(0);
   await expect(page.locator('.admin-organization-member').first()).toContainText('Оценка выполняется');
 });
 
@@ -1508,7 +1509,7 @@ test('PROGRAM01 R05 keeps privileged password reset in the card and exposes only
   await expect(card.getByRole('button', { name: 'Сбросить пароль' })).toHaveCount(1);
 });
 
-test('ADMIN-CABINET-01 keeps row actions scoped to invitation and report state', async ({ page }) => {
+test('ADM-UI-01 keeps the sent menu to two items and moves deletion and incident facts to the card', async ({ page }) => {
   const reportId = '11111111-1111-4111-8111-111111111111';
   const organization = { ...adminOrganization, members: [
     { ...adminOrganization.members[0], user_id: 8, email: 'new@example.test', invitation_id: null,
@@ -1537,13 +1538,24 @@ test('ADMIN-CABINET-01 keeps row actions scoped to invitation and report state',
   await expect(rows.nth(0).locator('.admin-organization-member-menu')).toHaveCount(0);
   await expect(rows.nth(1).locator('.admin-organization-member-menu')).toHaveCount(1);
   await rows.nth(1).locator('.admin-organization-member-menu summary').click();
-  await expect(rows.nth(1).getByRole('menuitem')).toHaveCount(3);
+  const sentActions = rows.nth(1).getByRole('menuitem');
+  await expect(sentActions).toHaveText(['Отправить письмо повторно', 'Отозвать приглашение']);
+  await expect(sentActions.first()).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(sentActions.last()).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(rows.nth(1).locator('.admin-organization-member-menu')).not.toHaveAttribute('open');
+  await expect(rows.nth(1).locator('.admin-organization-member-menu summary')).toBeFocused();
   await expect(rows.nth(2).getByRole('button', { name: 'Открыть пояснение' })).toHaveAttribute('data-report-id', reportId);
   await expect(rows.nth(2).locator('.admin-organization-member-menu')).toHaveCount(0);
-  await expect(rows.nth(2).getByRole('button', { name: 'Удалить человека' })).toBeVisible();
-  await expect(rows.nth(3)).toContainText('Номер случая: prep-known-11');
+  await expect(rows.locator('[data-action="purge-account"]')).toHaveCount(0);
+  await expect(rows.nth(3)).toContainText('Последний подтверждённый этап: подготовка кейсов.');
+  await rows.nth(3).locator('[data-action="open-member-card"]').click();
+  const incidentCard = page.locator('.org-admin-member-card');
+  await expect(incidentCard).toContainText('Подготовка заблокирована');
+  await expect(incidentCard.getByRole('button', { name: 'Проверить состояние' })).toBeVisible();
+  await expect(incidentCard.getByRole('button', { name: 'Скопировать номер' })).toBeHidden();
+  await page.keyboard.press('Escape');
   const reads = [];
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/users/admin/organizations') reads.push(request.method());
@@ -1554,6 +1566,7 @@ test('ADMIN-CABINET-01 keeps row actions scoped to invitation and report state',
   await rows.nth(1).locator('[data-action="open-member-card"]').click();
   await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Регистрация');
   await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Письмо и ссылка');
+  await expect(page.locator('[data-card-delete]').getByRole('button', { name: 'Удалить человека' })).toBeVisible();
   await expect(rows.nth(1).locator('.admin-organization-member-invitation')).toContainText('Регистрация');
   await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
   const reportReads = [];
@@ -1644,7 +1657,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await page.getByRole('button', { name: 'Данные организации' }).click();
   await page.getByRole('button', { name: 'Участники оценки' }).click();
   await expect(rows.first().locator('[data-action="send-member-invitation"]')).toHaveAttribute('data-value', longEmail);
-  await rows.first().locator('.admin-organization-member-menu summary').click();
+  await rows.first().locator('[data-action="open-member-card"]').click();
   let purgePosts = 0;
   page.on('request', (request) => {
     if (request.method() === 'POST' && /\/users\/admin\/users\/8\/purge$/.test(request.url())) purgePosts += 1;
@@ -1656,7 +1669,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     expect(dialog.message()).toContain(longEmail);
     await dialog.dismiss();
   });
-  const deletePerson = rows.first().locator('[data-action="purge-account"]');
+  const deletePerson = page.locator('dialog [data-action="purge-account"]');
   await deletePerson.click();
   await expect(deletePerson).toBeEnabled();
   expect(purgePosts).toBe(0);
@@ -1806,7 +1819,7 @@ test('ADMIN-02 org-admin edits one organization name and never sees free tenant 
   await expect(form.locator('[name="code"]')).toHaveCount(0);
   await expect(card).toHaveCSS('border-radius', '8px');
   await expect(form).toBeVisible();
-  await expect(card.locator('.admin-organization-member').first()).toHaveCSS('border-radius', '8px');
+  await expect(card.locator('.admin-people-list')).toHaveCSS('border-radius', '8px');
   await form.locator('[name="organization_name"]').fill('Закреплённая организация');
   await expect(form.locator('[name="organization_name"]')).toHaveValue('Закреплённая организация');
 });
@@ -2413,12 +2426,12 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   await expect(page.locator('[data-action="preview-early-data"] [name="source_author"]')).toHaveCount(0);
   await expect(page.locator('[data-action="preview-early-data"] [name="purpose"]')).toHaveValue('Точная цель');
   await page.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await page.locator('form[data-action="assign-member-assessment"] button[type="submit"]').click();
   await expect.poll(() => assignmentPayload).toBeTruthy();
   await expect(page.locator('#admin-organizations-status')).toContainText('Admin: оценка назначена');
   await expect(page.locator('#admin-organizations-status')).toContainText('Colleague: оценка назначена');
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('.admin-people-context')).toBeVisible();
+  await expect(page.locator('.admin-organization-head')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   expect(assignmentPayload.assignment_ref).toBe('competencies_4k');
   expect(assignmentPayload.role_profile_version_id).toBe(92);
@@ -2444,7 +2457,7 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
   await expect(page.locator('[data-bulk-actions]')).toBeHidden();
   await page.locator('input[name="invitation_email"]').check();
   await expect(page.locator('[data-bulk-actions]')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Назначить оценку' })).toBeDisabled();
+  await expect(page.locator('form[data-action="assign-member-assessment"] button[type="submit"]')).toBeDisabled();
 });
 
 test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting zero success', async ({ page }) => {
@@ -2500,7 +2513,7 @@ test('AC18-ADM-1C confirms a lost assignment response only by exact operation re
   await page.route('**/users/admin/organizations/3/assessment-assignments/operations/**', (route) =>
     fulfillJson(route, { items: [{ user_id: 8, status: 'already_assigned', assignment_id: 41 }] }));
   await page.locator('input[name="invitation_email"]').check();
-  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await page.locator('form[data-action="assign-member-assessment"] button[type="submit"]').click();
   await expect(page.locator('#admin-organizations-status')).toContainText('назначение подтверждено точным чтением операции');
 });
 
@@ -2519,7 +2532,7 @@ test('AC18-ADM-1C does not accept stale assignment state when exact receipt is a
   await page.route('**/users/admin/organizations/3/assessment-assignments/operations/**', (route) =>
     fulfillJson(route, { detail: 'ASSIGNMENT_OPERATION_NOT_FOUND' }, 404));
   await page.locator('input[name="invitation_email"]').check();
-  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await page.locator('form[data-action="assign-member-assessment"] button[type="submit"]').click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Итог назначения пока неизвестен');
   await expect(page.locator('#admin-organizations-status')).not.toContainText('подтверждено');
   await expect(page.locator('#admin-organizations-status')).not.toContainText('operation_id');
@@ -2544,7 +2557,7 @@ test('AC18-ADM-1C keeps a confirmed assignment when the following refresh fails'
   await page.route('**/users/admin/organizations/3/assessment-assignments', (route) =>
     fulfillJson(route, { items: [{ user_id: 8, status: 'assigned', assignment_id: 42 }] }));
   await page.locator('input[name="invitation_email"]').check();
-  await page.getByRole('button', { name: 'Назначить оценку' }).click();
+  await page.locator('form[data-action="assign-member-assessment"] button[type="submit"]').click();
   await expect(page.locator('#admin-organizations-status')).toContainText('оценка назначена');
   await expect(page.locator('#admin-organizations-status')).toContainText('данные могут быть устаревшими');
   expect(organizationReads).toBeGreaterThan(0);
@@ -2589,9 +2602,12 @@ test('AC18-ADM-1C shows factual invitation lifetime and read-only processing det
       assessment_stages: { 'specialist-pilot': { code: 'processing', action: 'open_processing',
         description: 'Прохождение завершено; формируется отчёт.' } } }] };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
-  await expect(page.locator('.admin-organization-member-invitation')).not.toContainText('72 часа');
+  await expect(page.locator('.admin-organization-member')).not.toContainText('72 часа');
   await page.getByRole('button', { name: 'Person' }).click();
   await expect(page.locator('.admin-member-card-dialog [data-card-invitation-history]')).toHaveCount(0);
+  await expect(page.locator('[data-card-assignment-history]')).toBeHidden();
+  await page.locator('.admin-member-history > summary').click();
+  await expect(page.locator('[data-card-assignment-history]')).toBeVisible();
   await expect(page.locator('[data-card-assignment-history]')).toContainText('Назначение #42: назначено');
   await expect(page.locator('[data-card-assignment-history]')).toContainText('Cycle cycle-current');
   await expect(page.locator('[data-card-assignment-history]')).toContainText('Назначение #41: отменено');
