@@ -29,8 +29,18 @@ def test_roles_persist_mixed_facts_and_replay_only_one_effect(invitation_databas
         assert first.status_code==200
         items={v['email']:v for v in first.json()['items']}
         assert [items[e]['outcome'] for e in ['person@example.test','admin@example.test','unknown@example.test']]==['accepted','failed','unknown']
-        read=client.get(base+'/operations/qa02-mixed-real-db',params={'assignment_ref':'competencies_4k'})
+        receipt_path = base + '/operations/qa02-mixed-real-db'
+        with routes.get_connection() as db:
+            before = db.execute('SELECT * FROM organization_invitations ORDER BY id').fetchall()
+        read = client.get(receipt_path, params={'assignment_ref': 'competencies_4k', 'email': 'unknown@example.test'})
+        assert read.status_code == 200
         saved={v['email']:v for v in read.json()['items']}
+        assert {email: (v['operation_id'], v['invitation_id']) for email, v in saved.items()} == {
+            email: (payload['operation_id'], item['invitation_id']) for email, item in items.items()}
+        assert client.get(receipt_path, params={'assignment_ref': 'new-program', 'email': 'unknown@example.test'}).status_code == 404
+        with routes.get_connection() as db:
+            assert db.execute('SELECT * FROM organization_invitations ORDER BY id').fetchall() == before
+        assert len(sent) == 3
         assert saved['admin@example.test']['reason_code']=='provider_limit'
         assert saved['admin@example.test']['reason_params']=={'retry_after_seconds':120}
         assert saved['unknown@example.test']['outcome']=='unknown'

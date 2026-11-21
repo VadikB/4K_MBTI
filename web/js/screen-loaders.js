@@ -152,11 +152,6 @@ export const openAdminReportsScreen = async () => {
   await module.openAdminReports();
 };
 
-export const loadAdminReportsData = async () => {
-  const module = await loadAdminReports();
-  return module.loadAdminReports();
-};
-
 export const openAdminMethodologyScreen = async () => {
   resetLogoutButtonsState();
   const module = await loadAdminMethodology();

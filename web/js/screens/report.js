@@ -1417,6 +1417,9 @@ export const downloadSelectedReportPdf = () => {
 export const openReport = (options = {}) => {
   const { returnTarget = 'home', returnToManagement = false, m8CycleId = null, m8ReportId = null, customerAccess = false,
     previousReportId = '', comparisonView = false } = options;
+  const managementNavigation = customerAccess
+    ? options.managementNavigation ?? window.history.state?.managementNavigation : null;
+  const adminReportsView = customerAccess && returnTarget === 'admin-reports' ? window.history.state?.adminReportsView : null;
   const comparisonState = new URLSearchParams(window.location.search);
   if (!m8CycleId) {
     void openReports();
@@ -1489,7 +1492,8 @@ export const openReport = (options = {}) => {
     else url.searchParams.delete('report_access');
     if (previousReportId) url.searchParams.set('previous_report_id', previousReportId);
     if (comparisonView && !customerAccess) url.searchParams.set('report_view', 'comparison');
-    window.history.replaceState({ reportReturnTarget: state.reportReturnTarget, returnToManagement }, '',
+    window.history.replaceState({ reportReturnTarget: state.reportReturnTarget, returnToManagement,
+      managementNavigation, adminReportsView }, '',
       url.pathname + '?' + url.searchParams.toString());
     const load = () => {
       if (!isCurrent()) return;

@@ -43,7 +43,6 @@ import {
   openAdminRegressionTestsScreen,
   openAdminPromptLabScreen,
   openAdminReportsScreen,
-  loadAdminReportsData,
   openAdminMethodologyScreen,
   loadAdminMethodologyData,
   loadDashboard,
@@ -245,11 +244,6 @@ const bootApp = async () => {
       return;
     }
     if (state.currentScreen === 'admin-reports' && state.isAdmin) {
-      try {
-        await loadAdminReportsData();
-      } catch (error) {
-        console.error('Failed to restore admin reports', error);
-      }
       void openAdminReportsScreen();
       return;
     }

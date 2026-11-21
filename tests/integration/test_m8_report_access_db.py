@@ -55,7 +55,9 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
             collection_closed_at timestamptz)''')
         connection.execute('CREATE TABLE m10_pipeline_runs(cycle_db_id bigint,status text,stage text,error_code text)')
         connection.execute('CREATE TABLE m8_results(id uuid PRIMARY KEY,cycle_db_id bigint)')
-        connection.execute('CREATE TABLE m8_result_revisions(id uuid PRIMARY KEY,results_id uuid,revision_no integer)')
+        connection.execute('CREATE TABLE m8_result_revisions(id uuid PRIMARY KEY,results_id uuid,revision_no integer,payload_json jsonb)')
+        connection.execute('CREATE TABLE m7_cycle_plans(id bigint,cycle_db_id bigint)')
+        connection.execute('CREATE TABLE m7_plan_revisions(plan_id bigint,revision_no integer,content_json jsonb)')
         connection.execute('''CREATE TABLE m8_reports(id uuid PRIMARY KEY,result_revision_id uuid,revision_no integer,
             audience text,status text DEFAULT 'ready',created_at timestamptz DEFAULT now(),c67_json jsonb)''')
         m8_report_access.ensure_schema(connection)
@@ -152,6 +154,17 @@ def test_owner_and_admin_http_scope_ignores_legacy_recipient_list(test_database_
         assert m8_report_access.page_customer_reports(connection, user_id=21, query='несуществующий')['total'] == 0
         with pytest.raises(PermissionError):
             m8_report_access.page_customer_reports(connection, user_id=21, organization_id=2)
+        connection.execute('INSERT INTO m7_cycle_plans VALUES(1,1),(2,2),(3,3)')
+        connection.execute("""INSERT INTO m7_plan_revisions VALUES
+            (1,1,'{"pilot_plan_binding":{"contract":"m7_pilot_plan_binding/1","program_ref":{"id":701}}}'),
+            (1,2,'{}'),
+            (2,1,'{"pilot_plan_binding":{"contract":"m7_pilot_plan_binding/1","program_ref":{"id":702}}}'),
+            (3,1,'{"pilot_plan_binding":{"contract":"m7_pilot_plan_binding/1","program_ref":{"id":701}}}')""")
+        for version, expected in ((701, cycle_id), (702, previous_cycle)):
+            exact = m8_report_access.page_customer_reports(connection, user_id=21, program_definition_id=version)
+            assert [item['cycle_id'] for item in exact['items']] == [str(expected)]
+        assert m8_report_access.page_customer_reports(connection, user_id=21, program_definition_id=999)['total'] == 0
+        assert m8_report_access.page_customer_reports(connection, user_id=21)['total'] == 4
 
         @contextmanager
         def get_connection():

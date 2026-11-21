@@ -6,6 +6,20 @@ from uuid import UUID
 
 ACCESS_CONTRACT_VERSION = "m8-report-access/1.1.0"
 
+# Keep the customer registry and the participant row on the same saved publication.
+CUSTOMER_REPORT_FOR_CYCLE_SQL = """
+    SELECT p.id,p.status,p.c67_json,rr.payload_json,
+           p.status IN ('ready','limited','no_result')
+             AND COALESCE(p.c67_json->'processing'->>'status','') <> 'failed' AS can_open
+    FROM m8_results r JOIN m8_result_revisions rr ON rr.results_id=r.id
+    JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
+    WHERE r.cycle_db_id=cycle.id
+    ORDER BY (p.id=(SELECT current.report_id FROM m8_published_reports current
+                    WHERE current.cycle_db_id=cycle.id)) DESC NULLS LAST,
+             rr.revision_no DESC,p.revision_no DESC
+    LIMIT 1
+"""
+
 
 def ensure_schema(connection) -> None:
     connection.execute("""CREATE TABLE IF NOT EXISTS m8_report_access_events (
@@ -45,7 +59,8 @@ def record_access(connection, *, report_id: str, user_id: int, channel: str) -> 
 
 
 def page_customer_reports(connection, *, user_id: int, organization_id: int | None = None,
-                          query: str = "", program: str = "", status: str = "",
+                          query: str = "", program: str = "", program_definition_id: int | None = None,
+                          status: str = "",
                           page: int = 1, page_size: int = 12) -> dict:
     """Closed assessment Cycles in one authorized organization; one row per Cycle."""
     if status not in {"", "preparing", "ready", "failed"}:
@@ -63,30 +78,20 @@ def page_customer_reports(connection, *, user_id: int, organization_id: int | No
         return {"items": [], "total": 0, "page": page, "page_size": page_size,
                 "organization_id": None, "organizations": organizations, "programs": []}
 
-    base = """FROM m5_cycles c
-        JOIN users u ON u.id=c.owner_user_id
-        JOIN organization_memberships membership ON membership.organization_id=c.organization_id
+    base = f"""FROM m5_cycles cycle
+        JOIN users u ON u.id=cycle.owner_user_id
+        JOIN organization_memberships membership ON membership.organization_id=cycle.organization_id
           AND membership.user_id=%s AND membership.role='admin'
-        JOIN organizations organization ON organization.id=c.organization_id AND organization.is_active=TRUE
-        LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=c.id
-        LEFT JOIN LATERAL (
-          SELECT p.id,p.status,p.c67_json
-          FROM m8_results r JOIN m8_result_revisions rr ON rr.results_id=r.id
-            JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
-          WHERE r.cycle_db_id=c.id
-          ORDER BY (p.id=(SELECT current.report_id FROM m8_published_reports current
-                           WHERE current.cycle_db_id=c.id)) DESC,
-                   rr.revision_no DESC,p.revision_no DESC LIMIT 1
-        ) report ON TRUE
-        WHERE c.organization_id=%s AND c.usage_scope='assessment' AND c.collection_closed_at IS NOT NULL"""
-    program_expr = "COALESCE(report.c67_json->'display'->>'program_name',c.display_snapshot_json->>'program_name','')"
+        JOIN organizations organization ON organization.id=cycle.organization_id AND organization.is_active=TRUE
+        LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=cycle.id
+        LEFT JOIN LATERAL ({CUSTOMER_REPORT_FOR_CYCLE_SQL}) report ON TRUE
+        WHERE cycle.organization_id=%s AND cycle.usage_scope='assessment' AND cycle.collection_closed_at IS NOT NULL"""
+    program_expr = "COALESCE(report.c67_json->'display'->>'program_name',cycle.display_snapshot_json->>'program_name','')"
     name_expr = "COALESCE(to_jsonb(u)->>'full_name','')"
-    status_expr = """CASE WHEN report.id IS NOT NULL AND report.status IN ('ready','limited','no_result') AND
-            COALESCE(report.c67_json->'processing'->>'status','') <> 'failed'
-          THEN 'ready' WHEN pipeline.status='failed' OR c.status='failed'
+    status_expr = """CASE WHEN report.can_open THEN 'ready' WHEN pipeline.status='failed' OR cycle.status='failed'
             OR report.c67_json->'processing'->>'status'='failed'
           THEN 'failed' ELSE 'preparing' END"""
-    source = f"SELECT c.id,c.cycle_id,c.collection_closed_at,{name_expr} AS full_name,\n" \
+    source = f"SELECT cycle.id,cycle.cycle_id,cycle.collection_closed_at,{name_expr} AS full_name,\n" \
         f"{program_expr} AS program_name,{status_expr} AS status,\n" \
         "report.id AS report_id " + base
     programs = [row["program_name"] for row in connection.execute(
@@ -100,6 +105,17 @@ def page_customer_reports(connection, *, user_id: int, organization_id: int | No
     if program:
         conditions.append("program_name=%s")
         params.append(program)
+    if program_definition_id is not None:
+        # The initial plan freezes the program. Later parameter revisions can
+        # drop the binding, and the organization's current connection can change.
+        conditions.append("""EXISTS (
+            SELECT 1 FROM m7_cycle_plans plan
+            JOIN m7_plan_revisions revision ON revision.plan_id=plan.id AND revision.revision_no=1
+            WHERE plan.cycle_db_id=cycles.id
+              AND revision.content_json->'pilot_plan_binding'->>'contract'='m7_pilot_plan_binding/1'
+              AND revision.content_json->'pilot_plan_binding'->'program_ref'->>'id'=%s
+        )""")
+        params.append(str(program_definition_id))
     if status:
         conditions.append("status=%s")
         params.append(status)

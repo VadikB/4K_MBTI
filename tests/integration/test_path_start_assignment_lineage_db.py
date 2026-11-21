@@ -105,16 +105,50 @@ def test_unproven_legacy_profile_is_unknown_but_exact_cycle_pointer_is_valid(lin
     assert rows['B']['preparation_operation_id'] is None
 
 
+def test_profile_readiness_is_bound_to_selected_assignment_and_independent_of_start(lineage_db):
+    from Api.routes import _project_admin_assessment_stage
+
+    lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','prepared',1,10,41,'assessment',101,NOW(),NULL)")
+    lineage_db.execute("INSERT INTO m7_cycle_plans VALUES(1,1,'READY')")
+    lineage_db.execute("""INSERT INTO m7_plan_revisions VALUES(1,1,'{"route":[{}]}')""")
+    lineage_db.execute("INSERT INTO m5_assessment_situations VALUES(1,1,'admitted')")
+    lineage_db.execute("UPDATE assessment_personalized_profiles SET status='blocked' WHERE id=102")
+    rows = project(lineage_db)
+    a = _project_admin_assessment_stage({
+        **rows['A'], 'assessment_profile_ready': False,
+        'start_readiness': {'contract': 'm7_start_readiness/1', 'can_start': True, 'cycle_id': 'cycle-A', 'reasons': []},
+    })
+    assert a['assignment_id'] == 41 and a['code'] == 'ready_to_start'
+    assert a['profile_readiness'] == {'personalized_profile_id': 101, 'status': 'ready'}
+    b = _project_admin_assessment_stage({**rows['B'], 'assessment_profile_ready': True})
+    assert b['assignment_id'] == 42 and b['start_readiness'] is None
+    assert b['profile_readiness'] == {'personalized_profile_id': 102, 'status': 'blocked'}
+    assert b['preparation_status'] is None
+    lineage_db.execute("DELETE FROM participant_acquaintance_confirmations WHERE assignment_ref='B'")
+    pending = _project_admin_assessment_stage({**project(lineage_db)['B'], 'assessment_profile_ready': True})
+    assert pending['assignment_id'] == 42 and pending['profile_readiness'] is None
+
+
 def test_admin_row_opens_same_admissible_publication_as_report_registry(lineage_db):
+    from Api.routes import _project_admin_assessment_stage
+
     lineage_db.execute("INSERT INTO m5_cycles VALUES(1,'cycle-A','calculated',1,10,41,'assessment',101,NOW(),NOW())")
     lineage_db.execute("INSERT INTO m8_results VALUES(1,1)")
-    lineage_db.execute("INSERT INTO m8_result_revisions VALUES(1,1,1,'{}'),(2,1,2,'{}')")
-    lineage_db.execute("INSERT INTO m8_reports VALUES(101,1,'assessee',1,'limited','{}'),"
-                       "(102,2,'assessee',1,'ready','{}'),(103,2,'customer',1,'ready','{}')")
+    lineage_db.execute("""INSERT INTO m8_result_revisions VALUES
+        (1,1,1,'{"assessed_skill_profile":[{"outcome":"full_score"}]}'),
+        (2,1,2,'{"assessed_skill_profile":[{"outcome":"result_without_score"}]}')""")
+    lineage_db.execute("INSERT INTO m8_reports VALUES(101,1,'assessee',1,'ready','{}'),"
+                       "(102,2,'assessee',1,'limited','{}'),(103,2,'customer',1,'ready','{}')")
     lineage_db.execute("INSERT INTO m8_published_reports VALUES(1,101)")
-    assert project(lineage_db)['A']['report_id'] == 101
+    a = _project_admin_assessment_stage(project(lineage_db)['A'])
+    assert a['report_id'] == '101' and a['result_summary']['kind'] == 'full'
+    lineage_db.execute("UPDATE m8_published_reports SET report_id=102 WHERE cycle_db_id=1")
+    b = _project_admin_assessment_stage(project(lineage_db)['A'])
+    assert b['report_id'] == '102' and b['result_summary']['kind'] == 'without_score'
+    lineage_db.execute("UPDATE m8_published_reports SET report_id=101 WHERE cycle_db_id=1")
     lineage_db.execute("UPDATE m8_reports SET status='failed' WHERE id=101")
-    assert project(lineage_db)['A']['report_id'] is None
+    unavailable = _project_admin_assessment_stage(project(lineage_db)['A'])
+    assert unavailable['report_id'] is None and unavailable['result_summary'] is None
     lineage_db.execute("DELETE FROM m8_published_reports WHERE cycle_db_id=1")
     assert project(lineage_db)['A']['report_id'] == 102
     lineage_db.execute("UPDATE m8_reports SET c67_json=%s WHERE id=102",
@@ -151,7 +185,8 @@ def test_completed_preparation_without_first_situation_does_not_allow_start(line
 
 def test_latest_unbound_confirmation_never_reuses_old_legacy_profile(lineage_db):
     lineage_db.execute("INSERT INTO participant_acquaintance_confirmations VALUES(3,1,10,'B',22,NULL,NOW()+INTERVAL '1 minute')")
-    assert project(lineage_db)['B']['preparation_operation_id'] is None
+    b = project(lineage_db)['B']
+    assert b['preparation_operation_id'] is None and b['personalized_profile_id'] is None
 
 
 def test_legacy_job_with_shared_sources_cannot_choose_assignment_generation(lineage_db):

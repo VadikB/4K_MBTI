@@ -1992,8 +1992,15 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'check-member-invitation') {
-      withScreen(loadAdminOrganizations, module => module.checkAdminInvitation(organizationId,
-        button.dataset.value, button.dataset.assignmentRef, button.dataset.operationId));
+      button.disabled = true;
+      withScreen(loadAdminOrganizations, async (module) => {
+        try {
+          await module.checkAdminInvitation(organizationId, button.dataset.value, button.dataset.assignmentRef,
+            button.dataset.operationId, Number(button.dataset.invitationId));
+        } finally {
+          button.disabled = false;
+        }
+      });
       return;
     }
     if (button.dataset.action === 'review-invitation-organization') {
@@ -2137,9 +2144,10 @@ if (adminOrganizationsList) {
     }
     if (button.dataset.action === 'open-organization-reports') {
       withScreen(loadAdminOrganizations, (module) => {
-        module.saveAdminOrganizationsNavigation();
+        const managementNavigation = module.saveAdminOrganizationsNavigation();
         withScreen(loadAdminReports, (reports) => reports.openAdminReports({
-          organizationId, programName: button.dataset.programName, returnToManagement: true,
+          organizationId, programDefinitionId: Number(button.dataset.programDefinitionId),
+          programLabel: button.dataset.programLabel, managementNavigation, returnToManagement: true,
         }));
       });
       return;
@@ -2156,9 +2164,10 @@ if (adminOrganizationsList) {
       const reportId = button.dataset.reportId;
       if (!reportId) return;
       withScreen(loadAdminOrganizations, (module) => {
-        module.saveAdminOrganizationsNavigation();
+        const managementNavigation = module.saveAdminOrganizationsNavigation();
         withScreen(loadReport, (report) => report.openReport({
           returnTarget: state.adminOrganizations?.is_superadmin ? 'home' : 'admin-organizations',
+          managementNavigation,
           m8CycleId: button.dataset.cycleId || null,
           m8ReportId: reportId,
           customerAccess: button.dataset.reportAccess === 'customer',

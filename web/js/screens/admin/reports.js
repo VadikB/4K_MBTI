@@ -14,6 +14,7 @@ const clear = document.getElementById('admin-reports-clear');
 const PAGE_SIZE = 12;
 let requestEpoch = 0;
 let searchTimer;
+let scopedProgram = null;
 
 const dateLabel = (value) => value ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' }).format(new Date(value)) : '—';
 const statusLabels = { preparing: 'Готовится', ready: 'Готов', failed: 'Не удалось подготовить' };
@@ -27,7 +28,9 @@ export const renderAdminReports = () => {
   organization.innerHTML = (data.organizations || []).map((item) => option(item.id, item.name, data.organization_id)).join('');
   const programs = new Set(data.programs || []);
   if (state.adminReportsProgram) programs.add(state.adminReportsProgram);
-  program.innerHTML = option('', 'Все программы', state.adminReportsProgram || '') +
+  const exactValue = scopedProgram ? 'program-definition:' + scopedProgram.id : '';
+  program.innerHTML = option('', 'Все программы', exactValue || state.adminReportsProgram || '') +
+    (scopedProgram ? option(exactValue, scopedProgram.label, exactValue) : '') +
     [...programs].map((item) => option(item, item, state.adminReportsProgram)).join('');
   status.value = state.adminReportsStatus || '';
   adminReportsFound.textContent = 'Найдено: ' + data.total;
@@ -86,18 +89,33 @@ export const loadAdminReports = async () => {
   const identityEpoch = state.identityEpoch;
   const params = new URLSearchParams({ page: String(state.adminReportsPage || 1),
     page_size: String(PAGE_SIZE), query: state.adminReportsSearch || '',
-    program: state.adminReportsProgram || '', status: state.adminReportsStatus || '' });
+    program: scopedProgram ? '' : state.adminReportsProgram || '', status: state.adminReportsStatus || '' });
   if (state.adminReportsOrganizationId) params.set('organization_id', String(state.adminReportsOrganizationId));
+  if (scopedProgram) params.set('program_definition_id', String(scopedProgram.id));
   const response = await fetch('/users/admin/m8-access/reports?' + params, { credentials: 'same-origin' });
   const data = await readApiResponse(response, 'Не удалось загрузить список отчётов.');
   if (epoch !== requestEpoch || identityEpoch !== state.identityEpoch || state.currentScreen !== 'admin-reports') return;
   state.adminReports = data;
   state.adminReportsOrganizationId = data.organization_id;
   persistAssessmentContext();
+  saveReportsView();
   renderAdminReports();
 };
 
+const saveReportsView = () => {
+  window.history.replaceState({ ...window.history.state, adminReportsView: {
+    ownerId: String(state.pendingUser?.id || ''),
+    organizationId: state.adminReportsOrganizationId,
+    search: state.adminReportsSearch,
+    program: state.adminReportsProgram,
+    scopedProgram,
+    status: state.adminReportsStatus,
+    page: state.adminReportsPage,
+  } }, '');
+};
+
 const refresh = () => {
+  saveReportsView();
   const epoch = requestEpoch + 1;
   adminReportsList.innerHTML = '<p class="report-empty-state">Загружаем закрытые оценки...</p>';
   void loadAdminReports().catch((error) => {
@@ -113,21 +131,35 @@ export const changeAdminReportsPage = (direction) => {
 };
 
 export const openAdminReports = async ({
-  organizationId, programName = '', returnToManagement = window.history.state?.returnToManagement === true,
+  organizationId, programDefinitionId, programLabel,
+  managementNavigation = window.history.state?.managementNavigation,
+  returnToManagement = window.history.state?.returnToManagement === true,
 } = {}) => {
   clearTimeout(searchTimer);
+  scopedProgram = null;
   if (organizationId) {
     state.adminReportsOrganizationId = organizationId;
-    state.adminReportsProgram = programName;
+    state.adminReportsProgram = '';
+    if (programDefinitionId > 0) scopedProgram = { id: programDefinitionId, label: programLabel };
     state.adminReportsPage = 1;
     state.adminReportsSearch = '';
     state.adminReportsStatus = '';
     state.adminReports = null;
-    persistAssessmentContext();
+  } else {
+    const saved = window.history.state?.adminReportsView;
+    if (saved?.ownerId === String(state.pendingUser?.id || '')) {
+      state.adminReportsOrganizationId = saved.organizationId;
+      state.adminReportsSearch = saved.search;
+      state.adminReportsProgram = saved.program;
+      state.adminReportsStatus = saved.status;
+      state.adminReportsPage = saved.page;
+      scopedProgram = saved.scopedProgram || null;
+    }
   }
   setCurrentScreen('admin-reports');
   syncUrlState('admin-reports');
-  window.history.replaceState({ ...window.history.state, returnToManagement }, '');
+  window.history.replaceState({ ...window.history.state, returnToManagement,
+    managementNavigation: returnToManagement ? managementNavigation : null }, '');
   document.getElementById('admin-reports-back-button').textContent = returnToManagement ? 'К управлению' : 'Назад';
   hideAllPanels();
   adminReportsPanel.classList.remove('hidden');
@@ -138,17 +170,20 @@ adminReportsSearch?.addEventListener('input', () => {
   clearTimeout(searchTimer);
   state.adminReportsSearch = adminReportsSearch.value;
   state.adminReportsPage = 1;
+  saveReportsView();
   searchTimer = setTimeout(refresh, 250);
 });
 organization?.addEventListener('change', () => {
   state.adminReportsOrganizationId = Number(organization.value);
   state.adminReportsProgram = '';
+  scopedProgram = null;
   state.adminReportsPage = 1;
   state.adminReports = null;
   persistAssessmentContext();
   refresh();
 });
 program?.addEventListener('change', () => {
+  scopedProgram = null;
   state.adminReportsProgram = program.value;
   state.adminReportsPage = 1;
   persistAssessmentContext();
@@ -163,6 +198,7 @@ status?.addEventListener('change', () => {
 clear?.addEventListener('click', () => {
   state.adminReportsSearch = '';
   state.adminReportsProgram = '';
+  scopedProgram = null;
   state.adminReportsStatus = '';
   state.adminReportsPage = 1;
   persistAssessmentContext();

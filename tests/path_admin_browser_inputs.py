@@ -14,6 +14,7 @@ from scripts.test_stand import environment, owned
 
 def seed_cabinet(scope):
     from Api.database import get_connection
+    from Api.invitation_outcomes import encode_reason
     from Api.m5_case_runtime import checksum
     from Api.preparation_observation import reference
     from psycopg.types.json import Jsonb
@@ -27,7 +28,14 @@ def seed_cabinet(scope):
         'ready': 'Полный результат',
         'limited': 'Ограниченный результат',
         'no_result': 'Результат без балла',
+        'without_score': 'Наблюдения без балла',
         'unavailable': 'Публикация недоступна',
+        'old_edition': 'Отчёт прежней версии программы',
+        'legacy_report': 'Исторический отчёт без привязки',
+        'old_batch': 'Участник прежней рассылки',
+        'unverified_invitation': 'Приглашение без подтверждённой привязки',
+        'profile_ready': 'Участник с закреплённым профилем',
+        'profile_pending': 'Участник с общим профилем',
     }
     members = {'assign': scope['member'], 'unknown': scope['second']}
     invitations = {}
@@ -41,17 +49,34 @@ def seed_cabinet(scope):
                 (email, name)).fetchone()['id']
             c.execute("INSERT INTO organization_memberships(organization_id,user_id,role,admission_source,admitted_at) "
                       "VALUES(%s,%s,'member','admin_add',NOW())", (scope['org'], members[key]))
-        for key, delivery in [('sent', 'accepted'), ('unknown', 'sending')]:
-            operation = 'cabinet-' + uuid4().hex
-            email = c.execute('SELECT email FROM users WHERE id=%s', (members[key],)).fetchone()['email']
+        current, previous, peer_org = seed_cabinet_programs(c, scope)
+        emails = {row['id']: row['email'] for row in c.execute(
+            'SELECT id,email FROM users WHERE id=ANY(%s)', (list(members.values()),)).fetchall()}
+        batch = 'cabinet-batch-' + uuid4().hex
+        recipients = [emails[members[key]] for key in ('unknown', 'old_batch')]
+        for key, delivery, ref, operation in (
+            ('sent', 'accepted', scope['ref'], 'cabinet-' + uuid4().hex),
+            ('unknown', 'sending', previous['assignment_ref'], batch),
+            ('old_batch', 'accepted', previous['assignment_ref'], batch),
+            ('unverified_invitation', 'sending', '', 'cabinet-legacy-' + uuid4().hex),
+        ):
+            email = emails[members[key]]
             invitation = c.execute("""INSERT INTO organization_invitations
                 (organization_id,token_hash,expires_at,created_by_user_id,recipient_email,purpose,
-                 delivery_status,request_id,assignment_ref)
-                VALUES(%s,%s,NOW()+INTERVAL '2 days',%s,%s,'personal_registration',%s,%s,%s) RETURNING id""",
-                (scope['org'], checksum(operation), scope['admin'], email, delivery, operation, scope['ref'])).fetchone()
-            invitations[key] = {'id': invitation['id'], 'operation': operation, 'email': email}
+                 delivery_status,request_id,assignment_ref,delivery_error)
+                VALUES(%s,%s,NOW()+INTERVAL '2 days',%s,%s,'personal_registration',%s,%s,%s,%s) RETURNING id""",
+                (scope['org'], checksum([operation, email]), scope['admin'], email, delivery, operation, ref,
+                 encode_reason(delivery, delivery, recipients=recipients if operation == batch else [email]))).fetchone()
+            invitations[key] = {'id': invitation['id'], 'operation': operation, 'email': email, 'ref': ref}
+        general_profile = c.execute("""INSERT INTO user_role_profiles(user_id,normalized_duties)
+            VALUES(%s,'Синтетические обязанности') RETURNING id""", (members['profile_pending'],)).fetchone()['id']
+        general_role = c.execute("""INSERT INTO roles(code,name)
+            VALUES('cabinet-profile-fixture','Синтетическая роль') RETURNING id""").fetchone()['id']
+        c.execute("""UPDATE users SET active_profile_id=%s, company_industry='Синтетический контекст',
+            role_id=%s WHERE id=%s""", (general_profile, general_role, members['profile_pending']))
         c.commit()
-    scoped_members = {key: member for key, member in members.items() if key not in {'assign', 'unknown', 'sent'}}
+    scoped_members = {key: member for key, member in members.items()
+                      if key not in {'assign', 'unknown', 'sent', 'old_batch', 'unverified_invitation'}}
     with session(scope['admin']) as client:
         response = client.post(f"/users/admin/organizations/{scope['org']}/assessment-assignments",
                                json=payload(scope, user_ids=list(scoped_members.values()), role_profile_version_id=scope['role']))
@@ -59,9 +84,13 @@ def seed_cabinet(scope):
         assignments = {item['user_id']: item['assignment_id'] for item in response.json()['items']}
     reports = {}
     cases = {}
+    profiles = {}
     for key, member_id in scoped_members.items():
-        profile_id = confirm_participant_profile({**scope, 'member': member_id})
         assignment_id = assignments[member_id]
+        if key == 'profile_pending':
+            profiles[key] = {'assignment_id': assignment_id, 'profile_id': None}
+            continue
+        profile_id = confirm_participant_profile({**scope, 'member': member_id})
         with get_connection() as c:
             if key == 'running':
                 operation = 'cabinet-' + uuid4().hex
@@ -81,24 +110,86 @@ def seed_cabinet(scope):
                 cases[key] = reference('cycle', operation)
             else:
                 cycle_id = uuid4()
-                closed = key not in {'active', 'failed'}
-                cycle_status = 'paused' if key == 'failed' else 'calculated' if closed else 'active'
+                closed = key not in {'active', 'failed', 'profile_ready'}
+                cycle_status = {'failed': 'paused', 'active': 'active', 'profile_ready': 'prepared'}.get(key, 'calculated')
                 cycle = c.execute("""INSERT INTO m5_cycles
                     (cycle_id,owner_user_id,organization_id,assignment_id,personalized_profile_id,
                      profile_ref_json,selected_role_ref_json,target_set_json,target_set_checksum,
                      time_budget_seconds,calendar_window_seconds,parameter_sources_json,
                      usage_scope,status,created_by,started_at,collection_closed_at)
                     VALUES(%s,%s,%s,%s,%s,'{}','{}','[]','synthetic',600,3600,'{}',
-                    'assessment',%s,%s,NOW(),CASE WHEN %s THEN NOW() END) RETURNING id""",
-                    (cycle_id, member_id, scope['org'], assignment_id, profile_id,
-                     cycle_status, member_id, closed)).fetchone()['id']
+                    'assessment',%s,%s,CASE WHEN %s THEN NULL ELSE NOW() END,
+                    CASE WHEN %s THEN NOW() END) RETURNING id""",
+                    (cycle_id, member_id, scope['org'],
+                     None if key in {'old_edition', 'legacy_report'} else assignment_id, profile_id,
+                     cycle_status, member_id, cycle_status == 'prepared', closed)).fetchone()['id']
                 if closed:
-                    reports[key] = seed_cabinet_report(c, member_id, cycle, cycle_id, key)
+                    status = 'ready' if key in {'old_edition', 'legacy_report'} else key
+                    reports[key] = seed_cabinet_report(
+                        c, member_id, cycle, cycle_id, status, newer_unpublished=key == 'ready')
+                    if key != 'legacy_report':
+                        seed_cabinet_plan(c, member_id, cycle, previous if key == 'old_edition' else current)
                 elif key == 'failed':
                     cases[key] = seed_next_failure(c, member_id, cycle, cycle_id)
+                elif key == 'profile_ready':
+                    profiles[key] = {'assignment_id': assignment_id, 'profile_id': profile_id}
             c.commit()
     return {'members': members, 'invitations': invitations, 'cases': cases, 'reports': reports,
-            'ref': scope['ref'], 'role': scope['second_role'], 'other_org': scope['foreign']}
+            'profiles': profiles, 'ref': scope['ref'], 'role': scope['second_role'],
+            'other_org': scope['foreign'], 'peer_org': peer_org, 'peer_ref': previous['assignment_ref']}
+
+
+def seed_cabinet_programs(c, scope):
+    from Api.assessment_programs import current_connection, definition_checksum
+    from Api.schema_bootstrap import fingerprint
+    from psycopg import sql
+
+    current = current_connection(c, organization_id=scope['org'])
+    ref = 'previous-' + scope['ref']
+    version = 'test.0'
+    digest = definition_checksum(code=current['program_code'], version=version, name=current['program_name'],
+        assignment_ref=ref, mode=current['mode'], configuration_id=current['assessment_configuration_id'],
+        catalog_version_id=current['catalog_version_id'], role_version_ids=[],
+        source_refs=current['source_refs_json'])
+    old = c.execute("""INSERT INTO assessment_program_definitions
+        (code,version,name,assignment_ref,mode,status,assessment_configuration_id,catalog_version_id,
+         source_refs_json,definition_checksum,published_by_user_id,published_at)
+        SELECT code,%s,name,%s,mode,'published',assessment_configuration_id,catalog_version_id,
+               source_refs_json,%s,published_by_user_id,NOW()
+        FROM assessment_program_definitions WHERE id=%s RETURNING id""",
+        (version, ref, digest, scope['program'])).fetchone()['id']
+    connection_id = c.execute("""INSERT INTO organization_assessment_program_connections
+        (organization_id,program_definition_id,connected_by_user_id,operation_id,request_fingerprint,is_current,superseded_at)
+        VALUES(%s,%s,%s,'cabinet-previous','synthetic',FALSE,NOW()) RETURNING id""",
+        (scope['org'], old, scope['super'])).fetchone()['id']
+    previous = {**current, 'connection_id': connection_id, 'program_definition_id': old,
+                'program_version': version, 'assignment_ref': ref, 'definition_checksum': digest}
+    peer_org = c.execute("""INSERT INTO organizations(code,name)
+        VALUES('cabinet-peer','Вторая организация') RETURNING id""").fetchone()['id']
+    # Allow the synthetic admin to exercise two organizations in the owned stand.
+    c.execute('DROP INDEX uq_organization_memberships_user')
+    c.execute(sql.SQL('CREATE UNIQUE INDEX uq_organization_memberships_user '
+                      'ON organization_memberships(user_id) WHERE user_id <> {}').format(sql.Literal(scope['admin'])))
+    c.execute('UPDATE app_bootstrap SET schema_hash=%s', (fingerprint(c),))
+    c.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,admission_source)
+        VALUES(%s,%s,'admin','admin_add')""", (peer_org, scope['admin']))
+    c.execute("""INSERT INTO organization_assessment_program_connections
+        (organization_id,program_definition_id,connected_by_user_id,operation_id,request_fingerprint)
+        VALUES(%s,%s,%s,'cabinet-peer','synthetic')""", (peer_org, old, scope['super']))
+    return current, previous, peer_org
+
+
+def seed_cabinet_plan(c, member_id, cycle, program):
+    from Api.m7_planning_repository import save_plan
+
+    content = {'status': 'READY', 'route': [], 'pilot_plan_binding': {
+        'contract': 'm7_pilot_plan_binding/1',
+        'program_ref': {'id': program['program_definition_id'], 'code': program['program_code'],
+                        'version': program['program_version'], 'checksum': program['definition_checksum'],
+                        'connection_id': program['connection_id']}}}
+    save_plan(c, cycle={'id': cycle}, profile_ref={}, full_targets=[], planned_targets=[], requirements=[],
+              rules={'snapshot_checksum': 'synthetic'}, content=content, created_by=member_id,
+              key=f'cabinet-report-{cycle}', request_hash='synthetic')
 
 
 def seed_next_failure(c, member_id, cycle, cycle_id):
@@ -130,7 +221,7 @@ def seed_next_failure(c, member_id, cycle, cycle_id):
     return reference('cycle', operation)
 
 
-def seed_cabinet_report(c, member_id, cycle, cycle_id, status):
+def seed_cabinet_report(c, member_id, cycle, cycle_id, status, *, newer_unpublished=False):
     # Saved synthetic result inputs. The real customer API still checks the
     # published ID, status, organization membership and exact Cycle.
     from Api.m5_case_runtime import checksum
@@ -146,15 +237,16 @@ def seed_cabinet_report(c, member_id, cycle, cycle_id, status):
         VALUES(%s,%s,1,'cabinet','synthetic','synthetic','{}','synthetic','{}','synthetic','{}','synthetic',%s)""",
         (calculation, cycle, member_id))
     c.execute('INSERT INTO m8_results(id,cycle_db_id) VALUES(%s,%s)', (result, cycle))
-    outcomes = {'ready': 'full_score', 'limited': 'partial_score', 'no_result': 'no_result'}
+    outcomes = {'ready': 'full_score', 'limited': 'partial_score',
+                'without_score': 'result_without_score', 'no_result': 'no_result'}
     payload = {'assessed_skill_profile': [{'outcome': outcomes[status]}]} if status in outcomes else {}
     c.execute("""INSERT INTO m8_result_revisions
         (id,results_id,revision_no,calculation_id,c46_revision_id,composition_checksum,payload_json,payload_checksum,reason,created_by)
         VALUES(%s,%s,1,%s,%s,'synthetic',%s,%s,'synthetic',%s)""",
         (revision, result, calculation, c46, Jsonb(payload), checksum(payload), member_id))
-    content = {'contract': 'C-67', 'display': {'program_name': 'Synthetic test program'}, 'skills': [],
+    content = {'contract': 'C-67', 'display': {'program_name': 'Имя программы в отчёте'}, 'skills': [],
                'descriptive': {'status': 'ready', 'summary': ['Синтетический результат для проверки кабинета.']}}
-    saved_status = 'draft' if status == 'unavailable' else status
+    saved_status = {'unavailable': 'draft', 'without_score': 'limited'}.get(status, status)
     for rn, report_id in [(1, report), (2, alternate)]:
         c.execute("""INSERT INTO m8_reports
             (id,result_revision_id,revision_no,audience,template_version,c67_json,c67_checksum,status,request_key,request_hash,created_by)
@@ -162,7 +254,20 @@ def seed_cabinet_report(c, member_id, cycle, cycle_id, status):
             (report_id, revision, rn, Jsonb(content), checksum(content), saved_status, f'cabinet-{rn}', member_id))
     if status != 'unavailable':
         c.execute('INSERT INTO m8_published_reports(cycle_db_id,report_id) VALUES(%s,%s)', (cycle, report))
-    return {'report_id': str(report), 'cycle_id': str(cycle_id)}
+    if newer_unpublished:
+        new_calculation, new_revision = uuid4(), uuid4()
+        c.execute("""INSERT INTO m6_cycle_calculations
+            (id,cycle_db_id,revision_no,request_key,request_hash,composition_checksum,
+             input_json,input_hash,result_json,result_hash,c56_json,c56_hash,created_by)
+            VALUES(%s,%s,2,'cabinet-new','synthetic','synthetic','{}','synthetic','{}','synthetic','{}','synthetic',%s)""",
+            (new_calculation, cycle, member_id))
+        new_payload = {'assessed_skill_profile': [{'outcome': 'result_without_score'}]}
+        c.execute("""INSERT INTO m8_result_revisions
+            (id,results_id,revision_no,calculation_id,c46_revision_id,composition_checksum,
+             payload_json,payload_checksum,reason,created_by)
+            VALUES(%s,%s,2,%s,%s,'synthetic',%s,%s,'synthetic',%s)""",
+            (new_revision, result, new_calculation, c46, Jsonb(new_payload), checksum(new_payload), member_id))
+    return {'report_id': str(report), 'cycle_id': str(cycle_id), 'results_revision_id': str(revision)}
 
 
 def main():

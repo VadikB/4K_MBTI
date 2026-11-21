@@ -1175,10 +1175,13 @@ def _project_admin_assessment_stage(row: dict) -> dict:
     payload = row.get("results_payload") or {}
     skills = payload.get("assessed_skill_profile") or [] if isinstance(payload, dict) else []
     outcomes = {str(item.get("outcome")) for item in skills if item.get("outcome")}
-    if outcomes:
-        if outcomes == {"no_result"}:
+    report_status = row.get("report_status")
+    if outcomes or report_status == "no_result":
+        if outcomes == {"no_result"} or (not outcomes and report_status == "no_result"):
             result_summary = {"kind": "insufficient", "label": "Недостаточно оснований для результата"}
-        elif outcomes == {"full_score"} and not any(
+        elif "result_without_score" in outcomes and not outcomes.intersection({"full_score", "partial_score"}):
+            result_summary = {"kind": "without_score", "label": "Есть наблюдения без общего балла"}
+        elif outcomes == {"full_score"} and report_status != "limited" and not any(
             (payload.get("partial_result") or {}).get(key)
             for key in ("is_incomplete", "plan_scope_limited", "observation_limited", "source_limited", "technical_failure")
         ):
@@ -1204,6 +1207,10 @@ def _project_admin_assessment_stage(row: dict) -> dict:
         "operation_id": row.get("preparation_operation_id"),
         "preparation_status": preparation_status,
         "start_readiness": row.get('start_readiness'),
+        "profile_readiness": {
+            "personalized_profile_id": int(row["personalized_profile_id"]),
+            "status": row["profile_status"],
+        } if row.get("personalized_profile_id") is not None else None,
         "acquaintance_status": acquaintance_status,
         "report_id": str(row["report_id"]) if row.get("report_id") and row.get("report_access") else None,
         "report_access": row.get("report_access_kind") if row.get("report_access") else None,
@@ -1373,6 +1380,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 personal_invitation.delivery_status AS invitation_delivery_status,
                 personal_invitation.delivery_error AS invitation_delivery_error,
                 personal_invitation.request_id AS invitation_operation_id,
+                personal_invitation.assignment_ref AS invitation_assignment_ref,
                 personal_invitation.created_by_user_id AS invitation_sender_id,
                 COALESCE(assignments.assignment_refs, ARRAY[]::text[]) AS assessment_assignments,
                 CASE
@@ -1394,7 +1402,8 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             LEFT JOIN auth_password_credentials c ON c.user_id = u.id OR LOWER(c.email) = LOWER(u.email)
             LEFT JOIN user_role_profiles p ON p.id = u.active_profile_id
             LEFT JOIN LATERAL (
-                SELECT id, created_at, expires_at, revoked_at, used_at, delivery_status, delivery_error, request_id, created_by_user_id
+                SELECT id, created_at, expires_at, revoked_at, used_at, delivery_status, delivery_error,
+                       request_id, assignment_ref, created_by_user_id
                 FROM organization_invitations oi
                 WHERE oi.organization_id = om.organization_id
                   AND LOWER(oi.recipient_email) = LOWER(u.email)
@@ -1450,6 +1459,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                     "invitation_delivery_status": row["invitation_delivery_status"] or "not_sent",
                     "invitation_reason": invitation_outcomes.facts(row['invitation_delivery_status'] or 'not_sent', row.get('invitation_delivery_error')),
                     "invitation_operation_id": row.get('invitation_operation_id') if row.get('invitation_sender_id') == actor_user_id else None,
+                    "invitation_assignment_ref": row["invitation_assignment_ref"],
                     "invitation_link_status": row["invitation_link_status"] or "not_created",
                     "invitation_expires_at": row["invitation_expires_at"],
                     "invitation_created_at": row["invitation_created_at"],
@@ -9171,17 +9181,20 @@ def current_customer_m8_report(cycle_id: UUID, request: Request):
 
 @router.get('/admin/m8-access/reports')
 def list_customer_m8_reports(request: Request, organization_id: int | None = None,
-                             query: str = '', program: str = '', status: str = '',
+                             query: str = '', program: str = '', program_definition_id: int | None = None,
+                             status: str = '',
                              page: int = 1, page_size: int = 12):
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     if user is None:
         raise HTTPException(401, detail='Требуется авторизация')
-    if page < 1 or page_size < 1 or page_size > 50 or len(query) > 200 or len(program) > 200:
+    if (page < 1 or not 1 <= page_size <= 50 or len(query) > 200 or len(program) > 200
+            or (program_definition_id is not None and program_definition_id < 1)):
         raise HTTPException(422, detail='Некорректные параметры списка Report.')
     with get_connection() as connection:
         try:
             return m8_report_access.page_customer_reports(connection, user_id=int(user.id),
-                organization_id=organization_id, query=query, program=program, status=status,
+                organization_id=organization_id, query=query, program=program,
+                program_definition_id=program_definition_id, status=status,
                 page=page, page_size=page_size)
         except PermissionError as exc:
             raise HTTPException(403, detail='Организация недоступна.') from exc

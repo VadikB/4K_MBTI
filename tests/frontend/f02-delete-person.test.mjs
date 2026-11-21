@@ -19,6 +19,7 @@ const setup = ({ actorId = 1, pending = [], canPreview = true } = {}) => {
     localDateTime: () => '', selectedOrganizationId: 3,
     invitationFacts, invitationMessage, invitationLinkMessage, invitationMissingText,
     invitationFor: (_org, _assessment, item) => ({ email: item.email, delivery_status: item.invitation_delivery_status || 'not_sent' }),
+    savedInvitation: (item) => ({ email: item.email, delivery_status: 'not_sent' }),
     pendingInvitationOperations: () => [],
   });
   vm.runInContext(renderSource + '\nthis.members = renderMemberList; this.tags = renderTagList; this.mount = mountAdminMemberPurge;', context);
