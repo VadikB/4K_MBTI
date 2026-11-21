@@ -188,3 +188,14 @@
     .platform-problems h1 { font-size: 24px; }
     .support-card { padding: 14px; }
 }
+
+.support-problem-types a {
+    padding: 8px 4px;
+    border-bottom: 2px solid transparent;
+}
+
+.support-problem-types a[aria-current="page"] {
+    color: var(--palette-graphite-900);
+    border-bottom-color: var(--palette-graphite-900);
+    text-decoration: none;
+}

@@ -75,7 +75,7 @@ from Api.assessment_role_profiles import (
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue, public_operation
-from Api import preparation_observation as preparation_observation, support_preparation
+from Api import preparation_observation as preparation_observation, support_invitations, support_preparation
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
@@ -3688,7 +3688,7 @@ def cleanup_admin_regression_tests(request: Request) -> dict[str, object]:
     return {"ok": True, "deleted": counts}
 
 
-def _require_support_preparation_access(connection, user: UserResponse | None) -> None:
+def _require_platform_support_access(connection, user: UserResponse | None) -> None:
     if user is None:
         raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
     if not has_superadmin_access(connection, user):
@@ -3701,7 +3701,7 @@ def list_support_preparation(request: Request, response: Response,
                              organization_id: int | None = Query(None, gt=0, le=2**63 - 1)) -> dict:
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     with get_connection() as connection:
-        _require_support_preparation_access(connection, user)
+        _require_platform_support_access(connection, user)
         result = support_preparation.list_failures(connection, before=before, organization_id=organization_id)
     response.headers["Cache-Control"] = "no-store"
     return result
@@ -3711,7 +3711,7 @@ def list_support_preparation(request: Request, response: Response,
 def read_support_preparation(reference: str, request: Request, response: Response) -> dict:
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
     with get_connection() as connection:
-        _require_support_preparation_access(connection, user)
+        _require_platform_support_access(connection, user)
         problem = support_preparation.read(connection, reference) if re.fullmatch(r"P4K-[A-F0-9]{24}", reference) else None
     if problem is None:
         raise HTTPException(status_code=404, detail="Случай подготовки не найден.")
@@ -3720,6 +3720,33 @@ def read_support_preparation(reference: str, request: Request, response: Respons
                    "version": get_app_version()}
     return {**problem, "environment": environment,
             "handoff_text": support_preparation.handoff(problem, **environment)}
+
+
+@router.get("/admin/support/invitations")
+def list_support_invitations(request: Request, response: Response,
+                             before: int | None = Query(None, gt=0, le=2**63 - 1),
+                             organization_id: int | None = Query(None, gt=0, le=2**63 - 1)) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        result = support_invitations.list_uncertain(connection, before=before, organization_id=organization_id)
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+@router.get("/admin/support/invitations/{reference}")
+def read_support_invitation(reference: str, request: Request, response: Response) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        problem = support_invitations.read(connection, reference)
+    if problem is None:
+        raise HTTPException(status_code=404, detail="Случай приглашения не найден.")
+    response.headers["Cache-Control"] = "no-store"
+    environment = {"mode": settings.app_origin_mode, "origin": settings.public_app_origin,
+                   "version": get_app_version()}
+    return {**problem, "environment": environment,
+            "handoff_text": support_invitations.handoff(problem, **environment)}
 
 
 @router.get("/admin/organizations", response_model=AdminOrganizationsResponse)
@@ -4376,15 +4403,12 @@ def read_personal_organization_invitation_operation(
         status = "accepted" if delivery == "accepted" else (
             "queued" if delivery == "queued" else "uncertain" if delivery == "sending" else "error"
         )
-        if row["used_at"] is not None:
+        link_status = invitation_outcomes.link_status(
+            used_at=row["used_at"], revoked_at=row["revoked_at"], expires_at=row["expires_at"],
+            now=datetime.now(timezone.utc).replace(tzinfo=None),
+        )
+        if link_status == "used":
             status = "already_registered"
-            link_status = "used"
-        elif row["revoked_at"] is not None:
-            link_status = "revoked"
-        elif row["expires_at"] <= datetime.now(timezone.utc).replace(tzinfo=None):
-            link_status = "expired"
-        else:
-            link_status = "active"
         items.append(PersonalInvitationResultItem(
             email=email,
             status=status,
