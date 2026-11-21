@@ -711,7 +711,7 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
             connection_factory, as_db_id=int(row["id"]), request_id=request_id,
             attempt_token=attempt_token, cycle_db_id=int(row["cycle_db_id"]),
             session_db_id=int(row["session_db_id"]), operation_ref=operation_ref,
-            error_code=type(exc).__name__,
+            error_code=str(exc) if isinstance(exc, m5_addressed_scenario.SemanticTurnError) else type(exc).__name__,
         )
         raise
 
@@ -968,8 +968,7 @@ def _submit_addressed_turn(connection, *, row: dict, saved: dict, state: dict, t
         return {"turn": dict(turn), "events": [result["event"]], "idempotent": False}
 
     events = []
-    if plan.withhold_turn:
-        state.setdefault("withheld_turn_ids", []).append(turn_id)
+    state.setdefault("turn_audiences", {})[turn_id] = list(plan.recipient_ids)
     materials = {item["material_id"]: item for item in payload["materials"]}
     update = design["events"]["E01_UPDATE"]
     material_id = update["material_ids"][0]

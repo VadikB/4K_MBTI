@@ -34,7 +34,7 @@ from Api.assessment_service import assessment_service
 from Api import m5_generation_lab
 from Api import m5_catalog_integrity
 from Api.m5_case_type_catalog import M5CaseTypeCatalogError
-from Api import m5_cycle_runtime, m5_scenario_runtime, m5_storage, m5_equivalent_generation
+from Api import m5_addressed_scenario, m5_cycle_runtime, m5_scenario_runtime, m5_storage, m5_equivalent_generation
 from Api import m7_cycle_planner
 from Api.m7_planning_contracts import CreateCyclePlanRequest, NextSituationRequest, PresentSituationRequest
 from Api import m7_route_replacement
@@ -6542,6 +6542,8 @@ def submit_m5_runtime_turn(assessment_situation_id: UUID, payload: M5QATurnReque
                                if payload.controlled_character_responses is not None else None),
             connection_factory=get_connection,
         )
+    except m5_addressed_scenario.SemanticTurnError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
@@ -6675,6 +6677,8 @@ def submit_owned_m5_turn(assessment_situation_id: UUID, payload: M5TurnRequest, 
             turn_id=str(payload.turn_id), content=payload.content, semantic_adapter=semantic_adapter,
             character_adapter=character_adapter, connection_factory=get_connection, enqueue_interim_by=int(user.id),
         )
+    except m5_addressed_scenario.SemanticTurnError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:
         if str(exc)=='M7_TIME_LIMIT_REACHED':_persist_time_expiry_for_situation(str(assessment_situation_id))
         raise HTTPException(status_code=409, detail=str(exc)) from exc

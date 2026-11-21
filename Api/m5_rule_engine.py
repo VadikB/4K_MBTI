@@ -279,6 +279,41 @@ class ControlledSemanticAdapter:
                         (turn_id,), adapter="controlled", controlled_test=True)
 
 
+_DETAIL_FIELD_TYPES = {
+    "text": "непустая строка",
+    "recipient_ids": "непустой массив уникальных непустых строк",
+    "speaker_ids": "непустой массив уникальных непустых строк",
+}
+
+
+def _structured_semantic_prompt(prompt: str) -> str:
+    # v1/v2 pinned the short envelope; structured rules supply their own shape.
+    preamble, _, old_format = prompt.partition("Верни только JSON с")
+    _, _, guidance = old_format.partition(". Если ")
+    if not guidance:
+        raise ValueError("M5_SEMANTIC_PROMPT_FORMAT_UNSUPPORTED")
+    return preamble + "Верни только JSON по response_contract. Если " + guidance
+
+
+def _semantic_details(value: dict, schema: dict) -> dict | None:
+    required = set(schema.get("required", ()))
+    if "details" not in value and not required:
+        return None
+    details = value.get("details")
+    if not isinstance(details, dict) or not required <= details.keys() <= required | set(schema.get("optional", ())):
+        raise ValueError("details fields do not match the response contract")
+    for key, field_value in details.items():
+        if key == "text":
+            valid = isinstance(field_value, str) and bool(field_value.strip())
+        else:
+            valid = (isinstance(field_value, list) and bool(field_value)
+                     and all(isinstance(item, str) and item.strip() for item in field_value)
+                     and len(set(field_value)) == len(field_value))
+        if not valid:
+            raise ValueError(f"invalid details.{key}")
+    return details
+
+
 class DeepSeekSemanticAdapter:
     def __init__(self, gateway: DeepSeekGateway | None = None, *, operation: dict | None = None):
         self.operation = operation or build_m5_ai_operations_snapshot()["semantic_decision"]
@@ -303,10 +338,17 @@ class DeepSeekSemanticAdapter:
         }
         ai_trace = None
         system_prompt = self.prompt
-        detail_codes = rule.get("detail_codes", ())
-        if detail_codes:
-            system_prompt += ("\nДля кодов " + ", ".join(detail_codes)
-                              + " также верни объект details по переданному условию.")
+        details_by_code = rule.get("details_by_code")
+        if details_by_code is not None:
+            system_prompt = _structured_semantic_prompt(self.prompt)
+            fields = {name for shape in details_by_code.values() for names in shape.values() for name in names}
+            prompt["response_contract"] = {
+                "required": {"code": "значение из allowed_codes", "basis": "строка"},
+                "details_by_code": details_by_code,
+                "detail_field_types": {name: _DETAIL_FIELD_TYPES[name] for name in sorted(fields)},
+                "instruction": "Соблюдай обязательные и необязательные поля details для выбранного code. "
+                               "Если поля для кода не заданы, опусти details или оставь пустой объект.",
+            }
         try:
             raw, ai_trace = _call_with_trace(
                 self.gateway, [{"role": "system", "content": system_prompt},
@@ -318,19 +360,24 @@ class DeepSeekSemanticAdapter:
                 return Decision(RuleOutcome.ERROR, "M5_AI_SENT_CONFIG_MISMATCH", "sent config differs from snapshot",
                                 (turn_id,), adapter="deepseek", model=self.operation["model"],
                                 prompt_ref=self.prompt_ref, ai_trace=ai_trace)
-            value = json.loads(raw)
-            code = str(value.get("code", "UNKNOWN"))
-            if code not in allowed:
-                return Decision(RuleOutcome.ERROR, "SEMANTIC_OUTPUT_INVALID", "code outside enum",
-                                (turn_id,), adapter="deepseek", model=self.operation["model"], prompt_ref=self.prompt_ref,
-                                ai_trace=ai_trace)
-            outcome = RuleOutcome.TRUE if code in rule.get("true_codes", (rule.get("true_code", "MATCH"),)) else (
-                RuleOutcome.UNKNOWN if code == "UNKNOWN" else RuleOutcome.FALSE)
-            details = value.get("details") if code in detail_codes else None
-            if code in detail_codes and not isinstance(details, dict):
-                return Decision(RuleOutcome.ERROR, "SEMANTIC_OUTPUT_INVALID", "details must be an object",
+            try:
+                value = json.loads(raw)
+                if not isinstance(value, dict):
+                    raise ValueError("response must be an object")
+                code = value.get("code", "UNKNOWN") if details_by_code is None else value.get("code")
+                if not isinstance(code, str) or code not in allowed:
+                    raise ValueError("code outside enum")
+                details = None
+                if details_by_code is not None:
+                    if not isinstance(value.get("basis"), str) or set(value) - {"code", "basis", "details"}:
+                        raise ValueError("response fields do not match the response contract")
+                    details = _semantic_details(value, details_by_code.get(code, {}))
+            except ValueError as exc:
+                return Decision(RuleOutcome.ERROR, "SEMANTIC_OUTPUT_INVALID", str(exc),
                                 (turn_id,), adapter="deepseek", model=self.operation["model"],
                                 prompt_ref=self.prompt_ref, ai_trace=ai_trace)
+            outcome = RuleOutcome.TRUE if code in rule.get("true_codes", (rule.get("true_code", "MATCH"),)) else (
+                RuleOutcome.UNKNOWN if code == "UNKNOWN" else RuleOutcome.FALSE)
             return Decision(outcome, code, str(value.get("basis") or ""), (turn_id,),
                             adapter="deepseek", model=self.operation["model"], prompt_ref=self.prompt_ref,
                             ai_trace=ai_trace, details=details)
