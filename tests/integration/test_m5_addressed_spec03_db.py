@@ -668,6 +668,9 @@ def test_written_spec02_prepares_submits_and_next_presents_spec03_in_same_cycle(
         _owner(http)
         written = http.get(_public_path(cycle_id)).json()
         assert written["current_situation"]["response_format"] == "written"
+        assert [row["material_id"] for row in written["current_situation"]["participant_payload"]["initial_materials"]] == [
+            "M01", "M02", "M03", "M04", "M05", "M06",
+        ]
         _post(http, written_id, _command("written-final", "Проверил вводные. Мой письменный ответ сохранён."))
         assert not characters.inputs
         transition = http.post(f"/users/assessment/m5/situations/{written_id}/transitions", json={
@@ -693,4 +696,33 @@ def test_written_spec02_prepares_submits_and_next_presents_spec03_in_same_cycle(
         assert resulting["cycle_id"] == cycle_id
         assert resulting["current_situation"]["assessment_situation_id"] == selected["assessment_situation_id"]
         assert resulting["current_situation"]["response_format"] == "dialogue"
-    _record("ac4-spec02-to-spec03", {"written_start": written, "written_receipt": transition.json(), "next": resulting})
+        assert [row["material_id"] for row in resulting["current_situation"]["participant_payload"]["initial_materials"]] == [
+            "M01", "M02", "M03",
+        ]
+    with product_db() as connection:
+        traces = {}
+        for as_id in (written_id, selected["assessment_situation_id"]):
+            row = connection.execute(
+                "SELECT execution_payload_json FROM m5_assessment_situations WHERE assessment_situation_id=%s",
+                (as_id,),
+            ).fetchone()
+            generation = row["execution_payload_json"]["ai_operations"]["functional_personalization"]
+            traces[generation["accepted_as"]["CaseID"]] = generation
+    spec02 = traces["CASE.SPEC.02"]
+    spec03 = traces["CASE.SPEC.03"]
+    assert spec02["source_snapshot"]["refs"]["protocol_package"] == spec03["source_snapshot"]["refs"]["protocol_package"]
+    assert spec02["source_snapshot"]["refs"]["protocol_package"]["version"] == "2.0.0"
+    k1_i09 = next(row for row in spec02["accepted_as"]["IndicatorObservability"] if row["IndicatorID"] == "K1.I09")
+    assert k1_i09["Конкретное условие"] and k1_i09["Что сохранить при адаптации"]
+    for reviewer in ("tester", "challenger"):
+        for trace in (spec02, spec03):
+            assert trace["tester"]["protocol"]["version"] == "2.1.0"
+        spec02_checks = {check["check_id"]: check for check in spec02["tester"]["independent_checks"][reviewer]}
+        assert "case_content" in spec02_checks["indicator:K1.I09"]["requirement"]
+        assert all("case_content" not in check.get("requirement", {})
+                   for check in spec03["tester"]["independent_checks"][reviewer])
+    scenario_contract = spec03["source_snapshot"]["refs"]["runtime_rule"]["scenario_contract"]
+    assert scenario_contract["events"]["E01_UPDATE"]["material_ids"] == ["M04"]
+    _record("ac4-spec02-to-spec03", {"written_start": written, "written_receipt": transition.json(), "next": resulting,
+                                    "spec02_k1_i09": k1_i09, "tester_protocol": spec02["tester"]["protocol"],
+                                    "spec03_start_material_ids": scenario_contract["start_material_ids"]})
