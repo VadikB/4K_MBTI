@@ -363,7 +363,7 @@ for (const superadmin of [false, true]) {
     await expect(readiness).not.toContainText('Оценка не выбрана');
     await view(page, 'Данные организации');
     await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
-    await expect(manual(page)).toContainText(message);
+    await expect(card(page).locator('.admin-data-readiness')).toContainText(message);
     await expect(manual(page)).not.toContainText('исторический ключ');
     await manual(page).locator('[name="purpose"]').fill('Синтетическая цель до подключения');
     await forcedSubmit(manual(page));
@@ -399,7 +399,8 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
   await expect(readiness).not.toContainText('Оценка не выбрана');
   for (const [label, form] of [['Данные организации', manual(page)], ['Анкета', csv(page)]]) {
     await view(page, label);
-    await expect(form).toContainText('Подключение программы пока не подтверждено');
+    const programStatus = label === 'Данные организации' ? card(page).locator('.admin-data-readiness') : form;
+    await expect(programStatus).toContainText('Подключение программы пока не подтверждено');
     await expect(form.locator('[name="assignment_ref"]')).toHaveCount(0);
     if (label === 'Данные организации') {
       await form.locator('[name="purpose"]').fill('Синтетическая цель без подключения');
@@ -437,14 +438,15 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
   const state = await fixture(page, { saved: [revision('pilot-11')] });
   await view(page, 'Данные организации');
   await manual(page).locator('[name="purpose"]').fill('Синтетическая цель A');
-  await manual(page).getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+  await manual(page).locator('[name="organization_name"]').fill('Новое имя организации A');
+  await manual(page).getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
   await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
   const before = scopedPosts(state).length;
   state.losePut = true; state.failRead = true;
   await connectForm(page).locator('[name="program_definition_id"]').selectOption('12');
   await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
   await expect(connectForm(page)).toContainText('Результат подключения не подтверждён');
-  await expect(manual(page)).toContainText('Подключение программы пока не подтверждено. Проверьте состояние подключения.');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Подключение программы пока не подтверждено. Проверьте состояние подключения.');
   const readiness = card(page).locator('.admin-assignment-readiness');
   await expect(readiness.locator('.form-status li')).toHaveCount(1);
   await expect(readiness.locator('dd').nth(1)).toHaveText('ещё не проверена для программы');
@@ -465,12 +467,12 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
   const puts = state.puts, reads = state.reads;
   state.failRead = false;
   await view(page, 'Данные организации');
-  await manual(page).getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
+  await card(page).locator('.admin-data-readiness').getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
-  await expect(manual(page)).toContainText('Синтетическая программа 12');
-  await expect(manual(page)).toContainText('synthetic-12');
-  await expect(manual(page)).toContainText('Синтетическая роль');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая программа 12');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('synthetic-12');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая роль');
   await expect(csv(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
   await expect(card(page).locator('.admin-questionnaire-preview')).toHaveCount(0);
   expect(state.puts).toBe(puts); expect(state.reads).toBe(reads + 1);
@@ -579,7 +581,8 @@ for (const channel of ['manual', 'csv']) test(
       await form.locator('input[type="file"]').setInputFiles(file('live-after-GET'));
     }
     await expect(page.locator('[data-organizations-stale]')).toBeVisible();
-    await expect(form).toContainText('Подключение программы пока не подтверждено');
+    const programStatus = channel === 'manual' ? card(page).locator('.admin-data-readiness') : form;
+    await expect(programStatus).toContainText('Подключение программы пока не подтверждено');
     if (channel === 'manual') {
       await expect(form.locator('[name="purpose"]')).toHaveValue('Синтетическая цель после начала GET');
       await expect(form.locator('[name="organization_name"]')).toHaveValue('Синтетические live сведения после начала GET');
@@ -604,7 +607,7 @@ for (const channel of ['manual', 'csv']) test(
     } else {
       await expect(form.locator('[data-csv-reselect]')).toHaveAttribute('data-csv-reselect', 'synthetic-live-after-GET.csv');
     }
-    await expect(form).toContainText('Подключение программы пока не подтверждено');
+    await expect(programStatus).toContainText('Подключение программы пока не подтверждено');
     expect(scopedPosts(state).filter((request) => !request.path.endsWith('/assessment-assignments'))).toEqual([]);
     await evidence(page, state, info, `failed-refresh-latest-${channel}`);
   },
@@ -633,7 +636,7 @@ test('ADM-PROGRAM AC04 older collection GET cannot invalidate exact B readback',
   await settled(page);
   await view(page, 'Данные организации');
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
-  await expect(manual(page)).toContainText('Синтетическая программа 12');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая программа 12');
   await expect(page.locator('[data-organizations-stale]')).toHaveCount(0);
   await evidence(page, state, info, 'older-collection-after-B-readback');
 });
@@ -656,7 +659,8 @@ test('ADM-PROGRAM AC02 older import collection cannot authorize stale program A'
   await view(page, 'Данные организации');
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
   await manual(page).locator('[name="purpose"]').fill('Синтетическая цель B');
-  await manual(page).getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+  await manual(page).locator('[name="organization_name"]').fill('Новое имя организации B');
+  await manual(page).getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
   await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
   expect(scopedPosts(state).map((r) => r.body.assignment_ref)).toEqual(['pilot-12']);
   await evidence(page, state, info, 'import-before-B-readback');
@@ -685,7 +689,7 @@ test('ADM-PROGRAM AC02 old program GET cannot confirm A over a newer collection 
   const state = await fixture(page, { unknown: true });
   const pending = gate(); state.programReadGate = pending.promise;
   await view(page, 'Данные организации');
-  await manual(page).getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
+  await card(page).locator('.admin-data-readiness').getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
   await expect.poll(() => state.reads).toBe(1);
   state.unknown = false; state.program = 12;
   const profile = card(page).locator('form[data-action="update-profile"]');
@@ -693,14 +697,14 @@ test('ADM-PROGRAM AC02 old program GET cannot confirm A over a newer collection 
   await expect(profile.locator('[data-operation-status]')).toContainText('Карточка организации сохранена');
   const readback = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith('/assessment-program'));
   pending.release(); await readback; await settled(page);
-  await expect(manual(page)).toContainText('Подключение программы пока не подтверждено');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Подключение программы пока не подтверждено');
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
   await forcedSubmit(manual(page));
   await forceAssignment(page);
   expect(scopedPosts(state)).toEqual([]);
   state.programReadGate = null;
   await view(page, 'Данные организации');
-  await manual(page).getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
+  await card(page).locator('.admin-data-readiness').getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
   expect(state.puts).toBe(0); expect(state.reads).toBe(2);
   await evidence(page, state, info, 'old-program-GET-newer-B-collection');

@@ -1,3 +1,5 @@
+export const participantReportAudience = 'Вы и действующие администраторы вашей организации.';
+
 // W02 v5 participant copy. Status and permitted actions still come from server contracts.
 export const waitingPresentation = (readiness = {}) => {
   const reason = String(readiness.reason || '');

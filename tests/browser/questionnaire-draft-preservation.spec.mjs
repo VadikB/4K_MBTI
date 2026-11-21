@@ -85,7 +85,7 @@ for (const scenario of [
     const before = await values(); save('before-release', { values: before, fields_entered: scenario.count });
     await page.screenshot({ path: path.join(directory, 'before-release.png'), fullPage: true });
     release();
-    await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Для этой организации ещё нет сохранённых анкет.' }).first()).toBeVisible();
+    await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-load-state')).toHaveCount(0);
     await page.evaluate(() => new Promise(requestAnimationFrame));
     const after = await values(), connected = await original.evaluate((element) => element.isConnected);
     save('after-release', { values: after, original_node_connected: connected, lost_fields: entries.slice(0, scenario.count)
@@ -97,10 +97,10 @@ for (const scenario of [
     expect(await form.evaluate((element) => element.checkValidity())).toBe(true);
     await page.screenshot({ path: path.join(directory, 'after-release.png'), fullPage: true });
     const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith('/questionnaire/preview'));
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+    await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
     expect((await previewResponse).status()).toBe(201);
     const preview = card.locator('.admin-questionnaire-preview');
-    await expect(preview).toContainText('Готово к подтверждению');
+    await expect(preview.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
     const revisionId = await preview.getAttribute('data-questionnaire-revision-id');
     const confirmation = page.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith(`/questionnaire/${revisionId}/confirm`));
     await preview.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
