@@ -37,7 +37,6 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     await superContext.addCookies([{ name: prepared.cookie_name, value: prepared.super_session, url: base }]);
     const superPage = await superContext.newPage();
     await superPage.goto(base);
-    await superPage.getByRole('button', { name: 'Организации', exact: true }).click();
     await expect(superPage.locator('#admin-organizations-panel')).toBeVisible();
     await superPage.locator('#admin-organization-select').selectOption(String(prepared.organization_id));
     const superCard = superPage.locator(`[data-organization-id="${prepared.organization_id}"]`);

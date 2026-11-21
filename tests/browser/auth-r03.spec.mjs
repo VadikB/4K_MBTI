@@ -805,7 +805,6 @@ for (const lostCommandResponse of [false, true]) {
         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });
       } finally { releaseReadback(); }
       if (readbackFailure === 'http503' && !lostCommandResponse) {
-        await page.locator('#admin-organizations-back-button').click();
         await page.locator('#admin-open-organizations-button').click();
         await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
         for (const width of [1440, 320, 390, 768]) {
@@ -1053,8 +1052,6 @@ test('PROGRAM01 R10 restores the exact connected program after reopening the car
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
   await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
-  await page.locator('#admin-organizations-back-button').click();
-  await expect(page.locator('#admin-panel')).toBeVisible();
   await page.locator('#admin-open-organizations-button').click();
   await expect(page.locator('[data-action="connect-assessment-program"]'))
     .toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
@@ -1134,7 +1131,7 @@ async function reopenAdminOrganizations(page) {
   if (!await back.isVisible()) await page.locator('#admin-organizations-account-name').click();
   await back.click();
   await expect(page.locator('#admin-panel')).toBeVisible();
-  await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#admin-summary-organizations-button').click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
 }
 

@@ -41,7 +41,6 @@ test('F02 AC03/04 current people, real clicks, HTTP and owned PostgreSQL: failur
     });
     const openOrganizations = async () => {
       await page.goto(base);
-      await page.getByRole('button', { name: 'Организации', exact: true }).click();
       await expect(page.locator('#admin-organizations-panel')).toBeVisible();
       await page.locator('#admin-organization-select').selectOption(String(prepared.organization_id));
     };

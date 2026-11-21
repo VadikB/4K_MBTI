@@ -37,6 +37,8 @@ import {
   openChatScreen,
   openProfileScreen,
   openReportsScreen,
+  openAdminDashboardScreen,
+  loadAdminDashboardData,
   openAdminOrganizationsScreen,
   openAdminRegressionTestsScreen,
   openAdminPromptLabScreen,
@@ -269,8 +271,12 @@ const bootApp = async () => {
       return;
     }
     if (state.currentScreen === 'admin' && state.isAdmin) {
-      window.history.replaceState({}, '', '/?screen=admin-organizations');
-      await openAdminOrganizationsScreen();
+      try {
+        await loadAdminDashboardData(state.adminPeriodKey || '30d');
+      } catch (error) {
+        console.error('Failed to restore admin dashboard', error);
+      }
+      await openAdminDashboardScreen();
       return;
     }
     if (!state.isAdmin) {

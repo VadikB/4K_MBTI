@@ -48,7 +48,7 @@ import {
   adminOpenReportsButton,
   adminOpenPromptLabButton,
   adminOpenMethodologyButton,
-  adminOpenOrganizationsButton,
+  adminSummaryOrganizationsButton,
   adminOpenRegressionTestsButton,
   adminRegressionTestsBackButton,
   adminRegressionTestsRunButton,
@@ -1468,12 +1468,13 @@ document.querySelectorAll('[data-admin-area]').forEach((button) => {
   });
 });
 
-if (adminOpenOrganizationsButton) {
-  adminOpenOrganizationsButton.addEventListener('click', (event) => {
-    event.preventDefault();
-    withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
-  });
-}
+const openOrganizationsFromNavigation = (event) => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+};
+adminSummaryOrganizationsButton?.addEventListener('click', openOrganizationsFromNavigation);
+document.getElementById('admin-open-organizations-button')?.addEventListener('click', openOrganizationsFromNavigation);
 
 if (adminOpenRegressionTestsButton) {
   adminOpenRegressionTestsButton.addEventListener('click', () => {

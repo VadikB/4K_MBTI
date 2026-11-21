@@ -6,7 +6,7 @@ import {
   adminAvatar,
   adminTitle,
   adminOpenMethodologyButton,
-  adminOpenOrganizationsButton,
+  adminSummaryOrganizationsButton,
   adminOpenRegressionTestsButton,
   adminOpenPromptLabButton,
   adminMetricsGrid,
@@ -29,8 +29,8 @@ export const renderAdminDashboard = () => {
   adminAvatar.textContent = buildInitials(user.full_name || 'Администратор системы');
   adminTitle.textContent = adminDashboard.title || 'Сводный отчет';
   const isSuperadmin = Boolean(adminDashboard.is_superadmin);
-  if (adminOpenOrganizationsButton) {
-    adminOpenOrganizationsButton.classList.toggle('hidden', !state.isAdmin);
+  if (adminSummaryOrganizationsButton) {
+    adminSummaryOrganizationsButton.classList.toggle('hidden', !state.isAdmin);
   }
   [adminOpenRegressionTestsButton, adminOpenMethodologyButton, adminOpenPromptLabButton].forEach((button) => {
     if (button) {

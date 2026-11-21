@@ -326,8 +326,6 @@ test('Q-DRAFT old account read cannot erase or restore drafts after re-login', a
   await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('synthetic-password');
   await page.locator('#verify-magic-link-button').click();
-  await expect(page.locator('#admin-panel')).toBeVisible();
-  await page.locator('#admin-open-organizations-button').click();
   await expect(page.locator('#admin-organizations-account-name')).toHaveText('Synthetic admin 28');
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(card(page).locator('[data-admin-view="organization-data"] .admin-questionnaire-load-state')).toHaveCount(0);
