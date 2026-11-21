@@ -477,8 +477,9 @@ def build_execution_rules(cases: list[dict], event_bindings: dict | None = None)
             content = material["content"]
             if case["schema_version"] == 4:
                 explicit_events = event_bindings["case_bindings"][case["case_id"]]["events"]
-                stage = next(item for item in stages if material["material_id"] in
-                             explicit_events[item["step_id"]]["material_ids"])
+                stage = next(item for item in stages
+                             if explicit_events[item["step_id"]]["function"] == "material_update"
+                             and material["material_id"] in explicit_events[item["step_id"]]["material_ids"])
             else:
                 stage_id = str(content.get("Предъявление") or "")
                 stage = next((item for item in stages if item["step_id"] in stage_id), None)

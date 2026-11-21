@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from Api import m5_passport_generation as passport_generation
+from Api.m5_addressed_contract import validate_scenario_contract
 from Api.m5_passport import allowed_profile, missing
 from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
@@ -182,6 +183,10 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     if selected_base_role is not None and selected_base_role != projected["base_role"]:
         raise missing(projected["case_id"], projected["version"], "BaseRole→profile")
     case = {"CaseID": projected["case_id"], "Version": projected["version"], "Паспорт": projected["passport"]}
+    design = (runtime_rule_ref or {}).get("scenario_contract")
+    if design is not None:
+        validate_scenario_contract(projected, design)
+        contract = passport_generation.addressed_candidate_contract(contract, design)
     # Resolve all mandatory checks before entering the provider.
     try:
         build_applicability_plan(case)
@@ -202,6 +207,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
         "schema_version": 2, "operation_id": operation_id, "synthetic": synthetic,
         "created_at": datetime.now(timezone.utc).isoformat(), "case": case, "case_version": projected,
         "as_contract": contract, "profile": allowed_profile(profile), "refs": refs,
+        **({"scenario_contract": design} if design is not None else {}),
     }
 
 
@@ -519,9 +525,16 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
         if isinstance(checks, list) else []
 
 
+def _generation_instructions(snapshot: dict) -> tuple[str, str]:
+    design = snapshot.get("scenario_contract")
+    if design:
+        return design["candidate_contract"]["instruction"], json.dumps(snapshot["as_contract"], ensure_ascii=False)
+    return (_frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8"),
+            _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8"))
+
+
 def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
-    instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
-    contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
+    instruction, contract = _generation_instructions(snapshot)
     if "as_contract" in snapshot:
         payload = passport_generation.provider_basis(snapshot)
     else:
@@ -756,8 +769,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
 def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], tested: dict[str, Any],
                      gateway: Any) -> dict[str, Any]:
     """Ask PM-03 for one complete corrected AS; never patch or admit it server-side."""
-    instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
-    contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
+    instruction, contract = _generation_instructions(snapshot)
     if "as_contract" in snapshot:
         repair_instruction = _frozen_file(snapshot, "repair_prompt").read_text(encoding="utf-8")
         repair_prompt_ref = snapshot["refs"]["repair_prompt"]

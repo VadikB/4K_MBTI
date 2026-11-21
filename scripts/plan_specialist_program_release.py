@@ -19,7 +19,7 @@ if __package__ in (None, ""):
 from Api.m5_case_runtime import checksum
 from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_runtime_rules import load_runtime_rule_package
-from Api.m5_passport_generation import BANK_PACKAGE
+from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE
 from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as BANK_RUNTIME_DIR
 
 
@@ -115,8 +115,12 @@ def apply_import(trace: dict[str, Any], package_dir: Path = PACKAGE_DIR,
     )
     with get_connection() as connection:
         imported = import_package_directory(connection, package_dir)
-        rules = (json.loads((package_dir / "execution-rules.json").read_bytes()) if package["schema_version"] == 4
-                 else build_execution_rules(package["cases"], loaded_runtime["bindings"]))
+        if package["schema_version"] == 4:
+            rules = json.loads((package_dir / "execution-rules.json").read_bytes())
+            if loaded_runtime["manifest"]["schema_version"] == 3:
+                rules.update(owner_task="M5-02", case_bindings=loaded_runtime["bindings"]["case_bindings"])
+        else:
+            rules = build_execution_rules(package["cases"], loaded_runtime["bindings"])
         runtime = import_runtime_rule_version(
             connection, loaded_runtime, rules,
             package_db_id=imported["package_db_id"],
@@ -174,7 +178,9 @@ def build_release_artifacts(
         raise ValueError("M5_USAGE_SCOPE_INVALID")
     scope_suffix = "-qa" if usage_scope == "qa" else ""
     passport_bank = package["schema_version"] == 4
-    release_suffix = f"-{'passport' if passport_bank else 'admitted'}.1{scope_suffix}"
+    addressed_rules = runtime["manifest"]["schema_version"] == 3
+    release_series = "passport.2" if addressed_rules else ("passport.1" if passport_bank else "admitted.1")
+    release_suffix = f"-{release_series}{scope_suffix}"
     source_manifest = json.loads((package_dir / "manifest.json").read_text())
     source_package = json.loads((package_dir / "case-package.json").read_text())
     source_ref = {
@@ -191,7 +197,7 @@ def build_release_artifacts(
         bindings["case_bindings"][case["case_id"]].update(
             case_version=case["version"], case_checksum=checksum(case),
         )
-    rules = ({"schema_version": 3, "status": "structured_draft", "owner_task": "M5-01",
+    rules = ({"schema_version": 3, "status": "structured_draft", "owner_task": "M5-02" if addressed_rules else "M5-01",
               "case_bindings": bindings["case_bindings"]} if passport_bank
              else build_execution_rules(package["cases"], bindings))
     replacements = {"case-package.json": package, "execution-rules.json": rules}
@@ -209,7 +215,8 @@ def build_release_artifacts(
         "id": runtime_manifest["id"], "version": runtime_manifest["version"],
         "manifest_checksum": runtime["manifest_checksum"],
     }
-    runtime_version = f"{'1.3.1' if passport_bank else '1.2.1'}{scope_suffix}"
+    runtime_series = "1.4.1" if addressed_rules else ("1.3.1" if passport_bank else "1.2.1")
+    runtime_version = f"{runtime_series}{scope_suffix}"
     bindings["version"] = runtime_version
     bindings.pop("artifact_checksum")
     bindings["artifact_checksum"] = digest(json_bytes(bindings))
@@ -219,6 +226,7 @@ def build_release_artifacts(
             "case_package_id": manifest["id"], "case_package_version": manifest["version"],
             "runtime_ref": source_runtime_ref,
             **({"as_contract_ref": package["as_contract_ref"]} if passport_bank else {}),
+            **({"scenario_case_ids": runtime_manifest["source"]["scenario_case_ids"]} if addressed_rules else {}),
         },
         artifacts=[{"name": "event-bindings.json", "sha256": bindings["artifact_checksum"]}],
     )
@@ -243,7 +251,11 @@ def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scop
         raw = artifact.read_bytes()
         evidence = json.loads(raw)
         if (evidence.get("as_contract_ref") != package["as_contract_ref"] or evidence.get("cases") != expected
-                or evidence.get("scopes") != {key: "PASS" for key in ADMISSION_EVIDENCE}):
+                or evidence.get("scopes") != {key: "PASS" for key in ADMISSION_EVIDENCE}
+                or (runtime["manifest"]["schema_version"] == 3 and evidence.get("runtime_rule_ref") != {
+                    "id": runtime["manifest"]["id"], "version": runtime["manifest"]["version"],
+                    "manifest_checksum": runtime["manifest_checksum"],
+                })):
             raise ValueError("M5_PASSPORT_BANK_ASSESSMENT_EVIDENCE_MISMATCH")
     path = str(artifact.relative_to(ROOT)) if artifact.is_relative_to(ROOT) else artifact.name
     ref = {"path": path, "sha256": digest(raw)}
@@ -326,7 +338,9 @@ def publish_admitted_catalog(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply-import", action="store_true")
-    parser.add_argument("--historical-0.5", dest="historical_0_5", action="store_true", help="Replay the historical release.")
+    sources = parser.add_mutually_exclusive_group()
+    sources.add_argument("--historical-0.5", dest="historical_0_5", action="store_true", help="Replay the historical release.")
+    sources.add_argument("--passport-01", action="store_true", help="Replay the M5-01 passport release.")
     parser.add_argument("--assessment-evidence", type=Path, help="Reviewed admission evidence for the passport bank.")
     parser.add_argument("--publish-admitted-catalog", action="store_true")
     parser.add_argument("--published-by", type=int)
@@ -339,8 +353,10 @@ def main() -> int:
                         help="Publication scope; qa uses synthetic evidence and separate artifact versions.")
     args = parser.parse_args()
     package_dir, runtime_dir = ((PACKAGE_DIR, RUNTIME_DIR) if args.historical_0_5
-                                else (BANK_PACKAGE, BANK_RUNTIME_DIR))
-    default_version = "1.0" if args.historical_0_5 else ("1.1-qa" if args.usage_scope == "qa" else "1.1")
+                                else (BANK_PACKAGE, BANK_RUNTIME_DIR if args.passport_01 else ADDRESSED_RUNTIME))
+    default_version = "1.0" if args.historical_0_5 else ("1.1" if args.passport_01 else "1.2")
+    if not args.historical_0_5 and args.usage_scope == "qa":
+        default_version += "-qa"
     catalog_version = args.catalog_version or default_version
     idempotency_key = args.idempotency_key or f"{args.catalog_id}-{catalog_version}"
     result = build_trace(package_dir, runtime_dir)

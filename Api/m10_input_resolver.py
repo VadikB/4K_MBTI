@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from Api.assessment_configuration import definition_checksum
 from Api.m6_input_resolver import normalize
 from Api.m6_input_resolver_v2 import load_criteria
 from Api import qa_orchestration
@@ -31,4 +32,9 @@ def resolve(connection, handoff_id: str) -> tuple[int, dict]:
         row["snapshot_json"], methodology, source_set / "manifest.json"
     ))
     material["usage_scope"] = expected_scope
+    if "conditional_opportunities" in handoff["envelope_json"]:
+        material["conditional_opportunities"] = handoff["envelope_json"]["conditional_opportunities"]
+        revision = material.pop("material_revision")
+        revision["material_sha256"] = definition_checksum(material)
+        material["material_revision"] = revision
     return int(row["id"]), material

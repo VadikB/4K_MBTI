@@ -448,11 +448,15 @@ def test_passport_bank_cli_build_import_publish_and_replay(specialist_release_co
                 "required_evidence_scopes": ["case_format", "case_dialogue", "assessment_situation"]},
     )
     old_trace = trace(connection, old_id)
+    passport_01 = cli("--passport-01", "--apply-import")
+    assert passport_01["import"]["created"] and passport_01["runtime"]["created"]
+    assert read_rules_version(connection, passport_01["runtime"]["id"]) == "1.3.0"
     draft = cli("--apply-import")
-    assert draft["import"]["created"] and draft["runtime"]["created"]
+    assert not draft["import"]["created"] and draft["runtime"]["created"]
+    assert draft["import"]["package_db_id"] == passport_01["import"]["package_db_id"]
     assert len(draft["readback"]["cases"]) == 9
-    assert not cli("--apply-import")["import"]["created"]
-    assert read_rules_version(connection, draft["runtime"]["id"]) == "1.3.0"
+    assert not cli("--apply-import")["runtime"]["created"]
+    assert read_rules_version(connection, draft["runtime"]["id"]) == "1.4.0"
     assert load_runtime_rule_package(passport_rules, json.loads(
         (BANK_PACKAGE / "case-package.json").read_bytes())["cases"])["manifest"]["schema_version"] == 2
     common = ("--publish-admitted-catalog", "--published-by", "99", "--organization-id", "11",
@@ -460,11 +464,14 @@ def test_passport_bank_cli_build_import_publish_and_replay(specialist_release_co
     monkeypatch.setattr("sys.argv", ["plan_specialist_program_release.py", *common])
     with pytest.raises(ValueError, match="M5_PASSPORT_BANK_ASSESSMENT_EVIDENCE_REQUIRED"):
         release.main()
+    old_publication = cli("--passport-01", *common, "--usage-scope", "qa")
     published = cli(*common, "--usage-scope", "qa")
     repeat = cli(*common, "--usage-scope", "qa")
+    assert old_publication["catalog"]["catalog_db_id"] != published["catalog"]["catalog_db_id"]
+    assert read_rules_version(connection, old_publication["runtime"]["id"]) == "1.3.1-qa"
     assert published["catalog"]["catalog_db_id"] == repeat["catalog"]["catalog_db_id"]
     assert not repeat["import"]["created"] and not repeat["runtime"]["created"]
-    assert read_rules_version(connection, published["runtime"]["id"]) == "1.3.1-qa"
+    assert read_rules_version(connection, published["runtime"]["id"]) == "1.4.1-qa"
     for case in published["readback"]["cases"]:
         content = connection.execute("SELECT content_json FROM m5_case_versions WHERE id=%s",
                                      (case["id"],)).fetchone()["content_json"]
