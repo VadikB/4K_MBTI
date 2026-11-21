@@ -1,4 +1,5 @@
 import { mountInvitationDetails } from './invitation-details.js';
+import { mountPreparationProblems } from './support-preparation.js';
 import { invitationMessage, invitationFacts, invitationSummary, invitationCommonMessage, exactInvitationItems, invitationLinkMessage, safeInvitationItem, invitationMissingText } from './invitation-presentation.js';
 import { preparationHtml, renderPreparation, preparationPresentation } from '../../preparation-status.js';
 import { createOperationId, readApiResponse, fetchWithDeadline as fetch, previewAccountPurge,
@@ -2868,7 +2869,13 @@ export const renderAdminOrganizations = () => {
     '<strong>Показано последнее подтверждённое состояние.</strong> ' + escapeHtml(organizationsReadStaleReason) +
     ' <button type="button" class="text-button" data-action="refresh-admin-organizations">Обновить безопасно</button></div>' : '';
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
-  if (isSuperadmin) document.querySelector('[data-platform-section="organizations"]')?.setAttribute('aria-current', 'page');
+  document.querySelectorAll('[data-platform-section]').forEach((link) => {
+    if (isSuperadmin && link.dataset.platformSection === 'organizations') link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+  const problems = document.getElementById('platform-problems');
+  problems?.classList.add('hidden');
+  problems?.replaceChildren();
   document.getElementById('platform-availability')?.classList.add('hidden');
   adminOrganizationsPanel.querySelector('.admin-organizations-shell')?.classList.remove('hidden');
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
@@ -3346,13 +3353,16 @@ export const openAdminOrganizations = async ({
   restoreManagementSelection();
   if (!preserveView) organizationViews.clear();
   restoreManagementNavigation(navigation);
+  const organizationParam = new URLSearchParams(window.location.search).get('org');
+  const requestedOrganization = state.adminDashboard?.is_superadmin && /^[1-9][0-9]*$/.test(organizationParam || '')
+    && Number.isSafeInteger(Number(organizationParam)) ? Number(organizationParam) : null;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   state.activeArea = 'management';
   state.isAdmin = Boolean(state.canAdmin || state.isAdmin);
   setCurrentScreen('admin-organizations');
   persistAssessmentContext();
-  syncUrlState('admin-organizations');
+  syncUrlState('admin-organizations', { organizationId: requestedOrganization });
   hideAllPanels();
   adminOrganizationsPanel?.classList.remove('hidden');
   setStatus('');
@@ -3360,6 +3370,10 @@ export const openAdminOrganizations = async ({
   try {
     const data = await loadAdminOrganizations();
     if (!data || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
+    if (requestedOrganization && data.is_superadmin && data.items?.some((org) => Number(org.id) === requestedOrganization)) {
+      selectedOrganizationId = requestedOrganization;
+      saveManagementSelection();
+    }
   } catch (error) {
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
@@ -3373,9 +3387,6 @@ export const openPlatformAvailability = (section) => {
     window.history.replaceState({}, '', '/?screen=admin-organizations');
     return openAdminOrganizations();
   }
-  const content = section === 'problems'
-    ? ['Проблемы', 'Раздел проблем будет доступен после подключения проверенного источника технических случаев.']
-    : ['Проверки', 'Контролируемые проверки будут доступны после подключения изолированного исполнителя.'];
   state.activeArea = 'management';
   state.isAdmin = true;
   setCurrentScreen('admin-platform-' + section);
@@ -3385,11 +3396,25 @@ export const openPlatformAvailability = (section) => {
   adminOrganizationsPanel.classList.remove('hidden');
   adminOrganizationsPanel.querySelector('.admin-organizations-shell')?.classList.add('hidden');
   const availability = document.getElementById('platform-availability');
-  availability.classList.remove('hidden');
-  document.getElementById('platform-availability-title').textContent = content[0];
-  document.getElementById('platform-availability-description').textContent = content[1];
+  const problems = document.getElementById('platform-problems');
+  availability.classList.toggle('hidden', section !== 'checks');
+  problems.classList.toggle('hidden', section !== 'problems');
+  const identityEpoch = state.identityEpoch;
+  if (section === 'problems') {
+    mountPreparationProblems(problems, () => state.identityEpoch === identityEpoch &&
+      state.currentScreen === 'admin-platform-problems' && !adminOrganizationsPanel.classList.contains('hidden'));
+  } else {
+    problems.replaceChildren();
+    document.getElementById('platform-availability-title').textContent = 'Проверки';
+    document.getElementById('platform-availability-description').textContent =
+      'Контролируемые проверки будут доступны после подключения изолированного исполнителя.';
+  }
   const accountName = document.getElementById('admin-organizations-account-name');
-  if (accountName) accountName.textContent = state.pendingUser?.full_name || state.pendingUser?.email || 'Аккаунт';
+  if (accountName) {
+    const name = state.pendingUser?.full_name || state.pendingUser?.email || 'Аккаунт';
+    accountName.textContent = name;
+    accountName.setAttribute('aria-label', 'Меню аккаунта: ' + name);
+  }
   document.querySelectorAll('[data-platform-section]').forEach((link) => {
     if (link.dataset.platformSection === section) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
