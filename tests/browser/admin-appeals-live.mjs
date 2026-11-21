@@ -126,23 +126,19 @@ try {
   const newSession = await browser.newContext({timezoneId: 'America/Los_Angeles'});
   await newSession.addCookies([{name: 'agent4k_session_token', value: 'participant-reentry', url: base}]);
   const readPage = await newSession.newPage();
-  const assessmentName = 'Синтетическая оценка 4К';
-  await readPage.route('**/users/1/acquaintance', route => route.fulfill({ json: {
-    ...model, assignment_id: model.readiness.assignment_id, assessment_name: assessmentName,
-  } }));
+  await readPage.route('**/users/1/acquaintance', route => route.fulfill({ json: model }));
   await readPage.goto(base);
   await readPage.evaluate(async () => {
     const {state} = await import('/web/js/state.js');
     state.pendingUser = {id: 1, full_name: 'Тестовый участник'};
     state.identityEpoch = 1;
-    state.dashboard = {current_assessments: [], completed_assessments: []};
-    const {openDashboard} = await import('/web/js/screens/dashboard.js');
-    openDashboard();
+    const {initOnboarding, openOnboarding} = await import('/web/js/screens/onboarding.js');
+    initOnboarding(); await openOnboarding();
   });
+  await readPage.getByRole('button', {name: 'Ответы на обращения'}).click();
   await readPage.getByRole('heading', {name: 'Ответ по вашему обращению'}).waitFor();
   await readPage.getByText(text).waitFor();
   await readPage.getByText('Тестовый администратор', {exact: false}).waitFor();
-  await readPage.locator('.participant-appeal').getByText(assessmentName, {exact: true}).waitFor();
   await expect(readPage.locator('.participant-appeal time')).toHaveText(savedTime);
   await readPage.getByText('Ваше обращение', {exact: true}).click();
   await readPage.getByText('Поле: Роль\nПроверьте синтетическую запись', {exact: true}).waitFor();

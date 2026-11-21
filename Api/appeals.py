@@ -1,6 +1,8 @@
 """Participant data appeals. Authorization is performed by the HTTP boundary."""
 import json
 
+from Api import assessment_assignment_sources
+
 
 def read_operation(connection, *, user_id, operation_id, assignment_id,
                    questionnaire_revision_id, message=None):
@@ -45,6 +47,45 @@ def list_issues(connection, *, organization_id: int | None, user_id: int) -> lis
         params,
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+def list_participant_issues(connection, *, user_id: int) -> list[dict]:
+    issues = list_issues(connection, organization_id=None, user_id=user_id)
+    exact_ids = [
+        item['id'] for item in issues if item['assignment_ref']
+        and item['assignment_id'] is not None and item['questionnaire_revision_id'] is not None
+    ]
+    names = {}
+    if exact_ids and assessment_assignment_sources.schema_available(connection):
+        # The same reference can be assigned again. Read only this issue's saved
+        # assignment and revision, including historical bindings. If the pair
+        # has held different configurations, it no longer identifies one name.
+        rows = connection.execute("""
+            SELECT issue.id,
+                CASE WHEN COUNT(DISTINCT binding.assessment_configuration_id) = 1
+                     THEN MAX(NULLIF(BTRIM(configuration.name), '')) END AS assessment_display_name
+            FROM participant_data_issue_reports issue
+            JOIN organization_assessment_assignments assignment
+              ON assignment.id=issue.assignment_id AND assignment.recipient_user_id=issue.user_id
+             AND assignment.organization_id=issue.organization_id AND assignment.assignment_ref=issue.assignment_ref
+            JOIN questionnaire_response_revisions revision
+              ON revision.id=issue.questionnaire_revision_id AND revision.organization_id=issue.organization_id
+             AND revision.assignment_ref=issue.assignment_ref
+            JOIN organization_assessment_source_bindings binding
+              ON binding.assignment_id=assignment.id AND binding.questionnaire_revision_id=revision.id
+            JOIN assessment_configurations configuration ON configuration.id=binding.assessment_configuration_id
+            WHERE issue.user_id=%s AND issue.id=ANY(%s)
+            GROUP BY issue.id
+        """, (user_id, exact_ids)).fetchall()
+        names = {row['id']: row['assessment_display_name'] for row in rows}
+
+    visible = ('id', 'organization_id', 'message', 'status', 'created_at',
+               'assignment_ref', 'assignment_id', 'questionnaire_revision_id',
+               'reply_message', 'reply_author_display_name', 'replied_at')
+    return [
+        {**{key: item[key] for key in visible}, 'assessment_display_name': names.get(item['id'])}
+        for item in issues
+    ]
 
 
 def claim_issue(connection, *, organization_id: int, user_id: int, issue_id: int, actor_id: int) -> dict | None:

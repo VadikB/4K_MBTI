@@ -59,10 +59,12 @@ async function fixture(page) {
       ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : respond(route, { user, dashboard });
     if (pathname === '/users/8/acquaintance/issues' && request.method() === 'GET') return respond(route, { items: [
       { organization_id: 10, assignment_id: 91, assignment_ref: model.readiness.assignment_ref, questionnaire_revision_id: 41,
+        assessment_display_name: card.title,
         message: 'Исходное сообщение\n' + 'ОченьДлинноеОбращение'.repeat(60),
         reply_message: 'Ответ из сохранённого обращения.\n' + 'ДлинныйОтвет'.repeat(60),
         reply_author_display_name: 'Автор ответа', replied_at: '2026-11-19T12:00:00Z' },
       { organization_id: 10, assignment_id: 90, assignment_ref: model.readiness.assignment_ref, questionnaire_revision_id: 41,
+        assessment_display_name: 'Оценка прежнего назначения',
         reply_message: 'Исторический ответ по прежнему назначению.', replied_at: '2026-11-19T10:00:00' },
       { assignment_ref: model.readiness.assignment_ref, message: 'Сообщение из старой записи',
         reply_message: 'Исторический ответ без подтверждённого назначения.', replied_at: '2026-11-19T09:00:00Z' },
@@ -115,6 +117,7 @@ for (const width of [1440, 390, 320]) {
       await expect(replies.nth(1).locator('time')).toHaveText('19.11.2026, 10:00');
       await expect(replies.nth(0).getByText(run.card.title, { exact: true })).toBeVisible();
       await expect(replies.nth(1)).not.toContainText(run.card.title);
+      await expect(replies.nth(1).getByText('Оценка прежнего назначения', { exact: true })).toBeVisible();
       await expect(page.locator('#dashboard-appeals')).not.toContainText(run.model.readiness.assignment_ref);
       await replies.nth(0).getByText('Ваше обращение', { exact: true }).click();
       expect(await replies.nth(0).evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);

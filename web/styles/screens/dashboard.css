@@ -1032,19 +1032,18 @@
     text-decoration: underline;
     text-underline-offset: 3px;
 }
-#dashboard-panel .participant-appeal {
+:is(#dashboard-panel, .participant-dialog) .participant-appeal {
     padding: 12px;
     border: 1px solid var(--participant-border);
     border-radius: var(--radius-sm);
     background: var(--participant-canvas);
 }
-#dashboard-panel .participant-appeal h3 { font-size: 15px; }
-#dashboard-panel .participant-appeal small, #dashboard-panel .participant-appeal details {
+.participant-appeal h3 { font-size: 15px; margin: 0; }
+.participant-appeal :is(small, details, .participant-appeal-assessment) {
     font-size: 13px;
     color: var(--participant-caption);
 }
-#dashboard-panel .participant-appeal summary { cursor: pointer; }
-#dashboard-panel .participant-appeal .participant-appeal-assessment { color: var(--participant-caption); font-size: 13px; }
+.participant-appeal summary { cursor: pointer; }
 #dashboard-panel [data-participant-appeals] { margin: 0; }
 #dashboard-panel #dashboard-appeals:empty { display: none; }
 .participant-dialog {
@@ -1061,6 +1060,8 @@
 .participant-dialog::backdrop { background: rgb(20 28 30 / 45%); }
 .participant-dialog h2 { margin: 0 0 14px; font: 700 22px/1.35 var(--font-heading); }
 .participant-dialog p, .participant-contact-details { margin: 0 0 10px; }
+.participant-replies { display: grid; gap: 12px; }
+.participant-replies .participant-appeal p { margin: 0; }
 .participant-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .participant-dialog-actions button { min-height: 44px; }
 .participant-contact-details dt { margin-top: 12px; color: var(--participant-caption); font-size: 14px; }

@@ -230,12 +230,20 @@
     #auth-complete-panel.w02-waiting .auth-complete-actions button { width: 100%; }
 }
 
-#onboarding-panel #onboarding-dashboard {
+#onboarding-panel :is(#onboarding-dashboard, #onboarding-appeals) {
     margin-left: auto; min-height: 44px; padding: 8px 0;
-    color: var(--participant-focus); font-size: 14px; white-space: nowrap;
+    color: var(--participant-focus); font-size: 14px; text-align: right;
 }
-#onboarding-panel #onboarding-dashboard[hidden] { display: none; }
-#onboarding-panel #onboarding-dashboard:focus-visible { outline: 3px solid var(--participant-focus); outline-offset: 2px; }
+#onboarding-panel #onboarding-dashboard { white-space: nowrap; }
+#onboarding-panel :is(#onboarding-dashboard, #onboarding-appeals)[hidden], #auth-complete-appeals[hidden] { display: none; }
+#onboarding-panel :is(#onboarding-dashboard, #onboarding-appeals):focus-visible { outline: 3px solid var(--participant-focus); outline-offset: 2px; }
+@media (max-width: 600px) {
+    #onboarding-panel .onboarding-topbar:has(#onboarding-appeals:not([hidden])) {
+        flex-basis: auto;
+        flex-wrap: wrap;
+        padding-block: 8px;
+    }
+}
 
 #onboarding-panel.onboarding-standalone:has(.assessment-state-card) .onboarding-thread {
     max-width: 640px;

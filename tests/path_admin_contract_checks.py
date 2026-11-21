@@ -655,6 +655,8 @@ def test_adm_fix03_stale_screen_cannot_retarget_appeal():
         accepted = member.post(prefix + '/issues', json=command)
         assert accepted.status_code == 201, accepted.text
         receipt = accepted.json()
+        assert member.get(prefix).json()['late_readiness']['personalized_profile_id'] is None
+        assert member.get(prefix + '/issues').json()['items'][0]['assessment_display_name'] == s['config']['name']
         assert member.post(prefix + '/issues', json={**command, 'operation_id': str(uuid4()),
             'questionnaire_revision_id': shown['questionnaire_revision_id'] + 100000}).status_code == 409
         assert member.post(prefix + '/issues', json={**command, 'operation_id': str(uuid4()),
@@ -719,6 +721,7 @@ def test_adm_fix03_stale_screen_cannot_retarget_appeal():
         assert item['reply_author_display_name'] == 'Synthetic contract subject'
         assert item['replied_at'] == reply.json()['created_at']
         assert item['reply_message'] == 'Synthetic reply'
+        assert item['assessment_display_name'] == s['config']['name']
         assert 'reply_author_user_id' not in item
         assert member.get(lookup, params=pair).json() == receipt
     with get_connection() as c:

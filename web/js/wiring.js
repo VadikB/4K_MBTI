@@ -2260,13 +2260,16 @@ if (adminOrganizationsList) {
       const userId = Number(facts.userId);
       document.body.append(dialog);
       dialog.addEventListener('close', () => {
+        const focused = document.activeElement;
         dialog.remove();
         if (cardEpoch !== state.identityEpoch) return;
+        if (focused && focused !== document.body && focused !== document.documentElement && !dialog.contains(focused)) return;
         const row = memberRow(organizationId, userId);
         (button.isConnected ? button : row?.querySelector('[data-action="' + entry + '"]') ||
           row?.querySelector('[data-action="open-member-card"]') ||
           adminOrganizationsList.querySelector('[data-organization-id="' + organizationId + '"] [data-action="toggle-appeals-filter"]'))?.focus();
       }, { once: true });
+      button.focus({ preventScroll: true });
       dialog.showModal();
       if (!isSuperadmin) {
         withScreen(loadAdminOrganizations, (module) => {

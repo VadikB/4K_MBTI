@@ -181,6 +181,15 @@ test('ADM-UI-03 organization roster opens the appeals section or the top of the 
       await expect(issues).toBeFocused();
     }
 
+    await name.press('Enter');
+    await expect(close).toBeFocused();
+    await dialog.evaluate(node => {
+      node.close();
+      document.querySelector('[data-member-user-id="28"] [data-action="open-member-appeals"]').focus();
+    });
+    await expect(page.locator('dialog.org-admin-member-card')).toHaveCount(0);
+    await expect(issues).toBeFocused();
+
     await orgSelect.selectOption('4');
     const otherOrg = panel.locator('[data-organization-id="4"]');
     const emptyFilter = otherOrg.getByRole('button', { name: 'С обращениями' });
