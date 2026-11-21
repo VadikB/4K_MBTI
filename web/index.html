@@ -358,8 +358,7 @@
             <h2 id="admin-title">Сводный отчет</h2>
           </div>
           <div class="admin-hero-actions">
-            <button id="admin-start-assessment-button" type="button" class="ghost-button compact-ghost">Пройти оценивание</button>
-            <button id="admin-open-organizations-button" type="button" class="ghost-button compact-ghost">Организации</button>
+            <button id="admin-summary-organizations-button" type="button" class="ghost-button compact-ghost">Организации</button>
             <button id="admin-open-regression-tests-button" type="button" class="ghost-button compact-ghost">Регрессионные тесты</button>
             <button id="admin-open-methodology-button" type="button" class="ghost-button compact-ghost">Управление кейсами</button>
             <button id="admin-open-prompt-lab-button" type="button" class="ghost-button compact-ghost">Prompt Lab</button>
@@ -426,6 +425,16 @@
           </details>
         </div>
       </header>
+      <nav class="platform-navigation" aria-label="Разделы управления платформой">
+        <a id="admin-open-organizations-button" href="/?screen=admin-organizations" data-platform-section="organizations">Организации</a>
+        <a href="/?screen=admin-platform-problems" data-platform-section="problems">Проблемы</a>
+        <a href="/?screen=admin-platform-checks" data-platform-section="checks">Проверки</a>
+      </nav>
+
+      <div class="platform-availability hidden" id="platform-availability" role="region" aria-labelledby="platform-availability-title">
+        <h1 id="platform-availability-title"></h1>
+        <p id="platform-availability-description"></p>
+      </div>
 
       <div class="admin-shell admin-organizations-shell">
         <section class="card card--lg admin-hero-card admin-organizations-hero">

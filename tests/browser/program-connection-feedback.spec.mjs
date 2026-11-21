@@ -140,8 +140,6 @@ test('R10-STATUS logout and another account cannot restore the previous outcome'
   await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('synthetic-password');
   await page.locator('#verify-magic-link-button').click();
-  await expect(page.locator('#admin-panel')).toBeVisible();
-  await page.locator('#admin-open-organizations-button').click();
   await expect(page.locator('#admin-organizations-account-name')).toHaveText('Synthetic admin 28');
   await expect(form(page)).toContainText('Подключено: Synthetic pilot 11');
   await expect(status(page)).toHaveCount(0);
@@ -162,8 +160,6 @@ test('R10-STATUS a late command cannot restore feedback after program selection 
 test('R10-STATUS changed server program invalidates the saved outcome even with an old draft', async ({ page }) => {
   const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
   f.state.linked = 12;
-  await page.locator('#admin-organizations-back-button').click();
-  await expect(page.locator('#admin-panel')).toBeVisible();
   await page.locator('#admin-open-organizations-button').click();
   await expect(form(page)).toContainText('Подключено: Synthetic pilot 12');
   await expect(status(page)).toHaveCount(0);

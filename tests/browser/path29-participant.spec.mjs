@@ -125,7 +125,6 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await superPage.locator('#request-magic-link-button').click();
       await superPage.locator('#magic-token-input').fill(state.password);
       await superPage.locator('#verify-magic-link-button').click();
-      await superPage.getByRole('button', { name: 'Организации', exact: true }).click();
       await expect(superPage.locator('#admin-organizations-panel')).toBeVisible();
       await superPage.locator('#admin-organization-name-input').fill('Сквозная организация PATH29');
       await superPage.locator('#admin-organization-code-input').fill('path29_full_' + state.run_id.slice(0, 8));
@@ -693,8 +692,6 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await switchAdmin.locator('#request-magic-link-button').click();
       await switchAdmin.locator('#magic-token-input').fill(state.password);
       await switchAdmin.locator('#verify-magic-link-button').click();
-      await expect(switchAdmin.locator('#admin-panel')).toBeVisible();
-      await switchAdmin.locator('#admin-open-organizations-button').click();
       await expect(switchAdmin.locator('#admin-organizations-panel')).toBeVisible();
       const picker = switchAdmin.locator('#admin-organization-select');
       await picker.selectOption(String(state.path29.organization_id));

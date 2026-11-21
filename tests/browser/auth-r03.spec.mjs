@@ -595,20 +595,72 @@ test('ADM28 invalid JSON leaves a finite unknown outcome and restores confirm co
   await expect(card.getByRole('button', { name: 'Проверить результат' })).toBeEnabled();
 });
 
-test('ADM28 superadmin still restores its global dashboard', async ({ page }) => {
+test('P4K-SUP-UX-01 superadmin restores the platform organizations cabinet', async ({ page }, info) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const journeyRequests = [];
+  page.on('request', (request) => { if (request.url().includes('/journey-state')) journeyRequests.push(request.url()); });
   await page.route('**/users/**', (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/users/session/restore') return fulfillJson(route, {
       authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
     });
+    if (path === '/users/18/session-bootstrap') return fulfillJson(route, {
+      user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
     if (path === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (path === '/users/admin/organizations') return fulfillJson(route, { is_superadmin: true, items: [], assessment_programs: [] });
     return fulfillJson(route, {});
   });
   await page.goto(base);
-  await expect(page.locator('#admin-panel')).toBeVisible();
-  await expect(page.locator('#admin-organizations-panel')).toBeHidden();
-  await expect(page.locator('#admin-open-methodology-button')).toBeVisible();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  await expect(page.locator('#admin-panel')).toBeHidden();
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await expect(page.locator('#admin-start-assessment-button')).toHaveCount(0);
+  const reference = await page.context().newPage();
+  const referencePath = path.join(root, '.test-stand/reference/reference/v1.6/index.html');
+  const hasReference = await fs.access(referencePath).then(() => true, () => false);
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.screenshot({ path: info.outputPath(`product-${width}.png`), fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (hasReference) {
+      await reference.setViewportSize({ width, height: 900 });
+      await reference.goto('file://' + referencePath + '?screen=organizations&view=screen');
+      await expect(reference.locator('#content')).toContainText('Организации');
+      await reference.screenshot({ path: info.outputPath(`reference-${width}.png`), fullPage: true });
+      expect(await reference.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+    await page.locator('[data-platform-section="problems"]').focus();
+    await expect(page.locator('[data-platform-section="problems"]')).toBeFocused();
+  }
+  if (hasReference) {
+    await reference.setViewportSize({ width: 390, height: 900 });
+    await reference.goto('file://' + referencePath + '?screen=organizations&view=screen');
+    await reference.locator('#account-toggle').click();
+    await reference.locator('[data-act="logout"]').click();
+    await reference.screenshot({ path: info.outputPath('reference-signed-out-390.png'), fullPage: true });
+  }
+  await reference.close();
+  await page.reload();
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await page.goto(base + '/?screen=admin');
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await expect(page).toHaveURL(/screen=admin-organizations/);
+  await page.goto(base + '/?screen=dashboard');
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await expect(page).toHaveURL(/screen=admin-organizations/);
+  expect(journeyRequests).toHaveLength(0);
+  await page.getByRole('link', { name: 'Проблемы' }).click();
+  await expect(page.locator('#platform-availability-title')).toHaveText('Проблемы');
+  await page.goBack();
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await page.locator('#admin-organizations-account-name').click();
+  await page.locator('#admin-organizations-logout-button').click();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  await expect(page.locator('.platform-navigation')).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.screenshot({ path: info.outputPath('product-signed-out-390.png'), fullPage: true });
 });
 
 async function reloadSuperadminOrganizations(page) {
@@ -753,7 +805,6 @@ for (const lostCommandResponse of [false, true]) {
         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });
       } finally { releaseReadback(); }
       if (readbackFailure === 'http503' && !lostCommandResponse) {
-        await page.locator('#admin-organizations-back-button').click();
         await page.locator('#admin-open-organizations-button').click();
         await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
         for (const width of [1440, 320, 390, 768]) {
@@ -1001,8 +1052,6 @@ test('PROGRAM01 R10 restores the exact connected program after reopening the car
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
   await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
-  await page.locator('#admin-organizations-back-button').click();
-  await expect(page.locator('#admin-panel')).toBeVisible();
   await page.locator('#admin-open-organizations-button').click();
   await expect(page.locator('[data-action="connect-assessment-program"]'))
     .toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
@@ -1082,7 +1131,7 @@ async function reopenAdminOrganizations(page) {
   if (!await back.isVisible()) await page.locator('#admin-organizations-account-name').click();
   await back.click();
   await expect(page.locator('#admin-panel')).toBeVisible();
-  await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#admin-summary-organizations-button').click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
 }
 
@@ -3466,6 +3515,11 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
 
   for (const width of [768, 1024, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    // The detail column can narrow the chart as the viewport grows. Wait for
+    // the resize handler to rebuild the SVG before measuring its rendered text.
+    await expect.poll(() => page.locator('#m8-report-chart svg').evaluate((svg) =>
+      Math.abs(svg.getBoundingClientRect().width - svg.viewBox.baseVal.width),
+    ), { message: `Radar resize at ${width}px` }).toBeLessThanOrEqual(1);
     if (width <= 960) {
       await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
       await expect(page.locator('.m8-radar-label')).toHaveCount(0);

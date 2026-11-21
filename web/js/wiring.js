@@ -45,11 +45,10 @@ import {
   dashboardOnboardingButton,
   adminLogoutButton,
   adminProfileButton,
-  adminStartAssessmentButton,
   adminOpenReportsButton,
   adminOpenPromptLabButton,
   adminOpenMethodologyButton,
-  adminOpenOrganizationsButton,
+  adminSummaryOrganizationsButton,
   adminOpenRegressionTestsButton,
   adminRegressionTestsBackButton,
   adminRegressionTestsRunButton,
@@ -792,16 +791,11 @@ const applyAuthResponse = async (data) => {
     state.pendingAgentMessage = null;
     state.pendingRoleOptions = [];
     state.pendingNoChangesQuickReply = false;
-    setCurrentScreen(state.adminDashboard?.is_superadmin ? 'admin' : 'admin-organizations');
+    setCurrentScreen('admin-organizations');
     persistAssessmentContext();
     hideLoader();
-    if (state.adminDashboard?.is_superadmin) {
-      const adminDashboardModule = await loadAdminDashboard();
-      adminDashboardModule.openAdminDashboard();
-    } else {
-      const organizationsModule = await loadAdminOrganizations();
-      await organizationsModule.openAdminOrganizations();
-    }
+    const organizationsModule = await loadAdminOrganizations();
+    await organizationsModule.openAdminOrganizations();
     return;
   }
 
@@ -1464,16 +1458,6 @@ if (adminOpenReportsButton) {
   });
 }
 
-if (adminStartAssessmentButton) {
-  adminStartAssessmentButton.addEventListener('click', () => {
-    if (state.adminDashboard?.is_superadmin) {
-      withScreen(() => import('./screens/profile-recovery.js'), (module) => module.recoverProfileCompletionForAssessment());
-      return;
-    }
-    withScreen(loadAdminDashboard, (module) => module.openAdminAssessmentDashboard());
-  });
-}
-
 document.querySelectorAll('[data-admin-area]').forEach((button) => {
   button.addEventListener('click', () => {
     if (button.dataset.adminArea === 'assessment') {
@@ -1484,11 +1468,13 @@ document.querySelectorAll('[data-admin-area]').forEach((button) => {
   });
 });
 
-if (adminOpenOrganizationsButton) {
-  adminOpenOrganizationsButton.addEventListener('click', () => {
-    withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
-  });
-}
+const openOrganizationsFromNavigation = (event) => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+};
+adminSummaryOrganizationsButton?.addEventListener('click', openOrganizationsFromNavigation);
+document.getElementById('admin-open-organizations-button')?.addEventListener('click', openOrganizationsFromNavigation);
 
 if (adminOpenRegressionTestsButton) {
   adminOpenRegressionTestsButton.addEventListener('click', () => {
