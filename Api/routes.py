@@ -5593,6 +5593,7 @@ def preview_admin_organization_questionnaire(
                 **questionnaire_sources.public_revision(
                     result, confirmed_row=dict(confirmed) if confirmed is not None else None,
                 ),
+                "expected_organization_name": (result.get("validation_json") or {}).get("expected_organization_name"),
                 "readiness": questionnaire_sources.admin_assignment_readiness(
                     connection, organization_id=organization_id, assignment_ref=payload.assignment_ref,
                 ),

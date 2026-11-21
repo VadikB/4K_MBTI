@@ -24,11 +24,12 @@ def main():
                          row_factory=dict_row) as connection:
         connection.execute('SET TRANSACTION READ ONLY')
         revision = connection.execute('''SELECT id,organization_id,assignment_ref,status,
-            source_author,answers_json
+            source_author,answers_json,organization_context_version_id
             FROM questionnaire_response_revisions WHERE id=%s''', (args.revision_id,)).fetchone()
         counts = {name: connection.execute('SELECT COUNT(*) AS n FROM ' + table).fetchone()['n']
                   for name, table in {
                       'questionnaire_revisions': 'questionnaire_response_revisions',
+                      'organization_context_versions': 'assessment_organization_context_versions',
                       'assignments': 'organization_assessment_assignments',
                       'profiles': 'assessment_personalized_profiles',
                       'preparation_operations': 'product_cycle_preparation_operations',

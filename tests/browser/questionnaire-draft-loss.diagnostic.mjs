@@ -98,7 +98,7 @@ for (const scenario of scenarios) test(`DIAGNOSE draft loss: ${scenario.name}`, 
     save('before-release', { values: before, fields_entered: scenario.count, read_pending: true });
     await page.screenshot({ path: path.join(directory, 'before-release.png'), fullPage: true });
     release();
-    await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Для этой организации ещё нет сохранённых анкет.' }).first()).toBeVisible();
+    await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-load-state').first()).toHaveCount(0);
     await page.evaluate(() => new Promise(requestAnimationFrame));
     const after = await values();
     const originalConnected = await original.evaluate((element) => element.isConnected);
@@ -113,7 +113,7 @@ for (const scenario of scenarios) test(`DIAGNOSE draft loss: ${scenario.name}`, 
     save('form-before-preview', { values: incomplete, validity });
     await page.screenshot({ path: path.join(directory, 'after-release.png'), fullPage: true });
     if (scenario.count) {
-      await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+      await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
       const noPost = !timeline.some((event) => event.event === 'request' && event.method === 'POST' && event.path.endsWith('/questionnaire/preview'));
       const noConfirm = await card.locator('.admin-questionnaire-preview [data-action="confirm-questionnaire"]').count() === 0;
       const beforeRefill = readDb();
@@ -132,7 +132,7 @@ for (const scenario of scenarios) test(`DIAGNOSE draft loss: ${scenario.name}`, 
     // Refill is an explicit user workaround, not a product or harness fix.
     for (const [name, value] of entries) await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
     const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST' && response.url().endsWith('/questionnaire/preview'));
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+    await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
     expect((await previewResponse).status()).toBe(201);
     const preview = card.locator('.admin-questionnaire-preview');
     await expect(preview).toContainText('Готово к подтверждению');

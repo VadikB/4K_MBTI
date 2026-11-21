@@ -75,15 +75,22 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
         else await field.fill(value);
       }
     }
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
-    const preview = card.locator('.admin-questionnaire-preview');
-    await expect(preview).toContainText('Готово к подтверждению');
-    const revisionId = await preview.getAttribute('data-questionnaire-revision-id');
-    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-    await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
-    await expect(preview.locator('[name="questionnaire_recipient_user"]')).toHaveCount(0);
-    await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
-    await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+    const previewResponse = page.waitForResponse((response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/questionnaire/preview'));
+    const confirmationResponse = page.waitForResponse((response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/confirm'));
+    const confirm = form.getByRole('button', { name: 'Подтвердить сведения', exact: true });
+    await confirm.focus();
+    await confirm.press('Enter');
+    const previewReply = await previewResponse;
+    expect(previewReply.status()).toBe(201);
+    const { id: revisionId, expected_organization_name } = await previewReply.json();
+    expect(expected_organization_name).toBe(values.organization_name);
+    const confirmationReply = await confirmationResponse;
+    expect(confirmationReply.status()).toBe(200);
+    expect(confirmationReply.url()).toMatch(new RegExp('/questionnaire/' + revisionId + '/confirm$'));
+    await expect(form.locator('[data-organization-confirmed]')).toBeVisible();
+    await expect(confirm).toHaveCount(0);
     const savedResponse = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}`);
     expect(savedResponse.status()).toBe(200);
     const saved = await savedResponse.json();
@@ -100,6 +107,12 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await page.reload();
     await expect(form.locator('[name="source_author"]')).toHaveCount(0);
     await expect(form.locator('[name="purpose"]')).toHaveValue(values.purpose);
+    await expect(form.locator('[data-organization-confirmed]')).toBeVisible();
+    await form.locator('[name="purpose"]').fill('Правка после подтверждения');
+    await expect(confirm).toBeVisible();
+    await expect(form.locator('[data-previous-organization-revision]')).toBeVisible();
+    await form.locator('[name="purpose"]').fill(values.purpose);
+    await expect(form.locator('[data-organization-confirmed]')).toBeVisible();
     await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     await card.locator('input[name="invitation_email"]').evaluateAll((fields) => fields.forEach((field) => {
       field.checked = true;

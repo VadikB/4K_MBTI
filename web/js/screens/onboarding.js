@@ -6,7 +6,7 @@ import { hideAllPanels, syncUrlState, openAcquaintanceWaiting } from '../router.
 import { readApiResponse, createOperationId, fetchWithDeadline as fetch } from '../api.js';
 import { prepareProductCycle, waitForProductCyclePreparation } from '../product-cycle-preparation.js';
 import { hasPendingPreparedStart, readPendingPreparedStart } from '../product-cycle-start.js';
-import { preparationFailureMessage, readinessPresentation, readinessIcon } from '../readiness-presentation.js';
+import { participantReportAudience, preparationFailureMessage, readinessPresentation, readinessIcon } from '../readiness-presentation.js';
 import { acquaintanceErrorMessage } from '../acquaintance-errors.js';
 import { resumeOnboardingIndex, onboardingScopeKey, preparationView } from '../onboarding-flow.js';
 
@@ -194,7 +194,7 @@ const steps = () => {
       description: (briefing.organizer || model?.readiness?.organization_name || 'Ваша организация') + ' приглашает вас пройти оценку универсальных компетенций 4К.',
       body: '<strong>Зачем проводится оценка</strong>' + paragraph(briefing.purpose) +
         '<strong>Как будут использоваться результаты</strong>' + paragraph(briefing.results_usage) +
-        '<strong>Кто увидит результат</strong>' + paragraph('Вы и администраторы вашей организации.') +
+        '<strong>Кто увидит результат</strong>' + paragraph(participantReportAudience) +
         paragraph('Сначала проверим сведения о вас, затем расскажем об оценке. Время выполнения ещё не идёт.'), button: 'Начать знакомство' },
     { title: 'Проверьте ваши сведения', description: 'Эти сведения помогут подготовить подходящие для вас ситуации.',
       body: fieldsHtml(), action: 'consent', button: 'Подтвердить' },

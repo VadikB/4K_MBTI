@@ -86,12 +86,68 @@
     cursor: not-allowed;
 }
 
-.admin-questionnaire-confirmation {
+.admin-questionnaire-confirmation,
+.admin-data-confirmation-recovery {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    min-width: 0;
+}
+
+.admin-questionnaire-confirmation p { margin: 0; }
+.admin-questionnaire-confirmation button[hidden] { display: none; }
+
+.admin-questionnaire-confirmation [data-organization-confirmed] {
+    color: var(--admin-primary);
+    font-weight: var(--fw-semibold);
+    padding: var(--space-2) 0;
+}
+
+.admin-organization-data-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(230px, 24vw, 280px);
+    align-items: start;
+    gap: 20px;
+    min-width: 0;
+}
+
+.admin-data-participant-preview {
+    position: sticky;
+    top: var(--space-3);
+    min-width: 0;
     padding: var(--space-4);
     border: 1px solid var(--palette-graphite-200);
     border-radius: var(--radius-sm);
-    background: var(--palette-graphite-050);
+    background: #fff;
 }
+
+.admin-data-participant-preview h4 {
+    font-size: 20px;
+    line-height: 28px;
+}
+
+.admin-data-participant-briefing {
+    padding: var(--space-3);
+    margin-top: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--palette-graphite-050);
+    font-size: var(--fs-body-sm);
+}
+
+.admin-data-participant-briefing h5 {
+    margin: 0;
+    color: var(--admin-primary);
+    font-size: var(--fs-body);
+}
+
+.admin-data-participant-briefing dl { margin: var(--space-3) 0 0; }
+.admin-data-participant-briefing dt { font-weight: var(--fw-semibold); }
+.admin-data-participant-briefing dd {
+    margin: var(--space-1) 0 var(--space-3);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.admin-data-participant-briefing dd:last-child { margin-bottom: 0; }
 
 .admin-organizations-panel[data-superadmin="false"] .admin-organizations-hero {
     padding: 0;
@@ -185,6 +241,30 @@
     line-height: 20px;
 }
 
+.admin-data-overview {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.admin-data-readiness {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-3) var(--space-4);
+    background: #fff;
+}
+
+.admin-data-readiness summary {
+    cursor: pointer;
+    font-weight: var(--fw-semibold);
+}
+.admin-data-readiness > p { margin: 0; }
+.admin-data-readiness .admin-assessment-identity { margin-top: var(--space-3); }
+.admin-data-readiness dl { margin: var(--space-2) 0 0; }
+.admin-data-readiness dd { margin: 0 0 var(--space-2); }
+.admin-data-readiness ul { margin-bottom: 0; }
+.admin-data-readiness li span { display: block; }
+
 .admin-organizations-hero {
     align-items: flex-start;
 }
@@ -267,13 +347,11 @@
 
 .admin-organization-early-data-form {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3);
-    align-items: end;
-    margin-top: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    min-width: 0;
 }
 
-.admin-organization-early-data-form label,
 .admin-organization-import-form label {
     display: grid;
     gap: var(--space-1);
@@ -282,8 +360,16 @@
     font-weight: var(--fw-bold);
 }
 
+.admin-organization-early-data-form label {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+    color: var(--text-main);
+    font-size: 14px;
+}
+
 .admin-organization-early-data-form .admin-organization-profile-wide,
-.admin-organization-early-data-form button {
+.admin-organization-early-data-form .admin-organization-legacy-profile {
     grid-column: 1 / -1;
 }
 
@@ -297,12 +383,31 @@
     border: 1px solid var(--palette-graphite-200);
     border-radius: var(--radius-sm);
     padding: var(--space-4);
+    background: #fff;
 }
 
 .admin-questionnaire-field-group legend {
-    padding: 0 var(--space-2);
+    float: left;
+    width: 100%;
+    margin: 0;
+    padding: 0;
     color: var(--text-main);
+    font-size: 20px;
+    line-height: 28px;
     font-weight: var(--fw-bold);
+}
+
+.admin-data-text-fields { grid-template-columns: minmax(0, 1fr); }
+
+.admin-questionnaire-field-group select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+    background: #f6f9f9;
+    color: var(--text-main);
+    font: inherit;
 }
 
 .admin-organization-member-form textarea {
@@ -333,8 +438,13 @@
     min-width: 0;
 }
 
+.admin-organization-early-data-form :is(input, textarea, select) {
+    font-size: 16px;
+    font-weight: var(--fw-regular);
+}
+
 .admin-organization-early-data-form textarea {
-    min-height: 112px;
+    min-height: 84px;
     height: auto;
     padding-top: var(--space-3);
     resize: vertical;
@@ -614,20 +724,6 @@
     .admin-organization-member-form .primary-button {
         min-height: 48px;
     }
-
-    .admin-organization-members-section[data-admin-view="organization-data"] {
-        grid-template-columns: minmax(0, 1fr) minmax(280px, 0.34fr);
-        align-items: start;
-    }
-
-    .admin-organization-members-section[data-admin-view="organization-data"] > .admin-readiness-panel {
-        grid-column: 2;
-        grid-row: 1 / span 5;
-    }
-
-    .admin-organization-members-section[data-admin-view="organization-data"] > :not(.admin-readiness-panel) {
-        grid-column: 1;
-    }
 }
 
 .admin-organization-members-section h4 {
@@ -636,32 +732,11 @@
 
 .admin-questionnaire-preview {
     display: grid;
-    gap: var(--space-3);
-    padding: var(--space-4);
-    border: 1px solid var(--palette-cyan-500);
-    border-radius: var(--radius-sm);
-    background: var(--palette-cyan-050);
-}
-
-.admin-questionnaire-preview p {
-    margin: 0;
-}
-
-.admin-questionnaire-preview fieldset {
-    display: grid;
+    justify-items: start;
     gap: var(--space-2);
-    margin: 0;
-    border: 1px solid var(--palette-graphite-200);
-    border-radius: var(--radius-sm);
-    background: #fff;
-    padding: var(--space-3);
 }
 
-.admin-questionnaire-recipients {
-    display: grid;
-    gap: var(--space-2);
-    padding-left: var(--space-3);
-}
+.admin-questionnaire-preview:not(:has(> :not([hidden]))) { display: none; }
 
 .admin-organization-members {
     display: grid;
@@ -984,22 +1059,24 @@
     .admin-organization-inline-form,
     .admin-organization-member-form,
     .admin-organization-import-form,
-    .admin-organization-early-data-form,
+    .admin-organization-data-layout,
     .admin-organization-columns,
     .admin-organization-profile-form {
         grid-template-columns: minmax(0, 1fr);
     }
 
     .admin-organization-profile-heading,
-    .admin-organization-profile-wide,
-    .admin-organization-early-data-form .admin-organization-profile-wide,
-    .admin-organization-early-data-form button {
+    .admin-organization-profile-wide {
         grid-column: auto;
     }
 
     .admin-questionnaire-field-group {
         grid-template-columns: minmax(0, 1fr);
     }
+
+    .admin-data-participant-preview { position: static; }
+    .admin-data-overview { flex-direction: column; align-items: stretch; gap: var(--space-1); }
+    .admin-data-overview > button { align-self: flex-start; }
 
     .admin-organization-profile-heading {
         align-items: stretch;
@@ -1016,6 +1093,13 @@
 
     .admin-organization-stats {
         justify-content: flex-start;
+    }
+}
+
+@media (max-width: 390px) {
+    .admin-questionnaire-field-group,
+    .admin-data-participant-preview {
+        padding: var(--space-3);
     }
 }
 

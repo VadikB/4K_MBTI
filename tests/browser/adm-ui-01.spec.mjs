@@ -361,7 +361,10 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
         await superadmin.close();
       }
       await page.reload();
-      await expect(card.locator('.admin-organization-head')).toContainText('версия ' + connected.program_version);
+      const readiness = card.locator('[data-admin-view="organization-data"] .admin-data-readiness');
+      await readiness.locator('summary').press('Enter');
+      await expect(readiness.locator('.admin-assessment-identity')).toBeVisible();
+      await expect(readiness.locator('.admin-assessment-identity')).toContainText(connected.program_version);
       await tabs.nth(2).click();
       const firstListing = page.waitForResponse(isRegistryResponse);
       await openReports();

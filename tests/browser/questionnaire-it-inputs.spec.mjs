@@ -39,7 +39,9 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     cli('bootstrap');
     cli('seed');
     run('scripts/adm28_browser_fixture.py', ['--state', statePath]);
-    const baseline = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath, '--revision-id', '0']));
+    const readDb = (id = 0) => JSON.parse(run('tests/questionnaire_it_readback.py',
+      ['--state', statePath, '--revision-id', String(id)]));
+    const baseline = readDb();
     save('baseline', baseline);
     const state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
     save('run', { run_id: state.run_id, database: state.database,
@@ -82,17 +84,49 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       { name: 'purpose', locator: form.locator('[name="purpose"]') },
       { name: 'organization-name', locator: form.locator('[name="organization_name"]') },
       { name: 'organization-type', locator: form.locator('[name="organization_type"]') },
-      { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }) },
+      { name: 'preview', locator: form.getByRole('button', { name: 'Подтвердить сведения', exact: true }) },
     ]);
     await assertValues();
     save('filled-fields', { values, all_10_fields_retained: true, viewport_widths: [1440, 320, 390, 768] });
-    const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST'
-      && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
-    expect((await previewResponse).status()).toBe(201);
+    const questionnairePath = `/users/admin/organizations/${organizationId}/questionnaire`;
+    const previewURL = base + questionnairePath + '/preview';
     const preview = card.locator('.admin-questionnaire-preview');
-    await expect(preview).toContainText('Готово к подтверждению');
-    const revisionId = await preview.getAttribute('data-questionnaire-revision-id');
+    const revisionId = await test.step('Вернуть исходный черновик после потери ответа и перезагрузки', async () => {
+      let firstPreview, firstKey;
+      await page.route(previewURL, async (route) => {
+        firstKey = route.request().postDataJSON().idempotency_key;
+        const committed = await route.fetch();
+        expect(committed.status()).toBe(201);
+        firstPreview = await committed.json();
+        await route.abort('connectionreset');
+      }, { times: 1 });
+      await form.locator('[data-early-data-submit]').click();
+      await expect(form.locator('[data-operation-status]')).toContainText('Не удалось получить ответ');
+      expect(firstKey).toBeTruthy();
+      expect(firstPreview.status).toBe('ready_for_confirmation');
+      const afterWrite = readDb(firstPreview.id);
+      expect(afterWrite.revision.status).toBe('ready_for_confirmation');
+      expect(afterWrite.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 1);
+      expect(afterWrite.counts.organization_context_versions).toBe(baseline.counts.organization_context_versions);
+
+      await page.reload();
+      await assertValues();
+      const replayed = page.waitForResponse((response) => response.request().method() === 'POST' && response.url() === previewURL);
+      await form.locator('[data-early-data-submit]').press('Enter');
+      const replay = await replayed;
+      expect(replay.status()).toBe(201);
+      expect(replay.request().postDataJSON().idempotency_key).toBe(firstKey);
+      expect((await replay.json()).id).toBe(firstPreview.id);
+      await expect(preview.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
+      expect(await preview.getAttribute('data-questionnaire-revision-id')).toBe(String(firstPreview.id));
+      const afterReload = readDb(firstPreview.id);
+      expect(afterReload.counts).toEqual(afterWrite.counts);
+      save('preview-after-reload', {
+        revision_id: firstPreview.id, same_idempotency_key: true,
+        counts_after_write: afterWrite.counts, counts_after_replay: afterReload.counts,
+      });
+      return String(firstPreview.id);
+    });
     if (process.env.P4K_F05_DRAFT_ONLY === '1') {
       await page.reload();
       await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
@@ -109,11 +143,45 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
         assignment_count: draft.counts.assignments, baseline_assignment_count: baseline.counts.assignments });
       return;
     }
-    const confirmResponse = page.waitForResponse((response) => response.request().method() === 'POST'
-      && response.url().endsWith(`/questionnaire/${revisionId}/confirm`));
-    await preview.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
-    expect((await confirmResponse).status()).toBe(200);
-    await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+    await test.step('После потери ответа подтверждения прочитать точный ID без второго POST', async () => {
+      const revisionPath = questionnairePath + '/' + revisionId;
+      const confirmURL = base + revisionPath + '/confirm';
+      await page.route(confirmURL, async (route) => {
+        const committed = await route.fetch();
+        expect(committed.status()).toBe(200);
+        await route.abort('connectionreset');
+      }, { times: 1 });
+      await preview.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
+      await expect(card.locator('.admin-data-confirmation-recovery')).toContainText('Итог подтверждения неизвестен');
+      const afterWrite = readDb(revisionId);
+      expect(afterWrite.revision.status).toBe('confirmed');
+      expect(afterWrite.revision.organization_context_version_id).toBeGreaterThan(0);
+      expect(afterWrite.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 1);
+      expect(afterWrite.counts.organization_context_versions).toBe(baseline.counts.organization_context_versions + 1);
+
+      const beforeReload = requests.length;
+      const readback = page.waitForResponse((response) => response.request().method() === 'GET' &&
+        response.url() === base + revisionPath);
+      await page.reload();
+      const read = await readback;
+      expect(read.status()).toBe(200);
+      expect(await read.json()).toMatchObject({
+        id: Number(revisionId), assignment_ref: 'ADM28 isolated', status: 'confirmed',
+      });
+      await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
+      const recoveryRequests = requests.slice(beforeReload).filter((request) => request.path.startsWith(questionnairePath));
+      expect(recoveryRequests[0]).toEqual({ method: 'GET', path: revisionPath });
+      expect(recoveryRequests.every((request) => request.method === 'GET')).toBe(true);
+      expect(requests.filter((request) => request.path === revisionPath + '/confirm')).toHaveLength(1);
+      const afterReload = readDb(revisionId);
+      expect(afterReload.revision.organization_context_version_id).toBe(afterWrite.revision.organization_context_version_id);
+      expect(afterReload.counts).toEqual(afterWrite.counts);
+      save('confirmation-after-reload', {
+        revision_id: Number(revisionId), context_version_id: afterWrite.revision.organization_context_version_id,
+        confirm_posts: 1, recovered_by: recoveryRequests[0],
+        counts_after_write: afterWrite.counts, counts_after_reload: afterReload.counts,
+      });
+    });
     const getRevision = () => page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}`);
     const response = await getRevision();
     expect(response.status()).toBe(200);
@@ -156,7 +224,7 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
         await route.fulfill({ response: committed });
       });
       try {
-        await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+        await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
         await committedGate;
         await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
@@ -194,7 +262,7 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     await form.locator('[name="organization_name"]').fill(draftName);
     const draftResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+    await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
     expect((await draftResponse).status()).toBe(201);
     const draftList = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`);
     expect(draftList.status()).toBe(200);
@@ -215,6 +283,11 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       await expect(card).toContainText('Итог подтверждения неизвестен');
       expect(confirmPosts).toBe(1);
       await page.unroute(confirmPath);
+      const readback = page.waitForResponse((r) => r.request().method() === 'GET' &&
+        r.url().endsWith('/questionnaire/' + latest.id));
+      await card.getByRole('button', { name: 'Проверить результат' }).press('Enter');
+      expect((await readback).status()).toBe(200);
+      await expect(form.locator('[data-organization-confirmed]')).toBeVisible();
       const afterCommit = await (await page.request.get(
         `${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
       const effective = afterCommit.items.find((item) => item.assignment_ref === saved.assignment_ref);
