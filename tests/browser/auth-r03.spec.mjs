@@ -3515,6 +3515,11 @@ test('QA19-04 keeps four M8 competency radars readable across mobile and desktop
 
   for (const width of [768, 1024, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    // The detail column can narrow the chart as the viewport grows. Wait for
+    // the resize handler to rebuild the SVG before measuring its rendered text.
+    await expect.poll(() => page.locator('#m8-report-chart svg').evaluate((svg) =>
+      Math.abs(svg.getBoundingClientRect().width - svg.viewBox.baseVal.width),
+    ), { message: `Radar resize at ${width}px` }).toBeLessThanOrEqual(1);
     if (width <= 960) {
       await expect(page.locator('.m8-radar-key li')).toHaveCount(groups[0][1].length);
       await expect(page.locator('.m8-radar-label')).toHaveCount(0);
