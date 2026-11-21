@@ -90,9 +90,13 @@ for(const width of [1440,390,320])test(`QA02 details and common failure at ${wid
 });
 test('QA02 mixed lost response recovers the same command without duplicate',async({page})=>{
   test.setTimeout(20000);const run=await setup(page,{mixed:true});
-  for(const box of await page.locator('input[name="invitation_email"]').all())await box.check();
-  await page.locator('[data-action="send-member-invitations"] button').click();
+  const organization = page.locator('[data-organization-id="3"]');
+  await expect(organization.locator('[data-admin-view="questionnaire"]')).toContainText('Ранний минимум подтверждён');
+  await organization.getByRole('checkbox', { name: 'Выбрать всех' }).check();
+  await expect(organization.locator('[data-selected-count]')).toHaveText('3');
+  await organization.locator('[data-action="send-member-invitations"] button').click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 1. Не отправлены: 1. Исход уточняется: 1');
+  expect(run.posts[0].emails).toEqual(['person0@example.test', 'person1@example.test', 'person2@example.test']);
   const id=run.posts[0].operation_id;run.unknown=false;
   await page.getByRole('button',{name:'Проверить отправку',exact:true}).first().click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 3. Не отправлены: 0. Исход уточняется: 0');
