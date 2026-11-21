@@ -20,6 +20,8 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
   };
   const cli = (action) => command('scripts/test_stand.py', action, ['--port', String(port)]);
   let server;
+  let releaseQuestionnaire;
+  const questionnaireGate = new Promise((resolve) => { releaseQuestionnaire = resolve; });
   cli('create');
   try {
     cli('bootstrap');
@@ -37,6 +39,10 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     const requests = [];
+    await page.route(base + '/users/admin/organizations/' + id + '/questionnaire', async (route) => {
+      await questionnaireGate;
+      await route.continue();
+    }, { times: 1 });
     page.on('request', (request) => {
       if (new URL(request.url()).pathname.startsWith('/users/admin/')) requests.push(request);
     });
@@ -86,7 +92,11 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       await page.keyboard.press('Tab');
       await expect(menu.getByRole('menuitem').last()).toBeFocused();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
-      if (width !== 1440) {
+      if (width === 1440) {
+        releaseQuestionnaire();
+        await expect(row('assign').getByRole('button', { name: 'Назначить оценку' })).toBeVisible();
+        await expect(menu.getByRole('menuitem').last()).toBeFocused();
+      } else {
         const popup = await menu.getByRole('menu').boundingBox();
         const owner = await sent.boundingBox();
         const identity = await memberCard('sent').boundingBox();
@@ -235,6 +245,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     expect(errors).toEqual([]);
     await info.attach('viewports', { body: JSON.stringify(geometry), contentType: 'application/json' });
   } finally {
+    releaseQuestionnaire();
     if (server?.exitCode === null) {
       const ended = once(server, 'exit');
       server.kill('SIGTERM');

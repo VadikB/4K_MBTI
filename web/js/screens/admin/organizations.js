@@ -2536,6 +2536,24 @@ export const mountAdminMemberAssessment = (dialog, organizationId, trigger) => {
   });
 };
 
+const restoreMemberMenuFocus = ({ control, wasOpen }) => {
+  const previousMenu = control.closest('.admin-organization-member-menu');
+  const previousRow = previousMenu.closest('[data-member-user-id]');
+  const organizationId = previousRow.closest('[data-organization-id]').dataset.organizationId;
+  const row = adminOrganizationsList.querySelector(
+    '[data-organization-id="' + CSS.escape(organizationId) + '"] ' +
+    '[data-member-user-id="' + CSS.escape(previousRow.dataset.memberUserId) + '"]',
+  );
+  const cardButton = row?.querySelector('[data-action="open-member-card"]');
+  const menu = row?.querySelector('.admin-organization-member-menu');
+  const previousAssessment = previousRow.querySelector('[data-action="open-member-card"]').dataset.invitationAssessment;
+  const item = menu && wasOpen && previousAssessment === cardButton?.dataset.invitationAssessment
+    ? [...menu.querySelectorAll('[role="menuitem"]:not(:disabled)')].find((candidate) => candidate.isEqualNode(control))
+    : null;
+  if (item) menu.open = true;
+  (item || menu?.querySelector('summary') || cardButton)?.focus({ preventScroll: true });
+};
+
 export const renderAdminOrganizations = () => {
   restoreManagementSelection();
   const data = state.adminOrganizations;
@@ -2620,6 +2638,9 @@ export const renderAdminOrganizations = () => {
   const preparationRoots = new Map(Array.from(adminOrganizationsList.querySelectorAll('[data-preparation-status]'), (node) => [node.dataset.preparationReferenceId, node]));
   const focusedPreparationControl = document.activeElement?.closest?.('[data-preparation-status]') ? document.activeElement : null;
   const focusedCheckUser = document.activeElement?.matches?.('[data-action="check-member-preparation"]') ? document.activeElement.closest('.admin-organization-member')?.querySelector('[data-user-id]')?.dataset.userId : null;
+  const focusedMenu = !isSuperadmin && document.activeElement?.closest?.('.admin-organization-member-menu');
+  // Replacing the list can dispatch focusout and close the old menu synchronously.
+  const menuFocus = focusedMenu ? { control: document.activeElement, wasOpen: focusedMenu.open } : null;
   adminOrganizationsList.innerHTML = purgeRecoveryMarkup + invitationRecoveryMarkup + staleMarkup + organizations
     .filter((org) => Number(org.id) === Number(selectedOrganizationId))
     .map((org) => {
@@ -2998,7 +3019,8 @@ export const renderAdminOrganizations = () => {
   }
   restoreAdminOrganizationsDraft();
   restoreProgramConnectionFeedback();
-  if (focusedPreparationControl?.isConnected) focusedPreparationControl.focus({ preventScroll: true });
+  if (menuFocus) restoreMemberMenuFocus(menuFocus);
+  else if (focusedPreparationControl?.isConnected) focusedPreparationControl.focus({ preventScroll: true });
   else if (focusedCheckUser) adminOrganizationsList.querySelector('[data-user-id="' + CSS.escape(focusedCheckUser) + '"]')?.closest('.admin-organization-member')?.querySelector('[data-action="check-member-preparation"]')?.focus({ preventScroll: true });
   adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')
     .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));

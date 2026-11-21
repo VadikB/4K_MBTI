@@ -1907,7 +1907,8 @@ if (adminOrganizationsList) {
     adminOrganizationsList.querySelectorAll('.admin-organization-member-menu[open]').forEach((candidate) => {
       if (candidate !== menu) candidate.open = false;
     });
-    menu.querySelector('[role="menu"] button:not([disabled])')?.focus();
+    const items = menu.querySelector('[role="menu"]');
+    if (!items?.contains(document.activeElement)) items?.querySelector('button:not([disabled])')?.focus();
   }, true);
 
   adminOrganizationsList.addEventListener('keydown', (event) => {
@@ -1915,8 +1916,8 @@ if (adminOrganizationsList) {
     if (!menu) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      menu.open = false;
       menu.querySelector('summary')?.focus();
+      menu.open = false;
     } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
       const items = [...menu.querySelectorAll('[role="menuitem"]:not(:disabled)')];
       const current = items.indexOf(document.activeElement);
@@ -1978,8 +1979,8 @@ if (adminOrganizationsList) {
     const actionMenu = button.closest('.admin-organization-member-menu[open]');
     const returnControl = actionMenu?.querySelector('summary') || button;
     if (actionMenu) {
-      actionMenu.open = false;
       returnControl?.focus();
+      actionMenu.open = false;
     }
     const card = button.closest('[data-organization-id]');
     const organizationId = Number(card?.getAttribute('data-organization-id'));
