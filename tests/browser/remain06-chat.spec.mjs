@@ -39,8 +39,8 @@ async function fixture(page, total) {
   await page.route('**/users/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/session/restore') return json(route, { authenticated, user, is_admin: false, dashboard: {} });
-    if (['/users/auth/logout', '/users/logout'].includes(pathname)) {
-      authenticated = false; return json(route, {});
+    if (pathname === '/users/session/logout' && route.request().method() === 'POST') {
+      authenticated = false; return json(route, { ok: true });
     }
     if (pathname === '/users/8/session-bootstrap') return json(route, { user, is_admin: false, dashboard: {} });
     if (pathname === '/users/8/journey-state') return json(route, { next_action: 'resume_assessment',

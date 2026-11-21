@@ -187,3 +187,63 @@ for (const width of [1440, 390, 320]) {
     await progress(`done-${width}`);
   });
 }
+
+test('ASUX-06-FIX cabinet waits for acknowledged logout and lets the participant retry', async ({ page }) => {
+  await fixture(page);
+  let attempts = 0;
+  let failFirstAttempt;
+  const firstAttempt = new Promise((resolve) => { failFirstAttempt = resolve; });
+  await page.route('**/users/session/logout', async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await firstAttempt;
+      return route.fulfill({ status: 503 });
+    }
+    if (attempts === 2) return route.abort('connectionreset');
+    if (attempts === 3) return route.fulfill({ json: {} });
+    return route.fulfill({ json: { ok: true } });
+  });
+
+  await page.goto(base);
+  const cabinet = page.locator('#dashboard-panel');
+  await expect(cabinet).toBeVisible();
+  const menu = cabinet.locator('[data-header-user-menu]');
+  const exit = cabinet.getByRole('menuitem', { name: 'Выйти' });
+  const dialog = page.getByRole('dialog', { name: 'Выйти из кабинета?' });
+  const stay = dialog.getByRole('button', { name: 'Остаться' });
+  const retry = dialog.getByRole('button', { name: 'Повторить' });
+  const openExit = async () => {
+    await menu.focus();
+    await exit.click();
+    await page.mouse.move(0, 0);
+  };
+  await openExit();
+  await stay.click();
+  await expect(exit).toBeFocused();
+  expect(attempts).toBe(0);
+
+  await openExit();
+  await dialog.getByRole('button', { name: 'Выйти' }).click();
+  try {
+    const pending = dialog.getByRole('button', { name: 'Выходим...' });
+    await expect(pending).toBeDisabled();
+    await expect(stay).toBeDisabled();
+    await pending.evaluate((button) => button.form.requestSubmit(button));
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+  } finally {
+    failFirstAttempt();
+  }
+
+  for (const failedAttempts of [1, 2, 3]) {
+    await expect(dialog.getByRole('alert')).toHaveText('Не удалось подтвердить выход. Попробуйте ещё раз');
+    await expect(retry).toBeFocused();
+    await expect(cabinet.locator('#current-assessments')).toContainText('3 ситуация из 8');
+    await expect(page.locator('#email-input')).toBeHidden();
+    expect(attempts).toBe(failedAttempts);
+    await page.keyboard.press('Enter');
+  }
+  await expect(page.locator('#auth-title')).toHaveText('Вы вышли из кабинета');
+  await expect(page.locator('#email-input')).toHaveValue('');
+  expect(attempts).toBe(4);
+});

@@ -1060,6 +1060,7 @@
 .participant-dialog::backdrop { background: rgb(20 28 30 / 45%); }
 .participant-dialog h2 { margin: 0 0 14px; font: 700 22px/1.35 var(--font-heading); }
 .participant-dialog p, .participant-contact-details { margin: 0 0 10px; }
+.participant-dialog-error:not(:empty) { margin-top: 12px; color: var(--danger); }
 .participant-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .participant-dialog-actions button { min-height: 44px; }
 .participant-contact-details dt { margin-top: 12px; color: var(--participant-caption); font-size: 14px; }

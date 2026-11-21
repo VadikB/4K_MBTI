@@ -9,6 +9,8 @@ import { showError } from './components/errors.js';
 import { showParticipantDialog } from './components/participant-dialog.js';
 import { clearOwnerDrafts, hasUnconfirmedDrafts } from './answer-drafts.js';
 
+let participantLogoutInProgress = false;
+
 const clearProfileDisplay = () => {
   document.getElementById('profile-avatar-image')?.removeAttribute('src');
   document.getElementById('profile-avatar-image')?.classList.add('hidden');
@@ -37,14 +39,15 @@ const postLogoutWithTimeout = async (timeoutMs = 900) => {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
-    await fetch('/users/session/logout', {
+    const response = await fetch('/users/session/logout', {
       method: 'POST',
       credentials: 'same-origin',
       keepalive: true,
       signal: controller.signal,
     });
+    return response.ok && (await response.json())?.ok === true;
   } catch (_error) {
-    // ignore logout network issues and still clear local state
+    return false;
   } finally {
     window.clearTimeout(timeoutId);
   }
@@ -56,6 +59,9 @@ export const isMissingUserError = (error) => {
 };
 
 export const resetStaleUserState = async ({ advance = true, broadcast = true } = {}) => {
+  // If logout reached the server but its response was lost, a background 401
+  // must leave the current screen available for the explicit retry.
+  if (advance && participantLogoutInProgress) return;
   const recoveryGeneration = advance
     ? advanceSessionGeneration({ broadcast })
     : getSessionGeneration();
@@ -180,13 +186,23 @@ export const loadUserJourneyState = async ({ allowAdmin = false } = {}) => {
 };
 
 export const logoutAndReturnToStart = async (trigger = null) => {
+  if (participantLogoutInProgress) return;
+  const participantExit = ['dashboard', 'interview', 'onboarding'].includes(state.currentScreen);
+  participantLogoutInProgress = participantExit;
+  try {
+    await handleLogout(trigger, participantExit);
+  } finally {
+    participantLogoutInProgress = false;
+  }
+};
+
+const handleLogout = async (trigger, participantExit) => {
   const ownerId = String(state.pendingUser?.id || '');
   const draftState = { ownerId, unsynced: false };
   window.dispatchEvent(new CustomEvent('agent4k:before-logout', { detail: draftState }));
   let unsynced = draftState.unsynced;
   try { unsynced ||= hasUnconfirmedDrafts(ownerId); } catch { unsynced = true; }
   const unsyncedNotice = 'Последние изменения черновика ещё не подтверждены сервером. После выхода локальная копия будет удалена. Скопируйте текст, если он нужен.';
-  const participantExit = ['dashboard', 'interview', 'onboarding'].includes(state.currentScreen);
   if (participantExit) {
     const epoch = state.identityEpoch;
     const confirmed = await showParticipantDialog(trigger, {
@@ -194,6 +210,11 @@ export const logoutAndReturnToStart = async (trigger = null) => {
       body: unsynced ? unsyncedNotice : 'Подтверждённые ответы и результаты сохранятся.',
       cancel: 'Остаться',
       confirm: 'Выйти',
+      confirmAction: {
+        // The endpoint acknowledges logout even if an earlier attempt already deleted the session.
+        run: () => epoch !== state.identityEpoch || postLogoutWithTimeout(5000),
+        failureMessage: 'Не удалось подтвердить выход. Попробуйте ещё раз',
+      },
     });
     if (!confirmed || epoch !== state.identityEpoch) return;
   } else if (unsynced && !window.confirm(unsyncedNotice + ' Выйти?')) return;
@@ -217,10 +238,12 @@ export const logoutAndReturnToStart = async (trigger = null) => {
   try {
     clearAssessmentContext();
     clearProfileDisplay();
-    await postLogoutWithTimeout();
-    const elapsed = Date.now() - startedAt;
-    if (elapsed < 250) {
-      await wait(250 - elapsed);
+    if (!participantExit) {
+      await postLogoutWithTimeout();
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < 250) {
+        await wait(250 - elapsed);
+      }
     }
     clearAssessmentContext();
     try {
@@ -241,19 +264,19 @@ export const logoutAndReturnToStart = async (trigger = null) => {
 // Another tab can replace the shared session cookie without changing this tab's memory.
 let checkingVisibleOwner = false;
 const reconcileVisibleOwner = async () => {
-  if (checkingVisibleOwner || !state.pendingUser?.id || !['reports','report','profile','interview'].includes(state.currentScreen)) return;
+  if (participantLogoutInProgress || checkingVisibleOwner || !state.pendingUser?.id || !['reports','report','profile','interview'].includes(state.currentScreen)) return;
   checkingVisibleOwner = true;
   const ownerId = state.pendingUser.id; const epoch = state.identityEpoch;
   try {
     const response = await fetch('/users/session/restore', {credentials:'same-origin', cache:'no-store'});
     const data = await response.json();
-    if (state.identityEpoch !== epoch) return;
+    if (participantLogoutInProgress || state.identityEpoch !== epoch) return;
     if (!response.ok || !data.authenticated || data.user?.id !== ownerId) {
       clearAssessmentContext(); clearProfileDisplay(); returnToStart();
     }
   } catch (_) {
     // Fail closed locally; never log out a different tab's current server session.
-    if (state.identityEpoch === epoch) { clearAssessmentContext(); clearProfileDisplay(); returnToStart(); }
+    if (!participantLogoutInProgress && state.identityEpoch === epoch) { clearAssessmentContext(); clearProfileDisplay(); returnToStart(); }
   } finally { checkingVisibleOwner = false; }
 };
 window.addEventListener('focus', () => { void reconcileVisibleOwner(); });
