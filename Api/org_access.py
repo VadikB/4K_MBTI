@@ -307,16 +307,22 @@ def _upsert_membership(
     )
 
 
+def has_superadmin_access(connection, user) -> bool:
+    if user is None:
+        return False
+    email = normalize_email_for_access(getattr(user, "email", None))
+    return email == LOCAL_SUPERADMIN_EMAIL or (
+        email in configured_superadmin_emails()
+        and not configured_access_suppressed(connection, email=email, access_kind="superadmin")
+    )
+
+
 def get_admin_scope(connection, user) -> AdminScope:
     if user is None:
         return AdminScope()
+    if has_superadmin_access(connection, user):
+        return AdminScope(is_superadmin=True)
     email = normalize_email_for_access(getattr(user, "email", None))
-    if email == LOCAL_SUPERADMIN_EMAIL:
-        return AdminScope(is_superadmin=True)
-    if email and email in configured_superadmin_emails() and not configured_access_suppressed(
-        connection, email=email, access_kind="superadmin"
-    ):
-        return AdminScope(is_superadmin=True)
 
     if is_platform_protected_account(connection, email=email, user_id=int(user.id)):
         return AdminScope()
