@@ -2802,12 +2802,12 @@ export const renderAdminOrganizations = () => {
   }
   if (adminOrganizationsTitle) {
     const activeView = organizationViews.get(Number(selectedOrganizationId)) || 'people';
-    adminOrganizationsTitle.textContent = data?.is_superadmin ? (data?.title || 'Организации')
+    adminOrganizationsTitle.textContent = data?.is_superadmin ? 'Организации'
       : ({ people: 'Участники оценки', 'organization-data': 'Данные организации', questionnaire: 'Анкета' })[activeView];
   }
   if (adminOrganizationsSubtitle) {
     adminOrganizationsSubtitle.textContent = data?.is_superadmin
-      ? (data?.subtitle || 'Управление доменами и администраторами организаций.')
+      ? 'Программы оценки, администраторы и проблемы организации.'
       : organizationViews.get(Number(selectedOrganizationId)) === 'organization-data'
         ? 'Подготовьте сведения, которые увидят участники перед оценкой.'
         : 'Подготовьте сведения для оценки и назначьте её участникам.';
@@ -2835,6 +2835,9 @@ export const renderAdminOrganizations = () => {
     '<strong>Показано последнее подтверждённое состояние.</strong> ' + escapeHtml(organizationsReadStaleReason) +
     ' <button type="button" class="text-button" data-action="refresh-admin-organizations">Обновить безопасно</button></div>' : '';
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
+  if (isSuperadmin) document.querySelector('[data-platform-section="organizations"]')?.setAttribute('aria-current', 'page');
+  document.getElementById('platform-availability')?.classList.add('hidden');
+  adminOrganizationsPanel.querySelector('.admin-organizations-shell')?.classList.remove('hidden');
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
     'hidden', !data || !isSuperadmin,
@@ -3337,4 +3340,32 @@ export const openAdminOrganizations = async ({
     return;
   }
   renderAdminOrganizations();
+};
+
+export const openPlatformAvailability = (section) => {
+  if (!state.adminDashboard?.is_superadmin || !['problems', 'checks'].includes(section)) {
+    window.history.replaceState({}, '', '/?screen=admin-organizations');
+    return openAdminOrganizations();
+  }
+  const content = section === 'problems'
+    ? ['Проблемы', 'Раздел проблем будет доступен после подключения проверенного источника технических случаев.']
+    : ['Проверки', 'Контролируемые проверки будут доступны после подключения изолированного исполнителя.'];
+  state.activeArea = 'management';
+  state.isAdmin = true;
+  setCurrentScreen('admin-platform-' + section);
+  persistAssessmentContext();
+  hideAllPanels();
+  adminOrganizationsPanel.dataset.superadmin = 'true';
+  adminOrganizationsPanel.classList.remove('hidden');
+  adminOrganizationsPanel.querySelector('.admin-organizations-shell')?.classList.add('hidden');
+  const availability = document.getElementById('platform-availability');
+  availability.classList.remove('hidden');
+  document.getElementById('platform-availability-title').textContent = content[0];
+  document.getElementById('platform-availability-description').textContent = content[1];
+  const accountName = document.getElementById('admin-organizations-account-name');
+  if (accountName) accountName.textContent = state.pendingUser?.full_name || state.pendingUser?.email || 'Аккаунт';
+  document.querySelectorAll('[data-platform-section]').forEach((link) => {
+    if (link.dataset.platformSection === section) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
 };
