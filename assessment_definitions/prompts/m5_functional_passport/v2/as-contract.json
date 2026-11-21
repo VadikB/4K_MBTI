@@ -1,0 +1,26 @@
+{
+  "fields": {
+    "AssessmentSituationID": "Новый технический идентификатор данной AS",
+    "BaseRole": "Выбранный код BaseRole из входа",
+    "CaseID": "Точный CaseID из входа",
+    "CaseTypeIDs": "Точный упорядоченный список из паспорта",
+    "CaseVersion": "Закреплённая версия Case из входа",
+    "IndicatorIDs": "Точный упорядоченный перечень поля 22",
+    "IndicatorObservability": "По одному элементу на IndicatorID: IndicatorID, Конкретное условие, Форма проявления, Дефект потери, material_refs, event_refs, character_refs, authority_refs. Для authority_refs допустимы participant и character:<CharacterID>",
+    "RuntimeBindings": "Карта EventID → {function, speaker_ids, material_ids}; character_reaction требует участников, material_update — документы с событийным предъявлением, facilitator_action — действие ведущего",
+    "Version": "Версия данной AS",
+    "Активные персонажи": "Массив: CharacterID, Имя, Роль, Текст, Начальные знания и границы доступа, мандат, условия реакций",
+    "Версии M2": "Точное соответствие поля 22",
+    "Закрытые фиксированные факты": "Список конкретных фактов и правил раскрытия из сценария",
+    "Материалы": "Массив с MaterialID, Название и полным текстом в Текст; полный набор согласно Функции материалов",
+    "Название": "Короткий заголовок конкретной ситуации",
+    "Применённые замены": "Список использованных подстановок с их источниками",
+    "События": "Массив в порядке поля 17: EventID, Действие, Изменение состояния, Когда запрещено, Повторение, Сведения и аудитория, Условие запуска",
+    "Стартовые MaterialIDs": "Упорядоченные стартовые MaterialID поля 17; P00 содержит вводную"
+  },
+  "id": "m5-functional-as",
+  "maximum_output_characters": 60000,
+  "schema_version": 1,
+  "source": "Product Architecture Change 01 C-34; M5 v1.1 §§4, 5.9, 6.3; CasePassport v1.1",
+  "version": "1.0.0"
+}

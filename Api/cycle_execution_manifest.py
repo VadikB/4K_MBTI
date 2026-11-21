@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = 2
 CHECKSUM_KIND = "sha256-canonical-json-v1"
 CONTENT_CHECKSUM_KIND = "sha256-raw-bytes-v1"
+M5_FUNCTIONAL_AS_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v2"
 
 # Logical names are part of the persisted contract. Paths always identify an
 # immutable, versioned publication; callers must never replace them with latest/current.
@@ -22,7 +23,7 @@ DEFAULT_DEPENDENCIES: dict[str, str] = {
     "m3_role_profiles": "assessment_definitions/role_profiles/competencies_4k/1.1",
     "m4_context": "assessment_definitions/contexts/competencies_4k/1.1",
     "m5_case_catalog": "assessment_definitions/cases/competencies_4k/1.1",
-    "m5_functional_as": "assessment_definitions/prompts/m5_functional_passport/v1",
+    "m5_functional_as": M5_FUNCTIONAL_AS_PACKAGE,
     "m5_semantic_decision": "assessment_definitions/prompts/m5_semantic_decision/v2",
     "m5_character_response": "assessment_definitions/prompts/m5_character_response/v2",
     "m5_technical_c45": "assessment_definitions/prompts/m5_technical_c45/v1",

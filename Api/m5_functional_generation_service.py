@@ -17,7 +17,7 @@ from Api import m5_passport_generation as passport_generation
 from Api.m5_addressed_contract import validate_scenario_contract
 from Api.m5_passport import allowed_profile, missing
 from Api.m5_functional_personalization import extract_candidate_as
-from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
+from Api.m5_functional_tester import aggregate, build_applicability_plan, load_protocol, normalize_results
 from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
 from Api.m5_runtime_rules import load_runtime_rule_package
@@ -167,7 +167,7 @@ def build_historical_input_snapshot(*, case_id: str, profile: dict[str, Any], op
 
 def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: str, synthetic: bool = False,
                             profile_checksum: str | None = None, case_version_checksum: str | None = None,
-                            as_package: Path = passport_generation.AS_PACKAGE,
+                            as_package: Path = passport_generation.CURRENT_AS_PACKAGE,
                             m2_path: Path = passport_generation.M2, m3_path: Path = passport_generation.M3,
                             provider_contract: dict[str, Any] | None = None,
                             profile_sources: dict | None = None,
@@ -177,7 +177,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     actual = runtime_checksum(case_version)
     if case_version_checksum and case_version_checksum != actual:
         raise missing(case_version["case_id"], case_version["version"], "content_checksum")
-    projected, m2_ref = passport_generation.normalize_case(
+    projected, m2_ref, m2 = passport_generation.normalize_case(
         case_version, contract_ref, m2_path=m2_path, m3_path=m3_path,
     )
     if selected_base_role is not None and selected_base_role != projected["base_role"]:
@@ -187,11 +187,6 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     if design is not None:
         validate_scenario_contract(projected, design)
         contract = passport_generation.addressed_candidate_contract(contract, design)
-    # Resolve all mandatory checks before entering the provider.
-    try:
-        build_applicability_plan(case)
-    except (KeyError, TypeError, ValueError) as exc:
-        raise missing(projected["case_id"], projected["version"], "16,18,22→Tester") from exc
     refs.update({
         "package": package_ref or {"compiler": {"source_schema_profile": "functional-passport-v1"}},
         "case": {"passport": projected["passport_source"], "case_version_checksum": actual},
@@ -203,12 +198,33 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
         refs["provider_contract"] = {key: provider_contract[key] for key in (
             "version", "checksum", "provider", "endpoint", "model", "thinking", "supported_response_formats",
         )}
-    return {
+    snapshot = {
         "schema_version": 2, "operation_id": operation_id, "synthetic": synthetic,
         "created_at": datetime.now(timezone.utc).isoformat(), "case": case, "case_version": projected,
         "as_contract": contract, "profile": allowed_profile(profile), "refs": refs,
         **({"scenario_contract": design} if design is not None else {}),
     }
+    # Resolve all mandatory checks before entering the provider.
+    try:
+        if "tester_protocol" in refs:
+            protocol = load_protocol(_frozen_file(snapshot, "tester_protocol"))
+            content = passport_generation.read_case_content_contract(
+                _frozen_file(snapshot, "case_content_contract"), projected["case_id"],
+            )
+            snapshot["applicability_plan"] = build_applicability_plan(
+                case, protocol, case_content_requirements=content["requirements"] if content else None,
+            )
+            if content:
+                indicator_ids = content["indicator_fields"].keys()
+                if not indicator_ids <= {target["indicator_id"] for target in projected["indicator_targets"]}:
+                    raise ValueError("M5_AS_CASE_CONTENT_INDICATOR_NOT_IN_PASSPORT")
+                snapshot["case_content_contract"] = content
+                snapshot["m2_indicator_descriptors"] = {key: m2[key]["descriptor"] for key in indicator_ids}
+        else:
+            build_applicability_plan(case)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise missing(projected["case_id"], projected["version"], "16,18,22→Tester") from exc
+    return snapshot
 
 
 def _frozen_file(snapshot: dict[str, Any], ref_name: str) -> Path:
@@ -596,7 +612,7 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
 
 
 def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway: Any) -> dict[str, Any]:
-    plan = build_applicability_plan(snapshot["case"])
+    plan = snapshot.get("applicability_plan") or build_applicability_plan(snapshot["case"])
     batch_size = 8
     concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
     protocol_ref = (snapshot.get("refs") or {}).get("protocol_package") or {}
@@ -864,8 +880,6 @@ def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path 
                  or tested["aggregation"]["deterministic_failures"])):
         observation.materials()
         repaired = repair_candidate(snapshot, generation, tested, gateway)
-        observation.progress('checking')
-        retested = test_candidate(snapshot, repaired, gateway)
         repair = {
             "original_candidate_checksum": generation["candidate_checksum"],
             "original_author_content_binding": generation["author_content_binding"],
@@ -874,7 +888,11 @@ def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path 
             "original_tester": tested,
             "repair_generation_operation": repaired["provider_operation"],
         }
-        generation, tested = repaired, retested
+        if snapshot.get("case_content_contract") and repaired["candidate_checksum"] == generation["candidate_checksum"]:
+            repair["outcome"] = "UNCHANGED_CANDIDATE"
+        else:
+            observation.progress('checking')
+            generation, tested = repaired, test_candidate(snapshot, repaired, gateway)
     compiled_case = None
     execution_rules = None
     if tested["aggregation"]["admitted_for_participant"]:

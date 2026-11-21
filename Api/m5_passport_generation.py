@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from Api.assessment_case_contracts import PreparedCaseV4
-from Api.cycle_execution_manifest import ROOT
+from Api.cycle_execution_manifest import M5_FUNCTIONAL_AS_PACKAGE, ROOT
 from Api.m5_case_runtime import checksum as runtime_checksum
 from Api.m5_package import digest
 from Api.m5_passport import compile_passport, load_m2, missing
@@ -14,7 +14,9 @@ from Api.m5_runtime_rules import ALLOWED_FUNCTIONS
 from scripts.build_m5_sales_package import _participant_presentation, _ref, build_execution_rules
 
 BANK_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.6"
+# The bank builder and cycles without a prompt dependency use the original publication.
 AS_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_passport/v1"
+CURRENT_AS_PACKAGE = ROOT / M5_FUNCTIONAL_AS_PACKAGE
 M2 = ROOT / "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json"
 M3 = ROOT / "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json"
 ADDRESSED_RUNTIME = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.4.0"
@@ -25,6 +27,11 @@ PROMPT_FILES = {
     "protocol_challenger": "challenger.md", "protocol_json_retry": "json-retry.md",
     "protocol_tester_addendum": "tester-addendum.md", "generation_contract": "as-contract.json",
 }
+V2_FILES = {
+    **PROMPT_FILES,
+    "case_content_contract": "case-content-contract.json",
+    "tester_protocol": "tester-protocol.json",
+}
 ADAPTED_FIELDS = ("Конкретное условие", "Форма проявления", "Дефект потери")
 REF_FIELDS = {"material_refs": "Материалы", "event_refs": "События",
               "character_refs": "Активные персонажи", "authority_refs": "authority"}
@@ -33,13 +40,16 @@ REF_FIELDS = {"material_refs": "Материалы", "event_refs": "Событи
 def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     manifest_raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(manifest_raw)
-    if (manifest["schema_version"], manifest["id"], manifest["version"]) != (1, "m5-functional-passport", "1.0.0"):
+    files = {"1.0.0": PROMPT_FILES, "2.0.0": V2_FILES}.get(manifest.get("version"))
+    if files is None or (manifest.get("schema_version"), manifest.get("id"), manifest.get("status")) != (
+        1, "m5-functional-passport", "draft"
+    ):
         raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
     artifacts = {item["name"]: item["sha256"] for item in manifest["artifacts"]}
-    if set(artifacts) != set(PROMPT_FILES.values()):
+    if set(artifacts) != set(files.values()) or len(manifest["artifacts"]) != len(files):
         raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
     refs = {}
-    for key, name in PROMPT_FILES.items():
+    for key, name in files.items():
         path = directory / name
         if digest(path.read_bytes()) != artifacts[name]:
             raise ValueError(f"M5_AS_PROMPT_CHECKSUM_MISMATCH:{name}")
@@ -49,6 +59,21 @@ def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     contract = json.loads((directory / PROMPT_FILES["generation_contract"]).read_bytes())
     ref = {"id": contract["id"], "version": contract["version"], "checksum": artifacts["as-contract.json"]}
     return contract, ref, refs
+
+
+def read_case_content_contract(path: Path, case_id: str) -> dict | None:
+    contract = json.loads(path.read_bytes())
+    requirements = contract.get("requirements")
+    indicator_fields = contract.get("indicator_fields")
+    if (contract.get("schema_version"), contract.get("id"), contract.get("version")) != (
+        1, "m5-functional-passport-content", "1.0.0"
+    ) or not (
+        _text(contract.get("case_id"))
+        and isinstance(requirements, dict) and requirements and all(_text(value) for value in requirements.values())
+        and isinstance(indicator_fields, dict) and all(_ids(fields) for fields in indicator_fields.values())
+    ):
+        raise ValueError("M5_AS_CASE_CONTENT_CONTRACT_INVALID")
+    return contract if contract["case_id"] == case_id else None
 
 
 def load_bank_case(case_id: str, directory: Path = BANK_PACKAGE) -> tuple[dict, dict]:
@@ -66,7 +91,7 @@ def load_bank_case(case_id: str, directory: Path = BANK_PACKAGE) -> tuple[dict, 
 
 
 def normalize_case(case: dict, as_contract_ref: dict, *, m2_path: Path = M2,
-                   m3_path: Path = M3) -> tuple[dict, dict]:
+                   m3_path: Path = M3) -> tuple[dict, dict, dict]:
     case_id, version = case["case_id"], case["version"]
     old_source = case.get("author_case_source") if case.get("schema_version") == 3 else case.get("passport_source")
     if not old_source:
@@ -83,7 +108,7 @@ def normalize_case(case: dict, as_contract_ref: dict, *, m2_path: Path = M2,
             raise missing(case_id, version, f"{key}→passport")
     if case.get("schema_version") == 4 and case != projected:
         raise missing(case_id, version, "CaseVersion→passport")
-    return projected, m2_ref
+    return projected, m2_ref, m2
 
 
 def addressed_candidate_contract(base: dict, design: dict) -> dict:
@@ -95,9 +120,12 @@ def addressed_candidate_contract(base: dict, design: dict) -> dict:
 
 
 def provider_basis(snapshot: dict) -> dict:
+    case_content = snapshot.get("case_content_contract")
     return {"case": snapshot["case"], "profile": snapshot["profile"],
             "normative_indicator_targets": snapshot["case_version"]["indicator_targets"],
             **({"scenario_contract": snapshot["scenario_contract"]} if "scenario_contract" in snapshot else {}),
+            **({"case_content_contract": case_content,
+                "m2_indicator_descriptors": snapshot["m2_indicator_descriptors"]} if case_content else {}),
             "requirements": {
                 "required_top_level_fields_exact": list(snapshot["as_contract"]["fields"]),
                 "maximum_output_characters": snapshot["as_contract"]["maximum_output_characters"],
@@ -196,10 +224,14 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
     check("indicator_adapted_target_set", set(observed) == set(targets["Точный перечень"]),
           path="candidate_as/IndicatorObservability")
     namespaces["authority"] = {"participant", *(f"character:{key}" for key in characters)}
+    indicator_fields = snapshot.get("case_content_contract", {}).get("indicator_fields", {})
     for indicator_id, item in observed.items():
         path = f"candidate_as/IndicatorObservability/{indicator_id}"
-        check("indicator_adapted_condition", set(item) == {"IndicatorID", *ADAPTED_FIELDS, *REF_FIELDS}
+        extra_fields = indicator_fields.get(indicator_id, [])
+        check("indicator_adapted_condition", set(item) - set(extra_fields) == {"IndicatorID", *ADAPTED_FIELDS, *REF_FIELDS}
               and all(_text(item.get(field)) for field in ADAPTED_FIELDS), path=path)
+        for field in extra_fields:
+            check("indicator_adaptation_required_text", _text(item.get(field)), path=f"{path}/{field}")
         for field, namespace in REF_FIELDS.items():
             values = item.get(field)
             check("indicator_adaptation_references", _ids(values) and set(values) <= set(namespaces[namespace]),

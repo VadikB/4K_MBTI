@@ -24,17 +24,21 @@ def checksum(value: Any) -> str:
 def load_protocol(path: Path = PROTOCOL_PATH) -> dict[str, Any]:
     raw = path.read_bytes()
     value = json.loads(raw)
-    if (value.get("schema_version"), value.get("id"), value.get("version"), value.get("status")) != (
-        2, "m5-functional-personalization-tester", "2.0.0", "draft"
-    ):
+    if (value.get("schema_version"), value.get("id"), value.get("status")) != (
+        2, "m5-functional-personalization-tester", "draft"
+    ) or value.get("version") not in {"2.0.0", "2.1.0"}:
         raise ValueError("M5_FUNCTIONAL_TESTER_PROTOCOL_INVALID")
     if set(value.get("result_statuses", [])) != RESULT_STATUSES:
         raise ValueError("M5_FUNCTIONAL_TESTER_PROTOCOL_INVALID")
+    content_checks = value.get("case_content_checks")
+    if value["version"] == "2.1.0" and not (isinstance(content_checks, dict) and content_checks):
+        raise ValueError("M5_FUNCTIONAL_TESTER_CASE_CONTENT_CHECKS_REQUIRED")
     value["checksum"] = hashlib.sha256(raw).hexdigest()
     return value
 
 
-def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | None = None) -> dict[str, Any]:
+def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | None = None, *,
+                             case_content_requirements: dict[str, str] | None = None) -> dict[str, Any]:
     protocol = deepcopy(protocol or load_protocol())
     passport = case.get("Паспорт")
     if not isinstance(passport, dict):
@@ -85,6 +89,15 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     identifiers = [item["check_id"] for item in checks]
     if len(identifiers) != len(set(identifiers)):
         raise ValueError("M5_FUNCTIONAL_TESTER_CHECK_ID_CONFLICT")
+    requirements = case_content_requirements or {}
+    content_check_ids = protocol.get("case_content_checks", {}).get(case_id, [])
+    protected_ids = {item["check_id"] for item in checks if item.get("mandatory") and item.get("protected")}
+    if set(content_check_ids) != set(requirements) or not set(requirements) <= protected_ids:
+        raise ValueError("M5_FUNCTIONAL_TESTER_CASE_CONTENT_CHECKS_MISMATCH")
+    for item in checks:
+        if item["check_id"] in requirements:
+            item["requirement"] = {"passport_or_protocol": item["requirement"],
+                                   "case_content": requirements[item["check_id"]]}
     return {
         "protocol": {"id": protocol["id"], "version": protocol["version"], "checksum": protocol["checksum"]},
         "case_ref": {"case_id": case_id, "case_version": version, "checksum": checksum(case)},

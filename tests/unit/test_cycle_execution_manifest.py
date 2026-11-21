@@ -6,7 +6,6 @@ import pytest
 
 from Api.cycle_execution_manifest import (
     CHECKSUM_KIND,
-    DEFAULT_DEPENDENCIES,
     build_manifest,
     resolve_dependency,
     validate_manifest,
@@ -103,5 +102,3 @@ def test_functional_protocol_prompt_package_is_complete(directory, version):
         {"name": name, "sha256": hashlib.sha256((package / name).read_bytes()).hexdigest()}
         for name in ("challenger.md", "json-retry.md", "tester-addendum.md")
     ]
-    if directory == "v2":
-        assert DEFAULT_DEPENDENCIES["m5_functional_as"] == "assessment_definitions/prompts/m5_functional_passport/v1"
