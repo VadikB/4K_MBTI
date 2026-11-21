@@ -142,9 +142,10 @@ export const navigateToScreen = (screen) => {
 };
 
 export const syncUrlState = (screen, options = {}) => {
-  const { replace = false } = options;
+  const { replace = false, organizationId } = options;
   const params = new URLSearchParams();
   params.set('screen', screen);
+  if (screen === 'admin-organizations' && organizationId) params.set('org', organizationId);
   params.set('ui', String(Date.now()));
   if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) params.set('cycle_id', state.productCycleId);
 

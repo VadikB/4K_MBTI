@@ -608,6 +608,7 @@ test('P4K-SUP-UX-01 superadmin restores the platform organizations cabinet', asy
       user: adminUser, is_admin: true, admin_dashboard: dashboard,
     });
     if (path === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (path === '/users/admin/support/preparation') return fulfillJson(route, { items: [], next_before: null });
     if (path === '/users/admin/organizations') return fulfillJson(route, { is_superadmin: true, items: [], assessment_programs: [] });
     return fulfillJson(route, {});
   });
@@ -652,7 +653,8 @@ test('P4K-SUP-UX-01 superadmin restores the platform organizations cabinet', asy
   await expect(page).toHaveURL(/screen=admin-organizations/);
   expect(journeyRequests).toHaveLength(0);
   await page.getByRole('link', { name: 'Проблемы' }).click();
-  await expect(page.locator('#platform-availability-title')).toHaveText('Проблемы');
+  await expect(page.locator('#platform-problems-title')).toHaveText('Проблемы');
+  await expect(page.locator('#platform-problems')).toContainText('Неразрешённых сбоев');
   await page.goBack();
   await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
   await page.locator('#admin-organizations-account-name').click();

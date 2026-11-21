@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
+from fastapi import APIRouter, HTTPException, Query, Request, Response as FastAPIResponse
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -75,7 +75,7 @@ from Api.assessment_role_profiles import (
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue, public_operation
-from Api import preparation_observation as preparation_observation
+from Api import preparation_observation as preparation_observation, support_preparation
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
@@ -95,6 +95,7 @@ from Api.org_access import (
     configured_superadmin_emails,
     ensure_configured_organizations,
     get_admin_scope,
+    has_superadmin_access,
     is_platform_protected_account,
     normalize_org_code,
 )
@@ -3695,6 +3696,40 @@ def cleanup_admin_regression_tests(request: Request) -> dict[str, object]:
         _require_superadmin(connection, user)
     counts = cleanup_autotest_data()
     return {"ok": True, "deleted": counts}
+
+
+def _require_support_preparation_access(connection, user: UserResponse | None) -> None:
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    if not has_superadmin_access(connection, user):
+        raise HTTPException(status_code=403, detail="Доступно только суперадминистратору.")
+
+
+@router.get("/admin/support/preparation")
+def list_support_preparation(request: Request, response: Response,
+                             before: int | None = Query(None, gt=0, le=2**63 - 1),
+                             organization_id: int | None = Query(None, gt=0, le=2**63 - 1)) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_support_preparation_access(connection, user)
+        result = support_preparation.list_failures(connection, before=before, organization_id=organization_id)
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+@router.get("/admin/support/preparation/{reference}")
+def read_support_preparation(reference: str, request: Request, response: Response) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_support_preparation_access(connection, user)
+        problem = support_preparation.read(connection, reference) if re.fullmatch(r"P4K-[A-F0-9]{24}", reference) else None
+    if problem is None:
+        raise HTTPException(status_code=404, detail="Случай подготовки не найден.")
+    response.headers["Cache-Control"] = "no-store"
+    environment = {"mode": settings.app_origin_mode, "origin": settings.public_app_origin,
+                   "version": get_app_version()}
+    return {**problem, "environment": environment,
+            "handoff_text": support_preparation.handoff(problem, **environment)}
 
 
 @router.get("/admin/organizations", response_model=AdminOrganizationsResponse)
