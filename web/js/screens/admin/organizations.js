@@ -2710,6 +2710,7 @@ export const renderAdminOrganizations = () => {
       const programState = organizationProgramState(orgId);
       const programConnectionUnverified = programState.status === 'unknown';
       const programConfirmed = programState.status === 'confirmed';
+      const reportProgram = programConfirmed && currentProgram.pilot_plan_ref ? currentProgram : null;
       const connectedRef = String(currentProgram?.assignment_ref || '').trim();
       const storedRef = selectedAssessmentRefs.get(organizationKey(orgId)) || '';
       const selectedRef = connectedRef || storedRef || revisions[0]?.assignment_ref || '';
@@ -2992,8 +2993,8 @@ export const renderAdminOrganizations = () => {
           '<section class="admin-organization-head" aria-label="Выбранная оценка">' +
           '<div><h3>' + escapeHtml(org.name) + '</h3><p><strong>Программа</strong> · ' + programLine + '</p></div>' +
           (isActive ? '<button type="button" class="text-button admin-organization-reports-link" data-action="open-organization-reports" data-program-definition-id="' +
-            (programConfirmed ? Number(currentProgram.program_definition_id) : '') + '" data-program-label="' +
-            escapeHtml(programConfirmed ? [currentProgram.program_name, currentProgram.program_version].filter(Boolean).join(' · ') : '') +
+            (reportProgram ? Number(reportProgram.program_definition_id) : '') + '" data-program-label="' +
+            escapeHtml(reportProgram ? [reportProgram.program_name, reportProgram.program_version].filter(Boolean).join(' · ') : '') +
             '">Отчёты организации</button>' : '') + '</section>') +
         renderOrganizationBatchProgress(orgId) +
         programMarkup +

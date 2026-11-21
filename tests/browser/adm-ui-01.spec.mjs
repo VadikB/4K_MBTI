@@ -213,7 +213,11 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(memberCard('failed')).toBeFocused();
 
     const organizations = await (await page.request.get(base + '/users/admin/organizations')).json();
-    const people = organizations.items.find((item) => item.id === id).members;
+    const selectedOrganization = organizations.items.find((item) => item.id === id);
+    expect(selectedOrganization.assessment_program).toMatchObject({
+      program_definition_id: fixture.program_id, pilot_plan_ref: { contract: 'm7_pilot_plan_admission/1' },
+    });
+    const people = selectedOrganization.members;
     for (const [key, generalProfile, label, start] of [
       ['profile_ready', false, 'Заполнены', 'Заблокирован'],
       ['profile_pending', true, 'Нет подтверждённых сведений', 'Нет подтверждённых сведений'],
@@ -238,6 +242,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     const registryOrganization = registry.locator('#admin-reports-organization');
     const registryProgram = registry.locator('#admin-reports-program');
     const selectedProgram = 'program-definition:' + fixture.program_id;
+    const isRegistryResponse = (response) => new URL(response.url()).pathname === '/users/admin/m8-access/reports';
     const registryOpen = (name) => registry.locator('.admin-report-row').filter({ hasText: name })
       .getByRole('button', { name: 'Открыть', exact: true });
     const reportBack = page.locator('#report-back-button');
@@ -286,10 +291,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     }
     await expect(row('unavailable').locator('[data-action="open-member-report"]')).toHaveCount(0);
     await tabs.nth(1).click();
-    const listing = page.waitForResponse((response) => {
-      const url = new URL(response.url());
-      return url.pathname === '/users/admin/m8-access/reports' && url.searchParams.has('program_definition_id');
-    });
+    const listing = page.waitForResponse(isRegistryResponse);
     await openReports();
     const filtered = await listing;
     const requested = new URL(filtered.url()).searchParams;
@@ -308,8 +310,13 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       await expect(peerCard.locator('[data-admin-view="organization-data"] [name="assignment_ref"]'))
         .toHaveValue(fixture.peer_ref);
       const peerReports = peerCard.getByRole('button', { name: 'Отчёты организации' });
+      const peerListing = peer.waitForResponse(isRegistryResponse);
       await peerReports.click();
+      const emptyPilot = await peerListing;
+      expect(new URL(emptyPilot.url()).searchParams.get('program_definition_id')).toBe(String(fixture.peer_program_id));
+      expect(await emptyPilot.json()).toMatchObject({ organization_id: fixture.peer_org, total: 0 });
       await expect(peer.locator('#admin-reports-organization')).toHaveValue(String(fixture.peer_org));
+      await expect(peer.locator('#admin-reports-program')).toHaveValue('program-definition:' + fixture.peer_program_id);
       await page.reload();
       await expect(registryOrganization).toHaveValue(String(id));
       await expect(registryProgram).toHaveValue(selectedProgram);
@@ -337,10 +344,55 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     } finally {
       await peer.close();
     }
+
+    await test.step('AC-4 ordinary program opens all organization reports on the first request', async () => {
+      const superadmin = await browser.newContext();
+      let connected;
+      try {
+        await superadmin.addCookies([{ name: fixture.cookie_name, value: fixture.super_session, url: base }]);
+        const connection = await superadmin.request.put(base + '/users/admin/organizations/' + id + '/assessment-program', {
+          data: { program_definition_id: fixture.ordinary_program_id, operation_id: 'cabinet-connect-ordinary' },
+        });
+        expect(connection.status()).toBe(200);
+        connected = (await connection.json()).connection;
+        expect(connected.program_definition_id).toBe(fixture.ordinary_program_id);
+        expect(connected).not.toHaveProperty('pilot_plan_ref');
+      } finally {
+        await superadmin.close();
+      }
+      await page.reload();
+      await expect(card.locator('.admin-organization-head')).toContainText('версия ' + connected.program_version);
+      await tabs.nth(2).click();
+      const firstListing = page.waitForResponse(isRegistryResponse);
+      await openReports();
+      const general = await firstListing;
+      expect(general.status()).toBe(200);
+      const params = new URL(general.url()).searchParams;
+      expect(params.get('organization_id')).toBe(String(id));
+      expect(params.get('program')).toBe('');
+      expect(params.has('program_definition_id')).toBe(false);
+      const publication = fixture.reports.legacy_report;
+      expect((await general.json()).items).toEqual(expect.arrayContaining([
+        expect.objectContaining({ cycle_id: publication.cycle_id, report_id: publication.report_id, status: 'ready' }),
+      ]));
+      await expect(registryProgram.locator('option:checked')).toHaveText('Все программы');
+      await checkReport(registryOpen('Исторический отчёт без привязки'), publication);
+      await page.reload();
+      await expect(page.locator('#m8-report-state')).toHaveText('Результат готов');
+      await reportBack.click();
+      await expect(registryOrganization).toHaveValue(String(id));
+      await expect(registryProgram.locator('option:checked')).toHaveText('Все программы');
+      await registry.getByRole('button', { name: 'К управлению' }).click();
+      await expect(orgSelect).toHaveValue(String(id));
+      await expect(tabs.nth(2)).toHaveAttribute('aria-pressed', 'true');
+      await expect(card.locator('[data-admin-view="questionnaire"] [name="assignment_ref"]')).toHaveValue(fixture.ref);
+    });
+
     const foreign = await browser.newContext();
     try {
       await foreign.addCookies([{ name: fixture.cookie_name, value: fixture.foreign_session, url: base }]);
       expect((await foreign.request.get(base + '/users/admin/m8-access/reports/' + fixture.reports.ready.report_id)).status()).toBe(403);
+      expect((await foreign.request.get(base + '/users/admin/m8-access/reports/' + fixture.reports.legacy_report.report_id)).status()).toBe(403);
     } finally {
       await foreign.close();
     }

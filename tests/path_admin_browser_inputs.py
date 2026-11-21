@@ -121,49 +121,73 @@ def seed_cabinet(scope):
                     'assessment',%s,%s,CASE WHEN %s THEN NULL ELSE NOW() END,
                     CASE WHEN %s THEN NOW() END) RETURNING id""",
                     (cycle_id, member_id, scope['org'],
-                     None if key in {'old_edition', 'legacy_report'} else assignment_id, profile_id,
+                     None if key == 'old_edition' else assignment_id, profile_id,
                      cycle_status, member_id, cycle_status == 'prepared', closed)).fetchone()['id']
                 if closed:
                     status = 'ready' if key in {'old_edition', 'legacy_report'} else key
                     reports[key] = seed_cabinet_report(
                         c, member_id, cycle, cycle_id, status, newer_unpublished=key == 'ready')
-                    if key != 'legacy_report':
-                        seed_cabinet_plan(c, member_id, cycle, previous if key == 'old_edition' else current)
+                    program = {'old_edition': previous, 'legacy_report': None}.get(key, current)
+                    seed_cabinet_plan(c, member_id, cycle, program)
                 elif key == 'failed':
                     cases[key] = seed_next_failure(c, member_id, cycle, cycle_id)
                 elif key == 'profile_ready':
                     profiles[key] = {'assignment_id': assignment_id, 'profile_id': profile_id}
             c.commit()
+    with get_connection() as c:
+        c.execute("""UPDATE organization_assessment_program_connections SET is_current=FALSE,superseded_at=NOW()
+            WHERE organization_id=%s AND is_current=TRUE""", (scope['org'],))
+        c.execute("""UPDATE organization_assessment_program_connections SET is_current=TRUE,superseded_at=NULL
+            WHERE id=%s""", (current['connection_id'],))
+        c.commit()
     return {'members': members, 'invitations': invitations, 'cases': cases, 'reports': reports,
             'profiles': profiles, 'ref': scope['ref'], 'role': scope['second_role'],
-            'other_org': scope['foreign'], 'peer_org': peer_org, 'peer_ref': previous['assignment_ref']}
+            'program_id': current['program_definition_id'], 'ordinary_program_id': scope['program'],
+            'other_org': scope['foreign'], 'peer_org': peer_org, 'peer_ref': previous['assignment_ref'],
+            'peer_program_id': previous['program_definition_id']}
 
 
 def seed_cabinet_programs(c, scope):
     from Api.assessment_programs import current_connection, definition_checksum
+    from Api.m5_case_runtime import checksum
+    from Api.pilot_plan_admission import CONTRACT
     from Api.schema_bootstrap import fingerprint
     from psycopg import sql
+    from psycopg.types.json import Jsonb
 
-    current = current_connection(c, organization_id=scope['org'])
-    ref = 'previous-' + scope['ref']
-    version = 'test.0'
-    digest = definition_checksum(code=current['program_code'], version=version, name=current['program_name'],
-        assignment_ref=ref, mode=current['mode'], configuration_id=current['assessment_configuration_id'],
-        catalog_version_id=current['catalog_version_id'], role_version_ids=[],
-        source_refs=current['source_refs_json'])
-    old = c.execute("""INSERT INTO assessment_program_definitions
-        (code,version,name,assignment_ref,mode,status,assessment_configuration_id,catalog_version_id,
-         source_refs_json,definition_checksum,published_by_user_id,published_at)
-        SELECT code,%s,name,%s,mode,'published',assessment_configuration_id,catalog_version_id,
-               source_refs_json,%s,published_by_user_id,NOW()
-        FROM assessment_program_definitions WHERE id=%s RETURNING id""",
-        (version, ref, digest, scope['program'])).fetchone()['id']
-    connection_id = c.execute("""INSERT INTO organization_assessment_program_connections
-        (organization_id,program_definition_id,connected_by_user_id,operation_id,request_fingerprint,is_current,superseded_at)
-        VALUES(%s,%s,%s,'cabinet-previous','synthetic',FALSE,NOW()) RETURNING id""",
-        (scope['org'], old, scope['super'])).fetchone()['id']
-    previous = {**current, 'connection_id': connection_id, 'program_definition_id': old,
+    ordinary = current_connection(c, organization_id=scope['org'])
+    assert 'pilot_plan_admission' not in ordinary['source_refs_json']
+    roles = [role['version_id'] for role in ordinary['roles']]
+
+    def pilot_version(version, ref):
+        # The cabinet reads saved reports and a program reference. It does not run pilot admission.
+        pilot = {'contract': CONTRACT, 'artifact_id': 'synthetic-cabinet', 'artifact_version': version}
+        sources = {**ordinary['source_refs_json'], 'pilot_plan_admission': {
+            **pilot, 'snapshot_checksum': checksum(pilot)}}
+        digest = definition_checksum(code=ordinary['program_code'], version=version, name=ordinary['program_name'],
+            assignment_ref=ref, mode=ordinary['mode'], configuration_id=ordinary['assessment_configuration_id'],
+            catalog_version_id=ordinary['catalog_version_id'], role_version_ids=roles, source_refs=sources)
+        program_id = c.execute("""INSERT INTO assessment_program_definitions
+            (code,version,name,assignment_ref,mode,status,assessment_configuration_id,catalog_version_id,
+             source_refs_json,definition_checksum,published_by_user_id,published_at)
+            SELECT code,%s,name,%s,mode,'draft',assessment_configuration_id,catalog_version_id,
+                   %s,%s,published_by_user_id,NOW()
+            FROM assessment_program_definitions WHERE id=%s RETURNING id""",
+            (version, ref, Jsonb(sources), digest, scope['program'])).fetchone()['id']
+        c.execute("""INSERT INTO assessment_program_allowed_roles
+            (program_definition_id,role_profile_version_id,display_order)
+            SELECT %s,role_profile_version_id,display_order FROM assessment_program_allowed_roles
+            WHERE program_definition_id=%s""", (program_id, scope['program']))
+        c.execute("UPDATE assessment_program_definitions SET status='published' WHERE id=%s", (program_id,))
+        connection_id = c.execute("""INSERT INTO organization_assessment_program_connections
+            (organization_id,program_definition_id,connected_by_user_id,operation_id,request_fingerprint,is_current,superseded_at)
+            VALUES(%s,%s,%s,%s,'synthetic',FALSE,NOW()) RETURNING id""",
+            (scope['org'], program_id, scope['super'], 'cabinet-' + version)).fetchone()['id']
+        return {**ordinary, 'connection_id': connection_id, 'program_definition_id': program_id,
                 'program_version': version, 'assignment_ref': ref, 'definition_checksum': digest}
+
+    previous = pilot_version('test.0', 'previous-' + scope['ref'])
+    current = pilot_version('test.2', scope['ref'])
     peer_org = c.execute("""INSERT INTO organizations(code,name)
         VALUES('cabinet-peer','Вторая организация') RETURNING id""").fetchone()['id']
     # Allow the synthetic admin to exercise two organizations in the owned stand.
@@ -175,18 +199,20 @@ def seed_cabinet_programs(c, scope):
         VALUES(%s,%s,'admin','admin_add')""", (peer_org, scope['admin']))
     c.execute("""INSERT INTO organization_assessment_program_connections
         (organization_id,program_definition_id,connected_by_user_id,operation_id,request_fingerprint)
-        VALUES(%s,%s,%s,'cabinet-peer','synthetic')""", (peer_org, old, scope['super']))
+        VALUES(%s,%s,%s,'cabinet-peer','synthetic')""", (peer_org, previous['program_definition_id'], scope['super']))
     return current, previous, peer_org
 
 
 def seed_cabinet_plan(c, member_id, cycle, program):
     from Api.m7_planning_repository import save_plan
 
-    content = {'status': 'READY', 'route': [], 'pilot_plan_binding': {
-        'contract': 'm7_pilot_plan_binding/1',
-        'program_ref': {'id': program['program_definition_id'], 'code': program['program_code'],
-                        'version': program['program_version'], 'checksum': program['definition_checksum'],
-                        'connection_id': program['connection_id']}}}
+    content = {'status': 'READY', 'route': []}
+    if program:
+        content['pilot_plan_binding'] = {
+            'contract': 'm7_pilot_plan_binding/1',
+            'program_ref': {'id': program['program_definition_id'], 'code': program['program_code'],
+                            'version': program['program_version'], 'checksum': program['definition_checksum'],
+                            'connection_id': program['connection_id']}}
     save_plan(c, cycle={'id': cycle}, profile_ref={}, full_targets=[], planned_targets=[], requirements=[],
               rules={'snapshot_checksum': 'synthetic'}, content=content, created_by=member_id,
               key=f'cabinet-report-{cycle}', request_hash='synthetic')

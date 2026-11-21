@@ -1554,7 +1554,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
                 members_count=members_by_org.get(int(row["id"]), 0),
                 reports_count=reports_by_org.get(int(row["id"]), 0),
                 assessment_preparation_batch_id=latest_batch_by_org.get(int(row["id"])),
-                assessment_program=programs_by_org.get(int(row["id"])),
+                assessment_program=assessment_programs.public_program(programs_by_org.get(int(row["id"]))),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
             )
