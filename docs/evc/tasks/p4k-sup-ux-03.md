@@ -57,3 +57,11 @@
 - `python -m pytest -q tests/e2e/{test_arch30_membership_http,test_f01_role_isolation_http,test_m8_report_access_http}.py tests/unit/test_org_admission.py` — 34 PASS. Профиль `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0`.
 - Снимки из исходного отчёта относятся к `2af50394`. Зависимость экранной интеграции от карточки 02 сохраняется. Полный integration/browser CI и release gate относятся к этапу Ready. Результат быстрого CI актуального head фиксируется в [PR #280](https://github.com/VadikB/4K_MBTI/pull/280).
 - `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`. Для восстановления рабочего состояния есть прежний коммит `2af50394`. Обновление ветки выполняется без переписывания истории.
+
+## Кандидат 2.1.59 для PR #280, 21.11.2026
+
+Владелец прямо разрешил версию 2.1.59, перевод PR в Ready и полный CI. База `main` — `dea4d565` / 2.1.58, предыдущий head — `5cc53762`. Флаги этапа `branch_push=true`, `pr=true`, `version_bump=true`, `merge=false`, `deploy=false`, `artifact_publish=false`.
+
+- `npm run ready:prepare -- --candidate 2.1.59` — PASS. Версии обновлены в `pyproject.toml`, `uv.lock`, `web/js/config.js` и `web/index.html`, `web/dist` пересобран.
+- `python3.12 scripts/check_release_version.py --base-ref origin/main` и `pytest -q tests/unit/test_release_version.py` — PASS, 11 тестов. `npm run lint:js` и объединённый frontend/harness — PASS, 539 тестов.
+- Полный CI точного head и review ведутся в [PR #280](https://github.com/VadikB/4K_MBTI/pull/280). Схема и сохранённые данные совпадают с предыдущим head. Откат этапа подготовки использует состояние `5cc53762`; решение о выпуске остаётся за владельцем.
