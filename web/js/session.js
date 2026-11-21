@@ -6,6 +6,7 @@ import { returnToStart } from './router.js';
 import { applyLogoutButtonPendingState, resetLogoutButtonsState } from './logout-ui.js';
 import { authError } from './dom.js';
 import { showError } from './components/errors.js';
+import { showParticipantDialog } from './components/participant-dialog.js';
 import { clearOwnerDrafts, hasUnconfirmedDrafts } from './answer-drafts.js';
 
 const clearProfileDisplay = () => {
@@ -184,7 +185,18 @@ export const logoutAndReturnToStart = async (trigger = null) => {
   window.dispatchEvent(new CustomEvent('agent4k:before-logout', { detail: draftState }));
   let unsynced = draftState.unsynced;
   try { unsynced ||= hasUnconfirmedDrafts(ownerId); } catch { unsynced = true; }
-  if (unsynced && !window.confirm('Последние изменения черновика ещё не подтверждены сервером. После выхода локальная копия будет удалена. Скопируйте текст, если он нужен. Выйти?')) return;
+  const unsyncedNotice = 'Последние изменения черновика ещё не подтверждены сервером. После выхода локальная копия будет удалена. Скопируйте текст, если он нужен.';
+  const participantExit = ['dashboard', 'interview', 'onboarding'].includes(state.currentScreen);
+  if (participantExit) {
+    const epoch = state.identityEpoch;
+    const confirmed = await showParticipantDialog(trigger, {
+      title: 'Выйти из кабинета?',
+      body: unsynced ? unsyncedNotice : 'Подтверждённые ответы и результаты сохранятся.',
+      cancel: 'Остаться',
+      confirm: 'Выйти',
+    });
+    if (!confirmed || epoch !== state.identityEpoch) return;
+  } else if (unsynced && !window.confirm(unsyncedNotice + ' Выйти?')) return;
   // Explicit logout removes this owner's local input. Expired sessions preserve
   // the buffer until this same owner authenticates again.
   try { clearOwnerDrafts(ownerId); } catch { /* unavailable storage has no reliable copy */ }
@@ -217,6 +229,7 @@ export const logoutAndReturnToStart = async (trigger = null) => {
       // The user must still be able to return to auth even if lazy screen reset fails.
     }
     returnToStart();
+    if (participantExit) window.dispatchEvent(new Event('agent4k:participant-signed-out'));
   } catch (_error) {
     restoreButton();
     throw _error;

@@ -591,6 +591,20 @@ def owner_can_read_cycle(connection, cycle_id: str, user_id: int) -> bool:
     return bool(row and permits(row["usage_scope"]))
 
 
+def _is_limited_report(status: str | None, partial: dict | None) -> bool:
+    partial = partial if isinstance(partial, dict) else {}
+    progress = partial.get("progress")
+    progress = progress if isinstance(progress, dict) else {}
+    completed, planned = progress.get("completed"), progress.get("planned")
+    incomplete = (type(completed) is int and type(planned) is int and planned > 0
+                  and (completed < planned or bool(progress.get("interrupted"))))
+    return bool(status == "limited" or partial.get("plan_completed") is False
+                or partial.get("limitation_reasons") or incomplete
+                or any(partial.get(key) is True for key in (
+                    "is_incomplete", "plan_scope_limited", "observation_limited",
+                    "context_limited", "source_limited", "technical_failure")))
+
+
 def list_owned_cycles(connection, user_id: int) -> list[dict]:
     """Read-only owner history; one card per Cycle, revisions never count as Cycles."""
     from Api.qa_orchestration import sql_scope
@@ -601,7 +615,8 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
         pipeline.status AS processing_status,pipeline.stage AS processing_stage,
         (to_jsonb(pipeline)->>'error_code') AS processing_error,
         rr.id AS results_revision_id,rr.revision_no AS results_revision_no,
-        p.id AS report_id,p.revision_no,p.created_at,
+        p.id AS report_id,p.revision_no,p.created_at,to_jsonb(p)->>'status' AS report_status,
+        p.c67_json->'partial_result' AS report_partial_result,
         to_jsonb(p)->'c67_json'->'processing'->>'status' AS report_processing_status
         FROM m5_cycles c
         LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=c.id
@@ -646,6 +661,7 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             if item['report_id'] is None:
                 item.update({k:version[k] for k in ('report_id','revision_no','created_at','results_revision_id','results_revision_no')})
                 item['report_processing_status'] = row['report_processing_status']
+                item['report_limited'] = _is_limited_report(row['report_status'], row['report_partial_result'])
     for item in cycles.values():
         item['status'] = ('report_ready' if item['report_id'] and item['report_processing_status'] != 'failed' else
             'failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else

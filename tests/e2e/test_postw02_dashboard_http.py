@@ -26,10 +26,11 @@ class ReadOnlyStorage:
         self.cycle_id, self.revision_id = str(uuid4()), str(uuid4())
         self.route = [{'case_id': f'saved-{n}', 'case_version': '1'} for n in range(1, 9)]
         self.cycle = dict(id=1, cycle_id=self.cycle_id, status='active', started_at=datetime(2026, 11, 16, tzinfo=timezone.utc),
-            collection_closed_at=None, personalized_profile_id=4, assignment_id=91, profile_ref_json={'checksum': 'saved-profile'},
+            collection_closed_at=None, personalized_profile_id=4, assignment_id=91, organization_id=10, profile_ref_json={'checksum': 'saved-profile'},
             assessment_title='Synthetic assessment', organization_name='Synthetic organization', completed_cases=0)
         self.positions = [self.position(n) for n in range(1, 4)]
         self.statements = []
+        self.contact = None
         self.cycles = [self.cycle]
 
     def position(self, n, state=None):
@@ -42,6 +43,9 @@ class ReadOnlyStorage:
         assert sql.strip().startswith('SELECT'), sql
         assert 'FOR UPDATE' not in sql and 'FOR SHARE' not in sql
         if 'FROM m10_pipeline_runs p' in sql or 'to_regclass' in sql or 'FROM preparation_observations' in sql: return Result([])
+        if 'FROM organization_memberships admin' in sql:
+            assert params == (10, 8)
+            return Result([self.contact] if self.contact else [])
         if 'FROM users u' in sql: return Result([{'id': 8}])
         if 'COUNT(position.id)' in sql:
             assert params[0] == 8
@@ -126,7 +130,7 @@ def test_presented_three_of_eight_is_independent_of_completed_and_catalogue(cabi
     for completed in (0, 2, None):
         db.cycle['completed_cases'] = completed
         card = dashboard(cabinet)['current_assessments'][0]
-        assert (card['current_position_no'], card['planned_total']) == (3, 8)
+        assert (card['completed_positions'], card['current_position_no'], card['planned_total']) == (2, 3, 8)
         assert card['plan_revision_id'] == db.revision_id
     # There is no catalogue query or generated AS to obtain the denominator.
     assert len(db.positions) == 3
@@ -149,6 +153,7 @@ def test_other_plan_revision_does_not_invent_current_position(cabinet):
     card = dashboard(cabinet)['current_assessments'][0]
     assert card['current_position_no'] is None
     assert card['last_completed_position_no'] is None
+    assert card['completed_positions'] is None
     assert card['planned_total'] == 8
 
 
@@ -188,7 +193,10 @@ def test_closed_cycle_uses_one_owned_history_entry_and_new_assignment_is_visible
 
 
 def test_owner_bootstrap_rejects_missing_and_foreign_identity(cabinet):
-    client, *_ = cabinet
+    client, db, *_ = cabinet
+    assert dashboard(cabinet)['administrator_contact'] is None
+    db.contact = {'organization_name': 'Synthetic', 'name': 'Allowed name', 'email': 'help@example.test'}
+    assert dashboard(cabinet)['administrator_contact'] == db.contact
     assert client.get('/users/9/session-bootstrap').status_code == 403
     client.cookies.clear()
     assert client.get('/users/8/session-bootstrap').status_code == 401

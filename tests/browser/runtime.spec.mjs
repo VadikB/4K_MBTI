@@ -241,7 +241,7 @@ async function startIndependentCycle(page,stand,expected='готовности')
  await expect(page.locator('#interview-textarea')).toBeEnabled({timeout:15000});
  await expect(page.locator('#interview-messages')).toContainText(expected);
 }
-const completedCycleCards=(page)=>page.locator('#dashboard-panel .participant-assessment-card[data-journey-state="report_ready"]');
+const completedCycleCards=(page)=>page.locator('#completed-assessments .participant-assessment-card:has([data-dashboard-action="open_report"])');
 async function openCompletedReport(page,expectedCycles,cycleId=null){
  await expect(page.locator('#dashboard-panel')).toBeVisible();
  const completed=completedCycleCards(page);
@@ -249,7 +249,7 @@ async function openCompletedReport(page,expectedCycles,cycleId=null){
  const cycleIds=await completed.evaluateAll(cards=>cards.map(card=>card.dataset.cycleId));
  expect(cycleIds.every(Boolean)).toBe(true);expect(new Set(cycleIds).size).toBe(expectedCycles);
  const card=cycleId
-  ? page.locator(`#dashboard-panel .participant-assessment-card[data-journey-state="report_ready"][data-cycle-id="${cycleId}"]`)
+  ? completed.and(page.locator(`[data-cycle-id="${cycleId}"]`))
   : completed.first();
  await expect(card).toHaveCount(1);
  await card.locator('.participant-assessment-action').click();
@@ -1322,6 +1322,7 @@ test('Recovery: lost response, unaccepted request, two tabs and owner boundaries
  const startAgain=await context.request.post(stand.url+'/users/assessment/cycles/start',{data:{idempotency_key:randomUUID(),selected_skills:['K1','K2','K3','K4']}});
  expect((await startAgain.json()).runtime.cycle_id).toBe(initial.cycle_id);
  await page.getByRole('button',{name:'Выйти',exact:true}).click();
+ await page.getByRole('dialog', { name: 'Выйти из кабинета?' }).getByRole('button', { name: 'Выйти' }).click();
  await expect(page.locator('#email-input')).toBeVisible();
  await login(page,stand,'other@example.test');
  for(const endpoint of [`/users/assessment/cycles/${initial.cycle_id}/runtime`,`/users/assessment/m5/situations/${initial.current_situation.assessment_situation_id}/trace`])expect((await page.request.get(stand.url+endpoint)).status()).toBe(403);
@@ -1346,6 +1347,7 @@ test('Late 401 in another tab must not revoke a newly authenticated owner',async
  try{
    await capturedRequest;
    await page.getByRole('button',{name:'Выйти',exact:true}).click();
+ await page.getByRole('dialog', { name: 'Выйти из кабинета?' }).getByRole('button', { name: 'Выйти' }).click();
    await expect(page.locator('#email-input')).toBeVisible();
    fetchExpired();expect(await expiredResponse).toBe(401);
    await login(page,stand,'other@example.test');
@@ -1416,6 +1418,8 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click();
  await page.locator('#dashboard-restart-button').click();
+ await page.getByRole('dialog', { name: 'Выйти из кабинета?' }).getByRole('button', { name: 'Выйти' }).click();
+ await expect(page.locator('#email-input')).toBeVisible();
  await login(page,stand,'participant@example.test',false,true,true);
  await openCompletedReport(page,1,saved.cycle_id);
  await info.attach('history-list',{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
@@ -1451,6 +1455,8 @@ test('REV-02 fresh M4 confirmation, canonical context and saved history after lo
  await expect(otherTab.locator('#m8-report-state')).toContainText('Результат готов');
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click(); await page.locator('#dashboard-restart-button').click();
+ await page.getByRole('dialog', { name: 'Выйти из кабинета?' }).getByRole('button', { name: 'Выйти' }).click();
+ await expect(page.locator('#email-input')).toBeVisible();
  await login(page,stand,'other@example.test');
  await otherTab.bringToFront(); await otherTab.evaluate(()=>window.dispatchEvent(new Event('focus')));
  await expect(otherTab.locator('#auth-panel')).toBeVisible();
@@ -1483,12 +1489,16 @@ test('S10.4 owner profile, 403, logout, late response and account switch',async(
    await expect(page.locator('#profile-panel')).toBeVisible({timeout:10000});
  };
  const logout=async()=>{
-   await page.evaluate(()=>{
+   const destination = page.locator('#dashboard-panel:visible, #prechat-panel:visible, #ai-welcome-panel:visible');
+   await expect(destination.first()).toBeVisible();
+   const requiresConfirmation = await page.evaluate(()=>{
      const selector=!document.querySelector('#dashboard-panel')?.classList.contains('hidden')
        ?'#dashboard-restart-button'
        :!document.querySelector('#prechat-panel')?.classList.contains('hidden')?'#prechat-exit-button':'#new-user-exit-button';
      document.querySelector(selector)?.click();
+     return selector === '#dashboard-restart-button';
    });
+   if (requiresConfirmation) await page.getByRole('dialog', { name: 'Выйти из кабинета?' }).getByRole('button', { name: 'Выйти' }).click();
    await expect(page.locator('#email-input')).toBeVisible();
  };
  await settings();
@@ -1624,6 +1634,7 @@ test('G10.7 fresh participant, immutable M4, logout history and independent Cycl
  expect(projection).not.toContain('participant@example.test');expect(projection).not.toContain('full_name');
  await page.locator('#report-back-button').click();
  await page.locator('#dashboard-panel .user-chip').click();await page.locator('#dashboard-restart-button').click();
+ await page.getByRole('dialog', { name: 'Выйти из кабинета?' }).getByRole('button', { name: 'Выйти' }).click();
  await expect(page.locator('#email-input')).toBeVisible();
  await page.context().clearCookies();await page.evaluate(()=>{localStorage.clear();sessionStorage.clear();});
  await login(page,stand,'participant@example.test',false,true,true);

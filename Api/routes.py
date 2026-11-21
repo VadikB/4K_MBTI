@@ -655,6 +655,10 @@ def _participant_cycle_outcome(history: dict) -> tuple[str, str, str, str, str]:
         return ('failed', 'Не удалось подготовить отчёт',
                 'Ответы сохранены. Возвращаться к заданиям не требуется.',
                 'open_processing', 'Посмотреть состояние')
+    if history.get('report_id') and history.get('report_limited'):
+        return ('report_limited', 'С ограничениями',
+                'Результат доступен. В отчёте указаны ограничения оценки.',
+                'open_report', 'Посмотреть результаты →')
     if history.get('report_id'):
         return ('report_ready', 'Результат готов',
                 'Вы завершили оценку. В отчёте — ваши навыки, примеры из ответов и пояснения к результатам.',
@@ -666,11 +670,11 @@ def _participant_cycle_outcome(history: dict) -> tuple[str, str, str, str, str]:
 
 def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> UserDashboard:
     from Api.qa_orchestration import usage_scope
-    from Api.participant_dashboard import cycle_progress, preparation_state
+    from Api.participant_dashboard import assessment_rules, assignment_contact, cycle_progress, preparation_state
     # Dashboard follows the current Cycle runtime; legacy aggregate views are not inputs.
     readiness = participant_profile.readiness(connection, user_id=user.id, profile_id=profile_id)
     cycle_rows = connection.execute("""SELECT c.id,c.cycle_id,c.status,c.started_at,c.collection_closed_at,
-        c.personalized_profile_id,c.assignment_id,c.profile_ref_json,
+        c.personalized_profile_id,c.assignment_id,c.profile_ref_json,c.organization_id,
         configuration.name AS assessment_title,organization.name AS organization_name,
         COUNT(position.id) FILTER (WHERE position.state='completed')::int AS completed_cases
         FROM m5_cycles c
@@ -688,6 +692,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
     acquaintance_state = acquaintance.read_state(connection, user_id=user.id)
     current_assessments: list[ParticipantAssessmentCard] = []
     completed_assessments: list[ParticipantAssessmentCard] = []
+    early = acquaintance_state['readiness']
+    help_organization_id = early.get('organization_id') if early.get('assignment_ref') else None
     for raw_cycle in cycle_rows:
         cycle = dict(raw_cycle)
         cycle_id = str(cycle['cycle_id'])
@@ -704,7 +710,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         card_preparation = None
         if cycle['status'] in {'collection_closed', 'calculation_pending', 'calculated', 'failed'}:
             status, label, description, action, button = _participant_cycle_outcome(history)
-            card_preparation = preparation_observation.report_status(connection, cycle_id)
+            if action == 'open_processing':
+                card_preparation = preparation_observation.report_status(connection, cycle_id)
             completed_assessments.append(ParticipantAssessmentCard(
                 preparation=card_preparation,
                 cycle_id=cycle_id, title=history.get('program_name') or cycle['assessment_title'],
@@ -771,6 +778,8 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         if cycle['status'] != 'prepared' and history.get('status') == 'failed':
             journey_state, label, description = ('runtime_error', 'Не удалось продолжить оценку',
                 'Ваши ответы сохранены. Откройте оценку, чтобы проверить состояние.')
+        if not current_assessments:
+            help_organization_id = cycle['organization_id']
         current_assessments.append(ParticipantAssessmentCard(
             preparation=card_preparation,
             cycle_id=cycle_id, title=cycle['assessment_title'],
@@ -794,7 +803,6 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         row['assignment_id'] == assignment_id if assignment_id is not None else
         row['personalized_profile_id'] == readiness.get('id') for row in cycle_rows)
     if not current_assessments and not has_assignment_cycle:
-        early = acquaintance_state['readiness']
         if early.get('organization_id') is not None:
             status, label, description, action, button = preparation_state(acquaintance_state)
             if (early['status'] == 'ready' and assignment_id is None
@@ -808,7 +816,9 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
                     'Перед началом познакомьтесь с форматом оценки.',
                     'open_legacy_acquaintance' if readiness['status'] == 'ready' else 'start',
                     'Продолжить знакомство')
+            timing = acquaintance_state.get('assigned_timing') or {}
             current_assessments.append(ParticipantAssessmentCard(
+                rules=assessment_rules(timing) if timing.get('status') == 'resolved' else None,
                 preparation=(acquaintance_state.get('preparation_operation') or {}).get('preparation'),
                 title=acquaintance_state.get('assessment_name') or 'Оценка 4К',
                 organization_name=early.get('organization_name'), status=status, journey_state=status,
@@ -867,6 +877,7 @@ def _build_dashboard(connection, user: UserResponse, *, profile_id=None) -> User
         reports=reports,
         current_assessments=current_assessments,
         completed_assessments=completed_assessments,
+        administrator_contact=assignment_contact(connection, user_id=user.id, organization_id=help_organization_id),
     )
 
 

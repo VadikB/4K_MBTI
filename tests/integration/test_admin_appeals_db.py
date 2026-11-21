@@ -311,3 +311,35 @@ def test_issue_receipt_failure_rolls_back_message(issue_command_db):
     with issue_command_db() as c:
         assert c.execute('SELECT count(*) AS n FROM participant_data_issue_reports').fetchone()['n'] == 0
         assert c.execute('SELECT count(*) AS n FROM participant_data_issue_operations').fetchone()['n'] == 0
+
+
+@pytest.mark.integration
+def test_participant_help_contact_prefers_first_active_admin_in_assignment_organization(test_database_url) -> None:
+    from Api.participant_dashboard import assignment_contact
+
+    schema = "cabinet_contact_" + uuid4().hex
+    with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY, full_name TEXT, email TEXT)")
+        connection.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY, name TEXT, is_active BOOLEAN)")
+        connection.execute("""CREATE TABLE organization_memberships(id BIGSERIAL PRIMARY KEY,
+            organization_id BIGINT, user_id BIGINT, role TEXT, created_at TIMESTAMP, admitted_at TIMESTAMP)""")
+        connection.execute("""INSERT INTO users VALUES
+            (1,'Участник','participant@example.test'),(2,'Отключённый','revoked@example.test'),
+            (3,'Нужный контакт','help@example.test'),(4,'Автор ответа','author@example.test'),
+            (5,'Другой администратор','foreign@example.test'),(6,'Другой участник','other@example.test')""")
+        connection.execute("INSERT INTO organizations VALUES(10,'Организация A',TRUE),(20,'Организация B',TRUE)")
+        connection.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,created_at,admitted_at)
+            VALUES(10,1,'member','2025-01-01',NULL),(10,2,'member','2025-01-02',NULL),
+            (20,5,'admin','2025-01-03',NULL),(20,6,'member','2025-01-04',NULL),
+            (10,3,'admin','2025-01-07','2025-01-07'),(10,4,'admin','2025-01-01','2025-01-07')""")
+
+        assert assignment_contact(connection, user_id=1, organization_id=10) == {
+            "organization_name": "Организация A", "name": "Нужный контакт", "email": "help@example.test",
+        }
+        assert assignment_contact(connection, user_id=6, organization_id=10) is None
+        assert assignment_contact(connection, user_id=1, organization_id=None) is None
+        connection.execute("UPDATE organization_memberships SET role='member' WHERE organization_id=10")
+        assert assignment_contact(connection, user_id=1, organization_id=10) is None
+        connection.rollback()

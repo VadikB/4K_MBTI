@@ -6,6 +6,7 @@ import {
   dashboardRefreshStatus, dashboardRefreshButton,
 } from '../dom.js';
 import { hideAllPanels, syncUrlState } from '../router.js';
+import { showParticipantDialog } from '../components/participant-dialog.js';
 import { initAppHeader } from '../components/app-header.js';
 import { handleAssessmentEntryClick } from './interview.js';
 import { readApiResponse } from '../api.js';
@@ -17,6 +18,30 @@ let dashboardRefreshTimer = null;
 let dashboardRefreshPending = false;
 let appealsReadGeneration = 0;
 const header = initAppHeader({ root: dashboardPanel.querySelector('[data-app-header]'), onHome: () => openDashboard() });
+
+const contactButton = dashboardPanel.querySelector('#dashboard-contact-button');
+
+contactButton?.addEventListener('click', () => {
+  const contact = state.dashboard?.administrator_contact;
+  const body = document.createElement(contact ? 'dl' : 'p');
+  if (contact) {
+    body.className = 'participant-contact-details';
+    const email = document.createElement('a');
+    email.href = 'mailto:' + encodeURIComponent(contact.email).replace('%40', '@');
+    email.textContent = contact.email;
+    for (const [label, value] of [
+      ['Организация', contact.organization_name], ['Администратор', contact.name], ['Эл. почта', email],
+    ]) {
+      if (!value) continue;
+      const term = document.createElement('dt'); term.textContent = label;
+      const detail = document.createElement('dd'); detail.append(value);
+      body.append(term, detail);
+    }
+  } else {
+    body.textContent = 'Контакт администратора пока не указан.';
+  }
+  void showParticipantDialog(contactButton, { title: contactButton.textContent, body });
+});
 
 const refreshAppeals = async () => {
   const ownerId = state.pendingUser?.id;
@@ -31,26 +56,33 @@ const refreshAppeals = async () => {
     if (generation !== appealsReadGeneration || epoch !== state.identityEpoch || state.pendingUser?.id !== ownerId || state.currentScreen !== 'dashboard') return;
     const items = Array.isArray(result.items) ? result.items : [];
     if (!items.length) { section?.remove(); return; }
-    if (!section) { section = document.createElement('section'); section.dataset.participantAppeals = ''; section.dataset.ownerId = String(ownerId); dashboardPanel.append(section); }
+    if (!section) { section = document.createElement('section'); section.dataset.participantAppeals = ''; section.dataset.ownerId = String(ownerId); dashboardPanel.querySelector('#dashboard-appeals').append(section); }
+    const snapshot = JSON.stringify(items);
+    if (section.dataset.snapshot === snapshot) return;
+    section.dataset.snapshot = snapshot;
     section.replaceChildren();
-    const heading = document.createElement('h2'); heading.textContent = 'Мои обращения'; section.append(heading);
     for (const item of items) {
       const article = document.createElement('article'); article.className = 'card participant-appeal';
       const context = document.createElement('p'); context.textContent = item.assignment_ref
         ? `Назначение: ${item.assignment_ref}` : 'Связь с назначением неизвестна';
       const message = document.createElement('p'); message.textContent = item.message;
-      article.append(context, message);
       if (item.reply_message) {
         const title = document.createElement('h3'); title.textContent = 'Ответ по вашему обращению';
         const reply = document.createElement('p'); reply.textContent = item.reply_message;
         const attribution = document.createElement('small');
-        attribution.textContent = (item.reply_author_display_name || 'Администратор') + (item.replied_at ? ' · ' + new Date(item.replied_at).toLocaleString('ru-RU') : '');
-        article.append(title, reply, attribution);
+        const author = typeof item.reply_author_display_name === 'string' && item.reply_author_display_name.trim();
+        attribution.textContent = (author || 'Администратор') + (item.replied_at
+          ? ' · ' + new Date(item.replied_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '');
+        article.append(title, attribution, reply);
       } else {
         const status = document.createElement('p');
         status.textContent = item.status === 'in_progress' ? 'В работе' : item.status === 'resolved' ? 'Обработано ранее' : 'Новое';
         article.append(status);
       }
+      const original = document.createElement('details');
+      const summary = document.createElement('summary'); summary.textContent = 'Ваше обращение';
+      original.append(summary, context, message);
+      article.append(original);
       section.append(article);
     }
   } catch { /* Keep the last confirmed projection for this owner until a successful refresh. */ }
@@ -92,6 +124,7 @@ const refreshDashboard = async () => {
   }
 };
 
+dashboardPanel.querySelector('#dashboard-manual-refresh')?.addEventListener('click', () => void refreshDashboard());
 dashboardRefreshButton?.addEventListener('click', () => void refreshDashboard());
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && state.currentScreen === 'dashboard') void refreshDashboard();
@@ -140,7 +173,7 @@ const performCardAction = async (card, event) => {
 };
 
 const appendCardAction = (article, card, { primaryEntry, history }) => {
-  if (!card.action || !card.button_label) return;
+  if ((!card.action || !card.button_label) && (history || !card.rules)) return;
   const actions = document.createElement('div');
   actions.className = 'participant-assessment-actions';
   const button = document.createElement('button');
@@ -152,7 +185,32 @@ const appendCardAction = (article, card, { primaryEntry, history }) => {
   button.dataset.cycleId = card.cycle_id || '';
   button.textContent = history && card.action === 'open_report' ? 'Открыть отчёт' : card.button_label;
   button.onclick = (event) => void performCardAction(card, event);
-  actions.appendChild(button);
+  if (history) {
+    const status = document.createElement('span');
+    status.className = 'participant-assessment-status';
+    status.textContent = card.status_label;
+    actions.append(status);
+  }
+  if (card.action && card.button_label) actions.appendChild(button);
+  if (!history && card.rules) {
+    const rules = document.createElement('button');
+    rules.className = 'text-link';
+    rules.type = 'button';
+    rules.textContent = 'Условия прохождения';
+    rules.onclick = () => {
+      const { time_budget_seconds: budget, calendar_window_seconds: windowSeconds, participant_notice: notice } = card.rules;
+      const body = document.createElement('div');
+      for (const text of [
+        budget > 0 ? `На выполнение оценки — ${Math.ceil(budget / 60)} мин.` : '',
+        windowSeconds > 0 ? `Завершите оценку в течение ${windowSeconds / 3600} ч. после её начала.` : '',
+        notice,
+      ].filter(Boolean)) {
+        const line = document.createElement('p'); line.textContent = text; body.append(line);
+      }
+      void showParticipantDialog(rules, { title: rules.textContent, body });
+    };
+    actions.append(rules);
+  }
   article.appendChild(actions);
 };
 
@@ -170,18 +228,15 @@ const buildCard = (card, { primaryEntry = false, history = false } = {}) => {
     title.textContent = card.title;
     const details = document.createElement('p');
     details.className = 'participant-assessment-history-details';
-    details.textContent = [card.organization_name, formatAssessmentDate(card.closed_at),
-      card.action === 'open_processing' ? card.status_label : null].filter(Boolean).join(' · ');
+    details.textContent = [formatAssessmentDate(card.closed_at), card.organization_name].filter(Boolean).join(' · ');
     main.append(title, details);
   } else {
     const top = document.createElement('div');
     top.className = 'participant-assessment-top';
-    if (card.organization_name) {
-      const organization = document.createElement('span');
-      organization.className = 'participant-assessment-organization';
-      organization.textContent = card.organization_name;
-      top.appendChild(organization);
-    }
+    const label = document.createElement('span');
+    label.className = 'participant-assessment-label';
+    label.textContent = 'Текущая оценка';
+    top.append(label);
     const status = document.createElement('span');
     status.className = 'participant-assessment-status';
     status.textContent = card.status_label;
@@ -192,16 +247,36 @@ const buildCard = (card, { primaryEntry = false, history = false } = {}) => {
     const description = document.createElement('p');
     description.className = 'participant-assessment-description';
     description.textContent = card.description;
-    main.append(top, title, description);
+    main.append(top, title);
+    if (card.organization_name) {
+      const organization = document.createElement('p');
+      organization.className = 'participant-assessment-organization';
+      organization.textContent = card.organization_name;
+      main.append(organization);
+    }
+    main.append(description);
     const metadata = document.createElement('dl');
     metadata.className = 'participant-assessment-metadata';
-    assessmentMetadata(card).forEach(({ label, value }) => {
+    assessmentMetadata(card).filter(({ label }) => label !== 'Организация').forEach(({ label, value }) => {
       const item = document.createElement('div');
       const term = document.createElement('dt'); term.textContent = label;
       const detail = document.createElement('dd'); detail.textContent = value;
       item.append(term, detail); metadata.appendChild(item);
     });
     if (metadata.children.length) main.appendChild(metadata);
+    const { completed_positions: done, planned_total: total } = card;
+    if (Number.isInteger(done) && Number.isInteger(total) && total > 0 && done >= 0 && done <= total) {
+      const label = document.createElement('div');
+      label.className = 'participant-assessment-progress';
+      const text = document.createElement('span'); text.textContent = 'Завершено ситуаций';
+      const count = document.createElement('strong'); count.textContent = `${done} из ${total}`;
+      const meter = document.createElement('progress');
+      meter.setAttribute('aria-label', text.textContent);
+      meter.max = total;
+      meter.value = done;
+      label.append(text, count, meter);
+      main.append(label);
+    }
   }
   if (card.preparation) renderPreparation(main, card.preparation, { compact: true });
   article.appendChild(main);
@@ -214,7 +289,7 @@ let renderedOwner = null;
 let renderedEpoch = null;
 const cardBody = (card) => JSON.stringify({ ...card, preparation: null, action: null, button_label: null });
 const rememberCard = (article, card, options) => cardModels.set(article, {
-  body: cardBody(card), history: options.history,
+  body: cardBody(card), history: options.history, statusLabel: card.status_label, rules: JSON.stringify(card.rules),
   preparation: card.preparation && { ...card.preparation },
 });
 const updateCard = (article, card, options) => {
@@ -238,7 +313,9 @@ const updateCard = (article, card, options) => {
   if (card.preparation) renderPreparation(main, card.preparation, { compact: true });
   const actions = article.querySelector('.participant-assessment-actions');
   const button = actions?.querySelector('button');
-  if (button && card.action && card.button_label && button.dataset.dashboardAction === card.action) {
+  if (button && card.action && card.button_label && button.dataset.dashboardAction === card.action
+      && previous.statusLabel === card.status_label && previous.history === options.history
+      && previous.rules === JSON.stringify(card.rules)) {
     button.id = options.primaryEntry ? 'assessment-action-button' : '';
     button.textContent = options.history && card.action === 'open_report' ? 'Открыть отчёт' : card.button_label;
     button.className = `${options.history || card.action === 'open_processing' ? 'ghost-button' : 'primary-button'} participant-assessment-action`;
@@ -290,6 +367,7 @@ export const renderDashboard = () => {
   const sameOwner = renderedOwner === user?.id && renderedEpoch === state.identityEpoch;
   const reusable = new Map(sameOwner ? [...dashboardPanel.querySelectorAll('article[data-cycle-id]')]
     .filter(node => node.dataset.cycleId).map(node => [node.dataset.cycleId, node]) : []);
+  if (!sameOwner) dashboardPanel.querySelector('#dashboard-appeals')?.replaceChildren();
   renderedOwner = user?.id; renderedEpoch = state.identityEpoch;
   // Capture at application time, after the request: the user's latest focus wins.
   const focused = document.activeElement;
@@ -303,12 +381,8 @@ export const renderDashboard = () => {
   const current = Array.isArray(dashboard.current_assessments) ? dashboard.current_assessments : [];
   const completed = Array.isArray(dashboard.completed_assessments) ? dashboard.completed_assessments : [];
   currentAssessmentsTitle.textContent = current.length > 1 ? 'Текущие оценки' : 'Текущая оценка';
-  // Promote the latest closed Cycle into the main card only when no assignment is active.
-  // It remains a single entry; technical Report revisions never become separate rows.
-  const featured = current.length ? current : completed.slice(0, 1);
-  const previous = current.length ? completed : completed.slice(1);
-  renderCards(currentAssessments, featured, 'Пока нет назначенных оценок', 'Когда вам назначат оценку, она появится здесь', reusable);
-  renderCards(completedAssessments, previous, 'Здесь появятся результаты ваших оценок', 'Завершённые оценки пока отсутствуют', reusable);
+  renderCards(currentAssessments, current, 'Пока нет назначенных оценок', 'Когда вам назначат оценку, она появится здесь', reusable);
+  renderCards(completedAssessments, completed, 'Здесь появятся результаты ваших оценок', 'Завершённые оценки пока отсутствуют', reusable);
   if (cycleId && (wasSummary || wasCopy || wasAction)
       && (!focused.isConnected || (document.activeElement === document.body && focused !== document.activeElement))) {
     const card = [...dashboardPanel.querySelectorAll('article[data-cycle-id]')].find(node => node.dataset.cycleId === cycleId);
