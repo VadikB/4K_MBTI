@@ -558,7 +558,8 @@ def participant_trace(trace: dict) -> dict:
         'turns':[{**{k:x[k] for k in ('turn_id','sequence_no','speaker_type','speaker_id','content_text')},
                   'speaker_name':x.get('speaker_name')} for x in trace['turns']],
         'events':[{k:x[k] for k in ('event_id','event_type','sequence_no','material_id','payload_json')}
-                  for x in trace['events'] if x['event_type'] in ('material_disclosed','mandatory_update')]}
+                  for x in trace['events'] if x['event_type'] in ('material_disclosed','mandatory_update')
+                  and x['material_id'] != 'P00']}
 
 
 def participant_plan(plan: dict) -> dict:

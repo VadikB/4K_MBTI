@@ -463,12 +463,21 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
             },
             "closed_card": item["content"], "source": item["source"],
         } for item in case_rules.get("characters", [])]
+        initial_materials = situation["participant_payload"].get("initial_materials", [])
+        design = case_rules.get("scenario_contract")
+        if design:
+            initial_materials = [
+                {"material_id": "P00", "text": situation["participant_payload"]["introduction"]},
+                *initial_materials,
+            ]
+            if [item["material_id"] for item in initial_materials] != design["start_material_ids"]:
+                raise ValueError("M5_ADDRESSED_START_MATERIALS_MISMATCH")
         initial_runtime_materials = [{
             "material_id": item["material_id"], "kind": "initial_material", "speaker_id": None,
             "participant_payload": item, "disclosure_condition": {"type": "initial_presentation"},
             "event_condition": {"type": "scenario_start"}, "reaction_rule": None,
             "result_check": "Initial participant material is available from scenario start.",
-        } for item in situation["participant_payload"].get("initial_materials", [])]
+        } for item in initial_materials]
         execution["materials"] = initial_runtime_materials + case_rules.get("materials", [])
         execution["scenario"] = [{
             "step_id": item["step_id"], "order": item["order"],
@@ -476,7 +485,7 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
             "rules": [item["condition"]] if item.get("condition") else [],
             "source": item.get("source"),
         } for item in case_rules.get("scenario", [])]
-        execution["initial_materials"] = situation["participant_payload"].get("initial_materials", [])
+        execution["initial_materials"] = initial_materials
         execution["runtime_schema_version"] = 3
         execution["runtime_rules"] = case_rules
         execution["runtime_rule_ref"] = runtime_rule_ref

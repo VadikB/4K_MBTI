@@ -1233,7 +1233,13 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
   const dialogue = [
     ...(snapshot.trace?.turns || []).map((item) => ({...item, text:item.content_text,
       role:item.speaker_type === 'assessee' ? 'user' : 'assistant'})),
-    ...(snapshot.trace?.events || []).map((event) => ({...event, text:productEventText(event), role:'assistant'}))
+    ...(snapshot.trace?.events || []).map((event) => {
+      const delivery = event.payload_json;
+      const privateMessage = delivery?.recipient_ids?.length === 1 && delivery.recipient_ids[0] === 'assessee';
+      const sender = delivery?.speaker_name;
+      return { ...event, text: productEventText(event), role: 'assistant',
+        speaker_name: sender && privateMessage ? sender + ' · лично вам' : sender };
+    })
       // The start message already contains initial materials. Preserve later
       // content changes and mandatory updates, even when they reuse an ID.
       .filter((event) => event.event_type !== 'material_disclosed'
