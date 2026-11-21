@@ -419,10 +419,18 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     preparationReceiptRequired = fullPath;
     await page.request.post(base + '/__pytest__/release-preparation');
     step = 'real_llm_preparation';
-    await expect.poll(
-      async () => page.locator('#onboarding-title').innerText(),
-      { timeout: realProvider ? 600000 : 45000 },
-    ).toMatch(/^(Ваши кейсы подготовлены|Подготовка оценки)$/);
+    // The product stops automatic polling after a minute and offers an explicit
+    // status check. A real provider can finish later, so exercise that UI path.
+    const preparationStatusPath = base + '/users/assessment/cycles/preparation/' + encodeURIComponent(code);
+    await expect.poll(async () => {
+      const response = await page.request.get(preparationStatusPath);
+      expect(response.ok()).toBe(true);
+      return (await response.json()).status;
+    }, { timeout: realProvider ? 600000 : 45000 }).toBe('completed');
+    if (await page.locator('#onboarding-title').innerText() === 'Готовим вашу оценку') {
+      await page.getByRole('button', { name: 'Проверить состояние' }).click();
+    }
+    await expect(page.locator('#onboarding-title')).toHaveText('Ваши кейсы подготовлены');
     const preparationReceipt = fullPath
       ? await (await page.request.get(base + '/__pytest__/path-receipt')).json()
       : null;
@@ -552,6 +560,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     const stopAtFirstAS = process.env.P4K_STOP_AFTER_FIRST_AS === '1';
     const startPath = '**/users/assessment/cycles/start';
     let acceptedStarts = 0;
+    let httpStartStatus;
     if (stopAtFirstAS) {
       const prepared = beforeExplicitStart.prepared_plan;
       const pendingRuntime = await page.request.get(base + '/users/assessment/cycles/' + prepared.cycle_id + '/runtime');
@@ -564,6 +573,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await page.route(startPath, async (route) => {
         const result = await route.fetch();
         expect(result.status()).toBe(201);
+        httpStartStatus = result.status();
         acceptedStarts += 1;
         await route.abort('failed'); // The server committed; Chromium lost the receipt.
       });
@@ -572,7 +582,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const startResponse = page.waitForResponse((response) => response.request().method() === 'POST'
         && response.url().endsWith('/users/assessment/cycles/start'));
       await next.dblclick();
-      expect((await startResponse).status()).toBe(201);
+      httpStartStatus = (await startResponse).status();
+      expect(httpStartStatus).toBe(201);
     }
     await expect(page.locator('#interview-panel')).toBeVisible();
     await expect(page.locator('.interview-message--situation').first()).toBeVisible();
@@ -787,7 +798,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const introduction = runtime.current_situation.participant_payload.introduction;
       expect(introduction).toBeTruthy();
       await expect(page.locator('.interview-message--situation').first()).toContainText(introduction);
-      finalReceipt = { ...receipt, browser: browser.version(), http_start_status: started.status(),
+      finalReceipt = { ...receipt, browser: browser.version(), http_start_status: httpStartStatus,
         participant_state: await snapshot(), presented_as: {
           assessment_situation_id: runtime.current_situation.assessment_situation_id,
           participant_payload_checksum: checksum(runtime.current_situation.participant_payload),

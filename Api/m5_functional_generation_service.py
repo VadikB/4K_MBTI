@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from Api import m5_passport_generation as passport_generation
+from Api.m5_passport import allowed_profile, missing
 from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import aggregate, build_applicability_plan, normalize_results
 from Api.m5_case_runtime import checksum as runtime_checksum
@@ -96,7 +98,7 @@ def _protocol_package_ref(protocol_package: Path) -> dict[str, str]:
             "checksum": checksum(raw), "path": str(protocol_package.relative_to(ROOT))}
 
 
-def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id: str,
+def build_historical_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id: str,
                          synthetic: bool = False, case_value: dict[str, Any] | None = None,
                          author_as_example: dict[str, Any] | None = None,
                          profile_checksum: str | None = None,
@@ -105,6 +107,7 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
                          repair_package: Path = REPAIR_PACKAGE,
                          protocol_package: Path = PROTOCOL_PACKAGE,
                          provider_contract: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Reproduce the input contract of archived 0.2–0.5 laboratory runs."""
     number = case_id.rsplit(".", 1)[-1]
     case_path = _unique(f"02_cases/Case_SPEC_{number}_*.json", f"PERS_CASE_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
     example_path = _unique(f"04_as/AS_SPEC_{number}_FUNCTIONAL_*.json", f"PERS_AS_SOURCE_NOT_UNIQUE:{case_id}", source_root=source_root)
@@ -161,6 +164,47 @@ def build_input_snapshot(*, case_id: str, profile: dict[str, Any], operation_id:
     }
 
 
+def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: str, synthetic: bool = False,
+                            profile_checksum: str | None = None, case_version_checksum: str | None = None,
+                            as_package: Path = passport_generation.AS_PACKAGE,
+                            m2_path: Path = passport_generation.M2, m3_path: Path = passport_generation.M3,
+                            provider_contract: dict[str, Any] | None = None,
+                            profile_sources: dict | None = None,
+                            selected_base_role: str | None = None,
+                            runtime_rule_ref: dict | None = None, package_ref: dict | None = None) -> dict:
+    contract, contract_ref, refs = passport_generation.read_as_package(as_package)
+    actual = runtime_checksum(case_version)
+    if case_version_checksum and case_version_checksum != actual:
+        raise missing(case_version["case_id"], case_version["version"], "content_checksum")
+    projected, m2_ref = passport_generation.normalize_case(
+        case_version, contract_ref, m2_path=m2_path, m3_path=m3_path,
+    )
+    if selected_base_role is not None and selected_base_role != projected["base_role"]:
+        raise missing(projected["case_id"], projected["version"], "BaseRole→profile")
+    case = {"CaseID": projected["case_id"], "Version": projected["version"], "Паспорт": projected["passport"]}
+    # Resolve all mandatory checks before entering the provider.
+    try:
+        build_applicability_plan(case)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise missing(projected["case_id"], projected["version"], "16,18,22→Tester") from exc
+    refs.update({
+        "package": package_ref or {"compiler": {"source_schema_profile": "functional-passport-v1"}},
+        "case": {"passport": projected["passport_source"], "case_version_checksum": actual},
+        "m2": m2_ref, "as_contract": contract_ref,
+        "runtime_rule": runtime_rule_ref,
+        "profile": {"sha256": profile_checksum or checksum(profile), "sources": profile_sources or {}},
+    })
+    if provider_contract is not None:
+        refs["provider_contract"] = {key: provider_contract[key] for key in (
+            "version", "checksum", "provider", "endpoint", "model", "thinking", "supported_response_formats",
+        )}
+    return {
+        "schema_version": 2, "operation_id": operation_id, "synthetic": synthetic,
+        "created_at": datetime.now(timezone.utc).isoformat(), "case": case, "case_version": projected,
+        "as_contract": contract, "profile": allowed_profile(profile), "refs": refs,
+    }
+
+
 def _frozen_file(snapshot: dict[str, Any], ref_name: str) -> Path:
     ref = snapshot["refs"][ref_name]
     path = ROOT / ref["path"]
@@ -172,7 +216,6 @@ def _frozen_file(snapshot: dict[str, Any], ref_name: str) -> Path:
 
 
 def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, Any]:
-    expected = snapshot["author_as_example"]
     checks: list[dict[str, Any]] = []
     errors = []
     def check(code: str, passed: bool, actual: Any = None, *, path: str = "candidate_as") -> None:
@@ -182,6 +225,22 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
     check("json_object", isinstance(candidate, dict))
     if not isinstance(candidate, dict):
         return {"status": "FAIL", "checks": checks, "errors": errors}
+    if "as_contract" in snapshot:
+        serialized = json.dumps(candidate, ensure_ascii=False, separators=(",", ":"))
+        check("response_size", len(serialized) <= snapshot["as_contract"]["maximum_output_characters"],
+              len(serialized))
+        forbidden = {"Evidence", "IA", "participant_score", "participant_level", "author_assessment_situation", "author_as_example"}
+        def forbidden_keys(value):
+            if isinstance(value, dict):
+                return (set(value) & forbidden) | set().union(*(forbidden_keys(item) for item in value.values()))
+            if isinstance(value, list):
+                return set().union(*(forbidden_keys(item) for item in value))
+            return set()
+        violations = sorted(forbidden_keys(candidate))
+        check("no_premature_assessment", not violations, violations)
+        passport_generation.validate_candidate(snapshot, candidate, check)
+        return {"status": "FAIL" if errors else "PASS", "checks": checks, "errors": errors}
+    expected = snapshot["author_as_example"]
     package_ref = (snapshot.get("refs") or {}).get("package") or {}
     compiler = package_ref.get("compiler") or {}
     required = set(expected)
@@ -463,36 +522,39 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
 def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
     contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
-    compiler_profile = (((snapshot.get("refs") or {}).get("package") or {}).get("compiler") or {}).get(
-        "source_schema_profile"
-    )
-    two_layer = compiler_profile == "functional-personalization-indicator-v2"
-    required_fields = list(snapshot["author_as_example"].keys())
-    if two_layer:
-        required_fields.append(INDICATOR_LAYER_FIELD)
-    payload = {"profile": snapshot["profile"], "case": snapshot["case"],
-               "author_as_example": snapshot["author_as_example"], "requirements": {
-                   "output": "Верни только один JSON-объект полной AS с теми же верхнеуровневыми полями, что у author_as_example.",
-                   "required_top_level_fields_exact": required_fields,
-                   "omit_empty_required_fields": False,
-                   "status": "TEST_DRAFT", "current": False, "synthetic": snapshot["synthetic"],
-                   "must_adapt_all_dependent_parts": True, "must_not_create_evidence_or_scores": True,
-                   "compact_json": True, "do_not_expand_or_duplicate_author_content": True,
-                   **({"indicator_target_layers": {
-                       "author_layer": "server binds immutable author source after generation",
-                       "adapted_projection_location": "IndicatorObservability",
-                       "required_fields_per_adapted_target": list(ADAPTED_TARGET_FIELDS),
-                       "author_mapping": {"source_pointer": "/IndicatorObservability/{source_index}",
-                                          "source_checksum": "server-bound; provider must not calculate it"},
-                       "reference_namespaces": {
-                           "material_refs": "Материалы[].MaterialID",
-                           "event_refs": "События[].EventID",
-                           "character_refs": "Активные персонажи[].CharacterID",
-                           "authority_refs": "participant or character:<CharacterID>",
-                       },
-                       "preserve_author_meaning_observability_and_constraints": True,
-                   }} if two_layer else {}),
-                   "maximum_output_characters": int(len(canonical(snapshot["author_as_example"])) * 1.35)}}
+    if "as_contract" in snapshot:
+        payload = passport_generation.provider_basis(snapshot)
+    else:
+        compiler_profile = (((snapshot.get("refs") or {}).get("package") or {}).get("compiler") or {}).get(
+            "source_schema_profile"
+        )
+        two_layer = compiler_profile == "functional-personalization-indicator-v2"
+        required_fields = list(snapshot["author_as_example"].keys())
+        if two_layer:
+            required_fields.append(INDICATOR_LAYER_FIELD)
+        payload = {"profile": snapshot["profile"], "case": snapshot["case"],
+                   "author_as_example": snapshot["author_as_example"], "requirements": {
+                       "output": "Верни только один JSON-объект полной AS с теми же верхнеуровневыми полями, что у author_as_example.",
+                       "required_top_level_fields_exact": required_fields,
+                       "omit_empty_required_fields": False,
+                       "status": "TEST_DRAFT", "current": False, "synthetic": snapshot["synthetic"],
+                       "must_adapt_all_dependent_parts": True, "must_not_create_evidence_or_scores": True,
+                       "compact_json": True, "do_not_expand_or_duplicate_author_content": True,
+                       **({"indicator_target_layers": {
+                           "author_layer": "server binds immutable author source after generation",
+                           "adapted_projection_location": "IndicatorObservability",
+                           "required_fields_per_adapted_target": list(ADAPTED_TARGET_FIELDS),
+                           "author_mapping": {"source_pointer": "/IndicatorObservability/{source_index}",
+                                              "source_checksum": "server-bound; provider must not calculate it"},
+                           "reference_namespaces": {
+                               "material_refs": "Материалы[].MaterialID",
+                               "event_refs": "События[].EventID",
+                               "character_refs": "Активные персонажи[].CharacterID",
+                               "authority_refs": "participant or character:<CharacterID>",
+                           },
+                           "preserve_author_meaning_observability_and_constraints": True,
+                       }} if two_layer else {}),
+                       "maximum_output_characters": int(len(canonical(snapshot["author_as_example"])) * 1.35)}}
     messages = [{"role": "system", "content": instruction},
                 {"role": "system", "content": "Содержательный контракт:\n" + contract},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
@@ -503,12 +565,14 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
     provider_candidate, depth = extract_candidate_as(raw)
-    candidate = bind_indicator_target_layers(snapshot, provider_candidate)
+    candidate = (provider_candidate if "as_contract" in snapshot
+                 else bind_indicator_target_layers(snapshot, provider_candidate))
     provider_candidate_checksum = checksum(provider_candidate)
     candidate_checksum = checksum(candidate)
     return {"candidate_as": candidate, "candidate_checksum": candidate_checksum,
             "author_content_binding": {
-                "source": "frozen_input_snapshot.author_as_example",
+                "source": ("frozen_input_snapshot.case_version.passport" if "as_contract" in snapshot
+                           else "frozen_input_snapshot.author_as_example"),
                 "provider_candidate_checksum": provider_candidate_checksum,
                 "bound_candidate_checksum": candidate_checksum,
                 "changed": provider_candidate_checksum != candidate_checksum,
@@ -523,7 +587,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     batch_size = 8
     concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
     protocol_ref = (snapshot.get("refs") or {}).get("protocol_package") or {}
-    candidate_binding = protocol_ref.get("version") == "2.0.0"
+    passport_basis = passport_generation.provider_basis(snapshot) if "as_contract" in snapshot else None
+    candidate_binding = passport_basis is not None or protocol_ref.get("version") == "2.0.0"
     candidate_checksum = checksum(concrete_candidate) if candidate_binding else None
     payload_base = {"case": snapshot["case"], "profile": snapshot["profile"],
                "candidate_as": concrete_candidate,
@@ -557,6 +622,12 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                                  "paths": ["JSON path"], "reason": "string",
                                  "requirement_ref": "check_id/source_ref"}],
                }]}}
+    if passport_basis is not None:
+        payload_base = {
+            **passport_basis, "candidate_as": concrete_candidate, "candidate_checksum": candidate_checksum,
+            "required_output": payload_base["required_output"],
+            "deterministic_validation": generation["deterministic_validation"],
+        }
     adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
     tester_operations = []
@@ -589,7 +660,9 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
               for item in normalize_results(plan, tester_raw_checks)]
     protected = [item for item in plan["required_checks"] if item.get("protected")]
     challenge_payload = {
-        "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
+        **(passport_basis if passport_basis is not None else {
+            "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
+        }),
         "candidate_as": concrete_candidate,
         **({"candidate_checksum": candidate_checksum} if candidate_binding else {}),
         "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
@@ -617,6 +690,11 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "return_each_protected_check_once": True,
         },
     }
+    if passport_basis is not None:
+        challenge_payload = {
+            **passport_basis, "candidate_as": concrete_candidate, "candidate_checksum": candidate_checksum,
+            "protected_checks": protected, "required_output": payload_base["required_output"],
+        }
     challenger_operations = []
     challenger_raw_checks = []
     for batch_no, offset in enumerate(range(0, len(protected), batch_size), start=1):
@@ -680,34 +758,45 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
     """Ask PM-03 for one complete corrected AS; never patch or admit it server-side."""
     instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
     contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
-    repair_instruction, repair_prompt_ref = _load_repair_instruction(ROOT / snapshot["refs"]["repair_package"]["path"])
-    payload = {
-        "profile": snapshot["profile"], "case": snapshot["case"],
-        "author_as_example": snapshot["author_as_example"],
-        "rejected_candidate_as": concrete_adapted_candidate(generation["candidate_as"]),
-        "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
-        "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
-        "blocking_failures": tested["aggregation"]["blocking_failures"],
-        "deterministic_failures": tested["aggregation"]["deterministic_failures"],
-        "requirements": {
-            "output_contract": "full_as_json",
-            "preserve_case_identity_and_indicator_targets": True,
-            "fix_every_listed_failure_in_all_dependent_fields": True,
-            "do_not_weaken_or_remove_observation_conditions": True,
-            "must_not_create_evidence_or_scores": True,
-            "indicator_target_layers": {
-                "author_layer": "server binds immutable author source after repair",
-                "adapted_projection_location": "IndicatorObservability",
-                "required_fields_per_adapted_target": list(ADAPTED_TARGET_FIELDS),
-                "author_mapping": {
-                    "source_pointer": "/IndicatorObservability/{source_index}",
-                    "source_checksum": "server-bound; provider must not calculate it",
+    if "as_contract" in snapshot:
+        repair_instruction = _frozen_file(snapshot, "repair_prompt").read_text(encoding="utf-8")
+        repair_prompt_ref = snapshot["refs"]["repair_prompt"]
+        payload = {
+            **passport_generation.provider_basis(snapshot),
+            "rejected_candidate_as": generation["candidate_as"],
+            "blocking_failures": tested["aggregation"]["blocking_failures"],
+            "deterministic_failures": tested["aggregation"]["deterministic_failures"],
+            "validation_errors": generation["deterministic_validation"]["errors"],
+        }
+    else:
+        repair_instruction, repair_prompt_ref = _load_repair_instruction(ROOT / snapshot["refs"]["repair_package"]["path"])
+        payload = {
+            "profile": snapshot["profile"], "case": snapshot["case"],
+            "author_as_example": snapshot["author_as_example"],
+            "rejected_candidate_as": concrete_adapted_candidate(generation["candidate_as"]),
+            "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
+            "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
+            "blocking_failures": tested["aggregation"]["blocking_failures"],
+            "deterministic_failures": tested["aggregation"]["deterministic_failures"],
+            "requirements": {
+                "output_contract": "full_as_json",
+                "preserve_case_identity_and_indicator_targets": True,
+                "fix_every_listed_failure_in_all_dependent_fields": True,
+                "do_not_weaken_or_remove_observation_conditions": True,
+                "must_not_create_evidence_or_scores": True,
+                "indicator_target_layers": {
+                    "author_layer": "server binds immutable author source after repair",
+                    "adapted_projection_location": "IndicatorObservability",
+                    "required_fields_per_adapted_target": list(ADAPTED_TARGET_FIELDS),
+                    "author_mapping": {
+                        "source_pointer": "/IndicatorObservability/{source_index}",
+                        "source_checksum": "server-bound; provider must not calculate it",
+                    },
+                    "preserve_existing_valid_references": True,
                 },
-                "preserve_existing_valid_references": True,
+                "status": "TEST_DRAFT", "current": False,
             },
-            "status": "TEST_DRAFT", "current": False,
-        },
-    }
+        }
     adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
     messages = [
@@ -725,12 +814,14 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
     )
     provider_candidate, depth = extract_candidate_as(raw)
-    candidate = bind_indicator_target_layers(snapshot, provider_candidate)
+    candidate = (provider_candidate if "as_contract" in snapshot
+                 else bind_indicator_target_layers(snapshot, provider_candidate))
     provider_candidate_checksum = checksum(provider_candidate)
     candidate_checksum = checksum(candidate)
     return {"candidate_as": candidate, "candidate_checksum": candidate_checksum,
             "author_content_binding": {
-                "source": "frozen_input_snapshot.author_as_example",
+                "source": ("frozen_input_snapshot.case_version.passport" if "as_contract" in snapshot
+                           else "frozen_input_snapshot.author_as_example"),
                 "provider_candidate_checksum": provider_candidate_checksum,
                 "bound_candidate_checksum": candidate_checksum,
                 "changed": provider_candidate_checksum != candidate_checksum,
@@ -775,22 +866,27 @@ def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path 
     compiled_case = None
     execution_rules = None
     if tested["aggregation"]["admitted_for_participant"]:
-        compiler_profile = ((((snapshot.get("refs") or {}).get("package") or {}).get("compiler") or {})
-                            .get("source_schema_profile") or "functional-personalization-indicator-v1")
-        compiled_case = compile_case_values(
-            case=snapshot["case"], situation=generation["candidate_as"],
-            case_source_name=Path(snapshot["refs"]["case"]["path"]).name,
-            case_source_checksum=snapshot["refs"]["case"]["sha256"],
-            as_source_name=f"generated-{generation['candidate_checksum']}.json",
-            as_source_checksum=generation["candidate_checksum"],
-            source_schema_profile=compiler_profile,
-        )
-        package_cases = json.loads((functional_package / "case-package.json").read_text(encoding="utf-8"))["cases"]
-        package_version = json.loads((functional_package / "manifest.json").read_text(encoding="utf-8"))["version"]
-        runtime_bindings = load_runtime_rule_package(
-            runtime_package, package_cases, expected_case_package_version=package_version
-        )["bindings"]
-        execution_rules = build_execution_rules([compiled_case], runtime_bindings)
+        if "as_contract" in snapshot:
+            compiled_case, execution_rules = passport_generation.compile_candidate(
+                snapshot, generation["candidate_as"], generation["candidate_checksum"],
+            )
+        else:
+            compiler_profile = ((((snapshot.get("refs") or {}).get("package") or {}).get("compiler") or {})
+                                .get("source_schema_profile") or "functional-personalization-indicator-v1")
+            compiled_case = compile_case_values(
+                case=snapshot["case"], situation=generation["candidate_as"],
+                case_source_name=Path(snapshot["refs"]["case"]["path"]).name,
+                case_source_checksum=snapshot["refs"]["case"]["sha256"],
+                as_source_name=f"generated-{generation['candidate_checksum']}.json",
+                as_source_checksum=generation["candidate_checksum"],
+                source_schema_profile=compiler_profile,
+            )
+            package_cases = json.loads((functional_package / "case-package.json").read_text(encoding="utf-8"))["cases"]
+            package_version = json.loads((functional_package / "manifest.json").read_text(encoding="utf-8"))["version"]
+            runtime_bindings = load_runtime_rule_package(
+                runtime_package, package_cases, expected_case_package_version=package_version
+            )["bindings"]
+            execution_rules = build_execution_rules([compiled_case], runtime_bindings)
     return {"schema_version": 1, "input_snapshot_checksum": checksum(snapshot),
             "candidate_as": generation["candidate_as"], "candidate_checksum": generation["candidate_checksum"],
             "author_content_binding": generation["author_content_binding"],
@@ -817,7 +913,8 @@ def build_persistence_trace(snapshot: dict[str, Any], prepared: dict[str, Any]) 
         "input_snapshot_checksum": prepared["input_snapshot_checksum"],
         "source_snapshot": {
             "case": snapshot["case"],
-            "author_as_example": snapshot["author_as_example"],
+            **({"case_version": snapshot["case_version"]} if "as_contract" in snapshot
+               else {"author_as_example": snapshot["author_as_example"]}),
             "refs": snapshot["refs"],
             "profile_checksum": snapshot["refs"]["profile"]["sha256"],
         },

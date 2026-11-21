@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.passport_as_fixture import synthetic_as
 from Api import m5_functional_generation_service as functional_service
 from Api.llm.contracts import LlmGatewayError
 
@@ -18,19 +19,7 @@ class ControlledGateway:
     def chat_with_trace(self, messages, **kwargs):
         payload = json.loads(next(item["content"] for item in reversed(messages) if item["role"] == "user"))
         if ":generation:" in kwargs["routing_key"]:
-            candidate = json.loads(json.dumps(payload["author_as_example"], ensure_ascii=False))
-            materials = [item["MaterialID"] for item in candidate["Материалы"]]
-            events = [item["EventID"] for item in candidate["События"]]
-            characters = [item["CharacterID"] for item in candidate["Активные персонажи"]]
-            for index, target in enumerate(candidate["IndicatorObservability"]):
-                target.update({
-                    "material_refs": materials[:1], "event_refs": events[:1],
-                    "character_refs": characters[:1], "authority_refs": ["participant"],
-                    "author_mapping": {"source_pointer": f"/IndicatorObservability/{index}",
-                        "source_checksum": functional_service.checksum(
-                            payload["author_as_example"]["IndicatorObservability"][index])},
-                })
-            content = json.dumps(candidate, ensure_ascii=False)
+            content = json.dumps(synthetic_as(payload), ensure_ascii=False)
         else:
             required = ((payload.get("applicability_plan") or {}).get("required_checks")
                         or payload["protected_checks"])
@@ -91,7 +80,7 @@ def test_controlled_runner_compiles_all_27_rows():
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     for row in matrix["rows"]:
         result = run_row(matrix, row, ControlledGateway())
-        assert result["package"]["version"] == "0.5"
+        assert result["package"]["version"] == "0.6"
         assert result["admission"]["status"] == "PASS", row["id"]
         assert result["generation_operation"]["kind"] == "generation"
         assert result["repair"] is None

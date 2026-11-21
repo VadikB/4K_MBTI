@@ -39,6 +39,15 @@ def _command_request(request: dict) -> dict:
             if key not in {"preparation_key", "next_preparation_scope"}}
 
 
+def _owned_profile_snapshot(connection, *, profile_id: int, user_id: int) -> dict | None:
+    return connection.execute(
+        """SELECT content_json,assessment_configuration_id,checksum,organization_id,
+                  organization_context_version_id,role_profile_version_id,user_context_version_id
+           FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s""",
+        (profile_id, user_id),
+    ).fetchone()
+
+
 def latest_scope_operation(connection, *, user_id: int, profile_id: int, assignment_ref: str,
                            questionnaire_revision_id: int | None,
                            assignment_id: int | None = None) -> dict | None:
@@ -470,13 +479,6 @@ class ProductCyclePreparationQueue:
             thread.join(timeout=1.0)
 
     def _process(self, job: dict) -> None:
-        from Api import m10_product_flow, m7_cycle_planner
-        from Api.llm.deepseek_gateway import DeepSeekGateway
-        from Api.llm.provider_contract import load_provider_contract
-        from Api import m5_functional_generation_service
-        from Api.cycle_execution_manifest import resolve_cycle_dependency
-
-        failure_result = None
         try:
             with self._lease_heartbeat(job):
                 observer = observation.begin('cycle', job['operation_id'], job['attempt_token'],
@@ -511,6 +513,9 @@ class ProductCyclePreparationQueue:
         from Api.llm.deepseek_gateway import DeepSeekGateway
         from Api.llm.provider_contract import load_provider_contract
         from Api import m5_functional_generation_service
+        from Api.m5_passport_generation import AS_PACKAGE
+        from Api.m5_runtime_rules import resolve_preparation_binding
+        from Api.m5_storage import resolve_cycle_base_role
         from Api.cycle_execution_manifest import resolve_cycle_dependency
 
         failure_result = None
@@ -524,43 +529,33 @@ class ProductCyclePreparationQueue:
                 self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))
                 next_cycle_id = request.get("cycle_id") if request.get("kind") == "next" else None
                 if next_cycle_id:
-                    cycle = connection.execute(
-                        """SELECT personalized_profile_id FROM m5_cycles
+                    existing_cycle = connection.execute(
+                        """SELECT cycle_id,personalized_profile_id FROM m5_cycles
                            WHERE cycle_id=%s AND owner_user_id=%s""",
                         (next_cycle_id, job["user_id"]),
                     ).fetchone()
-                    if not cycle:
+                    if not existing_cycle:
                         raise ValueError("M7_CYCLE_NOT_FOUND")
-                    profile_id = cycle["personalized_profile_id"]
-                    functional = m10_product_flow.uses_functional_generation(
-                        connection, cycle_id=str(next_cycle_id),
-                    )
                 else:
-                    profile_id = m10_product_flow._owned_profile(
-                        connection,
-                        int(job["user_id"]),
-                        request.get("personalized_profile_id"),
-                    )
-                profile = connection.execute(
-                    "SELECT content_json,assessment_configuration_id,checksum,organization_id FROM assessment_personalized_profiles WHERE id=%s AND user_id=%s",
-                    (profile_id, job["user_id"]),
-                ).fetchone() if profile_id else None
-                if request.get('profile_checksum') and (not profile or profile['checksum'] != request['profile_checksum']
-                        or profile['organization_id'] != request.get('organization_id')):
-                    raise ValueError('PRODUCT_CYCLE_PREPARATION_PROFILE_SCOPE_CHANGED')
-                frozen_first = None
-                if not next_cycle_id:
-                    frozen_first = connection.execute(
-                        """SELECT c.cycle_id FROM m7_plan_request_keys k
+                    existing_cycle = connection.execute(
+                        """SELECT c.cycle_id,c.personalized_profile_id FROM m7_plan_request_keys k
                            JOIN m7_cycle_plans p ON p.id=k.plan_id JOIN m5_cycles c ON c.id=p.cycle_db_id
                            WHERE k.created_by=%s AND k.key=%s""",
                         (job["user_id"], f"product-prepare:{preparation_key}"),
                     ).fetchone()
-                if frozen_first:
+                profile_id = (existing_cycle["personalized_profile_id"] if existing_cycle else
+                              m10_product_flow._owned_profile(
+                                  connection, int(job["user_id"]), request.get("personalized_profile_id"),
+                              ))
+                profile = _owned_profile_snapshot(connection, profile_id=profile_id, user_id=job["user_id"])
+                if request.get('profile_checksum') and (not profile or profile['checksum'] != request['profile_checksum']
+                        or profile['organization_id'] != request.get('organization_id')):
+                    raise ValueError('PRODUCT_CYCLE_PREPARATION_PROFILE_SCOPE_CHANGED')
+                if existing_cycle:
                     functional = m10_product_flow.uses_functional_generation(
-                        connection, cycle_id=str(frozen_first["cycle_id"]),
+                        connection, cycle_id=str(existing_cycle["cycle_id"]),
                     )
-                elif not next_cycle_id:
+                else:
                     catalog_column = connection.execute("""SELECT EXISTS (
                         SELECT 1 FROM information_schema.columns
                         WHERE table_schema=current_schema() AND table_name='assessment_configurations'
@@ -569,7 +564,8 @@ class ProductCyclePreparationQueue:
                         JOIN m5_catalogs catalog ON catalog.id=c.catalog_version_id
                         JOIN m5_catalog_case_versions member ON member.catalog_db_id=catalog.id
                         JOIN m5_case_versions cv ON cv.id=member.case_version_id
-                        WHERE c.id=%s AND cv.case_id LIKE 'CASE.SPEC.%%' LIMIT 1""",
+                        WHERE c.id=%s AND (cv.case_id LIKE 'CASE.SPEC.%%'
+                            OR cv.content_json->>'schema_version'='4') LIMIT 1""",
                         (profile["assessment_configuration_id"],)).fetchone())
                 if next_cycle_id:
                     result = m10_product_flow.prepare_next_situation(
@@ -587,15 +583,22 @@ class ProductCyclePreparationQueue:
                     functional=functional,
                     decision=decision,
                 )
-                frozen_profile = dict(profile["content_json"]) if needs_generation else None
-                frozen_case = None
                 if needs_generation:
                     frozen_cycle = connection.execute(
                         "SELECT * FROM m5_cycles WHERE cycle_id=%s", (str(result["plan"]["cycle_id"]),)
                     ).fetchone()
+                    if frozen_cycle["personalized_profile_id"] != profile_id:
+                        profile = _owned_profile_snapshot(
+                            connection, profile_id=frozen_cycle["personalized_profile_id"], user_id=job["user_id"],
+                        )
+                    if not profile or profile["checksum"] != frozen_cycle["profile_ref_json"]["checksum"]:
+                        raise ValueError("PRODUCT_CYCLE_PREPARATION_PROFILE_SCOPE_CHANGED")
+                    frozen_profile = dict(profile["content_json"])
                     catalog_db_id = (frozen_cycle["catalog_ref_json"] or {}).get("db_id")
                     frozen_case_row = connection.execute(
-                        "SELECT cv.content_json,cv.content_checksum FROM m5_case_versions cv "
+                        "SELECT cv.id,cv.content_json,cv.content_checksum,member.runtime_rule_version_id,"
+                        "p.package_id,p.package_version FROM m5_case_versions cv "
+                        "JOIN m5_packages p ON p.id=cv.package_id "
                         "JOIN m5_catalog_case_versions member ON member.case_version_id=cv.id "
                         "WHERE member.catalog_db_id=%s AND cv.case_id=%s AND cv.case_version=%s",
                         (catalog_db_id, decision["selected_case_id"], decision["selected_case_version"]),
@@ -604,24 +607,31 @@ class ProductCyclePreparationQueue:
                         raise ValueError("M5_FUNCTIONAL_CASE_VERSION_NOT_FOUND")
                     frozen_case = dict(frozen_case_row["content_json"])
                     frozen_case_checksum = frozen_case_row["content_checksum"]
-                    functional_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_package")
-                    repair_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_repair")
-                    protocol_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_protocol")
-                    runtime_package = resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_runtime")
+                    generation_package_ref = {
+                        "id": frozen_case_row["package_id"], "version": frozen_case_row["package_version"],
+                        "compiler": {"source_schema_profile": "functional-passport-v1"},
+                    }
+                    selected_base_role = resolve_cycle_base_role(connection, frozen_cycle, frozen_profile)
+                    dependencies = (frozen_cycle["execution_manifest_json"] or {}).get("dependencies", {})
+                    as_package = (resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_as")
+                                  if "m5_functional_as" in dependencies else AS_PACKAGE)
+                    m2_path = resolve_cycle_dependency(dict(frozen_cycle), "m2_methodology") / "methodology.json"
+                    m3_path = resolve_cycle_dependency(dict(frozen_cycle), "m3_role_profiles") / "base_roles.json"
+                    runtime_rule_ref = resolve_preparation_binding(connection, frozen_case_row)
                     provider_path = resolve_cycle_dependency(dict(frozen_cycle), "provider_contract") / "manifest.json"
             if needs_generation:
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job)
-                snapshot = m5_functional_generation_service.build_input_snapshot(
-                    case_id=decision["selected_case_id"], profile=frozen_profile,
+                snapshot = m5_functional_generation_service.build_passport_snapshot(
+                    case_version=frozen_case, profile=frozen_profile,
                     operation_id=str(job["operation_id"]), synthetic=False,
-                    case_value=frozen_case["author_case"],
-                    author_as_example=frozen_case["author_assessment_situation"],
-                    profile_checksum=profile["checksum"],
-                    case_version_checksum=frozen_case_checksum,
-                    source_root=functional_package / "sources/functional-v0.2",
-                    repair_package=repair_package,
-                    protocol_package=protocol_package,
+                    profile_checksum=profile["checksum"], case_version_checksum=frozen_case_checksum,
+                    profile_sources={key: profile[key + "_version_id"] for key in (
+                        "organization_context", "role_profile", "user_context",
+                    )},
+                    selected_base_role=selected_base_role, as_package=as_package,
+                    m2_path=m2_path, m3_path=m3_path, runtime_rule_ref=runtime_rule_ref,
+                    package_ref=generation_package_ref,
                     provider_contract=load_provider_contract(provider_path),
                 )
                 provider = snapshot["refs"]["provider_contract"]
@@ -634,10 +644,7 @@ class ProductCyclePreparationQueue:
                     # Test/injected transports may intentionally expose no constructor options;
                     # their sent identity remains captured in the immutable operation trace.
                     generation_gateway = DeepSeekGateway()
-                generated = m5_functional_generation_service.prepare(
-                    snapshot, generation_gateway, functional_package=functional_package,
-                    runtime_package=runtime_package,
-                )
+                generated = m5_functional_generation_service.prepare(snapshot, generation_gateway)
                 if not generated["admitted_for_participant"]:
                     failure_result = {
                         "stage": "functional_tester_admission",

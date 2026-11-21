@@ -1,0 +1,68 @@
+{
+  "cases": [
+    {
+      "case_id": "CASE.SPEC.01",
+      "path": "sources/CASE.SPEC.01.json",
+      "sha256": "52cf0579a04aec67d34acddf6e802f2b679ada4c84846bb87307e02a7307dc1d",
+      "source_sha256": "eb2d1dfd0abc66637c2988dbe1eb3d6bd2600330d6aeb0c32a4493ce3d48dd53",
+      "version": "v0.5"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "path": "sources/CASE.SPEC.02.json",
+      "sha256": "532c03915912d0e9e10d32e727e1f6b45a0244c9b60c41f4ce88c4017f7b529f",
+      "source_sha256": "65a4cd6a3c7003a399e841788f325d37b464c7a8080e74a0d119ca33b18698a7",
+      "version": "v0.6"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "path": "sources/CASE.SPEC.03.json",
+      "sha256": "affdd16e1f82211040d1cb09518cc82b676846e7a392782adeddb1e64fba207e",
+      "source_sha256": "5a95eb813a0201edc3bcb5c8fcea5fecf23ba12f1ab60ecf28d6be1aacba2d4f",
+      "version": "v0.4"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "path": "sources/CASE.SPEC.04.json",
+      "sha256": "e60a57ce48bc841395b7d4079ae6d1050d2aa7ec4eb85ad561857599e9a27d56",
+      "source_sha256": "17e208d2a07a45258aeaf225c93ae721f03f2e6db93752d02828b1c2ca9687c0",
+      "version": "v0.5"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "path": "sources/CASE.SPEC.05.json",
+      "sha256": "db1f6d3355bea5d6fd8441e70ffa8a31b1dd1f8ebf0a118dc8ebc8315d760723",
+      "source_sha256": "f024d2c7e5b448681db987fc777fdb6447857a4792c3d3c779efcdd268fb6707",
+      "version": "v0.5"
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "path": "sources/CASE.SPEC.06.json",
+      "sha256": "381eebc6012d85b501fc4f49490c7672ad11d74675f2f680588b2d6b43cdadd3",
+      "source_sha256": "51ceec06875d50ecd7933ef2b2860a6d38c7c4a9cab1fef1781b3896bd5e3135",
+      "version": "v0.4"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "path": "sources/CASE.SPEC.07.json",
+      "sha256": "b10133ee0d3ac81fd0537e8385419a401ddad5d3ae2a7d450a09982a55d8031e",
+      "source_sha256": "79b98154e5bb1d1ec90ee2d58ef43e2be846a8cf348d4b989b23fa37ff8fa725",
+      "version": "v0.4"
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "path": "sources/CASE.SPEC.08.json",
+      "sha256": "3fd938fb3fdf094397962d39f469aaea1d3cfdd8083256519870cb8bb789320e",
+      "source_sha256": "cc6de199dc9fa956cf025043987fd461b3cf2bc8f105647affce5f258b2022c1",
+      "version": "v0.4"
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "path": "sources/CASE.SPEC.09.json",
+      "sha256": "9d740f7a90fd8b6913efd3a9e8eb3dfe4e422ec4ab3da4194d3d6de15cdee323",
+      "source_sha256": "eac993bf67d5cf9d52428a2fb03272095cec70a47710f4a1de1e5a9e4092f2af",
+      "version": "v0.4"
+    }
+  ],
+  "schema_version": 1
+}

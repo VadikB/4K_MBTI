@@ -15,6 +15,8 @@ from Api.assessment_case_contracts import (
     C34ExecutionEnvelope,
     CaseVersionV2,
     CaseVersionV3,
+    CaseVersionV4,
+    PreparedCaseV4,
     QAEvidenceV2,
     VersionRef,
     validate_case_version,
@@ -57,7 +59,7 @@ def _replace_casefold(value: str, source: str, replacement: str) -> str:
 
 
 def _materialize_v3_presentation(
-    case: CaseVersionV3, profile_snapshot: dict, profile_ref: dict, substitutions: list[dict],
+    case: CaseVersionV3 | PreparedCaseV4, profile_snapshot: dict, profile_ref: dict, substitutions: list[dict],
     *, source_schema_profile: str | None = None,
 ) -> dict:
     presentation = case.participant_presentation.model_dump()
@@ -96,7 +98,7 @@ def _materialize_v3_presentation(
             material["text"] = _replace_casefold(material["text"], target.source_value, replacement)
     presentation.pop("substitution_targets", None)
     if source_schema_profile in {
-        "functional-personalization-indicator-v1", "functional-personalization-indicator-v2",
+        "functional-personalization-indicator-v1", "functional-personalization-indicator-v2", "functional-passport-v1",
     }:
         # Functional AS defines its public copy in P00 + explicit start materials
         # (Generation_contract_v0.2 / 05_participant). Passport 8–13 describes the
@@ -130,7 +132,7 @@ def build_assessment_situation(
         raise ValueError("PROFILE_BASE_ROLE_NOT_APPLICABLE")
     evidence = [QAEvidenceV2.model_validate(x) for x in qa_evidence]
     admission = evaluate_admission(case, evidence, policy)
-    if isinstance(case, CaseVersionV3):
+    if isinstance(case, (CaseVersionV3, PreparedCaseV4)):
         # The generating operation's frozen source, not current config or a
         # guessed profession, selects the existing presentation contract.
         functional = (ai_operations or {}).get("functional_personalization") or {}
@@ -140,6 +142,8 @@ def build_assessment_situation(
             case, profile_snapshot, profile_ref, substitutions,
             source_schema_profile=compiler.get("source_schema_profile"),
         )
+    elif isinstance(case, CaseVersionV4):
+        raise ValueError("M5_CASE_REQUIRES_ADMITTED_GENERATED_AS")
     else:
         participant_payload = {
             "case_id": case.case_id,

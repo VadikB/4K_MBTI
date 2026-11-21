@@ -20,3 +20,8 @@ def test_asux04_prepared_next_keeps_exact_route_and_time(product_db, monkeypatch
     functional_path(product_db, monkeypatch, tmp_path, True, False, None, None,
                     next_failure='TECHNICAL' if case == 'TECHNICAL_RETRY' else None,
                     next_expiry=case == 'CALENDAR_EXPIRY')
+
+
+def test_passport_bank_standard_first_start_and_next(product_db, monkeypatch, tmp_path):
+    functional_path(product_db, monkeypatch, tmp_path, False, False, "after_provider", None,
+                    passport_bank=True, refresh_profile_before_recovery=True)

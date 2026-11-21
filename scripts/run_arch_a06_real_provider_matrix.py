@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Api import m5_functional_generation_service as functional_service
+from Api.m5_passport_generation import load_bank_case
 from Api.llm.deepseek_gateway import DeepSeekGateway
 from scripts.run_functional_personalization_matrix import build_synthetic_profile
 
@@ -83,8 +84,9 @@ def source_row(matrix: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
 
 def run_row(matrix: dict[str, Any], row: dict[str, Any], gateway: Any) -> dict[str, Any]:
     profile = build_synthetic_profile(source_row(matrix, row))
-    snapshot = functional_service.build_input_snapshot(
-        case_id=row["case_id"], profile=profile, operation_id=row["id"],
+    case, package = load_bank_case(row["case_id"])
+    snapshot = functional_service.build_passport_snapshot(
+        case_version=case, package_ref=package, profile=profile, operation_id=row["id"],
         synthetic=True, profile_checksum=profile["checksum"],
     )
     prepared = functional_service.prepare(snapshot, gateway)

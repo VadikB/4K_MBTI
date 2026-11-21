@@ -132,7 +132,7 @@ def repair_one(*, row: dict[str, Any], position: dict[str, Any], gateway: Any,
             reason = checked.get("conclusion", {}).get("reason")
             feedback = reason if isinstance(reason, str) and reason.strip() else feedback
             continue
-        snapshot = service.build_input_snapshot(
+        snapshot = service.build_historical_input_snapshot(
             case_id=row["CaseID"], profile=saved["profile"],
             operation_id=f"negative-v2-repair:{row['NegativeID']}", synthetic=True,
         )

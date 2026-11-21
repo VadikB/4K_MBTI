@@ -61,8 +61,8 @@ def profile(task):
 
 def test_shared_service_admits_only_after_deterministic_and_independent_checks():
     gateway = Gateway()
-    first = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("credit risk"), operation_id="op-1")
-    second = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("warehouse supply"), operation_id="op-2")
+    first = service.build_historical_input_snapshot(case_id="CASE.SPEC.01", profile=profile("credit risk"), operation_id="op-1")
+    second = service.build_historical_input_snapshot(case_id="CASE.SPEC.01", profile=profile("warehouse supply"), operation_id="op-2")
     result_a, result_b = service.prepare(first, gateway), service.prepare(second, gateway)
     assert result_a["admitted_for_participant"] is True
     assert result_b["admitted_for_participant"] is True
@@ -120,7 +120,7 @@ def test_provider_cannot_overwrite_frozen_author_indicator_content():
                                        provider={"finish_reason": "stop"})
             return super().chat_with_trace(messages, **kwargs)
 
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="a06-pilot-regression",
     )
     result = service.prepare(snapshot, PilotMutationGateway())
@@ -164,7 +164,7 @@ def test_saved_r10_pilot_uses_adapted_sales_view_for_semantic_review():
 
 
 def test_repair_receives_concrete_projection_and_two_layer_requirements():
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="repair-two-layer",
     )
     generated = service.generate(snapshot, Gateway())
@@ -202,7 +202,7 @@ def test_repair_receives_same_frozen_content_contract_as_generation(case_id):
             self.messages.append(deepcopy(messages))
             return super().chat_with_trace(messages, **kwargs)
 
-    snapshot = service.build_input_snapshot(case_id=case_id, profile=profile("synthetic tasks"),
+    snapshot = service.build_historical_input_snapshot(case_id=case_id, profile=profile("synthetic tasks"),
         operation_id="repair-contract", synthetic=True)
     gateway = CaptureGateway()
     generation = service.generate(snapshot, gateway)
@@ -221,7 +221,7 @@ def test_repair_receives_same_frozen_content_contract_as_generation(case_id):
 
 
 def test_repair_reads_contract_from_snapshot_ref_not_default_package(tmp_path):
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
         operation_id="repair-frozen-contract", synthetic=True)
     generation = service.generate(snapshot, Gateway())
     # Technical snapshot fixture: whitespace differs, normative content is unchanged.
@@ -244,7 +244,7 @@ def test_repair_reads_contract_from_snapshot_ref_not_default_package(tmp_path):
 
 @pytest.mark.parametrize("failure", ["checksum", "unavailable"])
 def test_repair_rejects_broken_frozen_contract_before_gateway(failure):
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
         operation_id="repair-invalid-contract", synthetic=True)
     generation = service.generate(snapshot, Gateway())
     if failure == "checksum":
@@ -282,7 +282,7 @@ def test_repeated_blocking_failure_is_not_admitted_after_single_repair():
             return response
 
     gateway = AlwaysRejectedGateway()
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.02", profile=profile("synthetic tasks"),
         operation_id="repair-remains-rejected", synthetic=True)
     result = service.prepare(snapshot, gateway)
 
@@ -295,7 +295,7 @@ def test_repeated_blocking_failure_is_not_admitted_after_single_repair():
 
 
 def test_author_binding_does_not_recreate_missing_indicator_target():
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="a06-missing-target",
     )
     candidate = deepcopy(snapshot["author_as_example"])
@@ -312,7 +312,7 @@ def test_author_binding_does_not_recreate_missing_indicator_target():
 
 
 def test_two_layer_contract_accepts_valid_adaptation_and_compiles_it():
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-positive",
     )
     result = service.prepare(snapshot, Gateway())
@@ -335,7 +335,7 @@ def test_two_layer_contract_accepts_valid_adaptation_and_compiles_it():
 
 
 def test_two_layer_contract_rejects_lost_condition_bad_reference_and_authority():
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-negative",
     )
     gateway = Gateway()
@@ -358,7 +358,7 @@ def test_two_layer_contract_rejects_lost_condition_bad_reference_and_authority()
 
 
 def test_two_layer_contract_rejects_duplicate_adapted_target_before_mapping():
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-duplicate",
     )
     generated = service.generate(snapshot, Gateway())
@@ -398,7 +398,7 @@ def test_two_layer_contract_rejects_semantic_substitution_from_independent_teste
                                        provider={"finish_reason": "stop"})
             return super().chat_with_trace(messages, **kwargs)
 
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("sales"), operation_id="two-layer-semantic",
     )
     generation = service.generate(snapshot, SemanticSubstitutionGateway())
@@ -420,7 +420,7 @@ def test_frozen_package_03_snapshot_keeps_legacy_handoff_contract():
             return super().chat_with_trace(messages, **kwargs)
 
     package_03 = service.ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.3"
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("legacy"), operation_id="legacy-03",
         source_root=package_03 / "sources/functional-v0.2",
     )
@@ -439,7 +439,7 @@ def test_shared_service_closes_admission_when_tester_omits_required_checks():
             if ":tester:" in kwargs["routing_key"]:
                 return SimpleNamespace(content='{"checks":[]}', sent={}, provider={"finish_reason":"stop"})
             return super().chat_with_trace(messages, **kwargs)
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-x")
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-x")
     result = service.prepare(snapshot, EmptyTester())
     assert result["admitted_for_participant"] is False
     assert result["tester"]["aggregation"]["status"] == "INCOMPLETE"
@@ -465,7 +465,7 @@ def test_tester_rejects_check_returned_by_wrong_batch():
                 response.content = json.dumps(body)
             return response
 
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"),
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"),
                                             operation_id="tester-batch-binding")
     result = service.prepare(snapshot, MisroutedGateway())
     assert result["admitted_for_participant"] is False
@@ -489,7 +489,7 @@ def test_protocol_v2_rejects_unbound_candidate_review(stage, binding):
                 response.content = json.dumps(body)
             return response
 
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"),
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"),
                                             operation_id=f"candidate-binding-{stage}-{binding}")
     result = service.prepare(snapshot, UnboundGateway())
     assert snapshot["refs"]["protocol_package"]["version"] == "2.0.0"
@@ -502,7 +502,7 @@ def test_protocol_v2_rejects_unbound_candidate_review(stage, binding):
 
 
 def test_frozen_protocol_v1_still_accepts_its_original_checks_only_envelope():
-    snapshot = service.build_input_snapshot(
+    snapshot = service.build_historical_input_snapshot(
         case_id="CASE.SPEC.01", profile=profile("legacy"), operation_id="protocol-v1-compatibility",
         protocol_package=service.ROOT / "assessment_definitions/prompts/m5_functional_protocol/v1",
     )
@@ -523,7 +523,7 @@ def test_malformed_provider_json_is_retried_once_without_salvaging_fragments():
             if self.calls == 1: response.content += '{"second":"object"}'
             return response
     gateway = MalformedOnce()
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-r")
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-r")
     result = service.prepare(snapshot, gateway)
     assert result["admitted_for_participant"] is True
     assert result["generation_operation"]["parse_failures"][0]["code"] == "PROVIDER_JSON_INVALID"
@@ -555,7 +555,7 @@ def test_blocking_tester_failure_triggers_one_full_repair_and_retest():
                                            provider={"finish_reason": "stop"})
             return super().chat_with_trace(messages, **kwargs)
 
-    snapshot = service.build_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-repair")
+    snapshot = service.build_historical_input_snapshot(case_id="CASE.SPEC.01", profile=profile("risk"), operation_id="op-repair")
     result = service.prepare(snapshot, RepairingGateway())
     assert result["admitted_for_participant"] is True
     assert result["repair"]["original_tester"]["aggregation"]["status"] == "FAIL"
@@ -594,7 +594,7 @@ def test_admission01_protocol_failure_never_requests_candidate_repair(mutation, 
             return response
 
     gateway = BrokenReview()
-    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+    snapshot = service.build_historical_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
                                            operation_id=f'admission01-{reviewer}-{mutation}', synthetic=True)
     result = service.prepare(snapshot, gateway)
     record_property('generation_calls', len(gateway.profiles))
@@ -640,7 +640,7 @@ def test_admission01_tester_block_survives_incomplete_challenger_and_is_retested
             return response
 
     gateway = MixedReview()
-    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+    snapshot = service.build_historical_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
                                            operation_id='admission01-mixed', synthetic=True)
     result = service.prepare(snapshot, gateway)
     record_property('generation_calls', len(gateway.profiles))
@@ -674,7 +674,7 @@ def test_admission01_malformed_candidate_is_structured_validation_failure(field,
                 response.content = json.dumps(candidate)
             return response
 
-    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+    snapshot = service.build_historical_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
                                            operation_id='admission01-shape', synthetic=True)
     gateway = MalformedCandidate()
     if stage == 'generation':
@@ -691,7 +691,7 @@ def test_admission01_malformed_candidate_is_structured_validation_failure(field,
 
 @pytest.mark.parametrize('case_id', ['CASE.SPEC.02', 'CASE.SPEC.07'])
 def test_admission01_written_case_accepts_empty_character_namespace(case_id):
-    snapshot = service.build_input_snapshot(case_id=case_id, profile=profile('synthetic'),
+    snapshot = service.build_historical_input_snapshot(case_id=case_id, profile=profile('synthetic'),
                                            operation_id='admission01-empty-characters', synthetic=True)
     assert snapshot['author_as_example']['Активные персонажи'] == []
     result = service.prepare(snapshot, Gateway())
@@ -718,7 +718,7 @@ def test_admission01_json_retry_keeps_same_candidate_and_existing_limit(stage, e
                     response.content = '{"checks":'
             return response
 
-    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+    snapshot = service.build_historical_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
                                            operation_id='admission01-json', synthetic=True)
     gateway = ReviewJson()
     result = service.prepare(snapshot, gateway)
@@ -749,7 +749,7 @@ def test_admission01_bad_reference_is_checked_in_generated_and_repaired_candidat
                 response.content = json.dumps(candidate)
             return response
 
-    snapshot = service.build_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
+    snapshot = service.build_historical_input_snapshot(case_id='CASE.SPEC.01', profile=profile('synthetic'),
                                            operation_id='admission01-bad-ref', synthetic=True)
     if stage == 'generation':
         result = service.generate(snapshot, InvalidReference())

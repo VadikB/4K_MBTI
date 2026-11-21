@@ -211,10 +211,12 @@ def publication_plan(
     if len(cases) != len(selected):
         raise ValueError("M5_CATALOG_CASE_OUTSIDE_PACKAGE")
     case_types = load_case_type_catalog()
+    if runtime_rule_version_id is None and any(row["content_json"].get("schema_version") == 4 for row in cases):
+        raise ValueError("M5_PASSPORT_RUNTIME_BINDING_REQUIRED")
     for row in cases:
         content = row["content_json"]
         # Historical rows without the v2/v3 Case contract have no typed CaseTypeIDs.
-        if content.get("schema_version") in (2, 3) or "case_type_ids" in content:
+        if content.get("schema_version") in (2, 3, 4) or "case_type_ids" in content:
             case_types.validate(content.get("case_type_ids"), case_id=row["case_id"], pointer="/case_type_ids")
     if runtime_rule_version_id is not None:
         covered = connection.execute(

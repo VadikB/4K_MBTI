@@ -19,6 +19,8 @@ if __package__ in (None, ""):
 from Api.m5_case_runtime import checksum
 from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_runtime_rules import load_runtime_rule_package
+from Api.m5_passport_generation import BANK_PACKAGE
+from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as BANK_RUNTIME_DIR
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,10 +34,10 @@ ADMISSION_EVIDENCE = {
 }
 
 
-def build_trace() -> dict[str, Any]:
-    verification = verify_package_directory(PACKAGE_DIR)
-    package = json.loads((PACKAGE_DIR / "case-package.json").read_text())
-    manifest = json.loads((PACKAGE_DIR / "manifest.json").read_text())
+def build_trace(package_dir: Path = PACKAGE_DIR, runtime_dir: Path = RUNTIME_DIR) -> dict[str, Any]:
+    verification = verify_package_directory(package_dir)
+    package = json.loads((package_dir / "case-package.json").read_text())
+    manifest = json.loads((package_dir / "manifest.json").read_text())
     artifacts = {item["name"]: item["sha256"] for item in manifest["artifacts"]}
     cases = sorted(package["cases"], key=lambda item: item["case_id"])
     if [item["case_id"] for item in cases] != EXPECTED_CASE_IDS:
@@ -43,27 +45,30 @@ def build_trace() -> dict[str, Any]:
     if {item["base_role"] for item in cases} != {"specialist_expert"}:
         raise ValueError("SPECIALIST_NINE_CASE_ROLE_MISMATCH")
     runtime = load_runtime_rule_package(
-        RUNTIME_DIR, cases, expected_case_package_version=manifest["version"]
+        runtime_dir, cases, expected_case_package_version=manifest["version"]
     )
     registry = []
     for case in cases:
-        number = case["case_id"].rsplit(".", 1)[-1]
-        source_name = next(
-            name for name in artifacts
-            if name.startswith(f"sources/Case_SPEC_{number}_") and name.count("/") == 1
-        )
-        as_name = next(
-            name for name in artifacts
-            if name.startswith(f"sources/AS_SPEC_{number}_") and name.count("/") == 1
-        )
+        if case["schema_version"] == 4:
+            source_name = case["passport_source"]["file"]
+            source_refs = {"as_contract_ref": case["as_contract_ref"]}
+        else:
+            number = case["case_id"].rsplit(".", 1)[-1]
+            source_name = next(
+                name for name in artifacts
+                if name.startswith(f"sources/Case_SPEC_{number}_") and name.count("/") == 1
+            )
+            as_name = next(
+                name for name in artifacts
+                if name.startswith(f"sources/AS_SPEC_{number}_") and name.count("/") == 1
+            )
+            source_refs = {"assessment_situation_source": {"path": as_name, "sha256": artifacts[as_name]}}
         registry.append({
-            "case_id": case["case_id"],
-            "case_version": case["version"],
-            "base_role": case["base_role"],
-            "case_status": case["status"],
+            "case_id": case["case_id"], "case_version": case["version"],
+            "base_role": case["base_role"], "case_status": case["status"],
             "db_content_checksum": checksum(case),
             "source": {"path": source_name, "sha256": artifacts[source_name]},
-            "assessment_situation_source": {"path": as_name, "sha256": artifacts[as_name]},
+            **source_refs,
         })
     admitted = (
         verification.get("methodology_admission") == "PASS"
@@ -96,21 +101,24 @@ def build_trace() -> dict[str, Any]:
     }
 
 
-def apply_import(trace: dict[str, Any]) -> dict[str, Any]:
+def apply_import(trace: dict[str, Any], package_dir: Path = PACKAGE_DIR,
+                 runtime_dir: Path = RUNTIME_DIR) -> dict[str, Any]:
     from Api.database import get_connection
     from Api.m5_catalog_integrity import publication_plan
     from Api.m5_runtime_rules import import_runtime_rule_version
     from Api.m5_storage import import_package_directory, package_readback
     from scripts.build_m5_sales_package import build_execution_rules
 
-    package = json.loads((PACKAGE_DIR / "case-package.json").read_text())
+    package = json.loads((package_dir / "case-package.json").read_text())
     loaded_runtime = load_runtime_rule_package(
-        RUNTIME_DIR, package["cases"], expected_case_package_version=trace["package"]["version"]
+        runtime_dir, package["cases"], expected_case_package_version=trace["package"]["version"]
     )
     with get_connection() as connection:
-        imported = import_package_directory(connection, PACKAGE_DIR)
+        imported = import_package_directory(connection, package_dir)
+        rules = (json.loads((package_dir / "execution-rules.json").read_bytes()) if package["schema_version"] == 4
+                 else build_execution_rules(package["cases"], loaded_runtime["bindings"]))
         runtime = import_runtime_rule_version(
-            connection, loaded_runtime, build_execution_rules(package["cases"], loaded_runtime["bindings"]),
+            connection, loaded_runtime, rules,
             package_db_id=imported["package_db_id"],
         )
         readback = package_readback(connection, imported["package_db_id"])
@@ -157,6 +165,7 @@ def build_admitted_materials(decision_basis: str) -> tuple[dict[str, Any], dict[
 
 def build_release_artifacts(
     package: dict[str, Any], runtime: dict[str, Any], *, usage_scope: str,
+    package_dir: Path = PACKAGE_DIR,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Assign immutable DB versions and seal the derived package and rule bindings."""
     from scripts.build_m5_sales_package import build_execution_rules
@@ -164,9 +173,10 @@ def build_release_artifacts(
     if usage_scope not in {"assessment", "qa"}:
         raise ValueError("M5_USAGE_SCOPE_INVALID")
     scope_suffix = "-qa" if usage_scope == "qa" else ""
-    release_suffix = f"-admitted.1{scope_suffix}"
-    source_manifest = json.loads((PACKAGE_DIR / "manifest.json").read_text())
-    source_package = json.loads((PACKAGE_DIR / "case-package.json").read_text())
+    passport_bank = package["schema_version"] == 4
+    release_suffix = f"-{'passport' if passport_bank else 'admitted'}.1{scope_suffix}"
+    source_manifest = json.loads((package_dir / "manifest.json").read_text())
+    source_package = json.loads((package_dir / "case-package.json").read_text())
     source_ref = {
         "id": source_manifest["id"], "version": source_manifest["version"],
         "checksum": checksum({"package": source_package, "manifest": source_manifest}),
@@ -175,12 +185,15 @@ def build_release_artifacts(
     package["status"] = "FROZEN"
     bindings = runtime["bindings"]
     for case in package["cases"]:
-        # The author payload keeps the approved source revision.
         case["version"] += release_suffix
+        if passport_bank:
+            case["passport"]["7 Version"] = case["version"]
         bindings["case_bindings"][case["case_id"]].update(
             case_version=case["version"], case_checksum=checksum(case),
         )
-    rules = build_execution_rules(package["cases"], bindings)
+    rules = ({"schema_version": 3, "status": "structured_draft", "owner_task": "M5-01",
+              "case_bindings": bindings["case_bindings"]} if passport_bank
+             else build_execution_rules(package["cases"], bindings))
     replacements = {"case-package.json": package, "execution-rules.json": rules}
     manifest = {
         **source_manifest, "version": package["version"], "status": package["status"],
@@ -196,7 +209,7 @@ def build_release_artifacts(
         "id": runtime_manifest["id"], "version": runtime_manifest["version"],
         "manifest_checksum": runtime["manifest_checksum"],
     }
-    runtime_version = f"1.2.1{scope_suffix}"
+    runtime_version = f"{'1.3.1' if passport_bank else '1.2.1'}{scope_suffix}"
     bindings["version"] = runtime_version
     bindings.pop("artifact_checksum")
     bindings["artifact_checksum"] = digest(json_bytes(bindings))
@@ -205,6 +218,7 @@ def build_release_artifacts(
         source={
             "case_package_id": manifest["id"], "case_package_version": manifest["version"],
             "runtime_ref": source_runtime_ref,
+            **({"as_contract_ref": package["as_contract_ref"]} if passport_bank else {}),
         },
         artifacts=[{"name": "event-bindings.json", "sha256": bindings["artifact_checksum"]}],
     )
@@ -212,17 +226,54 @@ def build_release_artifacts(
     return manifest, rules
 
 
+def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scope: str,
+                             evidence_path: Path | None) -> tuple[dict, dict, dict]:
+    package = json.loads((package_dir / "case-package.json").read_bytes())
+    runtime = load_runtime_rule_package(runtime_dir, package["cases"], expected_case_package_version=package["version"])
+    expected = {case["case_id"]: checksum(case) for case in package["cases"]}
+    if usage_scope == "qa":
+        # Only QA scope receives synthetic evidence. Assessment requires review of
+        # the exact passport checksums AND the new AS result contract.
+        artifact = package_dir / "verification-report.json"
+        raw = artifact.read_bytes()
+    else:
+        if evidence_path is None:
+            raise ValueError("M5_PASSPORT_BANK_ASSESSMENT_EVIDENCE_REQUIRED")
+        artifact = evidence_path
+        raw = artifact.read_bytes()
+        evidence = json.loads(raw)
+        if (evidence.get("as_contract_ref") != package["as_contract_ref"] or evidence.get("cases") != expected
+                or evidence.get("scopes") != {key: "PASS" for key in ADMISSION_EVIDENCE}):
+            raise ValueError("M5_PASSPORT_BANK_ASSESSMENT_EVIDENCE_MISMATCH")
+    path = str(artifact.relative_to(ROOT)) if artifact.is_relative_to(ROOT) else artifact.name
+    ref = {"path": path, "sha256": digest(raw)}
+    for case in package["cases"]:
+        case["status"] = "FROZEN"
+    return package, runtime, {scope: ref for scope in ADMISSION_EVIDENCE}
+
+
 def publish_admitted_catalog(
     trace: dict[str, Any], *, published_by: int, decision_basis: str,
     catalog_id: str, catalog_version: str, idempotency_key: str,
-    organization_id: int | None, usage_scope: str = "assessment",
+    organization_id: int | None, usage_scope: str = "assessment", package_dir: Path = PACKAGE_DIR,
+    runtime_dir: Path = RUNTIME_DIR, evidence_path: Path | None = None,
 ) -> dict[str, Any]:
     from Api.database import get_connection
     from Api.m5_catalog_integrity import catalog_readback, publish_catalog
     from Api.m5_runtime_rules import import_runtime_rule_version
     from Api.m5_storage import import_package, package_readback
-    package, loaded_runtime, evidence_refs = build_admitted_materials(decision_basis)
-    manifest, execution_rules = build_release_artifacts(package, loaded_runtime, usage_scope=usage_scope)
+    if not str(decision_basis or "").strip():
+        raise ValueError("SPECIALIST_ADMISSION_DECISION_BASIS_REQUIRED")
+    if package_dir == PACKAGE_DIR:
+        package, loaded_runtime, evidence_refs = build_admitted_materials(decision_basis)
+    else:
+        verify_package_directory(package_dir)
+        package, loaded_runtime, evidence_refs = build_passport_admission(
+            package_dir, runtime_dir, usage_scope=usage_scope, evidence_path=evidence_path,
+        )
+    manifest, execution_rules = build_release_artifacts(
+        package, loaded_runtime, usage_scope=usage_scope, package_dir=package_dir,
+    )
     with get_connection() as connection:
         imported = import_package(
             connection, package=package, manifest=manifest, execution_rules=execution_rules
@@ -275,28 +326,36 @@ def publish_admitted_catalog(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply-import", action="store_true")
+    parser.add_argument("--historical-0.5", dest="historical_0_5", action="store_true", help="Replay the historical release.")
+    parser.add_argument("--assessment-evidence", type=Path, help="Reviewed admission evidence for the passport bank.")
     parser.add_argument("--publish-admitted-catalog", action="store_true")
     parser.add_argument("--published-by", type=int)
     parser.add_argument("--decision-basis")
     parser.add_argument("--catalog-id", default="specialist-pilot")
-    parser.add_argument("--catalog-version", default="1.0")
-    parser.add_argument("--idempotency-key", default="specialist-pilot-1.0")
+    parser.add_argument("--catalog-version")
+    parser.add_argument("--idempotency-key")
     parser.add_argument("--organization-id", type=int)
     parser.add_argument("--usage-scope", choices=("assessment", "qa"), default="assessment",
                         help="Publication scope; qa uses synthetic evidence and separate artifact versions.")
     args = parser.parse_args()
-    result = build_trace()
+    package_dir, runtime_dir = ((PACKAGE_DIR, RUNTIME_DIR) if args.historical_0_5
+                                else (BANK_PACKAGE, BANK_RUNTIME_DIR))
+    default_version = "1.0" if args.historical_0_5 else ("1.1-qa" if args.usage_scope == "qa" else "1.1")
+    catalog_version = args.catalog_version or default_version
+    idempotency_key = args.idempotency_key or f"{args.catalog_id}-{catalog_version}"
+    result = build_trace(package_dir, runtime_dir)
     if args.publish_admitted_catalog:
         if args.published_by is None or not args.decision_basis:
             parser.error("--publish-admitted-catalog requires --published-by and --decision-basis")
         result["database"] = publish_admitted_catalog(
             copy.deepcopy(result), published_by=args.published_by, decision_basis=args.decision_basis,
-            catalog_id=args.catalog_id, catalog_version=args.catalog_version,
-            idempotency_key=args.idempotency_key, organization_id=args.organization_id,
-            usage_scope=args.usage_scope,
+            catalog_id=args.catalog_id, catalog_version=catalog_version,
+            idempotency_key=idempotency_key, organization_id=args.organization_id,
+            usage_scope=args.usage_scope, package_dir=package_dir, runtime_dir=runtime_dir,
+            evidence_path=args.assessment_evidence,
         )
     elif args.apply_import:
-        result["database"] = apply_import(result)
+        result["database"] = apply_import(result, package_dir, runtime_dir)
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
     return 0
 
