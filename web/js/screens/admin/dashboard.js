@@ -5,7 +5,6 @@ import {
   adminUserRole,
   adminAvatar,
   adminTitle,
-  adminStartAssessmentButton,
   adminOpenMethodologyButton,
   adminOpenOrganizationsButton,
   adminOpenRegressionTestsButton,
@@ -30,9 +29,6 @@ export const renderAdminDashboard = () => {
   adminAvatar.textContent = buildInitials(user.full_name || 'Администратор системы');
   adminTitle.textContent = adminDashboard.title || 'Сводный отчет';
   const isSuperadmin = Boolean(adminDashboard.is_superadmin);
-  if (adminStartAssessmentButton) {
-    adminStartAssessmentButton.classList.toggle('hidden', !isSuperadmin);
-  }
   if (adminOpenOrganizationsButton) {
     adminOpenOrganizationsButton.classList.toggle('hidden', !state.isAdmin);
   }

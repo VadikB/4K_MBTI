@@ -595,20 +595,72 @@ test('ADM28 invalid JSON leaves a finite unknown outcome and restores confirm co
   await expect(card.getByRole('button', { name: 'Проверить результат' })).toBeEnabled();
 });
 
-test('ADM28 superadmin still restores its global dashboard', async ({ page }) => {
+test('P4K-SUP-UX-01 superadmin restores the platform organizations cabinet', async ({ page }, info) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const journeyRequests = [];
+  page.on('request', (request) => { if (request.url().includes('/journey-state')) journeyRequests.push(request.url()); });
   await page.route('**/users/**', (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/users/session/restore') return fulfillJson(route, {
       authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
     });
+    if (path === '/users/18/session-bootstrap') return fulfillJson(route, {
+      user: adminUser, is_admin: true, admin_dashboard: dashboard,
+    });
     if (path === '/users/admin/dashboard') return fulfillJson(route, dashboard);
+    if (path === '/users/admin/organizations') return fulfillJson(route, { is_superadmin: true, items: [], assessment_programs: [] });
     return fulfillJson(route, {});
   });
   await page.goto(base);
-  await expect(page.locator('#admin-panel')).toBeVisible();
-  await expect(page.locator('#admin-organizations-panel')).toBeHidden();
-  await expect(page.locator('#admin-open-methodology-button')).toBeVisible();
+  await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  await expect(page.locator('#admin-panel')).toBeHidden();
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await expect(page.locator('#admin-start-assessment-button')).toHaveCount(0);
+  const reference = await page.context().newPage();
+  const referencePath = path.join(root, '.test-stand/reference/reference/v1.6/index.html');
+  const hasReference = await fs.access(referencePath).then(() => true, () => false);
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.screenshot({ path: info.outputPath(`product-${width}.png`), fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (hasReference) {
+      await reference.setViewportSize({ width, height: 900 });
+      await reference.goto('file://' + referencePath + '?screen=organizations&view=screen');
+      await expect(reference.locator('#content')).toContainText('Организации');
+      await reference.screenshot({ path: info.outputPath(`reference-${width}.png`), fullPage: true });
+      expect(await reference.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+    await page.locator('[data-platform-section="problems"]').focus();
+    await expect(page.locator('[data-platform-section="problems"]')).toBeFocused();
+  }
+  if (hasReference) {
+    await reference.setViewportSize({ width: 390, height: 900 });
+    await reference.goto('file://' + referencePath + '?screen=organizations&view=screen');
+    await reference.locator('#account-toggle').click();
+    await reference.locator('[data-act="logout"]').click();
+    await reference.screenshot({ path: info.outputPath('reference-signed-out-390.png'), fullPage: true });
+  }
+  await reference.close();
+  await page.reload();
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await page.goto(base + '/?screen=admin');
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await expect(page).toHaveURL(/screen=admin-organizations/);
+  await page.goto(base + '/?screen=dashboard');
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await expect(page).toHaveURL(/screen=admin-organizations/);
+  expect(journeyRequests).toHaveLength(0);
+  await page.getByRole('link', { name: 'Проблемы' }).click();
+  await expect(page.locator('#platform-availability-title')).toHaveText('Проблемы');
+  await page.goBack();
+  await expect(page.locator('.platform-navigation [aria-current="page"]')).toHaveText('Организации');
+  await page.locator('#admin-organizations-account-name').click();
+  await page.locator('#admin-organizations-logout-button').click();
+  await expect(page.locator('#auth-panel')).toBeVisible();
+  await expect(page.locator('.platform-navigation')).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.screenshot({ path: info.outputPath('product-signed-out-390.png'), fullPage: true });
 });
 
 async function reloadSuperadminOrganizations(page) {

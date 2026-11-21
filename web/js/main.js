@@ -37,8 +37,6 @@ import {
   openChatScreen,
   openProfileScreen,
   openReportsScreen,
-  openAdminDashboardScreen,
-  loadAdminDashboardData,
   openAdminOrganizationsScreen,
   openAdminRegressionTestsScreen,
   openAdminPromptLabScreen,
@@ -201,7 +199,16 @@ const bootApp = async () => {
     }
   }
 
-  if (state.canAdmin && screen) {
+  if (state.canAdmin && state.adminDashboard?.is_superadmin &&
+      !['admin-organizations', 'admin-platform-problems', 'admin-platform-checks'].includes(state.currentScreen)) {
+    state.currentScreen = 'admin-organizations';
+    state.activeArea = 'management';
+    state.isAdmin = true;
+    window.history.replaceState({}, '', '/?screen=admin-organizations');
+    persistAssessmentContext();
+  }
+
+  if (state.canAdmin && screen && !state.adminDashboard?.is_superadmin) {
     if (screen === 'admin-assessment-empty') {
       state.activeArea = 'assessment';
       state.isAdmin = false;
@@ -239,6 +246,11 @@ const bootApp = async () => {
       void openAdminOrganizationsScreen({ preserveView: state.adminDashboard?.is_superadmin !== true });
       return;
     }
+    if (['admin-platform-problems', 'admin-platform-checks'].includes(state.currentScreen) && state.isAdmin) {
+      const module = await import('./entries/admin-organizations.js');
+      await module.openPlatformAvailability(state.currentScreen.slice('admin-platform-'.length));
+      return;
+    }
     if (state.currentScreen === 'admin-regression-tests' && state.isAdmin) {
       void openAdminRegressionTestsScreen();
       return;
@@ -257,14 +269,8 @@ const bootApp = async () => {
       return;
     }
     if (state.currentScreen === 'admin' && state.isAdmin) {
-      if (state.isAdmin) {
-        try {
-          await loadAdminDashboardData(state.adminPeriodKey || '30d');
-        } catch (error) {
-          console.error('Failed to restore admin dashboard', error);
-        }
-      }
-      await openAdminDashboardScreen();
+      window.history.replaceState({}, '', '/?screen=admin-organizations');
+      await openAdminOrganizationsScreen();
       return;
     }
     if (!state.isAdmin) {
