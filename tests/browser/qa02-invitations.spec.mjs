@@ -21,7 +21,8 @@ async function setup(page,{superadmin=false,mixed=false}={}){
   const members=Array.from({length:3},(_,i)=>({user_id:i+8,email:`person${i}@example.test`,full_name:`Участник ${i+1}`,has_password:false,
     registration_status:'pending',invitation_id:i+1,invitation_status:mixed?'not_sent':i===2?'accepted':'error',
     invitation_delivery_status:mixed?'not_sent':i===2?'accepted':'error',invitation_link_status:mixed?'not_created':'active',
-    invitation_operation_id:mixed?null:op,invitation_created_at:'2026-11-17T12:00:00Z',invitation_expires_at:'2026-11-20T12:00:00Z',
+    invitation_operation_id:mixed?null:op,invitation_assignment_ref:mixed?null:'competencies_4k',
+    invitation_created_at:'2026-11-17T12:00:00Z',invitation_expires_at:'2026-11-20T12:00:00Z',
     invitation_reason:mixed?{}:{reason_code:i===2?'accepted':'mail_not_configured',next_action:i===2?'none':'operator'}}));
   const program={organization_id:3,program_definition_id:7,program_name:'Синтетическая программа',program_version:'1',assignment_ref:'competencies_4k',roles:[]};
   const org={id:3,code:'qa02',name:'Синтетическая организация',is_active:true,domains:[],admins:[],members_count:3,reports_count:0,members,assessment_program:program};
@@ -101,7 +102,7 @@ test('QA02 mixed lost response recovers the same command without duplicate',asyn
 test('QA02 late detail response never updates another participant card',async({page})=>{
   test.setTimeout(20000);const run=await setup(page);
   await page.locator('[data-action="open-member-card"]').first().click();
-  const old=page.locator('.admin-member-card-dialog');await old.locator('summary').click();
+  const old=page.locator('.admin-member-card-dialog');await old.locator('.admin-invitation-details summary').click();
   const gate=deferred();run.refreshGate=gate;
   await old.getByRole('button',{name:'Обновить сведения'}).click();
   await expect(old.locator('[data-invite-read-status]')).toHaveText('Проверяем эту попытку');
@@ -111,6 +112,6 @@ test('QA02 late detail response never updates another participant card',async({p
   const next=page.locator('.admin-member-card-dialog');
   await expect(next.locator('h3')).toHaveText('Участник 2');
   await expect(next.locator('.admin-invitation-details')).not.toHaveAttribute('open','');
-  await next.locator('summary').click();
+  await next.locator('.admin-invitation-details summary').click();
   await expect(next.locator('[data-invite-diagnostic]')).toContainText('сервис отправки не настроен');
 });

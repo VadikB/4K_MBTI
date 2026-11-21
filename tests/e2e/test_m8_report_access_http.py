@@ -70,7 +70,12 @@ def test_customer_list_parameters_and_retired_routes(monkeypatch):
                                            'program': 'Пилот', 'status': 'ready', 'page': 2, 'page_size': 10})
         assert response.status_code == 200 and response.json()['total'] == 0
         assert calls[-1] == {'user_id': 20, 'organization_id': 1, 'query': 'Иван',
-                             'program': 'Пилот', 'status': 'ready', 'page': 2, 'page_size': 10}
+                             'program': 'Пилот', 'program_definition_id': None,
+                             'status': 'ready', 'page': 2, 'page_size': 10}
+        exact = client.get(url, params={'organization_id': 1, 'program_definition_id': 72})
+        assert exact.status_code == 200 and exact.json()['organization_id'] == 1
+        assert calls[-1]['program_definition_id'] == 72 and calls[-1]['program'] == ''
+        assert client.get(url, params={'program_definition_id': 0}).status_code == 422
         assert client.get(url, params={'organization_id': 99}).status_code == 403
         assert client.get(url, params={'page': 0}).status_code == 422
         for path in ('/users/admin/reports', '/users/admin/reports.pdf',

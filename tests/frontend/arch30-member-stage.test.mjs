@@ -34,7 +34,8 @@ test('ADM-STATUS-01 shows one current participant stage and keeps secondary sign
   assert.match(assignmentProjection, /acquaintance\.assignment_ref=assignment\.assignment_ref/);
   assert.match(organizations, /data-action="open-member-card"/);
   assert.match(organizations, /class="admin-organization-member-stage"/);
-  assert.match(organizations, /aria-label="Другие действия"/);
+  assert.match(organizations, /aria-haspopup="menu" aria-expanded="false"/);
+  assert.match(wiring, /<details class="admin-member-history">/);
   assert.doesNotMatch(organizations, /<details class="admin-organization-member-statuses">/);
   assert.match(styles, /\.admin-organization-current-stage/);
   assert.match(styles, /overflow-wrap: anywhere/);

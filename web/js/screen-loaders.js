@@ -123,10 +123,10 @@ export const loadAdminDashboardData = async (periodKey) => {
   return module.loadAdminDashboard(periodKey);
 };
 
-export const openAdminOrganizationsScreen = async () => {
+export const openAdminOrganizationsScreen = async (options) => {
   resetLogoutButtonsState();
   const module = await loadAdminOrganizations();
-  await module.openAdminOrganizations();
+  await module.openAdminOrganizations(options);
 };
 
 export const loadAdminOrganizationsData = async () => {
@@ -150,11 +150,6 @@ export const openAdminReportsScreen = async () => {
   resetLogoutButtonsState();
   const module = await loadAdminReports();
   await module.openAdminReports();
-};
-
-export const loadAdminReportsData = async () => {
-  const module = await loadAdminReports();
-  return module.loadAdminReports();
 };
 
 export const openAdminMethodologyScreen = async () => {

@@ -43,7 +43,6 @@ import {
   openAdminRegressionTestsScreen,
   openAdminPromptLabScreen,
   openAdminReportsScreen,
-  loadAdminReportsData,
   openAdminMethodologyScreen,
   loadAdminMethodologyData,
   loadDashboard,
@@ -230,12 +229,14 @@ const bootApp = async () => {
         m8CycleId: params.get('cycle_id'),
         m8ReportId: params.get('report_id'),
         customerAccess: true,
-        returnTarget: 'admin-reports',
+        returnTarget: window.history.state?.reportReturnTarget === 'admin-organizations'
+          ? 'admin-organizations' : 'admin-reports',
+        returnToManagement: window.history.state?.returnToManagement === true,
       });
       return;
     }
     if (state.currentScreen === 'admin-organizations' && state.isAdmin) {
-      void openAdminOrganizationsScreen();
+      void openAdminOrganizationsScreen({ preserveView: state.adminDashboard?.is_superadmin !== true });
       return;
     }
     if (state.currentScreen === 'admin-regression-tests' && state.isAdmin) {
@@ -243,11 +244,6 @@ const bootApp = async () => {
       return;
     }
     if (state.currentScreen === 'admin-reports' && state.isAdmin) {
-      try {
-        await loadAdminReportsData();
-      } catch (error) {
-        console.error('Failed to restore admin reports', error);
-      }
       void openAdminReportsScreen();
       return;
     }

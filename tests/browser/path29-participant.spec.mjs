@@ -280,9 +280,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     await checkbox.check();
     if (!boundedPath) await capturePathViewports(admin, dir, 'admin-assignment', [
       { name: 'long-participant-selection', locator: checkbox },
-      { name: 'assign', locator: card.getByRole('button', { name: 'Назначить оценку', exact: true }) },
+      { name: 'assign', locator: card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }) },
     ]);
-    await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+    await card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(card.locator('[data-assignment-sources]')).toHaveCount(0);
     await expect(card.locator('[data-operation-status]').first()).toContainText(`${fullName}: оценка назначена.`);
     await checkbox.check();
@@ -658,7 +658,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       });
       try {
         await checkbox.check();
-        await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+        await card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }).click();
         await committedGate;
         expect(delayedPosts).toBe(1);
         await admin.locator('#admin-organizations-account-name').click();
@@ -721,7 +721,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       });
       try {
         await switchCheckbox.check();
-        await switchCard.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+        await switchCard.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }).click();
         await committedGate;
         await picker.selectOption(String(secondOrgId));
         await expect(switchAdmin.locator(`[data-organization-id="${secondOrgId}"]`)).toBeVisible();
@@ -762,7 +762,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         return route.continue();
       });
       try {
-        await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+        await card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }).click();
         await expect(card).toContainText('Операция уже относится к другому набору участников');
         expect(refusalPosts).toBe(1);
         expect(seededPosts).toBe(1);

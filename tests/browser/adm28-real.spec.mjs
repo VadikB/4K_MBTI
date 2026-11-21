@@ -39,6 +39,9 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await page.locator('#magic-token-input').fill(state.password);
     await page.locator('#verify-magic-link-button').click();
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+    const summary = page.locator('.org-admin-account-menu summary');
+    await expect(page.locator('#admin-organizations-back-button')).toBeHidden();
+    await summary.click();
     await page.getByRole('button', { name: 'К сводке', exact: true }).click();
     await expect(page.locator('#admin-panel')).toBeVisible();
     await expect(page.locator('#admin-metrics-grid .admin-metric-card')).toHaveCount(2);
@@ -54,7 +57,7 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await expect(card.locator('[data-bulk-actions]')).toBeHidden();
     await card.locator('input[name="invitation_email"]').first().check();
     await expect(card.locator('[data-bulk-actions]')).toBeVisible();
-    await expect(card.getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
+    await expect(card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
     await card.locator('input[name="invitation_email"]').first().uncheck();
     await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     const form = card.locator('form[data-action="preview-early-data"]');
@@ -102,7 +105,7 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
       field.checked = true;
       field.dispatchEvent(new Event('change', { bubbles: true }));
     }));
-    await card.getByRole('button', { name: 'Назначить оценку', exact: true }).click();
+    await card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }).click();
     await expect(card.locator('[data-operation-status]')).toContainText('Синтетический admin: оценка назначена');
     await expect(card.locator('[data-operation-status]')).toContainText('Синтетический member: оценка назначена');
     await expect(card.locator('.admin-organization-member')).toHaveCount(2);
