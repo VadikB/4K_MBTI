@@ -1816,6 +1816,8 @@ if (adminOrganizationsList) {
       return;
     }
     if (form.dataset.action === 'preview-early-data') {
+      const confirmation = form.querySelector('[data-early-data-submit]');
+      if (confirmation.hidden || confirmation.disabled) return;
       const formData = new FormData(form);
       const value = (name) => String(formData.get(name) || '').trim();
       withScreen(loadAdminOrganizations, (module) =>
@@ -1839,7 +1841,6 @@ if (adminOrganizationsList) {
               organization_name_usage_rules: value('organization_name_usage_rules'),
             },
           },
-          idempotency_key: createOperationId(),
         }),
       );
       return;

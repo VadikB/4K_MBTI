@@ -137,13 +137,13 @@ for (const channel of ['product_form', 'csv']) {
       await page.screenshot({ path: path.join(directory, 'filled-1440.png'), fullPage: true });
       const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST'
         && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
-      await form.getByRole('button', { name: channel === 'csv' ? 'Загрузить заполненную анкету' : 'Сохранить черновик и предпросмотр', exact: true }).click();
+      await form.getByRole('button', { name: channel === 'csv' ? 'Загрузить заполненную анкету' : 'Подтвердить сведения', exact: true }).click();
       const previewReply = await previewResponse;
       expect(previewReply.status()).toBe(201);
       const previewPayload = await previewReply.json();
       save('preview-http', previewPayload);
       const preview = card.locator('.admin-questionnaire-preview');
-      await expect(preview).toContainText('Готово к подтверждению');
+      await expect(preview.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
       revisionId = Number(await preview.getAttribute('data-questionnaire-revision-id'));
       expect(revisionId).toBeGreaterThan(0);
       expect(previewPayload.id).toBe(revisionId);
@@ -159,7 +159,7 @@ for (const channel of ['product_form', 'csv']) {
       const confirmedReply = await confirmResponse;
       expect(confirmedReply.status()).toBe(200);
       save('confirm-http', await confirmedReply.json());
-      await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+      await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
       const response = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}`);
       expect(response.status()).toBe(200);
       const saved = await response.json();
@@ -171,7 +171,7 @@ for (const channel of ['product_form', 'csv']) {
       expect(saved.source_author).toBe('');
       expect(saved.uploaded_by_user_id).toBeGreaterThan(0);
       const uploaderLabel = saved.uploaded_by_name || saved.uploaded_by_email || 'аккаунт #' + saved.uploaded_by_user_id;
-      await expect(card.locator('.admin-questionnaire-confirmation .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploaderLabel);
+      await expect(card.locator('.admin-data-readiness .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploaderLabel);
       expect(saved.answers_json.C01.name).toBe(channel === 'csv' ? 'Синтетическая организация' : fixture.fields.organization_name);
       const db = readDb(revisionId);
       save('database-readback', db);
@@ -193,9 +193,9 @@ for (const channel of ['product_form', 'csv']) {
           if (!['source_author', 'organizer'].includes(name)) await expect(form.locator(`[name="${name}"]`)).toHaveValue(value);
         }
       }
-      await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
-      await expect(card.locator('.admin-questionnaire-confirmation .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploaderLabel);
-      await expect(card.locator('.admin-questionnaire-confirmation .admin-questionnaire-uploader')).toHaveAttribute('data-questionnaire-revision-id', String(revisionId));
+      await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
+      await expect(card.locator('.admin-data-readiness .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploaderLabel);
+      await expect(card.locator('.admin-data-readiness .admin-questionnaire-uploader')).toHaveAttribute('data-questionnaire-revision-id', String(revisionId));
       const listResponse = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`);
       expect(listResponse.status()).toBe(200);
       const list = await listResponse.json();

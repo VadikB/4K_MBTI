@@ -294,6 +294,7 @@ async function adm28Preview(page) {
   const card = page.locator('[data-organization-id="3"]');
   await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
   const form = card.locator('form[data-action="preview-early-data"]');
+  const proposedName = 'Обновлённое название R03';
   let revisionId = 201;
   await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
     const payload = route.request().postDataJSON();
@@ -305,13 +306,15 @@ async function adm28Preview(page) {
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 synthetic');
   await expect(form.locator('[name="source_author"]')).toHaveCount(0);
+  await form.locator('[name="organization_name"]').fill(proposedName);
   await form.locator('[name="purpose"]').fill('Synthetic purpose');
-  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await form.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await expect(card.locator('.admin-questionnaire-preview')).toBeVisible();
   return { card, form, organization, preview: card.locator('.admin-questionnaire-preview'),
     saved: { id: 201, assignment_ref: 'ADM28 synthetic', status: 'confirmed', channel: 'product_form',
       effective_confirmed: { id: 201, assignment_ref: 'ADM28 synthetic', confirmed_at: null },
-      answers_json: { C02a: { participant_text: 'Synthetic purpose' } },
+      organization_name_current: proposedName,
+      answers_json: { C01: { name: proposedName }, C02a: { participant_text: 'Synthetic purpose' } },
       recipient_mapping: ['participant'], recipient_user_ids: [] } };
 }
 
@@ -326,7 +329,7 @@ test('ADM28 confirmation finishes before supplementary GET and offers a retry on
   await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) => fulfillJson(route, saved));
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await expect(preview).toHaveCount(0);
-  await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+  await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
   await expect(card).not.toContainText('Подтверждаем…');
   release();
   await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Не удалось обновить готовность');
@@ -346,15 +349,15 @@ test('ADM28 lost POST response checks exact revision and recipients without repu
   }));
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Итог подтверждения неизвестен');
-  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
+  await expect(preview.locator('[data-action="confirm-questionnaire"]')).toBeHidden();
   await card.getByRole('button', { name: 'Проверить результат' }).click();
   await expect(preview).toHaveCount(0);
-  await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+  await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
   expect(posts).toBe(1);
 });
 
 test('REMAIN-02 removes recipient controls and keeps confirmation available after navigation', async ({ page }) => {
-  const { card, preview } = await adm28Preview(page);
+  const { card, form, preview } = await adm28Preview(page);
   await expect(preview.locator('[name="questionnaire_recipient_user"]')).toHaveCount(0);
   await expect(preview.locator('[name="questionnaire_recipient"]')).toHaveCount(0);
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).hover();
@@ -362,15 +365,28 @@ test('REMAIN-02 removes recipient controls and keeps confirmation available afte
   await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
-  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) =>
-    fulfillJson(route, { detail: 'QUESTIONNAIRE_REVISION_CONFLICT' }, 409));
+  let confirmationPosts = 0, revisionReads = 0;
+  await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) => {
+    confirmationPosts += 1;
+    return fulfillJson(route, { detail: 'QUESTIONNAIRE_REVISION_CONFLICT' }, 409);
+  });
+  await page.route('**/users/admin/organizations/3/questionnaire/201', (route) => {
+    revisionReads += 1;
+    return fulfillJson(route, { id: 201, assignment_ref: 'ADM28 synthetic', status: 'ready_for_confirmation' });
+  });
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
-  await expect(preview.locator('[data-operation-status]')).toContainText('уже подтверждена более новая');
-  await expect(preview.locator('[data-operation-status]')).toBeVisible();
-  await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
+  const recovery = card.locator('.admin-data-confirmation-recovery');
+  await expect(recovery).toBeVisible();
+  await expect(recovery).toContainText('уже подтверждена более новая');
+  await expect(form.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toHaveCount(0);
+  await recovery.getByRole('button', { name: 'Проверить результат' }).click();
+  await expect(form.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Synthetic purpose');
+  expect(revisionReads).toBe(1);
+  expect(confirmationPosts).toBe(1);
 });
 
-test('ADM28 old confirmation cannot delete a newly created preview or newer input', async ({ page }) => {
+test('ADM28 keeps newer input while confirmation is in flight', async ({ page }) => {
   const { card, preview, form, saved } = await adm28Preview(page);
   let release;
   const delayed = new Promise((resolve) => { release = resolve; });
@@ -380,20 +396,21 @@ test('ADM28 old confirmation cannot delete a newly created preview or newer inpu
   });
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await form.locator('[name="purpose"]').fill('New synthetic purpose');
-  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
-  await expect(card.locator('[data-questionnaire-revision-id="202"]')).toBeVisible();
+  await expect(form.locator('[data-early-data-submit]')).toBeDisabled();
   release();
+  await expect(preview).toHaveCount(0);
   await expect(form.locator('[name="purpose"]')).toHaveValue('New synthetic purpose');
-  await expect(card.locator('[data-questionnaire-revision-id="202"]')).toContainText('New synthetic purpose');
+  await expect(card.locator('[data-preview-value="purpose"]')).toHaveText('New synthetic purpose');
+  await expect(form.locator('[data-early-data-submit]')).toBeEnabled();
 });
 
 test('ADMIN-02 name conflict retains the organization draft', async ({ page }) => {
-  const { preview, form } = await adm28Preview(page);
+  const { card, preview, form } = await adm28Preview(page);
   const enteredName = await form.locator('[name="organization_name"]').inputValue();
   await page.route('**/users/admin/organizations/3/questionnaire/201/confirm', (route) =>
     fulfillJson(route, { detail: 'QUESTIONNAIRE_ORGANIZATION_NAME_CONFLICT' }, 409));
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
-  await expect(preview.locator('[data-operation-status]')).toContainText('Название организации изменилось');
+  await expect(card.locator('.admin-data-confirmation-recovery')).toContainText('Название организации изменилось');
   await expect(form.locator('[name="organization_name"]')).toHaveValue(enteredName);
 });
 
@@ -413,7 +430,7 @@ test('ADM28 late confirmation cannot replace another selected assessment', async
   release();
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue('Another assessment');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Another purpose');
-  await expect(card.locator('.admin-questionnaire-confirmation')).toHaveCount(0);
+  await expect(card.locator('[data-organization-confirmed]')).toBeHidden();
 });
 
 test('ADM28 late confirmation after account change cannot populate the new account', async ({ page }) => {
@@ -495,6 +512,58 @@ test('ADM28 initial HTML has a complete frontend version before JavaScript', asy
     await expect(page.locator('.app-footer-release')).toBeHidden();
     await expect(page.locator('#email-input')).toBeHidden();
   } finally { await context.close(); }
+});
+
+test('ADM-UI-02 retries a lost preview with the same idempotency key', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+  const form = card.locator('form[data-action="preview-early-data"]');
+  await form.locator('[name="purpose"]').fill('Цель для проверки повтора');
+  const requests = [];
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
+    const payload = route.request().postDataJSON();
+    requests.push(payload);
+    if (requests.length === 1) return route.abort('connectionreset');
+    return fulfillJson(route, {
+      id: 322, assignment_ref: payload.assignment_ref, channel: payload.channel, status: 'invalid',
+      answers_json: payload.answers, validation_json: { missing: ['C01'] },
+    });
+  });
+  const confirm = form.getByRole('button', { name: 'Подтвердить сведения', exact: true });
+  await confirm.click();
+  await expect(form.locator('.admin-questionnaire-confirmation [data-operation-status]')).toContainText('Не удалось получить ответ');
+  await expect(form.locator('[name="purpose"]')).toHaveValue('Цель для проверки повтора');
+  await confirm.click();
+  await expect(form.locator('.admin-questionnaire-preview')).toContainText('Проверьте: сведения об организации');
+  expect(requests).toHaveLength(2);
+  expect(requests[0].idempotency_key).toBeTruthy();
+  expect(requests[1]).toEqual(requests[0]);
+});
+
+test('ADM-UI-02 asks before replacing a name changed on the server', async ({ page }) => {
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, { body: { items: [] } });
+  const card = page.locator('[data-organization-id="3"]');
+  await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+  const form = card.locator('form[data-action="preview-early-data"]');
+  await form.locator('[name="purpose"]').fill('Новая цель');
+  await page.route('**/users/admin/organizations/3/questionnaire/preview', (route) => {
+    const payload = route.request().postDataJSON();
+    return fulfillJson(route, {
+      id: 323, assignment_ref: payload.assignment_ref, channel: payload.channel, status: 'ready_for_confirmation',
+      answers_json: payload.answers, expected_organization_name: 'Имя изменено другим администратором',
+    });
+  });
+  const writes = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().endsWith('/confirm')) writes.push(request.url());
+  });
+  await form.locator('[data-early-data-submit]').press('Enter');
+  await expect(form.locator('[data-organization-rename]')).toBeVisible();
+  await expect(form.locator('[data-organization-rename]')).toContainText('Имя изменено другим администратором');
+  await expect(form.locator('[data-action="confirm-questionnaire"]')).toBeFocused();
+  await expect(form.locator('[data-early-data-submit]')).toBeHidden();
+  expect(writes).toEqual([]);
 });
 
 test('ADM28 invalid JSON leaves a finite unknown outcome and restores confirm controls', async ({ page }) => {
@@ -1875,7 +1944,7 @@ test('UX-ADM28-02 reports questionnaire load failure separately and offers retry
 });
 
 test('AC18-ADM-1A accepted composition stays usable across target widths and keyboard', async ({ page }, testInfo) => {
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), adminOrganization, { body: { items: [] } });
   const card = page.locator('[data-organization-id="3"]');
   const people = card.getByRole('button', { name: 'Участники оценки', exact: true });
   const data = card.getByRole('button', { name: 'Данные организации', exact: true });
@@ -1886,7 +1955,7 @@ test('AC18-ADM-1A accepted composition stays usable across target widths and key
   await expect(card.locator('[data-admin-view="organization-data"]')).toBeVisible();
   await expect(card.getByRole('group', { name: 'Об организации' })).toBeVisible();
   await expect(card.getByRole('group', { name: 'Настройки контекста для ситуаций' })).toBeVisible();
-  await expect(card.getByRole('button', { name: 'Сохранить черновик и предпросмотр' })).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Подтвердить сведения' })).toBeVisible();
   for (const width of [1440, 1280, 768, 390, 320]) {
     await page.setViewportSize({ width, height: width <= 390 ? 844 : 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
@@ -1932,7 +2001,7 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
   await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(assignment).toHaveValue('B');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Published B');
-  await expect(form.locator('[name="organization_name"]')).toHaveValue('Организация B');
+  await expect(form.locator('[name="organization_name"]')).toHaveValue(organization.name);
   await expect(form.locator('[name="source_author"]')).toHaveCount(0);
 
   await form.locator('[name="purpose"]').fill('Draft B');
@@ -2009,7 +2078,7 @@ test('UX-FIX20-02 clears account A drafts and ignores its late preview after acc
   for (const [name, value] of Object.entries(valuesA).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) {
     await fillEarlyField(formA, name, value);
   }
-  await formA.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await formA.getByRole('button', { name: 'Подтвердить сведения' }).click();
 
   await page.evaluate(() => document.getElementById('admin-logout-button').click());
   await expect(page.locator('#auth-panel')).toBeVisible();
@@ -2077,14 +2146,14 @@ test('UX-FIX20-02 keeps newer input when an older preview response arrives', asy
   for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) {
     await fillEarlyField(form, name, value);
   }
-  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await form.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await form.locator('[name="purpose"]').fill('Новая цель после отправки');
   releasePreview();
   const stalePreview = card.locator('.admin-questionnaire-preview');
   await expect(stalePreview).toBeVisible();
   await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель после отправки');
-  await expect(stalePreview).toContainText('Обновите предпросмотр перед подтверждением');
-  await expect(stalePreview.getByRole('button', { name: 'Подтвердить сведения' })).toBeDisabled();
+  await expect(stalePreview).toContainText('Форма изменилась после проверки');
+  await expect(stalePreview.locator('[data-action="confirm-questionnaire"]')).toBeHidden();
 });
 
 test('ADM19-02 routes org-admin own assessment by server journey and preserves management capability', async ({ page }) => {
@@ -2204,10 +2273,9 @@ test('ADM19-01 saves early organization data through the versioned product form 
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
   for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await fillEarlyField(form, name, value);
-  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await form.getByRole('button', { name: 'Подтвердить сведения' }).click();
 
-  await expect(card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview'))
-    .toContainText('Готово к подтверждению');
+  await expect.poll(() => submittedPayload?.assignment_ref).toBe(values.assignment_ref);
   expect(submittedPayload.channel).toBe('product_form');
   expect(submittedPayload.csv_text).toBeNull();
   expect(submittedPayload.answers.C01).toEqual({
@@ -2263,19 +2331,21 @@ test('REMAIN-02 confirms content preview without recipient controls', async ({ p
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
   for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await fillEarlyField(form, name, value);
-  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await form.getByRole('button', { name: 'Подтвердить сведения' }).click();
   const preview = card.locator('[data-admin-view="organization-data"] .admin-questionnaire-preview');
-  await expect(preview).toContainText('Что увидит участник');
-  await expect(preview).toContainText('Новая цель участника');
-  await expect(preview).toContainText('Старая цель');
+  const participantPreview = card.locator('[data-organization-participant-preview]');
+  await expect(participantPreview).toContainText('Как увидит участник');
+  await expect(participantPreview).toContainText('Новая цель участника');
+  await expect(participantPreview).toContainText('Для развития');
+  await expect(preview).toContainText('Подтвердите переименование организации');
   await expect(preview).not.toContainText('Получатели результатов');
   await expect(preview.locator('[name="questionnaire_recipient"]')).toHaveCount(0);
-  await expect(preview).not.toContainText('Обновите предпросмотр перед подтверждением');
+  await expect(preview.locator('[data-preview-stale]')).toBeHidden();
   await expect(preview.getByRole('button', { name: 'Подтвердить сведения' })).toBeEnabled();
   await preview.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await expect(preview).toHaveCount(0);
   await expect(card.locator('[data-admin-view="organization-data"] .admin-readiness-panel'))
-    .toContainText('Готовность выбранной оценки ещё не рассчитана');
+    .toContainText('Готовность оценки · ещё не рассчитана');
   await expect(card.locator('[data-admin-view="organization-data"] .admin-readiness-panel')).not.toContainText('Поток B');
   await expect(form.locator('[name="purpose"]')).toHaveValue('Новая цель участника');
 
@@ -2306,6 +2376,7 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
   await page.route('**/users/admin/organizations/3/questionnaire', (route) => fulfillJson(route, {
     items: [{
       id: 13, assignment_ref: 'Поток order', status: 'confirmed', channel: 'product_form',
+      effective_confirmed: { id: 13, assignment_ref: 'Поток order' },
       confirmed_at: '2026-10-21T10:01:00Z', validation_json: { errors: [], missing: [] },
       answers_json: { C02a: { participant_text: 'Newer confirmed 13' } },
       readiness: { early: { status: 'ready' }, context: { status: 'ready' }, roles: { status: 'incomplete' } },
@@ -2324,7 +2395,7 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
   await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(form.locator('[name="assignment_ref"]')).toHaveValue(values.assignment_ref);
   for (const [name, value] of Object.entries(values).filter(([name]) => !['assignment_ref', 'source_author'].includes(name))) await fillEarlyField(form, name, value);
-  await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+  await form.getByRole('button', { name: 'Подтвердить сведения' }).click();
   await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
   await form.locator('[name="purpose"]').fill('Draft after confirm');
   await card.getByRole('button', { name: 'Участники' }).click();
@@ -2332,7 +2403,7 @@ test('F22-04 keeps a newer confirmed revision and input entered after confirm st
   releaseConfirm();
 
   await expect(form.locator('[name="purpose"]')).toHaveValue('Draft after confirm');
-  await expect(page.locator('#admin-organizations-status')).toContainText('более новая серверная редакция');
+  await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('более новая серверная редакция');
 });
 
 test('ADM19-01 adds a participant with only email, name and role', async ({ page }) => {
@@ -2416,7 +2487,8 @@ test('UX-ADM27 org-admin assigns the selected assessment to self and a colleague
   }
   await expect(page.locator('[name="role_profile_version_id"]')).toHaveValue('92');
   await page.getByRole('button', { name: 'Данные организации', exact: true }).click();
-  const assessmentIdentity = page.locator('[data-action="preview-early-data"] .admin-assessment-identity');
+  await page.locator('.admin-data-readiness summary').press('Enter');
+  const assessmentIdentity = page.locator('.admin-data-readiness .admin-assessment-identity');
   await expect(assessmentIdentity).toContainText('Специалист 4К');
   await expect(assessmentIdentity).toContainText('Версия программы');
   await expect(assessmentIdentity).toContainText('1.0');

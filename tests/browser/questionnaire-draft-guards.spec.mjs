@@ -45,7 +45,8 @@ const empty = Object.fromEntries(Object.keys(fields('')).map((name) => [name, ''
 const confirmed = { id: 201, status: 'confirmed', channel: 'product_form', assignment_ref: 'pilot-11',
   source_author: 'Исторический автор',
   answers_json: {
-    C01: { name: fields('сервер').organization_name, organization_type: fields('сервер').organization_type },
+    C01: { name: 'Synthetic organization 3', organization_type: fields('сервер').organization_type },
+    C02a: { participant_text: 'Сохранённая цель' }, C03: { participant_text: 'Сохранённое использование' },
     C17: { case_reality_level: 'Реальные', organization_name_usage_rules: 'Разрешено' },
     C21: { organizer: fields('сервер').organizer },
   } };
@@ -112,12 +113,17 @@ async function finishRead(page, f) {
 test('Q-DRAFT pristine initial form does not mask a confirmed server revision', async ({ page }) => {
   const f = await fixture(page, { items: [confirmed] });
   await finishRead(page, f);
-  await assertValues(page, fields('сервер'));
+  await assertValues(page, { ...fields('сервер'), organization_name: 'Synthetic organization 3' });
   await expect(form(page).locator('[name="case_reality_level"]')).toHaveValue('Реальные');
   await expect(form(page).locator('[name="organization_name_usage_rules"]')).toHaveValue('Разрешено');
+  const preview = card(page).locator('[data-organization-participant-preview]');
+  await expect(preview).toContainText('Сохранённая цель');
+  await expect(preview).toContainText('Сохранённое использование');
+  await expect(form(page).locator('[data-organization-confirmed]')).toBeVisible();
+  await expect(form(page).locator('[data-early-data-submit]')).toBeHidden();
   await card(page).getByRole('button', { name: 'Участники оценки', exact: true }).click();
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
-  await assertValues(page, fields('сервер'));
+  await assertValues(page, { ...fields('сервер'), organization_name: 'Synthetic organization 3' });
   expect(f.state.mutations).toEqual([]);
 });
 
@@ -136,6 +142,49 @@ test('ADMIN-02 offers approved context choices to a new organization draft', asy
   await nameUsage.selectOption('Использовать условное название');
   await expect(reality).toHaveValue('Близко к реальной работе');
   await expect(nameUsage).toHaveValue('Использовать условное название');
+});
+
+test('ADM-UI-02 keeps the participant preview visible for first and partial input', async ({ page }) => {
+  const f = await fixture(page, { items: [{
+    ...confirmed, status: 'invalid',
+    answers_json: { C01: { name: 'Synthetic organization 3', organization_type: 'Компания',
+      industry: 'ИТ', activity_description: 'Разрабатывает рабочие инструменты.' } },
+  }] });
+  const currentForm = form(page);
+  const preview = card(page).locator('[data-organization-participant-preview]');
+  await expect(currentForm.locator('[name="organization_name"]')).toHaveValue('Synthetic organization 3');
+  await expect(preview.locator('[data-preview-value="purpose"]')).toHaveText('Цель пока не указана.');
+  await finishRead(page, f);
+  await expect(currentForm.locator('[name="organization_type"]')).toHaveValue('Компания');
+  await expect(currentForm.locator('[name="industry"]')).toHaveValue('ИТ');
+  await expect(currentForm.locator('[name="activity_description"]')).toHaveValue('Разрабатывает рабочие инструменты.');
+  await expect(currentForm.locator('[name="case_reality_level"]')).toHaveValue('');
+  await fill(page, { purpose: 'Цель для участника', results_usage: 'Для развития' });
+  await expect(preview.locator('[data-preview-value="purpose"]')).toHaveText('Цель для участника');
+  await expect(preview.locator('[data-preview-value="results_usage"]')).toHaveText('Для развития');
+  await expect(preview).toContainText('Вы и действующие администраторы вашей организации.');
+  await expect(currentForm.locator('fieldset legend')).toHaveText([
+    'Об организации', 'Сведения для знакомства', 'Настройки контекста для ситуаций',
+  ]);
+
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const box = await currentForm.boundingBox();
+    const panel = await preview.boundingBox();
+    const action = await currentForm.locator('[data-early-data-submit]').boundingBox();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    expect(action.x + action.width).toBeLessThanOrEqual(width);
+    if (width === 1440) {
+      expect(panel.width).toBeGreaterThanOrEqual(230);
+      expect(panel.width).toBeLessThanOrEqual(300);
+      expect(panel.x).toBeGreaterThan(box.x + box.width);
+      expect(panel.y).toBeCloseTo(box.y, 0);
+    } else {
+      expect(panel.y).toBeGreaterThan(box.y + box.height);
+    }
+  }
+  expect(f.state.mutations).toEqual([]);
 });
 
 test('ADM-FIX-04 explains unsupported saved C17 choice and retains the draft', async ({ page }) => {
@@ -204,7 +253,7 @@ test('Q-DRAFT old account read cannot erase or restore drafts after re-login', a
   await page.locator('#admin-open-organizations-button').click();
   await expect(page.locator('#admin-organizations-account-name')).toHaveText('Synthetic admin 28');
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
-  await expect(card(page).locator('.admin-questionnaire-load-state').filter({ hasText: 'ещё нет сохранённых анкет' }).first()).toBeVisible();
+  await expect(card(page).locator('[data-admin-view="organization-data"] .admin-questionnaire-load-state')).toHaveCount(0);
   await assertValues(page, empty); await fill(page, fields('B'));
   await finishRead(page, f); await assertValues(page, fields('B'));
 });

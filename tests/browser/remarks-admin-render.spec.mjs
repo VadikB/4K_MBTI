@@ -40,7 +40,7 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
     await expect(card).toBeVisible();
     await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
     await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();
-    await expect(card.locator('.admin-questionnaire-confirmation .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploader);
+    await expect(card.locator('.admin-data-readiness .admin-questionnaire-uploader')).toHaveText('Внёс данные: ' + uploader);
     const scaleText = async () => {
       if (textScale !== 2) return;
       await page.evaluate(() => {
@@ -82,10 +82,11 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
         form.append(message);
       }, (action === 'add-domain') === populated ? 'success' : 'error');
     }
+    await card.locator('.admin-data-readiness summary').click();
     await scaleText();
     const layout = await page.evaluate(() => {
       const form = document.querySelector('[data-action="preview-early-data"]');
-      const identity = form.querySelector('.admin-assessment-identity').getBoundingClientRect();
+      const identity = document.querySelector('.admin-data-readiness .admin-assessment-identity').getBoundingClientRect();
       const groups = [...form.querySelectorAll('.admin-questionnaire-field-group')].map((node) => node.getBoundingClientRect().toJSON());
       const selector = '.admin-organization-columns, .admin-organization-program-form, [data-action="preview-early-data"]';
       const outliers = [...document.querySelectorAll(selector)].flatMap((node) => [node, ...node.querySelectorAll('*')])

@@ -82,16 +82,16 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       { name: 'purpose', locator: form.locator('[name="purpose"]') },
       { name: 'organization-name', locator: form.locator('[name="organization_name"]') },
       { name: 'organization-type', locator: form.locator('[name="organization_type"]') },
-      { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }) },
+      { name: 'preview', locator: form.getByRole('button', { name: 'Подтвердить сведения', exact: true }) },
     ]);
     await assertValues();
     save('filled-fields', { values, all_10_fields_retained: true, viewport_widths: [1440, 320, 390, 768] });
     const previewResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+    await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
     expect((await previewResponse).status()).toBe(201);
     const preview = card.locator('.admin-questionnaire-preview');
-    await expect(preview).toContainText('Готово к подтверждению');
+    await expect(preview.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
     const revisionId = await preview.getAttribute('data-questionnaire-revision-id');
     if (process.env.P4K_F05_DRAFT_ONLY === '1') {
       await page.reload();
@@ -113,7 +113,7 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       && response.url().endsWith(`/questionnaire/${revisionId}/confirm`));
     await preview.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
     expect((await confirmResponse).status()).toBe(200);
-    await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+    await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
     const getRevision = () => page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}`);
     const response = await getRevision();
     expect(response.status()).toBe(200);
@@ -156,7 +156,7 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
         await route.fulfill({ response: committed });
       });
       try {
-        await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+        await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
         await committedGate;
         await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
@@ -194,7 +194,7 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     await form.locator('[name="organization_name"]').fill(draftName);
     const draftResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр', exact: true }).click();
+    await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
     expect((await draftResponse).status()).toBe(201);
     const draftList = await page.request.get(`${base}/users/admin/organizations/${organizationId}/questionnaire`);
     expect(draftList.status()).toBe(200);
@@ -215,6 +215,11 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       await expect(card).toContainText('Итог подтверждения неизвестен');
       expect(confirmPosts).toBe(1);
       await page.unroute(confirmPath);
+      const readback = page.waitForResponse((r) => r.request().method() === 'GET' &&
+        r.url().endsWith('/questionnaire/' + latest.id));
+      await card.getByRole('button', { name: 'Проверить результат' }).press('Enter');
+      expect((await readback).status()).toBe(200);
+      await expect(form.locator('[data-organization-confirmed]')).toBeVisible();
       const afterCommit = await (await page.request.get(
         `${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
       const effective = afterCommit.items.find((item) => item.assignment_ref === saved.assignment_ref);

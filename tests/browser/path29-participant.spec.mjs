@@ -196,11 +196,11 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
     if (!boundedPath) await capturePathViewports(admin, dir, 'admin-questionnaire', [
       { name: 'organization-name', locator: form.locator('[name="organization_name"]') },
       { name: 'purpose', locator: form.locator('[name="purpose"]') },
-      { name: 'preview', locator: form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }) },
+      { name: 'preview', locator: form.getByRole('button', { name: 'Подтвердить сведения' }) },
     ], viewportOptions);
-    await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+    await form.getByRole('button', { name: 'Подтвердить сведения' }).click();
     await card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения' }).click();
-    await expect(card.locator('.admin-questionnaire-confirmation')).toContainText('Сведения подтверждены');
+    await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
     if (!fullPath || controlledProvider) {
       const questionnaireUrl = `${base}/users/admin/organizations/${state.path29.organization_id}/questionnaire`;
       const beforeDraft = await (await admin.request.get(questionnaireUrl)).json();
@@ -210,9 +210,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await form.locator('[name="organization_name"]').fill(values.organization_name + ' — черновик');
       const draftResponse = admin.waitForResponse((response) => response.request().method() === 'POST'
         && response.url().endsWith(`/users/admin/organizations/${state.path29.organization_id}/questionnaire/preview`));
-      await form.getByRole('button', { name: 'Сохранить черновик и предпросмотр' }).click();
+      await form.getByRole('button', { name: 'Подтвердить сведения' }).click();
       expect((await draftResponse).status()).toBe(201);
-      await expect(card.locator('.admin-questionnaire-preview')).toContainText('Готово к подтверждению');
+      await expect(card.locator('.admin-questionnaire-preview').getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
       const afterDraft = await (await admin.request.get(questionnaireUrl)).json();
       const draft = afterDraft.items.find((item) => item.assignment_ref === assignmentRef);
       expect(draft.status).not.toBe('confirmed');

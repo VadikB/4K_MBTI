@@ -16,6 +16,7 @@ import {
 } from '../../dom.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state, safeStorage } from '../../state.js';
+import { participantReportAudience } from '../../readiness-presentation.js';
 import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
 import { questionnaireAssignmentState } from './questionnaire-assignment-state.js';
 import adminContextChoices from '../../../../assessment_definitions/contexts/competencies_4k/1.1/admin_context_choices.json' with { type: 'json' };
@@ -36,6 +37,7 @@ const questionnairePreviews = new Map();
 const questionnaireRevisions = new Map();
 const staleQuestionnairePreviews = new Set();
 const questionnairePreviewRequestGenerations = new Map();
+const earlyDataPreviewAttempts = new Map();
 const organizationViews = new Map();
 const managementDrafts = new Map();
 let renderedFormSignatures = new WeakMap();
@@ -486,6 +488,7 @@ const clearAdminOrganizationsSessionState = () => {
   questionnaireRevisions.clear();
   staleQuestionnairePreviews.clear();
   questionnairePreviewRequestGenerations.clear();
+  earlyDataPreviewAttempts.clear();
   organizationViews.clear();
   managementDrafts.clear();
   renderedFormSignatures = new WeakMap();
@@ -508,7 +511,7 @@ const clearInaccessibleOrganizationState = (organizations) => {
     clearProgramConnectionFeedback();
   }
   for (const drafts of [managementDrafts, selectedAssessmentRefs, questionnairePreviews, questionnaireRevisions,
-    questionnairePreviewRequestGenerations]) {
+    questionnairePreviewRequestGenerations, earlyDataPreviewAttempts, questionnaireConfirmOutcomes]) {
     for (const key of drafts.keys()) {
       const scopedKey = String(key);
       if (scopedKey.startsWith(currentIdentityKey() + ':') &&
@@ -575,6 +578,34 @@ const readinessMarkup = (selectedRef, readiness) => !selectedRef || !readiness
   readinessRow('Подготовка', readiness?.preparation, null) + '</ul>' +
   '<p>Добавлять участников можно до заполнения анкеты. Приглашение, назначение и начало оценки проверяются сервером отдельно.</p></div>';
 
+const organizationDataReadiness = (programState, readiness, roleLabel, sourceMarkup) => {
+  const program = programState.program;
+  if (!program) {
+    return '<div class="admin-readiness-panel admin-data-readiness" data-questionnaire-program-state="' +
+      programState.status + '"><p>' + escapeHtml(programState.message) + '</p>' +
+      (programState.status === 'unknown'
+        ? '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>' : '') + '</div>';
+  }
+  const label = readiness ? readinessLabel(readiness.status) : 'ещё не рассчитана';
+  return '<details class="admin-readiness-panel admin-data-readiness" data-readiness-status="' +
+    escapeHtml(readiness?.status || 'not-calculated') + '"><summary>Готовность оценки · ' + escapeHtml(label) +
+    '</summary><section class="admin-assessment-identity" aria-label="Выбранная оценка программы"><strong>' +
+    escapeHtml(programIdentity(program)) + '</strong><dl><dt>Версия программы</dt><dd>' +
+    escapeHtml(program.program_version) + '</dd><dt>Роль в оценке</dt><dd>' + escapeHtml(roleLabel) + '</dd></dl></section>' +
+    (readiness ? '<ul>' + readinessRow('Ранние сведения', readiness.early, null) +
+      readinessRow('Контекст', readiness.context, null) +
+      readinessRow('Участники', readiness.roles, readiness.roles?.action_view || null) +
+      readinessRow('Подготовка', readiness.preparation, null) + '</ul>'
+      : '<p>Подтвердите сведения, чтобы проверить готовность оценки.</p>') + sourceMarkup + '</details>';
+};
+
+const participantPreviewMarkup = '<aside class="admin-data-participant-preview" data-organization-participant-preview>' +
+  '<h4>Как увидит участник</h4><div class="admin-data-participant-briefing">' +
+  '<h5 data-preview-value="organization_name" data-empty="Название организации"></h5>' +
+  '<dl><dt>Зачем проводится оценка</dt><dd data-preview-value="purpose" data-empty="Цель пока не указана."></dd>' +
+  '<dt>Как будут использоваться результаты</dt><dd data-preview-value="results_usage" data-empty="Использование результатов пока не указано."></dd>' +
+  '<dt>Кто увидит результат</dt><dd>' + participantReportAudience + '</dd></dl></div></aside>';
+
 const operationRoot = () => {
   if (!operationAnchor || operationAnchor.identity !== currentIdentityKey()) return null;
   const card = adminOrganizationsList.querySelector('[data-organization-id="' + operationAnchor.organizationId + '"]');
@@ -598,6 +629,65 @@ const setLocalOperationStatus = (root, message, tone) => {
     local.classList.toggle('hidden', !message);
   }
   return local;
+};
+
+const organizationDataForm = (organizationId) => adminOrganizationsList.querySelector(
+  '[data-organization-id="' + Number(organizationId) + '"] form[data-action="preview-early-data"]',
+);
+const confirmationNeedsReadback = (outcome) => ['unknown', 'conflict', 'rejected'].includes(outcome?.status);
+
+const updateOrganizationDataForm = (form) => {
+  if (!form) return;
+  const organizationId = Number(form.closest('[data-organization-id]').dataset.organizationId);
+  const key = assessmentKey(organizationId, form.dataset.assessmentRef);
+  const outcome = questionnaireConfirmOutcomes.get(key);
+  const busy = earlyDataPreviewAttempts.get(key)?.inFlight || questionnaireConfirmRequestsInFlight.has(key);
+  const unchanged = form.hasAttribute('data-confirmed-form') && editableFields(form).every((field) =>
+    field instanceof HTMLSelectElement ? field.selectedOptions[0]?.defaultSelected : field.value === field.defaultValue);
+
+  const preview = form.parentElement.querySelector('[data-organization-participant-preview]');
+  preview.querySelectorAll('[data-preview-value]').forEach((value) => {
+    value.textContent = form.elements[value.dataset.previewValue].value.trim() || value.dataset.empty;
+  });
+
+  const reviewButton = form.querySelector('[data-action="confirm-questionnaire"]');
+  const needsReadback = confirmationNeedsReadback(outcome);
+  const canReview = reviewButton && !staleQuestionnairePreviews.has(key) && !needsReadback;
+  if (reviewButton) {
+    reviewButton.hidden = !canReview || unchanged;
+    updateAdminOrganizationQuestionnaireConfirmState(organizationId, reviewButton.closest('.admin-questionnaire-preview'));
+  }
+  const renameNotice = form.querySelector('[data-organization-rename]');
+  if (renameNotice) renameNotice.hidden = !canReview;
+  form.querySelector('[data-organization-confirmed]').hidden = !unchanged || needsReadback;
+  const previous = form.querySelector('[data-previous-organization-revision]');
+  if (previous) previous.hidden = unchanged;
+  const submit = form.querySelector('[data-early-data-submit]');
+  submit.hidden = unchanged || Boolean(canReview) || needsReadback;
+  submit.disabled = Boolean(busy) || form.hasAttribute('data-confirmation-unavailable');
+  submit.textContent = earlyDataPreviewAttempts.get(key)?.inFlight ? 'Проверяем сведения…' :
+    busy ? 'Подтверждаем…' : 'Подтвердить сведения';
+  const check = form.querySelector('[data-action="check-questionnaire-confirmation"]');
+  if (check) check.disabled = Boolean(busy);
+};
+
+const organizationDataIsVisible = (organizationId, assessmentRef) =>
+  state.currentScreen === 'admin-organizations' && Number(selectedOrganizationId) === Number(organizationId) &&
+  organizationViews.get(Number(organizationId)) === 'organization-data' &&
+  organizationDataForm(organizationId)?.dataset.assessmentRef === assessmentRef;
+const focusOrganizationDataAction = (organizationId, assessmentRef) => {
+  if (!organizationDataIsVisible(organizationId, assessmentRef) || document.activeElement !== document.body) return;
+  organizationDataForm(organizationId).querySelector(
+    '[data-organization-confirmed]:not([hidden]), .admin-questionnaire-confirmation button:not([hidden]):enabled',
+  )?.focus({ preventScroll: true });
+};
+
+const setOrganizationDataStatus = (organizationId, assessmentRef, message, tone) => {
+  if (!organizationDataIsVisible(organizationId, assessmentRef)) return;
+  const form = organizationDataForm(organizationId);
+  const root = form.querySelector('.admin-questionnaire-confirmation');
+  const focus = !form.contains(document.activeElement) || root.contains(document.activeElement);
+  setStatus(message, tone, root, { focus });
 };
 
 const setStatus = (message, tone = 'muted', root = operationRoot(), { focus = true } = {}) => {
@@ -661,7 +751,9 @@ const trackOperation = (event) => {
       : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
   // Keep the result anchor, but a confirmation dialog is not a running command.
-  if (!['cancel-member-assignment', 'revoke-member-invitation', 'purge-account'].includes(button?.dataset.action)) {
+  if (form?.dataset.action !== 'preview-early-data' &&
+      !['cancel-member-assignment', 'revoke-member-invitation', 'purge-account',
+        'confirm-questionnaire', 'check-questionnaire-confirmation', 'open-organization-reports'].includes(button?.dataset.action)) {
     setStatus('Выполняем действие…', 'loading');
   }
 };
@@ -817,8 +909,10 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
         if (['preview-early-data', 'preview-questionnaire', 'questionnaire-preview']
           .some((action) => String(draftKey).startsWith(key + ':' + action + ':'))) managementDrafts.delete(draftKey);
       }
-      for (const scopeKey of questionnairePreviews.keys()) {
-        if (String(scopeKey).startsWith(key + ':')) questionnairePreviews.delete(scopeKey);
+      for (const scopedState of [questionnairePreviews, earlyDataPreviewAttempts, questionnaireConfirmOutcomes]) {
+        for (const scopeKey of scopedState.keys()) {
+          if (String(scopeKey).startsWith(key + ':')) scopedState.delete(scopeKey);
+        }
       }
     }
     questionnaireLoadStates.set(key, {
@@ -875,11 +969,13 @@ export const selectAdminOrganization = (organizationId) => {
 };
 
 export const selectAdminOrganizationView = (organizationId, view) => {
+  const restoreFocus = document.activeElement?.matches('[data-action="show-admin-view"]');
   assignmentViewGeneration += 1;
   captureAdminOrganizationsDraft();
   organizationViews.set(Number(organizationId), managementSections.includes(view) ? view : 'people');
   saveManagementSelection();
   renderAdminOrganizations();
+  if (restoreFocus) adminOrganizationsList.querySelector('.admin-organization-step.current')?.focus({ preventScroll: true });
 };
 
 export const selectAdminOrganizationAssessment = (organizationId, form, assessmentRef, previousRef = '') => {
@@ -909,9 +1005,10 @@ export const selectAdminOrganizationAssessment = (organizationId, form, assessme
       renderedFormSignatures.set(assessmentForm, formSignature(assessmentForm));
     });
   card?.querySelectorAll('.admin-questionnaire-preview').forEach((preview) => preview.remove());
-  card?.querySelectorAll('.admin-readiness-panel').forEach((panel) => {
+  card?.querySelectorAll('[data-admin-view="questionnaire"] .admin-readiness-panel').forEach((panel) => {
     panel.outerHTML = readinessMarkup(nextRef, revision?.readiness || null);
   });
+  updateOrganizationDataForm(organizationDataForm(organizationId));
 };
 
 export const getSelectedAdminOrganizationAssessment = (organizationId) =>
@@ -921,31 +1018,24 @@ export const getSelectedAdminOrganizationAssessment = (organizationId) =>
 export const markAdminOrganizationQuestionnairePreviewStale = (organizationId, assessmentRef = '') => {
   const selectedRef = String(assessmentRef || getSelectedAdminOrganizationAssessment(organizationId)).trim();
   const key = assessmentKey(organizationId, selectedRef);
-  if (!questionnairePreviews.has(key)) return;
-  staleQuestionnairePreviews.add(key);
-  const card = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"]');
-  card?.querySelectorAll('.admin-questionnaire-preview').forEach((preview) => {
-    if (!preview.querySelector('[data-preview-stale]')) {
-      preview.querySelector('strong')?.insertAdjacentHTML('afterend',
-        '<p class="form-status error" data-preview-stale>Данные изменились. Обновите предпросмотр перед подтверждением. ' +
-        '<button type="button" class="text-button" data-action="refresh-questionnaire-preview">Обновить предпросмотр</button></p>');
-    }
-    const confirmButton = preview.querySelector('[data-action="confirm-questionnaire"]');
-    if (confirmButton) confirmButton.disabled = true;
-  });
+  if (questionnairePreviews.has(key)) {
+    staleQuestionnairePreviews.add(key);
+    const preview = organizationDataForm(organizationId)?.querySelector('.admin-questionnaire-preview');
+    const stale = preview?.querySelector('[data-preview-stale]');
+    if (stale) stale.hidden = false;
+  }
+  updateOrganizationDataForm(organizationDataForm(organizationId));
 };
 
 export const updateAdminOrganizationQuestionnaireConfirmState = (organizationId, preview) => {
   if (!preview) return;
   const busy = questionnaireConfirmRequestsInFlight.has(assessmentKey(organizationId, preview.dataset.assessmentRef));
   const outcome = questionnaireConfirmOutcomes.get(assessmentKey(organizationId, preview.dataset.assessmentRef));
-  const uncertain = outcome?.status === 'unknown' && Number(outcome.revisionId) === Number(preview.dataset.questionnaireRevisionId);
+  const scope = organizationProgramState(organizationId);
   const confirmButton = preview.querySelector('[data-action="confirm-questionnaire"]');
-  if (confirmButton) confirmButton.disabled = busy || uncertain ||
-    organizationProgramState(organizationId).status !== 'confirmed' ||
-    organizationProgramState(organizationId).assessmentRef !== String(preview.dataset.assessmentRef || '').trim() ||
-    staleQuestionnairePreviews.has(assessmentKey(organizationId, preview.dataset.assessmentRef)) ||
-    questionnaireConfirmRequestsInFlight.has(assessmentKey(organizationId, preview.dataset.assessmentRef));
+  if (confirmButton) confirmButton.disabled = busy || confirmationNeedsReadback(outcome) ||
+    scope.status !== 'confirmed' || scope.assessmentRef !== preview.dataset.assessmentRef ||
+    staleQuestionnairePreviews.has(assessmentKey(organizationId, preview.dataset.assessmentRef));
 };
 
 export const updateAdminOrganizationProfile = async (organizationId, payload) => {
@@ -1670,16 +1760,33 @@ export const importAdminOrganizationMembers = async (organizationId, csvText) =>
 };
 
 export const previewAdminOrganizationQuestionnaire = async (organizationId, payload) => {
-  if (!requireOrganizationProgramScope(organizationId, payload?.assignment_ref)) return false;
-  const action = payload?.channel === 'csv' ? 'preview-questionnaire' : 'preview-early-data';
+  if (!requireOrganizationProgramScope(organizationId, payload?.assignment_ref) ||
+      questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return false;
+  const earlyData = payload.channel === 'product_form';
+  const action = earlyData ? 'preview-early-data' : 'preview-questionnaire';
+  const submittedRef = String(payload.assignment_ref).trim();
+  const scopeKey = assessmentKey(organizationId, submittedRef);
+  const viewGeneration = assignmentViewGeneration;
+  let attempt;
+  if (earlyData) {
+    if (confirmationNeedsReadback(questionnaireConfirmOutcomes.get(scopeKey)) ||
+        questionnaireConfirmRequestsInFlight.has(scopeKey)) return;
+    const previous = earlyDataPreviewAttempts.get(scopeKey);
+    if (previous?.inFlight) return;
+    const answers = JSON.stringify(payload.answers);
+    attempt = { answers, idempotencyKey: previous?.answers === answers ? previous.idempotencyKey : createOperationId(), inFlight: true };
+    earlyDataPreviewAttempts.set(scopeKey, attempt);
+    payload = { ...payload, idempotency_key: attempt.idempotencyKey };
+    updateOrganizationDataForm(organizationDataForm(organizationId));
+    setOrganizationDataStatus(organizationId, submittedRef, '', 'muted');
+  }
   const submittedForm = adminOrganizationsList.querySelector(
     '[data-organization-id="' + Number(organizationId) + '"] form[data-action="' + action + '"]',
   );
-  const submittedSignature = questionnaireInputSignature(organizationId, action, payload?.assignment_ref);
+  const submittedSignature = questionnaireInputSignature(organizationId, action);
   captureAdminOrganizationsDraft();
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
-  const scopeKey = assessmentKey(organizationId, payload?.assignment_ref);
   const requestGeneration = (questionnairePreviewRequestGenerations.get(scopeKey) || 0) + 1;
   questionnairePreviewRequestGenerations.set(scopeKey, requestGeneration);
   try {
@@ -1689,14 +1796,19 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     });
     const preview = await readApiResponse(response, 'Не удалось распознать анкету.');
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
-    if (questionnairePreviewRequestGenerations.get(scopeKey) !== requestGeneration) return;
+    if (questionnairePreviewRequestGenerations.get(scopeKey) !== requestGeneration ||
+        questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return;
+    if (!(Number(preview?.id) > 0) || preview.assignment_ref !== submittedRef) {
+      throw new Error('Не удалось проверить ответ сервера по этой редакции.');
+    }
+    if (attempt && earlyDataPreviewAttempts.get(scopeKey) === attempt) earlyDataPreviewAttempts.delete(scopeKey);
     const connection = organizationProgramState(organizationId);
-    if (connection.status !== 'confirmed' || connection.assessmentRef !== String(payload?.assignment_ref || '').trim()) return;
+    if (connection.status !== 'confirmed' || connection.assessmentRef !== submittedRef) return;
     const currentForm = adminOrganizationsList.querySelector(
       '[data-organization-id="' + Number(organizationId) + '"] form[data-action="' + action + '"]',
     );
     const draftKey = organizationKey(organizationId) + ':' + action + ':' + String(payload?.assignment_ref || '').trim();
-    const inputChanged = questionnaireInputSignature(organizationId, action, payload?.assignment_ref) !== submittedSignature;
+    const inputChanged = questionnaireInputSignature(organizationId, action) !== submittedSignature;
     if (currentForm && inputChanged) captureFormDraft(organizationId, currentForm);
     else if (!managementDrafts.has(draftKey) && submittedForm) captureFormDraft(organizationId, submittedForm);
     questionnairePreviews.set(scopeKey, preview);
@@ -1704,30 +1816,48 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     if (inputChanged) staleQuestionnairePreviews.add(scopeKey);
     else staleQuestionnairePreviews.delete(scopeKey);
     renderAdminOrganizations();
-    setStatus(inputChanged
-      ? 'Данные изменились во время предпросмотра. Обновите предпросмотр перед подтверждением.'
-      : preview.status === 'ready_for_confirmation'
-      ? (payload?.channel === 'csv'
-        ? 'Анкета загружена. Проверьте сведения, изменения и источник перед подтверждением.'
-        : 'Черновик сохранён. Проверьте сведения и источник перед подтверждением.')
-      : 'Черновик сохранён. Исправьте перечисленные ошибки или заполните обязательные поля.',
-    !inputChanged && preview.status === 'ready_for_confirmation' ? 'success' : 'error');
+    const ready = preview.status === 'ready_for_confirmation';
+    if (earlyData) {
+      const proposedName = preview.participant_preview?.organization_name || payload.answers.C01?.name;
+      const expectedName = preview.expected_organization_name ?? organizationById(organizationId)?.name;
+      const renamesOrganization = proposedName && proposedName !== expectedName;
+      if (ready && !inputChanged && !renamesOrganization && viewGeneration === assignmentViewGeneration &&
+          organizationDataIsVisible(organizationId, submittedRef)) {
+        await confirmAdminOrganizationQuestionnaire(organizationId, Number(preview.id), submittedRef);
+      } else if (ready && !inputChanged && organizationDataIsVisible(organizationId, submittedRef)) {
+        organizationDataForm(organizationId)?.querySelector('[data-action="confirm-questionnaire"]')?.focus();
+      }
+      return;
+    }
+    setStatus(inputChanged ? 'Данные изменились во время предпросмотра. Обновите предпросмотр перед подтверждением.' :
+      ready ? 'Анкета загружена. Проверьте сведения, изменения и источник перед подтверждением.' :
+        'Черновик сохранён. Исправьте перечисленные ошибки или заполните обязательные поля.',
+    !inputChanged && ready ? 'success' : 'error');
   } catch (error) {
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
     if (questionnairePreviewRequestGenerations.get(scopeKey) !== requestGeneration) return;
-    if (getSelectedAdminOrganizationAssessment(organizationId) === String(payload?.assignment_ref || '').trim()) {
-      setStatus(questionnaireErrorMessage(error, 'Не удалось распознать анкету.'), 'error');
+    if (attempt && error?.status && error.status < 500) earlyDataPreviewAttempts.delete(scopeKey);
+    const message = error instanceof TypeError || error?.name === 'RequestDeadlineError'
+      ? 'Не удалось получить ответ. Повторите проверку сведений.'
+      : questionnaireErrorMessage(error, 'Не удалось проверить сведения.');
+    if (earlyData) setOrganizationDataStatus(organizationId, submittedRef, message, 'error');
+    else if (getSelectedAdminOrganizationAssessment(organizationId) === submittedRef) setStatus(message, 'error');
+  } finally {
+    if (attempt && earlyDataPreviewAttempts.get(scopeKey) === attempt) attempt.inFlight = false;
+    if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) {
+      updateOrganizationDataForm(organizationDataForm(organizationId));
     }
   }
 };
 
-export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId) => {
+export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, assessmentRef) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const card = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"]');
   const confirmButton = card?.querySelector('[data-action="confirm-questionnaire"][data-value="' + Number(revisionId) + '"]');
-  const submittedRef = String(confirmButton?.closest('.admin-questionnaire-preview')?.getAttribute('data-assessment-ref') || '').trim();
-  if (!requireOrganizationProgramScope(organizationId, submittedRef)) return false;
+  const submittedRef = assessmentRef || confirmButton?.closest('.admin-questionnaire-preview')?.dataset.assessmentRef || '';
+  if (!requireOrganizationProgramScope(organizationId, submittedRef) ||
+      questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return false;
   const preview = questionnairePreviews.get(assessmentKey(organizationId, submittedRef));
   if (Number(preview?.id) !== Number(revisionId) || preview?.status !== 'ready_for_confirmation' ||
       staleQuestionnairePreviews.has(assessmentKey(organizationId, submittedRef))) {
@@ -1740,10 +1870,9 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
   captureAdminOrganizationsDraft();
   const requestKey = assessmentKey(organizationId, submittedRef);
   const priorOutcome = questionnaireConfirmOutcomes.get(requestKey);
-  if (questionnaireConfirmRequestsInFlight.has(requestKey) ||
-    (priorOutcome?.status === 'unknown' && Number(priorOutcome.revisionId) === Number(revisionId))) return;
+  if (questionnaireConfirmRequestsInFlight.has(requestKey) || confirmationNeedsReadback(priorOutcome)) return;
   questionnaireConfirmRequestsInFlight.add(requestKey);
-  updateAdminOrganizationQuestionnaireConfirmState(organizationId, confirmButton?.closest('.admin-questionnaire-preview'));
+  updateOrganizationDataForm(organizationDataForm(organizationId));
   if (confirmButton) {
     confirmButton.disabled = true;
     confirmButton.textContent = 'Подтверждаем…';
@@ -1783,9 +1912,8 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
       questionnaireRevisions.set(revisionsKey, [mergeQuestionnaireRevision(confirmed, currentRevision),
         ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
       renderAdminOrganizations();
-      if (getSelectedAdminOrganizationAssessment(organizationId) === submittedRef) {
-        setStatus('Подтверждение завершено. Показана более новая серверная редакция.', 'success');
-      }
+      setOrganizationDataStatus(organizationId, submittedRef,
+        'Сведения сохранены. Показана более новая серверная редакция.', 'muted');
       return;
     }
     questionnaireRevisions.set(revisionsKey,
@@ -1806,27 +1934,20 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     questionnaireConfirmOutcomes.set(requestKey, outcome);
     questionnaireConfirmRequestsInFlight.delete(requestKey);
     renderAdminOrganizations();
-    if (getSelectedAdminOrganizationAssessment(organizationId) === submittedRef) {
-      setStatus('Сведения подтверждены. Обновляем готовность…', 'success');
-    }
+    setOrganizationDataStatus(organizationId, submittedRef, '', 'muted');
+    focusOrganizationDataAction(organizationId, submittedRef);
     void refreshConfirmedReadiness(organizationId, outcome, { identityEpoch, identityKey, requestKey, requestGeneration });
   } catch (error) {
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
     if (questionnaireConfirmRequestGenerations.get(requestKey) !== requestGeneration) return;
-    if (!error?.status || error.status >= 500) {
-      questionnaireConfirmOutcomes.set(requestKey, {
-        status: 'unknown', revisionId, assignmentRef: submittedRef,
-      });
-      captureAdminOrganizationsDraft();
-      renderAdminOrganizations();
-      if (getSelectedAdminOrganizationAssessment(organizationId) === submittedRef) {
-        setStatus('Ответ не получен. Итог подтверждения неизвестен. Проверьте результат; повторно отправлять сведения пока не нужно.', 'error');
-      }
-    } else {
-      if (getSelectedAdminOrganizationAssessment(organizationId) === submittedRef) {
-        setStatus(questionnaireErrorMessage(error, 'Не удалось подтвердить анкету.'), 'error');
-      }
-    }
+    const status = !error?.status || error.status >= 500 ? 'unknown' :
+      error.status === 409 ? 'conflict' : 'rejected';
+    const message = status === 'unknown'
+      ? 'Ответ сервера не получен. Проверьте, сохранилась ли эта редакция.'
+      : questionnaireErrorMessage(error, 'Не удалось подтвердить сведения.');
+    questionnaireConfirmOutcomes.set(requestKey, { status, revisionId, assignmentRef: submittedRef, message });
+    captureAdminOrganizationsDraft();
+    renderAdminOrganizations();
   } finally {
     if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
       questionnaireConfirmRequestGenerations.get(requestKey) === requestGeneration) {
@@ -1836,8 +1957,9 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
       );
       if (currentButton) {
         currentButton.textContent = 'Подтвердить сведения';
-        updateAdminOrganizationQuestionnaireConfirmState(organizationId, currentButton.closest('.admin-questionnaire-preview'));
       }
+      updateOrganizationDataForm(organizationDataForm(organizationId));
+      focusOrganizationDataAction(organizationId, submittedRef);
     }
   }
 };
@@ -1851,7 +1973,7 @@ const refreshConfirmedReadiness = async (organizationId, outcome, context) => {
     if (!isCurrent()) return;
     if (!Array.isArray(result.items)) throw new Error('Не удалось обновить готовность.');
     const refreshed = result.items.find((item) => item.assignment_ref === outcome.assignmentRef);
-    if (!refreshed || Number(refreshed.effective_confirmed?.id) < Number(outcome.revisionId) || !refreshed.readiness) {
+    if (Number(refreshed?.effective_confirmed?.id || 0) < Number(outcome.revisionId) || !refreshed?.readiness) {
       throw new Error('Готовность подтверждённой редакции ещё недоступна.');
     }
     const key = organizationKey(organizationId);
@@ -1865,19 +1987,15 @@ const refreshConfirmedReadiness = async (organizationId, outcome, context) => {
     questionnaireRevisions.set(key, [...merged.values()]);
     questionnaireConfirmOutcomes.delete(context.requestKey);
     renderAdminOrganizations();
-    if (getSelectedAdminOrganizationAssessment(organizationId) === outcome.assignmentRef) {
-      setStatus(Number(refreshed.id) > Number(outcome.revisionId)
-        ? 'Подтверждение завершено. Показана более новая серверная редакция.'
-        : 'Сведения подтверждены. Готовность обновлена. Перейдите к участникам и назначению.', 'success');
+    if (Number(refreshed.id) > Number(outcome.revisionId)) {
+      setOrganizationDataStatus(organizationId, outcome.assignmentRef,
+        'Сведения сохранены. Показана более новая серверная редакция.', 'muted');
     }
   } catch {
     if (!isCurrent()) return;
     outcome.status = 'refresh_failed';
     captureAdminOrganizationsDraft();
     renderAdminOrganizations();
-    if (getSelectedAdminOrganizationAssessment(organizationId) === outcome.assignmentRef) {
-      setStatus('Сведения подтверждены. Не удалось обновить готовность. Проверьте результат.', 'error');
-    }
   }
 };
 
@@ -1890,7 +2008,8 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
   const identityKey = currentIdentityKey();
   const requestGeneration = questionnaireConfirmRequestGenerations.get(requestKey);
   questionnaireConfirmRequestsInFlight.add(requestKey);
-  setStatus('Проверяем сохранённую редакцию…', 'loading');
+  updateOrganizationDataForm(organizationDataForm(organizationId));
+  setOrganizationDataStatus(organizationId, outcome.assignmentRef, 'Проверяем сохранённую редакцию…', 'loading');
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId, { credentials: 'same-origin' });
     const saved = await readApiResponse(response, 'Не удалось проверить подтверждение.');
@@ -1898,10 +2017,18 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
       questionnaireConfirmOutcomes.get(requestKey) !== outcome) return;
     if (Number(saved.id) !== Number(revisionId) || saved.assignment_ref !== outcome.assignmentRef) throw new Error('Ответ относится к другой редакции.');
     captureAdminOrganizationsDraft();
+    reflectConfirmedOrganizationName(organizationId, saved);
     if (saved.status !== 'confirmed') {
       questionnaireConfirmOutcomes.delete(requestKey);
+      if (outcome.status === 'conflict' || saved.status !== 'ready_for_confirmation') {
+        staleQuestionnairePreviews.add(requestKey);
+      }
+      if (outcome.status === 'conflict') await loadQuestionnaireRevisions(organizationId, { render: false });
+      if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
       renderAdminOrganizations();
-      setStatus('Редакция пока не подтверждена. Можно проверить ещё раз или явно повторить подтверждение.', 'muted');
+      setOrganizationDataStatus(organizationId, outcome.assignmentRef,
+        outcome.status === 'conflict' ? 'Редакция не сохранена. Сверьте текущие сведения и подтвердите черновик заново.' :
+          'Редакция пока не подтверждена. Можно повторить подтверждение.', 'muted');
       return;
     }
     const revisionsKey = organizationKey(organizationId);
@@ -1909,19 +2036,25 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
     const latest = revisions.find((item) => item.assignment_ref === saved.assignment_ref);
     questionnaireRevisions.set(revisionsKey, [mergeQuestionnaireRevision(saved, latest),
       ...revisions.filter((item) => item.assignment_ref !== saved.assignment_ref)]);
-    reflectConfirmedOrganizationName(organizationId, saved);
     const preview = questionnairePreviews.get(requestKey);
-    if (Number(preview?.id) === Number(revisionId)) questionnairePreviews.delete(requestKey);
+    if (Number(preview?.id) === Number(revisionId)) {
+      questionnairePreviews.delete(requestKey);
+      staleQuestionnairePreviews.delete(requestKey);
+    }
     outcome.status = 'confirmed';
     renderAdminOrganizations();
-    setStatus('Сведения подтверждены. Сохранённая редакция проверена.', 'success');
+    setOrganizationDataStatus(organizationId, outcome.assignmentRef, '', 'muted');
     void refreshConfirmedReadiness(organizationId, outcome, { identityEpoch, identityKey, requestKey, requestGeneration });
   } catch (error) {
     if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) {
-      setStatus('Не удалось проверить результат. ' + error.message + ' Повторите проверку.', 'error');
+      setOrganizationDataStatus(organizationId, outcome.assignmentRef, 'Не удалось проверить результат. Повторите проверку.', 'error');
     }
   } finally {
-    if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) questionnaireConfirmRequestsInFlight.delete(requestKey);
+    if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) {
+      questionnaireConfirmRequestsInFlight.delete(requestKey);
+      updateOrganizationDataForm(organizationDataForm(organizationId));
+      focusOrganizationDataAction(organizationId, outcome.assignmentRef);
+    }
   }
 };
 
@@ -2627,7 +2760,9 @@ export const renderAdminOrganizations = () => {
   if (adminOrganizationsSubtitle) {
     adminOrganizationsSubtitle.textContent = data?.is_superadmin
       ? (data?.subtitle || 'Управление доменами и администраторами организаций.')
-      : 'Подготовьте сведения для оценки и назначьте её участникам.';
+      : organizationViews.get(Number(selectedOrganizationId)) === 'organization-data'
+        ? 'Подготовьте сведения, которые увидят участники перед оценкой.'
+        : 'Подготовьте сведения для оценки и назначьте её участникам.';
   }
   const organizations = Array.isArray(data?.items) ? data.items : [];
   clearInaccessibleOrganizationState(organizations);
@@ -2695,6 +2830,7 @@ export const renderAdminOrganizations = () => {
   const preparationRoots = new Map(Array.from(adminOrganizationsList.querySelectorAll('[data-preparation-status]'), (node) => [node.dataset.preparationReferenceId, node]));
   const focusedPreparationControl = document.activeElement?.closest?.('[data-preparation-status]') ? document.activeElement : null;
   const focusedCheckUser = document.activeElement?.matches?.('[data-action="check-member-preparation"]') ? document.activeElement.closest('.admin-organization-member')?.querySelector('[data-user-id]')?.dataset.userId : null;
+  const focusedConfirmation = document.activeElement?.matches?.('[data-organization-confirmed]');
   const focusedMenu = !isSuperadmin && document.activeElement?.closest?.('.admin-organization-member-menu');
   // Replacing the list can dispatch focusout and close the old menu synchronously.
   const menuFocus = focusedMenu ? { control: document.activeElement, wasOpen: focusedMenu.open } : null;
@@ -2730,9 +2866,9 @@ export const renderAdminOrganizations = () => {
         selectedAssessmentRefs.set(organizationKey(orgId), connectedRef);
       }
       const questionnairePreview = questionnairePreviews.get(assessmentKey(orgId, selectedRef));
-      const currentRevision = questionnairePreview ||
-        (selectedRef ? revisions.find((item) => item.assignment_ref === selectedRef) : revisions[0]) || null;
-      const readiness = currentRevision?.readiness || null;
+      const savedRevision = (selectedRef ? revisions.find((item) => item.assignment_ref === selectedRef) : revisions[0]) || null;
+      const currentRevision = questionnairePreview || savedRevision;
+      const readiness = currentRevision?.readiness || savedRevision?.readiness || null;
       const currentReadinessMarkup = programConfirmed ? readinessMarkup(selectedRef, readiness) : '';
       const questionnaireLoadState = questionnaireLoadStates.get(organizationKey(orgId));
       const questionnaireLoadMarkup = questionnaireLoadState?.status === 'error'
@@ -2829,8 +2965,10 @@ export const renderAdminOrganizations = () => {
         '</form>' : '';
       const revisionAnswers = currentRevision?.answers_json || {};
       const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
-      const organizationName = escapeHtml(revisionAnswers?.C01?.name === undefined
-        ? org.name : revisionAnswers.C01.name);
+      const confirmedForm = programConfirmed && currentRevision?.status === 'confirmed' &&
+        (revisionAnswers.C01?.name ?? org.name) === org.name;
+      const organizationName = escapeHtml(currentRevision?.status === 'confirmed'
+        ? org.name : revisionAnswers.C01?.name ?? org.name);
       const legacyProfile = String(org.profile || '').trim();
       const currentActivityDescription = String(revisionAnswers?.C01?.activity_description || '').trim();
       const legacyProfileMarkup = !legacyProfile ? '' :
@@ -2843,8 +2981,10 @@ export const renderAdminOrganizations = () => {
       const viewButton = (view, label) => '<button type="button" class="admin-organization-step' +
         (activeView === view ? ' current' : '') + '" data-action="show-admin-view" data-view="' + view +
         '" aria-pressed="' + String(activeView === view) + '">' + label + '</button>';
-      const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(assessmentKey(orgId, selectedRef));
-      const confirmationOutcome = questionnaireConfirmOutcomes.get(assessmentKey(orgId, selectedRef));
+      const key = assessmentKey(orgId, selectedRef);
+      const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(key);
+      const confirmationOutcome = questionnaireConfirmOutcomes.get(key);
+      const requiresReadback = confirmationNeedsReadback(confirmationOutcome);
       const savedChoiceError = (currentRevision?.validation_json?.errors || []).find(
         (error) => error.code === 'CONTEXT_CHOICE_UNSUPPORTED' ||
           String(error.code).startsWith('ADMIN_CONTEXT_CHOICES_') ||
@@ -2861,28 +3001,18 @@ export const renderAdminOrganizations = () => {
       const revisionAttribution = (revision) => '<p class="admin-questionnaire-uploader" data-questionnaire-revision-id="' +
         Number(revision.id) + '">Внёс данные: ' + escapeHtml(revision.uploaded_by_name || revision.uploaded_by_email ||
           (Number(revision.uploaded_by_user_id) > 0 ? 'аккаунт #' + Number(revision.uploaded_by_user_id) : 'сведения не сохранены')) + '</p>';
-      const confirmationMarkup = confirmationOutcome || publishedRevision
-        ? '<div class="admin-questionnaire-confirmation" role="status"><strong>' +
-          (!programConfirmed ? 'Сохранённые сведения выбранной оценки' : confirmationOutcome?.status === 'unknown'
-            ? 'Итог подтверждения неизвестен' : 'Сведения подтверждены') + '</strong>' +
-          (publishedRevision ? revisionAttribution(publishedRevision) : '') +
-          (!programConfirmed ? '<p>Доступность для текущей программы будет определена после проверки подключения.</p>' : '') +
-          (confirmationOutcome ? '<p>' + (confirmationOutcome.status === 'unknown'
-            ? 'Проверьте сохранение этой редакции перед повторной отправкой.'
-            : confirmationOutcome.status === 'refresh_failed' ? 'Не удалось обновить готовность.' : 'Готовность обновляется…') +
-            '</p><button type="button" class="ghost-button compact-ghost" data-action="check-questionnaire-confirmation" data-value="' +
-            Number(confirmationOutcome.revisionId) + '">Проверить результат</button>' :
-            '<button type="button" class="text-button" data-action="show-admin-view" data-view="people">Перейти к участникам и назначению</button>') + '</div>' :
-          (currentRevision && !questionnairePreview ? '<div class="admin-questionnaire-saved-revision"><strong>Сохранённая редакция</strong>' +
-            revisionAttribution(currentRevision) + '</div>' : '');
+      const resultCheck = requiresReadback || confirmationOutcome?.status === 'refresh_failed'
+        ? '<div class="admin-data-confirmation-recovery" role="status">' +
+          (confirmationOutcome.status === 'unknown' ? '<strong>Итог подтверждения неизвестен</strong>' : '') +
+          '<p>' + escapeHtml(confirmationOutcome.message || 'Не удалось обновить готовность оценки.') + '</p>' +
+          '<button type="button" class="ghost-button compact-ghost" data-action="check-questionnaire-confirmation" data-value="' +
+          Number(confirmationOutcome.revisionId) + '">Проверить результат</button></div>' : '';
       const participant = questionnairePreview?.participant_preview || {};
       const fieldLabels = { organization_name: 'Организация', organization_type: 'Тип организации',
         industry: 'Сфера деятельности', activity_description: 'Описание деятельности', purpose: 'Цель оценки',
         results_usage: 'Использование результатов' };
       const validationLabels = { C01: 'сведения об организации', C02a: 'цель оценки', C03: 'использование результатов',
         C17: 'правила кейсов' };
-      const participantRows = Object.entries(fieldLabels).filter(([key]) => participant[key]).map(([key, label]) =>
-        '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(participant[key]) + '</dd>').join('');
       const changes = Array.isArray(questionnairePreview?.changes) ? questionnairePreview.changes : [];
       const changesMarkup = questionnairePreview?.is_first_publication
         ? '<p><strong>Пока нет подтверждённых сведений.</strong> Эта редакция станет текущей после подтверждения.</p>'
@@ -2902,30 +3032,44 @@ export const renderAdminOrganizations = () => {
         return validationLabels[code] ||
           (String(code).includes('duplicate') ? 'повторяющиеся поля' : 'некорректно заполненные поля');
       });
-      const nameMismatch = questionnairePreview && participant.organization_name && participant.organization_name !== org.name;
-      const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" role="status" data-draft-action="questionnaire-preview" data-assessment-ref="' +
-        escapeHtml(selectedRef) + '" data-preview-action="' +
-        (questionnairePreview.channel === 'csv' ? 'preview-questionnaire' : 'preview-early-data') +
-        '" data-questionnaire-revision-id="' + Number(questionnairePreview.id) + '"><strong>' +
-        (!programConfirmed ? 'Сохранённый предпросмотр выбранной оценки' : questionnairePreview.status === 'ready_for_confirmation'
-          ? 'Готово к подтверждению' : 'Нужно исправить анкету') + '</strong>' +
-        '<p>Внёс данные: ' + escapeHtml(questionnairePreview.uploaded_by_name ||
-          questionnairePreview.uploaded_by_email || ('аккаунт #' + Number(questionnairePreview.uploaded_by_user_id))) + '</p>' +
-        (previewIsStale ? '<p class="form-status error" data-preview-stale>Данные изменились. Обновите предпросмотр перед подтверждением. ' +
-          '<button type="button" class="text-button" data-action="refresh-questionnaire-preview">Обновить предпросмотр</button></p>' : '') +
-        (humanProblems.length ? '<p>Проверьте: ' + escapeHtml([...new Set(humanProblems)].join(', ')) + '.</p>' :
-          '<p>Обязательные сведения заполнены.</p>') +
-        (nameMismatch ? '<p class="form-status error" role="alert">Название в анкете «' + escapeHtml(participant.organization_name) +
-          '» отличается от текущего названия «' + escapeHtml(org.name) + '». При подтверждении организация будет переименована.</p>' : '') +
-        '<section><h5>Что увидит участник</h5><dl>' + participantRows + '</dl></section>' +
-        '<section><h5>Изменения относительно текущей редакции</h5>' + changesMarkup + '</section>' +
-        (questionnairePreview.status === 'ready_for_confirmation' ?
-          '<button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
-          Number(questionnairePreview.id) + '"' + (previewIsStale ? ' disabled' : '') + '>Подтвердить сведения</button>' : '') + '</div>' : '';
+      const csvPreview = questionnairePreview?.channel === 'csv';
+      const proposedName = participant.organization_name || questionnairePreview?.answers_json?.C01?.name;
+      const expectedName = questionnairePreview?.expected_organization_name ?? org.name;
+      const nameMismatch = proposedName && proposedName !== expectedName;
+      const readyForConfirmation = questionnairePreview?.status === 'ready_for_confirmation';
+      const previewMarkup = questionnairePreview ? '<div class="admin-questionnaire-preview" data-draft-action="questionnaire-preview" data-assessment-ref="' +
+        escapeHtml(selectedRef) + '" data-preview-action="' + (csvPreview ? 'preview-questionnaire' : 'preview-early-data') +
+        '" data-questionnaire-revision-id="' + Number(questionnairePreview.id) + '">' +
+        '<p class="form-status error" data-preview-stale' + (previewIsStale ? '' : ' hidden') +
+        '>' + (csvPreview ? 'Данные изменились. ' +
+          '<button type="button" class="text-button" data-action="refresh-questionnaire-preview">Загрузить файл повторно</button>'
+          : 'Форма изменилась после проверки. Подтвердите текущие сведения.') + '</p>' +
+        (humanProblems.length ? '<p class="form-status error" role="alert">Проверьте: ' +
+          escapeHtml([...new Set(humanProblems)].join(', ')) + '.</p>' : '') +
+        (readyForConfirmation && nameMismatch ? '<p data-organization-rename>Название изменится с «' + escapeHtml(expectedName) +
+          '» на «' + escapeHtml(proposedName) + '». Подтвердите переименование организации.</p>' : '') +
+        (csvPreview ? '<details><summary>Сведения из загруженной анкеты</summary>' +
+          revisionAttribution(questionnairePreview) + '<dl>' +
+          Object.entries(fieldLabels).filter(([field]) => participant[field]).map(([field, label]) =>
+            '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(participant[field]) + '</dd>').join('') +
+          '</dl>' + changesMarkup + '</details>' : '') +
+        (readyForConfirmation ? '<button type="button" class="primary-button compact-primary" data-action="confirm-questionnaire" data-value="' +
+          Number(questionnairePreview.id) + '">Подтвердить сведения</button>' : '') + '</div>' : '';
+      const sourceRevision = publishedRevision || savedRevision;
+      const sourceMarkup = sourceRevision ? revisionAttribution(sourceRevision) : '';
+      const confirmationMarkup = '<div class="admin-questionnaire-confirmation">' +
+        (publishedRevision ? '<p data-previous-organization-revision hidden>Действуют ранее подтверждённые сведения, пока вы не подтвердите изменения.</p>' : '') +
+        '<p data-organization-confirmed role="status" tabindex="-1" hidden>Сведения подтверждены</p>' +
+        resultCheck + savedChoiceWarning + previewMarkup +
+        '<button class="primary-button compact-primary" type="submit" data-early-data-submit>Подтвердить сведения</button></div>';
       const tabsMarkup = '<nav class="admin-organization-steps" aria-label="Разделы управления">' +
         viewButton('people', 'Участники оценки') +
         viewButton('organization-data', 'Данные организации') +
         viewButton('questionnaire', 'Анкета') + '</nav>';
+      const reportsLink = isActive ? '<button type="button" class="text-button admin-organization-reports-link" data-action="open-organization-reports" data-program-definition-id="' +
+        (reportProgram ? Number(reportProgram.program_definition_id) : '') + '" data-program-label="' +
+        escapeHtml(reportProgram ? [reportProgram.program_name, reportProgram.program_version].filter(Boolean).join(' · ') : '') +
+        '">Отчёты организации</button>' : '';
       const programLine = programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram
         ? escapeHtml(programIdentity(currentProgram)) + ' · версия ' + escapeHtml(currentProgram.program_version)
         : 'Не подключена';
@@ -2989,13 +3133,10 @@ export const renderAdminOrganizations = () => {
         (purgePreviewAvailable
           ? '<button class="ghost-button compact-ghost danger" type="button" data-action="purge-organization" data-execution-available="' +
             String(physicalPurgeAvailable) + '">Удалить полностью</button>' : '') : '') + '</div>' +
-        '</div>' : tabsMarkup +
+        '</div>' : tabsMarkup + (activeView === 'organization-data' ? '' :
           '<section class="admin-organization-head" aria-label="Выбранная оценка">' +
           '<div><h3>' + escapeHtml(org.name) + '</h3><p><strong>Программа</strong> · ' + programLine + '</p></div>' +
-          (isActive ? '<button type="button" class="text-button admin-organization-reports-link" data-action="open-organization-reports" data-program-definition-id="' +
-            (reportProgram ? Number(reportProgram.program_definition_id) : '') + '" data-program-label="' +
-            escapeHtml(reportProgram ? [reportProgram.program_name, reportProgram.program_version].filter(Boolean).join(' · ') : '') +
-            '">Отчёты организации</button>' : '') + '</section>') +
+          reportsLink + '</section>')) +
         renderOrganizationBatchProgress(orgId) +
         programMarkup +
         (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
@@ -3033,26 +3174,27 @@ export const renderAdminOrganizations = () => {
             assignmentReadinessMarkup + participantTools + members + '</section>' +
             '<aside class="admin-people-add">' + addMemberForm + importMembersForm + '</aside>') +
         '</section>' +
-        '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') + '" data-admin-view="organization-data">' + questionnaireLoadMarkup + currentReadinessMarkup + '<h4>Данные организации и выбранной оценки</h4>' +
-        '<p>Черновик можно редактировать. Участники увидят новые сведения после подтверждения.</p>' + legacyProfileMarkup +
-        '<form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' + escapeHtml(selectedRef) + '">' +
-        assessmentFieldMarkup +
+        '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') +
+        '" data-admin-view="organization-data">' + (questionnaireLoadState?.status === 'empty' ? '' : questionnaireLoadMarkup) +
+        '<div class="admin-data-overview">' + organizationDataReadiness(programState, readiness, assignmentRoleLabel, sourceMarkup) +
+        (!isSuperadmin && activeView === 'organization-data' ? reportsLink : '') + '</div>' +
+        '<div class="admin-organization-data-layout"><form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' +
+        escapeHtml(selectedRef) + '"' + (confirmedForm ? ' data-confirmed-form' : '') +
+        (!programConfirmed || questionnaireLoadState?.accessDenied ? ' data-confirmation-unavailable' : '') + '>' +
+        (programConfirmed ? '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '">' : '') +
         '<fieldset class="admin-questionnaire-field-group"><legend>Об организации</legend>' +
-        '<label><span>Название организации</span><input name="organization_name" value="' + organizationName + '" required></label>' +
+        '<label class="admin-organization-profile-wide"><span>Название организации</span><input name="organization_name" value="' + organizationName + '" required></label>' +
         '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
         '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '"></label>' +
         '<label class="admin-organization-profile-wide"><span>Описание деятельности</span><textarea name="activity_description">' + answer('C01', 'activity_description') + '</textarea></label>' +
-        '</fieldset>' +
-        '<fieldset class="admin-questionnaire-field-group"><legend>Сведения для знакомства</legend>' +
-        '<label class="admin-organization-profile-wide"><span>Зачем проводится оценка</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
-        '<label class="admin-organization-profile-wide"><span>Как будут использоваться результаты</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label>' +
-        '<p>Предпросмотр: ' + escapeHtml(revisionAnswers?.C02a?.participant_text || '') + ' · ' +
-          escapeHtml(revisionAnswers?.C03?.participant_text || '') + '</p></fieldset>' +
-        '<fieldset class="admin-questionnaire-field-group"><legend>Настройки контекста для ситуаций</legend>' +
+        legacyProfileMarkup + '</fieldset>' +
+        '<fieldset class="admin-questionnaire-field-group admin-data-text-fields"><legend>Сведения для знакомства</legend>' +
+        '<label><span>Зачем проводится оценка</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
+        '<label><span>Как будут использоваться результаты</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label></fieldset>' +
+        '<fieldset class="admin-questionnaire-field-group admin-data-text-fields"><legend>Настройки контекста для ситуаций</legend>' +
         '<label><span>Близость ситуаций к реальной работе</span>' + contextChoiceSelect('case_reality_level', revisionAnswers?.C17?.case_reality_level) + '</label>' +
         '<label><span>Название организации в ситуациях</span>' + contextChoiceSelect('organization_name_usage_rules', revisionAnswers?.C17?.organization_name_usage_rules) + '</label></fieldset>' +
-        '<button class="primary-button compact-primary" type="submit"' + (programConfirmed ? '' : ' disabled') + '>Сохранить черновик и предпросмотр</button></form>' +
-        (activeView === 'organization-data' ? confirmationMarkup + savedChoiceWarning + previewMarkup : '') + '</section>' +
+        confirmationMarkup + '</form>' + participantPreviewMarkup + '</div></section>' +
         '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') + '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + currentReadinessMarkup + '<h4>Корпоративная анкета</h4>' +
         '<form class="admin-organization-import-form" data-action="preview-questionnaire" data-assessment-ref="' + escapeHtml(selectedRef) + '">' +
         assessmentFieldMarkup +
@@ -3079,7 +3221,10 @@ export const renderAdminOrganizations = () => {
   }
   restoreAdminOrganizationsDraft();
   restoreProgramConnectionFeedback();
+  updateOrganizationDataForm(organizationDataForm(selectedOrganizationId));
   if (menuFocus) restoreMemberMenuFocus(menuFocus);
+  else if (focusedConfirmation) organizationDataForm(selectedOrganizationId)
+    ?.querySelector('[data-organization-confirmed]:not([hidden])')?.focus({ preventScroll: true });
   else if (focusedPreparationControl?.isConnected) focusedPreparationControl.focus({ preventScroll: true });
   else if (focusedCheckUser) adminOrganizationsList.querySelector('[data-user-id="' + CSS.escape(focusedCheckUser) + '"]')?.closest('.admin-organization-member')?.querySelector('[data-action="check-member-preparation"]')?.focus({ preventScroll: true });
   adminOrganizationsList.querySelectorAll('form[data-action], .admin-questionnaire-preview')
