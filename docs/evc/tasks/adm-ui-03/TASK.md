@@ -152,3 +152,13 @@ PostgreSQL, включая ответ с названием. На 390 и 320 px 
 фиксирует [PR №277](https://github.com/VadikB/4K_MBTI/pull/277). Вывод в Ready
 остаётся отдельным этапом. Откат приложения сохраняет историю обращений,
 ответов и их привязок в PostgreSQL.
+
+## Подготовка к Ready 2.1.58
+
+По прямому поручению владельца подготовлен PATCH 2.1.58 для PR №277.
+Проверенная реализация `50da5884`, свежий `origin/main` `7b5f0f55` (2.1.57).
+`npm run ready:prepare -- --candidate 2.1.58` обновил номер и сборку,
+проверка release gate прошла. `adm-ui-03-reentry.spec.mjs` прошёл на кандидате
+с отдельной PostgreSQL и входит в fast lane по штатной конфигурации CI.
+Для этапа разрешены `branch_push=true`, `pr=true` (Ready) и `version_bump=true`.
+`merge=false`, `deploy=false`, `artifact_publish=false`.
