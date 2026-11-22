@@ -12,6 +12,7 @@ export {
   loadAdminOrganizations,
   refreshAdminOrganizationsSafely,
   renderAdminOrganizations,
+  toggleAppealsFilter,
   createAdminOrganization,
   selectAdminOrganization,
   selectAdminOrganizationView,

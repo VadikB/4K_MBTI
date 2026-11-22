@@ -1,5 +1,6 @@
 import { waitingPresentation, readinessIcon } from './readiness-presentation.js';
 import { state, persistAssessmentContext, clearAssessmentContext } from './state.js';
+import { openParticipantReplies } from './components/participant-appeals.js';
 import {
   authPanel,
   authCompletePanel,
@@ -35,7 +36,11 @@ import {
   participantAreaNavigation,
 } from './dom.js';
 
+const acquaintanceReplies = authCompletePanel?.querySelector('#auth-complete-appeals');
+acquaintanceReplies?.addEventListener('click', () => { void openParticipantReplies(acquaintanceReplies); });
+
 export const hideAllPanels = () => {
+  document.querySelector('dialog[open] .participant-replies')?.closest('dialog').close();
   document.getElementById('session-restore-panel')?.classList.add('hidden');
   participantAreaNavigation?.classList.toggle('hidden', !state.canAdmin || state.activeArea !== 'assessment');
   authPanel.classList.add('hidden');
@@ -70,6 +75,7 @@ export const openAuthComplete = () => {
   state.currentScreen = 'auth-complete';
   persistAssessmentContext();
   authCompletePanel?.classList.remove('w02-waiting');
+  if (acquaintanceReplies) acquaintanceReplies.hidden = true;
   authCompletePanel?.classList.remove('hidden');
   window.history.replaceState({ screen: 'auth-complete' }, '', '/?screen=auth-complete');
 };
@@ -93,6 +99,7 @@ export const openAcquaintanceWaiting = (readiness = {}) => {
   persistAssessmentContext();
   const presentation = waitingPresentation(readiness);
   authCompletePanel?.classList.add('w02-waiting');
+  if (acquaintanceReplies) acquaintanceReplies.hidden = !state.pendingUser?.id;
   authCompletePanel.dataset.readinessReason = String(readiness.reason || '');
   authCompletePanel.querySelector('.auth-waiting-icon').innerHTML = readinessIcon(readiness.status);
   let note = authCompletePanel.querySelector('.auth-waiting-note');

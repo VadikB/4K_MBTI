@@ -379,7 +379,9 @@ for (const width of [1440, 390]) {
       await expect(page.locator('#auth-complete-title')).toHaveText(titles.organization);
       await expect(page.locator('#auth-complete-panel')).not.toContainText(/ответы сохранены|OLD A|OLD B|OLD C/i);
       await expect(page.getByRole('button', { name: 'Посмотреть знакомство', exact: true })).toHaveCount(0);
-      await expect(page.locator('#auth-complete-panel button:visible')).toHaveText(['Проверить готовность', 'Выйти']);
+      await expect(page.locator('#auth-complete-panel button:visible')).toHaveText([
+        'Проверить готовность', 'Ответы на обращения', 'Выйти',
+      ]);
     } finally { await context.close(); }
   });
 }

@@ -150,10 +150,64 @@ def test_http_owner_tenant_claim_reply_and_readback(test_database_url, monkeypat
             assert own.json()["items"][0]["reply_message"] == "Исправим запись"
             assert own.json()["items"][0]["assignment_id"] == 11
             assert own.json()["items"][0]["reply_author_display_name"] is None
+            assert own.json()["items"][0]["assessment_display_name"] is None
             assert 'reply_author_user_id' not in own.json()['items'][0]
     finally:
         with psycopg.connect(test_database_url) as connection:
             connection.execute(psycopg.sql.SQL("DROP SCHEMA {} CASCADE").format(psycopg.sql.Identifier(schema)))
+
+
+@pytest.mark.integration
+def test_appeal_title_follows_saved_assignment_and_revision(test_database_url) -> None:
+    schema = "appeals_titles_" + uuid4().hex
+    with psycopg.connect(test_database_url, row_factory=dict_row) as c:
+        c.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
+        c.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
+        c.execute("CREATE TABLE users(id BIGINT PRIMARY KEY,full_name TEXT)")
+        c.execute("CREATE TABLE organizations(id BIGINT PRIMARY KEY)")
+        c.execute("CREATE TABLE organization_memberships(organization_id BIGINT,user_id BIGINT,role TEXT)")
+        c.execute("INSERT INTO users VALUES(1,'Участник'),(2,'Другой участник')")
+        c.execute("INSERT INTO organizations VALUES(10),(20)")
+        ensure_appeals_schema(c)
+        c.execute("""CREATE TABLE organization_assessment_assignments(
+            id BIGINT PRIMARY KEY,recipient_user_id BIGINT,organization_id BIGINT,assignment_ref TEXT,status TEXT)""")
+        c.execute("""CREATE TABLE questionnaire_response_revisions(
+            id BIGINT PRIMARY KEY,organization_id BIGINT,assignment_ref TEXT)""")
+        c.execute("""CREATE TABLE organization_assessment_source_bindings(
+            assignment_id BIGINT,questionnaire_revision_id BIGINT,assessment_configuration_id BIGINT)""")
+        c.execute("CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,name TEXT)")
+        c.execute("""INSERT INTO organization_assessment_assignments VALUES
+            (11,1,10,'same-ref','cancelled'),(12,1,10,'same-ref','active'),
+            (13,2,10,'same-ref','active'),(14,1,20,'same-ref','active')""")
+        c.execute("INSERT INTO questionnaire_response_revisions VALUES(1,10,'same-ref'),(2,10,'same-ref'),(3,20,'same-ref')")
+        c.execute("INSERT INTO assessment_configurations VALUES(50,'Прежняя оценка'),(60,'Следующая оценка')")
+        c.execute("""INSERT INTO organization_assessment_source_bindings VALUES
+            (11,1,50),(12,1,60),(12,2,60),(13,1,60),(14,3,60)""")
+        c.execute("""INSERT INTO participant_data_issue_reports
+            (user_id,organization_id,scope_key,assignment_ref,assignment_id,questionnaire_revision_id,message)
+            VALUES (1,10,'a','same-ref',11,1,'Старое назначение'),
+                   (1,10,'b','same-ref',12,1,'Следующее назначение'),
+                   (1,10,'c','same-ref',11,2,'Другая редакция'),
+                   (1,10,'d','same-ref',13,1,'Чужое назначение'),
+                   (1,10,'e','same-ref',14,3,'Другая организация'),
+                   (1,10,'f','same-ref',NULL,1,'Историческая запись'),
+                   (2,10,'g','same-ref',13,1,'Чужое обращение')""")
+
+        def titles():
+            return {item['message']: item['assessment_display_name']
+                    for item in appeals.list_participant_issues(c, user_id=1)}
+
+        assert titles() == {
+            'Старое назначение': 'Прежняя оценка',
+            'Следующее назначение': 'Следующая оценка',
+            'Другая редакция': None,
+            'Чужое назначение': None,
+            'Другая организация': None,
+            'Историческая запись': None,
+        }
+        c.execute("INSERT INTO organization_assessment_source_bindings VALUES(11,1,60)")
+        assert titles()['Старое назначение'] is None
+        c.rollback()
 
 
 @pytest.mark.integration
