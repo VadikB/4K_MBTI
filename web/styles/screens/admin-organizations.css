@@ -26,8 +26,7 @@
 }
 .platform-navigation a[aria-current="page"] { color: var(--palette-graphite-900); font-weight: 600; border-bottom-color: var(--palette-cyan-500); }
 .platform-navigation a:focus-visible { outline: 2px solid var(--palette-outcome-link); outline-offset: 2px; }
-.admin-organizations-panel[data-superadmin="true"] .admin-account-navigation,
-.admin-organizations-panel[data-superadmin="true"] #admin-organizations-back-button { display: none; }
+.admin-organizations-panel[data-superadmin="true"] .admin-account-navigation { display: none; }
 .admin-organizations-panel[data-superadmin="true"] .org-admin-product-header { grid-template-columns: 1fr auto; }
 .admin-organizations-panel[data-superadmin="true"] .org-admin-product-header { min-height: 64px; }
 .admin-organizations-panel[data-superadmin="true"] .org-admin-account-menu summary {
@@ -106,6 +105,7 @@
     box-shadow: 0 12px 32px rgb(15 23 42 / 18%);
 }
 .org-admin-account-menu button { width: 100%; text-align: left; }
+.org-admin-account-avatar, .org-admin-account-identity { display: none; }
 
 .admin-assessment-empty-content {
     display: grid;
@@ -1110,8 +1110,6 @@
         grid-row: 2;
     }
 
-    .org-admin-account > span,
-    .org-admin-account > #admin-organizations-back-button { display: none; }
     .admin-organizations-form,
     .admin-organization-inline-form,
     .admin-organization-member-form,
@@ -1343,28 +1341,56 @@
     .admin-organizations-panel[data-superadmin="true"] .admin-organization-transfer-form { grid-row: 5; }
 }
 
-/* Org-admin composition follows the approved v3 workspace, without nested
-   page cards consuming the usable width on narrow screens. */
+/* Organization administration shares the desktop and mobile scale from reference v3. */
+.admin-organizations-panel[data-superadmin="false"] {
+    min-height: 0;
+    background: var(--palette-outcome-canvas);
+    font-size: var(--fs-body-sm);
+    line-height: 20px;
+}
 .admin-organizations-panel[data-superadmin="false"] .admin-organizations-shell {
-    width: min(100%, 1160px);
-    padding: 40px;
-    gap: 24px;
-    background: var(--bg-soft);
+    width: min(100%, 1144px);
+    padding: 48px 32px 76px;
+    gap: 16px;
+    background: transparent;
 }
 .admin-organizations-panel[data-superadmin="false"] .admin-organizations-list-card,
 .admin-organizations-panel[data-superadmin="false"] .admin-organization-card {
     padding: 0;
-    border: 0 solid var(--palette-graphite-200);
+    border: 0;
     background: transparent;
     box-shadow: none;
     gap: 24px;
 }
+.admin-organizations-panel[data-superadmin="false"] .admin-organizations-hero > div { width: 100%; }
 .admin-organizations-panel[data-superadmin="false"] .admin-organizations-hero h2 {
     font-size: 28px;
+    font-weight: var(--fw-bold);
     line-height: 36px;
+    letter-spacing: normal;
     white-space: normal;
 }
-.admin-organizations-panel[data-superadmin="false"] .admin-organization-step.current,
+.admin-organizations-panel[data-superadmin="false"] .admin-organizations-hero p {
+    color: var(--palette-outcome-text);
+    line-height: 20px;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-organization-steps {
+    flex-wrap: wrap;
+    gap: 0 24px;
+    overflow: visible;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-organization-step {
+    padding-block: 0 16px;
+    border-bottom-width: 2px;
+    color: var(--palette-outcome-text);
+    font-weight: var(--fw-regular);
+    white-space: normal;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-organization-step.current {
+    border-bottom-color: var(--text-main);
+    color: var(--text-main);
+    font-weight: var(--fw-semibold);
+}
 .org-admin-product-header .admin-account-navigation-item.current {
     border-bottom-color: var(--admin-primary);
     border-radius: 0;
@@ -1431,8 +1457,6 @@
 .admin-assignment-readiness .form-status.error > ul { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
 
 @media (max-width: 860px) {
-    .admin-organizations-panel[data-superadmin="false"] .admin-organizations-shell { padding: 24px 20px; }
-    .admin-organizations-panel[data-superadmin="false"] .admin-organizations-hero h2 { font-size: 24px; line-height: 32px; }
     .admin-organization-bulk-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
     .admin-organization-bulk-actions button { width: 100%; }
     .admin-organization-member-form, .admin-organization-import-form { min-width: 0; }
@@ -1457,30 +1481,101 @@
 .admin-invitation-details button { margin: 4px 8px 4px 0; max-width: 100%; }
 
 .admin-organizations-panel[data-superadmin="false"] .org-admin-product-header {
-    padding-inline: max(20px, calc((100vw - 1080px) / 2));
+    min-height: 81px;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 24px;
+    padding-inline: max(32px, calc((100% - 1080px) / 2));
 }
-
+.admin-organizations-panel[data-superadmin="false"] .org-admin-product-header .brand {
+    width: fit-content;
+    margin: 0;
+    font-size: 22px;
+    font-weight: 750;
+    line-height: 30px;
+    letter-spacing: -1px;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-account-navigation {
+    align-self: stretch;
+    justify-content: center;
+    gap: 32px;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-account-navigation-item {
+    padding: 4px 0;
+    color: var(--palette-outcome-text);
+    font-weight: var(--fw-medium);
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-account-navigation-item.current {
+    border-bottom-color: var(--text-main);
+    color: var(--text-main);
+    font-weight: var(--fw-semibold);
+}
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account { min-width: 0; }
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu { min-width: 0; }
 .admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu summary {
     display: flex;
     align-items: center;
-    min-height: 44px;
-    max-width: 220px;
-    gap: 8px;
+    gap: 10px;
+    min-height: 50px;
+    max-width: 260px;
+    padding: 8px 0 8px 8px;
+    color: var(--text-main);
+    font-size: var(--fs-meta);
+    font-weight: var(--fw-regular);
+    line-height: 20px;
 }
-
 .admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu summary::after {
     content: "⌄";
     flex: none;
 }
-
-.org-admin-account-menu #admin-organizations-back-button {
-    display: block;
-    border: 0;
-    text-align: left;
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu summary:focus-visible {
+    outline: 2px solid var(--palette-outcome-link);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
 }
-
-.admin-organizations-panel[data-superadmin="false"] .admin-organizations-hero {
-    margin-bottom: -12px;
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    font-size: var(--fs-micro);
+    font-weight: 650;
+}
+.org-admin-account-avatar::before { content: attr(data-initials); }
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-name {
+    display: -webkit-box;
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu > div {
+    top: calc(100% + 6px);
+    width: 280px;
+    max-width: calc(100vw - 40px);
+    min-width: 0;
+    padding: 20px;
+    color: var(--text-main);
+    font-size: var(--fs-body-sm);
+    line-height: 20px;
+    box-shadow: none;
+}
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-identity { display: block; }
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-identity p {
+    margin: 6px 0 0;
+    color: var(--palette-outcome-text);
+}
+.admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu button {
+    width: auto;
+    min-height: 44px;
+    margin-top: 6px;
+    padding-inline: 0;
+    color: var(--palette-outcome-link);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .admin-organizations-panel[data-superadmin="false"] .admin-organization-head,
@@ -1493,13 +1588,19 @@
 
 .admin-organizations-panel[data-superadmin="false"] .admin-organization-head {
     align-items: center;
-    padding: 14px 20px;
+    gap: 15px;
+    margin-bottom: -4px;
+    padding: 16px 20px;
 }
-
-.admin-organizations-panel[data-superadmin="false"] .admin-organization-head p {
-    margin: 4px 0 0;
+.admin-organizations-panel[data-superadmin="false"] .admin-organization-head h3 {
     font-size: var(--fs-body-sm);
-    color: var(--text-muted);
+    line-height: 20px;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-organization-head p {
+    margin: 3px 0 0;
+    color: var(--palette-outcome-text);
+    font-size: var(--fs-meta);
+    line-height: 19px;
 }
 
 .admin-organization-reports-link {
@@ -1509,6 +1610,8 @@
     border: 0;
     background: transparent;
     color: var(--palette-outcome-link);
+    font: inherit;
+    text-align: left;
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -1682,6 +1785,93 @@
     font: inherit;
 }
 
+.admin-organizations-panel[data-superadmin="false"] :is(
+    .admin-people-list-heading h4, .admin-people-add h4, .admin-questionnaire-field-group legend,
+    .admin-data-participant-preview h4, .admin-questionnaire-upload h4
+) {
+    font-size: var(--fs-h3);
+    font-weight: var(--fw-bold);
+    line-height: 28px;
+    letter-spacing: var(--ls-tight);
+}
+
+.admin-organizations-panel[data-superadmin="false"] :is(.admin-organization-member-form, .admin-organization-early-data-form) label {
+    gap: 8px;
+    color: var(--text-main);
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-regular);
+    line-height: 20px;
+}
+
+.admin-organizations-panel[data-superadmin="false"] :is(.admin-organization-member-form, .admin-organization-early-data-form)
+:is(input:not([type="hidden"]), textarea, select) {
+    min-height: 56px;
+    padding: 15px 16px;
+    background: var(--palette-outcome-canvas);
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-regular);
+    line-height: 24px;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-organization-early-data-form select { line-height: normal; }
+.admin-organizations-panel[data-superadmin="false"] .admin-people-add .primary-button {
+    min-height: 48px;
+    padding: 12px 24px;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-questionnaire-confirmation .primary-button {
+    min-height: 42px;
+    padding: 9px 16px;
+    font-size: var(--fs-body-sm);
+    line-height: 24px;
+}
+
+.admin-organizations-panel[data-superadmin="false"] [data-admin-view="questionnaire"] > .admin-readiness-panel {
+    background: var(--panel);
+}
+.admin-questionnaire-upload {
+    display: grid;
+    gap: 12px;
+    width: min(100%, 760px);
+    padding: 24px;
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+}
+.admin-questionnaire-upload-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 16px;
+}
+.admin-questionnaire-upload p { margin: 0; }
+.admin-questionnaire-upload .admin-organization-import-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+}
+.admin-questionnaire-upload .admin-organization-import-form input[type="file"] {
+    width: min(100%, 320px);
+    height: auto;
+    min-height: 44px;
+    padding: 8px;
+    font: inherit;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-questionnaire-upload button[type="submit"] {
+    min-height: 50px;
+    padding: 12px 24px;
+    font-size: var(--fs-body);
+    font-weight: var(--fw-medium);
+    line-height: 24px;
+}
+.admin-organizations-panel[data-superadmin="false"] .admin-questionnaire-upload .text-link {
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 @media (min-width: 861px) {
     .admin-organizations-panel[data-superadmin="false"] [data-admin-view="people"] {
         grid-template-columns: minmax(0, 1fr) 254px;
@@ -1689,28 +1879,46 @@
     }
 }
 
+@media (max-width: 1000px) {
+    .admin-organizations-panel[data-superadmin="false"] .org-admin-product-header { padding-inline: 24px; }
+    .admin-organizations-panel[data-superadmin="false"] .admin-organizations-shell { padding: 40px 24px 68px; }
+}
+
 @media (max-width: 860px) {
-    .admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu summary { max-width: 128px; }
-    .admin-organizations-panel[data-superadmin="false"] .admin-organization-steps {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) auto;
-        align-items: stretch;
-        gap: 12px;
+    .admin-organizations-panel[data-superadmin="false"] .org-admin-product-header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(50px, 1fr) 48px;
+        gap: 8px;
+        min-height: 119px;
+        padding: 12px 20px 0;
     }
+    .admin-organizations-panel[data-superadmin="false"] .org-admin-product-header .brand { font-size: 20px; }
+    .admin-organizations-panel[data-superadmin="false"] .admin-account-navigation { justify-self: stretch; }
+    .admin-organizations-panel[data-superadmin="false"] .org-admin-account-menu summary {
+        max-width: calc(50vw - 16px);
+        padding-block: 4px;
+    }
+}
+
+@media (max-width: 767px) {
+    .admin-organizations-panel[data-superadmin="false"] .admin-organizations-shell { padding: 30px 14px 56px; }
+    .admin-organizations-panel[data-superadmin="false"] .admin-organizations-hero h2 { font-size: 24px; line-height: 32px; }
+    .admin-organizations-panel[data-superadmin="false"] .admin-organization-steps { gap: 14px; }
     .admin-organizations-panel[data-superadmin="false"] .admin-organization-step {
-        font-size: var(--fs-body-sm);
-        white-space: normal;
-        flex-shrink: 1;
+        padding-block: 5px;
+        font-size: var(--fs-meta);
+    }
+    .admin-organizations-panel[data-superadmin="false"] :is(.admin-people-list, .admin-people-add, .admin-questionnaire-upload) {
+        padding: 20px;
+    }
+    .admin-organizations-panel[data-superadmin="false"] .admin-organization-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
     }
 }
 
 @media (max-width: 680px) {
-    .admin-organizations-panel[data-superadmin="false"] .admin-organization-head {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 0;
-    }
-    .admin-people-list, .admin-people-add { padding: 16px; }
     .admin-people-list .admin-organization-member { grid-template-columns: 44px minmax(0, 1fr); }
     .admin-people-list .admin-organization-member-stage,
     .admin-people-list .admin-organization-member-actions {

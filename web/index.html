@@ -419,10 +419,18 @@
           <button class="admin-account-navigation-item" type="button" data-admin-area="assessment">Моя оценка</button>
         </nav>
         <div class="org-admin-account">
-          <button id="admin-organizations-back-button" class="ghost-button compact-ghost" type="button">К сводке</button>
           <details class="org-admin-account-menu">
-            <summary id="admin-organizations-account-name" aria-label="Меню аккаунта">Аккаунт</summary>
-            <div><button id="admin-organizations-logout-button" class="user-menu-item" type="button">Выйти</button></div>
+            <summary id="admin-organizations-account-name" aria-label="Меню аккаунта" aria-controls="admin-organizations-account-menu">
+              <span class="org-admin-account-avatar" data-initials="А" aria-hidden="true"></span>
+              <span class="org-admin-account-name">Аккаунт</span>
+            </summary>
+            <div id="admin-organizations-account-menu">
+              <div class="org-admin-account-identity">
+                <strong id="admin-organizations-menu-name"></strong>
+                <p id="admin-organizations-menu-role"></p>
+              </div>
+              <button id="admin-organizations-logout-button" class="user-menu-item" type="button">Выйти</button>
+            </div>
           </details>
         </div>
       </header>
@@ -444,7 +452,7 @@
           <div>
             <p class="section-label accent-label">Управление</p>
             <h2 id="admin-organizations-title">Участники оценки</h2>
-            <p id="admin-organizations-subtitle">Подготовьте организацию, участников и сведения для оценки.</p>
+            <p id="admin-organizations-subtitle">Добавьте сотрудников и следите за ходом выбранной оценки.</p>
           </div>
         </section>
 

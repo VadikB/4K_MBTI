@@ -1129,11 +1129,8 @@ async function fillEarlyField(form, name, value) {
 }
 
 async function reopenAdminOrganizations(page) {
-  const back = page.locator('#admin-organizations-back-button');
-  if (!await back.isVisible()) await page.locator('#admin-organizations-account-name').click();
-  await back.click();
-  await expect(page.locator('#admin-panel')).toBeVisible();
-  await page.locator('#admin-summary-organizations-button').click();
+  await page.locator('#admin-organizations-panel').getByRole('button', { name: 'Отчёты организации', exact: true }).click();
+  await page.locator('#admin-reports-panel').getByRole('button', { name: 'К управлению', exact: true }).click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
 }
 
@@ -1423,7 +1420,7 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
     cancelled = true;
     return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
   });
-  await expect(page.locator('.admin-organization-head')).toContainText('Специалист 4К · версия 1.0');
+  await expect(page.locator('.admin-organization-head')).toContainText('Программа «Специалист 4К» · версия 1.0');
   await expect(page.locator('[data-bulk-actions]')).toBeHidden();
   await page.locator('input[name="invitation_email"]').check();
   await expect(page.locator('[data-bulk-actions]')).toBeVisible();
@@ -1669,8 +1666,11 @@ test('ADM-UI-01 keeps the sent menu to two items and moves deletion and incident
   ] };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const account = page.locator('.org-admin-account-menu');
-  await expect(account.locator('summary')).toHaveText('Admin');
+  await expect(account.locator('#admin-organizations-account-name')).toHaveText('Admin');
   await account.locator('summary').click();
+  await expect(account.locator('#admin-organizations-menu-name')).toHaveText('Admin');
+  await expect(account.locator('#admin-organizations-menu-role')).toHaveText('Администратор R03 Organization');
+  await expect(account.getByRole('button', { name: 'К сводке', exact: true })).toHaveCount(0);
   await expect(account.getByRole('button', { name: 'Выйти' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(account).not.toHaveAttribute('open');
@@ -2596,8 +2596,8 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
   await expect(readiness).toContainText('Обратитесь к суперадминистратору');
   await expect(readiness).not.toContainText('Анкета для выбранной оценки не подтверждена');
   await expect(readiness).not.toContainText('Оценка не выбрана');
-  await expect(readiness.locator('dd').nth(1)).toHaveText('ещё не проверена для программы');
-  await expect(readiness.locator('dd').nth(2)).toHaveText('ещё не проверена для программы');
+  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
+  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
   await expect(page.locator('[data-bulk-actions]')).toBeHidden();
   await page.locator('input[name="invitation_email"]').check();
   await expect(page.locator('[data-bulk-actions]')).toBeVisible();
@@ -2805,7 +2805,7 @@ test('QA19-02 resolves palette tokens in visible auth and admin states', async (
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }));
   const card = page.locator('[data-organization-id="3"]');
   await expect(card.locator('.primary-button').first()).toHaveCSS('background-color', 'rgb(34, 44, 48)');
-  await expect(card).toHaveCSS('border-color', 'rgb(214, 226, 229)');
+  await expect(card.locator('.admin-organization-head')).toHaveCSS('border-color', 'rgb(214, 226, 229)');
 });
 
 test('R03 personal invitation has priority and exposes an explicit account choice', async ({ page }) => {
