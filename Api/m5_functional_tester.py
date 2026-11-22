@@ -1,8 +1,11 @@
 """Применимость и программная агрегация tester protocol v2 для PERS."""
 from __future__ import annotations
 
+from ast import literal_eval
+from collections.abc import Collection, Iterable
 import hashlib
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -12,6 +15,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL_PATH = ROOT / "docs/evc/protocols/m5-functional-personalization-tester-v2.json"
 RESULT_STATUSES = {"PASS", "FAIL", "NOT_APPLICABLE", "NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"}
 PROTECTED_CATEGORIES = {"invariant", "indicator_observability", "authority", "confidentiality", "scenario_executability", "target_integrity"}
+PATH_STEP = re.compile(r"""\.([^.[\]]+)|\[("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]'"]+)\]""")
+CANDIDATE_COLLECTION_IDS = {
+    "Материалы": "MaterialID", "События": "EventID", "Активные персонажи": "CharacterID",
+    "IndicatorObservability": "IndicatorID",
+}
 
 
 def checksum(value: Any) -> str:
@@ -106,13 +114,76 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     }
 
 
-def finding_errors(item: dict[str, Any]) -> list[dict[str, Any]]:
+def _candidate_path_parts(path: str) -> list[str] | None:
+    """Accept slash pointers and the dotted/bracket addresses used by reviewers."""
+    path = path.strip()
+    if path.startswith(("/", "candidate_as/")):
+        if re.search(r"~(?![01])", path):
+            return None
+        parts = [part.replace("~1", "/").replace("~0", "~") for part in path.removeprefix("/").split("/")]
+    else:
+        remaining = path.removeprefix("$")
+        if not remaining.startswith((".", "[")):
+            remaining = "." + remaining
+        parts = []
+        offset = 0
+        while offset < len(remaining):
+            match = PATH_STEP.match(remaining, offset)
+            if match is None:
+                return None
+            key, selector = match.groups()
+            if selector is not None:
+                key = selector.strip()
+                if key.startswith(('"', "'")):
+                    try:
+                        key = literal_eval(key)
+                    except (SyntaxError, ValueError):
+                        return None
+            parts.append(key)
+            offset = match.end()
+    return parts[1:] if parts[:1] == ["candidate_as"] else parts
+
+
+def _locate_candidate_path(candidate: dict, path: str) -> tuple[tuple[str, ...], bool] | None:
+    """Normalize ID selectors to indexes and allow a missing terminal element."""
+    parts = _candidate_path_parts(path)
+    if parts is None:
+        return None
+    node = candidate
+    address = []
+    for depth, part in enumerate(parts):
+        if isinstance(node, dict):
+            key = part
+            exists = key in node
+        elif isinstance(node, list):
+            if part.isascii() and part.isdigit() and len(part) <= len(str(len(node))):
+                key = int(part)
+                exists = key < len(node)
+            else:
+                id_key = CANDIDATE_COLLECTION_IDS.get(address[-1])
+                matches = [index for index, row in enumerate(node)
+                           if id_key is not None and isinstance(row, dict) and row.get(id_key) == part]
+                if len(matches) > 1:
+                    return None
+                key = matches[0] if matches else part
+                exists = bool(matches)
+        else:
+            return None
+        address.append(str(key))
+        if not exists:
+            return (tuple(address), False) if depth == len(parts) - 1 else None
+        node = node[key]
+    return tuple(address), True
+
+
+def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
+                   missing_paths: Collection[tuple[str, ...]] = ()) -> list[dict[str, Any]]:
     """Validate evidence before it can be interpreted as a candidate defect."""
     findings = item.get("findings", [])
     errors = []
-    def error(code: str, path: str) -> None:
+    def error(code: str, path: str, **basis) -> None:
         errors.append({"error_class": "verification_protocol", "code": code,
-                       "check_id": item.get("check_id"), "path": path})
+                       "check_id": item.get("check_id"), "path": path, **basis})
     if not isinstance(findings, list):
         error("FINDINGS_NOT_A_LIST", "findings")
         return errors
@@ -120,6 +191,7 @@ def finding_errors(item: dict[str, Any]) -> list[dict[str, Any]]:
         error("FAIL_WITHOUT_BASIS", "findings")
     if item.get("status") != "FAIL" and findings:
         error("STATUS_FINDINGS_CONFLICT", "findings")
+    top_level_field_missing = any(len(path) == 1 for path in missing_paths)
     for index, finding in enumerate(findings):
         path = f"findings/{index}"
         if not isinstance(finding, dict):
@@ -128,16 +200,30 @@ def finding_errors(item: dict[str, Any]) -> list[dict[str, Any]]:
         for field in ("code", "reason", "requirement_ref"):
             if not isinstance(finding.get(field), str) or not finding[field].strip():
                 error("FINDING_BASIS_REQUIRED", f"{path}/{field}")
+        requirement_ref = finding.get("requirement_ref")
+        if (candidate_as is not None and isinstance(requirement_ref, str) and requirement_ref.strip()
+                and requirement_ref != item.get("check_id")):
+            error("FINDING_REQUIREMENT_REF_MISMATCH", f"{path}/requirement_ref",
+                  actual=requirement_ref, expected=item["check_id"])
         if not isinstance(finding.get("severity"), str) or finding["severity"] not in {"blocking", "non_blocking"}:
             error("UNKNOWN_FINDING_SEVERITY", f"{path}/severity")
         paths = finding.get("paths")
         if not isinstance(paths, list) or not paths or any(
                 not isinstance(value, str) or not value.strip() for value in paths):
             error("FINDING_LOCATION_REQUIRED", f"{path}/paths")
+        elif candidate_as is not None:
+            for path_index, value in enumerate(paths):
+                located = _locate_candidate_path(candidate_as, value)
+                if located is not None:
+                    address, exists = located
+                    if (exists and (address or top_level_field_missing)) or address in missing_paths:
+                        continue
+                error("FINDING_PATH_UNRESOLVABLE", f"{path}/paths/{path_index}", actual=value)
     return errors
 
 
-def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, Any]]:
+def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: dict | None = None,
+                      missing_required_paths: Iterable[str] = ()) -> list[dict[str, Any]]:
     provided = {}
     duplicates = set()
     if isinstance(raw_checks, list):
@@ -148,6 +234,12 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, A
             if check_id in provided:
                 duplicates.add(check_id)
             provided[check_id] = item
+    missing_paths = set()
+    if candidate_as is not None:
+        for path in missing_required_paths:
+            located = _locate_candidate_path(candidate_as, path)
+            if located is not None and not located[1]:
+                missing_paths.add(located[0])
     normalized = []
     for definition in plan["required_checks"]:
         item = deepcopy(provided.get(definition["check_id"], {}))
@@ -160,7 +252,14 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any) -> list[dict[str, A
         elif status == "NOT_APPLICABLE":
             status, reason = "TECHNICAL_ERROR", "LLM не может исключить проверку, которую план применимости пометил обязательной."
         findings = item.get("findings") if isinstance(item.get("findings"), list) else []
-        protocol_errors = finding_errors(item)
+        requirement = definition.get("requirement")
+        localized = isinstance(requirement, dict) and "case_content" in requirement
+        protocol_errors = finding_errors(
+            item, candidate_as=candidate_as if localized else None, missing_paths=missing_paths,
+        )
+        if localized and candidate_as is None and findings:
+            protocol_errors.append({"error_class": "verification_protocol", "code": "FINDING_CANDIDATE_REQUIRED",
+                                    "check_id": definition["check_id"], "path": "candidate_as"})
         if protocol_errors:
             status, reason = "TECHNICAL_ERROR", "Ответ проверки содержит противоречивую или нелокализованную находку."
         protected = bool(definition.get("protected") or definition.get("category") in PROTECTED_CATEGORIES)

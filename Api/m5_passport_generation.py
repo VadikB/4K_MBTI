@@ -71,6 +71,7 @@ def read_case_content_contract(path: Path, case_id: str) -> dict | None:
         _text(contract.get("case_id"))
         and isinstance(requirements, dict) and requirements and all(_text(value) for value in requirements.values())
         and isinstance(indicator_fields, dict) and all(_ids(fields) for fields in indicator_fields.values())
+        and _ids(contract.get("initial_material_refs_required"))
     ):
         raise ValueError("M5_AS_CASE_CONTENT_CONTRACT_INVALID")
     return contract if contract["case_id"] == case_id else None
@@ -154,7 +155,15 @@ def _text(value: object) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
-def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
+def validate_candidate(snapshot: dict, candidate: dict, check) -> list[str]:
+    """Validate the shape and identify required elements that can be cited as absent."""
+    content_contract = snapshot.get("case_content_contract", {})
+    missing_paths = []
+
+    def record_missing(expected, present, parent):
+        if content_contract:
+            missing_paths.extend(f"{parent}/{key}" for key in sorted(set(expected) - set(present)))
+
     passport = snapshot["case"]["Паспорт"]
     case = snapshot["case_version"]
     scenario = passport["17 Сценарий Dialogue"]
@@ -162,6 +171,7 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
     required = snapshot["as_contract"]["fields"]
     check("top_level_contract", set(candidate) == set(required),
           {"missing": sorted(set(required) - set(candidate)), "extra": sorted(set(candidate) - set(required))})
+    record_missing(required, candidate, "candidate_as")
     design = snapshot.get("scenario_contract")
     expected_fields = {
         "CaseID": case["case_id"], "CaseVersion": case["version"], "BaseRole": case["base_role"],
@@ -186,31 +196,45 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
             namespaces[field] = index or {}
     materials, characters, events = (namespaces[key] for key in ("Материалы", "Активные персонажи", "События"))
     check("passport_material_set", set(materials) == set(scenario["Функции материалов"]), path="candidate_as/Материалы")
+    record_missing(scenario["Функции материалов"], materials, "candidate_as/Материалы")
     check("character_count", len(characters) == passport["19 Параметры сложности"]["Фиксировано"]["Активные персонажи"],
           path="candidate_as/Активные персонажи")
     for material_id, material in materials.items():
+        path = f"candidate_as/Материалы/{material_id}"
         check("participant_material_text", _text(material.get("Текст")) and _text(material.get("Название")),
-              path=f"candidate_as/Материалы/{material_id}")
+              path=path)
+        record_missing(("Название", "Текст"), material, path)
     if design is None:
         check("passport_event_sequence", list(events) == [event["EventID"] for event in scenario["События"]],
               path="candidate_as/События")
+        record_missing((event["EventID"] for event in scenario["События"]), events, "candidate_as/События")
         for character_id, character in characters.items():
+            path = f"candidate_as/Активные персонажи/{character_id}"
             check("character_card", all(_text(character.get(field)) for field in ("Имя", "Роль", "Текст"))
-                  and isinstance(character.get("Начальные знания"), list), path=f"candidate_as/Активные персонажи/{character_id}")
+                  and isinstance(character.get("Начальные знания"), list), path=path)
+            record_missing(("Имя", "Роль", "Текст", "Начальные знания"), character, path)
+        event_fields = (
+            "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", "Условие запуска",
+        )
         for event_id, event in events.items():
-            check("scenario_event", all(_text(event.get(field)) for field in (
-                "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", "Условие запуска"
-            )), path=f"candidate_as/События/{event_id}")
+            path = f"candidate_as/События/{event_id}"
+            check("scenario_event", all(_text(event.get(field)) for field in event_fields), path=path)
+            record_missing(event_fields, event, path)
         delayed = set(materials) - set(scenario["На старте"])
         bindings = candidate.get("RuntimeBindings")
         check("runtime_event_set", isinstance(bindings, dict) and set(bindings) == set(events), path="candidate_as/RuntimeBindings")
+        binding_fields = ("function", "speaker_ids", "material_ids")
+        if isinstance(bindings, dict):
+            record_missing(events, bindings, "candidate_as/RuntimeBindings")
         bound_materials = []
         for event_id, binding in (bindings.items() if isinstance(bindings, dict) else ()):
             path = f"candidate_as/RuntimeBindings/{event_id}"
-            if not isinstance(binding, dict) or set(binding) != {"function", "speaker_ids", "material_ids"}:
+            if isinstance(binding, dict):
+                record_missing(binding_fields, binding, path)
+            if not isinstance(binding, dict) or set(binding) != set(binding_fields):
                 check("runtime_event_binding", False, path=path)
                 continue
-            function, speaker_ids, material_ids = (binding[key] for key in ("function", "speaker_ids", "material_ids"))
+            function, speaker_ids, material_ids = (binding[key] for key in binding_fields)
             check("runtime_event_binding", isinstance(function, str) and function in ALLOWED_FUNCTIONS
                   and _ids(speaker_ids) and set(speaker_ids) <= set(characters)
                   and _ids(material_ids) and set(material_ids) <= delayed
@@ -225,25 +249,33 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
     observed = _indexed(candidate.get("IndicatorObservability"), "IndicatorID") or {}
     check("indicator_adapted_target_set", set(observed) == set(targets["Точный перечень"]),
           path="candidate_as/IndicatorObservability")
+    record_missing(targets["Точный перечень"], observed, "candidate_as/IndicatorObservability")
     namespaces["authority"] = {"participant", *(f"character:{key}" for key in characters)}
-    indicator_fields = snapshot.get("case_content_contract", {}).get("indicator_fields", {})
+    indicator_fields = content_contract.get("indicator_fields", {})
+    requires_initial_refs = set(content_contract.get("initial_material_refs_required", ()))
+    initial_materials = set(scenario["На старте"]) & materials.keys()
     for indicator_id, item in observed.items():
         path = f"candidate_as/IndicatorObservability/{indicator_id}"
         extra_fields = indicator_fields.get(indicator_id, [])
         check("indicator_adapted_condition", set(item) - set(extra_fields) == {"IndicatorID", *ADAPTED_FIELDS, *REF_FIELDS}
               and all(_text(item.get(field)) for field in ADAPTED_FIELDS), path=path)
+        record_missing((*ADAPTED_FIELDS, *REF_FIELDS, *extra_fields), item, path)
         for field in extra_fields:
             check("indicator_adaptation_required_text", _text(item.get(field)), path=f"{path}/{field}")
         for field, namespace in REF_FIELDS.items():
             values = item.get(field)
-            check("indicator_adaptation_references", _ids(values) and set(values) <= set(namespaces[namespace]),
-                  path=f"{path}/{field}")
+            ref_path = f"{path}/{field}"
+            references_valid = _ids(values) and set(values) <= set(namespaces[namespace])
+            check("indicator_adaptation_references", references_valid, path=ref_path)
+            if references_valid and field == "material_refs" and indicator_id in requires_initial_refs:
+                check("indicator_initial_material_ref_required", not initial_materials.isdisjoint(values), path=ref_path)
 
     if design:
         for indicator_id, refs in design["required_observability"].items():
             for field, required_refs in refs.items():
                 check("required_scenario_observability", observed.get(indicator_id, {}).get(field) == required_refs,
                       path=f"candidate_as/IndicatorObservability/{indicator_id}/{field}")
+    return missing_paths
 
 
 def _validate_addressed_content(candidate: dict, design: dict, materials: dict, characters: dict, check) -> None:

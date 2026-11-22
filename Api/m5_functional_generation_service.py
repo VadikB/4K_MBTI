@@ -227,11 +227,11 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
                 case, protocol, case_content_requirements=content["requirements"] if content else None,
             )
             if content:
-                indicator_ids = content["indicator_fields"].keys()
+                indicator_ids = content["indicator_fields"].keys() | set(content["initial_material_refs_required"])
                 if not indicator_ids <= {target["indicator_id"] for target in projected["indicator_targets"]}:
                     raise ValueError("M5_AS_CASE_CONTENT_INDICATOR_NOT_IN_PASSPORT")
                 snapshot["case_content_contract"] = content
-                snapshot["m2_indicator_descriptors"] = {key: m2[key]["descriptor"] for key in indicator_ids}
+                snapshot["m2_indicator_descriptors"] = {key: m2[key]["descriptor"] for key in sorted(indicator_ids)}
         else:
             build_applicability_plan(case)
     except (KeyError, TypeError, ValueError) as exc:
@@ -272,8 +272,9 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
             return set()
         violations = sorted(forbidden_keys(candidate))
         check("no_premature_assessment", not violations, violations)
-        passport_generation.validate_candidate(snapshot, candidate, check)
-        return {"status": "FAIL" if errors else "PASS", "checks": checks, "errors": errors}
+        missing_paths = passport_generation.validate_candidate(snapshot, candidate, check)
+        return {"status": "FAIL" if errors else "PASS", "checks": checks, "errors": errors,
+                **({"missing_required_paths": missing_paths} if missing_paths else {})}
     expected = snapshot["author_as_example"]
     package_ref = (snapshot.get("refs") or {}).get("package") or {}
     compiler = package_ref.get("compiler") or {}
@@ -633,6 +634,10 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     plan = snapshot.get("applicability_plan") or build_applicability_plan(snapshot["case"])
     batch_size = 8
     concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
+    review_basis = {
+        "candidate_as": concrete_candidate,
+        "missing_required_paths": generation["deterministic_validation"].get("missing_required_paths", ()),
+    }
     protocol_ref = (snapshot.get("refs") or {}).get("protocol_package") or {}
     passport_basis = passport_generation.provider_basis(snapshot) if "as_contract" in snapshot else None
     candidate_binding = passport_basis is not None or protocol_ref.get("version") == "2.0.0"
@@ -704,7 +709,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "parse_failures": parse_failures,
         })
     checks = [{**item, "reviewer": "tester", "candidate_checksum": generation["candidate_checksum"]}
-              for item in normalize_results(plan, tester_raw_checks)]
+              for item in normalize_results(plan, tester_raw_checks, **review_basis)]
     protected = [item for item in plan["required_checks"] if item.get("protected")]
     challenge_payload = {
         **(passport_basis if passport_basis is not None else {
@@ -770,7 +775,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         })
     challenge_plan = {**plan, "required_checks": protected, "not_applicable_checks": []}
     challenge_checks = [{**item, "reviewer": "challenger", "candidate_checksum": generation["candidate_checksum"]}
-                        for item in normalize_results(challenge_plan, challenger_raw_checks)]
+                        for item in normalize_results(challenge_plan, challenger_raw_checks, **review_basis)]
     challenge_by_id = {item["check_id"]: item for item in challenge_checks
                        if item.get("status") != "NOT_APPLICABLE"}
     merged_checks = []

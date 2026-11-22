@@ -83,6 +83,7 @@ def test_cycle_freezes_interactions_from_its_exact_educational_assignment(test_d
             "snapshot_checksum": checksum, "interactions": definition["interactions"],
         }
         assert resolve_cycle_dependency(stored, "m5_educational_role_interactions").name == "prompt.md"
+        assert resolve_cycle_dependency(stored, "m5_functional_as").name == "v2"
         historic = read_cycle(connection, str(old_cycle["cycle_id"]))
         assert historic["execution_manifest_json"] == old_cycle["execution_manifest_json"]
         assert "project_role" not in historic["execution_manifest_json"]["runtime_refs"]
@@ -98,6 +99,7 @@ def test_old_cycle_keeps_v1_runtime_dependencies_after_v2_defaults(test_database
     case = package["cases"][0]
     current = dict(DEFAULT_DEPENDENCIES)
     v1 = {**current,
+        "m5_functional_as": "assessment_definitions/prompts/m5_functional_passport/v1",
         "m5_semantic_decision": "assessment_definitions/prompts/m5_semantic_decision/v1",
         "m5_character_response": "assessment_definitions/prompts/m5_character_response/v1",
         "m5_functional_package": "assessment_definitions/cases/competencies_4k/functional-personalization/0.4",
@@ -148,6 +150,7 @@ def test_old_cycle_keeps_v1_runtime_dependencies_after_v2_defaults(test_database
             assert new_ops["semantic_decision"]["prompt_ref"]["version"] == "v2"
             assert new_ops["character_response"]["prompt_ref"]["version"] == "v2"
             assert old_cycle["execution_manifest_json"]["dependencies"]["m5_functional_runtime"]["path"].endswith("1.1.0")
+            assert resolve_cycle_dependency(old_cycle, "m5_functional_as").name == "v1"
             assert new_cycle["execution_manifest_json"]["dependencies"]["m5_functional_as"]["path"].endswith("m5_functional_passport/v2")
             assert "api_key" not in json.dumps(old_ops).lower()
             assert old_ops["semantic_decision"]["provider_contract"]["checksum"] == new_ops["semantic_decision"]["provider_contract"]["checksum"]

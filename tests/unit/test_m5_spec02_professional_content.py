@@ -347,3 +347,143 @@ def test_spec02_new_fields_apply_only_to_new_package_and_preserve_bound_versions
     previous_plan = service.build_applicability_plan(other["case"])
     assert other["applicability_plan"]["required_checks"] == previous_plan["required_checks"]
     assert "case_content_contract" not in provider_basis(other)
+
+
+@pytest.fixture
+def spec02_candidate():
+    snapshot = snapshot_for("credit")
+    return snapshot, coherent_as(snapshot, "credit")
+
+
+def _record_followup(tmp_path, prepared, gateway):
+    initial = prepared["repair"]["original_tester"] if prepared["repair"] else prepared["tester"]
+    repair_payloads = [json.loads(call["messages"][-1]["content"]) for call in gateway.calls
+                       if call["role"] == "repair"]
+    (tmp_path / "followup.json").write_text(json.dumps({
+        "synthetic": True,
+        "initial_candidate_checksum": initial["candidate_checksum"],
+        "initial_admission": initial["aggregation"],
+        "final_candidate_checksum": prepared["candidate_checksum"],
+        "final_admission": prepared["tester"]["aggregation"],
+        "admitted": prepared["admitted_for_participant"],
+        "repair_requests": len(repair_payloads),
+        "repair_bases": [{"blocking_failures": item["blocking_failures"],
+                          "validation_errors": item["validation_errors"]} for item in repair_payloads],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+@pytest.mark.parametrize("reviewer", ["tester", "challenger"])
+@pytest.mark.parametrize(("field", "invalid_value", "error_code"), [
+    ("requirement_ref", "indicator:K4.I99", "FINDING_REQUIREMENT_REF_MISMATCH"),
+    ("paths", ["candidate_as/Материалы/9999/Текст"], "FINDING_PATH_UNRESOLVABLE"),
+    ("paths", ["/candidate_as/Материалы/0/Необязательное поле"], "FINDING_PATH_UNRESOLVABLE"),
+], ids=["foreign-requirement", "nonexistent-document", "unknown-leaf"])
+def test_unfounded_finding_never_triggers_repair(spec02_candidate, tmp_path, reviewer, field, invalid_value, error_code):
+    snapshot, candidate = spec02_candidate
+    check_id = "indicator:K1.I09"
+    defect = finding(check_id, [material_path(candidate, "M01")], "Синтетическая находка с ошибочным основанием.")
+    defect[field] = invalid_value
+    candidate_checksum = service.checksum(candidate)
+    gateway = CapturingGateway(candidate, None, {(candidate_checksum, reviewer): {check_id: defect}})
+    prepared = service.prepare(snapshot, gateway)
+    assert prepared["deterministic_validation"]["status"] == "PASS"
+    aggregation = prepared["tester"]["aggregation"]
+    assert aggregation["status"] == "INCOMPLETE"
+    assert not prepared["admitted_for_participant"] and not prepared["repair"]
+    assert not aggregation["blocking_failures"]
+    assert not any(call["role"] == "repair" for call in gateway.calls)
+    error, = aggregation["verification_errors"]
+    assert (error["code"], error["reviewer"], error["check_id"], error["candidate_checksum"]) == (
+        error_code, reviewer, check_id, candidate_checksum,
+    )
+    assert error["actual"] == (invalid_value if field == "requirement_ref" else invalid_value[0])
+    _record_followup(tmp_path, prepared, gateway)
+
+
+@pytest.mark.parametrize("valid_reviewer, invalid_reviewer", [("tester", "challenger"), ("challenger", "tester")])
+def test_localized_blocker_survives_other_reviewers_error(spec02_candidate, tmp_path, valid_reviewer, invalid_reviewer):
+    snapshot, corrected = spec02_candidate
+    candidate = deepcopy(corrected)
+    mutate_glossary(candidate)
+    check_id = "indicator:K1.I09"
+    real_finding = finding(
+        check_id,
+        ["$.candidate_as.Материалы[P00].Текст", "/candidate_as/Материалы/M01/Текст",
+         "candidate_as/IndicatorObservability/K1.I09/Конкретное условие",
+         "candidate_as.IndicatorObservability['K1.I09']['Что сохранить при адаптации']"],
+        "Словарь присвоил один статус обоим терминам, от которых зависит условие карты.",
+    )
+    invalid_finding = finding(
+        check_id, ["$.candidate_as.Материалы[9999].Текст"], "Синтетическая находка по несуществующему адресу.",
+    )
+    initial_checksum = service.checksum(candidate)
+    gateway = CapturingGateway(candidate, corrected, {
+        (initial_checksum, valid_reviewer): {check_id: real_finding},
+        (initial_checksum, invalid_reviewer): {check_id: invalid_finding},
+    })
+    prepared = service.prepare(snapshot, gateway)
+    initial = prepared["repair"]["original_tester"]["aggregation"]
+    assert initial["status"] == "FAIL"
+    assert [(item["reviewer"], item["findings"]) for item in initial["blocking_failures"]] == [
+        (valid_reviewer, [real_finding]),
+    ]
+    assert initial["verification_errors"][0]["reviewer"] == invalid_reviewer
+    repair_call, = [call for call in gateway.calls if call["role"] == "repair"]
+    payload = json.loads(repair_call["messages"][-1]["content"])
+    assert payload["blocking_failures"] == initial["blocking_failures"]
+    assert prepared["candidate_checksum"] == service.checksum(corrected) != initial_checksum
+    assert prepared["tester"]["reviewed_candidate_checksum"] == prepared["candidate_checksum"]
+    assert all(row["candidate_checksum"] == prepared["candidate_checksum"]
+               for reviews in prepared["tester"]["independent_checks"].values() for row in reviews)
+    assert prepared["admitted_for_participant"]
+    _record_followup(tmp_path, prepared, gateway)
+
+
+@pytest.mark.parametrize("path", [
+    "candidate_as/Материалы/M01",
+    "candidate_as.Автор",
+    "$.candidate_as[\"Материалы\"][0][\"Текст\"]",
+], ids=["existing-container", "undeclared-leaf", "missing-required-field"])
+def test_finding_on_a_missing_field_must_identify_a_required_element(spec02_candidate, tmp_path, path):
+    snapshot, corrected = spec02_candidate
+    candidate = deepcopy(corrected)
+    del material(candidate, "M01")["Текст"]
+    check_id = "case02.attractive_feature"
+    defect = finding(check_id, [path], "В обязательном M01 отсутствует текст требований.")
+    gateway = CapturingGateway(candidate, corrected, {(service.checksum(candidate), "challenger"): {check_id: defect}})
+    prepared = service.prepare(snapshot, gateway)
+    initial = prepared["repair"]["original_tester"]["aggregation"]
+    if path == "candidate_as.Автор":
+        assert not initial["blocking_failures"]
+        assert initial["verification_errors"][0]["actual"] == path
+    else:
+        assert initial["blocking_failures"][0]["findings"] == [defect]
+        assert not initial["verification_errors"]
+    assert prepared["admitted_for_participant"]
+    _record_followup(tmp_path, prepared, gateway)
+
+
+@pytest.mark.parametrize("changed", [False, True], ids=["unchanged", "corrected"])
+def test_empty_k1_i09_refs_block_even_when_both_reviewers_pass(spec02_candidate, tmp_path, changed):
+    snapshot, corrected = spec02_candidate
+    candidate = deepcopy(corrected)
+    k1_i09(candidate)["material_refs"] = []
+    gateway = CapturingGateway(candidate, corrected if changed else candidate, {})
+    prepared = service.prepare(snapshot, gateway)
+    repair = prepared["repair"]
+    initial = repair["original_tester"]
+    assert initial["aggregation"]["status"] == "FAIL"
+    assert all(row["status"] == "PASS" for reviews in initial["independent_checks"].values() for row in reviews)
+    error, = repair["original_deterministic_validation"]["errors"]
+    assert error["path"] == "candidate_as/IndicatorObservability/K1.I09/material_refs"
+    assert error["check"] == "indicator_initial_material_ref_required"
+    repair_call, = [call for call in gateway.calls if call["role"] == "repair"]
+    payload = json.loads(repair_call["messages"][-1]["content"])
+    assert payload["validation_errors"] == [error]
+    assert prepared["admitted_for_participant"] is changed
+    if changed:
+        assert prepared["tester"]["reviewed_candidate_checksum"] == service.checksum(corrected)
+    else:
+        assert repair["outcome"] == "UNCHANGED_CANDIDATE"
+        assert prepared["compiled_case"] is None
+    _record_followup(tmp_path, prepared, gateway)
