@@ -12,11 +12,13 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from Api import m5_scenario_runtime as runtime, participant_profile, routes
+from Api.cycle_execution_manifest import DEFAULT_DEPENDENCIES, resolve_cycle_dependency
 from Api.m10_input_resolver import resolve
 from Api.m10_product_flow import start_prepared
 from Api.m5_case_runtime import checksum
 from Api.m5_catalog_integrity import publish_catalog
-from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE
+from Api.m5_functional_generation_service import checksum as candidate_checksum
+from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE, read_case_content_contract
 from Api.m5_rule_engine import CharacterReply, ControlledSemanticAdapter, Decision, DeepSeekSemanticAdapter
 from Api.m5_runtime_rules import import_runtime_rule_version, load_runtime_rule_package
 from Api.m5_storage import import_package
@@ -102,7 +104,16 @@ def product_path(product_db, monkeypatch):
             def chat_with_trace(self, messages, **kwargs):
                 result = super().chat_with_trace(messages, **kwargs)
                 if ":generation:" in kwargs["routing_key"]:
-                    result.content = json.dumps(synthetic_as(self.calls[-1][2], variant=variant), ensure_ascii=False)
+                    payload = self.calls[-1][2]
+                    candidate = synthetic_as(payload, variant=variant)
+                    if delivery := payload.get("event_material_delivery"):
+                        for event in candidate["События"]:
+                            event["Условие запуска"] = delivery["events"][event["EventID"]]["condition"]
+                        if candidate["CaseID"] == "CASE.SPEC.01":
+                            del candidate["RuntimeBindings"]["E01_DOCUMENT"]["material_ids"]
+                        if candidate["CaseID"] == "CASE.SPEC.02":
+                            candidate["RuntimeBindings"]["E01_FACT"]["material_ids"] = candidate["Стартовые MaterialIDs"]
+                    result.content = json.dumps(candidate, ensure_ascii=False)
                 return result
 
         gateway = Gateway("pass")
@@ -658,9 +669,101 @@ def test_committed_transition_fences_simultaneous_match(product_db, product_path
     _record("ac3-race-" + boundary, {"saved_status": saved["status"], "events": saved["events"]})
 
 
-def test_written_spec02_prepares_submits_and_next_presents_spec03_in_same_cycle(product_db, product_path, monkeypatch):
+def _read_prepared_as(connection, as_id, contract_version):
+    row = connection.execute(
+        "SELECT * FROM m5_assessment_situations WHERE assessment_situation_id=%s", (as_id,),
+    ).fetchone()
+    payload = row["execution_payload_json"]
+    trace = payload["ai_operations"]["functional_personalization"]
+    refs = trace["source_snapshot"]["refs"]
+    assert refs["as_contract"]["version"] == contract_version
+    assert refs["runtime_rule"]["version"] == "1.4.1"
+    assert trace["candidate_checksum"] == candidate_checksum(trace["accepted_as"])
+    assert trace["candidate_checksum"] == trace["tester"]["reviewed_candidate_checksum"]
+    assert trace["candidate_checksum"] == payload["runtime_rule_ref"]["candidate_checksum"]
+    assert trace["compiled_case_checksum"] == row["snapshot_json"]["case_ref"]["checksum"]
+    assert runtime.build_execution_envelope(connection, row)["admitted"]
+    return row, trace
+
+
+def test_spec01_discloses_document_once_on_its_prepared_condition(product_db, product_path, monkeypatch):
+    app, _, cycle_id, as_id, case_id = product_path(["CASE.SPEC.01"])
+    assert case_id == "CASE.SPEC.01"
+    semantics = Semantics()
+    monkeypatch.setattr(runtime, "DeepSeekSemanticAdapter", lambda **_: semantics)
+    monkeypatch.setattr(runtime, "DeepSeekCharacterAdapter", lambda **_: Characters())
+    with product_db() as connection:
+        row, trace = _read_prepared_as(connection, as_id, "2.0.0")
+        rules = row["execution_payload_json"]["runtime_rules"]
+        document = next(item for item in rules["materials"] if item["material_id"] == "M02")
+        event = next(item for item in rules["scenario"] if item["step_id"] == "E01_DOCUMENT")
+        delivery = trace["source_snapshot"]["event_material_delivery"]["events"]["E01_DOCUMENT"]
+        condition = delivery["condition"]
+        assert delivery["functions"] == ["material_update"]
+        assert delivery["material_ids"] == ["M02"]
+        assert document["event_condition"]["source"] == event["source"]
+        assert document["event_condition"]["text"] == event["condition"] == condition
+        assert trace["accepted_as"]["RuntimeBindings"]["E01_DOCUMENT"]["material_ids"] == ["M02"]
+        assert trace["author_content_binding"]["event_material_changes"] == [{
+            "path": "candidate_as/RuntimeBindings/E01_DOCUMENT/material_ids", "actual": None, "assembled": ["M02"],
+        }]
+        assert len(trace["tester"]["provider_operation"]["batches"]) == 4
+        assert len(trace["tester"]["challenger_operation"]["batches"]) == 4
+        assert trace["repair"] is None
+    with TestClient(app) as http:
+        _owner(http)
+        before = http.get(_public_path(cycle_id)).json()
+        assert [item["material_id"] for item in before["current_situation"]["participant_payload"]["initial_materials"]] == ["M01"]
+        assert not any(item["material_id"] == "M02" for item in before["trace"]["events"])
+        semantics.outcomes = {"M02:mandatory": "NO_MATCH"}
+        ordinary = _post(http, as_id, _command("no-proposal", "К какому сроку нужна работа?"))
+        assert not any(item["material_id"] == "M02" for item in ordinary["events"])
+        semantics.outcomes = {"M02:mandatory": "MATCH"}
+        first = _post(http, as_id, _command("proposal", "Предлагаю согласовать план и следующий шаг."))
+        update, = [item for item in first["events"] if item["material_id"] == "M02"]
+        assert update["event_type"] == "mandatory_update"
+        repeat = _post(http, as_id, _command("repeat-proposal", "Подтверждаю тот же следующий шаг."))
+        assert not any(item["material_id"] == "M02" for item in repeat["events"])
+        after = http.get(_public_path(cycle_id)).json()
+        assert [item["event_id"] for item in after["trace"]["events"] if item["material_id"] == "M02"] == [update["event_id"]]
+    _record("event-materials-spec01", {"before": before["trace"]["events"], "update": update,
+                                      "after": after["trace"]["events"], "condition": condition})
+
+
+@pytest.mark.parametrize(("package_dir", "package_version", "contract_version", "content_version"), [
+    ("v3", "3.0.0", "2.0.0", "1.1.0"),
+    ("v2", "2.0.0", "1.0.0", "1.0.0"),
+    ("v1", "1.0.0", "1.0.0", None),
+])
+def test_written_spec02_prepares_submits_and_next_presents_spec03_in_same_cycle(
+        product_db, product_path, monkeypatch, package_dir, package_version, contract_version, content_version):
+    default = DEFAULT_DEPENDENCIES["m5_functional_as"]
+    assert default.endswith("/v3")
+    dependency = f"assessment_definitions/prompts/m5_functional_passport/{package_dir}"
+    if package_dir != "v3":
+        monkeypatch.setitem(DEFAULT_DEPENDENCIES, "m5_functional_as", dependency)
     app, queue, cycle_id, written_id, case_id = product_path(["CASE.SPEC.02", "CASE.SPEC.03"])
+    monkeypatch.setitem(DEFAULT_DEPENDENCIES, "m5_functional_as", default)
     assert case_id == "CASE.SPEC.02"
+    with product_db() as connection:
+        cycle = connection.execute("SELECT * FROM m5_cycles WHERE cycle_id=%s", (cycle_id,)).fetchone()
+        frozen_package = resolve_cycle_dependency(cycle, "m5_functional_as")
+        assert frozen_package.as_posix().endswith(dependency)
+        package_pin = cycle["execution_manifest_json"]["dependencies"]["m5_functional_as"]
+        first_as, first_trace = _read_prepared_as(connection, written_id, contract_version)
+        assert first_trace["accepted_as"]["RuntimeBindings"]["E01_FACT"]["material_ids"] == []
+        if package_dir == "v3":
+            event = first_trace["source_snapshot"]["event_material_delivery"]["events"]["E01_FACT"]
+            assert event["functions"] == ["facilitator_action"]
+            assert event["material_ids"] == []
+            assert first_trace["author_content_binding"]["event_material_changes"] == [{
+                "path": "candidate_as/RuntimeBindings/E01_FACT/material_ids",
+                "actual": first_trace["accepted_as"]["Стартовые MaterialIDs"], "assembled": [],
+            }]
+        assert first_trace["author_content_binding"]["changed"] is (package_dir == "v3")
+        assert first_trace["repair"] is None
+        assert len(first_trace["tester"]["provider_operation"]["batches"]) == 5
+        assert len(first_trace["tester"]["challenger_operation"]["batches"]) == 4
     semantics, characters = Semantics(), Characters()
     monkeypatch.setattr(runtime, "DeepSeekSemanticAdapter", lambda **_: semantics)
     monkeypatch.setattr(runtime, "DeepSeekCharacterAdapter", lambda **_: characters)
@@ -668,9 +771,18 @@ def test_written_spec02_prepares_submits_and_next_presents_spec03_in_same_cycle(
         _owner(http)
         written = http.get(_public_path(cycle_id)).json()
         assert written["current_situation"]["response_format"] == "written"
-        assert [row["material_id"] for row in written["current_situation"]["participant_payload"]["initial_materials"]] == [
-            "M01", "M02", "M03", "M04", "M05", "M06",
-        ]
+        presentation = written["current_situation"]["participant_payload"]
+        assert presentation["introduction"] == "Синтетический текст P00."
+        cards = ["M01", "M02", "M03", "M04", "M05", "M06"]
+        assert [item["material_id"] for item in presentation["initial_materials"]] == cards
+        semantics.outcomes = {"CASE.SPEC.02:E01_FACT:completion": "MATCH"}
+        clarification = _post(http, written_id, _command("clarify", "Что означает уже показанный факт из M01?"))
+        assert any(item["event_type"] == "stage_transitioned" for item in clarification["events"])
+        assert not any(item["material_id"] for item in clarification["events"])
+        refreshed = http.get(_public_path(cycle_id)).json()
+        assert refreshed["current_situation"]["participant_payload"] == presentation
+        assert [item["material_id"] for item in refreshed["trace"]["events"] if item["material_id"]] == cards
+        semantics.outcomes = {}
         _post(http, written_id, _command("written-final", "Проверил вводные. Мой письменный ответ сохранён."))
         assert not characters.inputs
         transition = http.post(f"/users/assessment/m5/situations/{written_id}/transitions", json={
@@ -699,30 +811,63 @@ def test_written_spec02_prepares_submits_and_next_presents_spec03_in_same_cycle(
         assert [row["material_id"] for row in resulting["current_situation"]["participant_payload"]["initial_materials"]] == [
             "M01", "M02", "M03",
         ]
+        assert not any(row["material_id"] == "M04" for row in resulting["trace"]["events"])
+        next_id = str(selected["assessment_situation_id"])
+        _rules(semantics)
+        ordinary = _post(http, next_id, _command("before-update", "Когда срок?"))
+        assert not _effect(ordinary, "E01_UPDATE")
+        _rules(semantics, update="MATCH")
+        proposal = _command("proposal-in-next", PROPOSAL)
+        update, = _effect(_post(http, next_id, proposal), "E01_UPDATE")
+        assert update["material_id"] == "M04"
+        assert update["payload_json"]["recipient_ids"] == ["assessee"]
+        assert update["payload_json"]["speaker_id"] == "COLLEAGUE_1"
+        with product_db() as connection:
+            control(connection, cycle_id=cycle_id, key="pause-after-next-update", action="pause",
+                    reason="operator_pause", initiated_by=99)
+            control(connection, cycle_id=cycle_id, key="resume-after-next-update", action="resume",
+                    reason="operator_resume", initiated_by=99)
+        assert _post(http, next_id, proposal)["idempotent"]
+        assert not _effect(_post(http, next_id, _command("fresh-proposal", PROPOSAL)), "E01_UPDATE")
+        after = http.get(_public_path(cycle_id)).json()
+        assert [row["event_id"] for row in after["trace"]["events"] if row["material_id"] == "M04"] == [update["event_id"]]
     with product_db() as connection:
-        traces = {}
-        for as_id in (written_id, selected["assessment_situation_id"]):
-            row = connection.execute(
-                "SELECT execution_payload_json FROM m5_assessment_situations WHERE assessment_situation_id=%s",
-                (as_id,),
-            ).fetchone()
-            generation = row["execution_payload_json"]["ai_operations"]["functional_personalization"]
-            traces[generation["accepted_as"]["CaseID"]] = generation
-    spec02 = traces["CASE.SPEC.02"]
-    spec03 = traces["CASE.SPEC.03"]
-    assert spec02["source_snapshot"]["refs"]["protocol_package"] == spec03["source_snapshot"]["refs"]["protocol_package"]
-    assert spec02["source_snapshot"]["refs"]["protocol_package"]["version"] == "2.0.0"
-    k1_i09 = next(row for row in spec02["accepted_as"]["IndicatorObservability"] if row["IndicatorID"] == "K1.I09")
-    assert k1_i09["Конкретное условие"] and k1_i09["Что сохранить при адаптации"]
-    for reviewer in ("tester", "challenger"):
-        for trace in (spec02, spec03):
+        row, _ = _read_prepared_as(connection, written_id, contract_version)
+        assert row["snapshot_checksum"] == first_as["snapshot_checksum"]
+        assert row["execution_payload_json"] == first_as["execution_payload_json"]
+        _, next_trace = _read_prepared_as(connection, next_id, contract_version)
+        assert len(next_trace["tester"]["provider_operation"]["batches"]) == 4
+        assert len(next_trace["tester"]["challenger_operation"]["batches"]) == 4
+        assert next_trace["repair"] is None
+    first_refs, next_refs = (trace["source_snapshot"]["refs"] for trace in (first_trace, next_trace))
+    assert first_refs["as_contract"] == next_refs["as_contract"]
+    assert first_refs["protocol_package"] == next_refs["protocol_package"]
+    assert first_refs["protocol_package"]["version"] == package_version
+    assert first_refs["protocol_package"]["path"] == package_pin["path"]
+    k1_i09 = next(row for row in first_trace["accepted_as"]["IndicatorObservability"] if row["IndicatorID"] == "K1.I09")
+    if content_version:
+        content = read_case_content_contract(frozen_package / "case-content-contract.json", "CASE.SPEC.02")
+        assert content["version"] == content_version
+        assert k1_i09["Конкретное условие"] and k1_i09["Что сохранить при адаптации"]
+        assert k1_i09["material_refs"] and set(k1_i09["material_refs"]) <= set(first_trace["accepted_as"]["Стартовые MaterialIDs"])
+        for trace in (first_trace, next_trace):
             assert trace["tester"]["protocol"]["version"] == "2.1.0"
-        spec02_checks = {check["check_id"]: check for check in spec02["tester"]["independent_checks"][reviewer]}
-        assert "case_content" in spec02_checks["indicator:K1.I09"]["requirement"]
-        assert all("case_content" not in check.get("requirement", {})
-                   for check in spec03["tester"]["independent_checks"][reviewer])
-    scenario_contract = spec03["source_snapshot"]["refs"]["runtime_rule"]["scenario_contract"]
+        for reviewer in ("tester", "challenger"):
+            spec02_checks = {check["check_id"]: check for check in first_trace["tester"]["independent_checks"][reviewer]}
+            assert spec02_checks["indicator:K1.I09"]["requirement"]["case_content"] == content["requirements"]["indicator:K1.I09"]
+            assert all("case_content" not in check.get("requirement", {})
+                       for check in next_trace["tester"]["independent_checks"][reviewer])
+    else:
+        assert "case_content_contract" not in first_refs
+        assert "Что сохранить при адаптации" not in k1_i09
+    scenario_contract = next_refs["runtime_rule"]["scenario_contract"]
     assert scenario_contract["events"]["E01_UPDATE"]["material_ids"] == ["M04"]
-    _record("ac4-spec02-to-spec03", {"written_start": written, "written_receipt": transition.json(), "next": resulting,
-                                    "spec02_k1_i09": k1_i09, "tester_protocol": spec02["tester"]["protocol"],
-                                    "spec03_start_material_ids": scenario_contract["start_material_ids"]})
+    _record(f"ac4-spec02-to-spec03-{package_dir}", {
+        "cycle_package": package_pin, "prompt_package": first_refs["protocol_package"],
+        "contract": first_refs["as_contract"], "content_version": content_version,
+        "written_start": written, "clarification": clarification, "written_receipt": transition.json(),
+        "next": resulting, "spec03_update": update, "spec02_k1_i09": k1_i09,
+        "tester_protocol": first_trace["tester"]["protocol"], "snapshot_checksum": first_as["snapshot_checksum"],
+        "first_checksums": first_trace["author_content_binding"],
+        "reviewed_candidate_checksum": first_trace["tester"]["reviewed_candidate_checksum"],
+    })

@@ -91,7 +91,7 @@ def test_frozen_educational_role_and_spec02_contract_reach_generation_and_repair
     result = service.prepare(snapshot, gateway)
     calls = [(routing, messages, payload) for routing, messages, payload in gateway.calls if ":generation:" in routing]
     assert len(calls) == 2 and result["admitted_for_participant"]
-    assert snapshot["refs"]["protocol_package"]["version"] == "2.0.0"
+    assert snapshot["refs"]["protocol_package"]["version"] == "3.0.0"
     assert snapshot["applicability_plan"]["protocol"]["version"] == "2.1.0"
     for _, messages, payload in calls:
         assert payload["project_role"] == expected
@@ -155,6 +155,7 @@ def test_passport_provider_inputs_bind_exact_checks_and_candidate(number, count,
             assert any("/material_refs" in item["path"] for item in payload["validation_errors"])
     if mode != "protocol":
         trace = service.build_persistence_trace(snapshot, result)
-        assert trace["source_snapshot"]["refs"]["as_contract"] == case["as_contract_ref"]
+        assert trace["source_snapshot"]["refs"]["as_contract"]["version"] == "2.0.0"
+        assert trace["source_snapshot"]["case_version"]["as_contract_ref"] == case["as_contract_ref"]
         assert "author_as_example" not in json.dumps(trace, ensure_ascii=False)
         assert result["compiled_case"]["indicator_targets"][0]["material_refs"]
