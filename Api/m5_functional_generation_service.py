@@ -172,7 +172,9 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
                             provider_contract: dict[str, Any] | None = None,
                             profile_sources: dict | None = None,
                             selected_base_role: str | None = None,
-                            runtime_rule_ref: dict | None = None, package_ref: dict | None = None) -> dict:
+                            runtime_rule_ref: dict | None = None, package_ref: dict | None = None,
+                            project_role: dict | None = None,
+                            project_role_prompt: Path | None = None) -> dict:
     contract, contract_ref, refs = passport_generation.read_as_package(as_package)
     actual = runtime_checksum(case_version)
     if case_version_checksum and case_version_checksum != actual:
@@ -198,10 +200,20 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
         refs["provider_contract"] = {key: provider_contract[key] for key in (
             "version", "checksum", "provider", "endpoint", "model", "thinking", "supported_response_formats",
         )}
+    if project_role is not None:
+        if project_role_prompt is None:
+            raise ValueError("M5_EDUCATIONAL_ROLE_PROMPT_NOT_FROZEN")
+        refs["project_role_prompt"] = {
+            "path": str(project_role_prompt.relative_to(ROOT)),
+            "sha256": checksum(project_role_prompt.read_bytes()),
+        }
+        refs["project_role"] = {key: project_role[key] for key in ("code", "version", "checksum", "snapshot_checksum")}
     snapshot = {
         "schema_version": 2, "operation_id": operation_id, "synthetic": synthetic,
         "created_at": datetime.now(timezone.utc).isoformat(), "case": case, "case_version": projected,
         "as_contract": contract, "profile": allowed_profile(profile), "refs": refs,
+        **({"project_role": {**project_role, "interactions": list(project_role["interactions"])}}
+           if project_role is not None else {}),
         **({"scenario_contract": design} if design is not None else {}),
     }
     # Resolve all mandatory checks before entering the provider.
@@ -544,9 +556,15 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
 def _generation_instructions(snapshot: dict) -> tuple[str, str]:
     design = snapshot.get("scenario_contract")
     if design:
-        return design["candidate_contract"]["instruction"], json.dumps(snapshot["as_contract"], ensure_ascii=False)
-    return (_frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8"),
-            _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8"))
+        instruction = design["candidate_contract"]["instruction"]
+        contract = json.dumps(snapshot["as_contract"], ensure_ascii=False)
+    else:
+        instruction = _frozen_file(snapshot, "generator_prompt").read_text(encoding="utf-8")
+        contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
+    if "project_role" in snapshot:
+        addendum = _frozen_file(snapshot, "project_role_prompt").read_text(encoding="utf-8")
+        instruction = f"{instruction}\n\n{addendum}"
+    return instruction, contract
 
 
 def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:

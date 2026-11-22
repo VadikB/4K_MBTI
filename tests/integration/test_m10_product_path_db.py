@@ -926,6 +926,25 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     app = FastAPI()
     app.include_router(routes.router)
     second_operation = 'next:' + first_as
+    support_case = next_failure in {'FAIL', 'TECHNICAL'}
+    if support_case:
+        from Api import preparation_observation, support_preparation
+        support_reference = preparation_observation.reference('cycle', second_operation)
+        support_path = '/users/admin/support/preparation'
+        with product_db() as connection:
+            connection.execute("""CREATE TABLE organization_assessment_assignments (
+                id BIGINT PRIMARY KEY,organization_id BIGINT NOT NULL,recipient_user_id BIGINT NOT NULL,
+                assignment_ref TEXT NOT NULL,status TEXT NOT NULL,revoked_at TIMESTAMP)""")
+            connection.execute("""INSERT INTO organization_assessment_assignments
+                VALUES (41,10,99,'synthetic-next','active',NULL)""")
+            connection.execute('UPDATE m5_cycles SET assignment_id=41 WHERE cycle_id=%s', (cycle_id,))
+
+        def support_setup_user(token):
+            if token == 'support-platform':
+                return SimpleNamespace(id=100, email=routes.ADMIN_EMAIL)
+            return {'functional-owner': SimpleNamespace(id=99), 'functional-other': SimpleNamespace(id=100)}.get(token)
+
+        monkeypatch.setattr(routes.web_session_service, 'get_user_by_token', support_setup_user)
     if next_failure and next_failure != 'TECHNICAL':
         original_chat = FunctionalGateway.chat_with_trace
         review_calls = []
@@ -975,9 +994,31 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             with ThreadPoolExecutor(max_workers=2) as workers:
                 assert [op['operation_id'] for op in workers.map(concurrent_next, range(2))] == [second_operation] * 2
         assert http.get(status_path).json()["status"] == "queued"
+        if support_case:
+            with product_db() as connection:
+                connection.execute('SET TRANSACTION READ ONLY')
+                pending = support_preparation.read(connection, support_reference)
+                assert pending['state'] == 'waiting' and pending['stage'] == 'queued'
+                assert pending['assignment_id'] == 41
+                assert support_preparation.list_failures(connection)['items'] == []
         claimed = queue._claim()
         assert claimed and claimed["operation_id"] == second_operation
         assert http.get(status_path).json()["status"] == "running"
+        if support_case:
+            preparation_observation.begin('cycle', second_operation, claimed['attempt_token'],
+                                          'next', 'next', factory=product_db)
+            with product_db() as connection:
+                assert support_preparation.read(connection, support_reference)['state'] == 'waiting'
+                connection.execute("""UPDATE preparation_observations
+                    SET stage_started_at=NOW()-INTERVAL '3 minutes', heartbeat_at=NOW()-INTERVAL '2 minutes'
+                    WHERE source='cycle' AND operation_id=%s AND attempt_token=%s""",
+                    (second_operation, str(claimed['attempt_token'])))
+                stale = support_preparation.read(connection, support_reference)
+                assert stale['state'] == 'unconfirmed' and stale['stage'] == 'next'
+                stage_at, last_known, read_at = (
+                    datetime.fromisoformat(stale[key]) for key in ('stage_at', 'last_confirmed_at', 'read_at')
+                )
+                assert stage_at < last_known < read_at
         assert http.post(next_path, json=original_request).json()["operation_id"] == second_operation
         http.cookies.set(routes.SESSION_COOKIE_NAME, "functional-other")
         assert http.get(status_path).status_code == 404
@@ -1041,6 +1082,36 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                 assert diagnostic['candidate_checksum']
                 assert diagnostic['admission_checks']
                 assert diagnostic['admission_aggregation']['admitted_for_participant'] is False
+                if support_case:
+                    participant = finished.json()['preparation']
+                    admin = routes._project_admin_assessment_stage({
+                        'assignment_id': 41, 'cycle_status': 'paused', 'cycle_id': cycle_id,
+                        'preparation': participant,
+                    })
+                    assert admin['preparation']['reference'] == participant['reference'] == support_reference
+                    assert diagnostic['operation_id'] == second_operation
+                    connection.execute("""UPDATE organization_assessment_assignments
+                        SET status='revoked',revoked_at=NOW() WHERE id=41""")
+                    connection.execute("""INSERT INTO organization_assessment_assignments
+                        VALUES (42,10,99,'synthetic-next','active',NULL)""")
+            if support_case:
+                http.cookies.set(routes.SESSION_COOKIE_NAME, 'support-platform')
+                listed = http.get(support_path)
+                first_read = http.get(f'{support_path}/{support_reference}')
+                second_read = http.get(f'{support_path}/{support_reference}')
+                assert listed.status_code == first_read.status_code == second_read.status_code == 200
+                one, two = first_read.json(), second_read.json()
+                assert one.pop('read_at') <= two.pop('read_at')
+                assert one == two
+                assert [item['reference'] for item in listed.json()['items']] == [support_reference]
+                assert (one['assignment_id'], one['organization_id'], one['state']) == (41, 10, 'admission_denied')
+                assert one['failure_class'] == expected_code and one['last_confirmed_at']
+                assert one['previous_position'] == 1
+                assert one['result_confirmed_at'] is None
+                for forbidden in ('answers', 'result_json', 'error_message', 'candidate_checksum',
+                                  'synthetic localized defect', 'attempt_token', second_operation):
+                    assert forbidden not in first_read.text
+                assert review_calls == calls_at_failure
             assert sum(':generation:repair:' in key for key in review_calls) == (1 if next_failure == 'FAIL' else 0)
             assert sum(':generation:' in key for key in review_calls) == (2 if next_failure == 'FAIL' else 1)
             evidence = {'synthetic': True, 'outcome': next_failure, 'cycle_id': cycle_id,
@@ -1060,6 +1131,14 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         assert prepared["status"] == "completed"
         assert prepared["result"]["decision"]["status"] == "SELECTED"
         assert prepared["result"]["presentation"] is None
+        if support_case:
+            with product_db() as connection:
+                connection.execute('SET TRANSACTION READ ONLY')
+                resolved = support_preparation.read(connection, support_reference)
+                assert resolved['state'] == 'result_confirmed' and resolved['result_confirmed_at']
+                assert resolved['last_confirmed_at'] == resolved['result_confirmed_at']
+                assert resolved['operation_status'] == 'failed' and resolved['assignment_id'] == 41
+                assert support_preparation.list_failures(connection)['items'] == []
         prepared_as = prepared["result"]["decision"]["assessment_situation_id"]
         runtime_path = f'/users/assessment/cycles/{cycle_id}/runtime'
         for _ in range(2):

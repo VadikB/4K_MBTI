@@ -14,6 +14,7 @@ SCHEMA_VERSION = 2
 CHECKSUM_KIND = "sha256-canonical-json-v1"
 CONTENT_CHECKSUM_KIND = "sha256-raw-bytes-v1"
 M5_FUNCTIONAL_AS_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v2"
+PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
 
 # Logical names are part of the persisted contract. Paths always identify an
 # immutable, versioned publication; callers must never replace them with latest/current.
@@ -100,9 +101,12 @@ def build_manifest(
     target_set_checksum: str,
     parameter_sources: Mapping[str, Any],
     catalog_ref: Mapping[str, Any] | None,
+    project_role: Mapping[str, Any] | None = None,
     root: Path = ROOT,
     dependencies: Mapping[str, str] = DEFAULT_DEPENDENCIES,
 ) -> tuple[dict[str, Any], str]:
+    if project_role is not None:
+        dependencies = {**dependencies, "m5_educational_role_interactions": PROJECT_ROLE_PROMPT}
     snapshot = deepcopy(_dependency_snapshot(root, tuple(sorted(dependencies.items()))))
     manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -116,6 +120,7 @@ def build_manifest(
             "target_set_checksum": target_set_checksum,
             "parameter_sources": dict(parameter_sources),
             "catalog_ref": dict(catalog_ref) if catalog_ref else None,
+            **({"project_role": deepcopy(dict(project_role))} if project_role is not None else {}),
         },
     }
     return manifest, checksum(manifest)

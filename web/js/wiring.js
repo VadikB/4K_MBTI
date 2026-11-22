@@ -45,11 +45,10 @@ import {
   dashboardOnboardingButton,
   adminLogoutButton,
   adminProfileButton,
-  adminStartAssessmentButton,
   adminOpenReportsButton,
   adminOpenPromptLabButton,
   adminOpenMethodologyButton,
-  adminOpenOrganizationsButton,
+  adminSummaryOrganizationsButton,
   adminOpenRegressionTestsButton,
   adminRegressionTestsBackButton,
   adminRegressionTestsRunButton,
@@ -792,16 +791,11 @@ const applyAuthResponse = async (data) => {
     state.pendingAgentMessage = null;
     state.pendingRoleOptions = [];
     state.pendingNoChangesQuickReply = false;
-    setCurrentScreen(state.adminDashboard?.is_superadmin ? 'admin' : 'admin-organizations');
+    setCurrentScreen('admin-organizations');
     persistAssessmentContext();
     hideLoader();
-    if (state.adminDashboard?.is_superadmin) {
-      const adminDashboardModule = await loadAdminDashboard();
-      adminDashboardModule.openAdminDashboard();
-    } else {
-      const organizationsModule = await loadAdminOrganizations();
-      await organizationsModule.openAdminOrganizations();
-    }
+    const organizationsModule = await loadAdminOrganizations();
+    await organizationsModule.openAdminOrganizations();
     return;
   }
 
@@ -1464,16 +1458,6 @@ if (adminOpenReportsButton) {
   });
 }
 
-if (adminStartAssessmentButton) {
-  adminStartAssessmentButton.addEventListener('click', () => {
-    if (state.adminDashboard?.is_superadmin) {
-      withScreen(() => import('./screens/profile-recovery.js'), (module) => module.recoverProfileCompletionForAssessment());
-      return;
-    }
-    withScreen(loadAdminDashboard, (module) => module.openAdminAssessmentDashboard());
-  });
-}
-
 document.querySelectorAll('[data-admin-area]').forEach((button) => {
   button.addEventListener('click', () => {
     if (button.dataset.adminArea === 'assessment') {
@@ -1484,11 +1468,13 @@ document.querySelectorAll('[data-admin-area]').forEach((button) => {
   });
 });
 
-if (adminOpenOrganizationsButton) {
-  adminOpenOrganizationsButton.addEventListener('click', () => {
-    withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
-  });
-}
+const openOrganizationsFromNavigation = (event) => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+};
+adminSummaryOrganizationsButton?.addEventListener('click', openOrganizationsFromNavigation);
+document.getElementById('admin-open-organizations-button')?.addEventListener('click', openOrganizationsFromNavigation);
 
 if (adminOpenRegressionTestsButton) {
   adminOpenRegressionTestsButton.addEventListener('click', () => {
@@ -1612,13 +1598,15 @@ const openAdminSubjectConfirmation = ({
   dialog.querySelector('.admin-subject-confirmation-description').textContent = consequences;
   const cancelButton = dialog.querySelector('[data-dialog-cancel]');
   cancelButton.textContent = cancelLabel;
-  dialog.querySelector('[data-dialog-confirm]').textContent = confirmLabel;
+  const confirmButton = dialog.querySelector('[data-dialog-confirm]');
+  if (onConfirm) confirmButton.textContent = confirmLabel;
+  else confirmButton.remove();
   document.body.append(dialog);
   dialog.addEventListener('close', () => {
     const confirmed = dialog.returnValue === 'confirm';
     dialog.remove();
     if (trigger?.isConnected) trigger.focus();
-    if (confirmed) onConfirm();
+    if (confirmed) onConfirm?.();
   }, { once: true });
   dialog.showModal();
   cancelButton.focus();
@@ -1796,9 +1784,18 @@ if (adminOrganizationsList) {
       return;
     }
     if (form.dataset.action === 'add-admin') {
+      const fields = new FormData(form);
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
       withScreen(loadAdminOrganizations, async (module) => {
-        await module.addAdminOrganizationAdmin(organizationId, value);
-        if (input) input.value = '';
+        try {
+          await module.addAdminOrganizationAdmin(organizationId, {
+            email: fields.get('email'),
+            full_name: String(fields.get('full_name') || '').trim(),
+          });
+        } finally {
+          submit.disabled = false;
+        }
       });
       return;
     }
@@ -2278,9 +2275,32 @@ if (adminOrganizationsList) {
       withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationDomain(organizationId, value));
       return;
     }
-    if (button.dataset.action === 'delete-admin') {
-      if (!window.confirm('Снять административный доступ у ' + value + '? Участие в оценке и аккаунт сохранятся.')) return;
-      withScreen(loadAdminOrganizations, (module) => module.deleteAdminOrganizationAdmin(organizationId, value));
+    if (button.dataset.action === 'delete-admin' || button.dataset.action === 'view-admin-access') {
+      const revoke = button.dataset.action === 'delete-admin';
+      const participant = button.dataset.participant;
+      const name = button.dataset.personName;
+      const subject = name && name !== value ? name + ' · ' + value : value;
+      const epoch = state.identityEpoch;
+      const consequences = revoke
+        ? 'Сотрудник потеряет доступ к управлению организацией, анкете и архиву отчётов. Отчёты останутся в организации.' +
+          (participant === 'true' ? ' Участие сотрудника в оценке сохранится.' : '')
+        : (button.dataset.active === 'true'
+          ? 'Администратор может работать с анкетой и открыть все отчёты этой организации, включая прежние.'
+          : 'Доступ временно остановлен, пока организация неактивна.') +
+          (participant === 'true' ? ' Сотрудник также участвует в оценке.'
+            : participant === 'false' ? ' У сотрудника только административный доступ в этой организации.' : '');
+      openAdminSubjectConfirmation({
+        trigger: returnControl,
+        title: revoke ? 'Снять права администратора?' : 'Права доступа',
+        subject, consequences,
+        cancelLabel: revoke ? 'Отмена' : 'Закрыть',
+        confirmLabel: 'Снять права',
+        onConfirm: revoke ? () => withScreen(loadAdminOrganizations, (module) => {
+          if (epoch === state.identityEpoch && state.currentScreen === 'admin-organizations') {
+            return module.deleteAdminOrganizationAdmin(organizationId, value);
+          }
+        }) : null,
+      });
       return;
     }
     if (button.dataset.action === 'reset-member-password') {

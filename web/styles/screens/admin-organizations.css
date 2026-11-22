@@ -7,6 +7,63 @@
     overflow-wrap: anywhere;
 }
 
+.platform-navigation { display: none; }
+.admin-organizations-panel[data-superadmin="true"] .platform-navigation {
+    display: flex;
+    width: min(100%, 1144px);
+    margin: 0 auto;
+    padding: 20px 32px 0;
+    gap: 24px;
+    border-bottom: 1px solid var(--participant-border);
+}
+.platform-navigation a {
+    min-height: 42px;
+    color: var(--palette-outcome-text);
+    font: 500 14px/20px var(--font-body);
+    text-decoration: none;
+    padding: 8px 4px 12px;
+    border-bottom: 3px solid transparent;
+}
+.platform-navigation a[aria-current="page"] { color: var(--palette-graphite-900); font-weight: 600; border-bottom-color: var(--palette-cyan-500); }
+.platform-navigation a:focus-visible { outline: 2px solid var(--palette-outcome-link); outline-offset: 2px; }
+.admin-organizations-panel[data-superadmin="true"] .admin-account-navigation,
+.admin-organizations-panel[data-superadmin="true"] #admin-organizations-back-button { display: none; }
+.admin-organizations-panel[data-superadmin="true"] .org-admin-product-header { grid-template-columns: 1fr auto; }
+.admin-organizations-panel[data-superadmin="true"] .org-admin-product-header { min-height: 64px; }
+.admin-organizations-panel[data-superadmin="true"] .org-admin-account-menu summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0;
+}
+.admin-organizations-panel[data-superadmin="true"] .org-admin-account-menu summary::before {
+    content: 'СА';
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--palette-cyan-050);
+    color: var(--palette-graphite-900);
+    font: 600 13px/18px var(--font-body);
+}
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero .section-label { display: none; }
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero h2 { font-size: 28px; line-height: 36px; }
+.platform-availability { width: min(100%, 1144px); min-height: 50vh; margin: 0 auto; padding: 38px 32px; }
+.platform-availability h1 { margin: 0 0 12px; font-size: 28px; line-height: 36px; }
+.platform-availability p { max-width: 65ch; color: var(--palette-outcome-text); }
+@media (max-width: 460px) {
+    .admin-organizations-panel[data-superadmin="true"] .platform-navigation { padding: 12px 16px 0; gap: 15px; }
+    .platform-availability { padding: 24px 16px; }
+    .admin-organizations-panel[data-superadmin="true"] .org-admin-product-header { padding-inline: 16px; }
+}
+
 .org-admin-product-header {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1182,7 +1239,7 @@
     display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap;
 }
 .admin-subject-confirmation-actions button { min-height: 44px; }
-.admin-subject-confirmation-actions .danger-button { background: var(--palette-error); border-color: var(--palette-error); }
+.admin-subject-confirmation-actions .danger-button { background: var(--palette-error); border-color: var(--palette-error); color: #fff; }
 
 @media (min-width: 861px) {
     .admin-organization-members-section[data-admin-view="people"] > .admin-people-context,
@@ -1611,4 +1668,150 @@
     }
     .org-admin-member-card dl { grid-template-columns: minmax(0, 1fr); gap: 3px; }
     .org-admin-member-card dd + dt { margin-top: 6px; }
+}
+
+.admin-access-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 254px;
+    align-items: start;
+    gap: 20px;
+    min-width: 0;
+}
+
+.admin-access-workspace.is-paused {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-access-panel {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+
+.admin-access-panel h4,
+.admin-access-panel p {
+    margin: 0;
+}
+
+.admin-access-panel h4 {
+    font-size: 1.25rem;
+    line-height: 1.35;
+}
+
+.admin-access-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-access-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--palette-graphite-200);
+    overflow-wrap: anywhere;
+}
+
+.admin-access-row p,
+.admin-access-note {
+    color: var(--text-muted);
+    font-size: var(--fs-body-sm);
+}
+
+.admin-access-role {
+    display: inline-block;
+    margin-block-end: 2px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: rgb(from var(--palette-cyan-500) r g b / 0.18);
+    color: var(--text-main);
+    font-size: var(--fs-body-sm);
+    font-weight: 500;
+}
+
+.admin-access-role.is-paused {
+    background: var(--palette-graphite-200);
+}
+
+.admin-access-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.admin-access-workspace .admin-access-name,
+.admin-access-workspace .admin-access-link {
+    padding: 0;
+    border-radius: 2px;
+    background: transparent;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-align: left;
+    white-space: normal;
+}
+
+.admin-access-workspace .admin-access-link {
+    min-height: 44px;
+    font-weight: 500;
+}
+
+.admin-access-workspace .admin-organization-member-menu summary {
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+
+.admin-access-form button {
+    min-height: 44px;
+}
+
+.admin-access-form label {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.admin-access-form input {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+}
+
+.admin-access-form button {
+    justify-self: start;
+}
+
+.admin-access-workspace > .form-status {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+    .admin-access-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 580px) {
+    .admin-access-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-access-actions {
+        justify-content: space-between;
+    }
+
+    .admin-access-panel {
+        padding: var(--space-3);
+    }
 }

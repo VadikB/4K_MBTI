@@ -67,7 +67,6 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     await superPage.locator('#request-magic-link-button').click();
     await superPage.locator('#magic-token-input').fill(prepared.password);
     await superPage.locator('#verify-magic-link-button').click();
-    await superPage.getByRole('button', { name: 'Организации', exact: true }).click();
     await expect(superPage.locator('#admin-organizations-panel')).toBeVisible();
     await superPage.locator('#admin-organization-select').selectOption(String(orgId));
     const superCard = superPage.locator(`[data-organization-id="${orgId}"]`);
@@ -78,7 +77,8 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     // Текст option виден до завершения команды; ждём точный readback подключения.
     await expect(connect.locator('[data-program-connection-state]'))
       .toContainText('Подключено: Синтетическая программа 1.0 · 1.0');
-    const grant = superCard.locator('form[data-action="add-admin"]');
+    const administrators = superCard.locator('[data-organization-admins]');
+    const grant = administrators.locator('form[data-action="add-admin"]');
     await grant.locator('input[type="email"]').fill('participant@example.test');
     await grant.getByRole('button', { name: 'Добавить', exact: true }).click();
     await expect(grant).toContainText('Администратор добавлен.');
@@ -86,9 +86,11 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     expect(grantListingResponse.status()).toBe(200);
     const grantListing = await grantListingResponse.json();
     expect(grantListing.items.find((org) => org.id === orgId)?.admins)
-      .toContainEqual(expect.objectContaining({ email: 'participant@example.test' }));
-    const revoke = superCard.locator('button[data-action="delete-admin"][data-value="participant@example.test"]');
-    await expect(revoke).toBeVisible();
+      .toContainEqual(expect.objectContaining({ email: 'participant@example.test', is_participant: true }));
+    const participantAdmin = administrators.locator('.admin-access-row').filter({ hasText: 'participant@example.test' });
+    await expect(participantAdmin).toContainText('Также участник оценки');
+    await expect(administrators.locator('[data-action="delete-admin"]')).toHaveCount(0);
+    await expect(administrators).toContainText('Чтобы снять права у последнего администратора, сначала добавьте другого сотрудника.');
     const afterGrant = fixture('readback');
     expect(afterGrant.membership).toEqual({ role: 'admin', is_participant: true });
     expect(afterGrant.superadmin_memberships).toBe(0);
@@ -166,10 +168,19 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     expect(switched.control_connections).toBe(0);
     save('switched-b', switched);
 
-    await expect(revoke).toBeVisible();
-    superPage.once('dialog', (dialog) => dialog.accept());
-    await revoke.click();
-    await expect(revoke).toHaveCount(0);
+    const replacementEmail = 'replacement-admin@example.test';
+    await grant.getByLabel('Рабочая почта').fill(replacementEmail);
+    await grant.getByRole('button', { name: 'Добавить', exact: true }).click();
+    const replacement = administrators.locator('.admin-access-row').filter({ hasText: replacementEmail });
+    await expect(replacement).toContainText('Только административный доступ');
+
+    await participantAdmin.locator('summary').click();
+    await participantAdmin.getByRole('menuitem', { name: 'Снять права', exact: true }).click();
+    const confirmation = superPage.getByRole('dialog', { name: 'Снять права администратора?' });
+    await expect(confirmation).toContainText('Участие сотрудника в оценке сохранится.');
+    await confirmation.getByRole('button', { name: 'Снять права', exact: true }).click();
+    await expect(participantAdmin).toHaveCount(0);
+    await expect(replacement).toBeVisible();
     await expect(superCard).toContainText('Права администратора сняты.');
     await expect.poll(() => fixture('readback').membership.role).toBe('member');
     const revoked = fixture('readback');

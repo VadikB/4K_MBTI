@@ -21,6 +21,8 @@ class _Connection:
         self.queries = []
         self.rowcount = 0
         self.delete_rowcount = delete_rowcount
+        self.is_active = False
+        self.has_other_admin = True
 
     def execute(self, query, params=None):
         self.queries.append((" ".join(query.split()), params))
@@ -32,7 +34,14 @@ class _Connection:
         return self
 
     def fetchone(self):
-        return {"id": 3, "code": "synthetic-org", "is_active": False}
+        query = self.queries[-1][0]
+        if "SELECT om.user_id" in query:
+            return {"user_id": 18}
+        if "user_id<>%s" in query:
+            return {"exists": 1} if self.has_other_admin else None
+        if "JOIN user_platform_roles" in query:
+            return None
+        return {"id": 3, "code": "synthetic-org", "is_active": self.is_active}
 
     def commit(self):
         self.committed = True
@@ -197,6 +206,7 @@ def test_organization_admin_cannot_call_superadmin_transfer(monkeypatch, members
 
 def test_admin_authority_is_removed_without_erasing_participation(monkeypatch, membership_http):
     http, connection = membership_http
+    connection.is_active = True
     monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: None)
 
     response = http.delete(
@@ -213,6 +223,35 @@ def test_admin_authority_is_removed_without_erasing_participation(monkeypatch, m
         "role='admin' AND is_participant=FALSE" in query
         for query, _params in connection.queries
     )
+
+
+@pytest.mark.parametrize("method", ["post", "delete"])
+def test_paused_organization_refuses_admin_writes(monkeypatch, membership_http, method):
+    http, connection = membership_http
+    monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: None)
+    monkeypatch.setattr(routes, "_lock_membership_by_email", lambda *_args, **_kwargs: None)
+    payload = {"email": "person@example.test"}
+    response = getattr(http, method)(
+        "/users/admin/organizations/4/admins",
+        **({"json": payload} if method == "post" else {"params": payload}),
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "ORGANIZATION_ACCESS_PAUSED"
+    assert not connection.committed
+    assert not any("INSERT INTO" in query or "UPDATE organization_memberships" in query
+                   for query, _ in connection.queries)
+
+
+def test_last_admin_rejection_preserves_membership_and_config(monkeypatch, membership_http):
+    http, connection = membership_http
+    connection.is_active = True
+    connection.has_other_admin = False
+    monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: None)
+    response = http.delete("/users/admin/organizations/4/admins", params={"email": "person@example.test"})
+    assert response.status_code == 409
+    assert response.json()["detail"] == "LAST_ORGANIZATION_ADMIN"
+    assert not connection.committed
+    assert not any("INSERT INTO" in query or "DELETE FROM" in query for query, _ in connection.queries)
 
 
 def test_removed_transfer_endpoint_is_gone_for_superadmin(monkeypatch, membership_http):

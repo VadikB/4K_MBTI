@@ -114,3 +114,13 @@ def stored_recipient_fingerprint(stored):
         return value if isinstance(value, str) and len(value) == 64 and all(c in '0123456789abcdef' for c in value) else None
     except (ValueError, TypeError):
         return None
+
+
+def link_status(*, used_at, revoked_at, expires_at, now):
+    if used_at is not None:
+        return "used"
+    if revoked_at is not None:
+        return "revoked"
+    if expires_at <= now:
+        return "expired"
+    return "active"

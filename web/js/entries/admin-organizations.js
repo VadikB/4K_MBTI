@@ -8,6 +8,7 @@ export {
   reviewInvitationOrganization,
   checkAdminOrganizationProgram,
   openAdminOrganizations,
+  openPlatformAvailability,
   loadAdminOrganizations,
   refreshAdminOrganizationsSafely,
   renderAdminOrganizations,

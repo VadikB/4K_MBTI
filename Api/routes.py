@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Request, Response as FastAPIResponse
+from fastapi import APIRouter, HTTPException, Query, Request, Response as FastAPIResponse
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -75,7 +75,7 @@ from Api.assessment_role_profiles import (
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue, public_operation
-from Api import preparation_observation as preparation_observation
+from Api import preparation_observation as preparation_observation, support_invitations, support_preparation
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
@@ -95,6 +95,7 @@ from Api.org_access import (
     configured_superadmin_emails,
     ensure_configured_organizations,
     get_admin_scope,
+    has_superadmin_access,
     is_platform_protected_account,
     normalize_org_code,
 )
@@ -1293,7 +1294,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
 
         admin_rows = connection.execute(
             f"""
-            SELECT om.organization_id, u.id AS user_id, u.email, u.full_name
+            SELECT om.organization_id, u.id AS user_id, u.email, u.full_name, om.is_participant
             FROM organization_memberships om
             JOIN users u ON u.id = om.user_id
             WHERE om.organization_id = ANY(%s)
@@ -1308,7 +1309,10 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
             if not email:
                 continue
             admins_by_org.setdefault(int(row["organization_id"]), []).append(
-                {"user_id": int(row["user_id"]), "email": email, "full_name": row["full_name"]}
+                {
+                    "user_id": int(row["user_id"]), "email": email, "full_name": row["full_name"],
+                    "is_participant": row["is_participant"],
+                }
             )
 
         stage_rows = connection.execute(
@@ -1576,54 +1580,41 @@ def _ensure_org_admin_user(connection, *, email: str, full_name: str | None = No
         """,
         (normalized_email,),
     ).fetchone()
+    identity_row = connection.execute(
+        "SELECT user_id FROM user_identities WHERE LOWER(email) = %s LIMIT 1",
+        (normalized_email,),
+    ).fetchone()
+    if identity_row is not None:
+        if user_row is None or identity_row["user_id"] != user_row["id"]:
+            raise HTTPException(status_code=409, detail="ADMIN_EMAIL_ALREADY_LINKED")
+        return int(user_row["id"])
+
     if user_row is not None:
         user_id = int(user_row["id"])
     else:
-        fallback_name = str(full_name or normalized_email.split("@", 1)[0]).replace(".", " ").replace("_", " ").strip()
+        fallback_name = normalized_email.split("@", 1)[0].replace(".", " ").replace("_", " ").strip()
+        name = _normalize_optional_admin_text(full_name, max_length=255) or fallback_name[:255]
         created_user = connection.execute(
             """
             INSERT INTO users (full_name, email, role_id, job_description, phone, company_industry)
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
-            (fallback_name[:255] or "Администратор организации", normalized_email, None, None, None, None),
+            (name or "Администратор организации", normalized_email, None, None, None, None),
         ).fetchone()
         user_id = int(created_user["id"])
 
-    identity_row = connection.execute(
+    identity = connection.execute(
         """
-        SELECT id
-        FROM user_identities
-        WHERE LOWER(email) = %s
-        LIMIT 1
+        INSERT INTO user_identities (user_id, provider, provider_subject, email, is_primary, is_verified, verified_at, updated_at)
+        VALUES (%s, %s, %s, %s, TRUE, FALSE, NULL, NOW())
+        ON CONFLICT (provider, provider_subject) WHERE provider_subject IS NOT NULL DO NOTHING
+        RETURNING user_id
         """,
-        (normalized_email,),
+        (user_id, "email_magic_link", normalized_email, normalized_email),
     ).fetchone()
-    if identity_row is None:
-        connection.execute(
-            """
-            INSERT INTO user_identities (user_id, provider, provider_subject, email, is_primary, is_verified, verified_at, updated_at)
-            VALUES (%s, %s, %s, %s, TRUE, FALSE, NULL, NOW())
-            ON CONFLICT (provider, provider_subject) WHERE provider_subject IS NOT NULL DO UPDATE
-            SET user_id = EXCLUDED.user_id,
-                email = EXCLUDED.email,
-                updated_at = NOW()
-            """,
-            (user_id, "email_magic_link", normalized_email, normalized_email),
-        )
-    else:
-        connection.execute(
-            """
-            UPDATE user_identities
-            SET user_id = %s,
-                provider = %s,
-                provider_subject = %s,
-                is_primary = TRUE,
-                updated_at = NOW()
-            WHERE id = %s
-            """,
-            (user_id, "email_magic_link", normalized_email, int(identity_row["id"])),
-        )
+    if identity is None:
+        raise HTTPException(status_code=409, detail="ADMIN_EMAIL_ALREADY_LINKED")
     return user_id
 
 
@@ -3701,6 +3692,67 @@ def cleanup_admin_regression_tests(request: Request) -> dict[str, object]:
     return {"ok": True, "deleted": counts}
 
 
+def _require_platform_support_access(connection, user: UserResponse | None) -> None:
+    if user is None:
+        raise HTTPException(status_code=401, detail="Сессия не найдена. Войдите заново.")
+    if not has_superadmin_access(connection, user):
+        raise HTTPException(status_code=403, detail="Доступно только суперадминистратору.")
+
+
+@router.get("/admin/support/preparation")
+def list_support_preparation(request: Request, response: Response,
+                             before: int | None = Query(None, gt=0, le=2**63 - 1),
+                             organization_id: int | None = Query(None, gt=0, le=2**63 - 1)) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        result = support_preparation.list_failures(connection, before=before, organization_id=organization_id)
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+@router.get("/admin/support/preparation/{reference}")
+def read_support_preparation(reference: str, request: Request, response: Response) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        problem = support_preparation.read(connection, reference) if re.fullmatch(r"P4K-[A-F0-9]{24}", reference) else None
+    if problem is None:
+        raise HTTPException(status_code=404, detail="Случай подготовки не найден.")
+    response.headers["Cache-Control"] = "no-store"
+    environment = {"mode": settings.app_origin_mode, "origin": settings.public_app_origin,
+                   "version": get_app_version()}
+    return {**problem, "environment": environment,
+            "handoff_text": support_preparation.handoff(problem, **environment)}
+
+
+@router.get("/admin/support/invitations")
+def list_support_invitations(request: Request, response: Response,
+                             before: int | None = Query(None, gt=0, le=2**63 - 1),
+                             organization_id: int | None = Query(None, gt=0, le=2**63 - 1)) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        result = support_invitations.list_uncertain(connection, before=before, organization_id=organization_id)
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+@router.get("/admin/support/invitations/{reference}")
+def read_support_invitation(reference: str, request: Request, response: Response) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        problem = support_invitations.read(connection, reference)
+    if problem is None:
+        raise HTTPException(status_code=404, detail="Случай приглашения не найден.")
+    response.headers["Cache-Control"] = "no-store"
+    environment = {"mode": settings.app_origin_mode, "origin": settings.public_app_origin,
+                   "version": get_app_version()}
+    return {**problem, "environment": environment,
+            "handoff_text": support_invitations.handoff(problem, **environment)}
+
+
 @router.get("/admin/organizations", response_model=AdminOrganizationsResponse)
 def get_admin_organizations(request: Request) -> AdminOrganizationsResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
@@ -4355,15 +4407,12 @@ def read_personal_organization_invitation_operation(
         status = "accepted" if delivery == "accepted" else (
             "queued" if delivery == "queued" else "uncertain" if delivery == "sending" else "error"
         )
-        if row["used_at"] is not None:
+        link_status = invitation_outcomes.link_status(
+            used_at=row["used_at"], revoked_at=row["revoked_at"], expires_at=row["expires_at"],
+            now=datetime.now(timezone.utc).replace(tzinfo=None),
+        )
+        if link_status == "used":
             status = "already_registered"
-            link_status = "used"
-        elif row["revoked_at"] is not None:
-            link_status = "revoked"
-        elif row["expires_at"] <= datetime.now(timezone.utc).replace(tzinfo=None):
-            link_status = "expired"
-        else:
-            link_status = "active"
         items.append(PersonalInvitationResultItem(
             email=email,
             status=status,
@@ -4999,6 +5048,18 @@ def delete_admin_organization_domain(organization_id: int, domain: str, request:
         return _build_admin_organizations(connection)
 
 
+def _lock_active_organization_for_admin_write(connection, organization_id: int) -> dict:
+    organization = connection.execute(
+        "SELECT code, is_active FROM organizations WHERE id=%s FOR NO KEY UPDATE",
+        (organization_id,),
+    ).fetchone()
+    if organization is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    if not organization["is_active"]:
+        raise HTTPException(status_code=409, detail="ORGANIZATION_ACCESS_PAUSED")
+    return organization
+
+
 @router.post("/admin/organizations/{organization_id}/admins", response_model=AdminOrganizationsResponse)
 def add_admin_organization_admin(organization_id: int, payload: AdminOrganizationAdminRequest, request: Request) -> AdminOrganizationsResponse:
     token = request.cookies.get(SESSION_COOKIE_NAME)
@@ -5008,10 +5069,10 @@ def add_admin_organization_admin(organization_id: int, payload: AdminOrganizatio
         raise HTTPException(status_code=400, detail="Valid admin email is required")
     with get_connection() as connection:
         _require_superadmin(connection, user)
-        org_row = connection.execute("SELECT id,code FROM organizations WHERE id = %s LIMIT 1", (organization_id,)).fetchone()
-        if org_row is None:
-            raise HTTPException(status_code=404, detail="Organization not found")
+        # Account purge takes the exclusive lock before it locks memberships.
+        connection.execute("SELECT pg_advisory_xact_lock_shared(%s)", (8_044_001,))
         membership = _lock_membership_by_email(connection, email=normalized_email)
+        organization = _lock_active_organization_for_admin_write(connection, organization_id)
         _reject_platform_protected_account(
             connection,
             email=normalized_email,
@@ -5025,7 +5086,7 @@ def add_admin_organization_admin(organization_id: int, payload: AdminOrganizatio
         connection.execute(
             """DELETE FROM configured_access_suppressions
                WHERE email=%s AND access_kind='organization_admin' AND organization_code=%s""",
-            (normalized_email, str(org_row["code"])),
+            (normalized_email, str(organization["code"])),
         )
         user_id = _ensure_org_admin_user(connection, email=normalized_email, full_name=payload.full_name)
         connection.execute(
@@ -5040,15 +5101,11 @@ def add_admin_organization_admin(organization_id: int, payload: AdminOrganizatio
             expose_existing_organization=True,
             query="""
             INSERT INTO organization_memberships (
-                organization_id, user_id, role, admission_source, admitted_by_user_id, admitted_at
+                organization_id, user_id, role, is_participant, admission_source, admitted_by_user_id, admitted_at
             )
-            VALUES (%s, %s, 'admin', 'admin_add', %s, NOW())
+            VALUES (%s, %s, 'admin', FALSE, 'admin_add', %s, NOW())
             ON CONFLICT (organization_id, user_id) DO UPDATE
-            SET role = 'admin',
-                admission_source = EXCLUDED.admission_source,
-                admitted_by_user_id = EXCLUDED.admitted_by_user_id,
-                admitted_at = EXCLUDED.admitted_at,
-                updated_at = NOW()
+            SET role = 'admin', updated_at = NOW()
             WHERE organization_memberships.role IS DISTINCT FROM 'admin'
             """,
             params=(organization_id, user_id, int(user.id)),
@@ -5066,28 +5123,29 @@ def delete_admin_organization_admin(organization_id: int, email: str, request: R
         raise HTTPException(status_code=400, detail="Valid admin email is required")
     with get_connection() as connection:
         _require_superadmin(connection, user)
-        organization = connection.execute(
-            "SELECT code FROM organizations WHERE id=%s LIMIT 1 FOR UPDATE", (organization_id,),
-        ).fetchone()
-        if organization is None:
-            raise HTTPException(status_code=404, detail="Organization not found")
-        user_row = connection.execute(
+        # Serialize with account purge, which can also remove an administrator.
+        connection.execute("SELECT pg_advisory_xact_lock_shared(%s)", (8_044_001,))
+        organization = _lock_active_organization_for_admin_write(connection, organization_id)
+        target = connection.execute(
             """
-            SELECT id
-            FROM users
-            WHERE LOWER(email) = %s
-            LIMIT 1
+            SELECT om.user_id
+            FROM organization_memberships om
+            JOIN users u ON u.id = om.user_id
+            WHERE om.organization_id = %s AND LOWER(u.email) = %s AND om.role = 'admin'
+            FOR UPDATE OF om
             """,
-            (normalized_email,),
+            (organization_id, normalized_email),
         ).fetchone()
-        if user_row is not None:
-            connection.execute(
-                """UPDATE organization_memberships
-                   SET role='member', updated_at=NOW()
-                   WHERE organization_id=%s AND user_id=%s
-                     AND role='admin' AND is_participant=TRUE""",
-                (organization_id, int(user_row["id"])),
-            )
+        if target is not None:
+            user_id = int(target["user_id"])
+            _reject_platform_protected_account(connection, email=normalized_email, user_id=user_id)
+            has_other_admin = connection.execute(
+                """SELECT 1 FROM organization_memberships
+                   WHERE organization_id=%s AND role='admin' AND user_id<>%s LIMIT 1""",
+                (organization_id, user_id),
+            ).fetchone()
+            if not has_other_admin:
+                raise HTTPException(status_code=409, detail="LAST_ORGANIZATION_ADMIN")
             connection.execute(
                 """INSERT INTO configured_access_suppressions(
                        email,access_kind,organization_code,reason,created_by_user_id
@@ -5099,7 +5157,19 @@ def delete_admin_organization_admin(organization_id: int, email: str, request: R
                 """DELETE FROM organization_memberships
                    WHERE organization_id=%s AND user_id=%s
                      AND role='admin' AND is_participant=FALSE""",
-                (organization_id, int(user_row["id"])),
+                (organization_id, user_id),
+            )
+            # Carry forward sign-in admission for historical dual-role memberships.
+            connection.execute(
+                """UPDATE organization_memberships
+                   SET role='member', updated_at=NOW(),
+                       admission_source=CASE
+                           WHEN admission_source IN ('configured_admin', 'legacy_unclassified') THEN 'admin_add'
+                           ELSE admission_source
+                       END
+                   WHERE organization_id=%s AND user_id=%s
+                     AND role='admin' AND is_participant=TRUE""",
+                (organization_id, user_id),
             )
             connection.commit()
         return _build_admin_organizations(connection)

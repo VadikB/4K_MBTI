@@ -123,6 +123,8 @@ def provider_basis(snapshot: dict) -> dict:
     case_content = snapshot.get("case_content_contract")
     return {"case": snapshot["case"], "profile": snapshot["profile"],
             "normative_indicator_targets": snapshot["case_version"]["indicator_targets"],
+            **({"project_role": {key: snapshot["project_role"][key] for key in ("code", "interactions")}}
+               if "project_role" in snapshot else {}),
             **({"scenario_contract": snapshot["scenario_contract"]} if "scenario_contract" in snapshot else {}),
             **({"case_content_contract": case_content,
                 "m2_indicator_descriptors": snapshot["m2_indicator_descriptors"]} if case_content else {}),

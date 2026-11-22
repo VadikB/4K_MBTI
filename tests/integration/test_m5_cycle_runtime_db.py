@@ -9,6 +9,7 @@ from psycopg.rows import dict_row
 
 from Api.database import ensure_m5_runtime_schema
 from Api.m5_cycle_runtime import (
+    create_cycle,
     create_cycle_session_for_case,
     read_cycle,
     transition_session,
@@ -16,6 +17,7 @@ from Api.m5_cycle_runtime import (
 from Api.m5_storage import import_package, prepare_assessment_situation
 from scripts.build_m5_case_package import OUTPUT
 from Api import cycle_execution_manifest
+from Api.telegram_channel import checksum as educational_checksum
 from Api.cycle_execution_manifest import (
     DEFAULT_DEPENDENCIES,
     _dependency_snapshot,
@@ -23,6 +25,68 @@ from Api.cycle_execution_manifest import (
     resolve_cycle_dependency,
     validate_manifest,
 )
+
+
+@pytest.mark.integration
+def test_cycle_freezes_interactions_from_its_exact_educational_assignment(test_database_url):
+    with psycopg.connect(test_database_url, row_factory=dict_row) as connection:
+        schema = "m5_educational_pytest_" + uuid4().hex
+        connection.execute(psycopg.sql.SQL("CREATE SCHEMA {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute(psycopg.sql.SQL("SET LOCAL search_path TO {}").format(psycopg.sql.Identifier(schema)))
+        connection.execute("CREATE TABLE users(id BIGINT PRIMARY KEY)")
+        connection.execute("INSERT INTO users VALUES (99)")
+        connection.execute("CREATE TABLE assessment_configurations(id BIGINT PRIMARY KEY,name TEXT)")
+        connection.execute("INSERT INTO assessment_configurations VALUES (1,'Synthetic program')")
+        connection.execute("""CREATE TABLE assessment_personalized_profiles (
+            id BIGINT PRIMARY KEY, user_id BIGINT, organization_id BIGINT, role_profile_version_id BIGINT,
+            assessment_configuration_id BIGINT, status TEXT, checksum TEXT)""")
+        connection.execute("INSERT INTO assessment_personalized_profiles VALUES (7,99,10,2,1,'ready',%s)", ("c" * 64,))
+        connection.execute("""CREATE TABLE organization_assessment_assignments (
+            id BIGINT PRIMARY KEY, recipient_user_id BIGINT, organization_id BIGINT,
+            assignment_ref TEXT, status TEXT, revoked_at TIMESTAMP)""")
+        connection.execute("INSERT INTO organization_assessment_assignments VALUES (41,99,10,'synthetic','active',NULL)")
+        connection.execute("""CREATE TABLE organization_assessment_source_bindings (
+            assignment_id BIGINT, questionnaire_revision_id BIGINT,
+            assessment_configuration_id BIGINT, role_profile_version_id BIGINT)""")
+        connection.execute("INSERT INTO organization_assessment_source_bindings VALUES (41,9,1,2)")
+        connection.execute("""CREATE TABLE participant_acquaintance_confirmations (
+            user_id BIGINT, organization_id BIGINT, assignment_ref TEXT,
+            questionnaire_revision_id BIGINT, personalized_profile_id BIGINT)""")
+        connection.execute("INSERT INTO participant_acquaintance_confirmations VALUES (99,10,'synthetic',9,7)")
+        ensure_m5_runtime_schema(connection)
+        params = dict(
+            personalized_profile_id=7, created_by=99, selected_role_ref={"id": "2"},
+            target_set=[{"indicator_id": "K1.I01", "m2_version": "1.1"}],
+            time_budget_seconds=300, calendar_window_seconds=3600, parameter_sources={"fixture": True},
+        )
+        old_cycle = create_cycle(connection, **params)
+        connection.execute("""CREATE TABLE external_educational_contexts (
+            assessment_assignment_id BIGINT, source_system TEXT, organization_id BIGINT, recipient_user_id BIGINT,
+            snapshot_json JSONB, snapshot_checksum TEXT)""")
+        connection.execute("""INSERT INTO external_educational_contexts
+            VALUES (42,'4k_tg_bot',10,99,'{}','other-assignment'),
+                   (41,'4k_tg_bot',20,99,'{}','other-organization'),
+                   (41,'4k_tg_bot',10,100,'{}','other-owner')""")
+        definition = {"interactions": ["Учебный заказчик", "Учебный эксперт"]}
+        snapshot = {"role": {
+            "code": "educational_role", "project_role_version": 3, "definition": definition,
+            "agent4k_role_profile_version_id": 2, "project_role_checksum": educational_checksum(definition),
+        }}
+        checksum = educational_checksum(snapshot)
+        connection.execute("""INSERT INTO external_educational_contexts
+            VALUES (41,'4k_tg_bot',10,99,%s::jsonb,%s)""", (json.dumps(snapshot), checksum))
+        new_cycle = create_cycle(connection, **params)
+        stored = read_cycle(connection, str(new_cycle["cycle_id"]))
+        frozen = stored["execution_manifest_json"]["runtime_refs"]["project_role"]
+        assert frozen == {
+            "code": "educational_role", "version": 3, "checksum": educational_checksum(definition),
+            "snapshot_checksum": checksum, "interactions": definition["interactions"],
+        }
+        assert resolve_cycle_dependency(stored, "m5_educational_role_interactions").name == "prompt.md"
+        historic = read_cycle(connection, str(old_cycle["cycle_id"]))
+        assert historic["execution_manifest_json"] == old_cycle["execution_manifest_json"]
+        assert "project_role" not in historic["execution_manifest_json"]["runtime_refs"]
+        connection.rollback()
 
 
 @pytest.mark.integration

@@ -612,9 +612,15 @@ class ProductCyclePreparationQueue:
                         "compiler": {"source_schema_profile": "functional-passport-v1"},
                     }
                     selected_base_role = resolve_cycle_base_role(connection, frozen_cycle, frozen_profile)
-                    dependencies = (frozen_cycle["execution_manifest_json"] or {}).get("dependencies", {})
+                    execution_manifest = frozen_cycle["execution_manifest_json"] or {}
+                    dependencies = execution_manifest.get("dependencies", {})
                     as_package = (resolve_cycle_dependency(dict(frozen_cycle), "m5_functional_as")
                                   if "m5_functional_as" in dependencies else AS_PACKAGE)
+                    project_role = execution_manifest.get("runtime_refs", {}).get("project_role")
+                    project_role_prompt = (
+                        resolve_cycle_dependency(dict(frozen_cycle), "m5_educational_role_interactions")
+                        if project_role is not None else None
+                    )
                     m2_path = resolve_cycle_dependency(dict(frozen_cycle), "m2_methodology") / "methodology.json"
                     m3_path = resolve_cycle_dependency(dict(frozen_cycle), "m3_role_profiles") / "base_roles.json"
                     runtime_rule_ref = resolve_preparation_binding(connection, frozen_case_row)
@@ -633,6 +639,7 @@ class ProductCyclePreparationQueue:
                     m2_path=m2_path, m3_path=m3_path, runtime_rule_ref=runtime_rule_ref,
                     package_ref=generation_package_ref,
                     provider_contract=load_provider_contract(provider_path),
+                    project_role=project_role, project_role_prompt=project_role_prompt,
                 )
                 provider = snapshot["refs"]["provider_contract"]
                 try:

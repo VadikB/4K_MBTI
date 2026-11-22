@@ -123,12 +123,18 @@ def create_cycle(
         raise ValueError("M7_PARAMETER_PROVENANCE_REQUIRED")
     sources = parameter_sources
     target_set_checksum = checksum(normalized_targets)
+    project_role = None
+    if assignment_id is not None:
+        from Api.telegram_channel import project_role_for_cycle
+
+        project_role = project_role_for_cycle(connection, assignment_id=assignment_id, profile=profile)
     execution_manifest, execution_manifest_checksum = build_manifest(
         profile_ref=profile_ref,
         selected_role_ref=selected_role_ref,
         target_set_checksum=target_set_checksum,
         parameter_sources=sources,
         catalog_ref=catalog_ref,
+        project_role=project_role,
     )
     value = {
         "cycle_id": str(cycle_id),

@@ -945,6 +945,7 @@ class AdminRegressionTestStatusResponse(BaseModel):
 class AdminOrganizationAdminItem(BaseModel):
     user_id: int
     email: str
+    is_participant: bool
     full_name: str | None = None
 
 
