@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from Api import m5_functional_generation_service as service
+from Api.cycle_execution_manifest import PROJECT_ROLE_PROMPT, ROOT
 from Api.m5_passport_generation import BANK_PACKAGE, provider_basis
 from Api.m5_package import digest
 from scripts.build_m5_passport_bank import build_bank
@@ -70,6 +71,35 @@ class CaptureGateway:
             if self.mode == "protocol" and ":challenger:" in routing:
                 result["candidate_checksum"] = "wrong-candidate"
         return SimpleNamespace(content=json.dumps(result, ensure_ascii=False), sent={}, provider={"finish_reason": "stop"})
+
+
+def test_frozen_educational_role_reaches_original_and_repair_generation():
+    case = _raw_cases()[1]
+    project_role = {
+        "code": "training_role", "version": 2, "checksum": "role-checksum",
+        "snapshot_checksum": "assignment-snapshot-checksum", "interactions": ["Тестовый куратор", "Тестовый коллега"],
+    }
+    snapshot = service.build_passport_snapshot(
+        case_version=case, profile={}, operation_id="m5-educational",
+        project_role=project_role, project_role_prompt=ROOT / PROJECT_ROLE_PROMPT,
+    )
+    previous = service.build_passport_snapshot(case_version=case, profile={}, operation_id="m5-previous")
+    assert "project_role" not in provider_basis(previous)
+    expected = {"code": project_role["code"], "interactions": list(project_role["interactions"])}
+    project_role["interactions"].append("Позднее изменение")
+    gateway = CaptureGateway("repair")
+    result = service.prepare(snapshot, gateway)
+    calls = [(messages, payload) for routing, messages, payload in gateway.calls if ":generation:" in routing]
+    assert len(calls) == 2 and result["admitted_for_participant"]
+    for messages, payload in calls:
+        assert payload["project_role"] == expected
+        assert payload["case"] == previous["case"]
+        assert payload["normative_indicator_targets"] == previous["case_version"]["indicator_targets"]
+        assert (ROOT / PROJECT_ROLE_PROMPT).read_text() in messages[0]["content"]
+    trace = service.build_persistence_trace(snapshot, result)
+    assert trace["source_snapshot"]["refs"]["project_role"] == {
+        key: project_role[key] for key in ("code", "version", "checksum", "snapshot_checksum")
+    }
 
 
 @pytest.mark.parametrize(("number", "count", "mode"), [(2, 33, "pass"), (3, 31, "repair"), (2, 33, "protocol")])

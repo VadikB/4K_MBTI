@@ -114,6 +114,45 @@ def context(c, assignment_ref: str) -> dict:
     return dict(row)
 
 
+def project_role_for_cycle(c, *, assignment_id: int, profile: dict) -> dict | None:
+    """Read only the published role from the snapshot of this exact assignment."""
+    if not c.execute(
+        "SELECT to_regclass(current_schema()||'.external_educational_contexts') AS relation"
+    ).fetchone()["relation"]:
+        return None
+    row = c.execute(
+        """SELECT snapshot_json,snapshot_checksum FROM external_educational_contexts
+           WHERE assessment_assignment_id=%s AND source_system='4k_tg_bot'
+             AND organization_id=%s AND recipient_user_id=%s""",
+        (assignment_id, profile["organization_id"], profile["user_id"]),
+    ).fetchone()
+    if row is None:
+        return None
+    snapshot = row["snapshot_json"]
+    if checksum(snapshot) != row["snapshot_checksum"]:
+        raise ValueError("EDUCATIONAL_CONTEXT_CHECKSUM_MISMATCH")
+    role = snapshot["role"]
+    if str(role["agent4k_role_profile_version_id"]) != str(profile["role_profile_version_id"]):
+        raise ValueError("EDUCATIONAL_CONTEXT_ROLE_PROFILE_MISMATCH")
+    definition = role.get("definition", {})
+    interactions = definition.get("interactions", [])
+    if not isinstance(interactions, list) or any(
+        not isinstance(item, str) or not item.strip() for item in interactions
+    ):
+        raise ValueError("EDUCATIONAL_ROLE_INTERACTIONS_INVALID")
+    if not interactions:
+        return None
+    if checksum(definition) != role["project_role_checksum"]:
+        raise ValueError("EDUCATIONAL_ROLE_DEFINITION_CHECKSUM_MISMATCH")
+    return {
+        "code": role["code"],
+        "version": role["project_role_version"],
+        "checksum": role["project_role_checksum"],
+        "snapshot_checksum": row["snapshot_checksum"],
+        "interactions": interactions,
+    }
+
+
 def program_options(c, row: dict) -> list[dict]:
     snapshot = row["snapshot_json"]
     configuration_id = int(

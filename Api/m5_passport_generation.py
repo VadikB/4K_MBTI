@@ -97,6 +97,8 @@ def addressed_candidate_contract(base: dict, design: dict) -> dict:
 def provider_basis(snapshot: dict) -> dict:
     return {"case": snapshot["case"], "profile": snapshot["profile"],
             "normative_indicator_targets": snapshot["case_version"]["indicator_targets"],
+            **({"project_role": {key: snapshot["project_role"][key] for key in ("code", "interactions")}}
+               if "project_role" in snapshot else {}),
             **({"scenario_contract": snapshot["scenario_contract"]} if "scenario_contract" in snapshot else {}),
             "requirements": {
                 "required_top_level_fields_exact": list(snapshot["as_contract"]["fields"]),
