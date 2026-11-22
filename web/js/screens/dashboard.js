@@ -10,6 +10,7 @@ import { showParticipantDialog } from '../components/participant-dialog.js';
 import { initAppHeader } from '../components/app-header.js';
 import { handleAssessmentEntryClick } from './interview.js';
 import { readApiResponse } from '../api.js';
+import { readParticipantAppeals, renderParticipantAppeals } from '../components/participant-appeals.js';
 import { assessmentMetadata, formatAssessmentDate } from '../dashboard-presentation.js';
 
 const DASHBOARD_REFRESH_INTERVAL_MS = 30000;
@@ -17,6 +18,7 @@ const DASHBOARD_RETRY_INTERVAL_MS = 60000;
 let dashboardRefreshTimer = null;
 let dashboardRefreshPending = false;
 let appealsReadGeneration = 0;
+const appealSnapshots = new WeakMap();
 const header = initAppHeader({ root: dashboardPanel.querySelector('[data-app-header]'), onHome: () => openDashboard() });
 
 const contactButton = dashboardPanel.querySelector('#dashboard-contact-button');
@@ -51,40 +53,20 @@ const refreshAppeals = async () => {
   let section = dashboardPanel.querySelector('[data-participant-appeals]');
   if (section && section.dataset.ownerId !== String(ownerId)) { section.remove(); section = null; }
   try {
-    const response = await fetch(`/users/${encodeURIComponent(ownerId)}/acquaintance/issues`, { credentials: 'same-origin' });
-    const result = await readApiResponse(response, 'Не удалось загрузить обращения');
-    if (generation !== appealsReadGeneration || epoch !== state.identityEpoch || state.pendingUser?.id !== ownerId || state.currentScreen !== 'dashboard') return;
-    const items = Array.isArray(result.items) ? result.items : [];
+    const items = await readParticipantAppeals(ownerId);
+    if (generation !== appealsReadGeneration || epoch !== state.identityEpoch ||
+        state.pendingUser?.id !== ownerId || state.currentScreen !== 'dashboard') return;
     if (!items.length) { section?.remove(); return; }
-    if (!section) { section = document.createElement('section'); section.dataset.participantAppeals = ''; section.dataset.ownerId = String(ownerId); dashboardPanel.querySelector('#dashboard-appeals').append(section); }
-    const snapshot = JSON.stringify(items);
-    if (section.dataset.snapshot === snapshot) return;
-    section.dataset.snapshot = snapshot;
-    section.replaceChildren();
-    for (const item of items) {
-      const article = document.createElement('article'); article.className = 'card participant-appeal';
-      const context = document.createElement('p'); context.textContent = item.assignment_ref
-        ? `Назначение: ${item.assignment_ref}` : 'Связь с назначением неизвестна';
-      const message = document.createElement('p'); message.textContent = item.message;
-      if (item.reply_message) {
-        const title = document.createElement('h3'); title.textContent = 'Ответ по вашему обращению';
-        const reply = document.createElement('p'); reply.textContent = item.reply_message;
-        const attribution = document.createElement('small');
-        const author = typeof item.reply_author_display_name === 'string' && item.reply_author_display_name.trim();
-        attribution.textContent = (author || 'Администратор') + (item.replied_at
-          ? ' · ' + new Date(item.replied_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '');
-        article.append(title, attribution, reply);
-      } else {
-        const status = document.createElement('p');
-        status.textContent = item.status === 'in_progress' ? 'В работе' : item.status === 'resolved' ? 'Обработано ранее' : 'Новое';
-        article.append(status);
-      }
-      const original = document.createElement('details');
-      const summary = document.createElement('summary'); summary.textContent = 'Ваше обращение';
-      original.append(summary, context, message);
-      article.append(original);
-      section.append(article);
+    if (!section) {
+      section = document.createElement('section');
+      section.dataset.participantAppeals = '';
+      section.dataset.ownerId = String(ownerId);
+      dashboardPanel.querySelector('#dashboard-appeals').append(section);
     }
+    const snapshot = JSON.stringify(items);
+    if (appealSnapshots.get(section) === snapshot) return;
+    renderParticipantAppeals(section, items);
+    appealSnapshots.set(section, snapshot);
   } catch { /* Keep the last confirmed projection for this owner until a successful refresh. */ }
 };
 

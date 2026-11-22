@@ -12,6 +12,34 @@ sys.path.insert(0, str(ROOT))
 from scripts.test_stand import environment, owned
 
 
+def seed_appeals_reentry(scope):
+    from Api.auth_service import _hash_password, auth_service
+    from Api.database import get_connection
+    from tests.path_admin_contract_checks import payload, session
+
+    with session(scope['admin']) as client:
+        assigned = client.post(f"/users/admin/organizations/{scope['org']}/assessment-assignments",
+                               json=payload(scope, role_profile_version_id=scope['role']))
+        assert assigned.status_code == 200, assigned.text
+    auth_service.ensure_schema()
+    accounts = {}
+    with get_connection() as c:
+        for role, name in [('admin', 'Синтетический автор ответа'),
+                           ('member', 'Синтетический участник обращений')]:
+            user_id = scope[role]
+            password = 'SyntheticAppeal!2-' + uuid4().hex
+            salt, digest = _hash_password(password)
+            email = c.execute('UPDATE users SET full_name=%s WHERE id=%s RETURNING email',
+                              (name, user_id)).fetchone()['email']
+            c.execute("""INSERT INTO auth_password_credentials
+                (user_id,email,password_hash,password_salt) VALUES(%s,%s,%s,%s)""",
+                (user_id, email, digest, salt))
+            accounts[role] = {'id': user_id, 'email': email, 'name': name, 'password': password}
+        c.commit()
+    return {'organization_id': scope['org'], 'assessment_name': scope['config']['name'],
+            'assignment_id': assigned.json()['items'][0]['assignment_id'], **accounts}
+
+
 def seed_cabinet(scope):
     from Api.database import get_connection
     from Api.invitation_outcomes import encode_reason
@@ -298,7 +326,7 @@ def seed_cabinet_report(c, member_id, cycle, cycle_id, status, *, newer_unpublis
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'cabinet', 'readback'])
+    parser.add_argument('action', choices=['prepare', 'cabinet', 'readback', 'appeals-reentry'])
     parser.add_argument('--state', required=True, type=Path)
     parser.add_argument('--internal', action='store_true')
     args = parser.parse_args()
@@ -316,10 +344,13 @@ def main():
     from Api.web_session_service import web_session_service
     from Api.routes import SESSION_COOKIE_NAME
     try:
-        if args.action in {'prepare', 'cabinet'}:
+        if args.action in {'prepare', 'cabinet', 'appeals-reentry'}:
             scope = create_scope(include_second_role=args.action == 'cabinet')
             with session(scope['admin']) as client:
                 ready(client, scope)
+            if args.action == 'appeals-reentry':
+                print(json.dumps(seed_appeals_reentry(scope)))
+                return
             with get_connection() as c:
                 emails = {str(row['id']): row['email'] for row in c.execute(
                     'SELECT id,email FROM users WHERE id=ANY(%s)', ([scope['member'], scope['second']],)).fetchall()}

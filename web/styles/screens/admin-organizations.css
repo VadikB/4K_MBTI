@@ -1224,13 +1224,77 @@
 .admin-member-card-dialog dt { color: var(--text-muted); }
 .admin-member-card-dialog dd { margin: 0; overflow-wrap: anywhere; }
 .admin-member-card-dialog .dialog-close { width: 44px; height: 44px; border: 0; border-radius: 50%; font-size: 24px; cursor: pointer; }
-.admin-organization-member-issues { color: var(--palette-outcome-link); font-weight: 600; }
-.admin-member-appeals { display: grid; gap: 12px; max-height: 40vh; overflow-y: auto; }
+.admin-organization-member-issues {
+    justify-self: start;
+    min-height: 44px;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--palette-outcome-link);
+    font: inherit;
+    font-weight: var(--fw-semibold);
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+.admin-organizations-panel .admin-appeals-filter[aria-pressed="true"] {
+    background: var(--accent-soft);
+    border-color: var(--admin-primary);
+    font-weight: var(--fw-bold);
+}
+.admin-member-appeals,
+.admin-member-appeals-list { display: grid; gap: 12px; min-width: 0; }
 .admin-member-appeals h4 { margin: 0; }
-.admin-member-appeal { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--palette-graphite-200); border-radius: var(--radius-sm); }
-.admin-member-appeal p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.admin-member-appeal textarea { width: 100%; min-height: 96px; }
-.admin-member-appeal button { justify-self: start; }
+.admin-member-appeals h4:focus,
+.admin-member-appeal-state:focus { outline: 2px solid var(--palette-outcome-link); outline-offset: 3px; }
+.admin-member-appeal {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+    overflow-wrap: anywhere;
+}
+.admin-member-appeal h5,
+.admin-member-appeal h6,
+.admin-member-appeal p { margin: 0; }
+.admin-member-appeal-state {
+    justify-self: start;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    font-size: var(--fs-body-sm);
+}
+.admin-member-appeal h6 { font-size: var(--fs-body-sm); }
+.admin-member-appeal blockquote {
+    margin: 0;
+    padding: 10px 12px;
+    border-inline-start: 3px solid var(--palette-graphite-200);
+    background: var(--bg-soft);
+}
+.admin-member-appeal blockquote,
+.admin-member-appeal-reply { white-space: pre-wrap; }
+.admin-member-appeal textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: 96px;
+    padding: 10px 12px;
+    border: 1px solid var(--palette-graphite-200);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font: inherit;
+    resize: vertical;
+}
+.admin-member-appeal button { justify-self: start; min-height: 44px; max-width: 100%; white-space: normal; }
+.admin-member-appeal details,
+.admin-member-appeal-context,
+.admin-member-appeal .appeal-reply-attribution { color: var(--text-muted); font-size: var(--fs-body-sm); }
+.admin-member-appeal summary { cursor: pointer; }
+.admin-member-appeal-feedback:empty { position: absolute; }
 .admin-subject-confirmation-dialog { width: min(560px, calc(100vw - 32px)); }
 .admin-subject-confirmation-dialog p { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
 .admin-subject-confirmation-subject { font-weight: 600; color: var(--text-main); }

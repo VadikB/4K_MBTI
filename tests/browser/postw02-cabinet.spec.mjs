@@ -40,7 +40,8 @@ async function fixture(page) {
     current_assessments: [card], completed_assessments: [{ ...card, cycle_id: 'previous-cycle', current_position_no: null,
     title: 'Предыдущее прохождение', status: 'report_ready', journey_state: 'report_ready', status_label: 'Результат готов',
     description: 'Результат доступен.', action: 'open_report', button_label: 'Посмотреть результат', report_id: 'saved-report', calendar_deadline: null, closed_at: '2026-11-10T12:00:00Z' }] };
-  const model = { assignment_id: 91, assessment_name: card.title, readiness: { status: 'ready', organization_id: 10, assignment_ref: 'cabinet', questionnaire_revision_id: 41,
+  const model = { assignment_id: 91, assessment_name: card.title, readiness: { status: 'ready',
+    organization_id: 10, assignment_id: 91, assignment_ref: 'technical-assignment-key', questionnaire_revision_id: 41,
     briefing: { questions: ['Q1', 'Q2', 'Q3'], consent_version: 1 } }, mandatory_complete: true,
     state: { consent_version: 1, consent_accepted_at: 'synthetic', answers_json: { answer_1: 'A', answer_2: 'B', answer_3: 'C' } },
     onboarding: { status: 'completed', current_step: 8 }, late_readiness: { status: 'ready_to_prepare', personalized_profile_id: 4 },
@@ -57,8 +58,16 @@ async function fixture(page) {
     if (pathname === '/users/8/session-bootstrap') return journey.readFailure
       ? route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }) : respond(route, { user, dashboard });
     if (pathname === '/users/8/acquaintance/issues' && request.method() === 'GET') return respond(route, { items: [
-      { reply_message: 'Ответ из сохранённого обращения.', reply_author_display_name: 'Автор ответа', replied_at: '2026-11-19T12:00:00Z' },
-      { reply_message: 'Исторический ответ.', replied_at: '2026-11-19T10:00:00Z' },
+      { organization_id: 10, assignment_id: 91, assignment_ref: model.readiness.assignment_ref, questionnaire_revision_id: 41,
+        assessment_display_name: card.title,
+        message: 'Исходное сообщение\n' + 'ОченьДлинноеОбращение'.repeat(60),
+        reply_message: 'Ответ из сохранённого обращения.\n' + 'ДлинныйОтвет'.repeat(60),
+        reply_author_display_name: 'Автор ответа', replied_at: '2026-11-19T12:00:00Z' },
+      { organization_id: 10, assignment_id: 90, assignment_ref: model.readiness.assignment_ref, questionnaire_revision_id: 41,
+        assessment_display_name: 'Оценка прежнего назначения',
+        reply_message: 'Исторический ответ по прежнему назначению.', replied_at: '2026-11-19T10:00:00' },
+      { assignment_ref: model.readiness.assignment_ref, message: 'Сообщение из старой записи',
+        reply_message: 'Исторический ответ без подтверждённого назначения.', replied_at: '2026-11-19T09:00:00Z' },
     ] });
     if (pathname === '/users/8/journey-state') return respond(route, { next_action: journey.next_action, can_open_dashboard: true,
       profile: { status: 'complete' }, onboarding: model.onboarding, assessment: { status: 'in_progress', runtime_kind: 'cycle', cycle_id: card.cycle_id } });
@@ -102,6 +111,18 @@ for (const width of [1440, 390, 320]) {
       await expect(page.locator('.participant-appeal').nth(0)).toContainText('Автор ответа');
       await expect(page.locator('.participant-appeal').nth(0)).not.toContainText('Администратор помощи');
       await expect(page.locator('.participant-appeal').nth(1)).toContainText('Администратор ·');
+      const replies = page.locator('.participant-appeal');
+      await expect(replies.nth(0).locator('time')).toHaveAttribute('datetime', '2026-11-19T12:00:00Z');
+      await expect(replies.nth(0).locator('time')).toHaveText('19.11.2026, 15:00 МСК');
+      await expect(replies.nth(1).locator('time')).toHaveText('19.11.2026, 10:00');
+      await expect(replies.nth(0).getByText(run.card.title, { exact: true })).toBeVisible();
+      await expect(replies.nth(1)).not.toContainText(run.card.title);
+      await expect(replies.nth(1).getByText('Оценка прежнего назначения', { exact: true })).toBeVisible();
+      await expect(page.locator('#dashboard-appeals')).not.toContainText(run.model.readiness.assignment_ref);
+      await replies.nth(0).getByText('Ваше обращение', { exact: true }).click();
+      expect(await replies.nth(0).evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      await replies.nth(2).getByText('Ваше обращение', { exact: true }).click();
+      await expect(replies.nth(2).getByText('Связь с оценкой неизвестна')).toBeVisible();
       await expect(page.locator('#completed-assessments article')).toHaveCount(1);
       await expect(page.locator('#completed-assessments article')).toContainText('Результат готов');
       const geometry = await page.locator('#dashboard-panel').evaluate((node) => {

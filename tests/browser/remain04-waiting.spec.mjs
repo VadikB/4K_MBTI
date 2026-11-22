@@ -50,6 +50,7 @@ async function fixture(page, { login = false } = {}) {
       return json(route, refused ? { detail: 'controlled refusal' } : journey, refused ? 503 : 200);
     }
     if (url.pathname === '/users/8/acquaintance') return json(route, model);
+    if (url.pathname === '/users/8/acquaintance/issues') return json(route, { items: [] });
     if (url.pathname === '/users/8/onboarding') return json(route, route.request().postDataJSON());
     if (url.pathname === '/users/8/acquaintance/consent') { model.state.consent_accepted_at = 'synthetic'; model.state.consent_version = 1; return json(route, model.state); }
     if (url.pathname === '/users/8/acquaintance/answers') {
@@ -101,6 +102,15 @@ test('REMAIN04 waiting login/direct/reload/check, viewports/text200/focus, then 
   await check.scrollIntoViewIfNeeded();
   await check.focus();
   await expect(check).toBeFocused();
+  await page.keyboard.press('Tab');
+  const appeals = page.getByRole('button', { name: 'Ответы на обращения' });
+  await expect(appeals).toBeFocused();
+  await page.keyboard.press('Enter');
+  const replies = page.getByRole('dialog', { name: 'Ответы на обращения' });
+  await expect(replies.getByText('Ответов пока нет.')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(replies).toBeHidden();
+  await expect(appeals).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.locator('#auth-complete-logout-button')).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);

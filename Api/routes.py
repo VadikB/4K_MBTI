@@ -3561,11 +3561,7 @@ def read_participant_issue_operation(user_id: int, operation_id: str, request: R
 def list_participant_data_issues(user_id: int, request: Request) -> dict:
     _require_matching_session_user(request, user_id)
     with get_connection() as connection:
-        visible = ("id", "organization_id", "message", "status", "created_at",
-                   "assignment_ref", "assignment_id", "questionnaire_revision_id",
-                   "reply_message", "reply_author_display_name", "replied_at")
-        return {"items": [{key: item[key] for key in visible} for item in appeals.list_issues(
-            connection, organization_id=None, user_id=user_id)]}
+        return {"items": appeals.list_participant_issues(connection, user_id=user_id)}
 
 
 class AppealReplyRequest(BaseModel):
