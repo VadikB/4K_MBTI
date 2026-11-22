@@ -73,7 +73,7 @@ class CaptureGateway:
         return SimpleNamespace(content=json.dumps(result, ensure_ascii=False), sent={}, provider={"finish_reason": "stop"})
 
 
-def test_frozen_educational_role_reaches_original_and_repair_generation():
+def test_frozen_educational_role_and_spec02_contract_reach_generation_and_repair(tmp_path):
     case = _raw_cases()[1]
     project_role = {
         "code": "training_role", "version": 2, "checksum": "role-checksum",
@@ -89,17 +89,30 @@ def test_frozen_educational_role_reaches_original_and_repair_generation():
     project_role["interactions"].append("Позднее изменение")
     gateway = CaptureGateway("repair")
     result = service.prepare(snapshot, gateway)
-    calls = [(messages, payload) for routing, messages, payload in gateway.calls if ":generation:" in routing]
+    calls = [(routing, messages, payload) for routing, messages, payload in gateway.calls if ":generation:" in routing]
     assert len(calls) == 2 and result["admitted_for_participant"]
-    for messages, payload in calls:
+    assert snapshot["refs"]["protocol_package"]["version"] == "2.0.0"
+    assert snapshot["applicability_plan"]["protocol"]["version"] == "2.1.0"
+    for _, messages, payload in calls:
         assert payload["project_role"] == expected
         assert payload["case"] == previous["case"]
         assert payload["normative_indicator_targets"] == previous["case_version"]["indicator_targets"]
+        assert payload["case_content_contract"] == previous["case_content_contract"]
+        assert payload["case_content_contract"]["initial_material_refs_required"] == ["K1.I09"]
+        assert "indicator:K1.I09" in payload["case_content_contract"]["requirements"]
+        assert payload["m2_indicator_descriptors"] == previous["m2_indicator_descriptors"]
+        assert payload["m2_indicator_descriptors"]["K1.I09"]["id"] == "K1.I09"
         assert (ROOT / PROJECT_ROLE_PROMPT).read_text() in messages[0]["content"]
     trace = service.build_persistence_trace(snapshot, result)
     assert trace["source_snapshot"]["refs"]["project_role"] == {
         key: project_role[key] for key in ("code", "version", "checksum", "snapshot_checksum")
     }
+    (tmp_path / "educational-spec02-requests.json").write_text(json.dumps({
+        "synthetic": True,
+        "refs": trace["source_snapshot"]["refs"],
+        "requests": [{"routing_key": routing, "request_checksum": service.checksum(messages),
+                      "messages": messages} for routing, messages, _ in calls],
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 @pytest.mark.parametrize(("number", "count", "mode"), [(2, 33, "pass"), (3, 31, "repair"), (2, 33, "protocol")])

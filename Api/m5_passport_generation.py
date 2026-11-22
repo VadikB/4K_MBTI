@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from Api.assessment_case_contracts import PreparedCaseV4
-from Api.cycle_execution_manifest import ROOT
+from Api.cycle_execution_manifest import M5_FUNCTIONAL_AS_PACKAGE, ROOT
 from Api.m5_case_runtime import checksum as runtime_checksum
 from Api.m5_package import digest
 from Api.m5_passport import compile_passport, load_m2, missing
@@ -14,7 +14,9 @@ from Api.m5_runtime_rules import ALLOWED_FUNCTIONS
 from scripts.build_m5_sales_package import _participant_presentation, _ref, build_execution_rules
 
 BANK_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.6"
+# The bank builder and cycles without a prompt dependency use the original publication.
 AS_PACKAGE = ROOT / "assessment_definitions/prompts/m5_functional_passport/v1"
+CURRENT_AS_PACKAGE = ROOT / M5_FUNCTIONAL_AS_PACKAGE
 M2 = ROOT / "assessment_definitions/methodologies/competencies_4k/1.1/methodology.json"
 M3 = ROOT / "assessment_definitions/role_profiles/competencies_4k/1.1/base_roles.json"
 ADDRESSED_RUNTIME = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.4.0"
@@ -25,6 +27,11 @@ PROMPT_FILES = {
     "protocol_challenger": "challenger.md", "protocol_json_retry": "json-retry.md",
     "protocol_tester_addendum": "tester-addendum.md", "generation_contract": "as-contract.json",
 }
+V2_FILES = {
+    **PROMPT_FILES,
+    "case_content_contract": "case-content-contract.json",
+    "tester_protocol": "tester-protocol.json",
+}
 ADAPTED_FIELDS = ("Конкретное условие", "Форма проявления", "Дефект потери")
 REF_FIELDS = {"material_refs": "Материалы", "event_refs": "События",
               "character_refs": "Активные персонажи", "authority_refs": "authority"}
@@ -33,13 +40,16 @@ REF_FIELDS = {"material_refs": "Материалы", "event_refs": "Событи
 def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     manifest_raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(manifest_raw)
-    if (manifest["schema_version"], manifest["id"], manifest["version"]) != (1, "m5-functional-passport", "1.0.0"):
+    files = {"1.0.0": PROMPT_FILES, "2.0.0": V2_FILES}.get(manifest.get("version"))
+    if files is None or (manifest.get("schema_version"), manifest.get("id"), manifest.get("status")) != (
+        1, "m5-functional-passport", "draft"
+    ):
         raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
     artifacts = {item["name"]: item["sha256"] for item in manifest["artifacts"]}
-    if set(artifacts) != set(PROMPT_FILES.values()):
+    if set(artifacts) != set(files.values()) or len(manifest["artifacts"]) != len(files):
         raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
     refs = {}
-    for key, name in PROMPT_FILES.items():
+    for key, name in files.items():
         path = directory / name
         if digest(path.read_bytes()) != artifacts[name]:
             raise ValueError(f"M5_AS_PROMPT_CHECKSUM_MISMATCH:{name}")
@@ -49,6 +59,28 @@ def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     contract = json.loads((directory / PROMPT_FILES["generation_contract"]).read_bytes())
     ref = {"id": contract["id"], "version": contract["version"], "checksum": artifacts["as-contract.json"]}
     return contract, ref, refs
+
+
+def read_case_content_contract(path: Path, case_id: str) -> dict | None:
+    contract = json.loads(path.read_bytes())
+    requirements = contract.get("requirements")
+    evidence_sections = contract.get("finding_evidence_sections")
+    indicator_fields = contract.get("indicator_fields")
+    if (contract.get("schema_version"), contract.get("id"), contract.get("version")) != (
+        1, "m5-functional-passport-content", "1.0.0"
+    ) or not (
+        _text(contract.get("case_id"))
+        and isinstance(requirements, dict) and requirements and all(_text(value) for value in requirements.values())
+        and isinstance(evidence_sections, dict) and evidence_sections.keys() == requirements.keys()
+        and all(
+            _ids(paths) and paths and all(path.startswith("candidate_as/") and all(path.split("/")) for path in paths)
+            for paths in evidence_sections.values()
+        )
+        and isinstance(indicator_fields, dict) and all(_ids(fields) for fields in indicator_fields.values())
+        and _ids(contract.get("initial_material_refs_required"))
+    ):
+        raise ValueError("M5_AS_CASE_CONTENT_CONTRACT_INVALID")
+    return contract if contract["case_id"] == case_id else None
 
 
 def load_bank_case(case_id: str, directory: Path = BANK_PACKAGE) -> tuple[dict, dict]:
@@ -66,7 +98,7 @@ def load_bank_case(case_id: str, directory: Path = BANK_PACKAGE) -> tuple[dict, 
 
 
 def normalize_case(case: dict, as_contract_ref: dict, *, m2_path: Path = M2,
-                   m3_path: Path = M3) -> tuple[dict, dict]:
+                   m3_path: Path = M3) -> tuple[dict, dict, dict]:
     case_id, version = case["case_id"], case["version"]
     old_source = case.get("author_case_source") if case.get("schema_version") == 3 else case.get("passport_source")
     if not old_source:
@@ -83,7 +115,7 @@ def normalize_case(case: dict, as_contract_ref: dict, *, m2_path: Path = M2,
             raise missing(case_id, version, f"{key}→passport")
     if case.get("schema_version") == 4 and case != projected:
         raise missing(case_id, version, "CaseVersion→passport")
-    return projected, m2_ref
+    return projected, m2_ref, m2
 
 
 def addressed_candidate_contract(base: dict, design: dict) -> dict:
@@ -95,11 +127,14 @@ def addressed_candidate_contract(base: dict, design: dict) -> dict:
 
 
 def provider_basis(snapshot: dict) -> dict:
+    case_content = snapshot.get("case_content_contract")
     return {"case": snapshot["case"], "profile": snapshot["profile"],
             "normative_indicator_targets": snapshot["case_version"]["indicator_targets"],
             **({"project_role": {key: snapshot["project_role"][key] for key in ("code", "interactions")}}
                if "project_role" in snapshot else {}),
             **({"scenario_contract": snapshot["scenario_contract"]} if "scenario_contract" in snapshot else {}),
+            **({"case_content_contract": case_content,
+                "m2_indicator_descriptors": snapshot["m2_indicator_descriptors"]} if case_content else {}),
             "requirements": {
                 "required_top_level_fields_exact": list(snapshot["as_contract"]["fields"]),
                 "maximum_output_characters": snapshot["as_contract"]["maximum_output_characters"],
@@ -126,7 +161,15 @@ def _text(value: object) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
-def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
+def validate_candidate(snapshot: dict, candidate: dict, check) -> list[str]:
+    """Validate the shape and identify required elements that can be cited as absent."""
+    content_contract = snapshot.get("case_content_contract", {})
+    missing_paths = []
+
+    def record_missing(expected, present, parent):
+        if content_contract:
+            missing_paths.extend(f"{parent}/{key}" for key in sorted(set(expected) - set(present)))
+
     passport = snapshot["case"]["Паспорт"]
     case = snapshot["case_version"]
     scenario = passport["17 Сценарий Dialogue"]
@@ -134,6 +177,7 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
     required = snapshot["as_contract"]["fields"]
     check("top_level_contract", set(candidate) == set(required),
           {"missing": sorted(set(required) - set(candidate)), "extra": sorted(set(candidate) - set(required))})
+    record_missing(required, candidate, "candidate_as")
     design = snapshot.get("scenario_contract")
     expected_fields = {
         "CaseID": case["case_id"], "CaseVersion": case["version"], "BaseRole": case["base_role"],
@@ -158,31 +202,45 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
             namespaces[field] = index or {}
     materials, characters, events = (namespaces[key] for key in ("Материалы", "Активные персонажи", "События"))
     check("passport_material_set", set(materials) == set(scenario["Функции материалов"]), path="candidate_as/Материалы")
+    record_missing(scenario["Функции материалов"], materials, "candidate_as/Материалы")
     check("character_count", len(characters) == passport["19 Параметры сложности"]["Фиксировано"]["Активные персонажи"],
           path="candidate_as/Активные персонажи")
     for material_id, material in materials.items():
+        path = f"candidate_as/Материалы/{material_id}"
         check("participant_material_text", _text(material.get("Текст")) and _text(material.get("Название")),
-              path=f"candidate_as/Материалы/{material_id}")
+              path=path)
+        record_missing(("Название", "Текст"), material, path)
     if design is None:
         check("passport_event_sequence", list(events) == [event["EventID"] for event in scenario["События"]],
               path="candidate_as/События")
+        record_missing((event["EventID"] for event in scenario["События"]), events, "candidate_as/События")
         for character_id, character in characters.items():
+            path = f"candidate_as/Активные персонажи/{character_id}"
             check("character_card", all(_text(character.get(field)) for field in ("Имя", "Роль", "Текст"))
-                  and isinstance(character.get("Начальные знания"), list), path=f"candidate_as/Активные персонажи/{character_id}")
+                  and isinstance(character.get("Начальные знания"), list), path=path)
+            record_missing(("Имя", "Роль", "Текст", "Начальные знания"), character, path)
+        event_fields = (
+            "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", "Условие запуска",
+        )
         for event_id, event in events.items():
-            check("scenario_event", all(_text(event.get(field)) for field in (
-                "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", "Условие запуска"
-            )), path=f"candidate_as/События/{event_id}")
+            path = f"candidate_as/События/{event_id}"
+            check("scenario_event", all(_text(event.get(field)) for field in event_fields), path=path)
+            record_missing(event_fields, event, path)
         delayed = set(materials) - set(scenario["На старте"])
         bindings = candidate.get("RuntimeBindings")
         check("runtime_event_set", isinstance(bindings, dict) and set(bindings) == set(events), path="candidate_as/RuntimeBindings")
+        binding_fields = ("function", "speaker_ids", "material_ids")
+        if isinstance(bindings, dict):
+            record_missing(events, bindings, "candidate_as/RuntimeBindings")
         bound_materials = []
         for event_id, binding in (bindings.items() if isinstance(bindings, dict) else ()):
             path = f"candidate_as/RuntimeBindings/{event_id}"
-            if not isinstance(binding, dict) or set(binding) != {"function", "speaker_ids", "material_ids"}:
+            if isinstance(binding, dict):
+                record_missing(binding_fields, binding, path)
+            if not isinstance(binding, dict) or set(binding) != set(binding_fields):
                 check("runtime_event_binding", False, path=path)
                 continue
-            function, speaker_ids, material_ids = (binding[key] for key in ("function", "speaker_ids", "material_ids"))
+            function, speaker_ids, material_ids = (binding[key] for key in binding_fields)
             check("runtime_event_binding", isinstance(function, str) and function in ALLOWED_FUNCTIONS
                   and _ids(speaker_ids) and set(speaker_ids) <= set(characters)
                   and _ids(material_ids) and set(material_ids) <= delayed
@@ -197,21 +255,33 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> None:
     observed = _indexed(candidate.get("IndicatorObservability"), "IndicatorID") or {}
     check("indicator_adapted_target_set", set(observed) == set(targets["Точный перечень"]),
           path="candidate_as/IndicatorObservability")
+    record_missing(targets["Точный перечень"], observed, "candidate_as/IndicatorObservability")
     namespaces["authority"] = {"participant", *(f"character:{key}" for key in characters)}
+    indicator_fields = content_contract.get("indicator_fields", {})
+    requires_initial_refs = set(content_contract.get("initial_material_refs_required", ()))
+    initial_materials = set(scenario["На старте"]) & materials.keys()
     for indicator_id, item in observed.items():
         path = f"candidate_as/IndicatorObservability/{indicator_id}"
-        check("indicator_adapted_condition", set(item) == {"IndicatorID", *ADAPTED_FIELDS, *REF_FIELDS}
+        extra_fields = indicator_fields.get(indicator_id, [])
+        check("indicator_adapted_condition", set(item) - set(extra_fields) == {"IndicatorID", *ADAPTED_FIELDS, *REF_FIELDS}
               and all(_text(item.get(field)) for field in ADAPTED_FIELDS), path=path)
+        record_missing((*ADAPTED_FIELDS, *REF_FIELDS, *extra_fields), item, path)
+        for field in extra_fields:
+            check("indicator_adaptation_required_text", _text(item.get(field)), path=f"{path}/{field}")
         for field, namespace in REF_FIELDS.items():
             values = item.get(field)
-            check("indicator_adaptation_references", _ids(values) and set(values) <= set(namespaces[namespace]),
-                  path=f"{path}/{field}")
+            ref_path = f"{path}/{field}"
+            references_valid = _ids(values) and set(values) <= set(namespaces[namespace])
+            check("indicator_adaptation_references", references_valid, path=ref_path)
+            if references_valid and field == "material_refs" and indicator_id in requires_initial_refs:
+                check("indicator_initial_material_ref_required", not initial_materials.isdisjoint(values), path=ref_path)
 
     if design:
         for indicator_id, refs in design["required_observability"].items():
             for field, required_refs in refs.items():
                 check("required_scenario_observability", observed.get(indicator_id, {}).get(field) == required_refs,
                       path=f"candidate_as/IndicatorObservability/{indicator_id}/{field}")
+    return missing_paths
 
 
 def _validate_addressed_content(candidate: dict, design: dict, materials: dict, characters: dict, check) -> None:

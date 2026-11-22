@@ -136,6 +136,7 @@ def load_m2(path: Path, source_manifest: Path) -> tuple[dict, dict]:
                         "skill_id": skill["id"], "component_id": component["id"],
                         "m2_version": "v" + source["version"],
                         "source": {key: source[key] for key in ("id", "version", "sha256")},
+                        "descriptor": indicator,
                     }
     return index, {"id": "m2-competencies-4k", "version": methodology["methodology_version"],
                    "checksum": digest(raw)}

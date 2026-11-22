@@ -772,7 +772,18 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
         assert generated_trace["accepted_as"]["CaseVersion"] == decision["selected_case_version"]
         assert not set(generated_trace["source_snapshot"]) & {"author_as_example"}
         if passport_bank:
-            assert generated_trace["source_snapshot"]["refs"]["runtime_rule"]["version"] == "1.3.1"
+            refs = generated_trace["source_snapshot"]["refs"]
+            assert refs["runtime_rule"]["version"] == "1.3.1"
+            assert decision["selected_case_id"] == "CASE.SPEC.02"
+            assert refs["protocol_package"]["version"] == "2.0.0"
+            assert generated_trace["tester"]["protocol"]["checksum"] == refs["tester_protocol"]["sha256"]
+            for reviews in generated_trace["tester"]["independent_checks"].values():
+                by_id = {item["check_id"]: item for item in reviews}
+                for check_id in ("common.professional_consistency", "case02.attractive_feature", "indicator:K1.I09"):
+                    assert by_id[check_id]["requirement"]["case_content"]
+            k1_i09 = next(row for row in generated_trace["accepted_as"]["IndicatorObservability"]
+                          if row["IndicatorID"] == "K1.I09")
+            assert k1_i09["Что сохранить при адаптации"]
         assert generated_trace["source_snapshot"]["profile_checksum"] == situation["snapshot_json"]["profile_ref"]["checksum"]
         if refresh_profile_before_recovery:
             assert generated_trace["source_snapshot"]["profile_checksum"] == specialist_profile["checksum"]
@@ -873,9 +884,13 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
                 'candidate_checksum': generated_trace['candidate_checksum'],
                 'accepted_as_checksum': functional_checksum(accepted),
                 'case_ref': situation['snapshot_json']['case_ref'],
+                'case_route': route_ids,
                 'profile_ref': situation['snapshot_json']['profile_ref'],
                 'execution_payload_ref': situation['snapshot_json']['execution_payload_ref'],
                 'compiler': generated_trace['source_snapshot']['refs']['package']['compiler'],
+                **({'as_preparation_refs': {name: refs[name] for name in (
+                    'protocol_package', 'case_content_contract', 'tester_protocol', 'm2')},
+                    'tester_protocol': generated_trace['tester']['protocol']} if passport_bank else {}),
                 'persisted_public': frozen_public, 'http_public': response.json()['current_situation']['participant_payload'],
                 'http_status': response.status_code, 'assessment_answers_at_readback': 0,
                 'snapshot_checksum_verified': True, 'execution_checksum_verified': True,

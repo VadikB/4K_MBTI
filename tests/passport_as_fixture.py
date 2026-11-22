@@ -8,6 +8,7 @@ def synthetic_as(payload: dict, *, variant: int = 0) -> dict:
     starts = scenario["На старте"]
     events = scenario["События"]
     materials = sorted(scenario["Функции материалов"])
+    indicator_fields = payload.get("case_content_contract", {}).get("indicator_fields", {})
     characters = [f"SYNTHETIC-{n + 1}" for n in range(passport["19 Параметры сложности"]["Фиксировано"]["Активные персонажи"])]
     bindings = {}
     for index, event in enumerate(events):
@@ -37,6 +38,7 @@ def synthetic_as(payload: dict, *, variant: int = 0) -> dict:
             "Форма проявления": "Тестовое действие.", "Дефект потери": "Условие утрачено.",
             "material_refs": materials[:1], "event_refs": [events[0]["EventID"]],
             "character_refs": characters[:1], "authority_refs": ["participant"],
+            **dict.fromkeys(indicator_fields.get(indicator_id, []), "Синтетическая граница адаптации."),
         } for indicator_id in targets["Точный перечень"]],
     }
     if design := payload.get("scenario_contract"):
