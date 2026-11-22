@@ -64,12 +64,18 @@ def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
 def read_case_content_contract(path: Path, case_id: str) -> dict | None:
     contract = json.loads(path.read_bytes())
     requirements = contract.get("requirements")
+    evidence_sections = contract.get("finding_evidence_sections")
     indicator_fields = contract.get("indicator_fields")
     if (contract.get("schema_version"), contract.get("id"), contract.get("version")) != (
         1, "m5-functional-passport-content", "1.0.0"
     ) or not (
         _text(contract.get("case_id"))
         and isinstance(requirements, dict) and requirements and all(_text(value) for value in requirements.values())
+        and isinstance(evidence_sections, dict) and evidence_sections.keys() == requirements.keys()
+        and all(
+            _ids(paths) and paths and all(path.startswith("candidate_as/") and all(path.split("/")) for path in paths)
+            for paths in evidence_sections.values()
+        )
         and isinstance(indicator_fields, dict) and all(_ids(fields) for fields in indicator_fields.values())
         and _ids(contract.get("initial_material_refs_required"))
     ):

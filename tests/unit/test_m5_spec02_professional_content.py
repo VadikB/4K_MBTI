@@ -400,21 +400,54 @@ def test_unfounded_finding_never_triggers_repair(spec02_candidate, tmp_path, rev
     _record_followup(tmp_path, prepared, gateway)
 
 
+@pytest.mark.parametrize("reviewer", ["tester", "challenger"])
+@pytest.mark.parametrize(("check_id", "path"), [
+    *(pytest.param(check_id, "candidate_as/CaseID", id=check_id) for check_id in CHECKS),
+    pytest.param("indicator:K1.I09", "candidate_as/Материалы/M01/MaterialID", id="material-identifier"),
+    pytest.param("indicator:K1.I09", "candidate_as/IndicatorObservability/0/Конкретное условие", id="different-indicator"),
+    pytest.param("case02.attractive_feature", "candidate_as/IndicatorObservability/K1.I09/Конкретное условие",
+                 id="outside-materials"),
+])
+def test_finding_must_use_an_evidence_section(spec02_candidate, tmp_path, reviewer, check_id, path):
+    snapshot, candidate = spec02_candidate
+    candidate_checksum = service.checksum(candidate)
+    defect = finding(check_id, [path], "Синтетическая претензия без ссылки на относящееся к ней содержание.")
+    gateway = CapturingGateway(candidate, None, {(candidate_checksum, reviewer): {check_id: defect}})
+    prepared = service.prepare(snapshot, gateway)
+    aggregation = prepared["tester"]["aggregation"]
+    assert prepared["deterministic_validation"]["status"] == "PASS"
+    assert aggregation["status"] == "INCOMPLETE" and not aggregation["blocking_failures"]
+    assert not prepared["admitted_for_participant"] and prepared["repair"] is None
+    assert not any(call["role"] == "repair" for call in gateway.calls)
+    error, = aggregation["verification_errors"]
+    assert error["code"] == "FINDING_EVIDENCE_UNRELATED"
+    assert error["reviewer"] == reviewer and error["check_id"] == check_id
+    assert error["candidate_checksum"] == candidate_checksum and error["actual"] == [path]
+    assert error["expected"] == snapshot["case_content_contract"]["finding_evidence_sections"][check_id]
+    _record_followup(tmp_path, prepared, gateway)
+
+
 @pytest.mark.parametrize("valid_reviewer, invalid_reviewer", [("tester", "challenger"), ("challenger", "tester")])
-def test_localized_blocker_survives_other_reviewers_error(spec02_candidate, tmp_path, valid_reviewer, invalid_reviewer):
+@pytest.mark.parametrize("invalid_path, error_code", [
+    ("$.candidate_as.Материалы[9999].Текст", "FINDING_PATH_UNRESOLVABLE"),
+    ("candidate_as/CaseID", "FINDING_EVIDENCE_UNRELATED"),
+], ids=["nonexistent-address", "metadata-only"])
+def test_localized_blocker_survives_other_reviewers_error(
+    spec02_candidate, tmp_path, valid_reviewer, invalid_reviewer, invalid_path, error_code,
+):
     snapshot, corrected = spec02_candidate
     candidate = deepcopy(corrected)
     mutate_glossary(candidate)
     check_id = "indicator:K1.I09"
     real_finding = finding(
         check_id,
-        ["$.candidate_as.Материалы[P00].Текст", "/candidate_as/Материалы/M01/Текст",
+        ["candidate_as/CaseID", "$.candidate_as.Материалы[P00].Текст", "/candidate_as/Материалы/M01/Текст",
          "candidate_as/IndicatorObservability/K1.I09/Конкретное условие",
          "candidate_as.IndicatorObservability['K1.I09']['Что сохранить при адаптации']"],
         "Словарь присвоил один статус обоим терминам, от которых зависит условие карты.",
     )
     invalid_finding = finding(
-        check_id, ["$.candidate_as.Материалы[9999].Текст"], "Синтетическая находка по несуществующему адресу.",
+        check_id, [invalid_path], "Синтетическая находка без доступного содержательного основания.",
     )
     initial_checksum = service.checksum(candidate)
     gateway = CapturingGateway(candidate, corrected, {
@@ -427,7 +460,8 @@ def test_localized_blocker_survives_other_reviewers_error(spec02_candidate, tmp_
     assert [(item["reviewer"], item["findings"]) for item in initial["blocking_failures"]] == [
         (valid_reviewer, [real_finding]),
     ]
-    assert initial["verification_errors"][0]["reviewer"] == invalid_reviewer
+    error, = initial["verification_errors"]
+    assert (error["reviewer"], error["code"]) == (invalid_reviewer, error_code)
     repair_call, = [call for call in gateway.calls if call["role"] == "repair"]
     payload = json.loads(repair_call["messages"][-1]["content"])
     assert payload["blocking_failures"] == initial["blocking_failures"]
@@ -435,6 +469,23 @@ def test_localized_blocker_survives_other_reviewers_error(spec02_candidate, tmp_
     assert prepared["tester"]["reviewed_candidate_checksum"] == prepared["candidate_checksum"]
     assert all(row["candidate_checksum"] == prepared["candidate_checksum"]
                for reviews in prepared["tester"]["independent_checks"].values() for row in reviews)
+    assert prepared["admitted_for_participant"]
+    _record_followup(tmp_path, prepared, gateway)
+
+
+@pytest.mark.parametrize("field", [PRESERVE, "material_refs"])
+def test_finding_can_cite_the_row_with_a_missing_required_k1_i09_field(spec02_candidate, tmp_path, field):
+    snapshot, corrected = spec02_candidate
+    candidate = deepcopy(corrected)
+    del k1_i09(candidate)[field]
+    check_id = "indicator:K1.I09"
+    defect = finding(check_id, ["candidate_as/IndicatorObservability/K1.I09"],
+                     f"В строке K1.I09 отсутствует поле «{field}».")
+    gateway = CapturingGateway(candidate, corrected, {(service.checksum(candidate), "tester"): {check_id: defect}})
+    prepared = service.prepare(snapshot, gateway)
+    initial = prepared["repair"]["original_tester"]["aggregation"]
+    assert initial["blocking_failures"][0]["findings"] == [defect]
+    assert not initial["verification_errors"]
     assert prepared["admitted_for_participant"]
     _record_followup(tmp_path, prepared, gateway)
 

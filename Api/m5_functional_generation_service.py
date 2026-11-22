@@ -224,7 +224,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
                 _frozen_file(snapshot, "case_content_contract"), projected["case_id"],
             )
             snapshot["applicability_plan"] = build_applicability_plan(
-                case, protocol, case_content_requirements=content["requirements"] if content else None,
+                case, protocol, case_content_contract=content,
             )
             if content:
                 indicator_ids = content["indicator_fields"].keys() | set(content["initial_material_refs_required"])

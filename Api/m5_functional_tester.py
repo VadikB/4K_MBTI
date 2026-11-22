@@ -46,7 +46,7 @@ def load_protocol(path: Path = PROTOCOL_PATH) -> dict[str, Any]:
 
 
 def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | None = None, *,
-                             case_content_requirements: dict[str, str] | None = None) -> dict[str, Any]:
+                             case_content_contract: dict[str, Any] | None = None) -> dict[str, Any]:
     protocol = deepcopy(protocol or load_protocol())
     passport = case.get("Паспорт")
     if not isinstance(passport, dict):
@@ -97,7 +97,9 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     identifiers = [item["check_id"] for item in checks]
     if len(identifiers) != len(set(identifiers)):
         raise ValueError("M5_FUNCTIONAL_TESTER_CHECK_ID_CONFLICT")
-    requirements = case_content_requirements or {}
+    content_contract = case_content_contract or {}
+    requirements = content_contract.get("requirements", {})
+    evidence_sections = content_contract.get("finding_evidence_sections", {})
     content_check_ids = protocol.get("case_content_checks", {}).get(case_id, [])
     protected_ids = {item["check_id"] for item in checks if item.get("mandatory") and item.get("protected")}
     if set(content_check_ids) != set(requirements) or not set(requirements) <= protected_ids:
@@ -105,7 +107,8 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     for item in checks:
         if item["check_id"] in requirements:
             item["requirement"] = {"passport_or_protocol": item["requirement"],
-                                   "case_content": requirements[item["check_id"]]}
+                                   "case_content": requirements[item["check_id"]],
+                                   "finding_evidence_sections": evidence_sections[item["check_id"]]}
     return {
         "protocol": {"id": protocol["id"], "version": protocol["version"], "checksum": protocol["checksum"]},
         "case_ref": {"case_id": case_id, "case_version": version, "checksum": checksum(case)},
@@ -144,8 +147,9 @@ def _candidate_path_parts(path: str) -> list[str] | None:
     return parts[1:] if parts[:1] == ["candidate_as"] else parts
 
 
-def _locate_candidate_path(candidate: dict, path: str) -> tuple[tuple[str, ...], bool] | None:
-    """Normalize ID selectors to indexes and allow a missing terminal element."""
+def _locate_candidate_path(candidate: dict, path: str, *,
+                           allow_missing_parent: bool = False) -> tuple[tuple[str, ...], bool] | None:
+    """Normalize ID selectors to indexes, reporting the first absent element when requested."""
     parts = _candidate_path_parts(path)
     if parts is None:
         return None
@@ -171,13 +175,26 @@ def _locate_candidate_path(candidate: dict, path: str) -> tuple[tuple[str, ...],
             return None
         address.append(str(key))
         if not exists:
-            return (tuple(address), False) if depth == len(parts) - 1 else None
+            return (tuple(address), False) if allow_missing_parent or depth == len(parts) - 1 else None
         node = node[key]
     return tuple(address), True
 
 
+def _supports_finding(locations: list[tuple[str, ...]], sections: set[tuple[str, ...]],
+                      missing_containers: set[tuple[str, ...]]) -> bool:
+    for address in locations:
+        if address in missing_containers:
+            return True
+        if len(address) == 3 and CANDIDATE_COLLECTION_IDS.get(address[0]) == address[2]:
+            continue
+        if any(address[:len(section)] == section for section in sections):
+            return True
+    return False
+
+
 def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
-                   missing_paths: Collection[tuple[str, ...]] = ()) -> list[dict[str, Any]]:
+                   missing_paths: Collection[tuple[str, ...]] = (),
+                   evidence_sections: Collection[str] = ()) -> list[dict[str, Any]]:
     """Validate evidence before it can be interpreted as a candidate defect."""
     findings = item.get("findings", [])
     errors = []
@@ -192,6 +209,14 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
     if item.get("status") != "FAIL" and findings:
         error("STATUS_FINDINGS_CONFLICT", "findings")
     top_level_field_missing = any(len(path) == 1 for path in missing_paths)
+    sections = set()
+    if candidate_as is not None and findings:
+        for section in evidence_sections:
+            located = _locate_candidate_path(candidate_as, section, allow_missing_parent=True)
+            if located is not None and (located[1] or located[0] in missing_paths):
+                sections.add(located[0])
+    missing_containers = {path[:-1] for path in missing_paths
+                          if any(path[:len(section)] == section for section in sections)}
     for index, finding in enumerate(findings):
         path = f"findings/{index}"
         if not isinstance(finding, dict):
@@ -212,13 +237,18 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
                 not isinstance(value, str) or not value.strip() for value in paths):
             error("FINDING_LOCATION_REQUIRED", f"{path}/paths")
         elif candidate_as is not None:
+            locations = []
             for path_index, value in enumerate(paths):
                 located = _locate_candidate_path(candidate_as, value)
                 if located is not None:
                     address, exists = located
                     if (exists and (address or top_level_field_missing)) or address in missing_paths:
+                        locations.append(address)
                         continue
                 error("FINDING_PATH_UNRESOLVABLE", f"{path}/paths/{path_index}", actual=value)
+            if (evidence_sections and len(locations) == len(paths)
+                    and not _supports_finding(locations, sections, missing_containers)):
+                error("FINDING_EVIDENCE_UNRELATED", f"{path}/paths", actual=paths, expected=list(evidence_sections))
     return errors
 
 
@@ -256,6 +286,7 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
         localized = isinstance(requirement, dict) and "case_content" in requirement
         protocol_errors = finding_errors(
             item, candidate_as=candidate_as if localized else None, missing_paths=missing_paths,
+            evidence_sections=requirement.get("finding_evidence_sections", ()) if localized else (),
         )
         if localized and candidate_as is None and findings:
             protocol_errors.append({"error_class": "verification_protocol", "code": "FINDING_CANDIDATE_REQUIRED",

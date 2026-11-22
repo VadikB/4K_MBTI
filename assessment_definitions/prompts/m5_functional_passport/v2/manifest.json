@@ -6,11 +6,11 @@
     },
     {
       "name": "case-content-contract.json",
-      "sha256": "1419c39aa941bff7287576325b2538b12f0c2b1963afe80ec74bed0c755b95bb"
+      "sha256": "f0fb734a2150d34af643f45af12b023417692a231857cf6c42b7aee25a565f1f"
     },
     {
       "name": "challenger.md",
-      "sha256": "1cb20027a85fbcd52e69183bde84b299fc41ca04f0b9cab0cb73225328229331"
+      "sha256": "f2356dac97bd7178224b7e3e39b710a54f1264faf994352564b06a1c22779217"
     },
     {
       "name": "generator.md",
@@ -26,7 +26,7 @@
     },
     {
       "name": "tester-addendum.md",
-      "sha256": "8b93deff2f058927a04d9ace98a3a0bdd9e79c063c59aad229146e8f021673ce"
+      "sha256": "9424ef9e1c2abb539344e0366c48082d87693ff74fc1855cdc0eacdfad146071"
     },
     {
       "name": "tester-protocol.json",
