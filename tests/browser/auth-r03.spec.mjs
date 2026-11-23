@@ -1131,6 +1131,12 @@ const adminOrganization = {
     invitation_assignment_ref: 'competencies_4k', invitation_delivery_status: 'queued', invitation_link_status: 'active' }],
 };
 
+const withoutInvitation = (member) => ({
+  ...member, invitation_id: null, invitation_assignment_ref: null, invitation_status: 'not_sent',
+  invitation_delivery_status: 'not_sent', invitation_link_status: 'not_created',
+});
+const organizationBeforeInvitation = { ...adminOrganization, members: adminOrganization.members.map(withoutInvitation) };
+
 const withConnectedAssessment = (assessmentRef, id = 7) => ({
   ...adminOrganization, assessment_program: syntheticAdminProgram(assessmentRef, id),
 });
@@ -1190,7 +1196,7 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
     await page.locator('#platform-org-rows [data-org-id="' + organization.id + '"]:not([data-org-admins])').click();
   }
   if (organization.members.length) {
-    await page.locator('input[name="invitation_email"]').first().waitFor();
+    await page.locator('[data-action="open-member-card"]').first().waitFor();
   } else {
     await page.locator('.admin-organizations-empty').waitFor();
   }
@@ -1298,12 +1304,15 @@ for (const width of [1440, 320, 390, 768]) {
         assessment_assignments: ['specialist-pilot'], assessment_stages: { 'specialist-pilot': {
           code: 'preparing', label: 'Идёт подготовка оценки', action: 'check_preparation', assignment_id: 41,
           description: 'Подготовка выполняется автоматически. Проверка только обновляет состояние; время оценки не началось.',
-        } } }] };
+        } } }, { ...withoutInvitation(adminOrganization.members[0]), user_id: 9,
+        email: 'awaiting-assignment@example.test', full_name: 'Участник для назначения' }] };
     await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
       { body: { detail: 'Synthetic read unavailable' }, status: 503 });
     const card = page.locator('[data-organization-id="3"]');
-    await expect(card.locator('.admin-assignment-readiness')).toContainText('Не удалось проверить сохранённую анкету');
-    const explanation = await card.locator('.admin-assignment-readiness .form-status li').boundingBox();
+    const help = card.locator('.admin-member-action-help');
+    await help.locator('summary').click();
+    await expect(help).toContainText('Не удалось проверить сохранённую анкету');
+    const explanation = await help.locator('p').first().boundingBox();
     expect(explanation.width).toBeGreaterThan(150);
     const action = card.locator('[data-action="check-member-preparation"]');
     await expect(action).toBeVisible();
@@ -1314,7 +1323,7 @@ for (const width of [1440, 320, 390, 768]) {
     expect(box.height).toBeGreaterThan(20);
     await fs.mkdir(path.join(root, '.test-stand/path-start-viewports'), { recursive: true });
     await page.screenshot({ path: path.join(root, `.test-stand/path-start-viewports/admin-${width}.png`), fullPage: true });
-    await card.locator('[data-action="open-member-card"]').click();
+    await card.locator('[data-member-user-id="8"] [data-action="open-member-card"]').click();
     const dialog = page.locator('.admin-member-card-dialog');
     await expect(dialog).toContainText('Синтетический участник');
     await expect(dialog).toContainText('Подготовка выполняется автоматически');
@@ -1416,7 +1425,7 @@ test('ADM-STATUS-01 shows the current participant stage and opens known facts in
   });
 });
 
-test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from assignment cancellation', async ({ page }) => {
+test('ADM-STATUS-01 excludes a pending invitation from bulk and separates invitation revoke from assignment cancellation', async ({ page }) => {
   const organization = {
     ...adminOrganization,
     assessment_program: { program_definition_id: 7, program_name: 'Специалист 4К', program_version: '1.0', assignment_ref: 'competencies_4k', roles: [] },
@@ -1437,10 +1446,7 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
     return fulfillJson(route, { assignment_id: 41, status: 'cancelled' });
   });
   await expect(page.locator('.admin-organization-head')).toContainText('Программа «Специалист 4К» · версия 1.0');
-  await expect(page.locator('[data-bulk-actions]')).toBeHidden();
-  await page.locator('input[name="invitation_email"]').check();
-  await expect(page.locator('[data-bulk-actions]')).toBeVisible();
-  await expect(page.locator('[data-selected-count]')).toHaveText('1');
+  await expect(page.locator('[data-bulk-actions], input[name="invitation_email"]')).toHaveCount(0);
   const menu = page.locator('.admin-organization-member-menu');
   await menu.locator('summary').click();
   const revokeTrigger = menu.getByRole('menuitem', { name: 'Отозвать приглашение' });
@@ -1459,7 +1465,6 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   dialog = page.getByRole('dialog', { name: 'Отозвать приглашение?' });
   await dialog.getByRole('button', { name: 'Отозвать приглашение', exact: true }).click();
   await expect.poll(() => revoked).toBe(true);
-  await page.locator('input[name="invitation_email"]').check();
   await menu.locator('summary').click();
   const cancelTrigger = menu.getByRole('menuitem', { name: 'Отменить назначение оценки' });
   await cancelTrigger.click();
@@ -1470,7 +1475,7 @@ test('ADM-STATUS-01 keeps one bulk panel and separates invitation revoke from as
   await expect(dialog).toContainText('Аккаунт, участие в организации и история сохранятся');
   await dialog.getByRole('button', { name: 'Отменить назначение', exact: true }).click();
   await expect.poll(() => cancelled).toBe(true);
-  await expect(page.locator('input[name="invitation_email"]')).toBeVisible();
+  await expect(page.locator('[data-action="open-member-card"]')).toBeVisible();
 });
 
 test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acquaintance starts', async ({ page }) => {
@@ -1487,8 +1492,8 @@ test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acqua
   });
 
   const menu = page.locator('.admin-organization-member-menu');
-  const revoke = page.locator('[data-action="revoke-member-invitation"]');
-  await revoke.click();
+  await menu.locator('summary').click();
+  await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
   await page.getByRole('dialog', { name: 'Отозвать приглашение?' })
     .getByRole('button', { name: 'Отозвать приглашение', exact: true }).click();
 
@@ -1757,7 +1762,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   const longEmail = 'very.long.participant.name.for.layout.regression@example.invalid';
   const organization = {
     ...adminOrganization,
-    members_count: 2,
+    members_count: 3,
     members: [
       { ...adminOrganization.members[0], full_name: 'Очень длинное имя участника для проверки переноса строки без сжатия',
         email: longEmail, raw_position: 'Руководитель направления поддержки и развития клиентских сервисов',
@@ -1765,11 +1770,13 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
       { ...adminOrganization.members[0], user_id: 9, email: 'second@example.invalid', full_name: 'Другой участник',
         registration_status: 'registered', invitation_status: 'used', invitation_delivery_status: 'accepted',
         invitation_link_status: 'used', invitation_id: 2 },
+      { ...withoutInvitation(adminOrganization.members[0]), user_id: 10,
+        email: 'new@example.invalid', full_name: 'Участник для приглашения' },
     ],
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const rows = page.locator('.admin-organization-member');
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(3);
   await expect(rows.first().locator('.admin-organization-invitation-state')).toHaveCount(0);
   await rows.nth(1).locator('[data-action="open-member-card"]').click();
   await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Регистрация');
@@ -1777,6 +1784,8 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
   await expect(rows.nth(1).locator('[data-action="send-member-invitation"]')).toHaveCount(0);
 
+  await expect(rows.first().getByRole('checkbox')).toHaveCount(0);
+  const selectable = rows.nth(2);
   // 683 CSS px approximates the available width at 200% browser zoom on a 1366 px display.
   for (const width of [320, 375, 390, 683, 768, 1024, 1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -1785,20 +1794,20 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
       const name = row.querySelector('.admin-organization-member-name').getBoundingClientRect();
       const statuses = row.querySelector('.admin-organization-member-stage').getBoundingClientRect();
       const actions = row.querySelector('.admin-organization-member-menu').getBoundingClientRect();
-      const select = row.querySelector('.admin-organization-member-select').getBoundingClientRect();
-      const buttons = [...row.querySelectorAll('button, summary')]
-        .filter((button) => button.getClientRects().length).map((button) => button.getBoundingClientRect());
+      const buttons = [...row.querySelectorAll('button, .admin-organization-member-menu > summary')]
+        .filter((button) => button.getClientRects().length && !button.closest('.admin-member-action-help'))
+        .map((button) => button.getBoundingClientRect());
       return { documentWidth: document.documentElement.scrollWidth, viewportWidth: document.documentElement.clientWidth,
         mainWidth: main.width, nameWidth: name.width, statusesX: statuses.x, statusesY: statuses.y,
         mainRight: main.right, mainBottom: main.bottom, actionsX: actions.x, actionsY: actions.y,
-        selectWidth: select.width, selectHeight: select.height,
         buttons: buttons.map((rect) => ({ width: rect.width, height: rect.height })) };
     });
     expect(layout.documentWidth, JSON.stringify(layout)).toBeLessThanOrEqual(layout.viewportWidth + 1);
     expect(layout.nameWidth).toBeGreaterThan(100);
-    expect(layout.selectWidth).toBeGreaterThanOrEqual(44);
-    expect(layout.selectHeight).toBeGreaterThanOrEqual(44);
-    expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44)).toBe(true);
+    const target = await selectable.locator('.admin-organization-member-select').boundingBox();
+    expect(target.width).toBeGreaterThanOrEqual(44);
+    expect(target.height).toBeGreaterThanOrEqual(44);
+    expect(layout.buttons.every((button) => button.width >= 44 && button.height >= 44), JSON.stringify({ width, ...layout })).toBe(true);
     if (layout.statusesY < layout.mainBottom - 1) {
       expect(layout.mainRight).toBeLessThanOrEqual(layout.statusesX);
     } else {
@@ -1807,11 +1816,11 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
     expect(layout.actionsX >= layout.mainRight - 1 || layout.actionsY >= layout.mainBottom).toBe(true);
   }
 
-  const checkbox = rows.first().getByRole('checkbox', { name: 'Выбрать ' + longEmail });
+  const checkbox = selectable.getByRole('checkbox', { name: 'Выбрать Участник для приглашения' });
   await checkbox.focus();
   await page.keyboard.press('Space');
   await expect(checkbox).toBeChecked();
-  await rows.first().locator('.admin-organization-member-select').click();
+  await selectable.locator('.admin-organization-member-select').click();
   await expect(checkbox).not.toBeChecked();
   await page.getByRole('button', { name: 'Данные организации' }).click();
   await page.getByRole('button', { name: 'Участники оценки' }).click();
@@ -1832,7 +1841,7 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await deletePerson.click();
   await expect(deletePerson).toBeEnabled();
   expect(purgePosts).toBe(0);
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(3);
   await expect(page.locator('.admin-purge-recovery')).toHaveCount(0);
 });
 
@@ -2100,7 +2109,7 @@ test('F22-06 restores confirmed fields when the selected assessment has no local
 });
 
 test('UX-FIX20-02 preserves named drafts across all management views', async ({ page }) => {
-  const organization = withConnectedAssessment('Поток A');
+  const organization = { ...withConnectedAssessment('Поток A'), members: organizationBeforeInvitation.members };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   const card = page.locator('[data-organization-id="3"]');
   const memberForm = card.locator('[data-action="add-member"]');
@@ -2609,18 +2618,14 @@ test('PILOT31-03 explains every visible readiness blocker before assignment', as
     { body: { items: [{ id: 12, assignment_ref: 'other-assessment', status: 'draft' }] } },
   );
 
-  const readiness = page.locator('.admin-assignment-readiness');
-  await expect(readiness).toBeVisible();
-  await expect(readiness).toContainText('Программа оценки не подключена');
-  await expect(readiness).toContainText('Обратитесь к суперадминистратору');
-  await expect(readiness).not.toContainText('Анкета для выбранной оценки не подтверждена');
-  await expect(readiness).not.toContainText('Оценка не выбрана');
-  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
-  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
-  await expect(page.locator('[data-bulk-actions]')).toBeHidden();
-  await page.locator('input[name="invitation_email"]').check();
-  await expect(page.locator('[data-bulk-actions]')).toBeVisible();
-  await expect(page.locator('form[data-action="assign-member-assessment"] button[type="submit"]')).toBeDisabled();
+  await expect(page.locator('.admin-assignment-readiness')).toHaveCount(0);
+  const help = page.locator('.admin-member-action-help');
+  await help.locator('summary').click();
+  await expect(help).toContainText('Программа оценки не подключена');
+  await expect(help).toContainText('Обратитесь к суперадминистратору');
+  await expect(help).not.toContainText('Анкета для выбранной оценки не подтверждена');
+  await expect(help).not.toContainText('Оценка не выбрана');
+  await expect(page.locator('form[data-action="assign-member-assessment"]')).toHaveCount(0);
 });
 
 test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting zero success', async ({ page }) => {
@@ -2631,8 +2636,8 @@ test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting ze
       roles: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист' }] },
     members_count: 2,
     members: [
-      { ...adminOrganization.members[0], user_id: 8, email: 'first@example.test', full_name: 'Первый участник' },
-      { ...adminOrganization.members[0], user_id: 9, email: 'second@example.test', full_name: 'Второй участник' },
+      { ...organizationBeforeInvitation.members[0], user_id: 8, email: 'first@example.test', full_name: 'Первый участник' },
+      { ...organizationBeforeInvitation.members[0], user_id: 9, email: 'second@example.test', full_name: 'Второй участник' },
     ],
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, {
@@ -2649,7 +2654,7 @@ test('AC18-ADM-1B rejects an incomplete invitation batch instead of reporting ze
 });
 
 test('R03 reports an unconfigured invitation provider as a known failure', async ({ page }) => {
-  await openAdminOrganizations(page, (route) => fulfillJson(route, { detail: 'EMAIL_PROVIDER_NOT_CONFIGURED' }, 503));
+  await openAdminOrganizations(page, (route) => fulfillJson(route, { detail: 'EMAIL_PROVIDER_NOT_CONFIGURED' }, 503), organizationBeforeInvitation);
   await page.locator('input[name="invitation_email"]').check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
   await expect(page.locator('.admin-invitation-common')).toContainText('сервис отправки не настроен');
@@ -2686,12 +2691,15 @@ test('AC18-ADM-1C does not accept stale assignment state when exact receipt is a
       program_version: '1.2', assignment_ref: 'specialist-pilot',
       roles: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист' }],
       role_capabilities: [{ version_id: 92, code: 'specialist_expert', name: 'Специалист', is_available: true }] },
-    members: [{ ...adminOrganization.members[0], user_id: 8, assessment_assignments: ['specialist-pilot'] }] };
+    members: [{ ...adminOrganization.members[0], user_id: 8, assessment_assignments: [] }] };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization,
     { body: { items: [{ id: 11, assignment_ref: 'specialist-pilot', status: 'confirmed',
       channel: 'product_form', validation_json: {},
       effective_confirmed: { id: 11, assignment_ref: 'specialist-pilot', confirmed_at: null } }] } });
-  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => route.abort('failed'));
+  await page.route('**/users/admin/organizations/3/assessment-assignments', (route) => {
+    organization.members[0].assessment_assignments = ['specialist-pilot'];
+    return route.abort('failed');
+  });
   await page.route('**/users/admin/organizations/3/assessment-assignments/operations/**', (route) =>
     fulfillJson(route, { detail: 'ASSIGNMENT_OPERATION_NOT_FOUND' }, 404));
   await page.locator('input[name="invitation_email"]').check();
@@ -2729,7 +2737,7 @@ test('AC18-ADM-1C keeps a confirmed assignment when the following refresh fails'
 test('AC18-ADM-1C shows queued invitation outcome per person without provider counters', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, {
     items: [{ email: 'person@example.test', status: 'queued', invitation_id: 1 }],
-  }));
+  }), organizationBeforeInvitation);
   await page.locator('input[name="invitation_email"]').check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
   await expect(page.locator('.admin-organization-member-invitation')).toContainText('Приглашение подготовлено. Отправка ещё не подтверждена');
@@ -2741,7 +2749,7 @@ test('AC18-ADM-1C reads back an unknown invitation and hides the operation key',
   await openAdminOrganizations(page, (route) => {
     if (route.request().method() === 'POST') return route.abort('failed');
     return fulfillJson(route, { items: [{ email: 'person@example.test', status: 'queued', invitation_id: 1 }] });
-  });
+  }, organizationBeforeInvitation);
   await page.locator('input[name="invitation_email"]').check();
   await page.getByRole('button', { name: 'Отправить приглашения' }).click();
   await expect(page.locator('.admin-organization-member-invitation')).toContainText('Приглашение подготовлено. Отправка ещё не подтверждена');
@@ -3652,7 +3660,7 @@ test('R03 expired reset opens explicit recovery email entry', async ({ page }) =
 test('R03 queued batch is not reported as provider accepted', async ({ page }) => {
   await openAdminOrganizations(page, (route) => fulfillJson(route, {
     items: [{ email: 'person@example.test', status: 'queued', invitation_id: 1 }],
-  }));
+  }), organizationBeforeInvitation);
   await page.locator('input[name="invitation_email"]').check();
   await page.locator('[data-action="send-member-invitations"] button').click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 0. Не отправлены: 0. Исход уточняется: 1');

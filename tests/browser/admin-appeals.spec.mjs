@@ -125,7 +125,7 @@ test('ADM-UI-03 organization roster opens the appeals section or the top of the 
     const panel = page.locator('#admin-organizations-panel');
     const org = panel.locator('[data-organization-id="3"]');
     const orgSelect = panel.locator('#admin-organization-select');
-    const filter = org.getByRole('button', { name: 'С обращениями' });
+    const filter = org.locator('[data-action="toggle-appeals-filter"]');
     const name = org.getByRole('button', { name: 'Синтетический участник', exact: true });
     const issues = org.getByRole('button', { name: 'Обращения · 2', exact: true });
     const noIssues = org.getByRole('button', { name: 'Участник без обращений' });
@@ -135,9 +135,11 @@ test('ADM-UI-03 organization roster opens the appeals section or the top of the 
     await expect(org.getByRole('button', { name: 'Есть обращение' })).toBeVisible();
     await expect(noIssues).toBeVisible();
     await expect(org.locator('.admin-questionnaire-load-state[role="status"]')).toHaveCount(0);
+    await expect(filter).toHaveText('С обращениями · 2');
     await filter.focus();
     await page.keyboard.press('Space');
     await expect(filter).toHaveAttribute('aria-pressed', 'true');
+    await expect(filter).toHaveText('Все участники');
     await expect(filter).toBeFocused();
     await expect(org.getByRole('heading', { name: 'Участники с обращениями' })).toBeVisible();
     await expect(noIssues).toHaveCount(0);
@@ -192,7 +194,7 @@ test('ADM-UI-03 organization roster opens the appeals section or the top of the 
 
     await orgSelect.selectOption('4');
     const otherOrg = panel.locator('[data-organization-id="4"]');
-    const emptyFilter = otherOrg.getByRole('button', { name: 'С обращениями' });
+    const emptyFilter = otherOrg.locator('[data-action="toggle-appeals-filter"]');
     await expect(emptyFilter).toHaveAttribute('aria-pressed', 'false');
     await emptyFilter.click();
     await expect(otherOrg.getByText('Участников с обращениями нет.')).toBeVisible();

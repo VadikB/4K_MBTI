@@ -130,16 +130,17 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     if (process.env.P4K_F05_DRAFT_ONLY === '1') {
       await page.reload();
       await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-      const readiness = card.locator('.admin-assignment-readiness');
-      await expect(readiness).toContainText('Назначение пока недоступно');
-      await expect(readiness).not.toContainText('Можно назначать');
+      await expect(card.locator('form[data-action="assign-member-assessment"]')).toHaveCount(0);
+      await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+      const readiness = card.locator('.admin-data-readiness');
+      await expect(readiness).toContainText('не подтверждена');
       const draft = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath,
         '--revision-id', revisionId]));
       expect(draft.revision.status).not.toBe('confirmed');
       expect(draft.counts.questionnaire_revisions).toBe(baseline.counts.questionnaire_revisions + 1);
       expect(draft.counts.assignments).toBe(baseline.counts.assignments);
       save('f05-draft-only', { revision_id: Number(revisionId), revision_status: draft.revision.status,
-        assignment_status: await readiness.innerText(), revision_count: draft.counts.questionnaire_revisions,
+        assignment_status: await readiness.locator('dt:text-is("Анкета") + dd').textContent(), revision_count: draft.counts.questionnaire_revisions,
         assignment_count: draft.counts.assignments, baseline_assignment_count: baseline.counts.assignments });
       return;
     }
@@ -236,8 +237,8 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
         await expect(page.locator('#admin-organizations-panel')).toBeVisible();
         releaseResponse();
         await page.waitForTimeout(500);
-        await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-        await expect(card.locator('.admin-assignment-readiness')).toContainText(
+        await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+        await expect(card.locator('.admin-data-readiness')).toContainText(
           `действует подтверждённая редакция #${revisionId}; новый черновик ещё не подтверждён`);
         const revisions = await (await page.request.get(
           `${base}/users/admin/organizations/${organizationId}/questionnaire`)).json();
@@ -298,8 +299,8 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
         `${base}/users/admin/organizations/${organizationId}/questionnaire/${revisionId}`)).json();
       expect(original.status).toBe('confirmed');
       await page.reload();
-      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-      await expect(card.locator('.admin-assignment-readiness')).toContainText('Можно назначать');
+      await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+      await expect(card.locator('.admin-data-readiness dt:text-is("Анкета") + dd')).toHaveText('подтверждена');
       const confirmedDb = JSON.parse(run('tests/questionnaire_it_readback.py', ['--state', statePath,
         '--revision-id', String(latest.id)]));
       expect(confirmedDb.revision.status).toBe('confirmed');
@@ -314,16 +315,16 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     }
     await page.reload();
     await expect(form.locator('[name="organization_name"]')).toHaveValue(draftName);
-    await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-    await expect(card.locator('.admin-assignment-readiness')).toContainText(
+    await expect(card.locator('.admin-data-readiness')).toContainText(
       `действует подтверждённая редакция #${revisionId}; новый черновик ещё не подтверждён`);
+    await card.locator('.admin-data-readiness summary').click();
     for (const [name, width, zoom] of [
       ['desktop-1440', 1440, 1], ['mobile-390', 390, 1],
       ['mobile-320', 320, 1], ['mobile-320-text-200', 320, 2],
     ]) {
       await page.setViewportSize({ width, height: 900 });
       await page.evaluate((scale) => { document.documentElement.style.zoom = String(scale); }, zoom);
-      await expect(card.locator('.admin-assignment-readiness')).toBeVisible();
+      await expect(card.locator('.admin-data-readiness')).toBeVisible();
       await page.screenshot({ path: path.join(directory, `f05-confirmed-with-draft-${name}.png`), fullPage: true });
     }
     await page.evaluate(() => { document.documentElement.style.zoom = '1'; });

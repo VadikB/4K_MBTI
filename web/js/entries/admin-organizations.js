@@ -17,6 +17,7 @@ export {
   selectAdminOrganizationView,
   selectAdminOrganizationAssessment,
   getSelectedAdminOrganizationAssessment,
+  getAdminBulkParticipants,
   markAdminOrganizationQuestionnairePreviewStale,
   updateAdminOrganizationQuestionnaireConfirmState,
   retryAdminOrganizationQuestionnaireLoad,

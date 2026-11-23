@@ -78,7 +78,8 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(row('assign').getByRole('button', { name: 'Пригласить', exact: true })).toBeVisible();
     const addForm = card.locator('form[data-action="add-member"]');
     for (const name of ['Email', 'ФИО', 'Должность']) await expect(addForm.getByLabel(name)).toBeEditable();
-    await expect(card.getByLabel('Файл списка участников')).toBeVisible();
+    await expect(card.locator('.admin-people-import summary')).toHaveText('Импорт списка');
+    await expect(card.getByLabel('Файл списка участников')).toBeHidden();
 
     const geometry = [];
     const footerColors = [];
@@ -108,7 +109,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
       if (width === 1440) {
         releaseQuestionnaire();
-        await expect(row('assign').getByRole('button', { name: 'Назначить оценку' })).toBeVisible();
+        await expect(row('assign').locator('[data-action="open-member-assignment"][role="menuitem"]')).toBeAttached();
         await expect(menu.getByRole('menuitem').last()).toBeFocused();
       } else {
         const popup = await menu.getByRole('menu').boundingBox();
@@ -195,11 +196,15 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(invitationRow.locator('.admin-organization-member-invitation').first()).toHaveText(beforeLink);
     await expect(row('unverified_invitation')).toContainText('Не удалось подтвердить, к какой оценке относится отправка.');
     await expect(row('unverified_invitation').getByRole('button', { name: 'Проверить отправку' })).toHaveCount(0);
-    await expect(row('unverified_invitation').getByRole('button', { name: 'Отозвать приглашение' }))
+    const unverifiedMenu = row('unverified_invitation').locator('.admin-organization-member-menu summary');
+    await unverifiedMenu.press('Enter');
+    await expect(row('unverified_invitation').getByRole('menuitem', { name: 'Отозвать приглашение' }))
       .toHaveAttribute('data-invitation-id', String(fixture.invitations.unverified_invitation.id));
+    await page.keyboard.press('Escape');
     expect(requests.slice(beforeReceipt).filter((request) => request.method() !== 'GET')).toEqual([]);
 
-    const assign = row('assign').getByRole('button', { name: 'Назначить оценку' });
+    await row('assign').locator('.admin-organization-member-menu summary').press('Enter');
+    const assign = row('assign').getByRole('menuitem', { name: 'Назначить оценку' });
     await assign.click();
     const assignment = page.getByRole('dialog', { name: 'Назначить оценку' });
     await expect(assignment).toContainText('Участник для назначения');

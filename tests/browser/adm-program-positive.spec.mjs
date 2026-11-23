@@ -110,7 +110,7 @@ for (const channel of ['product_form', 'csv']) {
       await expect(card).toHaveCount(1);
       const organizationId = await card.getAttribute('data-organization-id');
       await expect(card.locator('.admin-organization-head')).toContainText('ADM28 synthetic Specialist pilot');
-      await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();
+      await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
       await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
       const connectionResponse = await page.request.get(`${base}/users/admin/organizations/${organizationId}/assessment-program`);
       expect(connectionResponse.status()).toBe(200);

@@ -1668,7 +1668,7 @@ const memberRow = (organizationId, userId) => adminOrganizationsList.querySelect
   '[data-organization-id="' + organizationId + '"] [data-member-user-id="' + userId + '"]',
 );
 
-const openAdminMemberAssignment = (trigger, card, organizationId) => {
+const openAdminMemberAssignment = (trigger, card, organizationId, returnControl) => {
   const userId = Number(trigger.dataset.userId);
   const assessmentRef = trigger.dataset.assessmentRef;
   const member = memberRow(organizationId, userId)?.querySelector('[data-action="open-member-card"]');
@@ -1709,8 +1709,12 @@ const openAdminMemberAssignment = (trigger, card, organizationId) => {
   document.body.append(dialog);
   dialog.addEventListener('close', () => {
     dialog.remove();
+    if (epoch !== state.identityEpoch || state.currentScreen !== 'admin-organizations') return;
     const row = memberRow(organizationId, userId);
-    (row?.querySelector('[data-action="open-member-assignment"]') || row?.querySelector('[data-action="open-member-card"]'))?.focus();
+    const selector = returnControl === trigger
+      ? '.admin-organization-member-actions > [data-action="open-member-assignment"]'
+      : '.admin-organization-member-menu > summary';
+    (row?.querySelector(selector) || row?.querySelector('[data-action="open-member-card"]'))?.focus();
   }, { once: true });
   dialog.showModal();
   roles.focus();
@@ -1730,28 +1734,20 @@ if (adminOrganizationsList) {
     if (!organizationId) {
       return;
     }
-    if (form.dataset.action === 'send-member-invitations') {
-      const emails = [...card.querySelectorAll('input[name="invitation_email"]:checked')]
-        .map((checkbox) => checkbox.value)
-        .filter(Boolean);
-      withScreen(loadAdminOrganizations, (module) =>
-        module.sendAdminOrganizationMemberInvitation(
-          organizationId, emails, module.getSelectedAdminOrganizationAssessment(organizationId),
-        ),
-      );
-      return;
-    }
-    if (form.dataset.action === 'assign-member-assessment') {
-      const formData = new FormData(form);
-      const userIds = [...card.querySelectorAll('input[name="invitation_email"]:checked')]
-        .map((checkbox) => Number(checkbox.dataset.userId))
-        .filter(Boolean);
-      withScreen(loadAdminOrganizations, (module) =>
-        module.assignAdminOrganizationAssessment(
-          organizationId, userIds, module.getSelectedAdminOrganizationAssessment(organizationId),
+    if (form.dataset.action === 'send-member-invitations' || form.dataset.action === 'assign-member-assessment') {
+      withScreen(loadAdminOrganizations, (module) => {
+        const selected = module.getAdminBulkParticipants(form, organizationId);
+        if (!selected.length) return;
+        const assessment = module.getSelectedAdminOrganizationAssessment(organizationId);
+        if (form.dataset.action === 'send-member-invitations') {
+          return module.sendAdminOrganizationMemberInvitation(organizationId, selected.map((field) => field.value), assessment);
+        }
+        const formData = new FormData(form);
+        return module.assignAdminOrganizationAssessment(
+          organizationId, selected.map((field) => Number(field.dataset.userId)), assessment,
           formData.get('role_profile_version_id') || null,
-        ),
-      );
+        );
+      });
       return;
     }
     if (form.dataset.action === 'connect-assessment-program') {
@@ -1850,16 +1846,11 @@ if (adminOrganizationsList) {
       return;
     }
     if (form.dataset.action === 'import-members') {
-      const fileInput = form.querySelector('input[type="file"]');
-      const file = fileInput?.files?.[0];
-      if (!file) {
-        return;
-      }
-      file.text().then((csvText) => {
-        withScreen(loadAdminOrganizations, async (module) => {
-          await module.importAdminOrganizationMembers(organizationId, csvText);
-          form.reset();
-        });
+      const file = form.elements.csv.files?.[0];
+      if (!file) return;
+      withScreen(loadAdminOrganizations, async (module) => {
+        await module.importAdminOrganizationMembers(organizationId, file, form);
+        if (!form.closest('[data-member-import]')) form.reset();
       });
       return;
     }
@@ -1883,24 +1874,6 @@ if (adminOrganizationsList) {
     const field = event.target instanceof HTMLInputElement && event.target.name === 'assignment_ref'
       ? event.target : null;
     if (field) field.dataset.previousAssessmentRef = field.value;
-  });
-
-  adminOrganizationsList.addEventListener('change', (event) => {
-    const checkbox = event.target instanceof HTMLInputElement ? event.target : null;
-    const card = checkbox?.closest('[data-organization-id]');
-    if (!checkbox || !card || !['invitation_email', 'select_all_participants'].includes(checkbox.name)) return;
-    const participants = [...card.querySelectorAll('input[name="invitation_email"]')];
-    if (checkbox.name === 'select_all_participants') participants.forEach((item) => { item.checked = checkbox.checked; });
-    const selectedCount = participants.filter((item) => item.checked).length;
-    const selectAll = card.querySelector('input[name="select_all_participants"]');
-    if (selectAll && checkbox.name !== 'select_all_participants') {
-      selectAll.checked = selectedCount === participants.length && participants.length > 0;
-      selectAll.indeterminate = selectedCount > 0 && selectedCount < participants.length;
-    }
-    const counter = card.querySelector('[data-selected-count]');
-    if (counter) counter.textContent = String(selectedCount);
-    const bulkActions = card.querySelector('[data-bulk-actions]');
-    if (bulkActions) bulkActions.hidden = selectedCount === 0;
   });
 
   adminOrganizationsList.addEventListener('toggle', (event) => {
@@ -1963,6 +1936,18 @@ if (adminOrganizationsList) {
   };
   adminOrganizationsList.addEventListener('input', markQuestionnairePreviewStale);
   adminOrganizationsList.addEventListener('change', markQuestionnairePreviewStale);
+  adminOrganizationsList.addEventListener('change', (event) => {
+    const fileInput = event.target;
+    if (!(fileInput instanceof HTMLInputElement) || fileInput.type !== 'file') return;
+    const form = fileInput.closest('[data-member-import] form');
+    if (!form) return;
+    const file = fileInput.files?.[0];
+    form.querySelector('[data-member-file-name]').textContent = file?.name || '';
+    form.querySelector('button[type="submit"]').disabled = !file;
+    const status = form.querySelector('[data-member-import-status]');
+    status.textContent = '';
+    status.classList.add('hidden');
+  });
 
   adminOrganizationsList.addEventListener('focusout', (event) => {
     const field = event.target instanceof HTMLInputElement && event.target.name === 'assignment_ref'
@@ -1977,6 +1962,11 @@ if (adminOrganizationsList) {
   });
 
   adminOrganizationsList.addEventListener('click', (event) => {
+    const filePicker = event.target instanceof Element ? event.target.closest('[data-choose-member-file]') : null;
+    if (filePicker) {
+      filePicker.form.elements.csv.click();
+      return;
+    }
     const button = event.target instanceof Element ? event.target.closest('button[data-action]') : null;
     if (!button) {
       return;
@@ -2089,7 +2079,7 @@ if (adminOrganizationsList) {
       return;
     }
     if (button.dataset.action === 'open-member-assignment') {
-      openAdminMemberAssignment(button, card, organizationId);
+      openAdminMemberAssignment(button, card, organizationId, returnControl);
       return;
     }
     if (button.dataset.action === 'toggle-appeals-filter') {

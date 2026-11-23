@@ -34,8 +34,8 @@ const deletionZone = (options) => {
 };
 
 test('F02 opens full deletion from the org admin card and from the superadmin row', () => {
-  const adminRow = setup().members([member], { canDeletePerson: true });
-  const superRow = setup().members([member], { isSuperadmin: true, canDeletePerson: true });
+  const adminRow = setup().members([member], { canDeletePerson: true }).markup;
+  const superRow = setup().members([member], { isSuperadmin: true, canDeletePerson: true }).markup;
   assert.doesNotMatch(adminRow, /data-action="purge-account"/);
   for (const markup of [superRow, deletionZone().innerHTML]) {
     assert.match(markup, /data-action="purge-account" data-user-id="20" data-email="owned@example.test">Удалить человека/);
@@ -48,7 +48,7 @@ test('F02 permission availability is explicit and self is hidden even for supera
   assert.equal(deletionZone({ actorId: 20 }).hidden, true);
   assert.doesNotMatch(setup({ actorId: 20 }).members([member], {
     isSuperadmin: true, canDeletePerson: true,
-  }), /data-action="purge-account"/);
+  }).markup, /data-action="purge-account"/);
 });
 
 test('F02 current administrator has separate named revoke-rights and whole-account controls', () => {

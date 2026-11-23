@@ -411,26 +411,56 @@ const captureFormDraft = (organizationId, form, { assessmentRef: assessmentOverr
   });
 };
 
+const participantSelectionKey = (organizationId) => {
+  const key = organizationKey(organizationId);
+  const assessmentRef = selectedAssessmentRefs.get(key) || '';
+  return key + ':participant-selection:' + assessmentRef;
+};
+
+const participantCheckboxes = (view) => [...(view?.querySelectorAll('input[name="invitation_email"]:enabled') || [])];
+
+const selectedBulkParticipants = (form, participants) => participants.filter((field) =>
+  field.checked && (!form.dataset.bulkFor || field.dataset.bulkFor.split(' ').includes(form.dataset.bulkFor)));
+
+export const getAdminBulkParticipants = (form, organizationId) => {
+  const view = form.closest('[data-admin-view="people"]');
+  if (!form.isConnected || !view || view.classList.contains('hidden') || state.currentScreen !== 'admin-organizations' ||
+      Number(selectedOrganizationId) !== organizationId) return [];
+  return selectedBulkParticipants(form, participantCheckboxes(view));
+};
+
 const captureParticipantSelection = (organizationId, card) => {
-  const fields = [...card.querySelectorAll('input[name="invitation_email"]')];
-  const assessmentRef = selectedAssessmentRefs.get(organizationKey(organizationId)) || '';
-  managementDrafts.set(organizationKey(organizationId) + ':participant-selection:' + assessmentRef, {
+  const fields = participantCheckboxes(card);
+  managementDrafts.set(participantSelectionKey(organizationId), {
     fields: Object.fromEntries(fields.map((field) => [field.value, { value: field.value, checked: field.checked }])),
   });
 };
 
-const syncParticipantSelection = (card) => {
-  const participants = [...card.querySelectorAll('input[name="invitation_email"]')];
-  const selectedCount = participants.filter((item) => item.checked).length;
+const syncParticipantSelection = (card, changed = null) => {
+  const participants = participantCheckboxes(card);
   const selectAll = card.querySelector('input[name="select_all_participants"]');
+  if (changed && changed === selectAll) participants.forEach((field) => { field.checked = selectAll.checked; });
+  const selectedCount = participants.filter((field) => field.checked).length;
   if (selectAll) {
     selectAll.checked = selectedCount === participants.length && participants.length > 0;
     selectAll.indeterminate = selectedCount > 0 && selectedCount < participants.length;
   }
+  if (changed) captureParticipantSelection(Number(card.dataset.organizationId), card);
   const counter = card.querySelector('[data-selected-count]');
   if (counter) counter.textContent = String(selectedCount);
   const bulkActions = card.querySelector('[data-bulk-actions]');
-  if (bulkActions) bulkActions.hidden = selectedCount === 0;
+  if (!bulkActions) return;
+  if (counter) bulkActions.hidden = selectedCount === 0;
+  bulkActions.querySelectorAll('form[data-bulk-for]').forEach((form) => {
+    const matchingCount = selectedBulkParticipants(form, participants).length;
+    form.querySelector('button[type="submit"]').disabled = !matchingCount;
+    const role = form.querySelector('label');
+    if (role) role.hidden = !matchingCount;
+    const recipients = form.querySelector('[data-bulk-recipients]');
+    recipients.textContent = matchingCount > 0 && matchingCount < selectedCount
+      ? 'Подходят для действия: ' + matchingCount + ' из ' + selectedCount : '';
+    recipients.hidden = !recipients.textContent;
+  });
 };
 
 export const captureAdminOrganizationsDraft = () => {
@@ -439,7 +469,8 @@ export const captureAdminOrganizationsDraft = () => {
     const organizationId = Number(card.getAttribute('data-organization-id'));
     const questionnaireAccessDenied = questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied;
     card.querySelectorAll('form[data-action]').forEach((form) => {
-      if (questionnaireAccessDenied && ['preview-early-data', 'preview-questionnaire'].includes(form.dataset.action)) return;
+      if (form.closest('[data-member-import]') ||
+          (questionnaireAccessDenied && ['preview-early-data', 'preview-questionnaire'].includes(form.dataset.action))) return;
       captureFormDraft(organizationId, form);
     });
     captureParticipantSelection(organizationId, card);
@@ -503,11 +534,11 @@ const restoreConfirmedRevisionForm = (form, revision) => {
 const restoreAdminOrganizationsDraft = () => {
   adminOrganizationsList.querySelectorAll('[data-organization-id]').forEach((card) => {
     const organizationId = Number(card.getAttribute('data-organization-id'));
-    card.querySelectorAll('form[data-action], .admin-questionnaire-preview').forEach((form) =>
-      restoreFormDraft(organizationId, form));
-    const assessmentRef = selectedAssessmentRefs.get(organizationKey(organizationId)) || '';
-    const selection = managementDrafts.get(organizationKey(organizationId) + ':participant-selection:' + assessmentRef);
-    card.querySelectorAll('input[name="invitation_email"]').forEach((field) => {
+    card.querySelectorAll('form[data-action], .admin-questionnaire-preview').forEach((form) => {
+      if (!form.closest('[data-member-import]')) restoreFormDraft(organizationId, form);
+    });
+    const selection = managementDrafts.get(participantSelectionKey(organizationId));
+    participantCheckboxes(card).forEach((field) => {
       if (selection?.fields?.[field.value]) field.checked = selection.fields[field.value].checked;
     });
     syncParticipantSelection(card);
@@ -633,7 +664,7 @@ const readinessMarkup = (selectedRef, readiness) => !selectedRef || !readiness
   readinessRow('Подготовка', readiness?.preparation, null) + '</ul>' +
   '<p>Добавлять участников можно до заполнения анкеты. Приглашение, назначение и начало оценки проверяются сервером отдельно.</p></div>';
 
-const organizationDataReadiness = (programState, readiness, roleLabel, sourceMarkup) => {
+const organizationDataReadiness = (programState, readiness, roleLabel, questionnaireLabel, sourceMarkup) => {
   const program = programState.program;
   if (!program) {
     return '<div class="admin-readiness-panel admin-data-readiness" data-questionnaire-program-state="' +
@@ -646,7 +677,8 @@ const organizationDataReadiness = (programState, readiness, roleLabel, sourceMar
     escapeHtml(readiness?.status || 'not-calculated') + '"><summary>Готовность оценки · ' + escapeHtml(label) +
     '</summary><section class="admin-assessment-identity" aria-label="Выбранная оценка программы"><strong>' +
     escapeHtml(programIdentity(program)) + '</strong><dl><dt>Версия программы</dt><dd>' +
-    escapeHtml(program.program_version) + '</dd><dt>Роль в оценке</dt><dd>' + escapeHtml(roleLabel) + '</dd></dl></section>' +
+    escapeHtml(program.program_version) + '</dd><dt>Роль в оценке</dt><dd>' + escapeHtml(roleLabel) + '</dd>' +
+    (questionnaireLabel ? '<dt>Анкета</dt><dd>' + escapeHtml(questionnaireLabel) + '</dd>' : '') + '</dl></section>' +
     (readiness ? '<ul>' + readinessRow('Ранние сведения', readiness.early, null) +
       readinessRow('Контекст', readiness.context, null) +
       readinessRow('Участники', readiness.roles, readiness.roles?.action_view || null) +
@@ -793,6 +825,7 @@ const restoreProgramConnectionFeedback = () => {
 const trackOperation = (event) => {
   const target = event.target instanceof Element ? event.target : null;
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
+  if (form?.closest('[data-member-import]')) return;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
   if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
     'open-member-card', 'open-member-appeals', 'open-member-report', 'toggle-appeals-filter',
@@ -803,19 +836,27 @@ const trackOperation = (event) => {
   if ((form?.dataset.action === 'connect-assessment-program' || button?.dataset.action === 'check-program-connection') &&
       programConnectionRequestsInFlight.has(organizationKey(card.dataset.organizationId))) return;
   clearProgramConnectionFeedback();
-  const selector = form ? 'form[data-action="' + CSS.escape(form.dataset.action) + '"]'
+  const selector = form?.hasAttribute('data-bulk-for') ? '[data-people-batch-status]'
+    : form ? 'form[data-action="' + CSS.escape(form.dataset.action) + '"]'
     : root.matches('.admin-questionnaire-preview')
       ? '.admin-questionnaire-preview[data-questionnaire-revision-id="' + root.dataset.questionnaireRevisionId + '"]'
       : root.closest('[data-organization-admins]') ? '[data-organization-admins]'
         : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
+  if (selector !== '[data-people-batch-status]') card.querySelector('[data-people-batch-status]')?.replaceChildren();
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
   // Keep the result anchor, but a confirmation dialog is not a running command.
   if (form?.dataset.action !== 'preview-early-data' &&
-      !['cancel-member-assignment', 'revoke-member-invitation', 'purge-account', 'delete-admin',
+      !['cancel-member-assignment', 'revoke-member-invitation', 'open-member-assignment', 'purge-account', 'delete-admin', 'retry-questionnaire-load',
         'confirm-questionnaire', 'check-questionnaire-confirmation', 'open-organization-reports'].includes(button?.dataset.action)) {
     setStatus('Выполняем действие…', 'loading');
   }
 };
+adminOrganizationsList?.addEventListener('change', (event) => {
+  const field = event.target;
+  if (!(field instanceof HTMLInputElement) || !['invitation_email', 'select_all_participants'].includes(field.name)) return;
+  const card = field.closest('[data-organization-id]');
+  if (card) syncParticipantSelection(card, field);
+});
 adminOrganizationsPanel?.addEventListener('submit', trackOperation, true);
 adminOrganizationsPanel?.addEventListener('click', trackOperation, true);
 adminOrganizationsPanel?.addEventListener('change', (event) => {
@@ -824,9 +865,13 @@ adminOrganizationsPanel?.addEventListener('change', (event) => {
   )) clearProgramConnectionFeedback();
 });
 
-const requestOrganizations = async (url, options, fallbackMessage, isCurrent = () => true) => {
+const requestOrganizations = async (url, options, fallbackMessage, {
+  isCurrent = () => true, refreshAfterSupersededWrite = false,
+} = {}) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  const sameContext = () => isCurrent() && state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey;
+  const refreshOnSuccess = refreshAfterSupersededWrite && !state.adminOrganizations?.is_superadmin;
   const requestGeneration = ++organizationsRequestGeneration;
   const response = await fetch(url, {
     credentials: 'same-origin',
@@ -834,14 +879,19 @@ const requestOrganizations = async (url, options, fallbackMessage, isCurrent = (
     ...options,
   });
   const data = await readApiResponse(response, fallbackMessage);
-  if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
-      requestGeneration !== organizationsRequestGeneration) return null;
+  if (!sameContext()) return null;
+  if (requestGeneration !== organizationsRequestGeneration) {
+    if (!refreshOnSuccess) return null;
+    // The write committed, but its collection snapshot cannot replace a newer one.
+    await refreshAdminOrganizationsSafely({ isCurrent: sameContext, announce: false });
+    return sameContext() ? data : null;
+  }
   // Preserve live input, not the earlier draft captured before this request.
   // Keep this after the identity/generation guard and before replacing the data.
   captureAdminOrganizationsDraft();
   organizationsReadStale = false;
   organizationsReadStaleReason = '';
-  state.adminOrganizations = data;
+  state.adminOrganizations = data.organizations || data;
   persistAssessmentContext();
   renderAdminOrganizations();
   return data;
@@ -854,48 +904,26 @@ const markOrganizationsReadStale = (reason) => {
   renderAdminOrganizations();
 };
 
-export const refreshAdminOrganizationsSafely = async ({ isCurrent = () => true } = {}) => {
+export const refreshAdminOrganizationsSafely = async ({ isCurrent = () => true, announce = true } = {}) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const requestGeneration = organizationsRequestGeneration + 1;
   try {
     const data = await requestOrganizations(
       '/users/admin/organizations',
-      { method: 'GET', headers: {} },
-      'Не удалось обновить организации.', isCurrent,
+      { method: 'GET', headers: {}, cache: 'no-store' },
+      'Не удалось обновить организации.', { isCurrent },
     );
     if (!data || !isCurrent()) return false;
-    setStatus('Состояние организаций обновлено.', 'success', undefined, { focus: false });
+    if (announce) setStatus('Состояние организаций обновлено.', 'success', undefined, { focus: false });
     return true;
   } catch (error) {
     if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         organizationsRequestGeneration !== requestGeneration) return false;
     markOrganizationsReadStale(error instanceof TypeError ? 'Не удалось получить ответ сервера.' : error.message || 'Не удалось обновить организации.');
-    setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error', undefined, { focus: false });
+    if (announce) setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error', undefined, { focus: false });
     return false;
   }
-};
-
-const requestOrganizationsImport = async (url, csvText) => {
-  const identityEpoch = state.identityEpoch;
-  const identityKey = currentIdentityKey();
-  const requestGeneration = ++organizationsRequestGeneration;
-  const response = await fetch(url, {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ csv_text: csvText }),
-  });
-  const data = await readApiResponse(response, 'Не удалось импортировать участников.');
-  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
-      organizationsRequestGeneration !== requestGeneration) return null;
-  captureAdminOrganizationsDraft();
-  organizationsReadStale = false;
-  organizationsReadStaleReason = '';
-  state.adminOrganizations = data.organizations || data;
-  persistAssessmentContext();
-  renderAdminOrganizations();
-  return data;
 };
 
 export const loadAdminOrganizations = async ({ isCurrent = () => true } = {}) => {
@@ -907,7 +935,7 @@ export const loadAdminOrganizations = async ({ isCurrent = () => true } = {}) =>
     data = await requestOrganizations(
       '/users/admin/organizations',
       { method: 'GET', headers: {} },
-      'Не удалось загрузить организации.', isCurrent,
+      'Не удалось загрузить организации.', { isCurrent },
     );
   } catch (error) {
     if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
@@ -1042,7 +1070,7 @@ export const createAdminOrganization = async () => {
     const pending = organizationCreatePending;
     try {
       const data = await requestOrganizations('/users/admin/organizations',
-        { method: 'GET', cache: 'no-store' }, 'Не удалось проверить создание организации.', isCurrent);
+        { method: 'GET', cache: 'no-store' }, 'Не удалось проверить создание организации.', { isCurrent });
       if (!isCurrent()) return;
       if (!data?.is_superadmin || !Array.isArray(data.items)) throw new Error('Исход создания неизвестен.');
       const match = findOrganizationByCode(data, pending.code);
@@ -1067,7 +1095,7 @@ export const createAdminOrganization = async () => {
       '/users/admin/organizations',
       { method: 'POST', body: JSON.stringify({ name, code }) },
       'Не удалось создать организацию.',
-      isCurrent,
+      { isCurrent },
     );
     if (!isCurrent()) return;
     const created = findOrganizationByCode(data, code);
@@ -1278,7 +1306,7 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
     return false;
   }
   try {
-    await requestOrganizations(
+    const result = await requestOrganizations(
       '/users/admin/organizations/' + organizationId + '/members',
       {
         method: 'POST',
@@ -1290,7 +1318,18 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
         }),
       },
       'Не удалось привязать участника.',
+      { refreshAfterSupersededWrite: true },
     );
+    if (!result) return false;
+    const form = operationRoot();
+    if (!state.adminOrganizations?.is_superadmin && form?.matches('form[data-action="add-member"]') &&
+        Number(form.closest('[data-organization-id]').dataset.organizationId) === organizationId &&
+        form.elements.email.value.trim() === normalizedEmail && form.elements.full_name.value.trim() === fullName &&
+        form.elements.role_description.value.trim() === roleDescription) {
+      form.reset();
+      managementDrafts.delete(formDraftKey(organizationId, form));
+      renderedFormSignatures.set(form, formSignature(form));
+    }
     setStatus('Участник привязан к организации.', 'success');
     return true;
   } catch (error) {
@@ -1638,7 +1677,7 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
     const data = await requestOrganizations(
       '/users/admin/organizations',
       { method: 'GET', headers: {} },
-      'Не удалось проверить состояние назначения.', contextIsCurrent,
+      'Не удалось проверить состояние назначения.', { isCurrent: contextIsCurrent },
     );
     if (!data || !contextIsCurrent()) return undefined;
     const organization = (data.items || []).find((item) => Number(item.id) === Number(organizationId));
@@ -1890,24 +1929,76 @@ export const prepareAdminOrganizationAssessments = async (organizationId) => {
   }
 };
 
-export const importAdminOrganizationMembers = async (organizationId, csvText) => {
-  const text = String(csvText || '').trim();
-  if (!text) {
-    setStatus('Выберите CSV-файл с участниками.', 'error');
-    return;
-  }
+export const importAdminOrganizationMembers = async (organizationId, source, form) => {
+  const picker = form?.querySelector('[data-choose-member-file]');
+  const status = form?.querySelector('[data-member-import-status]');
+  const submit = form?.querySelector('button[type="submit"]');
+  if (form && (!form.isConnected || submit.disabled)) return null;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  const sameIdentity = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey;
+  const report = (message, tone) => {
+    if (!sameIdentity()) return;
+    if (!picker) {
+      setStatus(message, tone);
+      return;
+    }
+    if (!form.isConnected) return;
+    status.textContent = message;
+    status.dataset.tone = tone;
+    status.classList.remove('hidden');
+    if (tone !== 'loading' && form.closest('details').open && !form.closest('[data-admin-view]').classList.contains('hidden') &&
+        (document.activeElement === document.body || form.contains(document.activeElement))) {
+      status.focus();
+    }
+  };
+
+  if (picker) {
+    picker.disabled = submit.disabled = true;
+    report('Загружаем список…', 'loading');
+  }
   try {
-    const result = await requestOrganizationsImport('/users/admin/organizations/' + organizationId + '/members/import', text);
-    if (!result || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
-    const errorsText = Array.isArray(result.errors) && result.errors.length ? ' Ошибки: ' + result.errors.slice(0, 3).join('; ') : '';
-    setStatus('Импортировано: ' + Number(result.imported_count || 0) + '. Пропущено: ' + Number(result.skipped_count || 0) + '.' + errorsText, result.skipped_count ? 'error' : 'success');
+    let text;
+    try {
+      text = (typeof source === 'string' ? source : await source.text()).trim();
+    } catch {
+      report('Не удалось прочитать файл. Выберите CSV-файл повторно.', 'error');
+      return null;
+    }
+    if (!sameIdentity() || (form && !form.isConnected)) return null;
+    if (!text) {
+      report(picker ? 'CSV-файл пуст. Заполните шаблон и выберите файл снова.' : 'Выберите CSV-файл с участниками.', 'error');
+      return null;
+    }
+    const result = await requestOrganizations(
+      '/users/admin/organizations/' + organizationId + '/members/import',
+      { method: 'POST', body: JSON.stringify({ csv_text: text }) },
+      'Не удалось импортировать участников.',
+      { refreshAfterSupersededWrite: Boolean(picker) },
+    );
+    if (!result || !sameIdentity()) return null;
+    const imported = Number(result.imported_count || 0);
+    const skipped = Number(result.skipped_count || 0);
+    if (picker && !imported && !skipped) {
+      report('В CSV-файле нет строк участников. Заполните шаблон и выберите файл снова.', 'error');
+      return result;
+    }
+    if (picker && !skipped) {
+      form.reset();
+      form.querySelector('[data-member-file-name]').textContent = '';
+    }
+    const errors = Array.isArray(result.errors) ? result.errors.slice(0, 3) : [];
+    report('Импортировано: ' + imported + '. Пропущено: ' + skipped + '.' +
+      (errors.length ? ' ' + errors.join('. ') : ''), skipped ? 'error' : 'success');
     return result;
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
-    setStatus(error.message || 'Не удалось импортировать участников.', 'error');
+    report(membershipErrorMessage(error, 'Не удалось импортировать участников.'), 'error');
     return null;
+  } finally {
+    if (picker) {
+      picker.disabled = false;
+      submit.disabled = !form.elements.csv.files?.length;
+    }
   }
 };
 
@@ -2628,15 +2719,17 @@ const renderMemberMenu = (items, label = 'Другие действия') =>
 const renderMemberList = (items, {
   isSuperadmin = false, canDeletePerson = false, canAssign = false, activeOrganization = true,
   selectedAssessmentRef = '', selectedAssessmentLabel = '', organizationId = selectedOrganizationId, appealsOnly = false,
+  assignmentHelp = '',
 } = {}) => {
-  if (appealsOnly) items = items.filter(item => Number(item.issue_count || 0) > 0);
   if (!items.length) {
-    return '<p class="admin-organizations-empty">' + (appealsOnly ? 'Участников с обращениями нет.' : 'Участники не привязаны.') + '</p>';
+    return { markup: '<p class="admin-organizations-empty">' +
+      (appealsOnly ? 'Участников с обращениями нет.' : isSuperadmin ? 'Участники не привязаны.' : 'Участников пока нет.') + '</p>' };
   }
   const pendingOperations = pendingInvitationOperations().filter((operation) =>
     operation.organizationId === Number(organizationId) && operation.assignmentRef === selectedAssessmentRef);
-  return (
-    '<div class="admin-organization-members">' +
+  let batchInvite = false;
+  let batchAssign = false;
+  const markup = '<div class="admin-organization-members">' +
     items
       .map((item) => {
         const email = String(item.email || '');
@@ -2743,9 +2836,10 @@ const renderMemberList = (items, {
           ? pendingCheck : '') || savedCheck;
         const resend = delivery === 'accepted' && link === 'active' && invitationId;
         const awaitingParticipant = !scopedStage || ['assigned', 'cancelled'].includes(preparationStatus);
-        const canSend = activeOrganization && selectedAssessmentRef && !registered && awaitingParticipant &&
+        const invitationCandidate = activeOrganization && !registered && awaitingParticipant &&
           !checkInvitation && !(separateReceipt && savedReceiptUnresolved && !linkClosed) &&
           (!['unknown', 'pending'].includes(delivery) || linkClosed);
+        const canSend = invitationCandidate && selectedAssessmentRef;
         const send = canSend ? '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' +
           (resend ? 'Отправить письмо повторно' : ['revoked', 'expired'].includes(link) ? 'Пригласить снова' :
             delivery === 'failed' ? 'Повторить отправку' : 'Пригласить') + '</button>' : '';
@@ -2755,20 +2849,11 @@ const renderMemberList = (items, {
           ['accepted', 'queued', 'sending'].includes(linkInvitation.delivery_status || invitationStatus)
           ? '<button type="button" data-action="revoke-member-invitation" data-participant-name="' + escapeHtml(participantName) +
             '" data-invitation-id="' + invitationId + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>' : '';
-        const assign = canAssign && !hasAssignment && (!scopedStage || preparationStatus === 'cancelled')
-          ? '<button type="button" data-action="open-member-assignment" data-user-id="' + Number(item.user_id) +
+        const assignmentCandidate = activeOrganization && !hasAssignment && (!scopedStage || preparationStatus === 'cancelled');
+        const canAssignMember = canAssign && assignmentCandidate;
+        const assign = canAssignMember ? '<button type="button" data-action="open-member-assignment" data-user-id="' + Number(item.user_id) +
             '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '">Назначить оценку</button>' : '';
-        const hasSentMenu = Boolean(resend && send && revoke);
-        const secondaries = hasSentMenu ? [send, revoke] : [revoke, cancelButton].filter(Boolean);
-        const secondaryActions = secondaries.length > 1 ? renderMemberMenu(secondaries.join(''), 'Действия для ' + participantName) :
-          (secondaries[0] || '').replace(' role="menuitem"', '');
-        const actions = isSuperadmin
-          ? legacyPrimary + ((legacyExtras.match(/<button\b/g) || []).length > 1
-            ? renderMemberMenu(legacyExtras) : legacyExtras.replace(' role="menuitem"', ''))
-          : failedPreparation ? checkPreparationButton
-            : reportButton || (checkPreparationButton || processingButton) + checkInvitation + assign +
-              (hasSentMenu ? '' : send) + secondaryActions +
-              (hasSentMenu ? cancelButton.replace(' role="menuitem"', '') : '');
+        const primary = checkPreparationButton || processingButton || checkInvitation || (resend ? assign : send || assign);
 
         const invitationStage = !separateReceipt && !registered && !scopedStage && !hasAssignment && (link === 'revoked' ? 'Приглашение отозвано' :
           link === 'expired' ? 'Срок ссылки истёк' : delivery === 'accepted' ? 'Письмо отправлено' :
@@ -2791,17 +2876,39 @@ const renderMemberList = (items, {
         const unboundRegistration = priorInvitationInCard && !receiptRef
           ? ({ registered: 'Завершена', pending: 'Ожидается' })[item.registration_status] || 'Статус не подтверждён'
           : '';
+        const reviewOrganization = invitation.next_action === 'review_organization' && (showInvitationNote || checkInvitation)
+          ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '';
+        const extraActions = [checkInvitation, send, assign, revoke, cancelButton, reviewOrganization]
+          .filter((action) => action && action !== primary).join('');
+        const actions = isSuperadmin
+          ? legacyPrimary + ((legacyExtras.match(/<button\b/g) || []).length > 1
+            ? renderMemberMenu(legacyExtras) : legacyExtras.replace(' role="menuitem"', ''))
+          : failedPreparation ? checkPreparationButton
+            : reportButton || primary + (extraActions ? renderMemberMenu(extraActions, 'Действия для ' + participantName) : '');
+
         const compactStageMarkup = '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' +
           (critical || delivery === 'failed' && invitationStage ? ' is-critical' : '') + '">' +
           escapeHtml(invitationStage || currentStage) + '</strong>' +
           (showInvitationNote ? '<span class="admin-organization-member-invitation">' + escapeHtml(invitationNote) + '</span>' : '') +
           (previousReceipt ? '<span class="admin-organization-member-invitation">' + escapeHtml(previousReceipt) + '</span>' : '') +
           ((!invitationStage || !showInvitationNote) ? '<span>' + escapeHtml(invitationStage && send
-            ? 'Отправьте участнику письмо со ссылкой для входа.' : stageDescription) + '</span>' : '') +
-          (!failedPreparation && invitation.next_action === 'review_organization' && (showInvitationNote || checkInvitation)
-            ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '') + '</div>';
-        const selection = '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' +
-          escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>';
+            ? 'Отправьте участнику письмо со ссылкой для входа.' : stageDescription) + '</span>' : '') + '</div>';
+        // An active link can still be resent from its row. A bulk send targets new or failed invitations.
+        const canInviteInBatch = Boolean(canSend && (linkClosed || ['not_attempted', 'failed'].includes(delivery)));
+        batchInvite ||= canInviteInBatch;
+        batchAssign ||= canAssignMember;
+        const bulkFor = [canInviteInBatch && 'invite', canAssignMember && 'assign'].filter(Boolean).join(' ');
+        const selection = isSuperadmin || bulkFor
+          ? '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' +
+            escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" data-bulk-for="' + bulkFor +
+            '" aria-label="Выбрать ' + escapeHtml(isSuperadmin ? email : participantName) + '"></label>'
+          : '';
+        const assignmentBlocked = !isSuperadmin && assignmentCandidate && !canAssign && assignmentHelp;
+        const invitationBlocked = invitationCandidate && !selectedAssessmentRef;
+        const actionHelp = assignmentBlocked
+          ? '<details class="admin-member-action-help"><summary>' + (invitationBlocked
+            ? 'Приглашение и назначение недоступны' : 'Назначение недоступно') + '</summary>' + assignmentHelp + '</details>'
+          : '';
         const name = '<button type="button" class="admin-organization-member-name" data-action="open-member-card" data-user-id="' +
           Number(item.user_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) +
           '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(isSuperadmin ? currentStage : invitationStage || currentStage) +
@@ -2832,15 +2939,12 @@ const renderMemberList = (items, {
             (critical ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span>' +
             (preparationStatus === 'preparation_failed' && scopedStage?.operation_id
               ? '<span>Номер случая: ' + escapeHtml(scopedStage.operation_id) + '</span>' : '') + '</div>') : compactStageMarkup) +
-          '<div class="admin-organization-member-actions">' +
-          actions +
-          '</div>' +
-          '</article>'
+          '<div class="admin-organization-member-actions">' + actions + '</div>' +
+          actionHelp + '</article>'
         );
       })
-      .join('') +
-    '</div>'
-  );
+      .join('') + '</div>';
+  return { markup, batchInvite, batchAssign };
 };
 
 const findOrganizationMember = (organizationId, userId) =>
@@ -3245,6 +3349,10 @@ export const renderAdminOrganizations = () => {
       .join('');
   }
   const preparationRoots = new Map(Array.from(adminOrganizationsList.querySelectorAll('[data-preparation-status]'), (node) => [node.dataset.preparationReferenceId, node]));
+  const batchStatus = adminOrganizationsList.querySelector('[data-people-batch-status]');
+  const focusedBatchStatus = batchStatus?.contains(document.activeElement) ? document.activeElement : null;
+  const memberImport = adminOrganizationsList.querySelector('[data-member-import]');
+  const focusedImportControl = memberImport?.contains(document.activeElement) ? document.activeElement : null;
   const focusedPreparationControl = document.activeElement?.closest?.('[data-preparation-status]') ? document.activeElement : null;
   const focusedCheckUser = document.activeElement?.matches?.('[data-action="check-member-preparation"]') ? document.activeElement.closest('.admin-organization-member')?.querySelector('[data-user-id]')?.dataset.userId : null;
   const focusedAppealControl = document.activeElement?.closest?.('[data-action="toggle-appeals-filter"], [data-action="open-member-appeals"]');
@@ -3337,25 +3445,35 @@ export const renderAdminOrganizations = () => {
             : 'В подключённой программе нет доступной роли для назначения.');
         }
       }
-      const assignmentReadinessMarkup = (isSuperadmin
-        ? '<section class="admin-assignment-readiness" aria-label="Готовность назначения"><h5>Готовность назначения</h5>'
-        : '<details class="admin-assignment-readiness"' + (assignmentBlockers.length ? ' open' : '') +
-          '><summary>Готовность назначения</summary>') + '<dl>' +
-        (isSuperadmin ? '<dt>Программа</dt><dd>' + (programConnectionUnverified ? 'подключение не подтверждено' : currentProgram
+      const checkProgram = '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>';
+      const blockerItems = assignmentBlockers.map((blocker) => '<li>' + escapeHtml(blocker) + '</li>').join('');
+      const recoveryActions = [];
+      if (programConnectionUnverified || (programConfirmed && (!rolesKnown || currentProgram.assignment_ref !== selectedRef))) {
+        recoveryActions.push(checkProgram);
+      }
+      if (programConfirmed && !questionnaireAssignment.canAssign) {
+        if (questionnaireLoadState?.status === 'error' && !questionnaireLoadState.accessDenied) {
+          recoveryActions.push('<button type="button" class="text-button" data-action="retry-questionnaire-load">Повторить загрузку</button>');
+        } else if (['ready', 'empty'].includes(questionnaireLoadState?.status)) {
+          recoveryActions.push('<button type="button" class="text-button" data-action="show-admin-view" data-view="organization-data">Открыть данные организации</button>');
+        }
+      }
+      const assignmentHelp = isSuperadmin || !assignmentBlockers.length ? '' :
+        (assignmentBlockers.length === 1 ? '<p>' + escapeHtml(assignmentBlockers[0]) + '</p>' : '<ul>' + blockerItems + '</ul>') +
+        recoveryActions.join(' ') + (rolesKnown && !roleAvailable ? '<p>Обратитесь к суперадминистратору.</p>' : '');
+      const assignmentReadinessMarkup = isSuperadmin ? '<section class="admin-assignment-readiness" aria-label="Готовность назначения"><h5>Готовность назначения</h5><dl>' +
+        '<dt>Программа</dt><dd>' + (programConnectionUnverified ? 'подключение не подтверждено' : currentProgram
           ? escapeHtml(programIdentity(currentProgram)) + ' · версия ' + escapeHtml(currentProgram.program_version)
-          : 'не подключена') + '</dd>' : '') +
+          : 'не подключена') + '</dd>' +
         '<dt>Роль в оценке</dt><dd>' + escapeHtml(assignmentRoleLabel) + '</dd>' +
         '<dt>Анкета</dt><dd>' + escapeHtml(questionnaireAssignment.label) + '</dd></dl>' +
         (assignmentBlockers.length
           ? '<div class="form-status error" role="alert"><strong>Назначение пока недоступно</strong><ul>' +
-            assignmentBlockers.map((blocker) => '<li>' + escapeHtml(blocker) + '</li>').join('') + '</ul></div>' +
-            (programState.status === 'absent' ? '<p data-program-next-step>Следующий шаг: ' +
-              (isSuperadmin ? 'подключите опубликованную программу в форме выше.'
-                : 'попросите суперадминистратора подключить опубликованную программу к организации.') + '</p>' : '') +
-            (programConnectionUnverified || (programConfirmed && !rolesKnown)
-              ? '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>' : '')
+            blockerItems + '</ul></div>' +
+            (programState.status === 'absent' ? '<p data-program-next-step>Следующий шаг: подключите опубликованную программу в форме выше.</p>' : '') +
+            (programConnectionUnverified || (programConfirmed && !rolesKnown) ? checkProgram : '')
           : '<p class="form-status success">Можно назначать. Выберите участников ниже; назначение не запускает оценку.</p>') +
-        (isSuperadmin ? '</section>' : '</details>');
+        '</section>' : '';
       const roleSelectionMarkup = roleCapabilities.length
         ? '<label><span>Роль в оценке</span><select name="role_profile_version_id" required' +
           (rolesKnown ? '' : ' disabled') + '><option value="">Выберите роль</option>' +
@@ -3514,16 +3632,19 @@ export const renderAdminOrganizations = () => {
       const peopleContext = '<section class="admin-organization-head" aria-label="Выбранная оценка">' +
         '<div><h3>Оценка сотрудников</h3><p>' + escapeHtml(org.name) + ' · ' + programLine + '</p></div>' +
         reportsLink + '</section>';
+      const allMembers = org.members || [];
+      const membersWithAppeals = allMembers.filter((item) => Number(item.issue_count || 0) > 0);
       const appealsOnly = appealsFilterOrganizations.has(orgId);
-      const appealsFilter = '<button type="button" class="ghost-button compact-ghost admin-appeals-filter" data-action="toggle-appeals-filter" aria-pressed="' +
-        appealsOnly + '">С обращениями</button>';
+      const visibleMembers = appealsOnly ? membersWithAppeals : allMembers;
+      const appealsLabel = isSuperadmin ? 'С обращениями' : appealsOnly ? 'Все участники' :
+        'С обращениями' + (membersWithAppeals.length ? ' · ' + membersWithAppeals.length : '');
+      const appealsFilter = '<button type="button" class="admin-appeals-filter ' + (isSuperadmin ? 'ghost-button compact-ghost' : 'text-button') +
+        '" data-action="toggle-appeals-filter" aria-pressed="' + appealsOnly + '"' +
+        (appealsOnly && !isSuperadmin ? ' aria-describedby="admin-people-title-' + orgId + '"' : '') + '>' + appealsLabel + '</button>';
       const peopleTitle = appealsOnly ? 'Участники с обращениями' : 'Участники';
-      const participantTools = '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +
-        '<div class="admin-organization-bulk-actions" data-bulk-actions hidden><form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"><button class="primary-button compact-primary" type="submit">Отправить приглашения</button></form>' +
-        '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment">' + roleSelectionMarkup + '<button class="primary-button compact-primary" type="submit"' +
-        (assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button></form></div>';
-      const members = renderInvitationFeedback(orgId, selectedRef, org.members || []) + renderMemberList(org.members || [], {
+      const members = renderMemberList(visibleMembers, {
         appealsOnly,
+        assignmentHelp,
         organizationId: orgId,
         isSuperadmin,
         activeOrganization: isActive,
@@ -3534,18 +3655,42 @@ export const renderAdminOrganizations = () => {
           ? programIdentity(currentProgram) + ' · ' + roleIdentity(allowedRoles)
           : 'выбранная оценка',
       });
+      const inviteForm = '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"' +
+        (isSuperadmin ? '><button class="primary-button compact-primary" type="submit">' :
+          ' data-bulk-for="invite"><button class="text-button" type="submit" disabled>') +
+        'Отправить приглашения</button>' + (isSuperadmin ? '' : '<p data-bulk-recipients role="status" hidden></p>') + '</form>';
+      const assignForm = '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment"' +
+        (isSuperadmin ? '>' : ' data-bulk-for="assign">') + roleSelectionMarkup +
+        '<button class="' + (isSuperadmin ? 'primary-button compact-primary' : 'text-button') + '" type="submit"' +
+        (!isSuperadmin || assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button>' +
+        (isSuperadmin ? '' : '<p data-bulk-recipients role="status" hidden></p>') + '</form>';
+      const participantTools = isSuperadmin
+        ? '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +
+          '<div class="admin-organization-bulk-actions" data-bulk-actions hidden>' + inviteForm + assignForm + '</div>'
+        : members.batchInvite || members.batchAssign
+          ? '<div class="admin-organization-bulk-actions admin-people-batch" data-bulk-actions><label class="admin-people-select"><input type="checkbox" name="select_all_participants"> Выбрать доступных</label>' +
+            (members.batchInvite ? inviteForm : '') + (members.batchAssign ? assignForm : '') + '</div>' : '';
+      const invitationFeedback = renderInvitationFeedback(orgId, selectedRef, isSuperadmin ? allMembers : visibleMembers);
       const addMemberForm = '<form class="admin-organization-member-form" data-action="add-member">' +
         '<h4>Добавить участника</h4>' +
         (isSuperadmin ? '<p>Для добавления нужны email, ФИО и должность.</p>' : '') +
-        '<label><span>Email</span><input name="email" type="email" placeholder="user@company.ru" required></label>' +
-        '<label><span>ФИО</span><input name="full_name" type="text" placeholder="Иван Иванов" required></label>' +
-        '<label><span>Должность</span><input name="role_description" type="text" placeholder="Руководитель отдела" required></label>' +
-        '<button class="primary-button compact-primary" type="submit">Добавить</button>' +
-        '</form>';
+        '<label><span>Email</span><input name="email" type="email" required' +
+        (isSuperadmin ? ' placeholder="user@company.ru"' : '') + '></label>' +
+        '<label><span>ФИО</span><input name="full_name" type="text" required' +
+        (isSuperadmin ? ' placeholder="Иван Иванов"' : '') + '></label>' +
+        '<label><span>Должность</span><input name="role_description" type="text" required' +
+        (isSuperadmin ? ' placeholder="Руководитель отдела"' : '') + '></label>' +
+        '<button class="primary-button compact-primary" type="submit">Добавить</button></form>';
       const importMembersForm = '<form class="admin-organization-import-form" data-action="import-members">' +
-        '<input name="csv" type="file" aria-label="Файл списка участников" accept=".csv,text/csv">' +
-        '<span>CSV: email, full_name, role_description, job_instructions</span>' +
-        '<button class="ghost-button compact-ghost" type="submit">Импорт</button>' +
+        '<input name="csv" type="file" aria-label="Файл списка участников" accept=".csv,text/csv"' +
+        (isSuperadmin ? '' : ' hidden') + '>' + (isSuperadmin
+          ? '<span>CSV: email, full_name, role_description, job_instructions</span>' +
+            '<button class="ghost-button compact-ghost" type="submit">Импорт</button>'
+          : '<a class="text-link" href="/web/assets/templates/participants.csv" download="participants.csv">Скачать шаблон</a>' +
+            '<button class="ghost-button compact-ghost" type="button" data-choose-member-file aria-describedby="member-file-' + orgId + '">Выбрать файл</button>' +
+            '<span data-member-file-name id="member-file-' + orgId + '" aria-live="polite"></span>' +
+            '<button class="primary-button compact-primary" type="submit" disabled>Загрузить</button>' +
+            '<p class="admin-organizations-status hidden" data-member-import-status role="status" aria-live="polite" tabindex="-1"></p>') +
         '</form>';
 
       const questionnaireUpload = '<form class="admin-organization-import-form" data-action="preview-questionnaire" data-assessment-ref="' +
@@ -3606,15 +3751,19 @@ export const renderAdminOrganizations = () => {
         (isSuperadmin
           ? '<h4>' + (appealsOnly ? peopleTitle : 'Участники оценки') + '</h4>' + appealsFilter + '<dl class="admin-people-context"><div><dt>Программа оценки</dt><dd>' +
             programLine + '</dd></div><div><dt>Роль в оценке</dt><dd>' + escapeHtml(assignmentRoleLabel) + '</dd></div></dl>' +
-            '<p>Назначение не запускает оценку.</p>' + assignmentReadinessMarkup + participantTools + members + addMemberForm + importMembersForm
+            '<p>Назначение не запускает оценку.</p>' + assignmentReadinessMarkup + participantTools + invitationFeedback +
+            members.markup + addMemberForm + importMembersForm
           : '<section class="admin-people-list" aria-labelledby="admin-people-title-' + orgId + '"><div class="admin-people-list-heading">' +
             '<h4 id="admin-people-title-' + orgId + '">' + peopleTitle + '</h4>' + appealsFilter + '</div>' +
-            assignmentReadinessMarkup + participantTools + members + '</section>' +
-            '<aside class="admin-people-add">' + addMemberForm + importMembersForm + '</aside>') +
+            participantTools + '<div data-people-batch-status="' + escapeHtml(assessmentKey(orgId, selectedRef)) + '"></div>' +
+            invitationFeedback + members.markup + '</section>' +
+            '<aside class="admin-people-add">' + addMemberForm + '<details class="admin-people-import" data-member-import="' +
+            escapeHtml(organizationKey(orgId)) + '"><summary>Импорт списка</summary>' + importMembersForm + '</details></aside>') +
         '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') +
         '" data-admin-view="organization-data">' + (questionnaireLoadState?.status === 'empty' ? '' : questionnaireLoadMarkup) +
-        '<div class="admin-data-overview">' + organizationDataReadiness(programState, readiness, assignmentRoleLabel, sourceMarkup) +
+        '<div class="admin-data-overview">' + organizationDataReadiness(programState, readiness, assignmentRoleLabel,
+          isSuperadmin ? '' : questionnaireAssignment.label, sourceMarkup) +
         (activeView === 'organization-data' ? reportsLink : '') + '</div>' +
         (isSuperadmin ? '' : '<div class="admin-organization-data-layout"><form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' +
         escapeHtml(selectedRef) + '"' + (confirmedForm ? ' data-confirmed-form' : '') +
@@ -3641,6 +3790,15 @@ export const renderAdminOrganizations = () => {
       );
     })
     .join('');
+  const newImport = adminOrganizationsList.querySelector('[data-member-import]');
+  if (memberImport && newImport?.dataset.memberImport === memberImport.dataset.memberImport) {
+    // Keep the actual input and its File across reads for this organization.
+    newImport.replaceWith(memberImport);
+  }
+  const newBatchStatus = adminOrganizationsList.querySelector('[data-people-batch-status]');
+  if (batchStatus?.dataset.peopleBatchStatus === newBatchStatus?.dataset.peopleBatchStatus && newBatchStatus) {
+    newBatchStatus.replaceWith(batchStatus);
+  }
   for (const freshRoot of adminOrganizationsList.querySelectorAll('[data-preparation-status]')) {
     const previousRoot = preparationRoots.get(freshRoot.dataset.preparationReferenceId);
     if (previousRoot) freshRoot.replaceWith(previousRoot);
@@ -3657,6 +3815,8 @@ export const renderAdminOrganizations = () => {
   restoreProgramConnectionFeedback();
   updateOrganizationDataForm(organizationDataForm(selectedOrganizationId));
   if (menuFocus) restoreMemberMenuFocus(menuFocus);
+  else if (focusedBatchStatus?.isConnected) focusedBatchStatus.focus({ preventScroll: true });
+  else if (focusedImportControl?.isConnected) focusedImportControl.focus({ preventScroll: true });
   else if (focusedConfirmation) organizationDataForm(selectedOrganizationId)
     ?.querySelector('[data-organization-confirmed]:not([hidden])')?.focus({ preventScroll: true });
   else if (focusedPreparationControl?.isConnected) focusedPreparationControl.focus({ preventScroll: true });
@@ -3682,6 +3842,7 @@ export const toggleAppealsFilter = (organizationId) => {
   if (Number(selectedOrganizationId) !== organizationId) return;
   captureAdminOrganizationsDraft();
   if (!appealsFilterOrganizations.delete(organizationId)) appealsFilterOrganizations.add(organizationId);
+  if (!state.adminOrganizations?.is_superadmin) managementDrafts.delete(participantSelectionKey(organizationId));
   renderAdminOrganizations();
   adminOrganizationsList.querySelector('[data-organization-id="' + organizationId + '"] [data-action="toggle-appeals-filter"]')
     ?.focus({ preventScroll: true });
