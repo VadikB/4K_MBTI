@@ -85,6 +85,11 @@
     text-decoration: none;
 }
 .platform-org-card-nav a:hover { text-decoration: underline; }
+.platform-org-card-nav a[aria-current="page"] {
+    color: var(--palette-outcome-link);
+    border-bottom: 2px solid currentColor;
+    font-weight: 600;
+}
 .platform-org-card-nav a:focus-visible,
 .platform-org-registry a:focus-visible,
 .platform-org-summary a:focus-visible {
@@ -158,6 +163,58 @@
 .platform-org-summary-heading { justify-content: space-between; }
 .platform-org-summary-panel form > p, .platform-org-summary-panel form > .text-button { grid-column: 1 / -1; }
 .platform-org-summary-panel .text-button { justify-self: start; text-align: left; }
+.organization-history { margin-top: 16px; overflow-wrap: anywhere; }
+.org-history-timeline, .org-purge-accounts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.org-history-timeline li, .org-purge-counts > div {
+    display: grid;
+    grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+    gap: 12px;
+    padding: 11px 0;
+    border-top: 1px solid var(--participant-border);
+}
+.org-history-timeline time, .org-history-timeline p, .org-purge-accounts span {
+    color: var(--palette-outcome-text);
+    font-size: 14px;
+}
+.org-history-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.org-history-actions button, .org-history-details button { min-height: 44px; white-space: normal; }
+.org-history-actions [hidden], .org-history-details [hidden], .organization-history [role="status"]:empty { display: none; }
+.org-history-details {
+    display: grid;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--participant-border);
+    border-radius: var(--radius-md);
+    background: var(--palette-graphite-050);
+}
+.org-history-details summary { cursor: pointer; font-weight: 600; padding-block: 5px; }
+.org-history-details[open] > :not(summary) { margin-top: 10px; }
+.org-history-details [data-org-purge], .org-history-details form {
+    display: grid;
+    gap: 10px;
+}
+.org-history-details [data-org-purge] > button, .org-history-details form > button { justify-self: start; }
+.org-history-details h4, .org-history-details h5, .org-purge-counts, .org-purge-counts dd { margin: 0; }
+.org-purge-counts > div { grid-template-columns: minmax(0, 1fr) auto; padding-block: 6px; }
+.org-purge-accounts li { display: grid; gap: 2px; padding-block: 6px; }
+.org-history-details label { display: grid; gap: 6px; }
+.org-history-details label.org-purge-ack { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+.org-purge-ack input { width: auto; min-height: auto; margin-top: 4px; }
+.org-history-details input[name="confirmation_code"] { max-width: 24rem; width: 100%; }
+.organization-history :is(button, summary, input):focus-visible, .org-lifecycle-dialog button:focus-visible {
+    outline: 2px solid var(--palette-outcome-link);
+    outline-offset: 2px;
+}
+.org-lifecycle-dialog form { display: grid; gap: 12px; overflow-wrap: anywhere; }
+.org-lifecycle-dialog :is(h3, p) { margin: 0; }
+@media (max-width: 460px) {
+    .org-history-timeline li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .platform-org-card-nav a { min-height: 44px; }
+}
 .admin-organizations-panel[data-superadmin="true"] .admin-organizations-list-card > .report-card-head { display: none; }
 .admin-organizations-panel[data-superadmin="true"] .admin-organizations-list-card,
 .admin-organizations-panel[data-superadmin="true"] .admin-organization-card {

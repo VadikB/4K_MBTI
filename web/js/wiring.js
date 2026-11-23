@@ -1708,7 +1708,7 @@ const openAdminMemberAssignment = (trigger, card, organizationId) => {
 if (adminOrganizationsList) {
   adminOrganizationsList.addEventListener('submit', (event) => {
     const form = event.target instanceof HTMLFormElement ? event.target : null;
-    if (!form) {
+    if (!form || form.method === 'dialog') {
       return;
     }
     event.preventDefault();
@@ -2013,75 +2013,6 @@ if (adminOrganizationsList) {
       return;
     }
     if (!organizationId) {
-      return;
-    }
-    if (button.dataset.action === 'purge-organization') {
-      const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
-      const organizationCode = String(card?.getAttribute('data-organization-code') || '').trim();
-      withScreen(loadAdminOrganizations, async (module) => {
-        let preview;
-        try {
-          preview = await module.previewAdminOrganizationPurge(organizationId);
-        } catch (error) {
-          window.alert(error.message || 'Не удалось построить состав удаления.');
-          return;
-        }
-        const deletedAccounts = (preview.accounts || []).filter((account) => account.will_delete_account);
-        const sharedAccounts = (preview.accounts || []).filter((account) => !account.will_delete_account);
-        const tableSummary = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
-          .map(([name, count]) => name + ': ' + Number(count)).join(', ');
-        const preserved = sharedAccounts.map((account) => account.email +
-          (account.preserved_reason === 'current_account' ? ' (текущий аккаунт)' :
-            account.preserved_reason === 'configured_account' ? ' (защищён настройками доступа)' : '')).join(', ') || 'нет';
-        const revokedConfigured = deletedAccounts.filter((account) => account.configured_access_will_be_revoked)
-          .map((account) => account.email).join(', ');
-        const summary = 'Будут удалены организация, связанные записи и аккаунты без других организаций. ' +
-          'Строк: ' + Number(preview.total_rows || 0) + (tableSummary ? ' (' + tableSummary + ')' : '') +
-          '. Полностью удаляемых аккаунтов: ' + deletedAccounts.length +
-          (revokedConfigured ? '. Настроенные полномочия будут отозваны: ' + revokedConfigured : '') +
-          '. Останутся защищённые или используемые другими организациями аккаунты: ' + preserved +
-          '. Общие методологические материалы останутся, потому что не принадлежат организации.';
-        const blockers = Array.isArray(preview.execution_blockers) ? preview.execution_blockers : [];
-        if (blockers.length) {
-          const blockerSummary = blockers.map((account) => account.email +
-            (account.reason === 'current_account'
-              ? ' — текущий аккаунт выполняющего администратора'
-              : ' — аккаунт задан в конфигурации администраторов')).join(', ');
-          window.alert(summary + ' Удаление пока заблокировано: ' + blockerSummary +
-            '. Используйте другой аккаунт или сначала измените конфигурацию администраторов.');
-          return;
-        }
-        if (button.dataset.executionAvailable !== 'true') {
-          window.alert(summary + ' Исполнение недоступно: внешний журнал удаления не настроен.');
-          return;
-        }
-        const confirmationCode = window.prompt(summary + ' Для подтверждения введите код: ' + organizationCode);
-        if (confirmationCode === null) return;
-        if (String(confirmationCode).trim() !== organizationCode) {
-          window.alert('Код подтверждения не совпадает. Удаление отменено.');
-          return;
-        }
-        if (!window.confirm('Удалить организацию «' + organizationName + '» полностью? Действие необратимо.')) return;
-        await module.purgeAdminOrganization(
-          organizationId, organizationCode, preview.fingerprint, organizationName,
-        );
-      });
-      return;
-    }
-    if (button.dataset.action === 'delete-organization') {
-      const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
-      const message = 'Деактивировать организацию «' + organizationName +
-        '»? Новые пользователи больше не будут автоматически привязываться к ней.';
-      if (!window.confirm(message)) {
-        return;
-      }
-      withScreen(loadAdminOrganizations, (module) => module.deleteOrDeactivateAdminOrganization(organizationId, organizationName));
-      return;
-    }
-    if (button.dataset.action === 'restore-organization') {
-      const organizationName = card?.querySelector('h3')?.textContent?.trim() || 'организацию';
-      if (!window.confirm('Восстановить организацию «' + organizationName + '» и снова разрешить доступ?')) return;
-      withScreen(loadAdminOrganizations, (module) => module.restoreAdminOrganization(organizationId, organizationName));
       return;
     }
     if (button.dataset.action === 'confirm-questionnaire') {

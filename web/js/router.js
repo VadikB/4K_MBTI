@@ -147,6 +147,7 @@ export const syncUrlState = (screen, options = {}) => {
   params.set('screen', screen);
   if (screen === 'admin-organizations' && organizationId) params.set('org', organizationId);
   if (screen === 'admin-organizations' && organizationView === 'create') params.set('view', 'create');
+  if (screen === 'admin-organizations' && organizationId && organizationView === 'history') params.set('view', 'history');
   params.set('ui', String(Date.now()));
   if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) params.set('cycle_id', state.productCycleId);
 
