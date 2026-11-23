@@ -1678,7 +1678,7 @@
 
 .admin-people-list .admin-organization-member-main { grid-area: identity; }
 .admin-organization-member-name-line { display: flex; align-items: center; gap: 8px; }
-.admin-organization-member-name-line .admin-organization-member-select { flex: 0 0 20px; }
+.admin-organization-member-name-line .admin-organization-member-select { flex: 0 0 44px; }
 .admin-people-list :is(.admin-organization-member-email, .admin-organization-member-position, .admin-organization-member-stage > span) {
     margin: 0;
     color: var(--palette-outcome-text);

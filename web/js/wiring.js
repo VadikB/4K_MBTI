@@ -2191,7 +2191,7 @@ if (adminOrganizationsList) {
       dialog.setAttribute('aria-labelledby', 'admin-member-processing-title');
       dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-processing-title"></h3>' +
         '<button type="submit" class="dialog-close" aria-label="Закрыть пояснение">×</button></div>' +
-        '<p data-processing-description></p><p>Отчёт можно открыть после готовности и при наличии права просмотра.</p>' +
+        '<p data-processing-description></p><p>Отчёт можно открыть только после готовности и при наличии права просмотра.</p>' +
         '<button type="submit" class="primary-button">Закрыть</button></form>';
       dialog.querySelector('h3').textContent = button.hasAttribute('data-processing-failed')
         ? 'Ошибка обработки результата' : 'Обработка результата';
