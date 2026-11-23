@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = 2
 CHECKSUM_KIND = "sha256-canonical-json-v1"
 CONTENT_CHECKSUM_KIND = "sha256-raw-bytes-v1"
-M5_FUNCTIONAL_AS_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v2"
+M5_FUNCTIONAL_AS_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v3"
 PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
 
 # Logical names are part of the persisted contract. Paths always identify an
