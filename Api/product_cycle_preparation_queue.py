@@ -12,6 +12,7 @@ import os
 import socket
 import threading
 from contextlib import contextmanager
+from time import perf_counter
 from uuid import uuid4
 
 from fastapi.encoders import jsonable_encoder
@@ -625,6 +626,7 @@ class ProductCyclePreparationQueue:
                     m3_path = resolve_cycle_dependency(dict(frozen_cycle), "m3_role_profiles") / "base_roles.json"
                     runtime_rule_ref = resolve_preparation_binding(connection, frozen_case_row)
                     provider_path = resolve_cycle_dependency(dict(frozen_cycle), "provider_contract") / "manifest.json"
+            saving_started = perf_counter()
             if needs_generation:
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job)
@@ -662,6 +664,7 @@ class ProductCyclePreparationQueue:
                     failure_code = ("M5_FUNCTIONAL_VERIFICATION_INCOMPLETE" if outcome == "INCOMPLETE"
                                     else "M5_FUNCTIONAL_AS_NOT_ADMITTED")
                     raise ValueError(failure_code + ":" + outcome)
+                saving_started = perf_counter()
                 trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job, lock=True)
@@ -682,14 +685,17 @@ class ProductCyclePreparationQueue:
                 participant_result = {**m10_product_flow.participant_presentation(result), "runtime": runtime}
                 connection.execute(
                     """UPDATE product_cycle_preparation_operations
-                       SET status='completed',result_json=%s::jsonb,completed_at=NOW(),updated_at=NOW(),
+                       SET status='completed',result_json=%s::jsonb,completed_at=clock_timestamp(),updated_at=clock_timestamp(),
                            locked_at=NULL,attempt_token=NULL
                        WHERE id=%s AND status='running' AND attempt_token=%s""",
                     (json.dumps(jsonable_encoder(participant_result), ensure_ascii=False),
                      job["id"], job["attempt_token"]),
                 )
-                connection.execute("UPDATE preparation_observations SET status='completed' WHERE source='cycle' AND operation_id=%s AND attempt_token=%s",
-                    (str(job['operation_id']),str(job['attempt_token'])))
+                connection.execute("""UPDATE preparation_observations SET status='completed',
+                    scope_json=scope_json || jsonb_build_object('ready_persistence_ms',%s::double precision)
+                    WHERE source='cycle' AND operation_id=%s AND attempt_token=%s""",
+                    (round((perf_counter() - saving_started) * 1000, 3),
+                     str(job['operation_id']), str(job['attempt_token'])))
         except Exception as exc:
             if failure_result is not None:
                 setattr(exc, "failure_result", failure_result)

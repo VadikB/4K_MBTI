@@ -11,6 +11,7 @@ import json
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from Api import m5_passport_generation as passport_generation
@@ -510,21 +511,51 @@ def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) 
             "sent": response.sent, "provider": response.provider}
 
 
+def _review_message(payload: dict, batch_checks: list[dict], *, passport: bool) -> dict[str, str]:
+    if passport:
+        payload = passport_generation.compact_review_payload(payload, batch_checks)
+    return {"role": "user", "content": json.dumps(
+        payload, ensure_ascii=False, separators=(",", ":") if passport else None,
+    )}
+
+
+def _message_fingerprint(messages: list[dict[str, str]]) -> tuple[str, int]:
+    encoded = canonical(messages)
+    return checksum(encoded), len(encoded)
+
+
 def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation_id: str,
                       max_tokens: int, temperature: float,
                       retry_instruction: str, review_checks: list[dict[str, Any]] | None = None,
-                      candidate_checksum: str | None = None) -> tuple[Any, Any, list[dict[str, Any]]]:
+                      candidate_checksum: str | None = None,
+                      calls: list[dict[str, Any]] | None = None,
+                      initial_fingerprint: tuple[str, int] | None = None) -> tuple[Any, Any, list[dict[str, Any]]]:
     """Retry one malformed provider envelope; never salvage or merge partial JSON."""
     failures: list[dict[str, Any]] = []
     current = list(messages)
     budget = ({"operation_budget": gateway.operation_budget(operation_id)}
               if hasattr(gateway, "operation_budget") else {})
     for attempt in (1, 2):
+        started_at = perf_counter()
         response = gateway.chat_with_trace(
             current, temperature=temperature, timeout_seconds=300, max_tokens=max_tokens,
             routing_key=operation_id if attempt == 1 else f"{operation_id}:json-retry",
             response_format={"type": "json_object"}, **budget,
         )
+        if calls is not None:
+            elapsed_ms = (perf_counter() - started_at) * 1000
+            input_checksum, messages_size = (
+                initial_fingerprint if attempt == 1 and initial_fingerprint is not None
+                else _message_fingerprint(current)
+            )
+            calls.append({
+                "attempt": attempt, "input_checksum": input_checksum, "message_count": len(current),
+                "messages_utf8_bytes": messages_size, "elapsed_ms": round(elapsed_ms, 3),
+                "model": response.sent.get("model"), "parameters": response.sent.get("parameters"),
+                "provider": {key: response.provider.get(key) for key in (
+                    "model", "revision", "finish_reason", "usage", "queue_wait_ms", "transport_attempts",
+                )},
+            })
         try:
             return json.loads(response.content), response, failures
         except json.JSONDecodeError as exc:
@@ -643,15 +674,18 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     messages = [{"role": "system", "content": instruction},
                 {"role": "system", "content": "Содержательный контракт:\n" + contract},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
-    input_checksum = checksum(messages)
+    fingerprint = _message_fingerprint(messages)
+    input_checksum = fingerprint[0]
     operation_id = f"{snapshot['operation_id']}:generation:{input_checksum[:12]}"
+    calls = []
     raw, response, parse_failures = _strict_json_call(
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.2,
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+        calls=calls, initial_fingerprint=fingerprint,
     )
     return {**_assemble_candidate(snapshot, raw),
             "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation", input_checksum=input_checksum),
-                                   "parse_failures": parse_failures}}
+                                   "parse_failures": parse_failures, "calls": calls}}
 
 
 def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway: Any) -> dict[str, Any]:
@@ -717,20 +751,23 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                     {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
                     *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
                       if adaptation_contract else []),
-                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
-        input_checksum = checksum(messages)
+                    _review_message(payload, batch_checks, passport=passport_basis is not None)]
+        fingerprint = _message_fingerprint(messages)
+        input_checksum = fingerprint[0]
         operation_id = f"{snapshot['operation_id']}:tester:{batch_no:02d}:{input_checksum[:12]}"
+        calls = []
         raw, response, parse_failures = _strict_json_call(
             gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
             review_checks=batch_checks, candidate_checksum=candidate_checksum,
+            calls=calls, initial_fingerprint=fingerprint,
         )
         tester_raw_checks.extend(_bound_batch_checks(raw, batch_checks, candidate_checksum))
         tester_operations.append({
             **_trace(response, operation_id=operation_id, kind="independent_tester_v2_batch",
                      input_checksum=input_checksum),
             "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
-            "parse_failures": parse_failures,
+            "parse_failures": parse_failures, "calls": calls,
         })
     checks = [{**item, "reviewer": "tester", "candidate_checksum": generation["candidate_checksum"]}
               for item in normalize_results(plan, tester_raw_checks, **review_basis)]
@@ -780,14 +817,17 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             {"role": "system", "content": _frozen_file(snapshot, "protocol_challenger").read_text(encoding="utf-8")},
             *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
               if adaptation_contract else []),
-            {"role": "user", "content": json.dumps(batch_payload, ensure_ascii=False)},
+            _review_message(batch_payload, batch_checks, passport=passport_basis is not None),
         ]
-        challenge_checksum = checksum(challenge_messages)
+        fingerprint = _message_fingerprint(challenge_messages)
+        challenge_checksum = fingerprint[0]
         challenge_operation_id = f"{snapshot['operation_id']}:challenger:{batch_no:02d}:{challenge_checksum[:12]}"
+        calls = []
         challenge_raw, challenge_response, challenge_failures = _strict_json_call(
             gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
             review_checks=batch_checks, candidate_checksum=candidate_checksum,
+            calls=calls, initial_fingerprint=fingerprint,
         )
         challenger_raw_checks.extend(_bound_batch_checks(challenge_raw, batch_checks, candidate_checksum))
         challenger_operations.append({
@@ -795,7 +835,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                      kind="independent_tester_v2_challenger_batch",
                      input_checksum=challenge_checksum),
             "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
-            "parse_failures": challenge_failures,
+            "parse_failures": challenge_failures, "calls": calls,
         })
     challenge_plan = {**plan, "required_checks": protected, "not_applicable_checks": []}
     challenge_checks = [{**item, "reviewer": "challenger", "candidate_checksum": generation["candidate_checksum"]}
@@ -882,17 +922,20 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
           if adaptation_contract else []),
         {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
     ]
-    input_checksum = checksum(messages)
+    fingerprint = _message_fingerprint(messages)
+    input_checksum = fingerprint[0]
     operation_id = f"{snapshot['operation_id']}:generation:repair:{input_checksum[:12]}"
+    calls = []
     raw, response, parse_failures = _strict_json_call(
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.1,
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
+        calls=calls, initial_fingerprint=fingerprint,
     )
     return {**_assemble_candidate(snapshot, raw),
             "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation_repair",
                                               input_checksum=input_checksum),
                                    "prompt_ref": repair_prompt_ref,
-                                   "parse_failures": parse_failures}}
+                                   "parse_failures": parse_failures, "calls": calls}}
 
 
 def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path = PACKAGE,
