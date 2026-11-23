@@ -139,11 +139,11 @@ test('F21 scope after assessment: native auth/admin/questionnaire input and IME 
     await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
     const card = page.locator('[data-organization-id="3"]');
     await expect(card).toBeVisible();
-    await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();
+    await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     await checkField(card.locator('form[data-action="update-profile"] [name="name"]'), 'admin', { ime: true });
     await page.screenshot({ path: info.outputPath('admin-input.png') });
     await page.goto(`${preview.base}/demo/admin/confirmed/`);
-    await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();
+    await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
     await checkField(card.locator('form[data-action="preview-early-data"] textarea').first(), 'questionnaire', { ime: true });
     await card.locator('[data-action="show-admin-view"][data-view="questionnaire"]').click();
     const csvInput = card.locator('form[data-action="preview-questionnaire"] input[type="file"]');

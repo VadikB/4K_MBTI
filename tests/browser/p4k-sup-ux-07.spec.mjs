@@ -119,6 +119,7 @@ for (const width of [1440, 390, 320]) {
     let access = 503;
     let calls = 0;
     let pdfStatus = 503;
+    const forbiddenPdf = Promise.withResolvers();
     await page.route('**' + customerPath, route => {
       expect(route.request().method()).toBe('GET');
       return access === 200 ? route.fulfill({ json: {
@@ -127,9 +128,10 @@ for (const width of [1440, 390, 320]) {
           descriptive: { status: 'ready', summary: ['Подтверждённые результаты.'] } },
       } }) : route.fulfill({ status: access, json: {} });
     });
-    await page.route('**' + customerPath + '/pdf', route => {
+    await page.route('**' + customerPath + '/pdf', async route => {
       expect(route.request().method()).toBe('GET');
       calls += 1;
+      if (pdfStatus === 403) await forbiddenPdf.promise;
       return route.fulfill({ status: pdfStatus, json: {} });
     });
     await page.evaluate(async ({ cycle, reportId }) => {
@@ -151,8 +153,13 @@ for (const width of [1440, 390, 320]) {
     await expect(page.getByRole('button', { name: /восстановление/ })).toHaveCount(0);
     await capture('product-pdf-error', false);
     pdfStatus = 403;
-    await page.keyboard.press('Enter');
-    await expect(pdf).toBeDisabled();
+    try {
+      await pdf.press('Enter');
+      await expect(pdf).toBeDisabled();
+      await expect(pdf).not.toBeFocused();
+    } finally {
+      forbiddenPdf.resolve();
+    }
     await expect(page.locator('#report-download-status')).toHaveText('Доступ к PDF этой редакции недоступен.');
     await expect(page.locator('#report-download-status')).toBeFocused();
     expect(calls).toBe(2);
