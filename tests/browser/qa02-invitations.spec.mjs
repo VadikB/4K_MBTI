@@ -53,6 +53,7 @@ async function setup(page,{superadmin=false,mixed=false}={}){
   await page.goto(base);await page.locator('#email-input').fill(user.email);await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('synthetic-password');await page.locator('#verify-magic-link-button').click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  if (superadmin) await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   return run;
 }
 for(const width of [1440,390,320])test(`QA02 details and common failure at ${width}`,async({page,context})=>{

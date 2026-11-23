@@ -2998,7 +2998,8 @@ test('R04 shared footer stays in document flow and stacks on mobile', async ({ p
   await expect(footer.getByText('Политика конфиденциальности')).toBeVisible();
   await expect(footer.getByText('Согласие на обработку персональных данных')).toBeVisible();
   await expect(footer.getByText('© 2026 LIDUM')).toBeVisible();
-  await expect(footer.locator('a')).toHaveCount(0);
+  await expect(footer.getByRole('link', { name: 'Согласие на обработку персональных данных' }))
+    .toHaveAttribute('href', '/web/assets/docs/personal-data-consent.pdf');
   await expect(footer).toHaveCSS('position', 'static');
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#email-input')).toHaveCSS('font-size', '16px');

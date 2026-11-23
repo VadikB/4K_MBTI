@@ -254,7 +254,10 @@ for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px
     });
     for(const role of (width===320?['admin','superadmin']:['admin'])) {
       await page.goto(`${admin.base}/demo/${role}/confirmed/`);
-      if(await page.locator('#admin-open-organizations-button').isVisible())await page.locator('#admin-open-organizations-button').click();
+      if (role === 'superadmin') {
+        await page.locator('#admin-open-organizations-button').click();
+        await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
+      }
       const card=page.locator('[data-organization-id="3"]');await expect(card).toBeVisible();
       await card.locator('.admin-organization-step[data-view="people"]').click();
       const member=card.locator('.admin-organization-member').filter({hasText:'member@example.test'});
