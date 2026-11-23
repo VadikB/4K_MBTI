@@ -1374,7 +1374,7 @@ test('ADM-STATUS-01 shows the current participant stage and opens known facts in
   await expect(rows.nth(0).locator('.admin-organization-current-stage')).toHaveText('Оценка назначена');
   await expect(rows.nth(1).locator('.admin-organization-current-stage')).toHaveText('Проходит знакомство');
   await expect(rows.nth(2).locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
-  await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Подготовка завершилась с ошибкой');
+  await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Не удалось подготовить оценку');
   await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveClass(/is-critical/);
   await expect(rows.nth(4).locator('.admin-organization-current-stage')).toHaveText('Оценка выполняется');
   await expect(rows.nth(5).locator('.admin-organization-current-stage')).toHaveText('Оценка приостановлена');
@@ -1690,10 +1690,10 @@ test('ADM-UI-01 keeps the sent menu to two items and moves deletion and incident
   await expect(rows.nth(2).getByRole('button', { name: 'Открыть пояснение' })).toHaveAttribute('data-report-id', reportId);
   await expect(rows.nth(2).locator('.admin-organization-member-menu')).toHaveCount(0);
   await expect(rows.locator('[data-action="purge-account"]')).toHaveCount(0);
-  await expect(rows.nth(3)).toContainText('Последний подтверждённый этап: подготовка кейсов.');
+  await expect(rows.nth(3)).toContainText('Требуется проверка подготовки оценки.');
   await rows.nth(3).locator('[data-action="open-member-card"]').click();
   const incidentCard = page.locator('.org-admin-member-card');
-  await expect(incidentCard).toContainText('Подготовка заблокирована');
+  await expect(incidentCard).toContainText('Не удалось подготовить оценку');
   await expect(incidentCard.getByRole('button', { name: 'Проверить состояние' })).toBeVisible();
   await expect(incidentCard.getByRole('button', { name: 'Скопировать номер' })).toBeHidden();
   await page.keyboard.press('Escape');
@@ -1704,6 +1704,8 @@ test('ADM-UI-01 keeps the sent menu to two items and moves deletion and incident
   await rows.nth(3).getByRole('button', { name: 'Проверить состояние' }).click();
   await expect.poll(() => reads.length).toBeGreaterThan(0);
   expect(reads).toEqual(['GET']);
+  await expect(incidentCard.locator('[data-card-check-feedback]')).toHaveText('Состояние обновлено.');
+  await page.keyboard.press('Escape');
   await rows.nth(1).locator('[data-action="open-member-card"]').click();
   await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Регистрация');
   await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Письмо и ссылка');

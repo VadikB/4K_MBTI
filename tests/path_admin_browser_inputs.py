@@ -40,7 +40,7 @@ def seed_appeals_reentry(scope):
             'assignment_id': assigned.json()['items'][0]['assignment_id'], **accounts}
 
 
-def seed_cabinet(scope):
+def seed_cabinet(scope, *, visual_states=False):
     from Api.database import get_connection
     from Api.invitation_outcomes import encode_reason
     from Api.m5_case_runtime import checksum
@@ -65,6 +65,9 @@ def seed_cabinet(scope):
         'profile_ready': 'Участник с закреплённым профилем',
         'profile_pending': 'Участник с общим профилем',
     }
+    if visual_states:
+        names.update(stale='Устаревшее состояние подготовки', first_failed='Сбой до старта',
+                     unknown_failure='Сбой без сведений об этапе', processing_failed='Сбой обработки результата')
     members = {'assign': scope['member'], 'unknown': scope['second']}
     invitations = {}
     with get_connection() as c:
@@ -80,22 +83,6 @@ def seed_cabinet(scope):
         current, previous, peer_org = seed_cabinet_programs(c, scope)
         emails = {row['id']: row['email'] for row in c.execute(
             'SELECT id,email FROM users WHERE id=ANY(%s)', (list(members.values()),)).fetchall()}
-        batch = 'cabinet-batch-' + uuid4().hex
-        recipients = [emails[members[key]] for key in ('unknown', 'old_batch')]
-        for key, delivery, ref, operation in (
-            ('sent', 'accepted', scope['ref'], 'cabinet-' + uuid4().hex),
-            ('unknown', 'sending', previous['assignment_ref'], batch),
-            ('old_batch', 'accepted', previous['assignment_ref'], batch),
-            ('unverified_invitation', 'sending', '', 'cabinet-legacy-' + uuid4().hex),
-        ):
-            email = emails[members[key]]
-            invitation = c.execute("""INSERT INTO organization_invitations
-                (organization_id,token_hash,expires_at,created_by_user_id,recipient_email,purpose,
-                 delivery_status,request_id,assignment_ref,delivery_error)
-                VALUES(%s,%s,NOW()+INTERVAL '2 days',%s,%s,'personal_registration',%s,%s,%s,%s) RETURNING id""",
-                (scope['org'], checksum([operation, email]), scope['admin'], email, delivery, operation, ref,
-                 encode_reason(delivery, delivery, recipients=recipients if operation == batch else [email]))).fetchone()
-            invitations[key] = {'id': invitation['id'], 'operation': operation, 'email': email, 'ref': ref}
         general_profile = c.execute("""INSERT INTO user_role_profiles(user_id,normalized_duties)
             VALUES(%s,'Синтетические обязанности') RETURNING id""", (members['profile_pending'],)).fetchone()['id']
         general_role = c.execute("""INSERT INTO roles(code,name)
@@ -120,7 +107,8 @@ def seed_cabinet(scope):
             continue
         profile_id = confirm_participant_profile({**scope, 'member': member_id})
         with get_connection() as c:
-            if key == 'running':
+            if key in {'running', 'stale', 'first_failed', 'unknown_failure'}:
+                status = 'running' if key in {'running', 'stale'} else 'failed'
                 operation = 'cabinet-' + uuid4().hex
                 request = {'kind': 'assessment', 'organization_id': scope['org'], 'assignment_ref': scope['ref'],
                            'assignment_id': assignment_id, 'personalized_profile_id': profile_id,
@@ -130,49 +118,87 @@ def seed_cabinet(scope):
                 c.execute("""INSERT INTO product_cycle_preparation_operations
                     (operation_id,user_id,request_json,request_checksum,status)
                     VALUES(%s,%s,%s,%s,%s)""",
-                    (operation, member_id, Jsonb(request), checksum(request), key))
-                c.execute("""INSERT INTO preparation_observations
-                    (source,operation_id,attempt_token,kind,stage,status,heartbeat_at)
-                    VALUES('cycle',%s,'cabinet-fixture','assessment','checking',%s,NOW())""",
-                    (operation, key))
+                    (operation, member_id, Jsonb(request), checksum(request), status))
+                if key != 'unknown_failure':
+                    c.execute("""INSERT INTO preparation_observations
+                        (source,operation_id,attempt_token,kind,stage,status,heartbeat_at)
+                        VALUES('cycle',%s,'cabinet-fixture','assessment','checking',%s,
+                               NOW()-CASE WHEN %s THEN INTERVAL '3 minutes' ELSE INTERVAL '0 seconds' END)""",
+                        (operation, status, key == 'stale'))
                 cases[key] = reference('cycle', operation)
+                if key == 'first_failed':
+                    _, cycle = seed_cabinet_cycle(c, scope, member_id, assignment_id, profile_id, 'prepared')
+                    seed_preparation_plan(c, member_id, cycle, planned=8)
             else:
-                cycle_id = uuid4()
-                closed = key not in {'active', 'failed', 'profile_ready'}
-                cycle_status = {'failed': 'paused', 'active': 'active', 'profile_ready': 'prepared'}.get(key, 'calculated')
-                cycle = c.execute("""INSERT INTO m5_cycles
-                    (cycle_id,owner_user_id,organization_id,assignment_id,personalized_profile_id,
-                     profile_ref_json,selected_role_ref_json,target_set_json,target_set_checksum,
-                     time_budget_seconds,calendar_window_seconds,parameter_sources_json,
-                     usage_scope,status,created_by,started_at,collection_closed_at)
-                    VALUES(%s,%s,%s,%s,%s,'{}','{}','[]','synthetic',600,3600,'{}',
-                    'assessment',%s,%s,CASE WHEN %s THEN NULL ELSE NOW() END,
-                    CASE WHEN %s THEN NOW() END) RETURNING id""",
-                    (cycle_id, member_id, scope['org'],
-                     None if key == 'old_edition' else assignment_id, profile_id,
-                     cycle_status, member_id, cycle_status == 'prepared', closed)).fetchone()['id']
-                if closed:
+                cycle_status = {'failed': 'paused', 'active': 'active', 'profile_ready': 'prepared',
+                                'processing_failed': 'calculation_pending'}.get(key, 'calculated')
+                cycle_id, cycle = seed_cabinet_cycle(c, scope, member_id,
+                    None if key == 'old_edition' else assignment_id, profile_id, cycle_status)
+                if key == 'processing_failed':
+                    c.execute("""INSERT INTO m10_pipeline_runs(cycle_db_id,status,stage,error_code)
+                        VALUES(%s,'failed','report','SYNTHETIC_PROCESSING_FAILURE')""", (cycle,))
+                elif cycle_status == 'calculated':
                     status = 'ready' if key in {'old_edition', 'legacy_report'} else key
                     reports[key] = seed_cabinet_report(
                         c, member_id, cycle, cycle_id, status, newer_unpublished=key == 'ready')
                     program = {'old_edition': previous, 'legacy_report': None}.get(key, current)
                     seed_cabinet_plan(c, member_id, cycle, program)
                 elif key == 'failed':
-                    cases[key] = seed_next_failure(c, member_id, cycle, cycle_id)
+                    cases[key] = seed_next_failure(c, member_id, cycle, cycle_id, profile_id,
+                        planned=8 if visual_states else 2, completed=2 if visual_states else 0)
                 elif key == 'profile_ready':
                     profiles[key] = {'assignment_id': assignment_id, 'profile_id': profile_id}
             c.commit()
     with get_connection() as c:
+        batch = 'cabinet-batch-' + uuid4().hex
+        recipients = [emails[members[key]] for key in ('unknown', 'old_batch')]
+        invitation_fixtures = [
+            ('sent', 'accepted', scope['ref'], 'cabinet-' + uuid4().hex),
+            ('unknown', 'sending', previous['assignment_ref'], batch),
+            ('old_batch', 'accepted', previous['assignment_ref'], batch),
+            ('unverified_invitation', 'sending', '', 'cabinet-legacy-' + uuid4().hex),
+        ]
+        if visual_states:
+            # Keep the confirmed profile and add an unresolved receipt for the other assessment.
+            invitation_fixtures.append(('first_failed', 'sending', previous['assignment_ref'], 'cabinet-prior-' + uuid4().hex))
+        for key, delivery, ref, operation in invitation_fixtures:
+            email = emails[members[key]]
+            invitation = c.execute("""INSERT INTO organization_invitations
+                (organization_id,token_hash,expires_at,created_by_user_id,recipient_email,purpose,
+                 delivery_status,request_id,assignment_ref,delivery_error)
+                VALUES(%s,%s,NOW()+INTERVAL '2 days',%s,%s,'personal_registration',%s,%s,%s,%s) RETURNING id""",
+                (scope['org'], checksum([operation, email]), scope['admin'], email, delivery, operation, ref,
+                 encode_reason(delivery, delivery, recipients=recipients if operation == batch else [email]))).fetchone()
+            invitations[key] = {'id': invitation['id'], 'operation': operation, 'email': email, 'ref': ref}
         c.execute("""UPDATE organization_assessment_program_connections SET is_current=FALSE,superseded_at=NOW()
             WHERE organization_id=%s AND is_current=TRUE""", (scope['org'],))
         c.execute("""UPDATE organization_assessment_program_connections SET is_current=TRUE,superseded_at=NULL
             WHERE id=%s""", (current['connection_id'],))
+        catalog_case_count = c.execute("""SELECT COUNT(*) AS n FROM m5_catalog_case_versions cases
+            JOIN assessment_program_definitions program ON program.catalog_version_id=cases.catalog_db_id
+            WHERE program.id=%s""", (current['program_definition_id'],)).fetchone()['n']
         c.commit()
-    return {'members': members, 'invitations': invitations, 'cases': cases, 'reports': reports,
-            'profiles': profiles, 'ref': scope['ref'], 'role': scope['second_role'],
+    return {'members': members, 'assignments': {key: assignments[member] for key, member in scoped_members.items()},
+            'invitations': invitations, 'cases': cases, 'reports': reports,
+            'profiles': profiles, 'ref': scope['ref'], 'role': scope['second_role'], 'catalog_case_count': catalog_case_count,
             'program_id': current['program_definition_id'], 'ordinary_program_id': scope['program'],
             'other_org': scope['foreign'], 'peer_org': peer_org, 'peer_ref': previous['assignment_ref'],
             'peer_program_id': previous['program_definition_id']}
+
+
+def seed_cabinet_cycle(c, scope, member_id, assignment_id, profile_id, status):
+    cycle_id = uuid4()
+    cycle = c.execute("""INSERT INTO m5_cycles
+        (cycle_id,owner_user_id,organization_id,assignment_id,personalized_profile_id,
+         profile_ref_json,selected_role_ref_json,target_set_json,target_set_checksum,
+         time_budget_seconds,calendar_window_seconds,parameter_sources_json,
+         usage_scope,status,created_by,started_at,collection_closed_at)
+        VALUES(%s,%s,%s,%s,%s,'{}','{}','[]','synthetic',600,3600,'{}',
+        'assessment',%s,%s,CASE WHEN %s THEN NULL ELSE NOW() END,
+        CASE WHEN %s THEN NOW() END) RETURNING id""",
+        (cycle_id, member_id, scope['org'], assignment_id, profile_id, status, member_id,
+         status == 'prepared', status in {'calculation_pending', 'calculated'})).fetchone()['id']
+    return cycle_id, cycle
 
 
 def seed_cabinet_programs(c, scope):
@@ -246,15 +272,13 @@ def seed_cabinet_plan(c, member_id, cycle, program):
               key=f'cabinet-report-{cycle}', request_hash='synthetic')
 
 
-def seed_next_failure(c, member_id, cycle, cycle_id):
-    from Api.m10_product_flow import next_preparation_scope
+def seed_preparation_plan(c, member_id, cycle, *, planned):
     from Api.m5_case_runtime import checksum
-    from Api.preparation_observation import reference
     from psycopg.types.json import Jsonb
 
-    plan = uuid4()
+    plan, revision = uuid4(), uuid4()
     rules = {'algorithm_version': 'synthetic'}
-    content = {'route': [{}, {}]}
+    content = {'route': [{'position_no': number} for number in range(1, planned + 1)]}
     c.execute("""INSERT INTO m7_cycle_plans
         (id,cycle_db_id,profile_ref_json,full_target_set_json,planned_target_set_json,
          observation_requirements_json,rules_json,rules_checksum,status,created_by)
@@ -262,7 +286,19 @@ def seed_next_failure(c, member_id, cycle, cycle_id):
         (plan, cycle, Jsonb(rules), checksum(rules), member_id))
     c.execute("""INSERT INTO m7_plan_revisions
         (id,plan_id,cycle_db_id,revision_no,content_json,content_checksum,reason)
-        VALUES(%s,%s,%s,1,%s,%s,'synthetic')""", (uuid4(), plan, cycle, Jsonb(content), checksum(content)))
+        VALUES(%s,%s,%s,1,%s,%s,'synthetic')""", (revision, plan, cycle, Jsonb(content), checksum(content)))
+    return revision
+
+
+def seed_next_failure(c, member_id, cycle, cycle_id, profile_id, *, planned, completed):
+    from Api.m10_product_flow import next_preparation_scope
+    from Api.m5_case_runtime import checksum
+    from Api.preparation_observation import reference
+    from psycopg.types.json import Jsonb
+
+    revision = seed_preparation_plan(c, member_id, cycle, planned=planned)
+    if completed:
+        seed_completed_positions(c, member_id, cycle, profile_id, revision, completed)
     operation = 'cabinet-next-' + uuid4().hex
     request = {'kind': 'next', 'cycle_id': str(cycle_id), 'next_preparation_scope': next_preparation_scope(
         c, cycle_id=str(cycle_id), user_id=member_id, check_current=False)}
@@ -273,6 +309,23 @@ def seed_next_failure(c, member_id, cycle, cycle_id):
         (source,operation_id,attempt_token,kind,stage,status)
         VALUES('cycle',%s,'cabinet-fixture','next','checking','failed')""", (operation,))
     return reference('cycle', operation)
+
+
+def seed_completed_positions(c, member_id, cycle, profile_id, revision, completed):
+    session_id = c.execute("""INSERT INTO m5_cycle_sessions(session_id,cycle_db_id,ordinal,status,created_by)
+        VALUES(%s,%s,1,'paused',%s) RETURNING id""", (uuid4(), cycle, member_id)).fetchone()['id']
+    case_version = c.execute('SELECT id FROM m5_case_versions ORDER BY id LIMIT 1').fetchone()['id']
+    for position in range(1, completed + 1):
+        situation = uuid4()
+        situation_id = c.execute("""INSERT INTO m5_assessment_situations
+            (assessment_situation_id,case_version_id,personalized_profile_id,cycle_db_id,session_db_id,
+             status,snapshot_json,execution_payload_json,snapshot_checksum,closed_at)
+            VALUES(%s,%s,%s,%s,%s,'closed','{}','{}',%s,NOW()) RETURNING id""",
+            (situation, case_version, profile_id, cycle, session_id, str(situation))).fetchone()['id']
+        c.execute("""INSERT INTO m7_route_positions
+            (id,cycle_db_id,plan_revision_id,position_no,case_id,case_version,expected_targets_json,state,current_as_db_id)
+            VALUES(%s,%s,%s,%s,'synthetic','1','[]','completed',%s)""",
+            (uuid4(), cycle, revision, position, situation_id))
 
 
 def seed_cabinet_report(c, member_id, cycle, cycle_id, status, *, newer_unpublished=False):
@@ -326,7 +379,8 @@ def seed_cabinet_report(c, member_id, cycle, cycle_id, status, *, newer_unpublis
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'cabinet', 'readback', 'appeals-reentry'])
+    parser.add_argument('action', choices=['prepare', 'cabinet', 'visual-states', 'readback', 'appeals-reentry',
+                                           'cabinet-state', 'cabinet-race-start'])
     parser.add_argument('--state', required=True, type=Path)
     parser.add_argument('--internal', action='store_true')
     args = parser.parse_args()
@@ -339,13 +393,14 @@ def main():
         return
     if os.getenv('AGENT4K_ISOLATED_STAND') != '1':
         raise RuntimeError('ISOLATED_STAND_REQUIRED')
-    from tests.path_admin_contract_checks import create_scope, session, ready, assignment_counts
+    from tests.path_admin_contract_checks import create_scope, session, ready, assignment_counts, snapshot
     from Api.database import get_connection, close_connection_pool
     from Api.web_session_service import web_session_service
     from Api.routes import SESSION_COOKIE_NAME
     try:
-        if args.action in {'prepare', 'cabinet', 'appeals-reentry'}:
-            scope = create_scope(include_second_role=args.action == 'cabinet')
+        if args.action in {'prepare', 'cabinet', 'visual-states', 'appeals-reentry'}:
+            with_cabinet = args.action in {'cabinet', 'visual-states'}
+            scope = create_scope(include_second_role=with_cabinet)
             with session(scope['admin']) as client:
                 ready(client, scope)
             if args.action == 'appeals-reentry':
@@ -354,8 +409,10 @@ def main():
             with get_connection() as c:
                 emails = {str(row['id']): row['email'] for row in c.execute(
                     'SELECT id,email FROM users WHERE id=ANY(%s)', ([scope['member'], scope['second']],)).fetchall()}
-            cabinet = seed_cabinet(scope) if args.action == 'cabinet' else {}
+            cabinet = seed_cabinet(scope, visual_states=args.action == 'visual-states') if with_cabinet else {}
             state['path_admin'] = scope
+            if args.action == 'visual-states':
+                state['cabinet_assignments'] = cabinet['assignments']
             args.state.write_text(json.dumps(state, default=str))
             # Short-lived synthetic session goes via private child stdout only;
             # caller never writes it into evidence or browser trace.
@@ -365,7 +422,23 @@ def main():
                 'program_id': scope['program'],
                 'session': web_session_service.create_session(scope['admin']),
                 **({'foreign_session': web_session_service.create_session(scope['foreign_admin']), **cabinet}
-                   if args.action == 'cabinet' else {})}))
+                   if with_cabinet else {})}))
+        elif args.action == 'cabinet-race-start':
+            with get_connection() as c:
+                changed = c.execute("""UPDATE m5_cycles SET status='active', started_at=NOW()
+                    WHERE assignment_id=%s AND status='prepared' AND started_at IS NULL""",
+                    (state['cabinet_assignments']['first_failed'],))
+                assert changed.rowcount == 1
+                c.commit()
+        elif args.action == 'cabinet-state':
+            saved = snapshot()
+            state_tables = {name: saved[name] for name in ('assessment_preparation_jobs',
+                'product_cycle_preparation_operations', 'm5_cycles', 'organization_assessment_assignments')}
+            with get_connection() as c:
+                cancellations = c.execute("""SELECT assignment_id, COUNT(*) AS count
+                    FROM organization_assessment_assignment_audit WHERE organization_id=%s
+                    GROUP BY assignment_id ORDER BY assignment_id""", (state['path_admin']['org'],)).fetchall()
+            print(json.dumps({'projection_sources': state_tables, 'cancellations': cancellations}))
         else:
             print(json.dumps(assignment_counts(state['path_admin'])))
     finally:

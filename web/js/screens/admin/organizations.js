@@ -781,7 +781,7 @@ const trackOperation = (event) => {
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
   if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
     'open-member-card', 'open-member-appeals', 'open-member-report', 'toggle-appeals-filter',
-    'view-admin-access'].includes(button.dataset.action))) return;
+    'check-member-preparation', 'open-member-processing', 'view-admin-access'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -853,7 +853,7 @@ export const refreshAdminOrganizationsSafely = async ({ isCurrent = () => true }
   } catch (error) {
     if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         organizationsRequestGeneration !== requestGeneration) return false;
-    markOrganizationsReadStale(error.message || 'Не удалось обновить организации.');
+    markOrganizationsReadStale(error instanceof TypeError ? 'Не удалось получить ответ сервера.' : error.message || 'Не удалось обновить организации.');
     setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error', undefined, { focus: false });
     return false;
   }
@@ -1518,6 +1518,7 @@ export const assignAdminOrganizationAssessment = async (organizationId, userIds,
 export const cancelAdminOrganizationAssessment = async (organizationId, assignmentId, assessmentRefOverride = '') => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  const viewGeneration = assignmentViewGeneration;
   const selectedOrganization = Number(selectedOrganizationId);
   const assessmentRef = String(assessmentRefOverride || getSelectedAdminOrganizationAssessment(organizationId) || '').trim();
   const key = identityKey + ':' + Number(organizationId) + ':' + Number(assignmentId);
@@ -1527,6 +1528,7 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
   cancellationRequestsInFlight.add(key);
   setStatus('Выполняем действие…', 'loading');
   const contextIsCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
+    state.currentScreen === 'admin-organizations' && assignmentViewGeneration === viewGeneration &&
     Number(selectedOrganizationId) === selectedOrganization && selectedOrganization === Number(organizationId) &&
     String(getSelectedAdminOrganizationAssessment(organizationId) || '').trim() === assessmentRef;
   const restoreButton = () => {
@@ -1541,9 +1543,9 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
     const data = await requestOrganizations(
       '/users/admin/organizations',
       { method: 'GET', headers: {} },
-      'Не удалось проверить состояние назначения.',
+      'Не удалось проверить состояние назначения.', contextIsCurrent,
     );
-    if (!data || !contextIsCurrent()) return null;
+    if (!data || !contextIsCurrent()) return undefined;
     const organization = (data.items || []).find((item) => Number(item.id) === Number(organizationId));
     if (!organization) return null;
     const stages = (organization.members || []).map((member) => member.assessment_stages?.[assessmentRef]).filter(Boolean);
@@ -1583,12 +1585,15 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
   } catch (error) {
     if (!contextIsCurrent()) return false;
     if (Number(error?.status) === 409) {
+      let refreshed = false;
       try {
-        await refreshExactAssignment();
+        refreshed = await refreshExactAssignment() !== undefined;
       } catch (refreshError) {
         if (contextIsCurrent()) markOrganizationsReadStale(refreshError.message || 'Не удалось обновить назначение после конфликта.');
       }
-      if (contextIsCurrent()) setStatus('Назначение уже изменилось и больше не может быть отменено. Показано актуальное состояние.', 'error');
+      if (contextIsCurrent()) setStatus(refreshed
+        ? 'Назначение уже изменилось и больше не может быть отменено. Показано актуальное состояние.'
+        : 'Сервер отклонил отмену. Проверьте состояние назначения перед повтором.', 'error');
     } else if (error?.name === 'RequestDeadlineError' || error instanceof TypeError) {
       try {
         const readback = await refreshExactAssignment();
@@ -2490,41 +2495,71 @@ const stageLabels = {
   report_ready: 'Отчёт готов', failed: 'Обработка завершилась с ошибкой', cancelled: 'Назначение отменено',
 };
 
-const observedPreparation = (stage) => {
+const observedPreparation = (stage, isSuperadmin = false) => {
   // A historical preparation cannot override cancellation or a start blocker.
   const model = stage?.preparation;
-  return model && ['preparing', 'preparation_failed', 'active', 'paused', 'interrupted', 'processing', 'failed', 'report_ready'].includes(stage.code) ? model : null;
+  if (!model) return null;
+  if (['preparing', 'preparation_failed'].includes(stage.code) && model.kind !== 'report') return model;
+  if (['active', 'paused', 'interrupted'].includes(stage.code) && (model.kind === 'next' || isSuperadmin)) return model;
+  return isSuperadmin && ['processing', 'failed', 'report_ready'].includes(stage.code) ? model : null;
 };
+
+const preparationFailed = (stage) => stage?.code === 'preparation_failed' || observedPreparation(stage)?.status === 'failed';
 
 const canCheckPreparation = (stage) => {
   const model = observedPreparation(stage);
-  return stage?.action === 'check_preparation' || stage?.code === 'preparation_failed' ||
-    (stage?.code !== 'report_ready' && (model?.status === 'failed' || model?.allowed_actions?.includes('check')));
+  return stage?.action === 'check_preparation' || preparationFailed(stage) || model?.allowed_actions?.includes('check');
 };
 
-const assessmentStageView = (stage, hasAssignment, includeObservation = true) => {
-  const model = includeObservation ? observedPreparation(stage) : null;
-  const preparation = model ? preparationPresentation(model, { readError: organizationsReadStale }) : null;
+const situationCount = new Intl.PluralRules('ru');
+
+const assessmentStageView = (stage, hasAssignment, isSuperadmin = false) => {
+  const code = stage?.code;
   const label = stage?.label || stageLabels[stage?.code] || stage?.code ||
     (hasAssignment ? 'Оценка назначена' : 'Оценка не назначена');
-  const description = stage?.description || (stage?.code === 'cancelled' ? 'Назначение отменено.' :
-    stage || hasAssignment ? 'Ожидаем следующего действия участника или системы.' : 'Для выбранной оценки назначения нет.');
-  const critical = ['preparation_failed', 'start_blocked', 'failed'].includes(stage?.code) || preparation?.failed;
-  if (preparation?.failed && model.kind === 'next') {
-    const progress = stage.progress;
-    const summary = [
-      stage.code === 'paused' ? 'Оценка приостановлена.' : '',
-      progress ? 'Завершено ' + progress.completed + ' из ' + progress.planned + ' ситуаций.' : '',
-    ].filter(Boolean).join(' ');
-    return { label: 'Не удалось подготовить следующую ситуацию', description: summary || preparation.explanation, critical };
+  const fallback = code === 'cancelled' ? 'Назначение отменено.' :
+    stage || hasAssignment ? 'Ожидаем следующего действия участника или системы.' : 'Для выбранной оценки назначения нет.';
+  const critical = ['preparation_failed', 'start_blocked', 'failed'].includes(code);
+  if (isSuperadmin) return { label, description: stage?.description || fallback, critical };
+  const model = observedPreparation(stage);
+  const preparation = model ? preparationPresentation(model, { readError: organizationsReadStale }) : null;
+  const planned = stage?.progress?.planned;
+  const progress = planned > 0 ? `Завершено ${stage.progress.completed} из ${planned} ${
+    situationCount.select(planned) === 'one' ? 'ситуации' : 'ситуаций'}.` : '';
+  const continuation = [code === 'paused' && 'Оценка приостановлена.', progress].filter(Boolean).join(' ');
+  if (preparationFailed(stage)) {
+    if (model?.kind === 'next') {
+      return { label: 'Не удалось завершить подготовку следующей ситуации',
+        description: continuation || 'Требуется проверка подготовки следующей ситуации.', critical: true };
+    }
+    const firstFailure = model?.stage_started_at && model.kind === 'assessment' && {
+      first: 'Подготовка первой ситуации прервалась.', checking: 'Требуется проверка материалов первой ситуации.',
+    }[model.stage_code];
+    return { label: 'Не удалось подготовить оценку',
+      description: firstFailure || 'Требуется проверка подготовки оценки.', critical: true };
   }
-  if (preparation?.uncertain) {
-    return { label: preparation.stage, description: preparation.notices[0] || preparation.explanation, critical };
+  if (code === 'failed') return { label: 'Не удалось обработать результат', description: 'Результат пока недоступен.', critical };
+  if (code === 'processing') return { label, description: 'Прохождение завершено. Готовится отчёт.', critical };
+  if (preparation) {
+    const detail = (model.kind === 'next' && continuation) || (!preparation.uncertain && preparation.explanation);
+    const notice = preparation.notices[0];
+    return { label: preparation.stage, description: [notice && notice + '.', detail].filter(Boolean).join(' '),
+      critical: preparation.uncertain && (organizationsReadStale || model.freshness !== 'unconfirmed') };
   }
-  if (stage?.code === 'preparing' && preparation?.explanation) {
-    return { label, description: preparation.notices[0] || preparation.explanation, critical };
+  if (code === 'preparing') {
+    return organizationsReadStale
+      ? { label: 'Последнее известное состояние: подготовка оценки', description: 'Не удалось обновить сведения.', critical: true }
+      : { label, description: progress || stage.description || 'Подробности этапа пока недоступны.', critical };
   }
-  return { label, description, critical };
+  const result = stage?.result_summary?.label;
+  const summary = [progress, result && result + '.', code === 'start_blocked' && stage.blocker?.reason, stage?.result_summary?.technical_failure &&
+    'Есть техническое ограничение обработки.'].filter(Boolean).join(' ');
+  const detail = {
+    report_ready: 'Оценка завершена.', paused: 'Оценка поставлена на паузу.',
+    interrupted: 'Для продолжения требуется восстановить сессию.',
+    start_blocked: 'Условия старта ещё не подтверждены.',
+  }[code];
+  return { label, description: summary || stage?.description || detail || fallback, critical };
 };
 
 const renderMemberMenu = (items, label = 'Другие действия') =>
@@ -2557,7 +2592,8 @@ const renderMemberList = (items, {
         const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
         const scopedStage = item.assessment_stages?.[selectedAssessmentRef] || null;
         const preparationStatus = String(scopedStage?.code || '');
-        const preparationModel = observedPreparation(scopedStage);
+        const preparationModel = observedPreparation(scopedStage, isSuperadmin);
+        const failedPreparation = preparationFailed(scopedStage);
         const isPreparing = preparationStatus === 'preparing';
         const isPrepared = ['preparation_complete', 'start_blocked', 'ready_to_start', 'active', 'paused', 'interrupted', 'processing', 'report_ready'].includes(preparationStatus);
         const canPrepare = item.assessment_profile_ready === true && !isPreparing && !isPrepared;
@@ -2580,7 +2616,7 @@ const renderMemberList = (items, {
         const deliveryLabel = invitationFacts(invitation).outcome === 'failed' ? 'Приглашение не отправлено' : invitationMessage(invitation, { compact: true });
         const linkLabel = invitationLinkMessage(invitation.link_status || item.invitation_link_status, invitationExpiry);
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
-        const { label: currentStage, description: stageDescription, critical } = assessmentStageView(scopedStage, hasAssignment, !isSuperadmin);
+        const { label: currentStage, description: stageDescription, critical } = assessmentStageView(scopedStage, hasAssignment, isSuperadmin);
         const assignmentHistory = (item.assessment_history || [])
           .filter((entry) => !selectedAssessmentRef || entry.assignment_ref === selectedAssessmentRef)
           .map((entry) => {
@@ -2615,7 +2651,7 @@ const renderMemberList = (items, {
           ? '<button type="button" role="menuitem" data-action="revoke-member-invitation" data-participant-name="' + escapeHtml(participantName) + '" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>'
           : '';
         const cancellableStage = ['assigned', 'acquaintance', 'acquaintance_complete', 'preparing', 'preparation_failed', 'preparation_complete', 'start_blocked', 'ready_to_start'].includes(preparationStatus);
-        const cancelButton = scopedStage?.assignment_id && cancellableStage
+        const cancelButton = scopedStage?.assignment_id && cancellableStage && (isSuperadmin || scopedStage.can_cancel !== false)
           ? '<button type="button" role="menuitem" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-assessment-label="' + escapeHtml(selectedAssessmentLabel || 'выбранная оценка') + '" data-value="' + escapeHtml(email) + '">Отменить назначение оценки</button>'
           : '';
         const reportButton = scopedStage?.action === 'open_report' && scopedStage.report_id &&
@@ -2627,10 +2663,12 @@ const renderMemberList = (items, {
         const checkPreparationButton = (isSuperadmin
           ? scopedStage?.action === 'check_preparation' || (preparationStatus === 'preparation_failed' && scopedStage?.operation_id)
           : canCheckPreparation(scopedStage))
-          ? '<button type="button" data-action="check-member-preparation">Проверить состояние</button>' : '';
+          ? '<button type="button" data-action="check-member-preparation"' + (isSuperadmin ? '' : ' aria-haspopup="dialog"') +
+            '>Проверить состояние</button>' : '';
         const processingButton = scopedStage?.action === 'open_processing'
-          ? '<button type="button" data-action="open-member-processing" data-participant-name="' + escapeHtml(participantName) +
-            '" data-stage-description="' + escapeHtml(stageDescription) + '">Подробнее об обработке</button>' : '';
+          ? '<button type="button" data-action="open-member-processing" aria-haspopup="dialog"' +
+            (preparationStatus === 'failed' ? ' data-processing-failed' : '') + ' data-stage-description="' +
+            escapeHtml(stageDescription) + '">Подробнее об обработке</button>' : '';
         const legacyPrimary = reportButton || processingButton || checkPreparationButton ||
           (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus) ? invitationButton : '');
         const legacyExtras = (legacyPrimary === invitationButton ? '' : invitationButton) +
@@ -2669,9 +2707,10 @@ const renderMemberList = (items, {
         const actions = isSuperadmin
           ? legacyPrimary + ((legacyExtras.match(/<button\b/g) || []).length > 1
             ? renderMemberMenu(legacyExtras) : legacyExtras.replace(' role="menuitem"', ''))
-          : reportButton || (checkPreparationButton || processingButton) + checkInvitation + assign +
-            (hasSentMenu ? '' : send) + secondaryActions +
-            (hasSentMenu ? cancelButton.replace(' role="menuitem"', '') : '');
+          : failedPreparation ? checkPreparationButton
+            : reportButton || (checkPreparationButton || processingButton) + checkInvitation + assign +
+              (hasSentMenu ? '' : send) + secondaryActions +
+              (hasSentMenu ? cancelButton.replace(' role="menuitem"', '') : '');
 
         const invitationStage = !separateReceipt && !registered && !scopedStage && !hasAssignment && (link === 'revoked' ? 'Приглашение отозвано' :
           link === 'expired' ? 'Срок ссылки истёк' : delivery === 'accepted' ? 'Письмо отправлено' :
@@ -2685,11 +2724,12 @@ const renderMemberList = (items, {
         const cardDescription = invitationStage
           ? resend ? linkLabel : invitationNote || (send ? 'Отправьте участнику письмо со ссылкой для входа.' : stageDescription)
           : stageDescription;
-        const showInvitationNote = !reportButton && preparationStatus !== 'report_ready' &&
+        const showInvitationNote = !failedPreparation && !reportButton && preparationStatus !== 'report_ready' &&
           (!scopedStage || preparationStatus === 'assigned' || checkInvitation) && invitationNote;
-        const previousReceipt = separateReceipt && (receiptRef
+        const previousReceipt = !failedPreparation && separateReceipt && (receiptRef
           ? 'Отправка по другой оценке (' + receiptRef + ') · ' + invitationMessage(saved, { compact: true })
           : 'Не удалось подтвердить, к какой оценке относится отправка.');
+        const priorInvitationInCard = failedPreparation && separateReceipt && receiptRef;
         const compactStageMarkup = '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' +
           (critical || delivery === 'failed' && invitationStage ? ' is-critical' : '') + '">' +
           escapeHtml(invitationStage || currentStage) + '</strong>' +
@@ -2697,13 +2737,24 @@ const renderMemberList = (items, {
           (previousReceipt ? '<span class="admin-organization-member-invitation">' + escapeHtml(previousReceipt) + '</span>' : '') +
           ((!invitationStage || !showInvitationNote) ? '<span>' + escapeHtml(invitationStage && send
             ? 'Отправьте участнику письмо со ссылкой для входа.' : stageDescription) + '</span>' : '') +
-          (invitation.next_action === 'review_organization' && (showInvitationNote || checkInvitation)
+          (!failedPreparation && invitation.next_action === 'review_organization' && (showInvitationNote || checkInvitation)
             ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '') + '</div>';
+        const selection = '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' +
+          escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>';
+        const name = '<button type="button" class="admin-organization-member-name" data-action="open-member-card" data-user-id="' +
+          Number(item.user_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) +
+          '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(isSuperadmin ? currentStage : invitationStage || currentStage) +
+          '" data-stage-description="' + escapeHtml(isSuperadmin ? stageDescription : cardDescription) + '" data-assignment-history="' +
+          escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') +
+          '" data-invitation-info="' + escapeHtml(JSON.stringify(priorInvitationInCard ? saved : invitation)) +
+          '" data-invitation-assessment="' + escapeHtml(priorInvitationInCard || selectedAssessmentRef) +
+          '" data-assignment-id="' + escapeHtml(scopedStage?.assignment_id) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) +
+          '" data-assessment-label="' + escapeHtml(selectedAssessmentLabel) +
+          '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>';
         return (
           '<article class="admin-organization-member" data-member-user-id="' + Number(item.user_id) + '">' +
-          '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' + escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" aria-label="Выбрать ' + escapeHtml(email) + '"></label>' +
-          '<div class="admin-organization-member-main"><button type="button" class="admin-organization-member-name" data-action="open-member-card" data-user-id="' + Number(item.user_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) + '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(isSuperadmin ? currentStage : invitationStage || currentStage) + '" data-stage-description="' +
-            escapeHtml(isSuperadmin ? stageDescription : cardDescription) + '" data-assignment-history="' + escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') + '" data-invitation-info="' + escapeHtml(JSON.stringify(invitation)) + '" data-invitation-assessment="' + escapeHtml(selectedAssessmentRef) + '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>' +
+          (isSuperadmin ? selection : '') + '<div class="admin-organization-member-main">' + (isSuperadmin ? name :
+            '<div class="admin-organization-member-name-line">' + selection + name + '</div>') +
           '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
           issueButton +
@@ -2733,53 +2784,45 @@ const renderMemberList = (items, {
 const findOrganizationMember = (organizationId, userId) =>
   organizationById(organizationId)?.members?.find((item) => Number(item.user_id) === Number(userId));
 
-export const checkAdminMemberPreparation = async (organizationId, userId) => {
-  const reference = getSelectedAdminOrganizationAssessment(organizationId);
-  const stage = () => findOrganizationMember(organizationId, userId)?.assessment_stages?.[reference];
-  const assignmentId = stage()?.assignment_id;
-  const isCurrent = () => state.currentScreen === 'admin-organizations' && selectedOrganizationId === organizationId &&
-    getSelectedAdminOrganizationAssessment(organizationId) === reference;
-  if (!isCurrent() || !await refreshAdminOrganizationsSafely({ isCurrent })) return;
-  const currentStage = stage();
-  if (assignmentId != null && currentStage?.assignment_id !== assignmentId) {
-    setStatus('Назначение изменилось. Проверьте актуальную строку участника.', 'muted', undefined, { focus: false });
-    return;
-  }
-  if (currentStage) setStatus('Состояние обновлено. ' + assessmentStageView(currentStage, true).label + '.',
-    'success', undefined, { focus: false });
-};
-
-export const mountAdminMemberAssessment = (dialog, organizationId, trigger) => {
-  const { userId, invitationAssessment: assessmentRef } = trigger.dataset;
+export const mountAdminMemberAssessment = (dialog, organizationId, trigger, { checkOnOpen, confirmCancellation }) => {
+  const { userId, assignmentId, assessmentRef } = trigger.dataset;
   const member = () => findOrganizationMember(organizationId, userId);
   const stageFor = (item) => item?.assessment_stages?.[assessmentRef];
-  const assignmentId = stageFor(member())?.assignment_id;
   const epoch = state.identityEpoch;
-  const isCurrent = () => dialog.open && epoch === state.identityEpoch && state.currentScreen === 'admin-organizations' &&
-    Number(selectedOrganizationId) === organizationId && getSelectedAdminOrganizationAssessment(organizationId) === assessmentRef;
+  const viewGeneration = assignmentViewGeneration;
+  const isViewCurrent = () => dialog.open && epoch === state.identityEpoch && state.currentScreen === 'admin-organizations' &&
+    Number(selectedOrganizationId) === organizationId && assignmentViewGeneration === viewGeneration;
+  const isCurrent = () => isViewCurrent() && getSelectedAdminOrganizationAssessment(organizationId) === assessmentRef;
+  const isOriginalAssignment = (item) => item && String(stageFor(item)?.assignment_id ?? '') === assignmentId;
   const incident = dialog.querySelector('[data-card-incident]');
   const lastStage = incident.querySelector('[data-card-last-stage]');
   const caseLine = incident.querySelector('[data-card-case]');
   const caseNumber = caseLine.querySelector('code');
+  const caseHint = incident.querySelector('[data-card-case-hint]');
   const check = incident.querySelector('[data-card-check]');
   const copy = incident.querySelector('[data-card-copy]');
+  const cancel = dialog.querySelector('[data-card-cancel-assignment]');
   const feedback = dialog.querySelector('[data-card-check-feedback]');
   const technical = dialog.querySelector('[data-card-technical]');
   const profile = dialog.querySelector('[data-card-profile]');
   const start = dialog.querySelector('[data-card-start]');
+  const stageLabel = dialog.querySelector('[data-card-stage]');
+  const description = dialog.querySelector('[data-card-description]');
+  let checking = false;
 
   const update = (stage) => {
     const model = observedPreparation(stage);
     const canCheck = canCheckPreparation(stage);
-    const failed = model?.status === 'failed' || stage?.code === 'preparation_failed';
+    const failed = preparationFailed(stage);
     const reference = failed ? model?.reference || '' : '';
-    const hasKnownStage = Boolean(model?.stage_label && model.stage_started_at);
+    const hasKnownStage = Boolean(model?.stage_label && model.stage_started_at && model.stage_code !== null);
     incident.hidden = !canCheck && !reference;
     check.hidden = !canCheck;
-    lastStage.hidden = !failed || !hasKnownStage;
+    lastStage.hidden = !hasKnownStage;
     lastStage.textContent = lastStage.hidden ? '' : 'Последний подтверждённый этап · ' + model.stage_label;
     caseNumber.textContent = reference;
-    caseLine.hidden = copy.hidden = !reference;
+    caseLine.hidden = caseHint.hidden = copy.hidden = !reference;
+    cancel.hidden = !assignmentId || !failed || stage?.can_cancel !== true;
     profile.textContent = stage?.profile_readiness?.status === 'ready' ? 'Заполнены' :
       stage?.profile_readiness?.status === 'blocked' ? 'Требуют уточнения' : 'Нет подтверждённых сведений';
     start.textContent = stage?.start_readiness?.can_start === true || stage?.code === 'ready_to_start' ? 'Подтверждён' :
@@ -2789,7 +2832,7 @@ export const mountAdminMemberAssessment = (dialog, organizationId, trigger) => {
   };
 
   const initial = member();
-  if (initial) update(stageFor(initial));
+  if (isOriginalAssignment(initial)) update(stageFor(initial));
   copy.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(caseNumber.textContent);
@@ -2798,32 +2841,56 @@ export const mountAdminMemberAssessment = (dialog, organizationId, trigger) => {
       feedback.textContent = 'Не удалось скопировать номер.';
     }
   });
-  check.addEventListener('click', async () => {
-    check.disabled = true;
+  const showChangedAssignment = () => {
+    if (incident.contains(document.activeElement) || document.activeElement === cancel) dialog.querySelector('.dialog-close')?.focus();
+    incident.hidden = cancel.hidden = technical.hidden = true;
+    feedback.textContent = 'Назначение изменилось. Откройте карточку заново.';
+  };
+  const checkState = async () => {
+    if (checking || check.hidden || !isViewCurrent()) return;
+    if (!isCurrent() || !isOriginalAssignment(member())) {
+      showChangedAssignment();
+      return;
+    }
+    checking = true;
+    check.setAttribute('aria-disabled', 'true');
+    cancel.disabled = true;
     feedback.textContent = 'Проверяем состояние…';
     const refreshed = await refreshAdminOrganizationsSafely({ isCurrent });
-    check.disabled = false;
-    if (!isCurrent()) return;
-    if (!refreshed) {
-      const lastKnown = observedPreparation(stageFor(member()));
-      if (lastKnown) renderPreparation(technical, lastKnown, { readError: true });
-      feedback.textContent = 'Не удалось обновить состояние. Показаны последние полученные сведения.';
-      check.focus();
-      return;
-    }
+    checking = false;
+    check.removeAttribute('aria-disabled');
+    cancel.disabled = false;
+    if (!isViewCurrent()) return;
     const current = member();
-    const stage = stageFor(current);
-    if (!current || (assignmentId != null && stage?.assignment_id !== assignmentId)) {
-      feedback.textContent = 'Назначение изменилось. Откройте карточку заново.';
+    if (!isCurrent() || !isOriginalAssignment(current)) {
+      showChangedAssignment();
       return;
     }
+    const stage = stageFor(current);
     const view = assessmentStageView(stage, current.assessment_assignments?.includes(assessmentRef));
-    dialog.querySelector('[data-card-stage]').textContent = view.label;
-    dialog.querySelector('[data-card-description]').textContent = view.description;
+    const focusWasOnCheck = document.activeElement === check;
+    stageLabel.textContent = view.label;
+    description.textContent = view.description;
     update(stage);
-    feedback.textContent = 'Состояние обновлено.';
-    (check.hidden ? dialog.querySelector('.dialog-close') : check)?.focus();
+    feedback.textContent = refreshed ? 'Состояние обновлено.' : 'Не удалось обновить состояние. Показаны последние полученные сведения.';
+    if (check.hidden && focusWasOnCheck) dialog.querySelector('.dialog-close')?.focus();
+  };
+  check.addEventListener('click', checkState);
+  cancel.addEventListener('click', () => {
+    confirmCancellation(cancel, () => {
+      if (!isViewCurrent()) return;
+      const current = member();
+      if (!isCurrent() || !isOriginalAssignment(current)) {
+        showChangedAssignment();
+        return;
+      }
+      if (checking || cancel.hidden || stageFor(current)?.can_cancel !== true) return;
+      dialog.close();
+      operationAnchor = { identity: currentIdentityKey(), organizationId, selector: '[data-admin-view="people"]' };
+      return cancelAdminOrganizationAssessment(organizationId, Number(assignmentId), assessmentRef);
+    });
   });
+  if (checkOnOpen) void checkState();
 };
 
 const restoreMemberMenuFocus = ({ control, wasOpen }) => {

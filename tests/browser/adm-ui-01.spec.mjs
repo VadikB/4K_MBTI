@@ -110,10 +110,10 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
         await expect(menu.getByRole('menuitem').last()).toBeFocused();
       } else {
         const popup = await menu.getByRole('menu').boundingBox();
-        const owner = await sent.boundingBox();
-        const identity = await memberCard('sent').boundingBox();
-        expect(popup.y).toBeGreaterThanOrEqual(identity.y + identity.height);
-        expect(popup.y + popup.height).toBeLessThanOrEqual(owner.y + owner.height);
+        const trigger = await anchor.boundingBox();
+        expect(popup.y).toBeGreaterThanOrEqual(trigger.y + trigger.height);
+        expect(popup.x).toBeGreaterThanOrEqual(0);
+        expect(popup.x + popup.width).toBeLessThanOrEqual(width);
       }
       await page.keyboard.press('Escape');
       await expect(anchor).toBeFocused();
@@ -205,11 +205,13 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(panel.locator('#admin-organizations-status')).toContainText('Участник для назначения: оценка назначена');
 
     const before = requests.length;
-    await expect(row('running').locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
+    await expect(row('running').locator('.admin-organization-current-stage')).toHaveText('Проверяем материалы ситуации');
     await row('running').getByRole('button', { name: 'Проверить состояние' }).click();
-    await expect(panel.locator('#admin-organizations-status')).toContainText('Состояние обновлено');
+    await expect(dialog.locator('[data-card-check-feedback]')).toHaveText('Состояние обновлено.');
+    await page.keyboard.press('Escape');
+    await expect(row('running').getByRole('button', { name: 'Проверить состояние' })).toBeFocused();
     await expect(row('active').locator('.admin-organization-current-stage')).toHaveText('Оценка выполняется');
-    await expect(row('failed').locator('.admin-organization-current-stage')).toHaveText('Не удалось подготовить следующую ситуацию');
+    await expect(row('failed').locator('.admin-organization-current-stage')).toHaveText('Не удалось завершить подготовку следующей ситуации');
     await memberCard('failed').click();
     await expect(dialog.locator('[data-card-description]')).toHaveText('Оценка приостановлена. Завершено 0 из 2 ситуаций.');
     await expect(dialog).toContainText('Последний подтверждённый этап · Проверяем материалы ситуации');
