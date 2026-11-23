@@ -139,3 +139,13 @@ GitHub увидел конфликты `web/dist` после выхода #288. 
 от базы. Исходники объединились автоматически, `web/dist` пересобран.
 Тест сверяет версию подвала с `APP_RELEASE`. Проверки frontend и квитанций
 после объединения — 539 PASS. Этап остаётся на Draft PR #285.
+
+## Кандидат 2.1.67 для Ready for review
+
+Владелец поручил подготовить следующий PATCH, перевести #285 в Ready и
+дождаться полного CI. Основание — `main` `810ca7bd`, версия 2.1.66.
+Команда `npm run ready:prepare -- --candidate 2.1.67` пересобрала frontend.
+`python3.12 scripts/check_release_version.py --base-ref origin/main` — PASS.
+Флаги этапа `branch_push/pr/version_bump=true` и
+`merge/deploy/artifact_publish=false`. Приёмка и снимки относятся к
+функциональному коммиту `f2e90d67`. Ссылки CI кандидата фиксируются в PR.
