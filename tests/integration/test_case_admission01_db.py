@@ -60,7 +60,7 @@ def test_passport_bank_standard_first_start_and_next(product_db, monkeypatch, tm
         trace = detail['functional_preparation']
         assert trace['operation_id'] == detail['operation_id']
         assert trace['candidate_checksum'] and trace['admitted_for_participant']
-        assert trace['package']['version'] == '2.0.0'
+        assert trace['package']['version'] == '3.0.0'
         assert trace['initial_reviews']['tester'] and trace['initial_reviews']['challenger']
         assert trace['generation']['calls'][0]['messages_utf8_bytes'] > 0
         assert detail['timing']['enqueue_to_worker_ms'] >= 0
