@@ -350,7 +350,7 @@ test('REMAIN-03 confirmed result survives organization refresh failure', async (
 });
 
 for (const superadmin of [false, true]) {
-  test(`ADM-PROGRAM AC01 absent ${superadmin ? 'superadmin' : 'admin'}: both real forms and commands`, async ({ page }, info) => {
+  test(`ADM-PROGRAM AC01 absent ${superadmin ? 'superadmin' : 'admin'}: role-specific forms and commands`, async ({ page }, info) => {
     const state = await fixture(page, { superadmin, program: null, saved: [revision('pilot-11')] });
     const message = superadmin
       ? 'Программа оценки не подключена. Подключите опубликованную программу.'
@@ -362,21 +362,26 @@ for (const superadmin of [false, true]) {
     await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
     await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
     await expect(readiness).not.toContainText('Оценка не выбрана');
-    await view(page, 'Данные организации');
-    await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
-    await expect(card(page).locator('.admin-data-readiness')).toContainText(message);
-    await expect(manual(page)).not.toContainText('исторический ключ');
-    await manual(page).locator('[name="purpose"]').fill('Синтетическая цель до подключения');
-    await forcedSubmit(manual(page));
-    await settled(page);
-    await view(page, 'Анкета');
-    await expect(csv(page).locator('[name="assignment_ref"]')).toHaveCount(0);
-    await expect(csv(page)).toContainText(message);
-    await expect(csv(page)).not.toContainText('исторический ключ');
-    await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
-    await csv(page).locator('input[type="file"]').setInputFiles(file('absent'));
-    await forcedSubmit(csv(page));
-    await settled(page);
+    if (superadmin) {
+      await expect(manual(page)).toHaveCount(0);
+      await expect(csv(page)).toHaveCount(0);
+    } else {
+      await view(page, 'Данные организации');
+      await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
+      await expect(card(page).locator('.admin-data-readiness')).toContainText(message);
+      await expect(manual(page)).not.toContainText('исторический ключ');
+      await manual(page).locator('[name="purpose"]').fill('Синтетическая цель до подключения');
+      await forcedSubmit(manual(page));
+      await settled(page);
+      await view(page, 'Анкета');
+      await expect(csv(page).locator('[name="assignment_ref"]')).toHaveCount(0);
+      await expect(csv(page)).toContainText(message);
+      await expect(csv(page)).not.toContainText('исторический ключ');
+      await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
+      await csv(page).locator('input[type="file"]').setInputFiles(file('absent'));
+      await forcedSubmit(csv(page));
+      await settled(page);
+    }
     await forceAssignment(page);
     expect(scopedPosts(state)).toEqual([]);
     if (superadmin) await expect(connectForm(page)).toBeVisible();
@@ -398,7 +403,11 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
   await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
   await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
   await expect(readiness).not.toContainText('Оценка не выбрана');
-  for (const [label, form] of [['Данные организации', manual(page)], ['Анкета', csv(page)]]) {
+  if (superadmin) {
+    await expect(manual(page)).toHaveCount(0);
+    await expect(csv(page)).toHaveCount(0);
+  }
+  for (const [label, form] of (superadmin ? [] : [['Данные организации', manual(page)], ['Анкета', csv(page)]])) {
     await view(page, label);
     const programStatus = label === 'Данные организации' ? card(page).locator('.admin-data-readiness') : form;
     await expect(programStatus).toContainText('Подключение программы пока не подтверждено');
@@ -415,18 +424,23 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
   await evidence(page, state, info, 'unknown-initial');
 });
 
+async function readExternalConnection(page, state, program) {
+  state.program = program;
+  await page.locator('#admin-organizations-panel [data-admin-area="management"]').click();
+}
+
 test('ADM-PROGRAM AC04 absent to first connection preserves both unscoped drafts', async ({ page }, info) => {
-  const state = await fixture(page, { program: null });
+  const state = await fixture(page, { superadmin: false, program: null });
   await view(page, 'Данные организации');
   await manual(page).locator('[name="purpose"]').fill('Синтетическая цель вручную');
   await manual(page).locator('[name="organization_name"]').fill('Синтетические первые сведения');
   await view(page, 'Анкета');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('first'));
-  await connectForm(page).locator('[name="program_definition_id"]').selectOption('11');
-  await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
+  await readExternalConnection(page, state, 11);
   await expect(csv(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-11');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
+  await view(page, 'Анкета');
   await expect(csv(page).locator('[data-csv-reselect]')).toBeVisible();
   await view(page, 'Данные организации');
   await expect(manual(page).locator('[name="purpose"]')).toHaveValue('Синтетическая цель вручную');
@@ -438,11 +452,7 @@ test('ADM-PROGRAM AC04 absent to first connection preserves both unscoped drafts
 test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B', async ({ page }, info) => {
   const state = await fixture(page, { saved: [revision('pilot-11')] });
   await view(page, 'Данные организации');
-  await manual(page).locator('[name="purpose"]').fill('Синтетическая цель A');
-  await manual(page).locator('[name="organization_name"]').fill('Новое имя организации A');
-  await manual(page).getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
-  await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
-  const before = scopedPosts(state).length;
+  await expect(manual(page)).toHaveCount(0);
   state.losePut = true; state.failRead = true;
   await connectForm(page).locator('[name="program_definition_id"]').selectOption('12');
   await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
@@ -452,29 +462,16 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
   await expect(readiness.locator('.form-status li')).toHaveCount(1);
   await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
   await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
-  await forcedSubmit(manual(page));
-  const staleConfirm = card(page).locator('[data-action="confirm-questionnaire"]');
-  await expect(staleConfirm).toBeDisabled();
-  // Force a stale DOM click into the real module, beyond the disabled affordance.
-  await staleConfirm.evaluate((button) => { button.disabled = false; button.click(); });
-  await view(page, 'Анкета');
-  await expect(csv(page).locator('[name="assignment_ref"]')).toHaveCount(0);
-  await csv(page).locator('input[type="file"]').setInputFiles(file('unknown'));
-  await forcedSubmit(csv(page));
-  await settled(page);
+  await expect(csv(page)).toHaveCount(0);
   await forceAssignment(page);
-  expect(scopedPosts(state)).toHaveLength(before);
+  expect(scopedPosts(state)).toEqual([]);
   const puts = state.puts, reads = state.reads;
   state.failRead = false;
   await view(page, 'Данные организации');
   await card(page).locator('.admin-data-readiness').getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
   await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая программа 12');
   await expect(card(page).locator('.admin-data-readiness')).toContainText('synthetic-12');
   await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая роль');
-  await expect(csv(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
   await expect(card(page).locator('.admin-questionnaire-preview')).toHaveCount(0);
   expect(state.puts).toBe(puts); expect(state.reads).toBe(reads + 1);
   await view(page, 'Участники оценки');
@@ -486,17 +483,16 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
 });
 
 test('ADM-PROGRAM AC04 manual and CSV authors remain scoped across A to B to A; file reselect is explicit', async ({ page }, info) => {
-  const state = await fixture(page);
+  const state = await fixture(page, { superadmin: false });
   await view(page, 'Данные организации');
   await manual(page).locator('[name="purpose"]').fill('Синтетическая цель A');
   await manual(page).locator('[name="organization_name"]').fill('Синтетическая организация A');
   await view(page, 'Анкета');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('A'));
-  await connectForm(page).locator('[name="program_definition_id"]').selectOption('12');
-  await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
+  await readExternalConnection(page, state, 12);
   await expect(csv(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
-  await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
+  await view(page, 'Анкета');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('B'));
   await view(page, 'Данные организации');
@@ -504,8 +500,7 @@ test('ADM-PROGRAM AC04 manual and CSV authors remain scoped across A to B to A; 
   await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('Синтетическая организация');
   await manual(page).locator('[name="purpose"]').fill('Синтетическая цель B');
   await manual(page).locator('[name="organization_name"]').fill('Синтетическая организация B');
-  await connectForm(page).locator('[name="program_definition_id"]').selectOption('11');
-  await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
+  await readExternalConnection(page, state, 11);
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-11');
   await expect(manual(page).locator('[name="purpose"]')).toHaveValue('Синтетическая цель A');
   await expect(manual(page).locator('[name="organization_name"]')).toHaveValue('Синтетическая организация A');
@@ -520,7 +515,7 @@ test('ADM-PROGRAM AC04 manual and CSV authors remain scoped across A to B to A; 
 
 for (const channel of ['manual', 'csv']) {
   test(`ADM-PROGRAM AC02 confirmed ${channel}: tampered hidden ref cannot preview`, async ({ page }, info) => {
-    const state = await fixture(page);
+    const state = await fixture(page, { superadmin: false });
     await view(page, channel === 'manual' ? 'Данные организации' : 'Анкета');
     const form = channel === 'manual' ? manual(page) : csv(page);
     await expect(form.locator('[name="source_author"]')).toHaveCount(0);
@@ -535,7 +530,7 @@ for (const channel of ['manual', 'csv']) {
 }
 
 test('ADM-PROGRAM AC02 delayed CSV File.text is rechecked after scope becomes unknown', async ({ page }, info) => {
-  const state = await fixture(page);
+  const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
   await view(page, 'Анкета');
   await expect(csv(page).locator('[name="source_author"]')).toHaveCount(0);
   await csv(page).locator('input[type="file"]').setInputFiles(file('delayed-A'));
@@ -547,13 +542,12 @@ test('ADM-PROGRAM AC02 delayed CSV File.text is rechecked after scope becomes un
     });
   });
   await forcedSubmit(csv(page));
-  state.losePut = true; state.failRead = true;
-  await connectForm(page).locator('[name="program_definition_id"]').selectOption('12');
-  await connectForm(page).getByRole('button', { name: 'Подключить', exact: true }).click();
+  await seedStaleCollectionThroughAssignment(page, state);
+  await view(page, 'Анкета');
   await expect(csv(page)).toContainText('Подключение программы пока не подтверждено');
   await page.evaluate(() => window.__releaseSyntheticCsv());
   await settled(page);
-  expect(scopedPosts(state)).toEqual([]);
+  expect(scopedPosts(state).filter((request) => request.path.includes('/questionnaire/'))).toEqual([]);
   await evidence(page, state, info, 'delayed-CSV-scope');
 });
 
@@ -571,7 +565,7 @@ async function seedStaleCollectionThroughAssignment(page, state) {
 for (const channel of ['manual', 'csv']) test(
   `ADM-PROGRAM AC04 failed refresh retains latest ${channel} edits`,
   async ({ page }, info) => {
-    const state = await fixture(page, { saved: [revision('pilot-11')] });
+    const state = await fixture(page, { superadmin: false, saved: [revision('pilot-11')] });
     await seedStaleCollectionThroughAssignment(page, state);
     await view(page, channel === 'manual' ? 'Данные организации' : 'Анкета');
     const form = channel === 'manual' ? manual(page) : csv(page);
@@ -636,7 +630,7 @@ test('ADM-PROGRAM AC04 older collection GET cannot invalidate exact B readback',
   await oldResponse;
   await settled(page);
   await view(page, 'Данные организации');
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
+  await expect(manual(page)).toHaveCount(0);
   await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая программа 12');
   await expect(page.locator('[data-organizations-stale]')).toHaveCount(0);
   await evidence(page, state, info, 'older-collection-after-B-readback');
@@ -646,9 +640,6 @@ test('ADM-PROGRAM AC02 older import collection cannot authorize stale program A'
   const state = await fixture(page);
   const pending = gate(); state.importGate = pending.promise;
   const form = card(page).locator('form[data-action="import-members"]');
-  // The questionnaire response replaces this form during its final render.
-  await expect(card(page).locator('.admin-questionnaire-load-state')
-    .filter({ hasText: 'Для этой организации ещё нет сохранённых анкет.' }).first()).toBeAttached();
   await form.locator('input[type="file"]').setInputFiles(file('members'));
   await form.getByRole('button', { name: 'Импорт', exact: true }).click();
   await expect.poll(() => state.requests.some((r) => r.path.endsWith('/members/import'))).toBe(true);
@@ -658,12 +649,9 @@ test('ADM-PROGRAM AC02 older import collection cannot authorize stale program A'
   const importResponse = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith('/members/import'));
   pending.release(); await importResponse; await settled(page);
   await view(page, 'Данные организации');
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
-  await manual(page).locator('[name="purpose"]').fill('Синтетическая цель B');
-  await manual(page).locator('[name="organization_name"]').fill('Новое имя организации B');
-  await manual(page).getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();
-  await expect(card(page).locator('.admin-questionnaire-preview')).toBeVisible();
-  expect(scopedPosts(state).map((r) => r.body.assignment_ref)).toEqual(['pilot-12']);
+  await expect(manual(page)).toHaveCount(0);
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая программа 12');
+  expect(scopedPosts(state)).toEqual([]);
   await evidence(page, state, info, 'import-before-B-readback');
 });
 
@@ -681,7 +669,7 @@ test('ADM-PROGRAM AC04 older failed load cannot invalidate exact B readback', as
   const oldResponse = page.waitForResponse((r) => new URL(r.url()).pathname === '/users/admin/organizations');
   pending.release(); await oldResponse; await settled(page);
   await view(page, 'Данные организации');
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая программа 12');
   await expect(page.locator('[data-organizations-stale]')).toHaveCount(0);
   await evidence(page, state, info, 'older-failed-load-after-B');
 });
@@ -699,14 +687,13 @@ test('ADM-PROGRAM AC02 old program GET cannot confirm A over a newer collection 
   const readback = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith('/assessment-program'));
   pending.release(); await readback; await settled(page);
   await expect(card(page).locator('.admin-data-readiness')).toContainText('Подключение программы пока не подтверждено');
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
-  await forcedSubmit(manual(page));
+  await expect(manual(page)).toHaveCount(0);
   await forceAssignment(page);
   expect(scopedPosts(state)).toEqual([]);
   state.programReadGate = null;
   await view(page, 'Данные организации');
   await card(page).locator('.admin-data-readiness').getByRole('button', { name: 'Проверить состояние подключения', exact: true }).click();
-  await expect(manual(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
+  await expect(card(page).locator('.admin-data-readiness')).toContainText('Синтетическая программа 12');
   expect(state.puts).toBe(0); expect(state.reads).toBe(2);
   await evidence(page, state, info, 'old-program-GET-newer-B-collection');
 });

@@ -21,10 +21,10 @@ test('shared footer is visible on common panels and hidden on chat panels', () =
   assert.match(main, /initAppFooter\(\)/);
 });
 
-test('footer has one non-interactive document block and a runtime year', () => {
+test('footer has one document block with a consent link and a runtime year', () => {
   assert.equal((html.match(/<footer class="app-footer"/g) || []).length, 1);
   assert.match(html, />Политика конфиденциальности<\/span>/);
-  assert.match(html, />Согласие на обработку персональных данных<\/span>/);
+  assert.match(html, />Согласие на обработку персональных данных<\/a>/);
   assert.match(html, /© <span data-app-footer-year><\/span> LIDUM/);
   assert.doesNotMatch(html, /href="#"[^>]*>\s*(?:Политика|Согласие)/);
 });

@@ -85,12 +85,12 @@ test('new passwords use two in-memory steps and the accepted ASCII policy', () =
   assert.match(html, /Без пробелов и кириллицы/);
 });
 
-test('auth surface exposes the R04 mail state and non-interactive shared footer', () => {
+test('auth surface exposes the R04 mail state and shared footer', () => {
   assert.match(authCss, /auth-email-outline\.svg/);
   assert.match(html, /id="auth-change-email-button"[^>]*>Изменить email</);
   assert.match(html, /<footer class="app-footer"/);
   assert.match(html, />Политика конфиденциальности<\/span>/);
-  assert.match(html, />Согласие на обработку персональных данных<\/span>/);
+  assert.match(html, /href="\/web\/assets\/docs\/personal-data-consent\.pdf">Согласие на обработку персональных данных<\/a>/);
   assert.match(html, />© <span data-app-footer-year><\/span> LIDUM<\/span>/);
   assert.doesNotMatch(html, /href="#"[^>]*>\s*(?:Политика|Согласие)/);
 });

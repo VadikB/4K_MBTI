@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { startAdminProgramPreview } from '../../scripts/adm-program-ui-preview.mjs';
+
+const release = (await readFile(new URL('../../web/js/config.js', import.meta.url), 'utf8'))
+  .match(/APP_RELEASE = "([^"]+)";/)?.[1];
+if (!release) throw new Error('web/js/config.js must define APP_RELEASE');
 
 const published = [{ id: 11, name: 'Пилот 4К · 9 кейсов', version: '1.2' },
   { id: 12, name: 'Пилот 4К · 9 кейсов', version: '1.3' }];
@@ -27,7 +32,7 @@ async function fixture(page, { superadmin = true } = {}) {
     organization(4, 'sever', 'ООО «Север»', true, binding(4), 12),
     organization(5, 'liniya', 'АНО «Линия»', false, null, 3),
   ];
-  const state = { items, posts: [], puts: [], requests: [], createOutcome: 'success', failList: false, readback: null };
+  const state = { items, posts: [], puts: [], requests: [], createOutcome: 'success', failList: false, readback: null, problems: [{ organization_id: 4 }] };
   const listing = () => ({ is_superadmin: superadmin, items: superadmin ? items : items.slice(0, 1),
     assessment_programs: published });
   await page.route('**/users/**', async (route) => {
@@ -40,9 +45,9 @@ async function fixture(page, { superadmin = true } = {}) {
       authenticated: true, user: { id: 18, email: 'synthetic@example.test', full_name: 'Синтетический оператор' },
       is_admin: true, admin_dashboard: dashboard,
     });
-    if (pathname === '/users/version') return json({ version: '2.1.65' });
+    if (pathname === '/users/version') return json({ version: release });
     if (pathname === '/users/admin/dashboard') return json(dashboard);
-    if (pathname === '/users/admin/support/preparation') return json({ items: [{ organization_id: 4 }], next_before: null });
+    if (pathname === '/users/admin/support/preparation') return state.problems === null ? json({}, 503) : json({ items: state.problems, next_before: null });
     if (pathname === '/users/admin/organizations' && method === 'GET') return state.failList
       ? json({}, 503) : json(listing());
     if (pathname === '/users/admin/organizations' && method === 'POST') {
@@ -139,6 +144,77 @@ test('UX-02 ответ программы из прежней карточки �
   }
 });
 
+test('UX-02 FIX роль платформы не показывает формы анкеты после перезагрузки', async ({ page }) => {
+  const state = await fixture(page);
+  await open(page, 3);
+  for (let visit = 0; visit < 2; visit += 1) {
+    await expect(card(page).getByRole('heading', { name: 'Доступ к отчётам и анкете' })).toBeVisible();
+    await expect(card(page).getByRole('button', { name: 'Анкета', exact: true })).toHaveCount(0);
+    await expect(card(page).locator('[data-action="preview-early-data"], [data-action="preview-questionnaire"], [data-action="confirm-questionnaire"]')).toHaveCount(0);
+    await expect(card(page)).toContainText('Анкету загружает администратор в своём кабинете.');
+    await card(page).getByRole('link', { name: 'добавьте сотрудника вашей команды' }).click();
+    await expect(card(page).getByRole('heading', { name: 'Добавить администратора' })).toBeFocused();
+    if (visit === 0) await page.reload();
+  }
+  expect(state.requests.filter(({ method, pathname }) => method !== 'GET' && pathname.includes('/questionnaire'))).toEqual([]);
+});
+
+test('UX-02 FIX счётчик отражает отказ, восстановление и подтверждённый ноль', async ({ page }) => {
+  const state = await fixture(page);
+  const row = page.getByRole('link', { name: 'Проблемы · ООО «Север»' });
+  const scope = '/?screen=admin-platform-problems&org=4';
+  for (const [items, value] of [[state.problems, '1'], [null, '—'],
+    [[{ organization_id: 4 }, { organization_id: 4 }], '2'], [[], '0']]) {
+    if (value !== '1') {
+      state.problems = items;
+      const read = page.waitForResponse((response) => response.url().endsWith('/support/preparation'));
+      await page.locator('#admin-open-organizations-button').click();
+      await read;
+    }
+    await expect(row).toHaveText(value);
+    await expect(row).toHaveAttribute('href', scope);
+    await open(page, 4);
+    await expect(card(page).locator('[data-org-problem-count]')).toHaveText(value);
+    await expect(card(page).getByRole('link', { name: 'Открыть список' })).toHaveAttribute('href', scope);
+  }
+});
+
+test('UX-02 FIX фон, подвал и заголовок создания на 320 px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await fixture(page);
+  const footer = page.locator('.app-footer');
+  for (const target of ['registry', 'create', 'card']) {
+    if (target === 'registry') {
+      await page.getByRole('searchbox', { name: 'Поиск организации' }).fill('нет совпадения');
+    }
+    if (target === 'create') await create(page);
+    if (target === 'card') {
+      await registry(page);
+      await page.getByRole('searchbox', { name: 'Поиск организации' }).fill('');
+      await open(page, 3);
+    }
+    const geometry = await footer.evaluate(node => ({
+      bottom: Math.round(node.getBoundingClientRect().bottom + window.scrollY),
+      viewport: innerHeight, height: document.documentElement.scrollHeight,
+      width: document.documentElement.scrollWidth,
+      color: getComputedStyle(document.querySelector('.admin-organizations-shell')).backgroundColor,
+    }));
+    expect(geometry.color).toBe('rgb(247, 247, 247)');
+    expect(geometry.width).toBeLessThanOrEqual(320);
+    expect(geometry.bottom).toBe(geometry.height);
+    if (target === 'card') expect(geometry.bottom).toBeGreaterThan(geometry.viewport);
+    else expect(geometry.bottom).toBe(geometry.viewport);
+    if (target === 'create') {
+      const lines = await page.getByRole('heading', { name: 'Создать организацию' }).evaluate(node => {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        return range.getClientRects().length;
+      });
+      expect(lines).toBe(1);
+    }
+  }
+});
+
 for (const width of [1440, 390, 320]) {
   test('UX-02 реестр, форма и состояния программы на ' + width + ' px', async ({ page, context }, info) => {
     const viewport = { width, height: width === 1440 ? 1000 : 844 };
@@ -154,7 +230,24 @@ for (const width of [1440, 390, 320]) {
       expect(geometry.width).toBeLessThanOrEqual(width);
       expect(geometry.font).toContain('Onest');
       expect(geometry.color).toBe('rgb(34, 44, 48)');
-      await page.screenshot({ path: info.outputPath('product-' + name + '.png'), scale: 'css' });
+      if (['registry', 'empty', 'create', 'connected'].includes(name)) {
+        const footer = page.locator('.app-footer');
+        await expect(footer).toBeVisible();
+        await expect(footer.locator('[data-app-release-number]')).toHaveText(release);
+        await expect(footer.getByRole('link', { name: 'Согласие на обработку персональных данных' }))
+          .toHaveAttribute('href', '/web/assets/docs/personal-data-consent.pdf');
+        const layout = await footer.evaluate((node) => ({
+          bottom: Math.round(node.getBoundingClientRect().bottom + scrollY),
+          height: document.documentElement.scrollHeight,
+          color: getComputedStyle(document.querySelector('.admin-organizations-shell')).backgroundColor,
+        }));
+        expect(layout.color).toBe('rgb(247, 247, 247)');
+        expect(layout.bottom).toBe(layout.height);
+        if (name === 'connected') expect(layout.bottom).toBeGreaterThan(viewport.height);
+        else if (name !== 'registry' || width === 1440) expect(layout.bottom).toBe(viewport.height);
+        if (name === 'create') await expect(page.locator('#admin-organizations-title')).toHaveCSS('font-size', width < 700 ? '24px' : '28px');
+      }
+      await page.screenshot({ path: info.outputPath('product-' + name + '.png'), fullPage: name === 'connected', scale: 'css' });
     };
     await expect(page.locator('#platform-org-count')).toHaveText('Найдено организаций: 3');
     await expect(page.getByRole('link', { name: 'Проблемы · ООО «Север»' })).toHaveText('1');
@@ -212,7 +305,7 @@ for (const width of [1440, 390, 320]) {
       await ref.setViewportSize(viewport);
       const shot = async (name) => {
         await ref.evaluate(() => document.fonts.ready);
-        await ref.screenshot({ path: info.outputPath('reference-' + name + '.png'), scale: 'css' });
+        await ref.screenshot({ path: info.outputPath('reference-' + name + '.png'), fullPage: name === 'connected', scale: 'css' });
       };
       await ref.goto(reference + '/v1.6/?screen=organizations&view=screen');
       await expect(ref.locator('#org-query')).toBeVisible();
