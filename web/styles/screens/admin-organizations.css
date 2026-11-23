@@ -1504,6 +1504,9 @@
     font-size: var(--fs-body-sm);
     line-height: 20px;
 }
+.shell:has(> #admin-organizations-panel[data-superadmin="false"]:not(.hidden)) > .app-footer {
+    background-color: var(--palette-outcome-canvas);
+}
 .admin-organizations-panel[data-superadmin="false"] .admin-organizations-shell {
     width: min(100%, 1144px);
     padding: 48px 32px 76px;
@@ -1818,36 +1821,51 @@
 }
 
 .admin-people-list .admin-organization-member {
-    grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.65fr);
-    align-items: start;
-    gap: 4px 10px;
-    padding: 12px 0;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(90px, 145px);
+    grid-template-areas: "identity stage actions";
+    align-items: center;
+    gap: 7px 14px;
+    padding: 18px 0;
     border: 0;
     border-top: 1px solid var(--palette-graphite-200);
     border-radius: 0;
     background: transparent;
 }
 
-.admin-people-list .admin-organization-member-main { grid-column: 2; }
-.admin-people-list .admin-organization-member-main span { margin: 0; }
+.admin-people-list .admin-organization-member-main { grid-area: identity; }
+.admin-organization-member-name-line { display: flex; align-items: center; gap: 8px; }
+.admin-organization-member-name-line .admin-organization-member-select { flex: 0 0 44px; }
+.admin-people-list :is(.admin-organization-member-email, .admin-organization-member-position, .admin-organization-member-stage > span) {
+    margin: 0;
+    color: var(--palette-outcome-text);
+    font-size: var(--fs-meta);
+    line-height: 19px;
+}
 .admin-people-list .admin-organization-member-name {
     color: var(--text-main) !important;
+    min-width: 0;
+    font-size: var(--fs-body-sm);
+    line-height: 20px;
+    font-weight: var(--fw-semibold);
     text-decoration: underline;
+    text-decoration-color: var(--line);
     text-underline-offset: 3px;
 }
 
 .admin-people-list .admin-organization-member-stage {
-    grid-column: 3;
-    grid-row: 1;
-    padding-top: 8px;
+    grid-area: stage;
+    gap: 3px;
 }
 
 .admin-people-list .admin-organization-current-stage {
     justify-self: start;
-    padding: 3px 8px;
+    padding: 4px 8px;
     border-radius: 6px;
     background: var(--accent-soft);
-    font-size: var(--fs-body-sm);
+    font-size: var(--fs-meta);
+    line-height: 18px;
+    font-weight: var(--fw-regular);
+    overflow-wrap: anywhere;
 }
 
 .admin-people-list .admin-organization-current-stage.is-critical {
@@ -1855,7 +1873,8 @@
 }
 
 .admin-people-list .admin-organization-member-actions {
-    grid-column: 4;
+    grid-area: actions;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -1863,12 +1882,16 @@
 }
 
 .admin-people-list .admin-organization-member-actions > button {
+    width: auto;
     min-height: 44px;
     padding: 4px 0;
     border: 0;
     background: transparent;
     justify-content: flex-end;
     color: var(--palette-outcome-link);
+    font-size: var(--fs-body-sm);
+    line-height: 20px;
+    font-weight: var(--fw-regular);
     text-align: right;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -1929,6 +1952,13 @@
     gap: 8px;
 }
 .admin-member-incident button { min-height: 44px; }
+.admin-member-incident code { overflow-wrap: anywhere; }
+.org-admin-member-card [data-card-cancel-assignment] {
+    justify-self: start;
+    min-height: 44px;
+    color: var(--palette-error);
+    text-align: left;
+}
 .admin-member-assignment-dialog label {
     display: grid;
     gap: 8px;
@@ -2074,28 +2104,20 @@
     }
 }
 
-@media (max-width: 680px) {
-    .admin-people-list .admin-organization-member { grid-template-columns: 44px minmax(0, 1fr); }
-    .admin-people-list .admin-organization-member-stage,
-    .admin-people-list .admin-organization-member-actions {
-        grid-column: 1 / -1;
-        grid-row: auto;
-        padding-top: 0;
+@media (max-width: 700px) {
+    .admin-people-list .admin-organization-member {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "identity actions" "stage stage";
+        column-gap: 10px;
     }
-    .admin-people-list .admin-organization-member-actions { align-items: flex-start; }
-    .admin-people-list .admin-organization-member-actions > button {
-        width: auto;
-        justify-content: flex-start;
-        text-align: left;
-    }
-    .admin-people-list .admin-organization-member-menu { min-width: 0; width: 100%; }
-    .admin-people-list .admin-organization-member-menu > div {
-        position: static;
-        width: 100%;
-        box-shadow: none;
-    }
+    .admin-people-list .admin-organization-member-actions { max-width: 140px; }
     .org-admin-member-card dl { grid-template-columns: minmax(0, 1fr); gap: 3px; }
     .org-admin-member-card dd + dt { margin-top: 6px; }
+}
+
+@media (max-width: 390px) {
+    .admin-people-list .admin-organization-member { column-gap: 4px; }
+    .admin-people-list .admin-organization-member-actions { max-width: 107px; }
 }
 
 .admin-access-workspace {

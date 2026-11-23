@@ -59,6 +59,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     const anchor = menu.locator('summary');
     const tabs = card.locator('.admin-organization-steps button');
     await expect(tabs).toHaveText(['Участники оценки', 'Данные организации', 'Анкета']);
+    const footer = page.locator('.app-footer');
     await expect(card.locator('.admin-organization-steps + .admin-organization-head')).toContainText('Synthetic test program');
     const summary = panel.locator('.org-admin-account-menu summary');
     await summary.focus();
@@ -80,6 +81,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(card.getByLabel('Файл списка участников')).toBeVisible();
 
     const geometry = [];
+    const footerColors = [];
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       await expect(panel).toHaveCSS('background-color', 'rgb(247, 247, 247)');
@@ -110,15 +112,25 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
         await expect(menu.getByRole('menuitem').last()).toBeFocused();
       } else {
         const popup = await menu.getByRole('menu').boundingBox();
-        const owner = await sent.boundingBox();
-        const identity = await memberCard('sent').boundingBox();
-        expect(popup.y).toBeGreaterThanOrEqual(identity.y + identity.height);
-        expect(popup.y + popup.height).toBeLessThanOrEqual(owner.y + owner.height);
+        const trigger = await anchor.boundingBox();
+        expect(popup.y).toBeGreaterThanOrEqual(trigger.y + trigger.height);
+        expect(popup.x).toBeGreaterThanOrEqual(0);
+        expect(popup.x + popup.width).toBeLessThanOrEqual(width);
       }
       await page.keyboard.press('Escape');
       await expect(anchor).toBeFocused();
       await expect(menu).not.toHaveAttribute('open');
       geometry.push({ width, columns: width === 1440 ? 2 : 1, scrollWidth: width });
+
+      for (const [title, view] of [
+        ['Данные организации', 'organization-data'], ['Анкета', 'questionnaire'], ['Участники оценки', 'people'],
+      ]) {
+        await card.getByRole('button', { name: title, exact: true }).click();
+        await expect(card.locator(`[data-admin-view="${view}"]`)).toBeVisible();
+        await expect(footer).toBeVisible();
+        await expect(footer).toHaveCSS('background-color', 'rgb(247, 247, 247)');
+        footerColors.push({ width, view, color: await footer.evaluate((element) => getComputedStyle(element).backgroundColor) });
+      }
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
     await anchor.click();
@@ -205,11 +217,13 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(panel.locator('#admin-organizations-status')).toContainText('Участник для назначения: оценка назначена');
 
     const before = requests.length;
-    await expect(row('running').locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
+    await expect(row('running').locator('.admin-organization-current-stage')).toHaveText('Проверяем материалы ситуации');
     await row('running').getByRole('button', { name: 'Проверить состояние' }).click();
-    await expect(panel.locator('#admin-organizations-status')).toContainText('Состояние обновлено');
+    await expect(dialog.locator('[data-card-check-feedback]')).toHaveText('Состояние обновлено.');
+    await page.keyboard.press('Escape');
+    await expect(row('running').getByRole('button', { name: 'Проверить состояние' })).toBeFocused();
     await expect(row('active').locator('.admin-organization-current-stage')).toHaveText('Оценка выполняется');
-    await expect(row('failed').locator('.admin-organization-current-stage')).toHaveText('Не удалось подготовить следующую ситуацию');
+    await expect(row('failed').locator('.admin-organization-current-stage')).toHaveText('Не удалось завершить подготовку следующей ситуации');
     await memberCard('failed').click();
     await expect(dialog.locator('[data-card-description]')).toHaveText('Оценка приостановлена. Завершено 0 из 2 ситуаций.');
     await expect(dialog).toContainText('Последний подтверждённый этап · Проверяем материалы ситуации');
@@ -286,6 +300,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       await expect(row(key)).toBeVisible();
       await openReports();
       await expect(registryOrganization).toHaveValue(String(id));
+      await expect(footer).toHaveCSS('background-color', 'rgb(246, 249, 249)');
       await expect(registryProgram).toHaveValue(selectedProgram);
       await checkReport(registryOpen(name), publication);
       if (key === 'ready') await page.reload();
@@ -422,6 +437,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     }
     expect(errors).toEqual([]);
     await info.attach('viewports', { body: JSON.stringify(geometry), contentType: 'application/json' });
+    await info.attach('footer-colors', { body: JSON.stringify(footerColors), contentType: 'application/json' });
   } finally {
     releaseQuestionnaire();
     if (server?.exitCode === null) {

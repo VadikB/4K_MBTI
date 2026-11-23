@@ -1608,6 +1608,17 @@ const openAdminSubjectConfirmation = ({
   cancelButton.focus();
 };
 
+const confirmAdminMemberCancellation = (trigger, participantName, assessmentLabel, onConfirm) =>
+  openAdminSubjectConfirmation({
+    trigger,
+    title: 'Отменить назначение?',
+    subject: participantName + ' · «' + (assessmentLabel || 'выбранная оценка') + '»',
+    consequences: 'Участник больше не сможет начать эту оценку. Для нового прохождения потребуется новое назначение. Аккаунт, участие в организации и история сохранятся.',
+    cancelLabel: 'Оставить назначение',
+    confirmLabel: 'Отменить назначение',
+    onConfirm,
+  });
+
 const confirmAdminAccountPurge = (button) => {
   const userId = Number(button.dataset.userId);
   const email = String(button.dataset.email || '').trim();
@@ -2169,21 +2180,21 @@ if (adminOrganizationsList) {
       });
       return;
     }
-    if (button.dataset.action === 'check-member-preparation') {
-      const userId = Number(button.closest('[data-member-user-id]')?.dataset.memberUserId);
-      withScreen(loadAdminOrganizations, (module) => state.adminOrganizations?.is_superadmin
-        ? module.refreshAdminOrganizationsSafely()
-        : module.checkAdminMemberPreparation(organizationId, userId));
+    const checkPreparation = button.dataset.action === 'check-member-preparation';
+    if (checkPreparation && state.adminOrganizations?.is_superadmin) {
+      withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
       return;
     }
     if (button.dataset.action === 'open-member-processing') {
       const dialog = document.createElement('dialog');
       dialog.className = 'admin-member-card-dialog';
-      dialog.innerHTML = '<form method="dialog"><div><h3>Обработка результата</h3>' +
+      dialog.setAttribute('aria-labelledby', 'admin-member-processing-title');
+      dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-processing-title"></h3>' +
         '<button type="submit" class="dialog-close" aria-label="Закрыть пояснение">×</button></div>' +
-        '<p data-processing-description></p><p>Прохождение завершено, результат обрабатывается. ' +
-        'Отчёт можно открыть только после готовности и при наличии права просмотра.</p>' +
+        '<p data-processing-description></p><p>Отчёт можно открыть только после готовности и при наличии права просмотра.</p>' +
         '<button type="submit" class="primary-button">Закрыть</button></form>';
+      dialog.querySelector('h3').textContent = button.hasAttribute('data-processing-failed')
+        ? 'Ошибка обработки результата' : 'Обработка результата';
       dialog.querySelector('[data-processing-description]').textContent = button.dataset.stageDescription ||
         'Текущий этап подтверждён сервером.';
       document.body.append(dialog);
@@ -2192,12 +2203,11 @@ if (adminOrganizationsList) {
       dialog.querySelector('.dialog-close')?.focus();
       return;
     }
-    if (['open-member-card', 'open-member-appeals'].includes(button.dataset.action)) {
+    if (checkPreparation || ['open-member-card', 'open-member-appeals'].includes(button.dataset.action)) {
       const entry = button.dataset.action;
       const focusAppeals = entry === 'open-member-appeals';
-      const member = focusAppeals
-        ? button.closest('[data-member-user-id]')?.querySelector('[data-action="open-member-card"]')
-        : button;
+      const member = entry === 'open-member-card' ? button
+        : button.closest('[data-member-user-id]')?.querySelector('[data-action="open-member-card"]');
       if (!member) return;
       const { dataset: facts } = member;
       const cardEpoch = state.identityEpoch;
@@ -2213,12 +2223,14 @@ if (adminOrganizationsList) {
         (isSuperadmin ? history + '</dl>' : '</dl>' +
           '<section class="admin-member-incident" data-card-incident hidden><h4>Сведения о подготовке</h4>' +
           '<p data-card-last-stage hidden></p><p data-card-case hidden>Номер случая <code></code></p>' +
+          '<p data-card-case-hint hidden>Передайте номер суперадминистратору для проверки.</p>' +
           '<div><button type="button" class="text-button" data-card-copy hidden>Скопировать номер</button>' +
           '<button type="button" class="text-button" data-card-check hidden>Проверить состояние</button></div></section>' +
           '<p data-card-check-feedback role="status"></p>' +
           '<details class="admin-member-history"><summary>История и сведения об оценке</summary><dl>' + history +
           '<dt>Сведения профиля</dt><dd data-card-profile></dd><dt>Допуск к старту</dt><dd data-card-start></dd></dl>' +
-          '<section data-card-technical hidden></section></details>') +
+          '<section data-card-technical hidden></section></details>' +
+          '<button type="button" class="text-button" data-card-cancel-assignment hidden>Отменить назначение оценки</button>') +
         '<div data-card-actions></div>' +
         (isSuperadmin ? '<button type="submit" class="primary-button">Закрыть</button>' :
           '<footer class="admin-member-card-footer"><section class="admin-member-delete" data-card-delete hidden></section>' +
@@ -2247,7 +2259,7 @@ if (adminOrganizationsList) {
       if (invitationInfo.invitation_id || invitationInfo.operation_id) {
         withScreen(loadAdminOrganizations, module => {
           if (dialog.isConnected) module.mountAdminInvitationDetails(dialog, organizationId,
-            facts.email || '', facts.invitationAssessment || '', invitationInfo);
+            facts.email || '', facts.invitationAssessment || '', invitationInfo, facts.invitationRegistration);
         });
       }
       const userId = Number(facts.userId);
@@ -2267,7 +2279,11 @@ if (adminOrganizationsList) {
       if (!isSuperadmin) {
         withScreen(loadAdminOrganizations, (module) => {
           if (!dialog.open) return;
-          module.mountAdminMemberAssessment(dialog, organizationId, member);
+          module.mountAdminMemberAssessment(dialog, organizationId, member, {
+            checkOnOpen: checkPreparation,
+            confirmCancellation: (trigger, onConfirm) =>
+              confirmAdminMemberCancellation(trigger, facts.participantName, facts.assessmentLabel, onConfirm),
+          });
           module.mountAdminMemberPurge(dialog, organizationId, userId);
         });
       }
@@ -2351,19 +2367,11 @@ if (adminOrganizationsList) {
       const assessmentRef = button.dataset.assessmentRef || 'выбранная оценка';
       const assessmentLabel = button.dataset.assessmentLabel || 'выбранная оценка';
       if (!assignmentId) return;
-      openAdminSubjectConfirmation({
-        trigger: returnControl,
-        title: 'Отменить назначение?',
-        subject: participantName + ' · «' + assessmentLabel + '»',
-        consequences: 'Участник больше не сможет начать эту оценку. Для нового прохождения потребуется новое назначение. Аккаунт, участие в организации и история сохранятся.',
-        cancelLabel: 'Оставить назначение',
-        confirmLabel: 'Отменить назначение',
-        onConfirm: () => {
-          button.disabled = true;
-          withScreen(loadAdminOrganizations, (module) => module.cancelAdminOrganizationAssessment(
-            organizationId, assignmentId, assessmentRef,
-          ));
-        },
+      confirmAdminMemberCancellation(returnControl, participantName, assessmentLabel, () => {
+        button.disabled = true;
+        withScreen(loadAdminOrganizations, (module) => module.cancelAdminOrganizationAssessment(
+          organizationId, assignmentId, assessmentRef,
+        ));
       });
       return;
     }
