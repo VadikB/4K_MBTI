@@ -4246,7 +4246,7 @@ def _execute_personal_invitations(
             send_auth_action_email(
                 email=email,
                 action_url=invitation_url,
-                expires_at=locked["expires_at"], created_at=locked.get("created_at"),
+                expires_at=locked["expires_at"],
                 purpose="organization_invitation",
             )
             with borrow_connection() as connection:
