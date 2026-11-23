@@ -27,7 +27,8 @@ def observation_db(test_database_url):
         with factory() as c:
             observation.ensure_schema(c)
             c.execute('''CREATE TABLE product_cycle_preparation_operations(operation_id TEXT,status TEXT,attempt_token UUID,
-                attempts INT,locked_at TIMESTAMPTZ,error_code TEXT,request_json JSONB,result_json JSONB,created_at TIMESTAMP DEFAULT NOW())''')
+                attempts INT,locked_at TIMESTAMPTZ,error_code TEXT,request_json JSONB,result_json JSONB,
+                created_at TIMESTAMP DEFAULT NOW(),completed_at TIMESTAMP)''')
             c.execute('CREATE TABLE m5_cycles(id INT,cycle_id UUID)')
             c.execute('CREATE TABLE m10_pipeline_runs(cycle_db_id INT,status TEXT)')
             c.execute('CREATE TABLE m10_report_claims(cycle_db_id INT,token UUID,lease_until TIMESTAMPTZ)')
