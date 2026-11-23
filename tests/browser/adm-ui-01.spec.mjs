@@ -63,7 +63,15 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     const summary = panel.locator('.org-admin-account-menu summary');
     await summary.focus();
     await page.keyboard.press('Enter');
-    await expect(panel.getByRole('button', { name: 'Выйти' })).toBeVisible();
+    const organizationLabel = await orgSelect.locator('option:checked').textContent();
+    await expect(panel.locator('#admin-organizations-menu-role')).toHaveText(
+      'Администратор ' + organizationLabel.split(' · ')[0],
+    );
+    await expect(panel.getByRole('button', { name: 'К сводке', exact: true })).toHaveCount(0);
+    const logout = panel.getByRole('button', { name: 'Выйти', exact: true });
+    await expect(logout).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(logout).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(summary).toBeFocused();
     await expect(row('assign').getByRole('button', { name: 'Пригласить', exact: true })).toBeVisible();
@@ -74,6 +82,9 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     const geometry = [];
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
+      await expect(panel).toHaveCSS('background-color', 'rgb(247, 247, 247)');
+      await expect(panel.locator('#admin-organizations-title')).toHaveCSS('font-weight', '700');
+      await expect(tabs.first()).toHaveCSS('font-size', width === 1440 ? '14px' : '13px');
       await expect.poll(async () => card.evaluate((node, viewport) => {
         const list = node.querySelector('.admin-people-list').getBoundingClientRect();
         const add = node.querySelector('.admin-people-add').getBoundingClientRect();
@@ -290,7 +301,17 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       await expect(card.locator('.admin-organization-head')).toContainText('Synthetic test program');
     }
     await expect(row('unavailable').locator('[data-action="open-member-report"]')).toHaveCount(0);
+    await tabs.nth(2).click();
+    await expect(card.locator('.admin-organization-head')).toBeHidden();
+    await expect(card.getByRole('button', { name: 'Отчёты организации', exact: true })).toHaveCount(1);
+    await openReports();
+    await expect(registryOrganization).toHaveValue(String(id));
+    await expect(registryProgram).toHaveValue(selectedProgram);
+    await registry.getByRole('button', { name: 'К управлению' }).click();
+    await expect(tabs.nth(2)).toHaveAttribute('aria-pressed', 'true');
+    await expect(card.locator('[data-admin-view="questionnaire"] [name="assignment_ref"]')).toHaveValue(fixture.ref);
     await tabs.nth(1).click();
+    await expect(card.locator('.admin-organization-head')).toBeHidden();
     const listing = page.waitForResponse(isRegistryResponse);
     await openReports();
     const filtered = await listing;

@@ -56,7 +56,6 @@ import {
   adminRegressionTestsRunTechnicalButton,
   adminRegressionTestsRunFullButton,
   adminRegressionTestsCleanupButton,
-  adminOrganizationsBackButton,
   adminOrganizationsLogoutButton,
   adminOrganizationCreateForm,
   adminOrganizationSelect,
@@ -1354,6 +1353,9 @@ if (adminAccountMenu) {
     adminAccountMenu.open = false;
     adminAccountMenu.querySelector('summary')?.focus();
   });
+  adminAccountMenu.addEventListener('focusout', (event) => {
+    if (!adminAccountMenu.contains(event.relatedTarget)) adminAccountMenu.open = false;
+  });
   document.addEventListener('click', (event) => {
     if (!adminAccountMenu.contains(event.target)) adminAccountMenu.open = false;
   });
@@ -1506,12 +1508,6 @@ if (adminReportsBackButton) {
 
 if (adminPromptLabBackButton) {
   adminPromptLabBackButton.addEventListener('click', () => {
-    withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
-  });
-}
-
-if (adminOrganizationsBackButton) {
-  adminOrganizationsBackButton.addEventListener('click', () => {
     withScreen(loadAdminDashboard, (module) => module.openAdminDashboard());
   });
 }

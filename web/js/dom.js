@@ -121,7 +121,6 @@ export const adminRegressionTestsMetrics = document.getElementById('admin-regres
 export const adminRegressionTestsResultTitle = document.getElementById('admin-regression-tests-result-title');
 export const adminRegressionTestsStatus = document.getElementById('admin-regression-tests-status');
 export const adminRegressionTestsSteps = document.getElementById('admin-regression-tests-steps');
-export const adminOrganizationsBackButton = document.getElementById('admin-organizations-back-button');
 export const adminOrganizationsTitle = document.getElementById('admin-organizations-title');
 export const adminOrganizationsSubtitle = document.getElementById('admin-organizations-subtitle');
 export const adminOrganizationCreateForm = document.getElementById('admin-organization-create-form');

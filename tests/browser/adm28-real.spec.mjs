@@ -40,9 +40,9 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await page.locator('#verify-magic-link-button').click();
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     const summary = page.locator('.org-admin-account-menu summary');
-    await expect(page.locator('#admin-organizations-back-button')).toBeHidden();
     await summary.click();
-    await page.getByRole('button', { name: 'К сводке', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'К сводке', exact: true })).toHaveCount(0);
+    await page.goto(base + '/?screen=admin');
     await expect(page.locator('#admin-panel')).toBeVisible();
     await expect(page.locator('#admin-metrics-grid .admin-metric-card')).toHaveCount(2);
     await expect(page.locator('#admin-insights-grid')).toHaveCount(0);
@@ -50,7 +50,7 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     const card = page.locator('.admin-organization-card');
     const organizationId = await card.getAttribute('data-organization-id');
-    await expect(card.locator('.admin-assignment-readiness')).toContainText('ADM28 synthetic Specialist pilot');
+    await expect(card.locator('.admin-organization-head')).toContainText('ADM28 synthetic Specialist pilot');
     await expect(card.locator('.admin-assignment-readiness')).toContainText('Специалист / эксперт');
     await expect(card.locator('.admin-assignment-readiness')).not.toContainText('ADM28 isolated');
     await expect(card.locator('.admin-assignment-readiness')).toContainText('не подтверждена');

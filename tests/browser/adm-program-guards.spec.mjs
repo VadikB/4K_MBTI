@@ -358,8 +358,8 @@ for (const superadmin of [false, true]) {
     await expect(readiness.locator('.form-status li')).toHaveText([message]);
     await expect(readiness.locator('[data-program-next-step]')).toContainText(superadmin
       ? 'подключите опубликованную программу' : 'попросите суперадминистратора подключить опубликованную программу');
-    await expect(readiness.locator('dd').nth(1)).toHaveText('ещё не проверена для программы');
-    await expect(readiness.locator('dd').nth(2)).toHaveText('ещё не проверена для программы');
+    await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
+    await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
     await expect(readiness).not.toContainText('Оценка не выбрана');
     await view(page, 'Данные организации');
     await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
@@ -394,8 +394,8 @@ for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superad
   const readiness = card(page).locator('.admin-assignment-readiness');
   await expect(readiness.locator('.form-status li')).toHaveCount(1);
   await expect(readiness).toContainText('Подключение программы пока не подтверждено');
-  await expect(readiness.locator('dd').nth(1)).toHaveText('ещё не проверена для программы');
-  await expect(readiness.locator('dd').nth(2)).toHaveText('ещё не проверена для программы');
+  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
+  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
   await expect(readiness).not.toContainText('Оценка не выбрана');
   for (const [label, form] of [['Данные организации', manual(page)], ['Анкета', csv(page)]]) {
     await view(page, label);
@@ -449,8 +449,8 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
   await expect(card(page).locator('.admin-data-readiness')).toContainText('Подключение программы пока не подтверждено. Проверьте состояние подключения.');
   const readiness = card(page).locator('.admin-assignment-readiness');
   await expect(readiness.locator('.form-status li')).toHaveCount(1);
-  await expect(readiness.locator('dd').nth(1)).toHaveText('ещё не проверена для программы');
-  await expect(readiness.locator('dd').nth(2)).toHaveText('ещё не проверена для программы');
+  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
+  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
   await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
   await forcedSubmit(manual(page));
   const staleConfirm = card(page).locator('[data-action="confirm-questionnaire"]');
@@ -478,7 +478,7 @@ test('ADM-PROGRAM AC02 unknown keeps old A inert; GET-only recovery uses exact B
   expect(state.puts).toBe(puts); expect(state.reads).toBe(reads + 1);
   await view(page, 'Участники оценки');
   await expect(card(page).locator('form[data-action="assign-member-assessment"] button')).toBeDisabled();
-  await expect(readiness.locator('dd').nth(2)).toHaveText('не подтверждена');
+  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('не подтверждена');
   await expect(readiness.locator('.form-status li')).toHaveCount(1);
   await expect(readiness).toContainText('Анкета для выбранной оценки не подтверждена');
   await evidence(page, state, info, 'unknown-to-exact-B');
@@ -720,8 +720,8 @@ for (const scenario of [
   const state = await fixture(page, { superadmin: false, rolesMode: scenario.rolesMode,
     saved: [revision(scenario.confirmed ? 'pilot-11' : 'old-program')] });
   const readiness = card(page).locator('.admin-assignment-readiness');
-  await expect(readiness.locator('dd').nth(1)).toHaveText(scenario.label);
-  await expect(readiness.locator('dd').nth(2)).toHaveText(scenario.confirmed ? 'подтверждена' : 'не подтверждена');
+  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText(scenario.label);
+  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText(scenario.confirmed ? 'подтверждена' : 'не подтверждена');
   await expect(readiness.locator('.form-status li')).toHaveCount(scenario.blockers);
   if (scenario.reason) await expect(readiness).toContainText(scenario.reason);
   await expect(readiness).not.toContainText('Оценка не выбрана');
@@ -750,7 +750,7 @@ test('ADM-PROGRAM readiness cached confirmation plus failed read stays unknown',
   await expect(card(page).locator('.admin-questionnaire-load-state.error').first()).toBeVisible();
   await view(page, 'Участники оценки');
   const readiness = card(page).locator('.admin-assignment-readiness');
-  await expect(readiness.locator('dd').nth(2)).toHaveText('подтверждена по сохранённой редакции; актуальность не проверена');
+  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('подтверждена по сохранённой редакции; актуальность не проверена');
   await expect(readiness).toContainText('Не удалось проверить сохранённую анкету');
   await expect(readiness).not.toContainText('Анкета для выбранной оценки не подтверждена');
   await card(page).locator('input[name="invitation_email"]').check();
