@@ -1834,6 +1834,7 @@ test('ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewpo
 
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(page.locator('.app-footer')).toHaveCSS('background-color', 'rgb(246, 249, 249)');
     const layout = await row.evaluate((member) => {
       const main = member.querySelector('.admin-organization-member-main').getBoundingClientRect();
       const name = member.querySelector('.admin-organization-member-name').getBoundingClientRect();
@@ -2981,6 +2982,7 @@ test('R04 shared footer stays in document flow and stacks on mobile', async ({ p
   await page.goto(base);
   const footer = page.locator('.app-footer');
   await expect(footer).toBeVisible();
+  await expect(footer).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await expect(footer.getByText('Политика конфиденциальности')).toBeVisible();
   await expect(footer.getByText('Согласие на обработку персональных данных')).toBeVisible();
   await expect(footer.getByText('© 2026 LIDUM')).toBeVisible();
@@ -3042,6 +3044,7 @@ test('R03 refresh obeys server journey and fails closed on journey outage', asyn
   });
   await page.goto(base);
   await expect(page.locator('#dashboard-panel')).toBeVisible();
+  await expect(page.locator('.app-footer--participant')).toHaveCSS('background-color', 'rgb(247, 247, 247)');
 
   journeyStatus = 503;
   await page.reload();

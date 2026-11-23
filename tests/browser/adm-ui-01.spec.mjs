@@ -59,6 +59,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     const anchor = menu.locator('summary');
     const tabs = card.locator('.admin-organization-steps button');
     await expect(tabs).toHaveText(['Участники оценки', 'Данные организации', 'Анкета']);
+    const footer = page.locator('.app-footer');
     await expect(card.locator('.admin-organization-steps + .admin-organization-head')).toContainText('Synthetic test program');
     const summary = panel.locator('.org-admin-account-menu summary');
     await summary.focus();
@@ -80,6 +81,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(card.getByLabel('Файл списка участников')).toBeVisible();
 
     const geometry = [];
+    const footerColors = [];
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       await expect(panel).toHaveCSS('background-color', 'rgb(247, 247, 247)');
@@ -119,6 +121,16 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       await expect(anchor).toBeFocused();
       await expect(menu).not.toHaveAttribute('open');
       geometry.push({ width, columns: width === 1440 ? 2 : 1, scrollWidth: width });
+
+      for (const [title, view] of [
+        ['Данные организации', 'organization-data'], ['Анкета', 'questionnaire'], ['Участники оценки', 'people'],
+      ]) {
+        await card.getByRole('button', { name: title, exact: true }).click();
+        await expect(card.locator(`[data-admin-view="${view}"]`)).toBeVisible();
+        await expect(footer).toBeVisible();
+        await expect(footer).toHaveCSS('background-color', 'rgb(247, 247, 247)');
+        footerColors.push({ width, view, color: await footer.evaluate((element) => getComputedStyle(element).backgroundColor) });
+      }
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
     await anchor.click();
@@ -288,6 +300,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
       await expect(row(key)).toBeVisible();
       await openReports();
       await expect(registryOrganization).toHaveValue(String(id));
+      await expect(footer).toHaveCSS('background-color', 'rgb(246, 249, 249)');
       await expect(registryProgram).toHaveValue(selectedProgram);
       await checkReport(registryOpen(name), publication);
       if (key === 'ready') await page.reload();
@@ -424,6 +437,7 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     }
     expect(errors).toEqual([]);
     await info.attach('viewports', { body: JSON.stringify(geometry), contentType: 'application/json' });
+    await info.attach('footer-colors', { body: JSON.stringify(footerColors), contentType: 'application/json' });
   } finally {
     releaseQuestionnaire();
     if (server?.exitCode === null) {

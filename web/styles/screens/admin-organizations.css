@@ -1348,6 +1348,9 @@
     font-size: var(--fs-body-sm);
     line-height: 20px;
 }
+.shell:has(> #admin-organizations-panel[data-superadmin="false"]:not(.hidden)) > .app-footer {
+    background-color: var(--palette-outcome-canvas);
+}
 .admin-organizations-panel[data-superadmin="false"] .admin-organizations-shell {
     width: min(100%, 1144px);
     padding: 48px 32px 76px;
