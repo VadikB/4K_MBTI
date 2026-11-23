@@ -327,9 +327,19 @@ def test_spec02_provider_requests_and_admission(tmp_path, control, profession, r
 def test_spec02_new_fields_apply_only_to_new_package_and_preserve_bound_versions():
     current = snapshot_for("credit")
     historical = snapshot_for("credit", package=AS_PACKAGE)
-    assert current["refs"]["protocol_package"]["version"] == "2.0.0"
+    previous = snapshot_for("credit", package=AS_PACKAGE.parent / "v2")
+    assert current["refs"]["protocol_package"]["version"] == "3.0.0"
+    assert current["case_content_contract"]["version"] == "1.1.0"
+    assert previous["refs"]["protocol_package"]["version"] == "2.0.0"
+    assert previous["case_content_contract"]["version"] == "1.0.0"
+    assert "в кратком словаре в тексте P00" in previous["case_content_contract"]["requirements"]["indicator:K1.I09"]
     assert historical["refs"]["protocol_package"]["version"] == "1.0.0"
-    assert current["refs"]["as_contract"] == historical["refs"]["as_contract"]
+    assert current["refs"]["as_contract"]["version"] == "2.0.0"
+    assert previous["refs"]["as_contract"] == historical["refs"]["as_contract"]
+    assert historical["refs"]["as_contract"]["version"] == "1.0.0"
+    assert current["case_version"]["as_contract_ref"] == historical["refs"]["as_contract"]
+    assert "event_material_delivery" not in provider_basis(previous)
+    assert "event_material_delivery" not in provider_basis(historical)
     assert current["refs"]["m2"] == historical["refs"]["m2"]
     assert current["case_version"] == historical["case_version"]
     assert "case_content_contract" not in provider_basis(historical)
@@ -349,6 +359,77 @@ def test_spec02_new_fields_apply_only_to_new_package_and_preserve_bound_versions
     assert "case_content_contract" not in provider_basis(other)
 
 
+def credit_case_with_documented_stages(snapshot):
+    candidate = coherent_as(snapshot, "credit")
+    intro = material(candidate, "P00")
+    intro["Текст"] = intro["Текст"].removesuffix("\n\n" + glossary("credit"))
+    material(candidate, "M01")["Текст"] += " К зачёту принимаются записи с подтверждением итоговой сверки."
+    report = material(candidate, "M05")
+    report["Текст"] = report["Текст"].replace("прошлых образцов", "прошлых образцов варианта B")
+    report["Текст"] += (
+        " Аналитик сначала фиксировал заключение по образцу. "
+        "Только после итоговой сверки проверяющий отмечал это заключение как проверенное."
+    )
+    target = k1_i09(candidate)
+    target[PRESERVE] = "Сохранить различие между записью аналитика и подтверждением сверки, доступное по M01 и M05."
+    target["material_refs"] = ["M01", "M05"]
+    return candidate
+
+
+@pytest.mark.parametrize("variant", ["documents_only", "paraphrase_in_intro", "conflicting_source"])
+def test_spec02_documented_stages_reach_review_and_repair(variant, tmp_path):
+    snapshot = snapshot_for("credit")
+    clear = credit_case_with_documented_stages(snapshot)
+    candidate = deepcopy(clear)
+    if variant == "paraphrase_in_intro":
+        material(candidate, "P00")["Текст"] += " Сверку отмечает проверяющий после записи аналитика."
+    check_id = "indicator:K1.I09"
+    verdicts = {}
+    if variant == "conflicting_source":
+        report = material(candidate, "M05")
+        report["Текст"] = report["Текст"].replace("Только после итоговой сверки", "Ещё до итоговой сверки")
+        defect = finding(check_id, [material_path(candidate, "M01"), material_path(candidate, "M05")],
+                         "M01 принимает подтверждённую сверку. В M05 проверенным назван результат до сверки.")
+        verdicts[(service.checksum(candidate), "challenger")] = {check_id: defect}
+
+    raw_candidate, raw_repair = deepcopy(candidate), deepcopy(clear)
+    for raw in (raw_candidate, raw_repair):
+        raw["RuntimeBindings"]["E01_FACT"]["material_ids"] = raw["Стартовые MaterialIDs"]
+    gateway = CapturingGateway(raw_candidate, raw_repair, verdicts)
+    result = service.prepare(snapshot, gateway)
+    requirement = snapshot["case_content_contract"]["requirements"][check_id]
+    assert "P00 или в доступных с начала документах M01–M06" in requirement
+    assert "Отдельный словарь не составляй" in requirement
+    assert result["admitted_for_participant"]
+    repaired = variant == "conflicting_source"
+    if repaired:
+        initial = result["repair"]["original_tester"]["aggregation"]
+        assert initial["status"] == "FAIL"
+        assert [r["check_id"] for r in initial["blocking_failures"]] == [check_id]
+        assert not initial["deterministic_failures"]
+    else:
+        assert result["repair"] is None
+    assert Counter(c["role"] for c in gateway.calls) == (
+        {"generation": 1, "tester": 10, "challenger": 8, "repair": 1} if repaired
+        else {"generation": 1, "tester": 5, "challenger": 4}
+    )
+    for call in gateway.calls:
+        payload = json.loads(call["messages"][-1]["content"])
+        assert payload["case_content_contract"]["requirements"][check_id] == requirement
+        assert payload["event_material_delivery"] == snapshot["event_material_delivery"]
+        if call["role"] in ("tester", "challenger"):
+            assert payload["candidate_as"]["RuntimeBindings"]["E01_FACT"]["material_ids"] == []
+            assert payload["candidate_checksum"] == service.checksum(payload["candidate_as"])
+    accepted = clear if repaired else candidate
+    assert result["candidate_checksum"] == service.checksum(accepted)
+    assert result["candidate_as"] == accepted
+    assert result["compiled_case"]["participant_presentation"]["introduction"] == material(accepted, "P00")["Текст"]
+    assert "Словарь" not in material(accepted, "P00")["Текст"]
+    assert k1_i09(result["candidate_as"])["material_refs"] == ["M01", "M05"]
+    assert k1_i09(result["candidate_as"])["Конкретное условие"] and k1_i09(result["candidate_as"])[PRESERVE]
+    _record_followup(tmp_path, result, gateway)
+
+
 @pytest.fixture
 def spec02_candidate():
     snapshot = snapshot_for("credit")
@@ -366,6 +447,7 @@ def _record_followup(tmp_path, prepared, gateway):
         "final_candidate_checksum": prepared["candidate_checksum"],
         "final_admission": prepared["tester"]["aggregation"],
         "admitted": prepared["admitted_for_participant"],
+        "request_counts": Counter(call["role"] for call in gateway.calls),
         "repair_requests": len(repair_payloads),
         "repair_bases": [{"blocking_failures": item["blocking_failures"],
                           "validation_errors": item["validation_errors"]} for item in repair_payloads],

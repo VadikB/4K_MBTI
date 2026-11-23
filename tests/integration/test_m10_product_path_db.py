@@ -775,7 +775,8 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
             refs = generated_trace["source_snapshot"]["refs"]
             assert refs["runtime_rule"]["version"] == "1.3.1"
             assert decision["selected_case_id"] == "CASE.SPEC.02"
-            assert refs["protocol_package"]["version"] == "2.0.0"
+            assert refs["protocol_package"]["version"] == "3.0.0"
+            assert refs["as_contract"]["version"] == "2.0.0"
             assert generated_trace["tester"]["protocol"]["checksum"] == refs["tester_protocol"]["sha256"]
             for reviews in generated_trace["tester"]["independent_checks"].values():
                 by_id = {item["check_id"]: item for item in reviews}
