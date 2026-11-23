@@ -159,8 +159,9 @@ def seed_cabinet(scope, *, visual_states=False):
             ('unverified_invitation', 'sending', '', 'cabinet-legacy-' + uuid4().hex),
         ]
         if visual_states:
-            # Keep the confirmed profile and add an unresolved receipt for the other assessment.
+            # Seed the invitation history after profile confirmation.
             invitation_fixtures.append(('first_failed', 'sending', previous['assignment_ref'], 'cabinet-prior-' + uuid4().hex))
+            invitation_fixtures.append(('unknown_failure', 'accepted', '', 'cabinet-unbound-' + uuid4().hex))
         for key, delivery, ref, operation in invitation_fixtures:
             email = emails[members[key]]
             invitation = c.execute("""INSERT INTO organization_invitations
@@ -170,6 +171,10 @@ def seed_cabinet(scope, *, visual_states=False):
                 (scope['org'], checksum([operation, email]), scope['admin'], email, delivery, operation, ref,
                  encode_reason(delivery, delivery, recipients=recipients if operation == batch else [email]))).fetchone()
             invitations[key] = {'id': invitation['id'], 'operation': operation, 'email': email, 'ref': ref}
+        if visual_states:
+            # A consumed link and a completed registration are independent facts.
+            c.execute("UPDATE organization_invitations SET used_at=NOW() WHERE id=%s",
+                      (invitations['unknown_failure']['id'],))
         c.execute("""UPDATE organization_assessment_program_connections SET is_current=FALSE,superseded_at=NOW()
             WHERE organization_id=%s AND is_current=TRUE""", (scope['org'],))
         c.execute("""UPDATE organization_assessment_program_connections SET is_current=TRUE,superseded_at=NULL

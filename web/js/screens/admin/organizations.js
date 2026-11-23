@@ -185,14 +185,14 @@ export const checkAdminInvitation = async (organizationId, email, assessment, op
       'Не удалось обновить сведения. Последний подтверждённый исход сохранён', 'error');
   }
 };
-export const mountAdminInvitationDetails = (dialog, organizationId, email, assessment, initial) => {
+export const mountAdminInvitationDetails = (dialog, organizationId, email, assessment, initial, registration) => {
   const epoch = state.identityEpoch;
   const actor = currentIdentityKey();
   const generation = assignmentViewGeneration;
   const screen = state.currentScreen;
   const valid = () => dialog.isConnected && epoch === state.identityEpoch && actor === currentIdentityKey() &&
     generation === assignmentViewGeneration && screen === state.currentScreen && Number(selectedOrganizationId) === Number(organizationId);
-  const refresh = initial.operation_id ? async (item) => {
+  const refresh = assessment && initial.operation_id ? async (item) => {
     const query = new URLSearchParams({ assignment_ref: assessment, email });
     const response = await fetch('/users/admin/organizations/' + organizationId + '/personal-invitations/operations/' +
       encodeURIComponent(item.operation_id) + '?' + query, { credentials: 'same-origin' });
@@ -203,7 +203,7 @@ export const mountAdminInvitationDetails = (dialog, organizationId, email, asses
     renderAdminOrganizations();
     return updated;
   } : null;
-  mountInvitationDetails(dialog, initial, refresh);
+  mountInvitationDetails(dialog, initial, refresh, { unboundRegistration: assessment ? '' : registration });
 };
 const localDateTime = (value) => {
   if (!value) return '';
@@ -2637,7 +2637,7 @@ const renderMemberList = (items, {
             (invitationRequestsInFlight.has(state.identityEpoch + ':' + pendingInvitation.requestKey) ? ' disabled' : '') +
             '>Проверить отправку</button>' : '';
         const saved = savedInvitation(item);
-        const receiptRef = item.invitation_assignment_ref || '';
+        const receiptRef = String(item.invitation_assignment_ref || '').trim();
         const separateReceipt = !isSuperadmin && saved.invitation_id && (!receiptRef || receiptRef !== selectedAssessmentRef);
         const savedReceiptUnresolved = ['unknown', 'pending'].includes(invitationFacts(saved).outcome);
         const savedCheck = saved.invitation_id && saved.operation_id && receiptRef && savedReceiptUnresolved
@@ -2729,7 +2729,10 @@ const renderMemberList = (items, {
         const previousReceipt = !failedPreparation && separateReceipt && (receiptRef
           ? 'Отправка по другой оценке (' + receiptRef + ') · ' + invitationMessage(saved, { compact: true })
           : 'Не удалось подтвердить, к какой оценке относится отправка.');
-        const priorInvitationInCard = failedPreparation && separateReceipt && receiptRef;
+        const priorInvitationInCard = failedPreparation && separateReceipt;
+        const unboundRegistration = priorInvitationInCard && !receiptRef
+          ? ({ registered: 'Завершена', pending: 'Ожидается' })[item.registration_status] || 'Статус не подтверждён'
+          : '';
         const compactStageMarkup = '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' +
           (critical || delivery === 'failed' && invitationStage ? ' is-critical' : '') + '">' +
           escapeHtml(invitationStage || currentStage) + '</strong>' +
@@ -2747,7 +2750,8 @@ const renderMemberList = (items, {
           '" data-stage-description="' + escapeHtml(isSuperadmin ? stageDescription : cardDescription) + '" data-assignment-history="' +
           escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') +
           '" data-invitation-info="' + escapeHtml(JSON.stringify(priorInvitationInCard ? saved : invitation)) +
-          '" data-invitation-assessment="' + escapeHtml(priorInvitationInCard || selectedAssessmentRef) +
+          '" data-invitation-assessment="' + escapeHtml(priorInvitationInCard ? receiptRef : selectedAssessmentRef) +
+          '" data-invitation-registration="' + escapeHtml(unboundRegistration) +
           '" data-assignment-id="' + escapeHtml(scopedStage?.assignment_id) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) +
           '" data-assessment-label="' + escapeHtml(selectedAssessmentLabel) +
           '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>';

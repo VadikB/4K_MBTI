@@ -95,9 +95,11 @@ test('ADM-VIS-02 · Состояние, карточка и точная отм�
       .members.find((member) => member.user_id === fixture.members[key]).assessment_stages[fixture.ref];
     const errors = [];
     const writes = [];
+    const receiptRequests = [];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('request', (request) => {
       if (new URL(request.url()).pathname.startsWith('/users/') && request.method() !== 'GET') writes.push(request.method());
+      if (new URL(request.url()).pathname.includes('/personal-invitations/operations/')) receiptRequests.push(request);
     });
     await open(page);
     const original = readback();
@@ -178,6 +180,39 @@ test('ADM-VIS-02 · Состояние, карточка и точная отм�
       await expect(processing).toHaveCount(0);
     });
 
+    await test.step('Сбой подготовки и приглашение без подтверждённой привязки', async () => {
+      const memberRow = row('unknown_failure');
+      await expect(memberRow.locator('.admin-organization-member-actions button')).toHaveText([checkLabel]);
+      await name('unknown_failure').click();
+      const invitation = dialog.locator('[data-card-unbound-invitation]');
+      const verifyInvitation = async () => {
+        await expect(dialog.getByText('Не удалось подтвердить, к какой оценке относится отправка', { exact: true })).toBeVisible();
+        await expect(invitation.locator('dt')).toHaveText(['Отправка', 'Ссылка', 'Регистрация']);
+        await expect(invitation.locator('dd')).toHaveText([
+          'Письмо принято почтовым сервисом', 'Ссылка использована', 'Ожидается',
+        ]);
+        await expect(dialog.getByRole('button', { name: 'Обновить сведения', exact: true, includeHidden: true })).toHaveCount(0);
+        expect(receiptRequests).toHaveLength(0);
+      };
+      await verifyInvitation();
+      const read = page.waitForResponse(requestIsRead);
+      await dialog.getByRole('button', { name: checkLabel }).click();
+      const reply = await read;
+      expect(reply.status()).toBe(200);
+      const member = (await reply.json()).items.find((item) => item.id === id)
+        .members.find((item) => item.user_id === fixture.members.unknown_failure);
+      expect(member).toMatchObject({
+        invitation_id: fixture.invitations.unknown_failure.id,
+        invitation_operation_id: fixture.invitations.unknown_failure.operation,
+        invitation_delivery_status: 'accepted', invitation_link_status: 'used', registration_status: 'pending',
+      });
+      expect(member.invitation_assignment_ref || '').toBe('');
+      await expect(feedback).toHaveText('Состояние обновлено.');
+      await verifyInvitation();
+      await page.keyboard.press('Escape');
+      await expect(name('unknown_failure')).toBeFocused();
+    });
+
     await test.step('Потеря ответа GET и повтор по тому же назначению', async () => {
       await page.route(listUrl, async (route) => {
         const confirmed = await route.fetch();
@@ -205,7 +240,11 @@ test('ADM-VIS-02 · Состояние, карточка и точная отм�
       expect(receipt.status()).toBe(200);
       expect(receipt.request().method()).toBe('GET');
       expect(new URL(receipt.url()).searchParams.get('assignment_ref')).toBe(prior.ref);
-      expect((await receipt.json()).items).toEqual([expect.objectContaining({ invitation_id: prior.id, email: prior.email })]);
+      expect(new URL(receipt.url()).searchParams.get('email')).toBe(prior.email);
+      expect(receiptRequests).toHaveLength(1);
+      expect((await receipt.json()).items).toEqual([expect.objectContaining({
+        invitation_id: prior.id, operation_id: prior.operation, email: prior.email,
+      })]);
       await dialog.locator('[data-card-cancel-assignment]').click();
       await expect(page.getByRole('dialog', { name: 'Отменить назначение?' })).toContainText('Сбой до старта');
       await page.keyboard.press('Escape');

@@ -2259,7 +2259,7 @@ if (adminOrganizationsList) {
       if (invitationInfo.invitation_id || invitationInfo.operation_id) {
         withScreen(loadAdminOrganizations, module => {
           if (dialog.isConnected) module.mountAdminInvitationDetails(dialog, organizationId,
-            facts.email || '', facts.invitationAssessment || '', invitationInfo);
+            facts.email || '', facts.invitationAssessment || '', invitationInfo, facts.invitationRegistration);
         });
       }
       const userId = Number(facts.userId);
