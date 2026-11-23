@@ -38,6 +38,8 @@
 
 Ветка `codex/adm-vis-03-participants`. На первом этапе результат передан на локальное ревью через Git bundle. Владелец затем поручил «делай PR на main», что разрешает публикацию ветки и открытие PR с базой `main`. На этапе PR `branch_push=true`, `pr=true`, `merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`.
 
+Для [PR #292](https://github.com/VadikB/4K_MBTI/pull/292) владелец затем поручил выполнить обязательные проверки, дождаться зелёного CI, слить в `main` и развернуть на `test`. Этап выпуска включает PATCH-кандидат `2.1.73` поверх `2.1.72`, полный CI точного head, squash merge и проверку штатного deploy на `test`. `branch_push=true`, `pr=true`, `merge=true`, `deploy=true`, `version_bump=true`, `artifact_publish=false`.
+
 Для отката доработки выполните `git revert` её отдельного коммита. Добавленные участники, приглашения и назначения сохраняются по действующим контрактам.
 
 ## Воспроизведение
