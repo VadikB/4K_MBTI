@@ -1,9 +1,12 @@
 import { fetchWithDeadline, readApiResponse } from '../../api.js';
 import { escapeHtml } from '../../utils/format.js';
+import { bindReportPdf } from '../../utils/report-download.js';
 import { invitationLinkMessage } from './invitation-presentation.js';
 
 const preparationReference = /^P4K-[A-F0-9]{24}$/;
 const invitationReference = /^INV-[1-9][0-9]{0,18}$/;
+const uuidPattern = '[A-F0-9]{8}(?:-[A-F0-9]{4}){3}-[A-F0-9]{12}';
+const reportReference = new RegExp('^(?:RPT-)?(' + uuidPattern + ')$', 'i');
 const httpReference = /^(?:[a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i;
 const positiveInteger = /^[1-9][0-9]*$/;
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
@@ -28,6 +31,19 @@ const states = {
     'Почтовый сервис принял письмо по исходной попытке.'],
   invitation_failed: ['Приглашение не отправлено', 'Отказ отправки', 'error',
     'По исходной попытке сохранён подтверждённый отказ.'],
+  report_failed: ['Отчёт не собран', 'Сбой подготовки', 'error',
+    'Сбор ответов завершён. Зафиксирован сбой итоговой обработки.'],
+  report_waiting: ['Отчёт готовится', 'Ожидание', 'pending',
+    'Сбор ответов завершён. Подготовка отчёта выполняется.'],
+  report_delayed: ['Подготовка отчёта затянулась', 'Обработка продолжается', 'pending',
+    'На последнем этапе обработка занимает больше времени. Сбой не подтверждён.'],
+  report_ready: ['Отчёт готов', 'Готов', 'success', 'Подтверждена сохранённая редакция отчёта.'],
+  report_limited: ['Отчёт готов с ограничениями', 'Доступен с ограничениями', 'success',
+    'Сохранена публикация с доступными результатами и ограничениями.'],
+  report_no_result: ['Отчёт о недостаточности данных', 'Нет результата оценки', 'success',
+    'Сохранена редакция с причинами отсутствия результата.'],
+  report_unconfirmed: ['Подготовка отчёта', 'Исход не подтверждён', 'pending',
+    'Подтверждённого исхода обработки пока нет.'],
   invitation_not_attempted: ['Приглашение создано', 'Отправка не начата', 'pending',
     'Сохранена запись приглашения.'],
 };
@@ -36,7 +52,8 @@ const date = (value) => value && Number.isFinite(Date.parse(value))
   ? dateFormatter.format(new Date(value)) + ' МСК' : 'Нет подтверждённых сведений';
 const numberLabel = (value) => '#' + escapeHtml(value);
 const isInvitation = (model) => model.kind === 'invitation';
-const stateFor = (model) => isInvitation(model) ? 'invitation_' + model.outcome : model.state;
+const stateFor = (model) => isInvitation(model) ? 'invitation_' + model.outcome
+  : model.kind === 'report' ? 'report_' + model.state : model.state;
 const presentation = (model) => states[stateFor(model)] || states.unconfirmed;
 
 function workspaceUrl(fields = {}) {
@@ -62,7 +79,7 @@ function button(label, action, primary = false) {
     (primary ? ' support-primary' : '') + '">' + label + '</button>';
 }
 
-function queueHtml({ items, next_before: nextBefore }, queueFields, before, invitationQueue) {
+function queueHtml({ items, next_before: nextBefore }, queueFields, before, queueKind) {
   const rows = items.map((item) =>
     '<tr><td><a class="support-link support-row-title" href="' +
       escapeHtml(workspaceUrl({ ...queueFields, issue: item.reference })) + '">' +
@@ -81,8 +98,11 @@ function queueHtml({ items, next_before: nextBefore }, queueFields, before, invi
   return (rows ? '<table class="support-table"><thead><tr><th scope="col">Проблема</th>' +
     '<th scope="col">Организация</th><th scope="col">Состояние</th><th scope="col">Наблюдение</th>' +
     '</tr></thead><tbody>' + rows + '</tbody></table>' :
-    '<p class="support-empty">' + (invitationQueue ? 'Приглашений с неизвестным исходом нет.' :
-      'Неразрешённых сбоев подготовки следующей ситуации нет.') + '</p>') +
+    '<p class="support-empty">' + ({
+      invitation: 'Приглашений с неизвестным исходом нет.',
+      report: 'Затянувшейся обработки и подтверждённых сбоев подготовки отчётов нет.',
+      preparation: 'Неразрешённых сбоев подготовки следующей ситуации нет.',
+    }[queueKind]) + '</p>') +
     (paging ? '<nav class="support-actions" aria-label="Страницы очереди">' + paging + '</nav>' : '');
 }
 
@@ -173,6 +193,61 @@ function problemHtml(model, queueUrl, handoffUrl, stale) {
     escapeHtml(organizationUrl(model.organization_id)) + '">К организации</a></section></div>';
 }
 
+function reportHtml(model, queueUrl, handoffUrl, stale, operation) {
+  const [title, , , fact] = presentation(model);
+  const missing = model.report_status === 'not_found';
+  const canRead = !stale && model.report_access === 'allowed';
+  const canRecover = !stale && !operation && model.recovery_revision;
+  const reportUrl = '/?' + new URLSearchParams({ screen: 'report', cycle_id: model.cycle_id,
+    report_id: model.report_id, report_access: 'customer' });
+  const results = { saved: 'Результаты сохранены', failed: 'Обработка завершилась с ошибкой',
+    not_confirmed: 'Наличие сохранённых Results пока не подтверждено' };
+  const access = missing ? 'Выбранная редакция не найдена для этого Cycle.' :
+    model.report_access === 'denied' ? 'Для текущей роли открытие отчёта недоступно.' :
+    model.report_openable ? 'Выбранная редакция сохранена.' :
+      model.report_id ? 'Сохранена техническая редакция. Открытие и PDF недоступны.' :
+        'Сохранённый отчёт пока отсутствует.';
+  return '<a class="support-link" href="' + escapeHtml(queueUrl) + '">← К проблемам</a>' +
+    '<header class="support-heading"><div><div class="support-muted">Организация ' + numberLabel(model.organization_id) +
+    '</div><h1 id="platform-problems-title" tabindex="-1">' + (missing ? 'Редакция отчёта не найдена' : title) + '</h1>' +
+    '<p>Подготовка отчёта по завершённой оценке.</p></div>' +
+    statusBadge(stateFor(model)) + '</header>' +
+    '<div class="support-actions"><a class="support-button support-primary" data-support-view="handoff" href="' +
+    escapeHtml(handoffUrl) + '">Подготовить передачу</a>' + button('Проверить состояние', 'check') + '</div>' +
+    '<p class="support-notice" data-support-feedback role="status"></p>' +
+    '<div class="support-grid"><section class="support-card"><h2>Наблюдаемое поведение</h2>' +
+    definitions([
+      ['Последний подтверждённый факт', fact],
+      ['Обработка Results', results[model.results_status]],
+      ['Этап', model.stage_label],
+    ]) + '</section><section class="support-card"><h2>Сведения для поиска</h2>' +
+    definitions([
+      ['Cycle', model.cycle_id],
+      ['Номер подготовки', model.preparation_reference],
+      ['Версия Results', model.results_revision_id || 'Отсутствует'],
+      ['Report', model.report_id || model.requested_report_id || 'Отсутствует'],
+      ...(model.report_id ? [
+        ['Редакция Report', '№' + model.report_revision],
+        ['Версия Results этой редакции', model.report_results_revision_id],
+      ] : []),
+    ]) + '</section><section class="support-card"><h2>Что доступно в продукте</h2>' +
+    '<p>' + escapeHtml(access) + '</p>' +
+    (canRead ? '<div class="support-actions">' +
+      (operation === 'pdf' ? '' : '<a class="support-button" href="' + escapeHtml(reportUrl) + '">' +
+        (operation === 'open' ? 'Повторить открытие' : 'Открыть отчёт') + '</a>') +
+      (operation === 'open' ? '' : button(operation === 'pdf' ? 'Повторить скачивание PDF' : 'Скачать PDF', 'pdf')) +
+      '</div><p class="report-pdf-status" data-support-pdf-status role="status"></p>' : '') +
+    (canRecover ? '<div class="support-actions">' + button('Запросить восстановление обработки', 'recover') +
+      '</div><p class="support-muted">Инженерное восстановление использует сохранённые данные этого Cycle.</p>' : '') +
+    '</section><section class="support-card"><h2>Ход операции</h2>' +
+    definitions([
+      ['Сбор ответов завершён', date(model.collection_closed_at)],
+      ['Последний сохранённый факт', date(model.last_confirmed_at)],
+      ['Последнее успешное чтение', date(model.read_at)],
+    ]) + '<a class="support-button" href="' + escapeHtml(organizationUrl(model.organization_id)) + '">К организации</a>' +
+    '</section></div>';
+}
+
 function handoffHtml(model, problemUrl, packet) {
   return '<a class="support-link" data-support-view="problem" href="' + escapeHtml(problemUrl) + '">← К карточке проблемы</a>' +
     '<header class="support-heading"><div><div class="support-muted">Организация ' + numberLabel(model.organization_id) +
@@ -185,7 +260,7 @@ function handoffHtml(model, problemUrl, packet) {
     '<p class="support-copy-status" data-support-copy-status role="status"></p>' +
     '<pre class="support-packet" tabindex="0" aria-label="Текст передачи">' + escapeHtml(packet) + '</pre></section>' +
     '<section class="support-card"><h2>Порядок разбора</h2><p>Разработчик ищет исходную попытку по ' +
-    (isInvitation(model) ? 'номеру приглашения и организации' : 'номеру подготовки') +
+    (isInvitation(model) ? 'номеру приглашения и организации' : model.kind === 'report' ? 'Cycle и номеру подготовки' : 'номеру подготовки') +
     ' в закрытой диагностике. Текущий статус можно проверить в карточке этого случая.</p></section></div>';
 }
 
@@ -198,16 +273,25 @@ export function mountPreparationProblems(root, isCurrent) {
   };
   const organization = positive('org');
   const before = positive('before');
-  const invitationQueue = invitationReference.test(reference) || params.get('kind') === 'invitation';
   const invitationCase = invitationReference.test(reference);
-  const endpoint = '/users/admin/support/' + (invitationCase || (!preparationReference.test(reference) && invitationQueue)
-    ? 'invitations' : 'preparation');
-  const queueFields = { ...(organization ? { org: organization } : {}), ...(invitationQueue ? { kind: 'invitation' } : {}) };
+  const cycleId = reportReference.exec(reference)?.[1].toLowerCase();
+  const reportCase = Boolean(cycleId);
+  const isPreparation = preparationReference.test(reference);
+  const queueKind = reportCase || (!invitationCase && !isPreparation && params.get('kind') === 'report') ? 'report'
+    : invitationCase || (!isPreparation && params.get('kind') === 'invitation') ? 'invitation' : 'preparation';
+  const endpoint = '/users/admin/support/' + { invitation: 'invitations', preparation: 'preparation', report: 'reports' }[queueKind];
+  const queueFields = { ...(organization ? { org: organization } : {}),
+    ...(queueKind === 'preparation' ? {} : { kind: queueKind }) };
+  const exactReport = params.get('report_id') || '';
+  let reportId = reportCase && new RegExp('^' + uuidPattern + '$', 'i').test(exactReport) ? exactReport.toLowerCase() : '';
+  const invalidReportId = reportCase && params.has('report_id') && !reportId;
+  const operation = reportId && ['pdf', 'open'].includes(params.get('operation')) ? params.get('operation') : '';
+  const reportFields = () => ({ ...(reportId ? { report_id: reportId } : {}), ...(operation ? { operation } : {}) });
+  const caseFields = () => ({ ...queueFields, issue: reference, ...reportFields() });
   const checkLabel = invitationCase ? 'Проверить отправку' : 'Проверить состояние';
-  const activeTitle = invitationCase ? 'Проверка приглашения' : 'Подготовка следующей ситуации';
+  const activeTitle = reportCase ? 'Подготовка отчёта'
+    : invitationCase ? 'Проверка приглашения' : 'Подготовка следующей ситуации';
   const queueUrl = workspaceUrl(queueFields);
-  const problemUrl = workspaceUrl({ ...queueFields, issue: reference });
-  const handoffUrl = workspaceUrl({ ...queueFields, issue: reference, view: 'handoff' });
   const content = document.createElement('div');
   root.replaceChildren(content);
   const active = () => root.contains(content) && isCurrent();
@@ -216,35 +300,59 @@ export function mountPreparationProblems(root, isCurrent) {
   let stale = false;
   let pending = false;
   let readFailure = null;
+  let recoveryRequest = null;
+  let recovering = false;
 
   const packet = () => model.handoff_text + (invitationCase && readFailure?.code
-    ? '\nКод обращения (запрос чтения): ' + readFailure.code : '');
+    ? '\nКод обращения (запрос чтения): ' + readFailure.code : '') +
+    (operation ? '\nВыбранная операция: ' + (operation === 'pdf' ? 'выгрузка PDF' : 'открытие отчёта') : '');
 
   const feedback = (message) => {
     const status = content.querySelector('[data-support-feedback]');
     if (status) status.textContent = message;
   };
   const renderProblem = (message = '') => {
-    content.innerHTML = view === 'handoff' ? handoffHtml(model, problemUrl, packet()) :
-      invitationCase ? invitationHtml(model, queueUrl, handoffUrl, stale, readFailure) :
-        problemHtml(model, queueUrl, handoffUrl, stale);
+    const problemUrl = workspaceUrl(caseFields());
+    const handoffUrl = workspaceUrl({ ...caseFields(), view: 'handoff' });
+    content.innerHTML = view === 'handoff' ? handoffHtml(model, problemUrl, packet())
+      : reportCase ? reportHtml(model, queueUrl, handoffUrl, stale, operation)
+        : invitationCase ? invitationHtml(model, queueUrl, handoffUrl, stale, readFailure)
+          : problemHtml(model, queueUrl, handoffUrl, stale);
+    const pdf = content.querySelector('[data-support-action="pdf"]');
+    if (pdf) bindReportPdf(pdf, {
+      status: content.querySelector('[data-support-pdf-status]'), isCurrent: active,
+      url: '/users/admin/m8-access/reports/' + encodeURIComponent(model.report_id) + '/pdf',
+      filename: '4k-report-' + model.report_id + '.pdf',
+    });
     feedback(message || (stale ? 'Не удалось обновить состояние. Показан последний подтверждённый факт.' :
-      model.state === 'unconfirmed' ? 'Актуального сигнала о ходе подготовки нет.' : ''));
+      !reportCase && model.state === 'unconfirmed' ? 'Актуального сигнала о ходе подготовки нет.' : ''));
   };
-  const readProblem = async (trigger) => {
-    if (pending) return;
+  const readProblem = async (trigger, updated = 'Состояние исходной операции обновлено.') => {
+    if (pending || recovering) return;
     pending = true;
     const refocus = document.activeElement === trigger;
     if (trigger) trigger.setAttribute('aria-disabled', 'true');
     feedback('Проверяем состояние…');
     try {
-      const candidate = await readApiResponse(await fetchWithDeadline(endpoint + '/' + encodeURIComponent(reference),
+      const path = endpoint + '/' + encodeURIComponent(cycleId || reference);
+      const lookup = reportId ? '?' + new URLSearchParams({ report_id: reportId }) : '';
+      const candidate = await readApiResponse(await fetchWithDeadline(path + lookup,
         { credentials: 'same-origin', cache: 'no-store' }, 10000), 'Не удалось проверить состояние.');
       if (!active()) return;
-      if (candidate?.reference !== reference || !candidate.handoff_text) throw new Error('Invalid preparation response');
+      if (!candidate?.handoff_text || (reportCase
+        ? candidate.cycle_id !== cycleId || (reportId && candidate.report_id !== reportId && candidate.report_status !== 'not_found')
+        : candidate.reference !== reference)) throw new Error('Invalid support response');
       model = candidate;
+      if (reportCase && !reportId && model.report_openable) {
+        reportId = model.report_id;
+        if (reportId) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('report_id', reportId);
+          window.history.replaceState(window.history.state, '', url);
+        }
+      }
       stale = false;
-      renderProblem(trigger ? 'Состояние исходной операции обновлено.' : '');
+      renderProblem(trigger ? updated : '');
     } catch (error) {
       if (!active()) return;
       if ([401, 403, 404].includes(error?.status)) model = null;
@@ -283,7 +391,7 @@ export function mountPreparationProblems(root, isCurrent) {
       const data = await readApiResponse(response, 'Не удалось загрузить проблемы.');
       if (!active()) return;
       if (!Array.isArray(data?.items)) throw new Error('Invalid preparation list');
-      target.innerHTML = queueHtml(data, queueFields, before, invitationQueue);
+      target.innerHTML = queueHtml(data, queueFields, before, queueKind);
     } catch (error) {
       if (!active()) return;
       const denied = [401, 403].includes(error?.status);
@@ -291,6 +399,30 @@ export function mountPreparationProblems(root, isCurrent) {
         (denied ? 'Доступ к очереди недоступен.' : 'Не удалось загрузить проблемы.') + '</p>' +
         (denied ? '' : button('Повторить чтение', 'queue'));
     }
+  };
+
+  const recover = async (control) => {
+    if (!reportCase || pending || recovering || stale || operation || !model?.recovery_revision) return;
+    const revision = model.recovery_revision;
+    if (recoveryRequest?.revision !== revision) recoveryRequest = { revision, key: crypto.randomUUID() };
+    recovering = true;
+    control.setAttribute('aria-disabled', 'true');
+    feedback('Отправляем запрос на восстановление…');
+    let message;
+    try {
+      const response = await fetchWithDeadline('/users/admin/assessment/m8/cycles/' + cycleId + '/processing-recovery',
+        { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idempotency_key: recoveryRequest.key, expected_pipeline_revision: revision }) }, 10000);
+      await readApiResponse(response, 'Не удалось подтвердить запрос.');
+      message = 'Запрос на восстановление принят. Проверьте состояние обработки.';
+    } catch (error) {
+      message = [401, 403].includes(error.status) ? 'Служебное восстановление недоступно текущей роли.'
+        : error.status === 409 ? 'Условия восстановления изменились. Состояние проверено заново.'
+          : 'Не удалось подтвердить запрос на восстановление. Состояние проверено заново.';
+    } finally {
+      recovering = false;
+    }
+    if (active()) await readProblem(control, message);
   };
 
   content.addEventListener('click', async (event) => {
@@ -305,6 +437,7 @@ export function mountPreparationProblems(root, isCurrent) {
     }
     const control = event.target.closest('[data-support-action]');
     if (control?.dataset.supportAction === 'check') void readProblem(control);
+    if (control?.dataset.supportAction === 'recover') void recover(control);
     if (control?.dataset.supportAction === 'queue') void readQueue();
     if (control?.dataset.supportAction === 'copy' && model) {
       const status = content.querySelector('[data-support-copy-status]');
@@ -317,7 +450,13 @@ export function mountPreparationProblems(root, isCurrent) {
     }
   });
 
-  if (preparationReference.test(reference) || invitationCase) {
+  if (invalidReportId) {
+    content.innerHTML = '<a class="support-link" href="' + escapeHtml(queueUrl) + '">← К проблемам</a>' +
+      '<h1 id="platform-problems-title">Не удалось выбрать редакцию отчёта</h1>' +
+      '<p class="support-notice" role="status">Укажите корректный идентификатор Report.</p>';
+    return;
+  }
+  if (isPreparation || invitationCase || reportCase) {
     content.innerHTML = '<h1 id="platform-problems-title">' + activeTitle + '</h1>' +
       '<p class="support-notice" data-support-feedback role="status"></p>';
     void readProblem();
@@ -325,22 +464,22 @@ export function mountPreparationProblems(root, isCurrent) {
   }
 
   const scope = organization ? { org: organization } : {};
-  const queueLink = (label, invitation) => '<a class="support-link" href="' +
-    escapeHtml(workspaceUrl(invitation ? { ...scope, kind: 'invitation' } : scope)) + '"' +
-    (invitation === invitationQueue ? ' aria-current="page"' : '') + '>' + label + '</a>';
+  const queueLink = (label, kind) => '<a class="support-link" href="' +
+    escapeHtml(workspaceUrl(kind === 'preparation' ? scope : { ...scope, kind })) + '"' +
+    (kind === queueKind ? ' aria-current="page"' : '') + '>' + label + '</a>';
   content.innerHTML = '<header class="support-heading"><div><h1 id="platform-problems-title">Проблемы</h1>' +
-    '<p>Найдите случай по организации, номеру подготовки или приглашения.</p></div></header>' +
+    '<p>Найдите случай по организации, номеру подготовки, приглашению или Cycle.</p></div></header>' +
     '<nav class="support-actions support-problem-types" aria-label="Типы проблем">' +
-    queueLink('Подготовка ситуаций', false) + queueLink('Приглашения', true) + '</nav>' +
+    queueLink('Подготовка ситуаций', 'preparation') + queueLink('Приглашения', 'invitation') + queueLink('Отчёты', 'report') + '</nav>' +
     '<section class="support-card"><form method="get" action="/" class="support-filter">' +
     '<input type="hidden" name="screen" value="admin-platform-problems">' +
-    (invitationQueue ? '<input type="hidden" name="kind" value="invitation">' : '') +
+    (queueKind !== 'preparation' ? '<input type="hidden" name="kind" value="' + queueKind + '">' : '') +
     '<label>Поиск<input type="search" name="issue" ' +
-    'placeholder="P4K-… или INV-…" title="Номер подготовки или приглашения" autocomplete="off"></label>' +
+    'placeholder="P4K-…, INV-… или Cycle" title="Номер подготовки, приглашения или Cycle" autocomplete="off"></label>' +
     '<label>Организация<input type="text" name="org" inputmode="numeric" pattern="[1-9][0-9]*" ' +
     'placeholder="Номер организации" value="' + escapeHtml(organization) + '"></label>' +
     '<button type="submit" class="support-button">Найти</button></form>' +
-    (reference ? '<p class="support-notice" role="status">Введите номер подготовки или приглашения.</p>' : '') +
+    (reference ? '<p class="support-notice" role="status">Введите номер подготовки, приглашения или Cycle.</p>' : '') +
     '<div data-support-list></div></section>';
   void readQueue();
 }

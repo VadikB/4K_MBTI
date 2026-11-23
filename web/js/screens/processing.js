@@ -232,6 +232,7 @@ const outcomeCopy = {
   waiting: ['Спасибо за ваши ответы', 'Готовим результат. Он будет доступен в ваших оценках.'],
   offline: ['Готовим результат', 'Последнее подтверждённое состояние: сбор ответов завершён.'],
   expired: ['Время оценки закончилось', 'Сбор новых ответов закрыт. Учтём сохранённые ответы.'],
+  noResult: ['Отчёт готов', 'В отчёте указано, почему для результата оценки недостаточно данных.'],
   ready: ['Ваш результат готов', 'Вы можете открыть отчёт и радар.'],
   limited: ['Ваш результат готов', 'В отчёте указано, какие навыки удалось оценить.'],
   failed: ['Не удалось подготовить результат', 'Ваши ответы сохранены.'],
@@ -251,12 +252,13 @@ const retryLabels = {
 const hasConfirmedClosure = (snapshot) => COLLECTION_CLOSED.has(snapshot?.collection_status);
 const hasFailedProcessing = (snapshot) => snapshot?.processing?.status === 'failed'
   || snapshot?.results_status === 'failed';
-const availableReport = (snapshot) => ['ready', 'limited'].includes(snapshot?.report_status)
+const availableReport = (snapshot) => ['ready', 'limited', 'no_result'].includes(snapshot?.report_status)
   ? snapshot.report_id || null : null;
 
 const cycleOutcomeKind = (snapshot) => {
   if (hasFailedProcessing(snapshot)) return 'failed';
   if (availableReport(snapshot)) {
+    if (snapshot.report_status === 'no_result' || snapshot.report_has_no_skill_results === true) return 'noResult';
     const partial = snapshot.partial_result;
     const limited = snapshot.report_status === 'limited' || partial?.plan_completed === false
       || partial?.is_incomplete === true || partial?.plan_scope_limited === true
@@ -290,7 +292,7 @@ const renderCycleOutcome = (view, kind, { readError = false } = {}) => {
   const showSnapshot = !['confirming', 'accessDenied', 'unavailable'].includes(kind);
   const reportId = showSnapshot && !readError ? availableReport(snapshot) : null;
   const failedWithReport = kind === 'failed' && availableReport(snapshot);
-  const ready = kind === 'ready' || kind === 'limited';
+  const ready = ['ready', 'limited', 'noResult'].includes(kind);
   processingOutcomeTitle.textContent = title;
   processingOutcomeDescription.textContent = readError && ready
     ? 'Последняя проверка подтвердила готовность результата.' : description;
@@ -364,10 +366,10 @@ const pollCycleStatus = async (view) => {
       credentials: 'same-origin', signal: request.signal,
     }, 4000);
     if (!isCurrent()) return;
-    if (response.status === 403 || response.status === 404) {
+    if ([401, 403, 404].includes(response.status)) {
       view.snapshot = null;
       cycleSnapshotsByScope.delete(view.scopeKey);
-      renderCycleOutcome(view, response.status === 403 ? 'accessDenied' : 'unavailable');
+      renderCycleOutcome(view, response.status === 404 ? 'unavailable' : 'accessDenied');
       return;
     }
     const snapshot = await readApiResponse(response, 'Не удалось получить состояние оценки.');

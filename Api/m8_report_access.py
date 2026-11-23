@@ -7,13 +7,15 @@ from uuid import UUID
 ACCESS_CONTRACT_VERSION = "m8-report-access/1.1.0"
 
 # Keep the customer registry and the participant row on the same saved publication.
-CUSTOMER_REPORT_FOR_CYCLE_SQL = """
+CUSTOMER_REPORT_SELECTION_SQL = """
     SELECT p.id,p.status,p.c67_json,rr.payload_json,
            p.status IN ('ready','limited','no_result')
              AND COALESCE(p.c67_json->'processing'->>'status','') <> 'failed' AS can_open
     FROM m8_results r JOIN m8_result_revisions rr ON rr.results_id=r.id
     JOIN m8_reports p ON p.result_revision_id=rr.id AND p.audience='assessee'
     WHERE r.cycle_db_id=cycle.id
+"""
+CUSTOMER_REPORT_FOR_CYCLE_SQL = CUSTOMER_REPORT_SELECTION_SQL + """
     ORDER BY (p.id=(SELECT current.report_id FROM m8_published_reports current
                     WHERE current.cycle_db_id=cycle.id)) DESC NULLS LAST,
              rr.revision_no DESC,p.revision_no DESC
