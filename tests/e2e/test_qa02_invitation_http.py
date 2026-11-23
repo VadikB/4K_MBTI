@@ -1,6 +1,10 @@
+import io
+import json
+from datetime import datetime, timezone
+
 import pytest
 from fastapi import HTTPException
-from Api import routes, invitation_outcomes
+from Api import email_service, routes, invitation_outcomes
 from Api.email_service import EmailDeliveryError, EmailDeliveryUncertainError
 from tests.e2e.test_r03_invitation_http import _InvitationConnection, _Result, _client
 
@@ -111,3 +115,58 @@ def test_post_transport_change_is_unknown_and_link_is_separate(monkeypatch):
     read=client.get(BASE+'/operations/qa02-after-transport',params={'assignment_ref':'competencies_4k'}).json()['items'][0]
     assert read['outcome']=='unknown' and read['link_status']=='revoked'
     assert len(sent)==1
+
+
+@pytest.mark.parametrize("superadmin", [False, True])
+def test_invitation_receipt_after_real_unisender_adapter(monkeypatch, superadmin):
+    from Api.org_access import AdminScope
+
+    db = _InvitationConnection()
+    client = _client(monkeypatch, db, [])
+    monkeypatch.setattr(routes, "get_admin_scope", lambda *_: AdminScope(
+        is_superadmin=superadmin, organization_ids=(3,),
+    ))
+    monkeypatch.setattr(routes, "send_auth_action_email", email_service.send_auth_action_email)
+    monkeypatch.setattr(routes.settings, "email_provider", "unisender_go")
+    monkeypatch.setattr(routes.settings, "unisender_go_api_key", "synthetic-test-key")
+    requests = []
+
+    class ProviderReply(io.BytesIO):
+        status = 200
+
+    def accept(request, *, timeout):
+        requests.append(request)
+        return ProviderReply(b'{"status":"success","job_id":"test-job"}')
+
+    monkeypatch.setattr(email_service.urlrequest, "urlopen", accept)
+    created_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    execute = db.execute
+
+    def record_created_at(query, params=()):
+        result = execute(query, params)
+        if "INSERT INTO organization_invitations" in query and result.one:
+            result.one["created_at"] = created_at
+        return result
+
+    monkeypatch.setattr(db, "execute", record_created_at)
+    email = "person@example.test"
+    operation = "qa02-real-adapter"
+    payload = {"emails": [email], "operation_id": operation}
+    first = client.post(BASE, json=payload)
+    assert first.status_code == 200
+    read = client.get(f"{BASE}/operations/{operation}", params={
+        "assignment_ref": "competencies_4k", "email": email,
+    })
+    replay = client.post(BASE, json=payload)
+    assert read.status_code == replay.status_code == 200
+    for response in (first, read, replay):
+        item = response.json()["items"][0]
+        assert item["outcome"] == item["delivery_status"] == db.rows[0]["delivery_status"] == "accepted"
+        assert item["invitation_id"] == db.rows[0]["id"]
+        assert item["operation_id"] == operation
+        assert datetime.fromisoformat(item["created_at"]).replace(tzinfo=None) == created_at
+        assert datetime.fromisoformat(item["expires_at"]).replace(tzinfo=None) == db.rows[0]["expires_at"]
+    assert len(requests) == 1
+    assert requests[0].get_method() == "POST"
+    assert requests[0].full_url.endswith("/email/send.json")
+    assert json.loads(requests[0].data)["message"]["recipients"] == [{"email": email}]
