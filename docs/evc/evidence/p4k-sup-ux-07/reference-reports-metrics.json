@@ -1,0 +1,62 @@
+[
+  {
+    "scene": "?id=failed",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "font": "Onest, Arial, sans-serif",
+    "color": "rgb(34, 44, 48)",
+    "heading": "Не удалось подготовить отчёт",
+    "blocks": [],
+    "focused": "Вернуться в мои оценки"
+  },
+  {
+    "scene": "?id=failed",
+    "width": 390,
+    "scrollWidth": 390,
+    "font": "Onest, Arial, sans-serif",
+    "color": "rgb(34, 44, 48)",
+    "heading": "Не удалось подготовить отчёт",
+    "blocks": [],
+    "focused": "Вернуться в мои оценки"
+  },
+  {
+    "scene": "?id=failed",
+    "width": 320,
+    "scrollWidth": 320,
+    "font": "Onest, Arial, sans-serif",
+    "color": "rgb(34, 44, 48)",
+    "heading": "Не удалось подготовить отчёт",
+    "blocks": [],
+    "focused": "Вернуться в мои оценки"
+  },
+  {
+    "scene": "?id=pdf-error",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "font": "Onest, Arial, sans-serif",
+    "color": "rgb(34, 44, 48)",
+    "heading": "Не удалось загрузить PDF",
+    "blocks": [],
+    "focused": "Повторить загрузку"
+  },
+  {
+    "scene": "?id=pdf-error",
+    "width": 390,
+    "scrollWidth": 390,
+    "font": "Onest, Arial, sans-serif",
+    "color": "rgb(34, 44, 48)",
+    "heading": "Не удалось загрузить PDF",
+    "blocks": [],
+    "focused": "Повторить загрузку"
+  },
+  {
+    "scene": "?id=pdf-error",
+    "width": 320,
+    "scrollWidth": 320,
+    "font": "Onest, Arial, sans-serif",
+    "color": "rgb(34, 44, 48)",
+    "heading": "Не удалось загрузить PDF",
+    "blocks": [],
+    "focused": "Повторить загрузку"
+  }
+]
