@@ -390,6 +390,7 @@ textarea {
     line-height: 16px;
     letter-spacing: 0.8px;
 }
+.app-footer-documents a { color: inherit; }
 
 .app-footer-copyright {
     font-size: 10px;

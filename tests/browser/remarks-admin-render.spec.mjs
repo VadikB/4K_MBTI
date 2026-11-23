@@ -36,6 +36,7 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
     await expect.poll(async () => await page.locator('#admin-open-organizations-button').isVisible() ||
       await page.locator('#admin-organizations-panel').isVisible()).toBe(true);
     if (await page.locator('#admin-open-organizations-button').isVisible()) await page.locator('#admin-open-organizations-button').click();
+    await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
     const card = page.locator('[data-organization-id="3"]');
     await expect(card).toBeVisible();
     await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
@@ -85,10 +86,8 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
     await card.locator('.admin-data-readiness summary').click();
     await scaleText();
     const layout = await page.evaluate(() => {
-      const form = document.querySelector('[data-action="preview-early-data"]');
       const identity = document.querySelector('.admin-data-readiness .admin-assessment-identity').getBoundingClientRect();
-      const groups = [...form.querySelectorAll('.admin-questionnaire-field-group')].map((node) => node.getBoundingClientRect().toJSON());
-      const selector = '.admin-organization-columns, .admin-organization-program-form, [data-action="preview-early-data"]';
+      const selector = '.admin-organization-columns, .admin-organization-program-form';
       const outliers = [...document.querySelectorAll(selector)].flatMap((node) => [node, ...node.querySelectorAll('*')])
         .filter((node) => { const r = node.getBoundingClientRect(); return r.width && (r.left < -1 || r.right > innerWidth + 1); })
         .map((node) => ({ tag: node.tagName, class: node.className, text: node.textContent.slice(0, 70) }));
@@ -101,18 +100,18 @@ test('F02 current people actions and FIX02 AC05/06: tags, program groups and rev
         radius: parseFloat(getComputedStyle(node).borderTopLeftRadius),
       }));
       return { document: document.documentElement.scrollWidth, viewport: innerWidth,
-        identity: identity.toJSON(), groups, outliers, tags, statuses };
+        identity: identity.toJSON(), outliers, tags, statuses };
     });
     metrics.push({ width, textScale, longTags, peopleLayout, ...layout });
     expect(layout.document).toBeLessThanOrEqual(width + 1);
     expect(layout.outliers).toEqual([]);
-    expect(layout.groups).toHaveLength(3);
+    await expect(card.locator('[data-action="preview-early-data"]')).toHaveCount(0);
     for (const tag of layout.tags) expect(tag.height).toBeLessThanOrEqual(tag.contentHeight + 34);
     for (const status of layout.statuses) {
       expect(status.width).toBeGreaterThanOrEqual(status.formWidth - 2);
       expect(status.radius).toBeLessThanOrEqual(20);
     }
-    expect(layout.identity.bottom).toBeLessThanOrEqual(layout.groups[0].top);
+
     await page.screenshot({ path: info.outputPath(`admin-${width}-text${textScale * 100}-${populated ? 'long' : 'empty'}.png`), fullPage: true });
     if (populated) await card.locator('.admin-organization-columns').screenshot({ path: info.outputPath(`tags-${width}-text${textScale * 100}.png`) });
   }

@@ -1104,6 +1104,7 @@ export const selectAdminOrganization = (organizationId) => {
 };
 
 export const selectAdminOrganizationView = (organizationId, view) => {
+  if (state.adminOrganizations?.is_superadmin && view === 'questionnaire') return;
   const restoreFocus = document.activeElement?.matches('[data-action="show-admin-view"]');
   assignmentViewGeneration += 1;
   captureAdminOrganizationsDraft();
@@ -1905,6 +1906,7 @@ export const importAdminOrganizationMembers = async (organizationId, csvText) =>
 };
 
 export const previewAdminOrganizationQuestionnaire = async (organizationId, payload) => {
+  if (state.adminOrganizations?.is_superadmin) return false;
   if (!requireOrganizationProgramScope(organizationId, payload?.assignment_ref) ||
       questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return false;
   const earlyData = payload.channel === 'product_form';
@@ -2010,6 +2012,7 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
 };
 
 export const confirmAdminOrganizationQuestionnaire = async (organizationId, revisionId, assessmentRef) => {
+  if (state.adminOrganizations?.is_superadmin) return;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const card = adminOrganizationsList.querySelector('[data-organization-id="' + Number(organizationId) + '"]');
@@ -2161,6 +2164,7 @@ const refreshConfirmedReadiness = async (organizationId, outcome, context) => {
 };
 
 export const checkAdminOrganizationConfirmation = async (organizationId, revisionId) => {
+  if (state.adminOrganizations?.is_superadmin) return;
   const connection = organizationProgramState(organizationId);
   if (connection.status !== 'confirmed' || questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied) return;
   const requestKey = assessmentKey(organizationId, connection.assessmentRef);
@@ -2599,7 +2603,7 @@ const renderOrganizationAdmins = (org, canDeletePerson) => {
       : '<p class="admin-organizations-empty">Администраторов пока нет.</p>') +
     (note ? '<p class="admin-access-note">' + note + '</p>' : '') + '</div>' +
     (active ? '<form class="admin-access-panel admin-access-form" data-action="add-admin">' +
-      '<h4>Добавить администратора</h4><label><span>Рабочая почта</span>' +
+      '<h4 id="platform-org-add-admin" tabindex="-1">Добавить администратора</h4><label><span>Рабочая почта</span>' +
       '<input type="email" name="email" placeholder="name@example.test" maxlength="254" required></label>' +
       '<label><span>ФИО, если известно</span><input name="full_name" maxlength="180"></label>' +
       '<p class="admin-access-note">Укажите именную почту сотрудника. Ему будут доступны анкета и все отчёты организации, включая прежние.</p>' +
@@ -2991,6 +2995,11 @@ const registryCount = document.getElementById('platform-org-count');
 const organizationPageUrl = (id) => '/?screen=admin-organizations&org=' + Number(id);
 const preparationProblemsUrl = (id) => '/?screen=admin-platform-problems&org=' + Number(id);
 const problemCount = (id) => preparationProblemCounts === null ? '—' : String(preparationProblemCounts.get(Number(id)) || 0);
+const renderPreparationProblemCounts = () => {
+  renderOrganizationRegistry();
+  const cardCount = adminOrganizationsList.querySelector('[data-org-problem-count]');
+  if (cardCount) cardCount.textContent = problemCount(selectedOrganizationId);
+};
 const organizationStateBadge = (org) => '<span class="platform-org-state' + (org.is_active === false ? ' is-inactive' : '') +
   '">' + (org.is_active === false ? 'Неактивна' : 'Активна') + '</span>';
 
@@ -3030,6 +3039,8 @@ registryFilter?.addEventListener('change', renderOrganizationRegistry);
 
 const loadPreparationProblemCounts = async (isCurrent) => {
   const generation = ++preparationProblemReadGeneration;
+  preparationProblemCounts = null;
+  renderPreparationProblemCounts();
   const counts = new Map();
   let before = null;
   try {
@@ -3047,9 +3058,7 @@ const loadPreparationProblemCounts = async (isCurrent) => {
       before = next;
     } while (before !== null);
     preparationProblemCounts = counts;
-    renderOrganizationRegistry();
-    const cardCount = adminOrganizationsList.querySelector('[data-org-problem-count]');
-    if (cardCount) cardCount.textContent = problemCount(selectedOrganizationId);
+    renderPreparationProblemCounts();
   } catch { /* The queue link is available even if its case count cannot be read. */ }
 };
 
@@ -3232,7 +3241,8 @@ export const renderAdminOrganizations = () => {
       const questionnaireValidation = questionnairePreview?.validation_json || {};
       const questionnaireProblems = [...(questionnaireValidation.errors || []),
         ...(questionnaireValidation.missing || [])];
-      const activeView = organizationViews.get(orgId) || 'people';
+      const savedView = organizationViews.get(orgId);
+      const activeView = isSuperadmin && savedView === 'questionnaire' ? 'people' : savedView || 'people';
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
       const pendingConnection = isSuperadmin ? pendingProgramConnection(orgId) : null;
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
@@ -3341,7 +3351,7 @@ export const renderAdminOrganizations = () => {
       const key = assessmentKey(orgId, selectedRef);
       const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(key);
       let confirmationOutcome = questionnaireConfirmOutcomes.get(key);
-      if (!confirmationOutcome && state.currentScreen === 'admin-organizations' && activeView === 'organization-data' &&
+      if (!isSuperadmin && !confirmationOutcome && state.currentScreen === 'admin-organizations' && activeView === 'organization-data' &&
           programConfirmed && currentIdentityKey() &&
           !questionnaireLoadState?.accessDenied && !questionnaireConfirmRequestsInFlight.has(key)) {
         const revisionId = Number(readSessionOperation(confirmationStorageKey(key)));
@@ -3433,7 +3443,7 @@ export const renderAdminOrganizations = () => {
         resultCheck + savedChoiceWarning + previewMarkup +
         '<button class="primary-button compact-primary" type="submit" data-early-data-submit>Подтвердить сведения</button></div>';
       const tabsMarkup = '<nav class="admin-organization-steps" aria-label="Разделы управления">' +
-        managementSections.map(viewButton).join('') + '</nav>';
+        managementSections.filter((view) => !isSuperadmin || view !== 'questionnaire').map(viewButton).join('') + '</nav>';
       const reportsLink = !isSuperadmin && isActive ? '<button type="button" class="text-button admin-organization-reports-link" data-action="open-organization-reports" data-program-definition-id="' +
         (reportProgram ? Number(reportProgram.program_definition_id) : '') + '" data-program-label="' +
         escapeHtml(reportProgram ? [reportProgram.program_name, reportProgram.program_version].filter(Boolean).join(' · ') : '') +
@@ -3508,7 +3518,10 @@ export const renderAdminOrganizations = () => {
         '<a class="text-link" href="' + escapeHtml(preparationProblemsUrl(orgId)) + '">Открыть список</a></div>' +
         '<p>Подготовка следующей ситуации: <strong data-org-problem-count>' + problemCount(orgId) + '</strong></p></section>' +
         '<section class="platform-org-summary-panel"><h3>Доступ к отчётам и анкете</h3><p>Готовые отчёты: <strong>' +
-        Number(org.reports_count || 0) + '</strong>. Действующий администратор видит весь архив организации.</p></section></div>' +
+        Number(org.reports_count || 0) + '</strong>. Действующий администратор видит весь архив организации.</p>' +
+        '<p class="platform-org-note">Анкету загружает администратор в своём кабинете. Чтобы помочь с анкетой, ' +
+        (isActive ? '<a class="text-link" href="#platform-org-add-admin" data-platform-org-jump>добавьте сотрудника вашей команды</a>'
+          : 'добавьте сотрудника вашей команды') + ' по его именной рабочей почте.</p></section></div>' +
         '<div class="admin-organization-head" id="platform-org-operations" tabindex="-1"><div class="admin-organization-stats">' +
         '<button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
         (batchIsRunning || !isActive ? ' disabled' : '') +
@@ -3553,7 +3566,7 @@ export const renderAdminOrganizations = () => {
         '" data-admin-view="organization-data">' + (questionnaireLoadState?.status === 'empty' ? '' : questionnaireLoadMarkup) +
         '<div class="admin-data-overview">' + organizationDataReadiness(programState, readiness, assignmentRoleLabel, sourceMarkup) +
         (activeView === 'organization-data' ? reportsLink : '') + '</div>' +
-        '<div class="admin-organization-data-layout"><form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' +
+        (isSuperadmin ? '' : '<div class="admin-organization-data-layout"><form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' +
         escapeHtml(selectedRef) + '"' + (confirmedForm ? ' data-confirmed-form' : '') +
         (!programConfirmed || questionnaireLoadState?.accessDenied ? ' data-confirmation-unavailable' : '') + '>' +
         (programConfirmed ? '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '">' : '') +
@@ -3569,13 +3582,11 @@ export const renderAdminOrganizations = () => {
         '<fieldset class="admin-questionnaire-field-group admin-data-text-fields"><legend>Настройки контекста для ситуаций</legend>' +
         '<label><span>Близость ситуаций к реальной работе</span>' + contextChoiceSelect('case_reality_level', revisionAnswers?.C17?.case_reality_level) + '</label>' +
         '<label><span>Название организации в ситуациях</span>' + contextChoiceSelect('organization_name_usage_rules', revisionAnswers?.C17?.organization_name_usage_rules) + '</label></fieldset>' +
-        confirmationMarkup + '</form>' + participantPreviewMarkup + '</div></section>' +
-        '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') +
-        '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + (isSuperadmin
-          ? currentReadinessMarkup + questionnaireTitle + questionnaireUpload
-          : '<div class="admin-questionnaire-upload"><div class="admin-questionnaire-upload-heading">' +
+        confirmationMarkup + '</form>' + participantPreviewMarkup + '</div>') + '</section>' +
+        (isSuperadmin ? '' : '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') +
+        '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + '<div class="admin-questionnaire-upload"><div class="admin-questionnaire-upload-heading">' +
             questionnaireTitle + (activeView === 'questionnaire' ? reportsLink : '') + '</div>' +
-            questionnaireUpload + '</div>' + currentReadinessMarkup) + '</section>' +
+            questionnaireUpload + '</div>' + currentReadinessMarkup + '</section>') +
         '</article>'
       );
     })
@@ -3636,6 +3647,7 @@ export const openAdminOrganizations = async ({
   preserveView = false, navigation = preserveView ? window.history.state?.managementNavigation : null,
   openRegistry = false,
 } = {}) => {
+  captureAdminOrganizationsDraft();
   assignmentViewGeneration += 1;
   restoreManagementSelection();
   if (!preserveView) organizationViews.clear();

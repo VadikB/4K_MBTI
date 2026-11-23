@@ -24,7 +24,7 @@ test('manual questionnaire draft fields are not blocked by publish required attr
 
 test('ADM 1A uses the accepted navigation, groups and provenance wording', () => {
   assert.match(organizations, /people:\s*\{\s*title: 'Участники оценки'/);
-  assert.match(organizations, /managementSections\.map\(viewButton\)/);
+  assert.match(organizations, /managementSections\.filter\(\(view\) => !isSuperadmin \|\| view !== 'questionnaire'\)\.map\(viewButton\)/);
   assert.match(organizations, /<legend>Об организации<\/legend>/);
   assert.match(organizations, /<legend>Сведения для знакомства<\/legend>/);
   assert.match(organizations, /<legend>Настройки контекста для ситуаций<\/legend>/);

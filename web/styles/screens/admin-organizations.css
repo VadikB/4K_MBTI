@@ -7,6 +7,12 @@
     overflow-wrap: anywhere;
 }
 
+.shell:has(> #admin-organizations-panel[data-superadmin="true"]:not(.hidden)),
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-shell {
+    background: var(--palette-outcome-canvas);
+}
+.admin-organizations-panel[data-superadmin="true"] { min-height: 0; }
+
 .platform-navigation { display: none; }
 .admin-organizations-panel[data-superadmin="true"] .platform-navigation {
     display: flex;
@@ -191,6 +197,20 @@
     .platform-org-registry td[data-label]::before { content: attr(data-label); color: var(--palette-outcome-text); }
     .platform-org-pair, .platform-org-summary-panel form { grid-template-columns: minmax(0, 1fr); }
     .platform-org-summary-panel { padding: 15px; }
+}
+@media (max-width: 700px) {
+    .admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero h2 {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 32px;
+        letter-spacing: normal;
+    }
+}
+@media (max-width: 479px) {
+    .shell:has(> #admin-organizations-panel[data-superadmin="true"]:not(.hidden)) > .app-footer {
+        gap: 10px;
+        padding-block: 16px calc(16px + env(safe-area-inset-bottom));
+    }
 }
 .platform-availability { width: min(100%, 1144px); min-height: 50vh; margin: 0 auto; padding: 38px 32px; }
 .platform-availability h1 { margin: 0 0 12px; font-size: 28px; line-height: 36px; }
