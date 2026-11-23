@@ -5,6 +5,24 @@ import hashlib
 import json
 
 
+# The list uses the same lineage match without locks. Only the command commits a cancellation.
+UNBOUND_ASSIGNMENT_CYCLE_SQL = """
+    SELECT 1 FROM m5_cycles historical_cycle
+    JOIN participant_acquaintance_confirmations confirmation
+      ON confirmation.personalized_profile_id=historical_cycle.personalized_profile_id
+     AND confirmation.user_id=historical_cycle.owner_user_id
+     AND confirmation.organization_id=historical_cycle.organization_id
+    JOIN organization_assessment_source_bindings binding
+      ON binding.assignment_id=assignment.id
+     AND binding.questionnaire_revision_id=confirmation.questionnaire_revision_id
+    WHERE historical_cycle.assignment_id IS NULL
+      AND historical_cycle.owner_user_id=assignment.recipient_user_id
+      AND historical_cycle.organization_id=assignment.organization_id
+      AND confirmation.assignment_ref=assignment.assignment_ref
+      AND historical_cycle.usage_scope='assessment'
+"""
+
+
 class CancellationError(ValueError):
     def __init__(self, code: str, status_code: int = 409):
         super().__init__(code)
@@ -73,18 +91,10 @@ def cancel(connection, *, organization_id: int, assignment_id: int,
         WHERE assignment_id=%s FOR UPDATE""", (assignment_id,)).fetchall()
     if any(row.get("started_at") is not None or row.get("status") != "prepared" for row in cycles):
         raise CancellationError("ASSIGNMENT_ALREADY_STARTED")
-    if not cycles and connection.execute("""SELECT 1 FROM m5_cycles cycle
-        JOIN participant_acquaintance_confirmations confirmation
-          ON confirmation.personalized_profile_id=cycle.personalized_profile_id
-         AND confirmation.user_id=cycle.owner_user_id
-         AND confirmation.organization_id=cycle.organization_id
-        JOIN organization_assessment_source_bindings binding
-          ON binding.assignment_id=%s
-         AND binding.questionnaire_revision_id=confirmation.questionnaire_revision_id
-        WHERE cycle.assignment_id IS NULL AND cycle.owner_user_id=%s AND cycle.organization_id=%s
-          AND confirmation.assignment_ref=%s AND cycle.usage_scope='assessment'
-        LIMIT 1 FOR UPDATE OF cycle""",
-        (assignment_id, recipient_user_id, organization_id, assignment["assignment_ref"])).fetchone():
+    if not cycles and connection.execute(f"""SELECT 1 FROM organization_assessment_assignments assignment
+        WHERE assignment.id=%s AND EXISTS (
+            {UNBOUND_ASSIGNMENT_CYCLE_SQL} LIMIT 1 FOR UPDATE OF historical_cycle
+        )""", (assignment_id,)).fetchone():
         raise CancellationError("ASSIGNMENT_LINK_UNKNOWN")
     if assignment["status"] == "active" and assignment.get("revoked_at") is None:
         changed = connection.execute("""UPDATE organization_assessment_assignments

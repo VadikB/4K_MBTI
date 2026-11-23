@@ -1216,6 +1216,7 @@ def _project_admin_assessment_stage(row: dict) -> dict:
         "report_id": str(row["report_id"]) if row.get("report_id") and row.get("report_access") else None,
         "report_access": row.get("report_access_kind") if row.get("report_access") else None,
         "assignment_id": int(row["assignment_id"]),
+        "can_cancel": row.get("can_cancel") is True,
         "progress": progress, "blocker": blocker, "result_summary": result_summary,
         "description": " ".join(description_parts) or None,
     }

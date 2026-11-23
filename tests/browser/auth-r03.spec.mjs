@@ -1390,7 +1390,7 @@ test('ADM-STATUS-01 shows the current participant stage and opens known facts in
   await expect(rows.nth(0).locator('.admin-organization-current-stage')).toHaveText('Оценка назначена');
   await expect(rows.nth(1).locator('.admin-organization-current-stage')).toHaveText('Проходит знакомство');
   await expect(rows.nth(2).locator('.admin-organization-current-stage')).toHaveText('Идёт подготовка оценки');
-  await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Подготовка завершилась с ошибкой');
+  await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveText('Не удалось подготовить оценку');
   await expect(rows.nth(3).locator('.admin-organization-current-stage')).toHaveClass(/is-critical/);
   await expect(rows.nth(4).locator('.admin-organization-current-stage')).toHaveText('Оценка выполняется');
   await expect(rows.nth(5).locator('.admin-organization-current-stage')).toHaveText('Оценка приостановлена');
@@ -1706,10 +1706,10 @@ test('ADM-UI-01 keeps the sent menu to two items and moves deletion and incident
   await expect(rows.nth(2).getByRole('button', { name: 'Открыть пояснение' })).toHaveAttribute('data-report-id', reportId);
   await expect(rows.nth(2).locator('.admin-organization-member-menu')).toHaveCount(0);
   await expect(rows.locator('[data-action="purge-account"]')).toHaveCount(0);
-  await expect(rows.nth(3)).toContainText('Последний подтверждённый этап: подготовка кейсов.');
+  await expect(rows.nth(3)).toContainText('Требуется проверка подготовки оценки.');
   await rows.nth(3).locator('[data-action="open-member-card"]').click();
   const incidentCard = page.locator('.org-admin-member-card');
-  await expect(incidentCard).toContainText('Подготовка заблокирована');
+  await expect(incidentCard).toContainText('Не удалось подготовить оценку');
   await expect(incidentCard.getByRole('button', { name: 'Проверить состояние' })).toBeVisible();
   await expect(incidentCard.getByRole('button', { name: 'Скопировать номер' })).toBeHidden();
   await page.keyboard.press('Escape');
@@ -1720,6 +1720,8 @@ test('ADM-UI-01 keeps the sent menu to two items and moves deletion and incident
   await rows.nth(3).getByRole('button', { name: 'Проверить состояние' }).click();
   await expect.poll(() => reads.length).toBeGreaterThan(0);
   expect(reads).toEqual(['GET']);
+  await expect(incidentCard.locator('[data-card-check-feedback]')).toHaveText('Состояние обновлено.');
+  await page.keyboard.press('Escape');
   await rows.nth(1).locator('[data-action="open-member-card"]').click();
   await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Регистрация');
   await expect(page.locator('.admin-member-card-dialog')).not.toContainText('Письмо и ссылка');
@@ -1848,6 +1850,7 @@ test('ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewpo
 
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(page.locator('.app-footer')).toHaveCSS('background-color', 'rgb(246, 249, 249)');
     const layout = await row.evaluate((member) => {
       const main = member.querySelector('.admin-organization-member-main').getBoundingClientRect();
       const name = member.querySelector('.admin-organization-member-name').getBoundingClientRect();
@@ -2995,10 +2998,12 @@ test('R04 shared footer stays in document flow and stacks on mobile', async ({ p
   await page.goto(base);
   const footer = page.locator('.app-footer');
   await expect(footer).toBeVisible();
+  await expect(footer).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await expect(footer.getByText('Политика конфиденциальности')).toBeVisible();
   await expect(footer.getByText('Согласие на обработку персональных данных')).toBeVisible();
   await expect(footer.getByText('© 2026 LIDUM')).toBeVisible();
-  await expect(footer.locator('a')).toHaveCount(0);
+  await expect(footer.getByRole('link', { name: 'Согласие на обработку персональных данных' }))
+    .toHaveAttribute('href', '/web/assets/docs/personal-data-consent.pdf');
   await expect(footer).toHaveCSS('position', 'static');
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#email-input')).toHaveCSS('font-size', '16px');
@@ -3056,6 +3061,7 @@ test('R03 refresh obeys server journey and fails closed on journey outage', asyn
   });
   await page.goto(base);
   await expect(page.locator('#dashboard-panel')).toBeVisible();
+  await expect(page.locator('.app-footer--participant')).toHaveCSS('background-color', 'rgb(247, 247, 247)');
 
   journeyStatus = 503;
   await page.reload();

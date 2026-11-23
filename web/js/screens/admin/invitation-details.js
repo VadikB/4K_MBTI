@@ -1,7 +1,7 @@
 import { invitationMessage, invitationLinkMessage } from './invitation-presentation.js';
 const attemptKey = item => String(item?.operation_id || '') + ':' + String(item?.invitation_id || '');
 const time = value => value ? new Date(value).toLocaleString('ru-RU', { timeZoneName: 'short' }) : 'Не сохранено';
-export const mountInvitationDetails = (dialog, initial, refresh = null) => {
+export const mountInvitationDetails = (dialog, initial, refresh = null, { unboundRegistration = '' } = {}) => {
   const details = document.createElement('details');
   details.className = 'admin-invitation-details';
   details.innerHTML = '<summary>Сведения о приглашении</summary><dl><dt>ID попытки</dt><dd data-invite-id></dd><dt data-invite-case-label>Номер случая</dt><dd data-invite-case></dd><dt>Время</dt><dd data-invite-time></dd><dt>Диагностика</dt><dd data-invite-diagnostic></dd></dl><p data-invite-read-status role="status"></p><button type="button" data-invite-copy>Копировать сведения</button>';
@@ -48,5 +48,16 @@ export const mountInvitationDetails = (dialog, initial, refresh = null) => {
     details.append(button);
   }
   dialog.querySelector('form').insertBefore(details, dialog.querySelector('[data-card-actions]'));
+  if (unboundRegistration) {
+    const saved = document.createElement('section');
+    saved.setAttribute('data-card-unbound-invitation', '');
+    saved.innerHTML = '<p>Не удалось подтвердить, к какой оценке относится отправка</p>' +
+      '<dl><dt>Отправка</dt><dd></dd><dt>Ссылка</dt><dd></dd><dt>Регистрация</dt><dd></dd></dl>';
+    const [delivery, link, registration] = saved.querySelectorAll('dd');
+    delivery.textContent = invitationMessage(initial);
+    link.textContent = invitationLinkMessage(initial.link_status, initial.expires_at ? time(initial.expires_at) : '');
+    registration.textContent = unboundRegistration;
+    details.before(saved);
+  }
   return { render, details };
 };

@@ -192,11 +192,12 @@ export function registerAuthV01Tests({ test, expect, baseRoutes, base, fulfillJs
       await page.goto(base);
       await shell(page);
       const footer = page.locator('.app-footer');
-      await expect(footer.locator('.app-footer-documents > span')).toHaveText([
+      await expect(footer.locator('.app-footer-documents > *')).toHaveText([
         'Политика конфиденциальности', 'Согласие на обработку персональных данных',
       ]);
       await expect(footer.locator('.app-footer-copyright')).toHaveText(`© ${year} LIDUM`);
-      await expect(footer.locator('a')).toHaveCount(0);
+      await expect(footer.getByRole('link', { name: 'Согласие на обработку персональных данных' }))
+        .toHaveAttribute('href', '/web/assets/docs/personal-data-consent.pdf');
       await expect(footer).toHaveCSS('font-family', /Onest/);
       await expect(footer.locator('.app-footer-documents')).toHaveCSS('line-height', '16px');
       await expect(footer.locator('.app-footer-release')).toBeHidden();

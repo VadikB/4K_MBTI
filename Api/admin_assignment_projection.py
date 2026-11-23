@@ -1,5 +1,6 @@
 """Shared read-only assignment lineage for admin rows and questionnaire summaries."""
 
+from Api.assessment_assignment_cancellation import UNBOUND_ASSIGNMENT_CYCLE_SQL
 from Api.assessment_assignment_sources import CONFIRMATION_ASSIGNMENT_SCOPE_SQL
 from Api.m8_report_access import CUSTOMER_REPORT_FOR_CYCLE_SQL
 
@@ -84,11 +85,17 @@ LEFT JOIN LATERAL (
 ) product_preparation ON TRUE
 """
 
-ADMIN_ASSIGNMENT_STAGES_SQL = """
+ADMIN_ASSIGNMENT_STAGES_SQL = f"""
 SELECT assignment.organization_id, assignment.recipient_user_id,
        assignment.id AS assignment_id, assignment.assignment_ref,
        assignment.status AS assignment_status, assignment.created_at AS assignment_created_at,
        assignment.revoked_at,
+       (assignment.status='active' AND assignment.revoked_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM m5_cycles started_cycle
+                        WHERE started_cycle.assignment_id=assignment.id
+                          AND (started_cycle.started_at IS NOT NULL OR started_cycle.status<>'prepared'))
+        AND (EXISTS (SELECT 1 FROM m5_cycles linked_cycle WHERE linked_cycle.assignment_id=assignment.id)
+             OR NOT EXISTS ({UNBOUND_ASSIGNMENT_CYCLE_SQL}))) AS can_cancel,
        acquaintance.status AS acquaintance_status,
        profile.id AS personalized_profile_id, profile.status AS profile_status,
        COALESCE(product_preparation.operation_id,preparation.operation_id) AS preparation_operation_id,

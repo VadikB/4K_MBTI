@@ -37,14 +37,23 @@ REF_FIELDS = {"material_refs": "Материалы", "event_refs": "Событи
               "character_refs": "Активные персонажи", "authority_refs": "authority"}
 
 
+EVENT_CONDITION_FIELD = "Условие запуска"
+LEGACY_EVENT_CONDITION_FIELD = "Условие возникновения"
+
+
 def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     manifest_raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(manifest_raw)
-    files = {"1.0.0": PROMPT_FILES, "2.0.0": V2_FILES}.get(manifest.get("version"))
-    if files is None or (manifest.get("schema_version"), manifest.get("id"), manifest.get("status")) != (
+    layout = {
+        "1.0.0": (PROMPT_FILES, "1.0.0"),
+        "2.0.0": (V2_FILES, "1.0.0"),
+        "3.0.0": (V2_FILES, "2.0.0"),
+    }.get(manifest.get("version"))
+    if layout is None or (manifest.get("schema_version"), manifest.get("id"), manifest.get("status")) != (
         1, "m5-functional-passport", "draft"
     ):
         raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
+    files, as_version = layout
     artifacts = {item["name"]: item["sha256"] for item in manifest["artifacts"]}
     if set(artifacts) != set(files.values()) or len(manifest["artifacts"]) != len(files):
         raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
@@ -57,6 +66,13 @@ def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     refs["protocol_package"] = {"id": manifest["id"], "version": manifest["version"],
                                 "checksum": digest(manifest_raw), "path": str(directory.relative_to(ROOT))}
     contract = json.loads((directory / PROMPT_FILES["generation_contract"]).read_bytes())
+    if (contract.get("schema_version"), contract.get("id"), contract.get("version")) != (1, "m5-functional-as", as_version):
+        raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
+    if as_version == "2.0.0" and not (
+        isinstance(contract.get("case_as_contract_ref"), dict)
+        and isinstance(contract.get("event_material_rules"), dict)
+    ):
+        raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
     ref = {"id": contract["id"], "version": contract["version"], "checksum": artifacts["as-contract.json"]}
     return contract, ref, refs
 
@@ -66,10 +82,9 @@ def read_case_content_contract(path: Path, case_id: str) -> dict | None:
     requirements = contract.get("requirements")
     evidence_sections = contract.get("finding_evidence_sections")
     indicator_fields = contract.get("indicator_fields")
-    if (contract.get("schema_version"), contract.get("id"), contract.get("version")) != (
-        1, "m5-functional-passport-content", "1.0.0"
-    ) or not (
-        _text(contract.get("case_id"))
+    if not (
+        contract.get("schema_version") == 1 and contract.get("id") == "m5-functional-passport-content"
+        and contract.get("version") in ("1.0.0", "1.1.0") and _text(contract.get("case_id"))
         and isinstance(requirements, dict) and requirements and all(_text(value) for value in requirements.values())
         and isinstance(evidence_sections, dict) and evidence_sections.keys() == requirements.keys()
         and all(
@@ -135,12 +150,44 @@ def provider_basis(snapshot: dict) -> dict:
             **({"scenario_contract": snapshot["scenario_contract"]} if "scenario_contract" in snapshot else {}),
             **({"case_content_contract": case_content,
                 "m2_indicator_descriptors": snapshot["m2_indicator_descriptors"]} if case_content else {}),
+            **({"event_material_delivery": snapshot["event_material_delivery"]}
+               if "event_material_delivery" in snapshot else {}),
             "requirements": {
                 "required_top_level_fields_exact": list(snapshot["as_contract"]["fields"]),
                 "maximum_output_characters": snapshot["as_contract"]["maximum_output_characters"],
                 "base_role": snapshot["case_version"]["base_role"],
                 "synthetic_profile": snapshot["synthetic"],
             }}
+
+
+def compact_review_payload(payload: dict, batch_checks: list[dict]) -> dict:
+    """Keep a requirement inline once when the current review already carries it."""
+    contract = payload.get("case_content_contract")
+    case = payload.get("case")
+    if not isinstance(contract, dict) or not isinstance(case, dict):
+        return payload
+    if (not _text(contract.get("case_id")) or contract["case_id"] != case.get("CaseID")
+            or not _text(contract.get("version"))):
+        return payload
+    requirements = contract.get("requirements")
+    if not isinstance(requirements, dict):
+        return payload
+    repeated = set()
+    for check in batch_checks:
+        check_id = check.get("check_id")
+        requirement = check.get("requirement")
+        if not _text(check_id) or not isinstance(requirement, dict):
+            continue
+        text = requirements.get(check_id)
+        passport_or_protocol = requirement.get("passport_or_protocol")
+        if (_text(text) and isinstance(passport_or_protocol, (str, dict)) and passport_or_protocol
+                and requirement.get("case_content") == text):
+            repeated.add(check_id)
+    if not repeated:
+        return payload
+    return {**payload, "case_content_contract": {
+        **contract, "requirements": {key: value for key, value in requirements.items() if key not in repeated},
+    }}
 
 
 def _indexed(value: object, key: str) -> dict | None:
@@ -159,6 +206,157 @@ def _ids(value: object) -> bool:
 
 def _text(value: object) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def build_event_material_delivery(case: dict, case_rules: dict) -> dict:
+    scenario = case["passport"]["17 Сценарий Dialogue"]
+    start_ids = scenario["На старте"]
+    delayed = set(scenario["Функции материалов"]) - set(start_ids)
+    # The release suffix changes CaseVersion while retaining the passport source.
+    fixed = case_rules.get(case["case_id"], {}).get(case["passport_source"]["sha256"], {})
+    assigned = [material_id for rule in fixed.values() for material_id in rule["material_ids"]]
+    event_ids = {event["EventID"] for event in scenario["События"]}
+    if (not fixed.keys() <= event_ids or not _ids(assigned) or not set(assigned) <= delayed
+            or any(rule["function"] not in ALLOWED_FUNCTIONS
+                   or bool(rule["material_ids"]) != (rule["function"] == "material_update")
+                   for rule in fixed.values())):
+        raise missing(case["case_id"], case["version"], "17→event_material_rules")
+    unassigned = sorted(delayed - set(assigned))
+    if unassigned and fixed.keys() == event_ids:
+        raise missing(case["case_id"], case["version"], "17→event_material_rules")
+    without_delivery = sorted(ALLOWED_FUNCTIONS - {"material_update"})
+    events = {}
+    for event in scenario["События"]:
+        event_id = event["EventID"]
+        if event_id in fixed:
+            rule = fixed[event_id]
+            delivery = {"functions": [rule["function"]], "material_ids": list(rule["material_ids"])}
+        elif unassigned:
+            delivery = {"functions": sorted(ALLOWED_FUNCTIONS), "allowed_material_ids": unassigned}
+        else:
+            delivery = {"functions": without_delivery, "material_ids": []}
+        basis = event["Действие"]
+        if not delayed:
+            basis = f"Все материалы доступны на старте. {basis}"
+        events[event_id] = {**delivery, "condition": event["Условие запуска"], "reason": basis}
+    return {"start_material_ids": list(start_ids), "events": events}
+
+
+def bind_event_materials(snapshot: dict, proposed: object) -> tuple[object, list[dict]]:
+    delivery = snapshot.get("event_material_delivery")
+    if delivery is None or not isinstance(proposed, dict):
+        return proposed, []
+    bindings = proposed.get("RuntimeBindings")
+    if not isinstance(bindings, dict):
+        return proposed, []
+    starts = set(delivery["start_material_ids"])
+    assembled, changes = {}, []
+    for event_id, rule in delivery["events"].items():
+        binding = bindings.get(event_id)
+        if (not isinstance(binding, dict) or "material_ids" not in rule
+                or binding.get("function") not in rule["functions"]):
+            continue
+        expected, actual = rule["material_ids"], binding.get("material_ids")
+        if ("material_ids" not in binding
+                or (expected == [] and binding["function"] == "facilitator_action"
+                    and _ids(actual) and actual and set(actual) <= starts)):
+            assembled[event_id] = {**binding, "material_ids": list(expected)}
+            changes.append({"path": f"candidate_as/RuntimeBindings/{event_id}/material_ids",
+                            "actual": actual, "assembled": list(expected)})
+    if not changes:
+        return proposed, []
+    return {**proposed, "RuntimeBindings": {**bindings, **assembled}}, changes
+
+
+def _fixed_event_conditions(snapshot: dict) -> dict[str, str]:
+    rules = snapshot.get("event_material_delivery", {}).get("events", {})
+    return {event_id: rule["condition"] for event_id, rule in rules.items() if rule.get("material_ids")}
+
+
+def _event_condition_fields(event: dict) -> dict:
+    return {key: event[key] for key in (EVENT_CONDITION_FIELD, LEGACY_EVENT_CONDITION_FIELD) if key in event}
+
+
+def bind_event_conditions(snapshot: dict, proposed: object) -> tuple[object, list[dict]]:
+    conditions = _fixed_event_conditions(snapshot)
+    if not conditions or not isinstance(proposed, dict):
+        return proposed, []
+    events = _indexed(proposed.get("События"), "EventID")
+    if events is None:
+        return proposed, []
+    changes = []
+    for event_id, event in events.items():
+        if event_id not in conditions:
+            continue
+        actual = _event_condition_fields(event)
+        expected = {EVENT_CONDITION_FIELD: conditions[event_id]}
+        if actual == expected:
+            continue
+        bound = {**event, **expected}
+        bound.pop(LEGACY_EVENT_CONDITION_FIELD, None)
+        events[event_id] = bound
+        changes.append({"path": f"candidate_as/События/{event_id}", "actual": actual, "assembled": expected})
+    return ({**proposed, "События": list(events.values())} if changes else proposed), changes
+
+
+def _validate_event_material_delivery(delivery: dict, bindings: object, characters: dict, check) -> None:
+    rules = delivery["events"]
+    path = "candidate_as/RuntimeBindings"
+    check("runtime_event_set", isinstance(bindings, dict) and bindings.keys() == rules.keys(),
+          list(bindings) if isinstance(bindings, dict) else bindings, path=path, expected=list(rules),
+          reason="Карта выдачи должна содержать события закреплённого паспорта.")
+    if not isinstance(bindings, dict):
+        return
+    start_ids = set(delivery["start_material_ids"])
+    flexible_ids = {material for rule in rules.values() for material in rule.get("allowed_material_ids", ())}
+    known_ids = start_ids | flexible_ids | {material for rule in rules.values() for material in rule.get("material_ids", ())}
+    assigned = []
+    for event_id, binding in bindings.items():
+        if event_id not in rules:
+            continue
+        rule = rules[event_id]
+        event_path = f"{path}/{event_id}"
+        fields = ["function", "speaker_ids", "material_ids"]
+        if not isinstance(binding, dict) or binding.keys() != set(fields):
+            check("runtime_event_binding", False, binding, path=event_path, expected=fields,
+                  reason="Ожидается привязка события с типом действия, участниками и списком выдачи.")
+            continue
+        function, speakers, actual = (binding[key] for key in fields)
+        functions = rule["functions"]
+        check("runtime_event_binding", function in functions, function, path=f"{event_path}/function",
+              expected=functions[0] if len(functions) == 1 else functions,
+              reason=f"Тип действия должен соответствовать правилу выдачи. {rule['reason']}")
+        speaker_options = {"allowed_speaker_ids": list(characters)} if function == "character_reaction" else {"expected": []}
+        check("runtime_event_binding", _ids(speakers) and set(speakers) <= characters.keys()
+              and bool(speakers) == (function == "character_reaction"), speakers,
+              path=f"{event_path}/speaker_ids",
+              reason="Для реакции нужен хотя бы один известный персонаж. Для остальных действий список пуст.",
+              **speaker_options)
+        if "material_ids" in rule or function != "material_update":
+            expected = rule.get("material_ids", [])
+            valid = actual == expected
+            options = {"expected": expected}
+        else:
+            allowed = rule["allowed_material_ids"]
+            valid = _ids(actual) and bool(actual) and set(actual) <= set(allowed)
+            options = {"allowed_material_ids": allowed, "condition": rule["condition"]}
+            if valid:
+                assigned.extend(actual)
+        reason = rule["reason"]
+        if not valid and isinstance(actual, list) and all(isinstance(item, str) for item in actual):
+            if set(actual) - known_ids:
+                reason = f"Список содержит неизвестный MaterialID. {reason}"
+            elif len(actual) != len(set(actual)):
+                reason = f"MaterialID повторяется в списке выдачи. {reason}"
+            elif rule.get("material_ids"):
+                reason = f"Сохраните обязательную выдачу на этом событии. {reason}"
+            elif set(actual) - start_ids:
+                reason = f"Материал недоступен для выдачи на этом событии. {reason}"
+        check("runtime_event_binding", valid, actual, path=f"{event_path}/material_ids", reason=reason, **options)
+    if flexible_ids:
+        check("runtime_delayed_materials", set(assigned) == flexible_ids and len(assigned) == len(flexible_ids),
+              assigned, path=path, expected=sorted(flexible_ids),
+              reason="Каждый доступный для событийной выдачи материал должен появиться ровно один раз.")
 
 
 def validate_candidate(snapshot: dict, candidate: dict, check) -> list[str]:
@@ -220,36 +418,29 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> list[str]:
                   and isinstance(character.get("Начальные знания"), list), path=path)
             record_missing(("Имя", "Роль", "Текст", "Начальные знания"), character, path)
         event_fields = (
-            "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", "Условие запуска",
+            "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", EVENT_CONDITION_FIELD,
         )
+        conditions = _fixed_event_conditions(snapshot)
         for event_id, event in events.items():
             path = f"candidate_as/События/{event_id}"
             check("scenario_event", all(_text(event.get(field)) for field in event_fields), path=path)
             record_missing(event_fields, event, path)
-        delayed = set(materials) - set(scenario["На старте"])
+            if event_id in conditions:
+                expected = {EVENT_CONDITION_FIELD: conditions[event_id]}
+                actual = _event_condition_fields(event)
+                check("runtime_event_condition", actual == expected, actual, path=path, expected=expected,
+                      reason="Условие фиксированной выдачи должно совпадать с закреплённым паспортом.")
         bindings = candidate.get("RuntimeBindings")
-        check("runtime_event_set", isinstance(bindings, dict) and set(bindings) == set(events), path="candidate_as/RuntimeBindings")
-        binding_fields = ("function", "speaker_ids", "material_ids")
         if isinstance(bindings, dict):
             record_missing(events, bindings, "candidate_as/RuntimeBindings")
-        bound_materials = []
-        for event_id, binding in (bindings.items() if isinstance(bindings, dict) else ()):
-            path = f"candidate_as/RuntimeBindings/{event_id}"
-            if isinstance(binding, dict):
-                record_missing(binding_fields, binding, path)
-            if not isinstance(binding, dict) or set(binding) != set(binding_fields):
-                check("runtime_event_binding", False, path=path)
-                continue
-            function, speaker_ids, material_ids = (binding[key] for key in binding_fields)
-            check("runtime_event_binding", isinstance(function, str) and function in ALLOWED_FUNCTIONS
-                  and _ids(speaker_ids) and set(speaker_ids) <= set(characters)
-                  and _ids(material_ids) and set(material_ids) <= delayed
-                  and bool(speaker_ids) == (function == "character_reaction")
-                  and bool(material_ids) == (function == "material_update"), path=path)
-            if _ids(material_ids):
-                bound_materials.extend(material_ids)
-        check("runtime_delayed_materials", set(bound_materials) == delayed and len(bound_materials) == len(delayed),
-              path="candidate_as/RuntimeBindings")
+            for event_id, binding in bindings.items():
+                if isinstance(binding, dict):
+                    record_missing(("function", "speaker_ids", "material_ids"), binding,
+                                   f"candidate_as/RuntimeBindings/{event_id}")
+        if "event_material_delivery" in snapshot:
+            _validate_event_material_delivery(snapshot["event_material_delivery"], bindings, characters, check)
+        else:
+            _validate_legacy_event_bindings(scenario, bindings, materials, characters, events, check)
     else:
         _validate_addressed_content(candidate, design, materials, characters, check)
     observed = _indexed(candidate.get("IndicatorObservability"), "IndicatorID") or {}
@@ -282,6 +473,29 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> list[str]:
                 check("required_scenario_observability", observed.get(indicator_id, {}).get(field) == required_refs,
                       path=f"candidate_as/IndicatorObservability/{indicator_id}/{field}")
     return missing_paths
+
+
+def _validate_legacy_event_bindings(scenario: dict, bindings: object, materials: dict,
+                                    characters: dict, events: dict, check) -> None:
+    delayed = set(materials) - set(scenario["На старте"])
+    check("runtime_event_set", isinstance(bindings, dict) and bindings.keys() == events.keys(),
+          path="candidate_as/RuntimeBindings")
+    bound_materials = []
+    for event_id, binding in (bindings.items() if isinstance(bindings, dict) else ()):
+        path = f"candidate_as/RuntimeBindings/{event_id}"
+        if not isinstance(binding, dict) or set(binding) != {"function", "speaker_ids", "material_ids"}:
+            check("runtime_event_binding", False, path=path)
+            continue
+        function, speaker_ids, material_ids = (binding[key] for key in ("function", "speaker_ids", "material_ids"))
+        check("runtime_event_binding", isinstance(function, str) and function in ALLOWED_FUNCTIONS
+              and _ids(speaker_ids) and set(speaker_ids) <= set(characters)
+              and _ids(material_ids) and set(material_ids) <= delayed
+              and bool(speaker_ids) == (function == "character_reaction")
+              and bool(material_ids) == (function == "material_update"), path=path)
+        if _ids(material_ids):
+            bound_materials.extend(material_ids)
+    check("runtime_delayed_materials", set(bound_materials) == delayed and len(bound_materials) == len(delayed),
+          path="candidate_as/RuntimeBindings")
 
 
 def _validate_addressed_content(candidate: dict, design: dict, materials: dict, characters: dict, check) -> None:
