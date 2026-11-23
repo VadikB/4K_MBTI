@@ -136,6 +136,47 @@ def test_repair_uses_same_delivery_and_keeps_independent_blocker(cases, tmp_path
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def test_spec01_assembles_fixed_condition_before_generation_and_repair_reviews(cases):
+    snapshot = _snapshot(cases["CASE.SPEC.01"])
+    original = synthetic_as(provider_basis(snapshot))
+    document, reply = original["События"]
+    condition = snapshot["event_material_delivery"]["events"]["E01_DOCUMENT"]["condition"]
+    document["Условие запуска"] = "После вопроса о погоде."
+    reply["Условие запуска"] = "После запроса о сроке."
+    repaired = deepcopy(original)
+    repaired["Название"] = "Исправленный заголовок"
+    repaired["События"][0]["Условие запуска"] = condition
+    repaired["События"][0]["Условие возникновения"] = document["Условие запуска"]
+    gateway = Gateway(original, repaired, block_first=True)
+    prepared = service.prepare(snapshot, gateway)
+
+    assert _counts(gateway) == {"generation": 1, "tester": 8, "challenger": 8, "repair": 1}
+    initial = prepared["repair"]["original_tester"]["aggregation"]
+    assert initial["status"] == "FAIL"
+    assert not initial["deterministic_failures"]
+    assert [item["check_id"] for item in initial["blocking_failures"]] == ["common.confidentiality"]
+    assert prepared["tester"]["aggregation"]["status"] == "PASS"
+    for route, _, payload in gateway.calls:
+        if ":generation:" not in route:
+            events = payload["candidate_as"]["События"]
+            assert events[0]["Условие запуска"] == condition
+            assert "Условие возникновения" not in events[0]
+            assert events[1] == reply
+    _assert_review_identity(gateway, prepared)
+    trace = service.build_persistence_trace(snapshot, prepared)
+    assert trace["repair"]["original_author_content_binding"]["provider_candidate_checksum"] == service.checksum(original)
+    assert trace["author_content_binding"]["provider_candidate_checksum"] == service.checksum(repaired)
+    assert trace["author_content_binding"]["event_condition_changes"] == [{
+        "path": "candidate_as/События/E01_DOCUMENT",
+        "actual": {"Условие запуска": condition, "Условие возникновения": document["Условие запуска"]},
+        "assembled": {"Условие запуска": condition},
+    }]
+    rules = prepared["execution_rules"]["cases"]["CASE.SPEC.01"]
+    stage = next(row for row in rules["scenario"] if row["step_id"] == "E01_DOCUMENT")
+    material = next(row for row in rules["materials"] if row["material_id"] == "M02")
+    assert stage["condition"] == material["event_condition"]["text"] == condition
+
+
 @pytest.mark.parametrize(("case_id", "event", "field", "actual", "expected", "reason"), [
     ("CASE.SPEC.02", "E01_FACT", "material_ids", ["M99"], [], "неизвестный MaterialID"),
     ("CASE.SPEC.02", "E01_FACT", "function", "material_update", "facilitator_action", "Тип действия"),
@@ -165,7 +206,8 @@ def test_real_binding_violation_remains_closed_after_repair(cases, case_id, even
     )
     assert reason in failure["reason"]
     assert verdict["deterministic_failures"] == [failure]
-    assert result["author_content_binding"]["changed"] is False
+    assert result["candidate_as"]["RuntimeBindings"][event][field] == actual
+    assert "event_material_changes" not in result["author_content_binding"]
     batches = 10 if case_id == "CASE.SPEC.02" else 8
     assert _counts(gateway) == {"generation": 1, "tester": batches, "challenger": 8, "repair": 1}
 
@@ -186,6 +228,7 @@ def test_flexible_delivery_diagnostic_reports_allowed_ids_and_condition(cases):
     assert diagnostic["allowed_material_ids"] == ["M02"]
     assert diagnostic["condition"] == rule["condition"]
     assert result["tester"]["aggregation"]["status"] == "PASS"
+    assert result["candidate_as"]["События"] == proposed["События"]
 
 
 @pytest.mark.parametrize(("package_dir", "package_version"), [("v1", "1.0.0"), ("v2", "2.0.0")])

@@ -37,6 +37,10 @@ REF_FIELDS = {"material_refs": "Материалы", "event_refs": "Событи
               "character_refs": "Активные персонажи", "authority_refs": "authority"}
 
 
+EVENT_CONDITION_FIELD = "Условие запуска"
+LEGACY_EVENT_CONDITION_FIELD = "Условие возникновения"
+
+
 def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     manifest_raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(manifest_raw)
@@ -234,6 +238,37 @@ def bind_event_materials(snapshot: dict, proposed: object) -> tuple[object, list
     return {**proposed, "RuntimeBindings": {**bindings, **assembled}}, changes
 
 
+def _fixed_event_conditions(snapshot: dict) -> dict[str, str]:
+    rules = snapshot.get("event_material_delivery", {}).get("events", {})
+    return {event_id: rule["condition"] for event_id, rule in rules.items() if rule.get("material_ids")}
+
+
+def _event_condition_fields(event: dict) -> dict:
+    return {key: event[key] for key in (EVENT_CONDITION_FIELD, LEGACY_EVENT_CONDITION_FIELD) if key in event}
+
+
+def bind_event_conditions(snapshot: dict, proposed: object) -> tuple[object, list[dict]]:
+    conditions = _fixed_event_conditions(snapshot)
+    if not conditions or not isinstance(proposed, dict):
+        return proposed, []
+    events = _indexed(proposed.get("События"), "EventID")
+    if events is None:
+        return proposed, []
+    changes = []
+    for event_id, event in events.items():
+        if event_id not in conditions:
+            continue
+        actual = _event_condition_fields(event)
+        expected = {EVENT_CONDITION_FIELD: conditions[event_id]}
+        if actual == expected:
+            continue
+        bound = {**event, **expected}
+        bound.pop(LEGACY_EVENT_CONDITION_FIELD, None)
+        events[event_id] = bound
+        changes.append({"path": f"candidate_as/События/{event_id}", "actual": actual, "assembled": expected})
+    return ({**proposed, "События": list(events.values())} if changes else proposed), changes
+
+
 def _validate_event_material_delivery(delivery: dict, bindings: object, characters: dict, check) -> None:
     rules = delivery["events"]
     path = "candidate_as/RuntimeBindings"
@@ -353,12 +388,18 @@ def validate_candidate(snapshot: dict, candidate: dict, check) -> list[str]:
                   and isinstance(character.get("Начальные знания"), list), path=path)
             record_missing(("Имя", "Роль", "Текст", "Начальные знания"), character, path)
         event_fields = (
-            "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", "Условие запуска",
+            "Действие", "Изменение состояния", "Когда запрещено", "Повторение", "Сведения и аудитория", EVENT_CONDITION_FIELD,
         )
+        conditions = _fixed_event_conditions(snapshot)
         for event_id, event in events.items():
             path = f"candidate_as/События/{event_id}"
             check("scenario_event", all(_text(event.get(field)) for field in event_fields), path=path)
             record_missing(event_fields, event, path)
+            if event_id in conditions:
+                expected = {EVENT_CONDITION_FIELD: conditions[event_id]}
+                actual = _event_condition_fields(event)
+                check("runtime_event_condition", actual == expected, actual, path=path, expected=expected,
+                      reason="Условие фиксированной выдачи должно совпадать с закреплённым паспортом.")
         bindings = candidate.get("RuntimeBindings")
         if isinstance(bindings, dict):
             record_missing(events, bindings, "candidate_as/RuntimeBindings")

@@ -43,7 +43,7 @@ def _record(name, value):
 
 @pytest.fixture
 def product_path(product_db, monkeypatch):
-    def setup(case_ids, variant=0):
+    def setup(case_ids, variant=0, *, edit_candidate=None):
         package = json.loads((BANK_PACKAGE / "case-package.json").read_bytes())
         bindings = load_runtime_rule_package(ADDRESSED_RUNTIME, package["cases"], expected_case_package_version="0.6")
         for case in package["cases"]:
@@ -113,6 +113,8 @@ def product_path(product_db, monkeypatch):
                             del candidate["RuntimeBindings"]["E01_DOCUMENT"]["material_ids"]
                         if candidate["CaseID"] == "CASE.SPEC.02":
                             candidate["RuntimeBindings"]["E01_FACT"]["material_ids"] = candidate["Стартовые MaterialIDs"]
+                    if edit_candidate is not None:
+                        edit_candidate(candidate)
                     result.content = json.dumps(candidate, ensure_ascii=False)
                 return result
 
@@ -686,8 +688,16 @@ def _read_prepared_as(connection, as_id, contract_version):
     return row, trace
 
 
-def test_spec01_discloses_document_once_on_its_prepared_condition(product_db, product_path, monkeypatch):
-    app, _, cycle_id, as_id, case_id = product_path(["CASE.SPEC.01"])
+@pytest.mark.parametrize("condition_field", [None, "Условие запуска", "Условие возникновения"],
+                         ids=["passport", "changed-trigger", "extra-trigger"])
+def test_spec01_discloses_document_once_on_its_prepared_condition(
+        product_db, product_path, monkeypatch, condition_field, request):
+    def edit_candidate(candidate):
+        if condition_field is not None:
+            event = next(item for item in candidate["События"] if item["EventID"] == "E01_DOCUMENT")
+            event[condition_field] = "Только когда участник попросил прогноз погоды."
+
+    app, _, cycle_id, as_id, case_id = product_path(["CASE.SPEC.01"], edit_candidate=edit_candidate)
     assert case_id == "CASE.SPEC.01"
     semantics = Semantics()
     monkeypatch.setattr(runtime, "DeepSeekSemanticAdapter", lambda **_: semantics)
@@ -703,6 +713,16 @@ def test_spec01_discloses_document_once_on_its_prepared_condition(product_db, pr
         assert delivery["material_ids"] == ["M02"]
         assert document["event_condition"]["source"] == event["source"]
         assert document["event_condition"]["text"] == event["condition"] == condition
+        accepted = next(row for row in trace["accepted_as"]["События"] if row["EventID"] == "E01_DOCUMENT")
+        assert accepted["Условие запуска"] == condition
+        assert "Условие возникновения" not in accepted
+        binding = trace["author_content_binding"]
+        if condition_field is None:
+            assert "event_condition_changes" not in binding
+        else:
+            change, = binding["event_condition_changes"]
+            assert change["actual"][condition_field] == "Только когда участник попросил прогноз погоды."
+            assert change["assembled"] == {"Условие запуска": condition}
         assert trace["accepted_as"]["RuntimeBindings"]["E01_DOCUMENT"]["material_ids"] == ["M02"]
         assert trace["author_content_binding"]["event_material_changes"] == [{
             "path": "candidate_as/RuntimeBindings/E01_DOCUMENT/material_ids", "actual": None, "assembled": ["M02"],
@@ -718,6 +738,8 @@ def test_spec01_discloses_document_once_on_its_prepared_condition(product_db, pr
         semantics.outcomes = {"M02:mandatory": "NO_MATCH"}
         ordinary = _post(http, as_id, _command("no-proposal", "К какому сроку нужна работа?"))
         assert not any(item["material_id"] == "M02" for item in ordinary["events"])
+        weather = _post(http, as_id, _command("weather", "Сообщите, пожалуйста, прогноз погоды."))
+        assert not any(item["material_id"] == "M02" for item in weather["events"])
         semantics.outcomes = {"M02:mandatory": "MATCH"}
         first = _post(http, as_id, _command("proposal", "Предлагаю согласовать план и следующий шаг."))
         update, = [item for item in first["events"] if item["material_id"] == "M02"]
@@ -726,8 +748,36 @@ def test_spec01_discloses_document_once_on_its_prepared_condition(product_db, pr
         assert not any(item["material_id"] == "M02" for item in repeat["events"])
         after = http.get(_public_path(cycle_id)).json()
         assert [item["event_id"] for item in after["trace"]["events"] if item["material_id"] == "M02"] == [update["event_id"]]
-    _record("event-materials-spec01", {"before": before["trace"]["events"], "update": update,
-                                      "after": after["trace"]["events"], "condition": condition})
+    _record("event-materials-spec01-" + request.node.callspec.id, {
+        "before": before["trace"]["events"], "update": update, "after": after["trace"]["events"],
+        "condition": condition, "binding": binding, "reviewed_checksum": trace["tester"]["reviewed_candidate_checksum"],
+        "execution_rules_checksum": trace["execution_rules_checksum"],
+    })
+
+
+def test_spec01_reopens_saved_condition_from_previous_worker(product_db, product_path, monkeypatch):
+    previous = "Только когда участник попросил прогноз погоды."
+
+    def edit_candidate(candidate):
+        event = next(item for item in candidate["События"] if item["EventID"] == "E01_DOCUMENT")
+        event["Условие запуска"] = previous
+
+    with monkeypatch.context() as before_fix:
+        before_fix.setattr("Api.m5_passport_generation._fixed_event_conditions", lambda _: {})
+        app, _, cycle_id, as_id, _ = product_path(["CASE.SPEC.01"], edit_candidate=edit_candidate)
+    with product_db() as connection:
+        row, _ = _read_prepared_as(connection, as_id, "2.0.0")
+    with TestClient(app) as opened:
+        _owner(opened)
+        response = opened.get(_public_path(cycle_id))
+        assert response.status_code == 200
+        assert response.json()["current_situation"]["assessment_situation_id"] == as_id
+    with product_db() as connection:
+        saved, _ = _read_prepared_as(connection, as_id, "2.0.0")
+    assert saved["snapshot_checksum"] == row["snapshot_checksum"]
+    assert saved["execution_payload_json"] == row["execution_payload_json"]
+    material = next(item for item in saved["execution_payload_json"]["materials"] if item["material_id"] == "M02")
+    assert material["event_condition"]["text"] == previous
 
 
 @pytest.mark.parametrize(("package_dir", "package_version", "contract_version", "content_version"), [

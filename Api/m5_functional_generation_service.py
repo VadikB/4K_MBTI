@@ -580,8 +580,10 @@ def _generation_instructions(snapshot: dict) -> tuple[str, str]:
 
 def _assemble_candidate(snapshot: dict, raw: Any) -> dict:
     proposed, depth = extract_candidate_as(raw)
+    condition_changes = []
     if "as_contract" in snapshot:
         candidate, changes = passport_generation.bind_event_materials(snapshot, proposed)
+        candidate, condition_changes = passport_generation.bind_event_conditions(snapshot, candidate)
         source = "frozen_input_snapshot.case_version.passport"
     else:
         candidate, changes = bind_indicator_target_layers(snapshot, proposed), []
@@ -596,6 +598,7 @@ def _assemble_candidate(snapshot: dict, raw: Any) -> dict:
             "bound_candidate_checksum": candidate_checksum,
             "changed": provider_checksum != candidate_checksum,
             **({"event_material_changes": changes} if changes else {}),
+            **({"event_condition_changes": condition_changes} if condition_changes else {}),
         },
         "response_envelope_depth": depth,
         "deterministic_validation": deterministic_checks(snapshot, candidate),
