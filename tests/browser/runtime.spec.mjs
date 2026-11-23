@@ -293,7 +293,13 @@ async function report(page,stand,info){
  const readyCycle=new URL(page.url()).searchParams.get('cycle_id') || page.acceptanceCycle;
  expect(readyCycle).toBeTruthy();
  await page.goto(`${stand.url}/?screen=processing&cycle_id=${encodeURIComponent(readyCycle)}`);
- await expect(page.locator('#processing-outcome-title')).toHaveText('Ваш результат готов',{timeout:70000});
+ const publicationResponse=await page.request.get(`${stand.url}/users/assessment/m8/cycles/${encodeURIComponent(readyCycle)}/reports/latest`);
+ expect(publicationResponse.ok()).toBeTruthy();
+ const publication=await publicationResponse.json();
+ const noSkillResults=Array.isArray(publication.c67.skills)
+  && publication.c67.skills.every(skill=>skill.outcome==='no_result');
+ await expect(page.locator('#processing-outcome-title')).toHaveText(
+  noSkillResults?'Отчёт готов':'Ваш результат готов',{timeout:70000});
  await page.screenshot({path:path.join(stand.dir,'outcome-ready-1440.png'),fullPage:true});
  await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:path.join(stand.dir,'outcome-ready-390.png'),fullPage:true});
