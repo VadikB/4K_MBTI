@@ -226,6 +226,7 @@ class DeepSeekGateway:
                             "request_id": body.get("id"), "model": body.get("model"),
                             "revision": body.get("system_fingerprint"),
                             "finish_reason": choice.get("finish_reason"), "usage": body.get("usage"),
+                            "queue_wait_ms": queue_wait_ms,
                             "transport_attempts": transport_attempts,
                         },
                     )

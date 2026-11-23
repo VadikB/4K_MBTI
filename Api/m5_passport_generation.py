@@ -160,6 +160,36 @@ def provider_basis(snapshot: dict) -> dict:
             }}
 
 
+def compact_review_payload(payload: dict, batch_checks: list[dict]) -> dict:
+    """Keep a requirement inline once when the current review already carries it."""
+    contract = payload.get("case_content_contract")
+    case = payload.get("case")
+    if not isinstance(contract, dict) or not isinstance(case, dict):
+        return payload
+    if (not _text(contract.get("case_id")) or contract["case_id"] != case.get("CaseID")
+            or not _text(contract.get("version"))):
+        return payload
+    requirements = contract.get("requirements")
+    if not isinstance(requirements, dict):
+        return payload
+    repeated = set()
+    for check in batch_checks:
+        check_id = check.get("check_id")
+        requirement = check.get("requirement")
+        if not _text(check_id) or not isinstance(requirement, dict):
+            continue
+        text = requirements.get(check_id)
+        passport_or_protocol = requirement.get("passport_or_protocol")
+        if (_text(text) and isinstance(passport_or_protocol, (str, dict)) and passport_or_protocol
+                and requirement.get("case_content") == text):
+            repeated.add(check_id)
+    if not repeated:
+        return payload
+    return {**payload, "case_content_contract": {
+        **contract, "requirements": {key: value for key, value in requirements.items() if key not in repeated},
+    }}
+
+
 def _indexed(value: object, key: str) -> dict | None:
     if not isinstance(value, list) or any(
         not isinstance(row, dict) or not isinstance(row.get(key), str) or not row[key].strip() for row in value
