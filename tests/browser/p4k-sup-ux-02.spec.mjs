@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { startAdminProgramPreview } from '../../scripts/adm-program-ui-preview.mjs';
+
+const release = (await readFile(new URL('../../web/js/config.js', import.meta.url), 'utf8'))
+  .match(/APP_RELEASE = "([^"]+)";/)?.[1];
+if (!release) throw new Error('web/js/config.js must define APP_RELEASE');
 
 const published = [{ id: 11, name: 'Пилот 4К · 9 кейсов', version: '1.2' },
   { id: 12, name: 'Пилот 4К · 9 кейсов', version: '1.3' }];
@@ -40,7 +45,7 @@ async function fixture(page, { superadmin = true } = {}) {
       authenticated: true, user: { id: 18, email: 'synthetic@example.test', full_name: 'Синтетический оператор' },
       is_admin: true, admin_dashboard: dashboard,
     });
-    if (pathname === '/users/version') return json({ version: '2.1.65' });
+    if (pathname === '/users/version') return json({ version: release });
     if (pathname === '/users/admin/dashboard') return json(dashboard);
     if (pathname === '/users/admin/support/preparation') return state.problems === null ? json({}, 503) : json({ items: state.problems, next_before: null });
     if (pathname === '/users/admin/organizations' && method === 'GET') return state.failList
@@ -228,7 +233,7 @@ for (const width of [1440, 390, 320]) {
       if (['registry', 'empty', 'create', 'connected'].includes(name)) {
         const footer = page.locator('.app-footer');
         await expect(footer).toBeVisible();
-        await expect(footer.locator('[data-app-release-number]')).toHaveText('2.1.65');
+        await expect(footer.locator('[data-app-release-number]')).toHaveText(release);
         await expect(footer.getByRole('link', { name: 'Согласие на обработку персональных данных' }))
           .toHaveAttribute('href', '/web/assets/docs/personal-data-consent.pdf');
         const layout = await footer.evaluate((node) => ({

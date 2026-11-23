@@ -91,3 +91,89 @@ def test_concurrent_different_recipient_set_never_adds_a_second_effect(invitatio
         assert first.result(timeout=5).json()['items'][0]['outcome']=='accepted'
         assert second.result(timeout=5).json()['items'][0]['reason_code']=='operation_mismatch'
     assert sent==['person@example.test']
+
+
+@pytest.mark.parametrize("already_revoked", [False, True])
+def test_recovery_of_proven_pre_transport_crash(invitation_database, monkeypatch, already_revoked):
+    from Api import invitation_outcomes
+
+    _, _, org, app = invitation_database
+    base = f"/users/admin/organizations/{org}/personal-invitations"
+    email = "person@example.test"
+    old = {"emails": [email], "operation_id": "qa02-pre-transport-crash"}
+    other = {"emails": ["admin@example.test"], "operation_id": "qa02-neighbor"}
+    calls = []
+
+    def transport(**payload):
+        calls.append(payload["email"])
+
+    monkeypatch.setattr(routes, "send_auth_action_email", transport)
+    with TestClient(app) as client:
+        assert client.post(base, json=other).json()["items"][0]["outcome"] == "accepted"
+
+        def crash_before_transport(**payload):
+            raise TypeError("send_auth_action_email() got an unexpected keyword argument 'created_at'")
+
+        monkeypatch.setattr(routes, "send_auth_action_email", crash_before_transport)
+        with pytest.raises(TypeError, match="unexpected keyword argument"):
+            client.post(base, json=old)
+        monkeypatch.setattr(routes, "send_auth_action_email", transport)
+
+        receipt = f"{base}/operations/{old['operation_id']}"
+        params = {"assignment_ref": "competencies_4k", "email": email}
+        unresolved = client.get(receipt, params=params).json()["items"][0]
+        assert unresolved["outcome"] == "unknown"
+        assert calls == ["admin@example.test"]
+
+        with routes.get_connection() as db:
+            if already_revoked:
+                db.execute("UPDATE organization_invitations SET revoked_at=NOW() WHERE id=%s",
+                           (unresolved["invitation_id"],))
+            attempt = db.execute(
+                "SELECT * FROM organization_invitations WHERE id=%s",
+                (unresolved["invitation_id"],),
+            ).fetchone()
+            neighbor = db.execute(
+                "SELECT * FROM organization_invitations WHERE request_id=%s", (other["operation_id"],),
+            ).fetchone()
+            recovery_params = (
+                invitation_outcomes.encode_reason("error", "failed_unclassified", recipients=[email]),
+                attempt["id"], org, attempt["created_by_user_id"], email, old["operation_id"],
+                attempt["assignment_ref"], attempt["delivery_started_at"], attempt["delivery_error"],
+                attempt["revoked_at"],
+            )
+            recovery = """
+                UPDATE organization_invitations SET delivery_status='error', delivery_error=%s
+                WHERE id=%s AND organization_id=%s AND created_by_user_id=%s
+                  AND lower(recipient_email)=%s AND request_id=%s AND assignment_ref=%s
+                  AND purpose='personal_registration' AND delivery_status='sending'
+                  AND delivery_started_at=%s AND delivery_error IS NOT DISTINCT FROM %s
+                  AND sent_at IS NULL AND used_at IS NULL AND revoked_at IS NOT DISTINCT FROM %s
+                RETURNING id
+            """
+            assert db.execute(recovery, recovery_params).fetchone() == {"id": attempt["id"]}
+            assert db.execute(recovery, recovery_params).fetchone() is None
+            db.commit()
+
+        resolved = client.get(receipt, params=params).json()["items"][0]
+        assert resolved["outcome"] == "failed"
+        assert resolved["invitation_id"] == unresolved["invitation_id"]
+        assert resolved["link_status"] == ("revoked" if already_revoked else "active")
+        assert client.post(base, json=old).json()["items"][0]["outcome"] == "failed"
+        assert calls == ["admin@example.test"]
+        retry = {**old, "operation_id": "qa02-explicit-retry"}
+        accepted = client.post(base, json=retry).json()["items"][0]
+        assert accepted["outcome"] == "accepted"
+        assert accepted["invitation_id"] != attempt["id"]
+        assert calls == ["admin@example.test", email]
+        with routes.get_connection() as db:
+            assert db.execute("SELECT * FROM organization_invitations WHERE id=%s",
+                              (neighbor["id"],)).fetchone() == neighbor
+            recovered = db.execute("SELECT * FROM organization_invitations WHERE id=%s",
+                                   (attempt["id"],)).fetchone()
+            assert recovered["sent_at"] is None
+            assert recovered["delivery_status"] == "error"
+            assert recovered["delivery_started_at"] == attempt["delivery_started_at"]
+            assert recovered["revoked_at"] is not None
+            if already_revoked:
+                assert recovered["revoked_at"] == attempt["revoked_at"]
