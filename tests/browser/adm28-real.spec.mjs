@@ -135,8 +135,8 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     const imported = card.locator('form[data-action="import-members"]');
     await imported.locator('[name="csv"]').setInputFiles({ name: 'synthetic.csv', mimeType: 'text/csv',
       buffer: Buffer.from('email,full_name,role_description,job_instructions\nimported@example.test,Синтетический импорт,Специалист,Проверять примеры\n') });
-    await imported.getByRole('button', { name: 'Импорт', exact: true }).click();
-    await expect(imported.locator('[data-operation-status]')).toContainText('Импортировано: 1');
+    await imported.getByRole('button', { name: 'Загрузить', exact: true }).click();
+    await expect(imported.getByRole('status')).toContainText('Импортировано: 1');
     await card.locator('input[name="invitation_email"]').evaluateAll((fields) => fields.forEach((field) => { field.checked = false; }));
     await card.locator('input[name="invitation_email"][value="added@example.test"]').check();
     await card.getByRole('button', { name: 'Отправить приглашения', exact: true }).click();

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import { closeSync, mkdirSync, openSync, writeFileSync } from 'node:fs';
+import { closeSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 test('ADM-VIS-03 · Добавление, импорт, фильтр и пакетные действия в кабинете', async ({ page, context }, info) => {
@@ -125,23 +125,87 @@ test('ADM-VIS-03 · Добавление, импорт, фильтр и паке
       await expect(unavailable.getByText('Программа оценки не подключена. Обратитесь к суперадминистратору.')).toBeVisible();
     });
 
-    await test.step('Отдельный импорт списка через штатный API', async () => {
+    await test.step('Выбор файла, скачивание, импорт шаблона и ошибка внутри блока', async () => {
       const disclosure = card(emptyId).locator('.admin-people-import');
-      const csv = disclosure.getByLabel('Файл списка участников');
-      await disclosure.locator('summary').press('Enter');
-      await expect(csv).toBeVisible();
-      const submit = disclosure.getByRole('button', { name: 'Импорт', exact: true });
-      await submit.press('Enter');
-      await expect(csv).toBeFocused();
+      const summary = disclosure.locator('summary');
+      const template = disclosure.getByRole('link', { name: 'Скачать шаблон' });
+      const chooseFile = disclosure.getByRole('button', { name: 'Выбрать файл' });
+      const submit = disclosure.getByRole('button', { name: 'Загрузить' });
+      const fileName = disclosure.locator('[data-member-file-name]');
+      const status = disclosure.locator('[data-member-import-status]');
+      let importedCount = 0;
+      const selectFile = async (name, content) => {
+        const opened = page.waitForEvent('filechooser');
+        await chooseFile.press('Enter');
+        await (await opened).setFiles({ name, mimeType: 'text/csv', buffer: Buffer.from(content) });
+        await expect(fileName).toHaveText(name);
+        await expect(submit).toBeEnabled();
+      };
       expect(requests).toHaveLength(1);
-      await csv.setInputFiles({ name: 'participants.csv', mimeType: 'text/csv',
-        buffer: Buffer.from('email,full_name,role_description\ncsv-adm-vis-03@example.test,Синтетический импорт,Специалист\n') });
-      const imported = post(emptyId, 'members/import');
+      for (const width of [1440, 390, 320]) {
+        await page.setViewportSize({ width, height: 1000 });
+        await expect(template).toBeHidden();
+        await summary.press('Enter');
+        await expect(submit).toBeDisabled();
+        await page.keyboard.press('Tab');
+        await expect(template).toBeFocused();
+        const downloaded = page.waitForEvent('download');
+        await page.keyboard.press('Enter');
+        const header = readFileSync(await (await downloaded).path(), 'utf-8');
+        expect(header.trim()).toBe('Email,ФИО,Должность');
+        await page.keyboard.press('Tab');
+        await expect(chooseFile).toBeFocused();
+
+        await selectFile('spisok-uchastnikov-' + width + '-dlinnoye-imya.csv',
+          header + 'csv-' + width + '-adm-vis-03@example.test,Синтетический импорт ' + width + ',Специалист\n');
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+        if (process.env.ADM_VIS_R2_VISUAL === '1') {
+          await disclosure.screenshot({ path: info.outputPath('import-' + width + '.png') });
+        }
+        await page.keyboard.press('Tab');
+        await expect(submit).toBeFocused();
+        const imported = post(emptyId, 'members/import');
+        await page.keyboard.press('Enter');
+        expect((await imported).status()).toBe(200);
+        await expect(status).toHaveText('Импортировано: 1. Пропущено: 0.');
+        await expect(status).toHaveAttribute('data-tone', 'success');
+        await expect(submit).toBeDisabled();
+        importedCount += 1;
+        await expect(list(emptyId).locator('.admin-organization-member')).toHaveCount(1 + importedCount);
+
+        await selectFile('stroka-s-oshibkoy.csv', header + 'bad-address,Синтетическая ошибка,Специалист\n');
+        const failed = post(emptyId, 'members/import');
+        await submit.press('Enter');
+        expect((await failed).status()).toBe(200);
+        await expect(status).toHaveAttribute('data-tone', 'error');
+        await expect(status).toContainText('email не указан или некорректен');
+        await expect(fileName).toHaveText('stroka-s-oshibkoy.csv');
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+        // A completed import uses the real collection response. Re-enter the organization for a fresh form.
+        await choose(id);
+        await choose(emptyId);
+      }
+
+      await summary.press('Enter');
+      await selectFile('legacy.csv', 'email,full_name,role_description,job_instructions\nlegacy-adm-vis-03@example.test,Старый формат,Специалист,Работа с данными\n');
+      const legacy = post(emptyId, 'members/import');
       await submit.press('Enter');
-      expect((await imported).status()).toBe(200);
-      await expect(disclosure.getByRole('status')).toContainText('Импортировано: 1');
-      await expect(disclosure.locator('[data-csv-reselect]')).toHaveCount(0);
-      await expect(list(emptyId).locator('.admin-organization-member')).toHaveCount(2);
+      expect((await legacy).status()).toBe(200);
+      await expect(status).toHaveText('Импортировано: 1. Пропущено: 0.');
+      await expect(list(emptyId).getByRole('button', { name: 'Старый формат' })).toBeVisible();
+
+      await selectFile('mixed.csv', 'Email,ФИО,Должность\nwrong,Неверная строка,Специалист\nmixed-adm-vis-03@example.test,Корректная строка,Инженер\n');
+      const mixed = post(emptyId, 'members/import');
+      await submit.press('Enter');
+      expect((await mixed).status()).toBe(200);
+      await expect(status).toContainText('Импортировано: 1. Пропущено: 1.');
+      await expect(status).toContainText('Строка 2: email не указан или некорректен');
+      await expect(list(emptyId).getByRole('button', { name: 'Корректная строка' })).toBeVisible();
+
+      await selectFile('empty.csv', '');
+      await submit.press('Enter');
+      await expect(status).toHaveText('CSV-файл пуст. Заполните шаблон и выберите файл снова.');
+      expect(requests.filter((request) => request.url().endsWith('/members/import'))).toHaveLength(8);
     });
 
     await test.step('Серверный отказ без данных и переход к сведениям организации', async () => {
@@ -158,7 +222,8 @@ test('ADM-VIS-03 · Добавление, импорт, фильтр и паке
       await member.getByRole('button', { name: 'Пригласить', exact: true }).click();
       expect((await (await invited).json()).items[0]).toMatchObject({ reason_code: 'questionnaire_unconfirmed', outcome: 'failed' });
       await expect(member).toContainText('не подтверждены сведения организации');
-      await member.getByRole('button', { name: 'Проверить сведения организации' }).click();
+      await member.locator('.admin-organization-member-menu summary').press('Enter');
+      await member.getByRole('menuitem', { name: 'Проверить сведения организации' }).press('Enter');
       await expect(card(id).locator('[data-admin-view="organization-data"]')).toBeVisible();
       const rejected = await page.request.post(base + '/users/admin/organizations/' + id + '/assessment-assignments', { data: {
         assignment_ref: fixture.ref, role_profile_version_id: fixture.role, user_ids: [fixture.member_id], operation_id: randomUUID(),
@@ -167,8 +232,19 @@ test('ADM-VIS-03 · Добавление, импорт, фильтр и паке
       expect(await rejected.json()).toMatchObject({ detail: 'ASSIGNMENT_QUESTIONNAIRE_NOT_CONFIRMED' });
     });
 
-    await test.step('Фильтр и открытие обращения с восстановлением фокуса', async () => {
+    await test.step('Смешанные строки, меню и открытие обращения с восстановлением фокуса', async () => {
       JSON.parse(run(inputs, 'prepare-participant-appeal'));
+      const organizationUrl = base + '/users/admin/organizations/' + id;
+      const sentEmail = 'sent-adm-vis-03@example.test';
+      const created = await page.request.post(organizationUrl + '/members', { data: {
+        email: sentEmail, full_name: 'Синтетический получатель письма', role_description: 'Менеджер',
+      } });
+      expect(created.status()).toBe(200);
+      const sentMember = (await created.json()).items.find((org) => org.id === id).members.find((m) => m.email === sentEmail);
+      const sent = await page.request.post(organizationUrl + '/personal-invitations', { data: {
+        emails: [sentEmail], assignment_ref: fixture.ref, operation_id: randomUUID(),
+      } });
+      expect((await sent.json()).items[0]).toMatchObject({ outcome: 'accepted' });
       await page.reload();
       await choose(id);
       await card(id).getByRole('button', { name: 'Участники оценки' }).click();
@@ -179,6 +255,37 @@ test('ADM-VIS-03 · Добавление, импорт, фильтр и паке
       await row(fixture.member_id).getByRole('checkbox').check();
       for (const width of [1440, 390, 320]) {
         await page.setViewportSize({ width, height: 1000 });
+        for (const [userId, main, extras] of [
+          [fixture.member_id, 'Пригласить', ['Назначить оценку']],
+          [sentMember.user_id, 'Назначить оценку', ['Отправить письмо повторно', 'Отозвать приглашение']],
+          [fixture.appeal_member_id, 'Пригласить', ['Отменить назначение оценки']],
+          [fixture.registered_id, 'Назначить оценку', []],
+        ]) {
+          const actions = row(userId).locator('.admin-organization-member-actions');
+          await expect(actions.locator(':scope > button')).toHaveText([main]);
+          const menu = actions.locator('summary');
+          await expect(menu).toHaveCount(extras.length ? 1 : 0);
+          if (!extras.length) continue;
+          await menu.press('Enter');
+          const entries = actions.getByRole('menuitem');
+          await expect(entries).toHaveText(extras);
+          await expect(entries.first()).toBeFocused();
+          if (extras.length > 1) {
+            await page.keyboard.press('ArrowDown');
+            await expect(entries.last()).toBeFocused();
+          }
+          if (userId === fixture.member_id) {
+            await page.keyboard.press('Enter');
+            const dialog = page.getByRole('dialog', { name: 'Назначить оценку' });
+            await expect(dialog.getByLabel('Роль в оценке')).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(dialog).toBeHidden();
+          } else {
+            await page.keyboard.press('Escape');
+          }
+          await expect(menu).toBeFocused();
+          await expect(menu).toHaveAttribute('aria-expanded', 'false');
+        }
         await toggle.press('Enter');
         await expect(toggle).toHaveText('Все участники');
         await expect(toggle).toHaveAttribute('aria-pressed', 'true');
@@ -187,6 +294,10 @@ test('ADM-VIS-03 · Добавление, импорт, фильтр и паке
         await expect(list(id).locator('.admin-organization-member')).toHaveCount(1);
         await expect(action('assign')).toHaveCount(0);
         await expect(action('invite').getByRole('button')).toBeDisabled();
+        await expect(mark).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+        await expect(mark).toHaveCSS('color', 'rgb(0, 125, 137)');
+        await expect(mark).toHaveCSS('text-decoration-line', 'underline');
+        await expect(mark).toHaveCSS('font-size', '13px');
         await mark.press('Enter');
         const dialog = page.getByRole('dialog', { name: 'Синтетический автор обращения' });
         await expect(dialog.getByRole('heading', { name: 'Обращения участника' })).toBeFocused();

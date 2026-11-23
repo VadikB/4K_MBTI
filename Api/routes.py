@@ -5626,7 +5626,10 @@ def import_admin_organization_members(
         if not reader.fieldnames:
             raise HTTPException(status_code=400, detail="CSV header is required")
         for line_number, row in enumerate(reader, start=2):
-            email = normalize_email(_csv_value(row, "email", "e-mail", "mail"))
+            try:
+                email = normalize_email(_csv_value(row, "email", "e-mail", "mail"))
+            except ValueError:
+                email = None
             if not email:
                 skipped_count += 1
                 errors.append(f"Строка {line_number}: email не указан или некорректен")

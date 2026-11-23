@@ -1492,8 +1492,8 @@ test('PROGRAM01 R08 refreshes actions and explains a revoke conflict after acqua
   });
 
   const menu = page.locator('.admin-organization-member-menu');
-  const revoke = page.locator('[data-action="revoke-member-invitation"]');
-  await revoke.click();
+  await menu.locator('summary').click();
+  await menu.getByRole('menuitem', { name: 'Отозвать приглашение' }).click();
   await page.getByRole('dialog', { name: 'Отозвать приглашение?' })
     .getByRole('button', { name: 'Отозвать приглашение', exact: true }).click();
 

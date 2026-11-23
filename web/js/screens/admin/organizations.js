@@ -469,7 +469,8 @@ export const captureAdminOrganizationsDraft = () => {
     const organizationId = Number(card.getAttribute('data-organization-id'));
     const questionnaireAccessDenied = questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied;
     card.querySelectorAll('form[data-action]').forEach((form) => {
-      if (questionnaireAccessDenied && ['preview-early-data', 'preview-questionnaire'].includes(form.dataset.action)) return;
+      if (form.closest('[data-member-import]') ||
+          (questionnaireAccessDenied && ['preview-early-data', 'preview-questionnaire'].includes(form.dataset.action))) return;
       captureFormDraft(organizationId, form);
     });
     captureParticipantSelection(organizationId, card);
@@ -533,8 +534,9 @@ const restoreConfirmedRevisionForm = (form, revision) => {
 const restoreAdminOrganizationsDraft = () => {
   adminOrganizationsList.querySelectorAll('[data-organization-id]').forEach((card) => {
     const organizationId = Number(card.getAttribute('data-organization-id'));
-    card.querySelectorAll('form[data-action], .admin-questionnaire-preview').forEach((form) =>
-      restoreFormDraft(organizationId, form));
+    card.querySelectorAll('form[data-action], .admin-questionnaire-preview').forEach((form) => {
+      if (!form.closest('[data-member-import]')) restoreFormDraft(organizationId, form);
+    });
     const selection = managementDrafts.get(participantSelectionKey(organizationId));
     participantCheckboxes(card).forEach((field) => {
       if (selection?.fields?.[field.value]) field.checked = selection.fields[field.value].checked;
@@ -823,6 +825,7 @@ const restoreProgramConnectionFeedback = () => {
 const trackOperation = (event) => {
   const target = event.target instanceof Element ? event.target : null;
   const form = event.type === 'submit' ? target?.closest('form[data-action]') : null;
+  if (form?.closest('[data-member-import]')) return;
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
   if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
     'open-member-card', 'open-member-appeals', 'open-member-report', 'toggle-appeals-filter',
@@ -843,7 +846,7 @@ const trackOperation = (event) => {
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
   // Keep the result anchor, but a confirmation dialog is not a running command.
   if (form?.dataset.action !== 'preview-early-data' &&
-      !['cancel-member-assignment', 'revoke-member-invitation', 'purge-account', 'delete-admin', 'retry-questionnaire-load',
+      !['cancel-member-assignment', 'revoke-member-invitation', 'open-member-assignment', 'purge-account', 'delete-admin', 'retry-questionnaire-load',
         'confirm-questionnaire', 'check-questionnaire-confirmation', 'open-organization-reports'].includes(button?.dataset.action)) {
     setStatus('Выполняем действие…', 'loading');
   }
@@ -914,7 +917,7 @@ export const refreshAdminOrganizationsSafely = async ({ isCurrent = () => true }
   }
 };
 
-const requestOrganizationsImport = async (url, csvText) => {
+const requestOrganizationsImport = async (url, csvText, { keepReceipt = false } = {}) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const requestGeneration = ++organizationsRequestGeneration;
@@ -925,8 +928,9 @@ const requestOrganizationsImport = async (url, csvText) => {
     body: JSON.stringify({ csv_text: csvText }),
   });
   const data = await readApiResponse(response, 'Не удалось импортировать участников.');
-  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
-      organizationsRequestGeneration !== requestGeneration) return null;
+  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  // The receipt still describes this import even when a newer read owns the list.
+  if (organizationsRequestGeneration !== requestGeneration) return keepReceipt ? data : null;
   captureAdminOrganizationsDraft();
   organizationsReadStale = false;
   organizationsReadStaleReason = '';
@@ -1938,32 +1942,72 @@ export const prepareAdminOrganizationAssessments = async (organizationId) => {
   }
 };
 
-export const importAdminOrganizationMembers = async (organizationId, csvText, fileName) => {
-  const text = String(csvText || '').trim();
-  if (!text) {
-    setStatus('Выберите CSV-файл с участниками.', 'error');
-    return;
-  }
+export const importAdminOrganizationMembers = async (organizationId, source, form) => {
+  const picker = form?.querySelector('[data-choose-member-file]');
+  const status = form?.querySelector('[data-member-import-status]');
+  const submit = form?.querySelector('button[type="submit"]');
+  if (form && (!form.isConnected || submit.disabled)) return null;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
-  try {
-    const result = await requestOrganizationsImport('/users/admin/organizations/' + organizationId + '/members/import', text);
-    if (!result || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
-    const form = operationRoot();
-    const notice = form?.querySelector('[data-csv-reselect]');
-    if (!state.adminOrganizations?.is_superadmin && form?.matches('form[data-action="import-members"]') &&
-        Number(form.closest('[data-organization-id]').dataset.organizationId) === organizationId &&
-        notice?.dataset.csvReselect === fileName && fileName) {
-      notice.remove();
-      managementDrafts.delete(formDraftKey(organizationId, form));
+  const sameIdentity = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey;
+  const report = (message, tone) => {
+    if (!sameIdentity()) return;
+    if (!picker) {
+      setStatus(message, tone);
+      return;
     }
-    const errorsText = Array.isArray(result.errors) && result.errors.length ? ' Ошибки: ' + result.errors.slice(0, 3).join('; ') : '';
-    setStatus('Импортировано: ' + Number(result.imported_count || 0) + '. Пропущено: ' + Number(result.skipped_count || 0) + '.' + errorsText, result.skipped_count ? 'error' : 'success');
+    if (!form.isConnected) return;
+    status.textContent = message;
+    status.dataset.tone = tone;
+    status.classList.remove('hidden');
+    if (tone !== 'loading' && form.closest('details').open && !form.closest('[data-admin-view]').classList.contains('hidden') &&
+        (document.activeElement === document.body || form.contains(document.activeElement))) {
+      status.focus();
+    }
+  };
+
+  if (picker) {
+    picker.disabled = submit.disabled = true;
+    report('Загружаем список…', 'loading');
+  }
+  try {
+    let text;
+    try {
+      text = (typeof source === 'string' ? source : await source.text()).trim();
+    } catch {
+      report('Не удалось прочитать файл. Выберите CSV-файл повторно.', 'error');
+      return null;
+    }
+    if (!sameIdentity() || (form && !form.isConnected)) return null;
+    if (!text) {
+      report(picker ? 'CSV-файл пуст. Заполните шаблон и выберите файл снова.' : 'Выберите CSV-файл с участниками.', 'error');
+      return null;
+    }
+    const result = await requestOrganizationsImport('/users/admin/organizations/' + organizationId + '/members/import',
+      text, { keepReceipt: Boolean(picker) });
+    if (!result || !sameIdentity()) return null;
+    const imported = Number(result.imported_count || 0);
+    const skipped = Number(result.skipped_count || 0);
+    if (picker && !imported && !skipped) {
+      report('В CSV-файле нет строк участников. Заполните шаблон и выберите файл снова.', 'error');
+      return result;
+    }
+    if (picker && !skipped) {
+      form.reset();
+      form.querySelector('[data-member-file-name]').textContent = '';
+    }
+    const errors = Array.isArray(result.errors) ? result.errors.slice(0, 3) : [];
+    report('Импортировано: ' + imported + '. Пропущено: ' + skipped + '.' +
+      (errors.length ? ' ' + errors.join('. ') : ''), skipped ? 'error' : 'success');
     return result;
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
-    setStatus(error.message || 'Не удалось импортировать участников.', 'error');
+    report(membershipErrorMessage(error, 'Не удалось импортировать участников.'), 'error');
     return null;
+  } finally {
+    if (picker) {
+      picker.disabled = false;
+      submit.disabled = !form.elements.csv.files?.length;
+    }
   }
 };
 
@@ -2818,17 +2862,7 @@ const renderMemberList = (items, {
         const canAssignMember = canAssign && assignmentCandidate;
         const assign = canAssignMember ? '<button type="button" data-action="open-member-assignment" data-user-id="' + Number(item.user_id) +
             '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '">Назначить оценку</button>' : '';
-        const hasSentMenu = Boolean(resend && send && revoke);
-        const secondaries = hasSentMenu ? [send, revoke] : [revoke, cancelButton].filter(Boolean);
-        const secondaryActions = secondaries.length > 1 ? renderMemberMenu(secondaries.join(''), 'Действия для ' + participantName) :
-          (secondaries[0] || '').replace(' role="menuitem"', '');
-        const actions = isSuperadmin
-          ? legacyPrimary + ((legacyExtras.match(/<button\b/g) || []).length > 1
-            ? renderMemberMenu(legacyExtras) : legacyExtras.replace(' role="menuitem"', ''))
-          : failedPreparation ? checkPreparationButton
-            : reportButton || (checkPreparationButton || processingButton) + checkInvitation + assign +
-              (hasSentMenu ? '' : send) + secondaryActions +
-              (hasSentMenu ? cancelButton.replace(' role="menuitem"', '') : '');
+        const primary = checkPreparationButton || processingButton || checkInvitation || (resend ? assign : send || assign);
 
         const invitationStage = !separateReceipt && !registered && !scopedStage && !hasAssignment && (link === 'revoked' ? 'Приглашение отозвано' :
           link === 'expired' ? 'Срок ссылки истёк' : delivery === 'accepted' ? 'Письмо отправлено' :
@@ -2851,15 +2885,23 @@ const renderMemberList = (items, {
         const unboundRegistration = priorInvitationInCard && !receiptRef
           ? ({ registered: 'Завершена', pending: 'Ожидается' })[item.registration_status] || 'Статус не подтверждён'
           : '';
+        const reviewOrganization = invitation.next_action === 'review_organization' && (showInvitationNote || checkInvitation)
+          ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '';
+        const extraActions = [checkInvitation, send, assign, revoke, cancelButton, reviewOrganization]
+          .filter((action) => action && action !== primary).join('');
+        const actions = isSuperadmin
+          ? legacyPrimary + ((legacyExtras.match(/<button\b/g) || []).length > 1
+            ? renderMemberMenu(legacyExtras) : legacyExtras.replace(' role="menuitem"', ''))
+          : failedPreparation ? checkPreparationButton
+            : reportButton || primary + (extraActions ? renderMemberMenu(extraActions, 'Действия для ' + participantName) : '');
+
         const compactStageMarkup = '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' +
           (critical || delivery === 'failed' && invitationStage ? ' is-critical' : '') + '">' +
           escapeHtml(invitationStage || currentStage) + '</strong>' +
           (showInvitationNote ? '<span class="admin-organization-member-invitation">' + escapeHtml(invitationNote) + '</span>' : '') +
           (previousReceipt ? '<span class="admin-organization-member-invitation">' + escapeHtml(previousReceipt) + '</span>' : '') +
           ((!invitationStage || !showInvitationNote) ? '<span>' + escapeHtml(invitationStage && send
-            ? 'Отправьте участнику письмо со ссылкой для входа.' : stageDescription) + '</span>' : '') +
-          (!failedPreparation && invitation.next_action === 'review_organization' && (showInvitationNote || checkInvitation)
-            ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '') + '</div>';
+            ? 'Отправьте участнику письмо со ссылкой для входа.' : stageDescription) + '</span>' : '') + '</div>';
         // An active link can still be resent from its row. A bulk send targets new or failed invitations.
         const canInviteInBatch = Boolean(canSend && (linkClosed || ['not_attempted', 'failed'].includes(delivery)));
         batchInvite ||= canInviteInBatch;
@@ -3318,9 +3360,8 @@ export const renderAdminOrganizations = () => {
   const preparationRoots = new Map(Array.from(adminOrganizationsList.querySelectorAll('[data-preparation-status]'), (node) => [node.dataset.preparationReferenceId, node]));
   const batchStatus = adminOrganizationsList.querySelector('[data-people-batch-status]');
   const focusedBatchStatus = batchStatus?.contains(document.activeElement) ? document.activeElement : null;
-  const memberImport = adminOrganizationsList.querySelector('.admin-people-import[open]');
-  const openImportOrganization = Number(memberImport?.closest('[data-organization-id]')?.dataset.organizationId);
-  const focusedImportToggle = document.activeElement?.matches?.('.admin-people-import > summary');
+  const memberImport = adminOrganizationsList.querySelector('[data-member-import]');
+  const focusedImportControl = memberImport?.contains(document.activeElement) ? document.activeElement : null;
   const focusedPreparationControl = document.activeElement?.closest?.('[data-preparation-status]') ? document.activeElement : null;
   const focusedCheckUser = document.activeElement?.matches?.('[data-action="check-member-preparation"]') ? document.activeElement.closest('.admin-organization-member')?.querySelector('[data-user-id]')?.dataset.userId : null;
   const focusedAppealControl = document.activeElement?.closest?.('[data-action="toggle-appeals-filter"], [data-action="open-member-appeals"]');
@@ -3651,9 +3692,14 @@ export const renderAdminOrganizations = () => {
         '<button class="primary-button compact-primary" type="submit">Добавить</button></form>';
       const importMembersForm = '<form class="admin-organization-import-form" data-action="import-members">' +
         '<input name="csv" type="file" aria-label="Файл списка участников" accept=".csv,text/csv"' +
-        (isSuperadmin ? '' : ' required') + '>' +
-        '<span>CSV: email, full_name, role_description, job_instructions</span>' +
-        '<button class="ghost-button compact-ghost" type="submit">Импорт</button>' +
+        (isSuperadmin ? '' : ' hidden') + '>' + (isSuperadmin
+          ? '<span>CSV: email, full_name, role_description, job_instructions</span>' +
+            '<button class="ghost-button compact-ghost" type="submit">Импорт</button>'
+          : '<a class="text-link" href="/web/assets/templates/participants.csv" download="participants.csv">Скачать шаблон</a>' +
+            '<button class="ghost-button compact-ghost" type="button" data-choose-member-file aria-describedby="member-file-' + orgId + '">Выбрать файл</button>' +
+            '<span data-member-file-name id="member-file-' + orgId + '" aria-live="polite"></span>' +
+            '<button class="primary-button compact-primary" type="submit" disabled>Загрузить</button>' +
+            '<p class="admin-organizations-status hidden" data-member-import-status role="status" aria-live="polite" tabindex="-1"></p>') +
         '</form>';
 
       const questionnaireUpload = '<form class="admin-organization-import-form" data-action="preview-questionnaire" data-assessment-ref="' +
@@ -3720,8 +3766,8 @@ export const renderAdminOrganizations = () => {
             '<h4 id="admin-people-title-' + orgId + '">' + peopleTitle + '</h4>' + appealsFilter + '</div>' +
             participantTools + '<div data-people-batch-status="' + escapeHtml(assessmentKey(orgId, selectedRef)) + '"></div>' +
             invitationFeedback + members.markup + '</section>' +
-            '<aside class="admin-people-add">' + addMemberForm + '<details class="admin-people-import"' +
-            (openImportOrganization === orgId ? ' open' : '') + '><summary>Импорт списка</summary>' + importMembersForm + '</details></aside>') +
+            '<aside class="admin-people-add">' + addMemberForm + '<details class="admin-people-import" data-member-import="' +
+            escapeHtml(organizationKey(orgId)) + '"><summary>Импорт списка</summary>' + importMembersForm + '</details></aside>') +
         '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') +
         '" data-admin-view="organization-data">' + (questionnaireLoadState?.status === 'empty' ? '' : questionnaireLoadMarkup) +
@@ -3753,6 +3799,11 @@ export const renderAdminOrganizations = () => {
       );
     })
     .join('');
+  const newImport = adminOrganizationsList.querySelector('[data-member-import]');
+  if (memberImport && newImport?.dataset.memberImport === memberImport.dataset.memberImport) {
+    // Keep the actual input and its File across reads for this organization.
+    newImport.replaceWith(memberImport);
+  }
   const newBatchStatus = adminOrganizationsList.querySelector('[data-people-batch-status]');
   if (batchStatus?.dataset.peopleBatchStatus === newBatchStatus?.dataset.peopleBatchStatus && newBatchStatus) {
     newBatchStatus.replaceWith(batchStatus);
@@ -3774,7 +3825,7 @@ export const renderAdminOrganizations = () => {
   updateOrganizationDataForm(organizationDataForm(selectedOrganizationId));
   if (menuFocus) restoreMemberMenuFocus(menuFocus);
   else if (focusedBatchStatus?.isConnected) focusedBatchStatus.focus({ preventScroll: true });
-  else if (focusedImportToggle) adminOrganizationsList.querySelector('.admin-people-import > summary')?.focus({ preventScroll: true });
+  else if (focusedImportControl?.isConnected) focusedImportControl.focus({ preventScroll: true });
   else if (focusedConfirmation) organizationDataForm(selectedOrganizationId)
     ?.querySelector('[data-organization-confirmed]:not([hidden])')?.focus({ preventScroll: true });
   else if (focusedPreparationControl?.isConnected) focusedPreparationControl.focus({ preventScroll: true });

@@ -1971,6 +1971,18 @@
     text-underline-offset: 3px;
 }
 
+.admin-people-list .admin-organization-member-issues {
+    min-height: 24px;
+    margin-top: 2px;
+    padding: 2px 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--palette-outcome-link);
+    font-size: var(--fs-meta);
+    line-height: 19px;
+    font-weight: var(--fw-regular);
+}
+
 .admin-people-list .admin-organization-member-stage {
     grid-area: stage;
     gap: 3px;
@@ -2060,8 +2072,21 @@
     text-underline-offset: 3px;
     cursor: pointer;
 }
-.admin-people-import form { margin-block: 8px; }
-.admin-people-import .admin-organization-import-form > span { overflow-wrap: anywhere; }
+.admin-people-import form {
+    justify-items: start;
+    min-width: 0;
+    margin-block: 8px;
+}
+.admin-people-import .text-link {
+    color: var(--palette-outcome-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.admin-people-import :is([data-member-file-name], [data-member-import-status]) {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+.admin-people-import [data-member-file-name]:empty { display: none; }
 .admin-people-add summary:focus-visible,
 .admin-people-list summary:focus-visible,
 .admin-people-list .text-button:focus-visible {
