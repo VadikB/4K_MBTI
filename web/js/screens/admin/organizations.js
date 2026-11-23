@@ -865,9 +865,13 @@ adminOrganizationsPanel?.addEventListener('change', (event) => {
   )) clearProgramConnectionFeedback();
 });
 
-const requestOrganizations = async (url, options, fallbackMessage, isCurrent = () => true) => {
+const requestOrganizations = async (url, options, fallbackMessage, {
+  isCurrent = () => true, refreshAfterSupersededWrite = false,
+} = {}) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  const sameContext = () => isCurrent() && state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey;
+  const refreshOnSuccess = refreshAfterSupersededWrite && !state.adminOrganizations?.is_superadmin;
   const requestGeneration = ++organizationsRequestGeneration;
   const response = await fetch(url, {
     credentials: 'same-origin',
@@ -875,14 +879,19 @@ const requestOrganizations = async (url, options, fallbackMessage, isCurrent = (
     ...options,
   });
   const data = await readApiResponse(response, fallbackMessage);
-  if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
-      requestGeneration !== organizationsRequestGeneration) return null;
+  if (!sameContext()) return null;
+  if (requestGeneration !== organizationsRequestGeneration) {
+    if (!refreshOnSuccess) return null;
+    // The write committed, but its collection snapshot cannot replace a newer one.
+    await refreshAdminOrganizationsSafely({ isCurrent: sameContext, announce: false });
+    return sameContext() ? data : null;
+  }
   // Preserve live input, not the earlier draft captured before this request.
   // Keep this after the identity/generation guard and before replacing the data.
   captureAdminOrganizationsDraft();
   organizationsReadStale = false;
   organizationsReadStaleReason = '';
-  state.adminOrganizations = data;
+  state.adminOrganizations = data.organizations || data;
   persistAssessmentContext();
   renderAdminOrganizations();
   return data;
@@ -895,49 +904,26 @@ const markOrganizationsReadStale = (reason) => {
   renderAdminOrganizations();
 };
 
-export const refreshAdminOrganizationsSafely = async ({ isCurrent = () => true } = {}) => {
+export const refreshAdminOrganizationsSafely = async ({ isCurrent = () => true, announce = true } = {}) => {
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   const requestGeneration = organizationsRequestGeneration + 1;
   try {
     const data = await requestOrganizations(
       '/users/admin/organizations',
-      { method: 'GET', headers: {} },
-      'Не удалось обновить организации.', isCurrent,
+      { method: 'GET', headers: {}, cache: 'no-store' },
+      'Не удалось обновить организации.', { isCurrent },
     );
     if (!data || !isCurrent()) return false;
-    setStatus('Состояние организаций обновлено.', 'success', undefined, { focus: false });
+    if (announce) setStatus('Состояние организаций обновлено.', 'success', undefined, { focus: false });
     return true;
   } catch (error) {
     if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         organizationsRequestGeneration !== requestGeneration) return false;
     markOrganizationsReadStale(error instanceof TypeError ? 'Не удалось получить ответ сервера.' : error.message || 'Не удалось обновить организации.');
-    setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error', undefined, { focus: false });
+    if (announce) setStatus('Состояние не обновлено. Последние показанные данные могут быть устаревшими.', 'error', undefined, { focus: false });
     return false;
   }
-};
-
-const requestOrganizationsImport = async (url, csvText, { keepReceipt = false } = {}) => {
-  const identityEpoch = state.identityEpoch;
-  const identityKey = currentIdentityKey();
-  const requestGeneration = ++organizationsRequestGeneration;
-  const response = await fetch(url, {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ csv_text: csvText }),
-  });
-  const data = await readApiResponse(response, 'Не удалось импортировать участников.');
-  if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
-  // The receipt still describes this import even when a newer read owns the list.
-  if (organizationsRequestGeneration !== requestGeneration) return keepReceipt ? data : null;
-  captureAdminOrganizationsDraft();
-  organizationsReadStale = false;
-  organizationsReadStaleReason = '';
-  state.adminOrganizations = data.organizations || data;
-  persistAssessmentContext();
-  renderAdminOrganizations();
-  return data;
 };
 
 export const loadAdminOrganizations = async ({ isCurrent = () => true } = {}) => {
@@ -949,7 +935,7 @@ export const loadAdminOrganizations = async ({ isCurrent = () => true } = {}) =>
     data = await requestOrganizations(
       '/users/admin/organizations',
       { method: 'GET', headers: {} },
-      'Не удалось загрузить организации.', isCurrent,
+      'Не удалось загрузить организации.', { isCurrent },
     );
   } catch (error) {
     if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
@@ -1084,7 +1070,7 @@ export const createAdminOrganization = async () => {
     const pending = organizationCreatePending;
     try {
       const data = await requestOrganizations('/users/admin/organizations',
-        { method: 'GET', cache: 'no-store' }, 'Не удалось проверить создание организации.', isCurrent);
+        { method: 'GET', cache: 'no-store' }, 'Не удалось проверить создание организации.', { isCurrent });
       if (!isCurrent()) return;
       if (!data?.is_superadmin || !Array.isArray(data.items)) throw new Error('Исход создания неизвестен.');
       const match = findOrganizationByCode(data, pending.code);
@@ -1109,7 +1095,7 @@ export const createAdminOrganization = async () => {
       '/users/admin/organizations',
       { method: 'POST', body: JSON.stringify({ name, code }) },
       'Не удалось создать организацию.',
-      isCurrent,
+      { isCurrent },
     );
     if (!isCurrent()) return;
     const created = findOrganizationByCode(data, code);
@@ -1332,6 +1318,7 @@ export const addAdminOrganizationMember = async (organizationId, payload) => {
         }),
       },
       'Не удалось привязать участника.',
+      { refreshAfterSupersededWrite: true },
     );
     if (!result) return false;
     const form = operationRoot();
@@ -1690,7 +1677,7 @@ export const cancelAdminOrganizationAssessment = async (organizationId, assignme
     const data = await requestOrganizations(
       '/users/admin/organizations',
       { method: 'GET', headers: {} },
-      'Не удалось проверить состояние назначения.', contextIsCurrent,
+      'Не удалось проверить состояние назначения.', { isCurrent: contextIsCurrent },
     );
     if (!data || !contextIsCurrent()) return undefined;
     const organization = (data.items || []).find((item) => Number(item.id) === Number(organizationId));
@@ -1983,8 +1970,12 @@ export const importAdminOrganizationMembers = async (organizationId, source, for
       report(picker ? 'CSV-файл пуст. Заполните шаблон и выберите файл снова.' : 'Выберите CSV-файл с участниками.', 'error');
       return null;
     }
-    const result = await requestOrganizationsImport('/users/admin/organizations/' + organizationId + '/members/import',
-      text, { keepReceipt: Boolean(picker) });
+    const result = await requestOrganizations(
+      '/users/admin/organizations/' + organizationId + '/members/import',
+      { method: 'POST', body: JSON.stringify({ csv_text: text }) },
+      'Не удалось импортировать участников.',
+      { refreshAfterSupersededWrite: Boolean(picker) },
+    );
     if (!result || !sameIdentity()) return null;
     const imported = Number(result.imported_count || 0);
     const skipped = Number(result.skipped_count || 0);

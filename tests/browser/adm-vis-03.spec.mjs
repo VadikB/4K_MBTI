@@ -20,10 +20,12 @@ test('ADM-VIS-03 · Добавление, импорт, фильтр и паке
   };
   const cli = (action) => run('scripts/test_stand.py', action, ['--port', String(port)]);
   const requests = [];
+  let collectionReads = 0;
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('request', (request) => {
     if (request.method() === 'POST' && request.url().startsWith(base + '/users/admin/organizations/')) requests.push(request);
+    if (request.method() === 'GET' && request.url() === base + '/users/admin/organizations') collectionReads += 1;
   });
   const post = (org, action) => page.waitForResponse((response) => response.request().method() === 'POST' &&
     response.url() === base + '/users/admin/organizations/' + org + '/' + action);
@@ -206,6 +208,94 @@ test('ADM-VIS-03 · Добавление, импорт, фильтр и паке
       await submit.press('Enter');
       await expect(status).toHaveText('CSV-файл пуст. Заполните шаблон и выберите файл снова.');
       expect(requests.filter((request) => request.url().endsWith('/members/import'))).toHaveLength(8);
+    });
+
+    await test.step('Параллельные импорт и ручное добавление обновляют список', async () => {
+      const collectionUrl = base + '/users/admin/organizations';
+      const membersUrl = collectionUrl + '/' + emptyId + '/members';
+      const disclosure = card(emptyId).locator('.admin-people-import');
+      const status = disclosure.locator('[data-member-import-status]');
+      for (const [index, delayedAction, holdResponse] of [
+        [1, 'members/import', false], [2, 'members', false], [3, 'members/import', true],
+      ]) {
+        const csvName = 'Параллельный импорт ' + index;
+        const manualName = 'Параллельное добавление ' + index;
+        const csvEmail = 'concurrent-csv-' + index + '@example.test';
+        const manualEmail = 'concurrent-manual-' + index + '@example.test';
+        const rowByName = (name) => list(emptyId).getByRole('button', { name, exact: true });
+        const submitImport = () => disclosure.getByRole('button', { name: 'Загрузить' }).click();
+        const submitManual = () => add.getByRole('button', { name: 'Добавить', exact: true }).click();
+        const importFirst = delayedAction === 'members/import';
+        const delayedUrl = importFirst ? membersUrl + '/import' : membersUrl;
+        const requestCount = requests.length;
+        const collectionReadCount = collectionReads;
+        const csv = 'Email,ФИО,Должность\n' + csvEmail + ',' + csvName + ',Специалист\n';
+        const { promise: held, resolve: markHeld } = Promise.withResolvers();
+        const { promise: released, resolve: release } = Promise.withResolvers();
+        await page.route(delayedUrl, async (route) => {
+          const response = holdResponse ? await route.fetch() : null;
+          markHeld();
+          await released;
+          if (response) await route.fulfill({ response });
+          else await route.continue();
+        }, { times: 1 });
+
+        try {
+          await disclosure.locator('[name="csv"]').setInputFiles({ name: 'concurrent.csv', mimeType: 'text/csv',
+            buffer: Buffer.from(csv + (importFirst ? '' : 'bad-address,Строка с ошибкой,Специалист\n')) });
+          await add.getByLabel('Email').fill(manualEmail);
+          await add.getByLabel('ФИО').fill(manualName);
+          await add.getByLabel('Должность').fill('Аналитик');
+          const delayed = post(emptyId, delayedAction);
+          await (importFirst ? submitImport() : submitManual());
+          await held;
+          const immediate = post(emptyId, importFirst ? 'members' : 'members/import');
+          await (importFirst ? submitManual() : submitImport());
+          expect((await immediate).status()).toBe(200);
+          await expect(rowByName(importFirst ? manualName : csvName)).toBeVisible();
+          if (holdResponse) {
+            // The older POST has committed but its collection snapshot predates the manual add.
+            await page.evaluate(({ orgId, email }) => {
+              const selector = '[data-organization-id="' + orgId + '"] .admin-people-list [data-email="' + email + '"]';
+              window.manualRowDisappeared = false;
+              window.rosterObserver = new MutationObserver(() => {
+                if (!document.querySelector(selector)) window.manualRowDisappeared = true;
+              });
+              window.rosterObserver.observe(document.querySelector('#admin-organizations-list'), { childList: true, subtree: true });
+            }, { orgId: emptyId, email: manualEmail });
+          } else {
+            await expect(rowByName(importFirst ? csvName : manualName)).toHaveCount(0);
+          }
+          release();
+          const delayedResponse = await delayed;
+          expect(delayedResponse.status()).toBe(200);
+          if (holdResponse) {
+            const receipt = await delayedResponse.json();
+            expect(receipt.organizations.items.find((org) => org.id === emptyId).members.map((member) => member.email))
+              .not.toContain(manualEmail);
+          }
+          const saved = await (await page.request.get(collectionUrl)).json();
+          const emails = saved.items.find((org) => org.id === emptyId).members.map((member) => member.email);
+          expect(emails).toEqual(expect.arrayContaining([csvEmail, manualEmail]));
+          await expect(status).toHaveText(importFirst ? 'Импортировано: 1. Пропущено: 0.' :
+            'Импортировано: 1. Пропущено: 1. Строка 3: email не указан или некорректен');
+          await expect(rowByName(csvName)).toHaveCount(1);
+          await expect(rowByName(manualName)).toHaveCount(1);
+          await expect(picker).toHaveValue(String(emptyId));
+          await expect(disclosure).toHaveAttribute('open', '');
+          expect(collectionReads - collectionReadCount).toBe(1);
+          expect(requests.slice(requestCount).map((request) => request.url()).sort())
+            .toEqual([membersUrl, membersUrl + '/import']);
+          if (holdResponse) {
+            expect(await page.evaluate(() => {
+              window.rosterObserver.disconnect();
+              return window.manualRowDisappeared;
+            })).toBe(false);
+          }
+        } finally {
+          release();
+        }
+      }
     });
 
     await test.step('Серверный отказ без данных и переход к сведениям организации', async () => {
