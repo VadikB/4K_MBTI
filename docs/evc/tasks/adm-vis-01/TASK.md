@@ -80,3 +80,9 @@ node "$ADM_VIS_VERIFICATION/compare.cjs" "$ADM_VIS_RESULTS/reference-layout.json
 ## Передача и откат
 
 Локальное ревью получает Git bundle ветки, SHA-256 пакета, исходные браузерные замеры и сводку проверок. В checkout с доступным базовым коммитом можно проверить и импортировать ветку командами `git bundle verify <абсолютный путь к ADM-VIS-01.bundle>` и `git fetch <абсолютный путь к ADM-VIS-01.bundle> refs/heads/codex/adm-vis-01-shell:refs/heads/codex/adm-vis-01-shell`. Откат после применения выполняется `git revert <SHA коммита ADM-VIS-01>` вместе с выходными файлами сборки.
+
+## Подготовка выпуска 2.1.65
+
+По поручению владельца подготовить новый номер и слить PR #284 при успешных проверках применён следующий PATCH от `origin/main` 2.1.64. Допуск этого этапа включает `branch_push=true`, `pr=true`, `version_bump=true`, `merge=true`, `deploy=true`, `artifact_publish=false`. Развёртывание на TEST запускает штатный workflow после squash merge.
+
+`npm run ready:prepare -- --candidate 2.1.65` обновил версию, пересобрал frontend и прошёл release gate. Результаты отдельного предпросмотра относятся к исходной сборке 2.1.64 на `d9f01e645072e942e4433cf4be5afb07b143c5ab`. Проверки релизной сборки отслеживаются по SHA в PR.
