@@ -591,7 +591,7 @@ def owner_can_read_cycle(connection, cycle_id: str, user_id: int) -> bool:
     return bool(row and permits(row["usage_scope"]))
 
 
-def _is_limited_report(status: str | None, partial: dict | None) -> bool:
+def is_limited_report(status: str | None, partial: dict | None) -> bool:
     partial = partial if isinstance(partial, dict) else {}
     progress = partial.get("progress")
     progress = progress if isinstance(progress, dict) else {}
@@ -661,7 +661,7 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             if item['report_id'] is None:
                 item.update({k:version[k] for k in ('report_id','revision_no','created_at','results_revision_id','results_revision_no')})
                 item['report_processing_status'] = row['report_processing_status']
-                item['report_limited'] = _is_limited_report(row['report_status'], row['report_partial_result'])
+                item['report_limited'] = is_limited_report(row['report_status'], row['report_partial_result'])
     for item in cycles.values():
         item['status'] = ('report_ready' if item['report_id'] and item['report_processing_status'] != 'failed' else
             'failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else

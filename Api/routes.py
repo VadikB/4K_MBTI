@@ -75,13 +75,13 @@ from Api.assessment_role_profiles import (
 )
 from Api.assessment_preparation_queue import assessment_preparation_queue
 from Api.product_cycle_preparation_queue import product_cycle_preparation_queue, public_operation
-from Api import preparation_observation as preparation_observation, support_invitations, support_preparation
+from Api import preparation_observation as preparation_observation, support_invitations, support_preparation, support_reports
 from Api.assessment_analysis_queue import assessment_analysis_queue
 from Api.assessment_authoring_service import assessment_authoring_service, ENTITY_CONFIG
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
 from Api.assessment_shadow_repository import assessment_shadow_repository
 from Api.assessment_shadow_batch_service import assessment_shadow_batch_service
-from Api.platform_access import require_platform_permission
+from Api.platform_access import has_platform_permission, require_platform_permission
 from Api.agent import interviewer_agent
 from Api.database import get_connection, get_level_percent_map, recompute_case_quality_checks
 from Api.database import get_case_methodology_versions
@@ -3748,6 +3748,36 @@ def read_support_invitation(reference: str, request: Request, response: Response
                    "version": get_app_version()}
     return {**problem, "environment": environment,
             "handoff_text": support_invitations.handoff(problem, **environment)}
+
+
+@router.get("/admin/support/reports")
+def list_support_reports(request: Request, response: Response,
+                         before: int | None = Query(None, gt=0, le=2**63 - 1),
+                         organization_id: int | None = Query(None, gt=0, le=2**63 - 1)) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        result = support_reports.list_problems(connection, before=before, organization_id=organization_id)
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+@router.get("/admin/support/reports/{cycle_id}")
+def read_support_report(cycle_id: UUID, request: Request, response: Response,
+                        report_id: UUID | None = None) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_platform_support_access(connection, user)
+        problem = support_reports.read(
+            connection, cycle_id, report_id=report_id, user_id=int(user.id),
+            can_recover=has_platform_permission(connection, user, "configuration.publish"),
+        )
+    if problem is None:
+        raise HTTPException(status_code=404, detail="Закрытый Cycle организации не найден.")
+    response.headers["Cache-Control"] = "no-store"
+    environment = {"mode": settings.app_origin_mode, "origin": settings.public_app_origin,
+                   "version": get_app_version()}
+    return {**problem, "handoff_text": support_reports.handoff(problem, **environment)}
 
 
 @router.get("/admin/organizations", response_model=AdminOrganizationsResponse)
@@ -9103,7 +9133,11 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
             new_cycle = ({'action':'start_new_cycle','method':'POST','href':'/assessment/cycles/start',
                           'availability':'requires_current_profile_configuration_catalog_and_membership'}
                          if partial and partial.get('is_incomplete') else None)
+            skills = report['c67'].get('skills')
+            no_result = isinstance(skills, list) and all(
+                isinstance(skill, dict) and skill.get('outcome') == 'no_result' for skill in skills)
             return {**cycle, 'results_status': 'ready', 'report_status': report['status'], 'report_id': report['id'],
+                    'report_has_no_skill_results': no_result,
                     'pipeline_stage': pipeline['stage'] if pipeline else 'report_ready', 'processing_error': None,
                     'processing':{'contract_version':'m10-processing-recovery/1.0.0',
                         'status':'recovered' if pipeline and pipeline['stage']=='recovered_report_ready' else 'completed',
@@ -9140,7 +9174,7 @@ def request_m8_processing_recovery(cycle_id: UUID, payload: M10ProcessingRecover
                 raise ValueError("M5_CYCLE_NOT_FOUND")
             result = m10_orchestration.request_processing_recovery(
                 connection, cycle_id=str(cycle_id), idempotency_key=payload.idempotency_key,
-                created_by=int(user.id))
+                created_by=int(user.id), expected_pipeline_revision=payload.expected_pipeline_revision)
             connection.commit()
             return {"recovery_id":str(result['id']),"status":result['status'],
                     "contract_version":"m10-processing-recovery/1.0.0"}

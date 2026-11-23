@@ -273,3 +273,137 @@ def test_public_projection_excludes_nested_private_data():
         for forbidden in ('validator_trace', 'profile_ref', 'assessment_situations', 'provenance',
                           'components', 'basis_refs', 'checksum'):
             assert forbidden not in str(projected)
+
+
+def test_support_report_readback_and_exact_access(test_database_url, monkeypatch):
+    from Api import support_reports
+    from Api.typst_pdf_renderer import TypstRenderError
+
+    with psycopg.connect(test_database_url, row_factory=dict_row) as setup:
+        schema = _schema(setup)
+        setup.execute('CREATE TABLE users(id bigint PRIMARY KEY)')
+        setup.execute('CREATE TABLE organizations(id bigint PRIMARY KEY,is_active boolean)')
+        setup.execute('CREATE TABLE organization_memberships(organization_id bigint,user_id bigint,role text)')
+        setup.execute('''CREATE TABLE m5_cycles(id bigint PRIMARY KEY,cycle_id uuid,organization_id bigint,
+            usage_scope text,collection_closed_at timestamptz)''')
+        setup.execute('''CREATE TABLE m10_pipeline_runs(cycle_db_id bigint,status text,stage text,
+            updated_at timestamptz)''')
+        setup.execute('CREATE TABLE m10_pipeline_revisions(cycle_db_id bigint,revision_no integer)')
+        setup.execute('''CREATE TABLE preparation_observations(id bigint,source text,operation_id text,stage text,
+            stage_started_at timestamptz)''')
+        setup.execute('CREATE TABLE m8_results(id uuid PRIMARY KEY,cycle_db_id bigint)')
+        setup.execute('''CREATE TABLE m8_result_revisions(id uuid PRIMARY KEY,results_id uuid,revision_no integer,
+            payload_json jsonb,created_at timestamptz DEFAULT now())''')
+        setup.execute('''CREATE TABLE m8_reports(id uuid PRIMARY KEY,result_revision_id uuid,revision_no integer,
+            audience text,status text,created_at timestamptz DEFAULT now(),c67_json jsonb)''')
+        setup.execute('CREATE TABLE m8_published_reports(cycle_db_id bigint,report_id uuid)')
+        m8_report_access.ensure_schema(setup)
+        setup.execute('INSERT INTO users VALUES(20),(21),(22),(23),(24)')
+        setup.execute('INSERT INTO organizations VALUES(1,true),(2,true)')
+        setup.execute("INSERT INTO organization_memberships VALUES(1,20,'admin'),(2,21,'admin')")
+        ready, failed, delayed, no_result, foreign = [uuid4() for _ in range(5)]
+        for db_id, cycle, org in ((1, ready, 1), (2, failed, 1), (3, delayed, 1),
+                                  (4, no_result, 1), (5, foreign, 2)):
+            setup.execute("""INSERT INTO m5_cycles VALUES
+                (%s,%s,%s,'assessment',now()-interval '1 day')""", (db_id, cycle, org))
+        setup.execute("""INSERT INTO m10_pipeline_runs VALUES
+            (2,'failed','report_failed',now()),(3,'processing','assessment_queued',now()-interval '1 day')""")
+        setup.execute('INSERT INTO m10_pipeline_revisions VALUES(2,7),(3,2)')
+        old_report, current_report, no_result_report, foreign_report = [uuid4() for _ in range(4)]
+        revisions = {}
+        for db_id in (1, 2, 4, 5):
+            result_id, revisions[db_id] = uuid4(), uuid4()
+            setup.execute('INSERT INTO m8_results VALUES(%s,%s)', (result_id, db_id))
+            setup.execute('INSERT INTO m8_result_revisions VALUES(%s,%s,1)', (revisions[db_id], result_id))
+        for db_id, report_id, revision, c67 in (
+            (1, old_report, 1, '{"skills":[{"outcome":"full_score"}]}'),
+            (1, current_report, 2, '{"partial_result":{"is_incomplete":true},"skills":[{"outcome":"partial_score"}]}'),
+            (4, no_result_report, 1, '{"skills":[{"outcome":"no_result"}],"partial_result":{"is_incomplete":true}}'),
+            (5, foreign_report, 1, '{"skills":[{"outcome":"full_score"}]}'),
+        ):
+            setup.execute("""INSERT INTO m8_reports(id,result_revision_id,revision_no,audience,status,c67_json)
+                VALUES(%s,%s,%s,'assessee','ready',%s::jsonb)""", (report_id, revisions[db_id], revision, c67))
+        setup.execute('INSERT INTO m8_published_reports VALUES(1,%s)', (current_report,))
+        setup.commit()
+
+        @contextmanager
+        def connect(*, read_only=False):
+            with psycopg.connect(test_database_url, row_factory=dict_row, autocommit=True) as db:
+                db.execute(sql.SQL('SET search_path TO {}').format(sql.Identifier(schema)))
+                db.autocommit = False
+                if read_only:
+                    db.execute('SET TRANSACTION READ ONLY')
+                yield db
+
+        with connect(read_only=True) as db:
+            queue = support_reports.list_problems(db, organization_id=1)
+            assert [item['state'] for item in queue['items']] == ['delayed', 'failed']
+            failure = support_reports.read(db, failed, report_id=None, user_id=23, can_recover=True)
+            assert failure['results_revision_id'] == revisions[2] and failure['results_status'] == 'saved'
+            assert failure['report_status'] == 'not_created' and failure['recovery_revision'] == 7
+
+        monkeypatch.setattr(routes, 'get_connection', connect)
+        monkeypatch.setattr(routes.web_session_service, 'get_user_by_token',
+                            lambda token: SimpleNamespace(id=int(token)) if token else None)
+        monkeypatch.setattr(routes, 'has_superadmin_access', lambda _db, user: user.id in {23, 24})
+        monkeypatch.setattr(routes, 'has_platform_permission', lambda _db, user, _permission: user.id == 24)
+        monkeypatch.setattr(routes, 'require_platform_permission',
+                            lambda *_args: (_ for _ in ()).throw(PermissionError('configuration.publish')))
+        monkeypatch.setattr(routes.m8_results, 'read_report', lambda _, rid: _report(rid, ready))
+        monkeypatch.setattr(routes.m8_report_corrections, 'public_notice', lambda *_args: None)
+        attempts = []
+
+        def render(report):
+            attempts.append(report['id'])
+            if len(attempts) == 1:
+                raise TypstRenderError('PDF_RENDER_TIMEOUT')
+            return b'%PDF-synthetic'
+
+        monkeypatch.setattr(routes.m8_results, 'render_pdf', render)
+        app = FastAPI()
+        app.include_router(routes.router)
+        with TestClient(app) as client:
+            support = '/users/admin/support/reports'
+            ready_path = f'{support}/{ready}'
+            exact_url = f'/users/admin/m8-access/reports/{old_report}'
+            assert client.get(ready_path).status_code == 401
+            for role in ('20', '21'):
+                client.cookies.set(routes.SESSION_COOKIE_NAME, role)
+                assert client.get(ready_path).status_code == 403
+            client.cookies.set(routes.SESSION_COOKIE_NAME, '23')
+            opened = client.get(ready_path)
+            assert opened.headers['cache-control'] == 'no-store'
+            assert opened.json()['report_id'] == str(current_report) and opened.json()['state'] == 'limited'
+            assert opened.json()['report_revision'] == 2 and opened.json()['report_access'] == 'denied'
+            assert 'skills' not in opened.text
+            normal = client.get(f'{support}/{no_result}').json()
+            assert normal['state'] == 'no_result' and normal['recovery_revision'] is None
+            exact = client.get(ready_path, params={'report_id': str(old_report)}).json()
+            assert exact['report_id'] == str(old_report) and exact['state'] == 'ready'
+            mismatch = client.get(ready_path, params={'report_id': str(foreign_report)}).json()
+            assert mismatch['report_id'] is None and mismatch['report_status'] == 'not_found'
+            assert mismatch['requested_report_id'] == str(foreign_report)
+            assert client.get(f'{support}/{uuid4()}').status_code == 404
+            assert client.get(f'{support}/{failed}').json()['recovery_revision'] is None
+            assert client.post(f'/users/admin/assessment/m8/cycles/{failed}/processing-recovery',
+                               json={'idempotency_key': 'denied', 'expected_pipeline_revision': 7}).status_code == 403
+            for denied in ('21', '23'):
+                client.cookies.set(routes.SESSION_COOKIE_NAME, denied)
+                assert client.get(exact_url).status_code == client.get(exact_url + '/pdf').status_code == 403
+            client.cookies.set(routes.SESSION_COOKIE_NAME, '24')
+            assert client.get(f'{support}/{failed}').json()['recovery_revision'] == 7
+            client.cookies.set(routes.SESSION_COOKIE_NAME, '20')
+            assert client.get(exact_url).json()['id'] == str(old_report)
+            assert client.get(exact_url + '/pdf').status_code == 503
+            assert client.get(exact_url + '/pdf').content == b'%PDF-synthetic'
+            assert attempts == [str(old_report), str(old_report)]
+            with connect() as db:
+                db.execute('DELETE FROM organization_memberships WHERE organization_id=1 AND user_id=20')
+            assert client.get(exact_url).status_code == client.get(exact_url + '/pdf').status_code == 403
+
+        with connect(read_only=True) as db:
+            assert db.execute('SELECT count(*) AS n FROM m8_reports').fetchone()['n'] == 4
+            assert db.execute('SELECT count(*) AS n FROM m8_result_revisions').fetchone()['n'] == 4
+            assert db.execute('SELECT count(*) AS n FROM m10_pipeline_revisions').fetchone()['n'] == 2
+        setup.execute(sql.SQL('DROP SCHEMA {} CASCADE').format(sql.Identifier(schema)))
+        setup.commit()

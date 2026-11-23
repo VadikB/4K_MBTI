@@ -247,7 +247,9 @@ for (const failure of [403, 404, 'network', 'timeout', 'admin503']) {
       window.setTimeout = (fn, delay, ...args) => original(fn, delay === 30000 ? 30 : delay, ...args);
     });
     await page.evaluate((customerAccess) => window.__report04Open({ m8ReportId: 'r2', m8CycleId: 'c2', customerAccess }), customer);
-    await expect(page.locator('#m8-report-state')).toContainText('Не удалось открыть');
+    const message = failure === 403 ? 'Нет доступа к этой редакции отчёта.'
+      : failure === 404 ? 'Сохранённая редакция отчёта не найдена.' : 'Не удалось открыть';
+    await expect(page.locator('#m8-report-state')).toContainText(message);
     await page.setViewportSize({ width: 390, height: 900 });
     await noOldResult(page);
     if (held) await held.fulfill({ json: secondReport() }).catch(() => {});

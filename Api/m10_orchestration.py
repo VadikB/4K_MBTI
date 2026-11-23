@@ -19,6 +19,9 @@ from Api.cycle_execution_manifest import resolve_cycle_dependency
 
 logger = logging.getLogger(__name__)
 PROCESSING_CONTRACT_VERSION = "m10-processing-recovery/1.0.0"
+RECOVERABLE_STAGES = frozenset({
+    "admission_processing_failed", "report_failed", "processing_failed", "recovery_failed",
+})
 _stop = threading.Event()
 _thread = None
 
@@ -377,23 +380,38 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
         connection.commit()
 
 
-def request_processing_recovery(connection, *, cycle_id: str, idempotency_key: str, created_by: int) -> dict:
+def request_processing_recovery(connection, *, cycle_id: str, idempotency_key: str, created_by: int,
+                                expected_pipeline_revision: int | None = None) -> dict:
     from Api.m5_case_runtime import checksum
-    from uuid import uuid4
+    from Api.m8_report_access import CUSTOMER_REPORT_FOR_CYCLE_SQL
+
+    # Select the current pipeline revision only after taking the same Cycle lock
+    # that serializes publication and pipeline transitions.
+    connection.execute("SELECT id FROM m5_cycles WHERE cycle_id=%s FOR UPDATE", (UUID(cycle_id),)).fetchone()
     cycle = connection.execute("""SELECT c.*,p.revision_no AS pipeline_revision_no,p.status AS pipeline_status,
         p.stage AS pipeline_stage FROM m5_cycles c
         JOIN m10_pipeline_runs run ON run.cycle_db_id=c.id
         JOIN m10_pipeline_revisions p ON p.cycle_db_id=c.id
-        WHERE c.cycle_id=%s ORDER BY p.revision_no DESC LIMIT 1 FOR UPDATE OF c""", (UUID(cycle_id),)).fetchone()
+        WHERE c.cycle_id=%s ORDER BY p.revision_no DESC LIMIT 1""", (UUID(cycle_id),)).fetchone()
     prior = connection.execute("SELECT * FROM m10_processing_recoveries WHERE created_by=%s AND idempotency_key=%s",
                                (created_by, idempotency_key)).fetchone()
     if prior:
-        if not cycle or int(prior["cycle_db_id"]) != int(cycle["id"]):
+        if (not cycle or int(prior["cycle_db_id"]) != int(cycle["id"])
+                or (expected_pipeline_revision is not None
+                    and prior["source_pipeline_revision_no"] != expected_pipeline_revision)):
             raise ValueError("IDEMPOTENCY_CONFLICT")
         return dict(prior)
     if (not cycle or cycle["pipeline_status"] != "failed"
-            or cycle["pipeline_stage"] not in {"admission_processing_failed", "report_failed", "processing_failed", "recovery_failed"}):
+            or cycle["pipeline_stage"] not in RECOVERABLE_STAGES):
         raise ValueError("M10_PROCESSING_RECOVERY_NOT_AVAILABLE")
+    if expected_pipeline_revision is not None:
+        if cycle["pipeline_revision_no"] != expected_pipeline_revision:
+            raise ValueError("M10_PROCESSING_RECOVERY_STALE")
+        report = connection.execute(f"""SELECT report.can_open FROM m5_cycles cycle
+            LEFT JOIN LATERAL ({CUSTOMER_REPORT_FOR_CYCLE_SQL}) report ON TRUE
+            WHERE cycle.id=%s""", (cycle["id"],)).fetchone()
+        if report and report["can_open"]:
+            raise ValueError("M10_PROCESSING_RECOVERY_NOT_AVAILABLE")
     try:
         published = m8_results.read_latest_report(connection, cycle_id, "assessee")
     except ValueError:

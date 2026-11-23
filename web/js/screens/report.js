@@ -1495,17 +1495,40 @@ export const openReport = (options = {}) => {
     window.history.replaceState({ reportReturnTarget: state.reportReturnTarget, returnToManagement,
       managementNavigation, adminReportsView }, '',
       url.pathname + '?' + url.searchParams.toString());
-    const load = () => {
+    let selectedReportId = m8ReportId;
+    const selectReport = (reportId) => {
+      selectedReportId = reportId;
+      const address = new URL(window.location.href);
+      address.searchParams.set('report_id', reportId);
+      window.history.replaceState(window.history.state, '', address);
+    };
+    const load = (event) => {
       if (!isCurrent()) return;
-      document.getElementById('m8-report-state').textContent = 'Открываем результат…';
-      void loadM8Report(m8CycleId, m8ReportId, isCurrent, ownerId, customerAccess,
-        { previousReportId, comparisonView: comparisonView && !customerAccess, comparisonState }).catch(() => {
-        if (!isCurrent()) return;
-        const stateNode = document.getElementById('m8-report-state');
-        if (!stateNode) return;
-        stateNode.innerHTML = 'Не удалось открыть результат. <button class="ghost-button compact-ghost" type="button">Повторить</button>';
-        stateNode.querySelector('button')?.addEventListener('click', load, { once: true });
-      });
+      const restoreFocus = document.activeElement === event?.currentTarget;
+      const stateNode = document.getElementById('m8-report-state');
+      stateNode.textContent = 'Открываем результат…';
+      const refocus = (target) => {
+        if (restoreFocus && isCurrent() && document.activeElement === document.body) {
+          target?.focus({ preventScroll: true });
+        }
+      };
+      void loadM8Report(m8CycleId, selectedReportId, isCurrent, ownerId, customerAccess,
+        { previousReportId, comparisonView: comparisonView && !customerAccess, comparisonState, selectReport }).then(
+        () => refocus(document.getElementById('m8-report-title')), (error) => {
+          if (!isCurrent()) return;
+          if ([401, 403].includes(error.status)) {
+            stateNode.textContent = 'Нет доступа к этой редакции отчёта.';
+          } else if (error.status === 404) {
+            stateNode.textContent = 'Сохранённая редакция отчёта не найдена.';
+          } else {
+            stateNode.innerHTML = 'Не удалось открыть результат. <button class="ghost-button compact-ghost" type="button">Повторить</button>';
+            const retry = stateNode.querySelector('button');
+            retry.addEventListener('click', load, { once: true });
+            refocus(retry);
+            return;
+          }
+          refocus(document.getElementById('m8-report-title'));
+        });
     };
     load();
     return;
@@ -2019,25 +2042,24 @@ const setupM8CompetencyNavigation = (c67) => {
 const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAccess = false, comparisonOptions = {}) => {
   const stateNode = document.getElementById('m8-report-state');
   if (!reportId) {
-  const status = await withReportDeadline(async (signal) => readApiResponse(
-    await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`, { signal }),
-    'Не удалось загрузить состояние отчёта.'));
-  if (!isCurrent()) return;
-  if (status.results_status !== 'ready') {
-    stateNode.textContent = status.results_status === 'failed' ? 'Не удалось подготовить отчёт. Ответы сохранены.' : 'Оценка завершена. Готовим ваш отчёт';
-    document.getElementById('m8-report-skills').replaceChildren();
-    return;
-  }
-  if (status.report_status !== 'ready') {
-    stateNode.textContent = status.report_status === 'failed'
-      ? 'Не удалось подготовить отчёт. Ответы сохранены.' : 'Оценка завершена. Готовим ваш отчёт';
-    document.getElementById('m8-report-skills').replaceChildren();
-    return;
-  }
+    const status = await withReportDeadline(async (signal) => readApiResponse(
+      await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`, { cache: 'no-store', signal }),
+      'Не удалось загрузить состояние отчёта.'));
+    if (!isCurrent()) return;
+    if (status.cycle_id && String(status.cycle_id) !== String(cycleId)) throw new Error('Получен статус другой оценки.');
+    if (status.results_status !== 'ready'
+      || !['ready', 'limited', 'no_result'].includes(status.report_status) || !status.report_id) {
+      stateNode.textContent = status.results_status === 'failed' || status.report_status === 'failed'
+        ? 'Не удалось подготовить отчёт. Ответы сохранены.' : 'Оценка завершена. Готовим ваш отчёт';
+      document.getElementById('m8-report-skills').replaceChildren();
+      return;
+    }
+    reportId = status.report_id;
+    comparisonOptions.selectReport(reportId);
   }
   const report = await withReportDeadline(async (signal) => readApiResponse(await fetch(customerAccess
     ? `/users/admin/m8-access/reports/${encodeURIComponent(reportId)}`
-    : reportId ? `/users/assessment/m8/reports/${encodeURIComponent(reportId)}` : `/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/reports/latest`, { signal }),
+    : `/users/assessment/m8/reports/${encodeURIComponent(reportId)}`, { cache: 'no-store', signal }),
   'Не удалось загрузить отчёт.'));
   if (!isCurrent()) return;
   if (

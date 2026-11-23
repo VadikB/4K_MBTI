@@ -87,7 +87,7 @@ test('FIX-02 P03/P04: two series, exact deltas, pair reload/back, partial basis 
   await page.locator('.m8-comparison-chart').scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(evidence, 'comparison-1440.png') });
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Скачать сравнение PDF' }).click();
+  await page.locator('.report-pdf-action button').click();
   expect((await fs.readFile(await (await download).path())).subarray(0, 5).toString()).toBe('%PDF-');
   await page.setViewportSize({ width: 390, height: 844 });
   frame = await openExample(page, 'P04', true);
@@ -162,8 +162,8 @@ test('FIX-02 P05/P06: mixed and roles, stale response, read failure, four PDF en
     }
     const button = place === 'report' ? frame.locator('#report-download-button')
       : place === 'history' ? frame.locator('.cycle-report-pdf').first()
-        : place === 'admin' ? frame.locator('.admin-report-download-action').getByRole('button', { name: 'PDF', exact: true }).first()
-          : frame.getByRole('button', { name: 'Скачать сравнение PDF' });
+        : place === 'admin' ? frame.locator('.admin-report-download-action').getByRole('button', { name: /PDF/ }).first()
+          : frame.locator('.report-pdf-action button');
     await button.click();
     await expect(frame.locator('.report-pdf-status').filter({ hasText: 'Попробуйте ещё раз' }).first()).toBeVisible();
     await Promise.all([page.waitForResponse('**/__reports/control'), page.getByRole('button', { name: 'Успешный повтор' }).click()]);

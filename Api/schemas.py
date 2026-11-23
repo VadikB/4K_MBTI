@@ -1647,6 +1647,7 @@ class M5CatalogPublishRequest(M5CatalogPlanRequest):
 
 class M10ProcessingRecoveryRequest(BaseModel):
     idempotency_key: str = Field(min_length=1, max_length=200)
+    expected_pipeline_revision: int | None = Field(default=None, ge=1)
 
 
 class PlatformRoleAssignmentRequest(BaseModel):

@@ -56,7 +56,8 @@ def test_recovery_requires_responsible_authority_and_server_actor(http):
     client.cookies.set(routes.SESSION_COOKIE_NAME, "operator")
     response = client.post(path, json={"idempotency_key":"retry-1"})
     assert response.status_code == 202
-    assert captured == {"cycle_id":str(cycle), "idempotency_key":"retry-1", "created_by":7}
+    assert captured == {"cycle_id":str(cycle), "idempotency_key":"retry-1", "created_by":7,
+                        "expected_pipeline_revision": None}
 
 
 def test_recovery_rejects_organization_administrator(http, monkeypatch):

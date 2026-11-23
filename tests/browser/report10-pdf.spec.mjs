@@ -140,8 +140,8 @@ for (const place of ['history', 'admin', 'comparison']) {
       });
       await fixtureApp(page, place);
       const button = place === 'history' ? page.locator('[data-cycle-id="cycle-pdf"] .cycle-report-pdf')
-        : place === 'admin' ? page.locator('.admin-report-download-action').getByRole('button', { name: 'PDF', exact: true })
-          : page.getByRole('button', { name: 'Скачать сравнение PDF' });
+        : place === 'admin' ? page.locator('.admin-report-download-action').getByRole('button', { name: /PDF/ })
+          : page.locator('.report-pdf-action button');
       const status = place === 'history' ? page.locator('[data-cycle-id="cycle-pdf"] [role="status"]')
         : place === 'admin' ? page.locator('.admin-report-download-action [role="status"]')
           : page.locator('.report-pdf-action [role="status"]');
@@ -203,7 +203,7 @@ test('FIX-01 stale PDF is suppressed after report switch and pair switch; duplic
   await page.locator('#m8-comparison-open').click();
   let pairHeld;
   await page.route('**/users/assessment/m8/reports/report-pdf/comparison.pdf?*', (route) => { pairHeld = route; });
-  await page.getByRole('button', { name: 'Скачать сравнение PDF' }).click();
+  await page.locator('.report-pdf-action button').click();
   await expect.poll(() => Boolean(pairHeld)).toBe(true);
   await page.locator('#m8-comparison-select').selectOption('older');
   const response = page.waitForResponse((r) => r.url().includes('comparison.pdf'));

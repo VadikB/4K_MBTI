@@ -3191,6 +3191,9 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
       { cycle_id: 'cycle-previous', report_id: 'report-previous', program_name: 'Программа ранее', collection_closed_at: '2026-09-17T11:00:00Z' },
       { cycle_id: 'cycle-other', report_id: 'report-other', program_name: 'Другая программа', collection_closed_at: '2026-08-17T11:00:00Z' },
     ] });
+    if (pathname === '/users/assessment/m8/reports/report-rad01/comparison.pdf') {
+      return fulfillJson(route, { detail: 'Synthetic PDF render failure' }, 503);
+    }
     if (pathname === '/users/assessment/m8/reports/report-rad01/comparison') {
       if (new URL(route.request().url()).searchParams.get('previous_report_id') === 'report-other') {
         await new Promise((resolve) => setTimeout(resolve, 250));
@@ -3202,7 +3205,7 @@ test('RAD01 renders saved scores, gaps and mobile competency view', async ({ pag
   });
   const assertComparisonPdfPair = async () => {
     const request = page.waitForRequest((item) => new URL(item.url()).pathname.endsWith('/comparison.pdf'));
-    await page.getByRole('button', { name: 'Скачать сравнение PDF' }).click();
+    await page.locator('.report-pdf-action button').click();
     const url = new URL((await request).url());
     expect(url.pathname).toBe('/users/assessment/m8/reports/report-rad01/comparison.pdf');
     expect(url.searchParams.get('previous_report_id')).toBe('report-previous');

@@ -38,7 +38,7 @@ test('REP02 presents saved descriptions and explicit non-blocking states without
 });
 
 test('REP01 keeps exact report binding and handles PDF failure locally', () => {
-  assert.match(report, /reportId \? `\/users\/assessment\/m8\/reports/);
+  assert.match(report, /reportId = status.report_id;\s*comparisonOptions.selectReport\(reportId\)/);
   assert.match(report, /String\(report\.id\) !== String\(reportId\)/);
   assert.match(wiring, /module\.downloadSelectedReportPdf\(\)/);
   assert.match(report, /'\/users\/assessment\/m8\/reports\/'/);

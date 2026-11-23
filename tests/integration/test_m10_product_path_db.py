@@ -6,7 +6,7 @@ import json
 import time
 from pathlib import Path
 from types import SimpleNamespace
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import psycopg
 import pytest
@@ -1397,6 +1397,7 @@ def test_s10_a_owner_path_reaches_versioned_report_without_admin_finalization(pr
 
 
 def test_admission_processing_failure_is_limited_and_recovery_is_new_revision(product_db):
+    from Api import support_reports
     from Api.m8_results import list_owned_cycles
     factory=product_db
     with factory() as connection:
@@ -1425,6 +1426,10 @@ def test_admission_processing_failure_is_limited_and_recovery_is_new_revision(pr
             "failed","admission_processing_failed","M6_ADMISSION_PROCESSING_FAILED")
         old_report=read_latest_report(connection,cycle_id,"assessee")
         assert old_report["c67"]["processing"]["status"] == "failed"
+        facts = support_reports.read(connection, UUID(cycle_id), report_id=None, user_id=99, can_recover=True)
+        assert (facts["state"], facts["stage_label"]) == ("failed", "Обработка результатов оценивания")
+        assert facts["results_status"] == "saved" and not facts["report_openable"]
+        assert str(facts["report_id"]) == old_report["id"] and facts["recovery_revision"]
         assert {x["code"] for x in old_report["c67"]["partial_result"]["limitation_reasons"]} >= {
             "technical_failure"}
         assert any("не L0" in item for item in old_report["c67"]["limitations"])
@@ -1547,8 +1552,16 @@ def test_report_failure_recovers_saved_results_without_recalculation(product_db,
         results_before = connection.execute("SELECT id,payload_checksum FROM m8_result_revisions").fetchone()
         calculation_before = connection.execute("SELECT id,c56_hash FROM m6_cycle_calculations").fetchone()
         assert connection.execute("SELECT count(*) AS n FROM m8_reports").fetchone()["n"] == 0
-        m10_orchestration.request_processing_recovery(connection, cycle_id=cycle_id,
-            idempotency_key="report01-service-recovery", created_by=99)
+        revision = connection.execute("SELECT max(revision_no) AS n FROM m10_pipeline_revisions").fetchone()["n"]
+        with pytest.raises(ValueError, match="M10_PROCESSING_RECOVERY_STALE"):
+            m10_orchestration.request_processing_recovery(connection, cycle_id=cycle_id,
+                idempotency_key="stale", created_by=99, expected_pipeline_revision=revision + 1)
+        request = m10_orchestration.request_processing_recovery(connection, cycle_id=cycle_id,
+            idempotency_key="report01-service-recovery", created_by=99, expected_pipeline_revision=revision)
+        replay = m10_orchestration.request_processing_recovery(connection, cycle_id=cycle_id,
+            idempotency_key="report01-service-recovery", created_by=99, expected_pipeline_revision=revision)
+        assert replay["id"] == request["id"]
+        assert request["source_pipeline_revision_no"] == revision
         connection.commit()
     monkeypatch.setattr(m10_orchestration.m8_results, "create_report_detached", original)
     def forbidden_recalculation(**_kwargs):
