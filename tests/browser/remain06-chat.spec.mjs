@@ -136,6 +136,7 @@ test('F21 scope after assessment: native auth/admin/questionnaire input and IME 
     await expect.poll(async () => await page.locator('#admin-open-organizations-button').isVisible()
       || await page.locator('#admin-organizations-panel').isVisible()).toBe(true);
     if (await page.locator('#admin-open-organizations-button').isVisible()) await page.locator('#admin-open-organizations-button').click();
+    await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
     const card = page.locator('[data-organization-id="3"]');
     await expect(card).toBeVisible();
     await card.locator('[data-action="show-admin-view"][data-view="organization-data"]').click();

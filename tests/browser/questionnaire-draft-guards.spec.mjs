@@ -103,6 +103,7 @@ async function fixture(page, { status = 200, items = [] } = {}) {
   await page.goto(base);
   await expect(page.locator('#admin-open-organizations-button')).toBeVisible();
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await expect(card(page)).toBeVisible();
   await expect.poll(() => state.initialHeld).toBe(true);
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
@@ -222,11 +223,13 @@ test('Q-DRAFT live input wins over a delayed confirmed revision in the same scop
 });
 test('Q-DRAFT pending read of organization A cannot overwrite organization B draft', async ({ page }) => {
   const f = await fixture(page); await fill(page, fields('A'));
-  await page.locator('#admin-organization-select').selectOption('4');
+  await page.locator('.platform-org-breadcrumb a').click();
+  await page.locator('#platform-org-rows [data-org-id="4"]:not([data-org-admins])').click();
   await card(page, 4).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await assertValues(page, empty, 4); await fill(page, fields('B'), 4);
   await finishRead(page, f); await assertValues(page, fields('B'), 4);
-  await page.locator('#admin-organization-select').selectOption('3');
+  await page.locator('.platform-org-breadcrumb a').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await assertValues(page, fields('A'));
 });
 test('Q-DRAFT pending read cannot clone a draft into a different connected assessment', async ({ page }) => {
@@ -271,11 +274,8 @@ test('ADM-UI-02 restores pending confirmation only for its account, organization
   await expect(form(page).locator('.admin-data-confirmation-recovery')).toBeVisible();
 
   const openData = async (org, assessmentRef) => {
-    const landing = page.locator('#admin-open-organizations-button');
-    const management = page.locator('#admin-organizations-panel');
-    await expect.poll(async () => await landing.isVisible() || await management.isVisible()).toBe(true);
-    if (await landing.isVisible()) await landing.click();
-    await page.locator('#admin-organization-select').selectOption(String(org));
+    await page.locator('#admin-open-organizations-button').click();
+    await page.locator('#platform-org-rows [data-org-id="' + org + '"]:not([data-org-admins])').click();
     await card(page, org).getByRole('button', { name: 'Данные организации', exact: true }).click();
     await expect(form(page, org).locator('[name="assignment_ref"]')).toHaveValue(assessmentRef);
   };
@@ -327,6 +327,7 @@ test('Q-DRAFT old account read cannot erase or restore drafts after re-login', a
   await page.locator('#magic-token-input').fill('synthetic-password');
   await page.locator('#verify-magic-link-button').click();
   await expect(page.locator('#admin-organizations-account-name')).toHaveText('Synthetic admin 28');
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(card(page).locator('[data-admin-view="organization-data"] .admin-questionnaire-load-state')).toHaveCount(0);
   await assertValues(page, empty); await fill(page, fields('B'));

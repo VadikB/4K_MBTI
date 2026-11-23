@@ -1473,7 +1473,7 @@ document.querySelectorAll('[data-admin-area]').forEach((button) => {
 const openOrganizationsFromNavigation = (event) => {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
-  withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations());
+  withScreen(loadAdminOrganizations, (module) => module.openAdminOrganizations({ openRegistry: true }));
 };
 adminSummaryOrganizationsButton?.addEventListener('click', openOrganizationsFromNavigation);
 document.getElementById('admin-open-organizations-button')?.addEventListener('click', openOrganizationsFromNavigation);

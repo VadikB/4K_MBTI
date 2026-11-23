@@ -32,7 +32,7 @@ const assignmentSourceRequests = new Map();
 const assignmentOperationIds = new Map();
 const cancellationOperationIds = new Map();
 const cancellationRequestsInFlight = new Set();
-const programConnectionOperationIds = new Map();
+const programConnectionAttempts = new Map();
 const unverifiedProgramConnections = new Set();
 const programConnectionRequestsInFlight = new Set();
 const questionnairePreviews = new Map();
@@ -57,18 +57,23 @@ let organizationsRequestGeneration = 0;
 let assignmentViewGeneration = 0;
 let organizationsReadStale = false;
 let organizationsReadStaleReason = '';
+let platformOrganizationView = 'registry';
+let organizationCreatePending = null;
+let organizationCreateInFlight = false;
+let preparationProblemCounts = null;
+let preparationProblemReadGeneration = 0;
 
 const currentIdentityKey = () => String(state.pendingUser?.id || '');
 const organizationKey = (organizationId) => currentIdentityKey() + ':' + Number(organizationId);
 const assessmentKey = (organizationId, assessmentRef = '') =>
   organizationKey(organizationId) + ':' + String(assessmentRef || '').trim();
 const confirmationStorageKey = (scope) => 'agent4k.questionnaire.confirmation.' + scope;
-const readQuestionnaireOperation = (key) => {
+const readSessionOperation = (key) => {
   try {
     return window.sessionStorage.getItem(key);
   } catch { return null; }
 };
-const writeQuestionnaireOperation = (key, value) => {
+const writeSessionOperation = (key, value) => {
   if (!key) return;
   try {
     if (value === null) window.sessionStorage.removeItem(key);
@@ -109,11 +114,12 @@ const clearPendingInvitationOperation = (requestKey, identityKey = currentIdenti
 };
 const organizationById = (organizationId) => (state.adminOrganizations?.items || [])
   .find((item) => Number(item.id) === Number(organizationId));
-const reflectConfirmedOrganizationName = (organizationId, revision, { allowAnswerFallback = false } = {}) => {
-  const name = String(revision?.organization_name_current ||
-    (allowAnswerFallback ? revision?.answers_json?.C01?.name : '') || '').trim();
+const reflectConfirmedOrganizationName = (organizationId, revision) => {
+  const name = String(revision?.organization_name_current || '').trim();
   const organization = organizationById(organizationId);
-  if (organization && name) {
+  if (organization && name && organization.name !== name) {
+    // A collection GET started before the server confirmed the name can carry the old value.
+    organizationsRequestGeneration += 1;
     organization.name = name;
     persistAssessmentContext();
   }
@@ -240,6 +246,7 @@ const organizationProgramState = (organizationId) => {
   const program = organization?.assessment_program;
   const assessmentRef = String(program?.assignment_ref || '').trim();
   if (organizationsReadStale || unverifiedProgramConnections.has(organizationKey(organizationId)) ||
+      pendingProgramConnection(organizationId)?.awaitingRead ||
       !organization || program === undefined || (program && !assessmentRef)) {
     return { status: 'unknown', assessmentRef: '', message:
       'Подключение программы пока не подтверждено. Проверьте состояние подключения.' };
@@ -519,7 +526,7 @@ const clearAdminOrganizationsSessionState = () => {
   assignmentOperationIds.clear();
   cancellationOperationIds.clear();
   cancellationRequestsInFlight.clear();
-  programConnectionOperationIds.clear();
+  programConnectionAttempts.clear();
   programConnectionOutcome = null;
   programConnectionFeedbackGeneration += 1;
   unverifiedProgramConnections.clear();
@@ -541,6 +548,13 @@ const clearAdminOrganizationsSessionState = () => {
   restoredManagementIdentity = null;
   organizationsReadStale = false;
   organizationsReadStaleReason = '';
+  platformOrganizationView = 'registry';
+  organizationCreatePending = null;
+  organizationCreateInFlight = false;
+  preparationProblemCounts = null;
+  preparationProblemReadGeneration += 1;
+  if (adminOrganizationNameInput) adminOrganizationNameInput.value = '';
+  if (adminOrganizationCodeInput) adminOrganizationCodeInput.value = '';
 };
 
 window.addEventListener('agent4k:assessment-context-cleared', clearAdminOrganizationsSessionState);
@@ -785,6 +799,8 @@ const trackOperation = (event) => {
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
+  if ((form?.dataset.action === 'connect-assessment-program' || button?.dataset.action === 'check-program-connection') &&
+      programConnectionRequestsInFlight.has(organizationKey(card.dataset.organizationId))) return;
   clearProgramConnectionFeedback();
   const selector = form ? 'form[data-action="' + CSS.escape(form.dataset.action) + '"]'
     : root.matches('.admin-questionnaire-preview')
@@ -973,30 +989,102 @@ const loadQuestionnaireRevisions = async (organizationId, context = {}) => {
 export const retryAdminOrganizationQuestionnaireLoad = (organizationId) =>
   loadQuestionnaireRevisions(organizationId);
 
+const normalizedOrganizationCode = (code) => code.trim().toLowerCase()
+  .replace(/\s/gu, '-').replace(/[^\p{L}\p{N}_-]/gu, '').replace(/^[-_]+|[-_]+$/gu, '');
+const findOrganizationByCode = (data, code) => data?.items?.find((item) => item.code === code);
+const createOperationStorageKey = () => 'agent4k.organizationCreate.' + currentIdentityKey();
+const rememberCreateAttempt = (attempt) => {
+  organizationCreatePending = attempt;
+  writeSessionOperation(createOperationStorageKey(), attempt ? JSON.stringify(attempt) : null);
+};
+const showOrganizationCreateAttempt = () => {
+  if (!organizationCreatePending && !organizationCreateInFlight) {
+    try {
+      const saved = JSON.parse(readSessionOperation(createOperationStorageKey()));
+      if (typeof saved?.code === 'string' && typeof saved.name === 'string' && saved.code && saved.name) {
+        organizationCreatePending = saved;
+        adminOrganizationNameInput.value = saved.name;
+        adminOrganizationCodeInput.value = saved.code;
+      }
+    } catch { /* Ignore malformed local storage. */ }
+  }
+  const locked = organizationCreateInFlight || Boolean(organizationCreatePending);
+  adminOrganizationNameInput.readOnly = locked;
+  adminOrganizationCodeInput.readOnly = locked;
+  adminOrganizationCreateButton.disabled = organizationCreateInFlight;
+  adminOrganizationCreateButton.textContent = organizationCreatePending ? 'Проверить создание' : 'Создать';
+};
+
 export const createAdminOrganization = async () => {
+  if (organizationCreateInFlight || !state.adminOrganizations?.is_superadmin || platformOrganizationView !== 'create') return;
   const name = String(adminOrganizationNameInput?.value || '').trim();
-  const code = String(adminOrganizationCodeInput?.value || '').trim();
+  const code = normalizedOrganizationCode(String(adminOrganizationCodeInput?.value || ''));
   if (!name || !code) {
     setStatus('Укажите название и код организации.', 'error');
     return;
   }
-  if (adminOrganizationCreateButton) {
-    adminOrganizationCreateButton.disabled = true;
-  }
+  const identityEpoch = state.identityEpoch;
+  const identityKey = currentIdentityKey();
+  const isCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey;
+  const isVisible = () => isCurrent() && platformOrganizationView === 'create' &&
+    state.currentScreen === 'admin-organizations';
+  const setCreateStatus = (message, tone) => { if (isVisible()) setStatus(message, tone, null); };
+  const openCreated = (organization, recovered) => {
+    rememberCreateAttempt(null);
+    adminOrganizationNameInput.value = '';
+    adminOrganizationCodeInput.value = '';
+    if (!isVisible()) return;
+    selectAdminOrganization(organization.id);
+    setStatus(recovered ? 'Создание подтверждено по коду организации.' : 'Организация создана.', 'success', null, { focus: false });
+  };
+  const readCreateOutcome = async () => {
+    const pending = organizationCreatePending;
+    try {
+      const data = await requestOrganizations('/users/admin/organizations',
+        { method: 'GET', cache: 'no-store' }, 'Не удалось проверить создание организации.', isCurrent);
+      if (!isCurrent()) return;
+      if (!data?.is_superadmin || !Array.isArray(data.items)) throw new Error('Исход создания неизвестен.');
+      const match = findOrganizationByCode(data, pending.code);
+      rememberCreateAttempt(null);
+      if (match?.name === pending.name) openCreated(match, true);
+      else if (match) setCreateStatus('Этот код уже используется другой организацией.', 'error');
+      else setCreateStatus('Организация с этим кодом пока не найдена. Можно повторить создание.', 'muted');
+    } catch (_error) {
+      setCreateStatus('Исход создания пока неизвестен. Проверьте организацию по тому же коду.', 'error');
+    }
+  };
+  organizationCreateInFlight = true;
+  showOrganizationCreateAttempt();
   try {
-    await requestOrganizations(
+    if (organizationCreatePending) return await readCreateOutcome();
+    if (!organizationsReadStale && findOrganizationByCode(state.adminOrganizations, code)) {
+      setCreateStatus('Организация с таким кодом уже существует.', 'error');
+      return;
+    }
+    rememberCreateAttempt({ code, name });
+    const data = await requestOrganizations(
       '/users/admin/organizations',
       { method: 'POST', body: JSON.stringify({ name, code }) },
       'Не удалось создать организацию.',
+      isCurrent,
     );
-    if (adminOrganizationNameInput) adminOrganizationNameInput.value = '';
-    if (adminOrganizationCodeInput) adminOrganizationCodeInput.value = '';
-    setStatus('Организация создана.', 'success');
+    if (!isCurrent()) return;
+    const created = findOrganizationByCode(data, code);
+    if (!created || created.name !== name) throw new Error('Сервер не подтвердил создание.');
+    openCreated(created, false);
   } catch (error) {
-    setStatus(error.message || 'Не удалось создать организацию.', 'error');
+    if (!isCurrent()) return;
+    if (error.status && error.status < 500) {
+      rememberCreateAttempt(null);
+      setCreateStatus(error.status === 409 ? 'Организация с таким кодом уже существует.' : error.message, 'error');
+    } else {
+      showOrganizationCreateAttempt();
+      await readCreateOutcome();
+    }
   } finally {
-    if (adminOrganizationCreateButton) {
-      adminOrganizationCreateButton.disabled = false;
+    if (isCurrent()) {
+      organizationCreateInFlight = false;
+      showOrganizationCreateAttempt();
     }
   }
 };
@@ -1006,6 +1094,11 @@ export const selectAdminOrganization = (organizationId) => {
   clearProgramConnectionFeedback();
   captureAdminOrganizationsDraft();
   selectedOrganizationId = Number(organizationId) || null;
+  if (state.adminOrganizations?.is_superadmin && selectedOrganizationId) {
+    platformOrganizationView = 'card';
+    syncUrlState('admin-organizations', { organizationId: selectedOrganizationId });
+    setStatus('');
+  }
   saveManagementSelection();
   renderAdminOrganizations();
 };
@@ -1848,9 +1941,9 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
       storageKey = await previewOperationStorageKey(scopeKey, payload);
       if (!isCurrent() || questionnaireLoadStates.get(organizationKey(organizationId))?.accessDenied ||
           !requireOrganizationProgramScope(organizationId, submittedRef)) return;
-      const storedKey = storageKey && readQuestionnaireOperation(storageKey);
+      const storedKey = storageKey && readSessionOperation(storageKey);
       attempt.idempotencyKey = storedKey || attempt.idempotencyKey;
-      writeQuestionnaireOperation(storageKey, attempt.idempotencyKey);
+      writeSessionOperation(storageKey, attempt.idempotencyKey);
       payload = { ...payload, idempotency_key: attempt.idempotencyKey };
     }
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/preview', {
@@ -1864,7 +1957,7 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     }
     if (attempt && earlyDataPreviewAttempts.get(scopeKey) === attempt) {
       earlyDataPreviewAttempts.delete(scopeKey);
-      writeQuestionnaireOperation(storageKey, null);
+      writeSessionOperation(storageKey, null);
     }
     const connection = organizationProgramState(organizationId);
     if (connection.status !== 'confirmed' || connection.assessmentRef !== submittedRef) return;
@@ -1901,7 +1994,7 @@ export const previewAdminOrganizationQuestionnaire = async (organizationId, payl
     if (!isCurrent()) return;
     if (attempt && error?.status && error.status < 500) {
       earlyDataPreviewAttempts.delete(scopeKey);
-      writeQuestionnaireOperation(storageKey, null);
+      writeSessionOperation(storageKey, null);
     }
     const message = error instanceof TypeError || error?.name === 'RequestDeadlineError'
       ? 'Не удалось получить ответ. Повторите проверку сведений.'
@@ -1946,7 +2039,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
   const requestGeneration = (questionnaireConfirmRequestGenerations.get(requestKey) || 0) + 1;
   questionnaireConfirmRequestGenerations.set(requestKey, requestGeneration);
   const storageKey = confirmationStorageKey(requestKey);
-  writeQuestionnaireOperation(storageKey, revisionId);
+  writeSessionOperation(storageKey, revisionId);
   try {
     const response = await fetch('/users/admin/organizations/' + organizationId + '/questionnaire/' + revisionId + '/confirm', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
@@ -1960,7 +2053,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     if (Number(confirmed?.id) !== Number(revisionId) || confirmed.status !== 'confirmed' || confirmedRef !== submittedRef) {
       throw new Error('Не удалось проверить ответ подтверждения.');
     }
-    writeQuestionnaireOperation(storageKey, null);
+    writeSessionOperation(storageKey, null);
     const changedActions = new Set();
     const currentCard = adminOrganizationsList.querySelector(
       '[data-organization-id="' + Number(organizationId) + '"]',
@@ -1986,7 +2079,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     questionnaireRevisions.set(revisionsKey,
       [mergeQuestionnaireRevision(confirmed, cachedRevision),
         ...revisions.filter((item) => String(item.assignment_ref || '').trim() !== confirmedRef)]);
-    reflectConfirmedOrganizationName(organizationId, confirmed, { allowAnswerFallback: true });
+    reflectConfirmedOrganizationName(organizationId, confirmed);
     const currentPreview = questionnairePreviews.get(confirmedKey);
     if (!currentPreview || Number(currentPreview.id) === Number(revisionId)) {
       questionnairePreviews.delete(confirmedKey);
@@ -2009,7 +2102,7 @@ export const confirmAdminOrganizationQuestionnaire = async (organizationId, revi
     if (questionnaireConfirmRequestGenerations.get(requestKey) !== requestGeneration) return;
     const status = !error?.status || error.status >= 500 ? 'unknown' :
       error.status === 409 ? 'conflict' : 'rejected';
-    if (status !== 'unknown') writeQuestionnaireOperation(storageKey, null);
+    if (status !== 'unknown') writeSessionOperation(storageKey, null);
     const message = status === 'unknown'
       ? 'Ответ сервера не получен. Проверьте, сохранилась ли эта редакция.'
       : questionnaireErrorMessage(error, 'Не удалось подтвердить сведения.');
@@ -2088,7 +2181,7 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
         !['confirmed', 'ready_for_confirmation', 'draft', 'invalid'].includes(saved.status)) {
       throw new Error('Не удалось проверить состояние этой редакции.');
     }
-    writeQuestionnaireOperation(confirmationStorageKey(requestKey), null);
+    writeSessionOperation(confirmationStorageKey(requestKey), null);
     captureAdminOrganizationsDraft();
     reflectConfirmedOrganizationName(organizationId, saved);
     if (saved.status !== 'confirmed') {
@@ -2125,7 +2218,7 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
     renderAdminOrganizations();
     setOrganizationDataStatus(organizationId, outcome.assignmentRef, '', 'muted');
     void refreshConfirmedReadiness(organizationId, outcome, { identityEpoch, identityKey, requestKey, requestGeneration });
-  } catch (error) {
+  } catch {
     if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) {
       setOrganizationDataStatus(organizationId, outcome.assignmentRef, 'Не удалось проверить результат. Повторите проверку.', 'error');
     }
@@ -2181,7 +2274,7 @@ export const restoreAdminOrganization = async (organizationId, organizationName 
 const readAdminOrganizationProgram = async (organizationId, identityEpoch, identityKey) => {
   const readGeneration = organizationsRequestGeneration;
   const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
-    method: 'GET', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+    method: 'GET', credentials: 'same-origin', cache: 'no-store',
   });
   const result = await readApiResponse(response, 'Не удалось проверить подключённую версию программы.');
   if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
@@ -2201,12 +2294,15 @@ const applyAdminOrganizationProgramReadback = (organizationId, connection) => {
   if (!organizations || !Array.isArray(organizations.items)) return;
   const organization = organizations.items.find((item) => Number(item.id) === Number(organizationId));
   if (!organization) return;
-  captureAdminOrganizationsDraft();
+  const showsCard = state.currentScreen === 'admin-organizations' && Number(selectedOrganizationId) === Number(organizationId) &&
+    (!organizations.is_superadmin || platformOrganizationView === 'card');
+  if (showsCard) captureAdminOrganizationsDraft();
   // An older collection GET must not replace this later exact readback.
   organizationsRequestGeneration += 1;
   organization.assessment_program = connection;
   persistAssessmentContext();
-  renderAdminOrganizations();
+  if (showsCard) renderAdminOrganizations();
+  else if (state.currentScreen === 'admin-organizations' && platformOrganizationView === 'registry') renderOrganizationRegistry();
 };
 
 const refreshAdminOrganizationQuestionnaireInBackground = (organizationId, identityEpoch, identityKey) => {
@@ -2218,11 +2314,41 @@ const isExactProgramConnection = (connection, organizationId, programDefinitionI
   Number(connection?.program_definition_id) === Number(programDefinitionId) &&
   Boolean(String(connection?.assignment_ref || '').trim());
 
+const programOperationKey = (organizationId) => 'agent4k.programConnection.' + organizationKey(organizationId);
+const pendingProgramConnection = (organizationId) => {
+  const key = organizationKey(organizationId);
+  if (programConnectionAttempts.has(key)) return programConnectionAttempts.get(key);
+  try {
+    const saved = JSON.parse(readSessionOperation(programOperationKey(organizationId)));
+    if (saved?.organizationId === Number(organizationId) && Number.isSafeInteger(saved.programDefinitionId) &&
+        saved.programDefinitionId > 0 && typeof saved.operationId === 'string' && saved.operationId) return saved;
+  } catch { /* Malformed local navigation data has no authority over the connection. */ }
+  return null;
+};
+const saveProgramConnectionAttempt = (organizationId, attempt) => {
+  const key = organizationKey(organizationId);
+  if (attempt) programConnectionAttempts.set(key, attempt);
+  else programConnectionAttempts.delete(key);
+  writeSessionOperation(programOperationKey(organizationId), attempt ? JSON.stringify(attempt) : null);
+};
+const describeProgramReadback = (connection, attempt) => {
+  if (!connection) return { message: 'Проверено: программа не подключена.', tone: 'muted' };
+  if (attempt && !isExactProgramConnection(connection, attempt.organizationId, attempt.programDefinitionId)) {
+    return { message: 'Подключена другая версия: ' + connection.program_name + ' · версия ' + connection.program_version + '.', tone: 'error' };
+  }
+  return { message: 'Состояние подключения программы подтверждено.', tone: 'success' };
+};
+
 export const checkAdminOrganizationProgram = async (organizationId) => {
   const key = organizationKey(organizationId);
   if (programConnectionRequestsInFlight.has(key)) return false;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
+  const feedbackGeneration = programConnectionFeedbackGeneration;
+  const attempt = pendingProgramConnection(organizationId);
+  const isVisible = () => Number(selectedOrganizationId) === Number(organizationId) &&
+    (!state.adminOrganizations?.is_superadmin || platformOrganizationView === 'card') &&
+    feedbackGeneration === programConnectionFeedbackGeneration && state.currentScreen === 'admin-organizations';
   captureAdminOrganizationsDraft();
   programConnectionRequestsInFlight.add(key);
   unverifiedProgramConnections.add(key);
@@ -2232,16 +2358,20 @@ export const checkAdminOrganizationProgram = async (organizationId) => {
     const connection = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
     unverifiedProgramConnections.delete(key);
+    saveProgramConnectionAttempt(organizationId, connection || !attempt ? null : { ...attempt, awaitingRead: false });
     applyAdminOrganizationProgramReadback(organizationId, connection);
-    setStatus(connection ? 'Состояние подключения программы подтверждено.' : organizationProgramState(organizationId).message,
-      connection ? 'success' : 'muted');
+    const { message, tone } = describeProgramReadback(connection, attempt);
+    if (isVisible()) setStatus(message, tone, programConnectionForm(organizationId) || operationRoot());
     refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
     return true;
   } catch (_error) {
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-    captureAdminOrganizationsDraft();
-    renderAdminOrganizations();
-    setStatus(organizationProgramState(organizationId).message, 'error');
+    if (isVisible()) {
+      captureAdminOrganizationsDraft();
+      renderAdminOrganizations();
+      setStatus('Чтение подключения недоступно. Проверьте состояние повторно.', 'error',
+        programConnectionForm(organizationId) || operationRoot());
+    }
     return false;
   } finally {
     if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) programConnectionRequestsInFlight.delete(key);
@@ -2249,12 +2379,20 @@ export const checkAdminOrganizationProgram = async (organizationId) => {
 };
 
 const programConnectionStateMarkup = (organizationId, connection) =>
-  '<p data-program-connection-state>' + (unverifiedProgramConnections.has(organizationKey(organizationId))
-    ? 'Результат подключения пока не подтверждён. После завершения проверки можно безопасно повторить запрос подключения.'
+  '<p data-program-connection-state>' + (organizationProgramState(organizationId).status === 'unknown'
+    ? 'Результат подключения пока не подтверждён.'
     : connection ? 'Подключено: <strong>' + escapeHtml(connection.program_name) + ' · ' +
       escapeHtml(connection.program_version) + '</strong>' : 'Программа ещё не подключена.') + '</p>';
 
 export const connectAdminOrganizationProgram = async (organizationId, programDefinitionId) => {
+  const pending = pendingProgramConnection(organizationId);
+  if (!state.adminOrganizations?.is_superadmin || !organizationById(organizationId) ||
+      organizationById(organizationId).is_active === false ||
+      !state.adminOrganizations.assessment_programs?.some((program) => Number(program.id) === Number(programDefinitionId))) return false;
+  if (pending?.awaitingRead) {
+    setStatus('Сначала проверьте состояние подключения ранее выбранной версии.', 'error', programConnectionForm(organizationId));
+    return false;
+  }
   const connectionKey = organizationKey(organizationId);
   if (programConnectionRequestsInFlight.has(connectionKey)) return false;
   programConnectionRequestsInFlight.add(connectionKey);
@@ -2267,6 +2405,7 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
     const form = programConnectionForm(organizationId);
     if (feedbackGeneration !== programConnectionFeedbackGeneration ||
         identityEpoch !== state.identityEpoch || identityKey !== currentIdentityKey() ||
+        platformOrganizationView !== 'card' || state.currentScreen !== 'admin-organizations' ||
         Number(selectedOrganizationId) !== Number(organizationId) ||
         Number(form?.elements.program_definition_id?.value) !== Number(programDefinitionId)) return;
     programConnectionOutcome = { identityEpoch, identityKey, organizationId: Number(organizationId),
@@ -2274,56 +2413,42 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
       message, tone };
     setStatus(message, tone, form);
   };
-  const operationKey = organizationKey(organizationId) + ':' + Number(programDefinitionId);
-  const operationId = programConnectionOperationIds.get(operationKey) || createOperationId();
-  programConnectionOperationIds.set(operationKey, operationId);
+  const operationId = pending?.programDefinitionId === Number(programDefinitionId) ? pending.operationId : createOperationId();
+  const attempt = { organizationId: Number(organizationId), programDefinitionId: Number(programDefinitionId), operationId, awaitingRead: true };
+  saveProgramConnectionAttempt(organizationId, attempt);
   captureAdminOrganizationsDraft();
   unverifiedProgramConnections.add(organizationKey(organizationId));
   renderAdminOrganizations();
-  setStatus('Проверяем результат подключения…', 'loading');
+  setStatus('Проверяем результат подключения…', 'loading', programConnectionForm(organizationId));
   let commandConfirmed = false;
   try {
-    const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
-      method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ program_definition_id: Number(programDefinitionId), operation_id: operationId }),
-    });
-    const result = await readApiResponse(response, 'Не удалось подключить программу оценки.');
-    const commandConnection = result?.connection;
-    if (!isExactProgramConnection(commandConnection, organizationId, programDefinitionId)) {
-      throw new Error('Сервер не подтвердил точную версию подключённой программы. Обновите список перед повтором.');
-    }
-    commandConfirmed = true;
+    try {
+      const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
+        method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ program_definition_id: attempt.programDefinitionId, operation_id: operationId }),
+      });
+      const result = await readApiResponse(response, 'Не удалось подключить программу оценки.');
+      const commandConnection = result?.connection;
+      commandConfirmed = isExactProgramConnection(commandConnection, organizationId, programDefinitionId);
+    } catch { /* Only the exact GET establishes the current binding. */ }
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
     const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
     if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-    if (!isExactProgramConnection(readback, organizationId, programDefinitionId)) {
-      throw new Error('Команда принята, но повторное чтение не подтвердило подключённую версию. Обновите список перед повтором.');
-    }
     unverifiedProgramConnections.delete(organizationKey(organizationId));
+    saveProgramConnectionAttempt(organizationId, readback ? null : { ...attempt, awaitingRead: false });
     applyAdminOrganizationProgramReadback(organizationId, readback);
-    programConnectionOperationIds.delete(operationKey);
-    setOutcome('Опубликованная версия программы подключена к организации.', 'success');
     refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
-    return true;
-  } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-    if (!commandConfirmed) {
-      try {
-        const readback = await readAdminOrganizationProgram(organizationId, identityEpoch, identityKey);
-        if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
-        if (isExactProgramConnection(readback, organizationId, programDefinitionId)) {
-          unverifiedProgramConnections.delete(organizationKey(organizationId));
-          applyAdminOrganizationProgramReadback(organizationId, readback);
-          programConnectionOperationIds.delete(operationKey);
-          setOutcome('Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
-          refreshAdminOrganizationQuestionnaireInBackground(organizationId, identityEpoch, identityKey);
-          return true;
-        }
-      } catch { /* The original command error remains the actionable outcome. */ }
+    if (!isExactProgramConnection(readback, organizationId, programDefinitionId)) {
+      const { message, tone } = describeProgramReadback(readback, attempt);
+      setOutcome(message, tone);
+      return false;
     }
-    captureAdminOrganizationsDraft();
-    renderAdminOrganizations();
-    setOutcome('Результат подключения не подтверждён. ' +
-      (error.message || 'Не удалось подключить программу оценки.'), 'error');
+    setOutcome(commandConfirmed ? 'Опубликованная версия программы подключена к организации.'
+      : 'Подключение подтверждено повторным чтением после потери ответа команды.', 'success');
+    return true;
+  } catch (_error) {
+    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return false;
+    setOutcome('Результат подключения не подтверждён. Чтение недоступно, проверьте состояние повторно.', 'error');
     return false;
   } finally {
     if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) programConnectionRequestsInFlight.delete(connectionKey);
@@ -2469,7 +2594,7 @@ const renderOrganizationAdmins = (org, canDeletePerson) => {
       (actions ? renderMemberMenu(actions, 'Другие действия · ' + (item.full_name || item.email)) : '') + '</div></li>';
   }).join('');
   return '<section class="admin-access-workspace' + (active ? '' : ' is-paused') + '" data-organization-admins>' +
-    '<div class="admin-access-panel"><h4>Администраторы организации</h4>' +
+    '<div class="admin-access-panel"><h4 id="platform-org-admins-heading" tabindex="-1">Администраторы организации</h4>' +
     (rows ? '<ul class="admin-access-list">' + rows + '</ul>'
       : '<p class="admin-organizations-empty">Администраторов пока нет.</p>') +
     (note ? '<p class="admin-access-note">' + note + '</p>' : '') + '</div>' +
@@ -2858,6 +2983,105 @@ const renderAdminOrganizationAccount = (organizationName) => {
     ? 'Администратор ' + organizationName : 'Администратор';
 };
 
+const registry = document.getElementById('platform-org-registry');
+const registryQuery = document.getElementById('platform-org-query');
+const registryFilter = document.getElementById('platform-org-filter');
+const registryRows = document.getElementById('platform-org-rows');
+const registryCount = document.getElementById('platform-org-count');
+const organizationPageUrl = (id) => '/?screen=admin-organizations&org=' + Number(id);
+const preparationProblemsUrl = (id) => '/?screen=admin-platform-problems&org=' + Number(id);
+const problemCount = (id) => preparationProblemCounts === null ? '—' : String(preparationProblemCounts.get(Number(id)) || 0);
+const organizationStateBadge = (org) => '<span class="platform-org-state' + (org.is_active === false ? ' is-inactive' : '') +
+  '">' + (org.is_active === false ? 'Неактивна' : 'Активна') + '</span>';
+
+const renderOrganizationRegistry = () => {
+  if (!registryRows || !state.adminOrganizations?.is_superadmin) return;
+  const query = registryQuery.value.trim().toLocaleLowerCase('ru');
+  const filter = registryFilter.value;
+  const items = (state.adminOrganizations.items || []).filter((org) =>
+    (!filter || (org.is_active === false ? 'inactive' : 'active') === filter) &&
+    (org.name + ' ' + org.code).toLocaleLowerCase('ru').includes(query));
+  const focused = document.activeElement?.closest('a[data-platform-org-view="card"]');
+  registryRows.innerHTML = items.map((org) => {
+    const id = Number(org.id);
+    const program = organizationProgramState(id);
+    const name = escapeHtml(org.name);
+    const badge = escapeHtml(Array.from(org.name.match(/«([^»]+)/u)?.[1] || org.name)[0]?.toLocaleUpperCase('ru'));
+    const programText = program.status === 'confirmed' ? program.program.program_name + ' · версия ' + program.program.program_version
+      : program.status === 'absent' ? 'Не подключена' : 'Подключение не подтверждено';
+    const cardLink = ' href="' + escapeHtml(organizationPageUrl(id)) + '" data-platform-org-view="card" data-org-id="' + id + '"';
+    return '<tr><th scope="row"><span class="platform-org-name"><span class="platform-org-symbol" aria-hidden="true">' + badge +
+      '</span><span><a class="text-link"' + cardLink + '>' + name + '</a><small>' + escapeHtml(org.code) +
+      '</small></span></span></th><td data-label="Статус">' + organizationStateBadge(org) +
+      '</td><td data-label="Программа">' + escapeHtml(programText) +
+      '</td><td data-label="Администраторы"><a class="text-link"' + cardLink + ' data-org-admins aria-label="Администраторы · ' + name +
+      '">' + (org.admins?.length || 0) + '</a></td><td data-label="Проблемы"><a class="text-link" href="' +
+      escapeHtml(preparationProblemsUrl(id)) + '" aria-label="Проблемы · ' + name + '">' + problemCount(id) + '</a></td></tr>';
+  }).join('') || '<tr><td colspan="5" class="platform-org-empty"><strong>Организации не найдены</strong><p>' +
+    (query || filter ? 'Измените название, код или фильтр статуса.' : 'Создайте первую организацию.') + '</p></td></tr>';
+  registryCount.textContent = 'Найдено организаций: ' + items.length;
+  if (focused && registry.contains(document.activeElement) === false && document.activeElement === document.body) {
+    registryRows.querySelector('a[data-org-id="' + Number(focused.dataset.orgId) + '"]' +
+      (focused.hasAttribute('data-org-admins') ? '[data-org-admins]' : ':not([data-org-admins])'))?.focus({ preventScroll: true });
+  }
+};
+registryQuery?.addEventListener('input', renderOrganizationRegistry);
+registryFilter?.addEventListener('change', renderOrganizationRegistry);
+
+const loadPreparationProblemCounts = async (isCurrent) => {
+  const generation = ++preparationProblemReadGeneration;
+  const counts = new Map();
+  let before = null;
+  try {
+    do {
+      const response = await fetch('/users/admin/support/preparation' + (before === null ? '' : '?before=' + before),
+        { credentials: 'same-origin', cache: 'no-store' });
+      const data = await readApiResponse(response, 'Не удалось прочитать проблемы организаций.');
+      if (!isCurrent() || generation !== preparationProblemReadGeneration || !Array.isArray(data?.items)) return;
+      for (const item of data.items) {
+        const id = Number(item.organization_id);
+        if (id > 0) counts.set(id, (counts.get(id) || 0) + 1);
+      }
+      const next = data.next_before;
+      if (next !== null && (!Number.isSafeInteger(next) || next <= 0 || (before !== null && next >= before))) return;
+      before = next;
+    } while (before !== null);
+    preparationProblemCounts = counts;
+    renderOrganizationRegistry();
+    const cardCount = adminOrganizationsList.querySelector('[data-org-problem-count]');
+    if (cardCount) cardCount.textContent = problemCount(selectedOrganizationId);
+  } catch { /* The queue link is available even if its case count cannot be read. */ }
+};
+
+adminOrganizationsPanel?.addEventListener('click', (event) => {
+  const jump = event.target.closest('[data-platform-org-jump]');
+  if (jump && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+    event.preventDefault();
+    adminOrganizationsList.querySelector(jump.hash)?.focus();
+    return;
+  }
+  const link = event.target.closest('a[data-platform-org-view]');
+  if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||
+      !state.adminOrganizations?.is_superadmin) return;
+  event.preventDefault();
+  if (link.dataset.platformOrgView === 'card') {
+    selectAdminOrganization(link.dataset.orgId);
+    if (link.hasAttribute('data-org-admins')) {
+      adminOrganizationsList.querySelector('#platform-org-admins-heading')?.focus();
+      return;
+    }
+  } else {
+    captureAdminOrganizationsDraft();
+    assignmentViewGeneration += 1;
+    clearProgramConnectionFeedback();
+    setStatus('');
+    platformOrganizationView = link.dataset.platformOrgView;
+    syncUrlState('admin-organizations', { organizationView: platformOrganizationView });
+    renderAdminOrganizations();
+  }
+  adminOrganizationsTitle?.focus();
+});
+
 export const renderAdminOrganizations = () => {
   restoreManagementSelection();
   const data = state.adminOrganizations;
@@ -2866,13 +3090,22 @@ export const renderAdminOrganizations = () => {
   clearInaccessibleOrganizationState(organizations);
   const isSuperadmin = Boolean(data?.is_superadmin);
   const selectedOrganization = organizations.find((org) => Number(org.id) === Number(selectedOrganizationId))
-    || organizations.find((org) => org.is_active !== false) || organizations[0];
+    || (isSuperadmin && platformOrganizationView === 'card' ? null
+      : organizations.find((org) => org.is_active !== false) || organizations[0]);
   selectedOrganizationId = selectedOrganization ? Number(selectedOrganization.id) : null;
   const view = managementCopy[organizationViews.get(selectedOrganizationId) || 'people'];
   renderAdminOrganizationAccount(selectedOrganization?.name);
-  if (adminOrganizationsTitle) adminOrganizationsTitle.textContent = isSuperadmin ? 'Организации' : view.title;
-  if (adminOrganizationsSubtitle) adminOrganizationsSubtitle.textContent = isSuperadmin
-    ? 'Программы оценки, администраторы и проблемы организации.' : view.subtitle;
+  const showingCreate = isSuperadmin && platformOrganizationView === 'create';
+  const showingCard = isSuperadmin && platformOrganizationView === 'card' && selectedOrganization;
+  const showingRegistry = isSuperadmin && !showingCreate && !showingCard;
+  if (adminOrganizationsTitle) adminOrganizationsTitle.textContent = showingCreate ? 'Создать организацию' :
+    showingCard ? selectedOrganization.name : isSuperadmin ? 'Организации' : view.title;
+  if (adminOrganizationsSubtitle) adminOrganizationsSubtitle.textContent = showingCreate
+    ? 'После создания можно подключить программу и добавить администратора.' : showingCard
+      ? 'Код организации · ' + selectedOrganization.code : isSuperadmin
+        ? 'Программы оценки, администраторы и проблемы организаций.' : view.subtitle;
+  const stateBadge = adminOrganizationsPanel.querySelector('[data-platform-org-state]');
+  if (stateBadge) stateBadge.innerHTML = showingCard ? organizationStateBadge(selectedOrganization) : '';
   const physicalPurgeAvailable = Boolean(data?.physical_purge_available);
   const purgePreviewAvailable = Boolean(data?.purge_preview_available);
   const pendingPurges = pendingAdminAccountPurges();
@@ -2896,10 +3129,21 @@ export const renderAdminOrganizations = () => {
   document.getElementById('platform-availability')?.classList.add('hidden');
   adminOrganizationsPanel.querySelector('.admin-organizations-shell')?.classList.remove('hidden');
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
-  document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle(
-    'hidden', !data || !isSuperadmin,
-  );
-  document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', !isSuperadmin && organizations.length <= 1);
+  document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle('hidden', !showingCreate);
+  adminOrganizationsPanel.querySelector('.admin-organizations-hero [data-platform-org-view="create"]')?.classList.toggle('hidden', !showingRegistry);
+  const breadcrumb = adminOrganizationsPanel.querySelector('.platform-org-breadcrumb');
+  breadcrumb?.classList.toggle('hidden', !showingCreate && !showingCard);
+  if (breadcrumb) breadcrumb.querySelector('[data-platform-org-location]').textContent = showingCreate ? 'Создание' : selectedOrganization?.name || '';
+  registry?.classList.toggle('hidden', !showingRegistry);
+  if (showingRegistry) renderOrganizationRegistry();
+  const listCard = adminOrganizationsList.closest('.admin-organizations-list-card');
+  listCard?.classList.toggle('hidden', showingCreate || (showingRegistry && !staleMarkup && !purgeRecoveryMarkup));
+  document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', isSuperadmin || organizations.length <= 1);
+  if (showingCreate || showingRegistry) {
+    adminOrganizationsList.innerHTML = showingRegistry ? purgeRecoveryMarkup + staleMarkup : '';
+    if (showingCreate) showOrganizationCreateAttempt();
+    return;
+  }
   if (!organizations.length) {
     if (adminOrganizationSelect) adminOrganizationSelect.innerHTML = '<option value="">Нет организаций</option>';
     adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + '<p class="report-empty-state">' + (isSuperadmin
@@ -2990,6 +3234,7 @@ export const renderAdminOrganizations = () => {
         ...(questionnaireValidation.missing || [])];
       const activeView = organizationViews.get(orgId) || 'people';
       const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
+      const pendingConnection = isSuperadmin ? pendingProgramConnection(orgId) : null;
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
       const roleCapabilities = Array.isArray(currentProgram?.role_capabilities)
         ? currentProgram.role_capabilities : allowedRoles.map((role) => ({ ...role, is_available: true }));
@@ -3061,15 +3306,20 @@ export const renderAdminOrganizations = () => {
         : '<div class="form-status" role="status" data-questionnaire-program-state="' + programState.status + '">' +
           '<p>' + escapeHtml(programState.message) + '</p>' +
           (programConnectionUnverified ? '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>' : '') + '</div>';
-      const programMarkup = isSuperadmin ? '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
-        '<label><span>Программа оценки</span><select name="program_definition_id" required>' +
+      const programMarkup = isSuperadmin ? '<section class="platform-org-summary-panel"><h3>Программа оценки</h3>' +
+        '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
+        programConnectionStateMarkup(orgId, currentProgram) +
+        (programConnectionUnverified ? '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>' : '') +
+        (isActive ? '<label><span>Опубликованная версия</span><select name="program_definition_id" required>' +
         '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
           '<option value="' + Number(program.id) + '"' +
           (Number(currentProgram?.program_definition_id) === Number(program.id) ? ' selected' : '') + '>' +
-          escapeHtml(program.name) + ' · ' + escapeHtml(program.version) + '</option>').join('') +
-        '</select></label><button class="ghost-button compact-ghost" type="submit">Подключить</button>' +
-        programConnectionStateMarkup(orgId, currentProgram) +
-        '</form>' : '';
+          'Версия ' + escapeHtml(program.version) + ' · ' + escapeHtml(program.name) + '</option>').join('') +
+        '</select></label><button class="primary-button compact-primary" type="submit"' +
+        (pendingConnection?.awaitingRead || !availablePrograms.length ? ' disabled' : '') + '>Подключить</button>' +
+        (currentProgram ? '<p class="platform-org-note">При смене версии новые назначения используют её. Прежние оценки сохраняют свои снимки.</p>' : '')
+          : '<p class="platform-org-note">Восстановите организацию, чтобы подключить программу.</p>') +
+        '</form></section>' : '';
       const revisionAnswers = currentRevision?.answers_json || {};
       const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
       const confirmedForm = programConfirmed && currentRevision?.status === 'confirmed' &&
@@ -3094,7 +3344,7 @@ export const renderAdminOrganizations = () => {
       if (!confirmationOutcome && state.currentScreen === 'admin-organizations' && activeView === 'organization-data' &&
           programConfirmed && currentIdentityKey() &&
           !questionnaireLoadState?.accessDenied && !questionnaireConfirmRequestsInFlight.has(key)) {
-        const revisionId = Number(readQuestionnaireOperation(confirmationStorageKey(key)));
+        const revisionId = Number(readSessionOperation(confirmationStorageKey(key)));
         if (Number.isSafeInteger(revisionId) && revisionId > 0) {
           confirmationOutcome = {
             revisionId, assignmentRef: selectedRef, status: 'unknown', restored: true,
@@ -3245,19 +3495,22 @@ export const renderAdminOrganizations = () => {
         '" data-organization-active="' +
         (isActive ? 'true' : 'false') +
         '">' +
-        (isSuperadmin ? '<div class="admin-organization-head">' +
-        '<div><p class="section-label accent-label">' +
-        escapeHtml(org.code) +
-        '</p><h3>' +
-        escapeHtml(org.name) +
-        '</h3><p class="admin-organization-state">' +
-        (isActive ? 'Активна' : 'Деактивирована') +
-        '</p></div>' +
-        '<div class="admin-organization-stats"><span>' +
-        Number(org.members_count || 0) +
-        ' участников</span><span>' +
-        Number(org.reports_count || 0) +
-        ' отчетов</span>' + (isSuperadmin ? '<button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
+        (isSuperadmin ? '<nav class="platform-org-card-nav" aria-label="Разделы организации">' +
+        '<a href="#platform-org-overview" data-platform-org-jump>Обзор</a>' +
+        '<a href="#platform-org-admins-heading" data-platform-org-jump>Администраторы</a>' +
+        '<a href="#platform-org-operations" data-platform-org-jump>Операции</a></nav>' +
+        '<div class="platform-org-summary" id="platform-org-overview" tabindex="-1">' +
+        '<div class="platform-org-pair">' + programMarkup +
+        '<section class="platform-org-summary-panel"><h3>Администраторы</h3><p>' +
+        ((org.admins || []).map((admin) => escapeHtml(admin.full_name || admin.email)).join(', ') || 'Администраторов пока нет') +
+        '</p><a class="text-link" href="#platform-org-admins-heading" data-platform-org-jump>Управлять доступом</a></section></div>' +
+        '<section class="platform-org-summary-panel"><div class="platform-org-summary-heading"><h3>Проблемы организации</h3>' +
+        '<a class="text-link" href="' + escapeHtml(preparationProblemsUrl(orgId)) + '">Открыть список</a></div>' +
+        '<p>Подготовка следующей ситуации: <strong data-org-problem-count>' + problemCount(orgId) + '</strong></p></section>' +
+        '<section class="platform-org-summary-panel"><h3>Доступ к отчётам и анкете</h3><p>Готовые отчёты: <strong>' +
+        Number(org.reports_count || 0) + '</strong>. Действующий администратор видит весь архив организации.</p></section></div>' +
+        '<div class="admin-organization-head" id="platform-org-operations" tabindex="-1"><div class="admin-organization-stats">' +
+        '<button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
         (batchIsRunning || !isActive ? ' disabled' : '') +
         '>Подготовить кейсы всем</button>' +
         (isActive
@@ -3265,10 +3518,9 @@ export const renderAdminOrganizations = () => {
           : '<button class="ghost-button compact-ghost" type="button" data-action="restore-organization">Восстановить</button>') +
         (purgePreviewAvailable
           ? '<button class="ghost-button compact-ghost danger" type="button" data-action="purge-organization" data-execution-available="' +
-            String(physicalPurgeAvailable) + '">Удалить полностью</button>' : '') : '') + '</div>' +
+            String(physicalPurgeAvailable) + '">Удалить полностью</button>' : '') + '</div>' +
         '</div>' : tabsMarkup + (activeView === 'people' ? peopleContext : '')) +
         renderOrganizationBatchProgress(orgId) +
-        programMarkup +
         (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
         '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
         '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
@@ -3382,21 +3634,29 @@ export const saveAdminOrganizationsNavigation = () => {
 
 export const openAdminOrganizations = async ({
   preserveView = false, navigation = preserveView ? window.history.state?.managementNavigation : null,
+  openRegistry = false,
 } = {}) => {
   assignmentViewGeneration += 1;
   restoreManagementSelection();
   if (!preserveView) organizationViews.clear();
   restoreManagementNavigation(navigation);
-  const organizationParam = new URLSearchParams(window.location.search).get('org');
-  const requestedOrganization = state.adminDashboard?.is_superadmin && /^[1-9][0-9]*$/.test(organizationParam || '')
+  const params = new URLSearchParams(window.location.search);
+  const organizationParam = openRegistry ? null : params.get('org');
+  const platformAccess = state.adminDashboard?.is_superadmin || state.adminOrganizations?.is_superadmin;
+  const requestedOrganization = platformAccess && /^[1-9][0-9]*$/.test(organizationParam || '')
     && Number.isSafeInteger(Number(organizationParam)) ? Number(organizationParam) : null;
+  platformOrganizationView = requestedOrganization ? 'card' :
+    !openRegistry && platformAccess && params.get('view') === 'create' ? 'create' : 'registry';
+  if (requestedOrganization) selectedOrganizationId = requestedOrganization;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
   state.activeArea = 'management';
   state.isAdmin = Boolean(state.canAdmin || state.isAdmin);
   setCurrentScreen('admin-organizations');
   persistAssessmentContext();
-  syncUrlState('admin-organizations', { organizationId: requestedOrganization });
+  if (openRegistry || params.get('screen') !== 'admin-organizations') {
+    syncUrlState('admin-organizations', { organizationId: requestedOrganization, organizationView: platformOrganizationView });
+  }
   hideAllPanels();
   const accountMenu = adminOrganizationsPanel?.querySelector('.org-admin-account-menu');
   if (accountMenu) accountMenu.open = false;
@@ -3404,15 +3664,19 @@ export const openAdminOrganizations = async ({
   adminOrganizationsPanel?.classList.remove('hidden');
   setStatus('');
   adminOrganizationsList.innerHTML = '<p class="report-empty-state">Загружаем организации...</p>';
+  const isCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
+    state.currentScreen === 'admin-organizations';
   try {
-    const data = await loadAdminOrganizations();
-    if (!data || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
-    if (requestedOrganization && data.is_superadmin && data.items?.some((org) => Number(org.id) === requestedOrganization)) {
-      selectedOrganizationId = requestedOrganization;
-      saveManagementSelection();
+    const data = await loadAdminOrganizations({ isCurrent });
+    if (!data || !isCurrent()) return;
+    if (requestedOrganization && data.is_superadmin && !data.items?.some((org) => Number(org.id) === requestedOrganization)) {
+      platformOrganizationView = 'registry';
+      syncUrlState('admin-organizations', { replace: true });
+      setStatus('Организация не найдена.', 'error');
     }
+    if (data.is_superadmin) void loadPreparationProblemCounts(isCurrent);
   } catch (error) {
-    if (state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return;
+    if (!isCurrent()) return;
     adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
     return;
   }

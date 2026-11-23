@@ -134,7 +134,7 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       const organizations = await (await superPage.request.get(base + '/users/admin/organizations')).json();
       const target = organizations.items.find((item) => item.code === 'path29_full_' + state.run_id.slice(0, 8));
       expect(target).toBeTruthy(); state.path29.organization_id = target.id;
-      await superPage.locator('#admin-organization-select').selectOption(String(target.id));
+      await superPage.locator('#platform-org-rows [data-org-id="' + target.id + '"]:not([data-org-admins])').click();
       const superCard = superPage.locator(`[data-organization-id="${target.id}"]`);
       await expect(superCard).toBeVisible();
       await superCard.locator('select[name="program_definition_id"]').selectOption(String(state.path29.program_id));

@@ -75,6 +75,7 @@ async function fixture(page, { questionnaireStatus = 503, lostPut = false } = {}
   await page.goto(base);
   await expect(page.locator('#admin-open-organizations-button')).toBeVisible();
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await expect(form(page)).toBeVisible();
   return { state, releaseQuestionnaire: questionnaire.release, message: lostPut ? recovery : success };
 }
@@ -117,7 +118,7 @@ test('R10-STATUS a new failed intent cannot revive success and its error survive
   f.state.failNextPut = true;
   await form(page).locator('[name="program_definition_id"]').selectOption('12');
   await form(page).getByRole('button', { name: 'Подключить', exact: true }).click();
-  await expect(status(page)).toContainText('Результат подключения не подтверждён');
+  await expect(status(page)).toContainText('Подключена другая версия: Synthetic pilot 11');
   await rerender(page);
   await expect(status(page)).toHaveAttribute('data-tone', 'error');
   await expect(status(page)).not.toContainText(success);
@@ -125,10 +126,12 @@ test('R10-STATUS a new failed intent cannot revive success and its error survive
 });
 test('R10-STATUS same program in another organization never receives the old outcome', async ({ page }) => {
   const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
-  await page.locator('#admin-organization-select').selectOption('4');
+  await page.locator('.platform-org-breadcrumb a').click();
+  await page.locator('#platform-org-rows [data-org-id="4"]:not([data-org-admins])').click();
   await expect(page.locator('[data-organization-id="4"]')).toContainText('Подключено: Synthetic pilot 11');
   await expect(page.locator('[data-organization-id="4"] [data-operation-status]')).toHaveCount(0);
-  await page.locator('#admin-organization-select').selectOption('3');
+  await page.locator('.platform-org-breadcrumb a').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await expect(status(page)).toHaveCount(0);
 });
 test('R10-STATUS logout and another account cannot restore the previous outcome', async ({ page }) => {
@@ -141,6 +144,7 @@ test('R10-STATUS logout and another account cannot restore the previous outcome'
   await page.locator('#magic-token-input').fill('synthetic-password');
   await page.locator('#verify-magic-link-button').click();
   await expect(page.locator('#admin-organizations-account-name')).toHaveText('Synthetic admin 28');
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await expect(form(page)).toContainText('Подключено: Synthetic pilot 11');
   await expect(status(page)).toHaveCount(0);
 });
@@ -161,6 +165,7 @@ test('R10-STATUS changed server program invalidates the saved outcome even with 
   const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
   f.state.linked = 12;
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await expect(form(page)).toContainText('Подключено: Synthetic pilot 12');
   await expect(status(page)).toHaveCount(0);
 });

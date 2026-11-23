@@ -185,6 +185,7 @@ async function fixture(page, { superadmin = true, program = 11, saved = [], unkn
   if (superadmin) {
     await expect(page.locator('#admin-open-organizations-button')).toBeVisible();
     await page.locator('#admin-open-organizations-button').click();
+    await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   }
   await expect(card(page)).toBeVisible();
   await expect.poll(() => state.requests.some((r) => r.path === '/users/admin/organizations/3/questionnaire')).toBe(true);

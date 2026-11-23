@@ -27,7 +27,7 @@ test('R10 late feedback is generation guarded while exact server readback stays 
 });
 
 test('R10 feedback is invalidated on session clearing, selection and new actions', () => {
-  assert.match(source, /programConnectionOperationIds.clear\(\);\s*programConnectionOutcome = null;\s*programConnectionFeedbackGeneration \+= 1/);
+  assert.match(source, /programConnectionAttempts.clear\(\);\s*programConnectionOutcome = null;\s*programConnectionFeedbackGeneration \+= 1/);
   assert.match(source, /export const selectAdminOrganization = [\s\S]*?clearProgramConnectionFeedback\(\)/);
   assert.match(source, /const trackOperation = [\s\S]*?clearProgramConnectionFeedback\(\)/);
   assert.match(source, /select\[name="program_definition_id"\][\s\S]*?clearProgramConnectionFeedback\(\)/);
