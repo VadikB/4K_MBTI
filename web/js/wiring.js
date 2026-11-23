@@ -1730,28 +1730,20 @@ if (adminOrganizationsList) {
     if (!organizationId) {
       return;
     }
-    if (form.dataset.action === 'send-member-invitations') {
-      const emails = [...card.querySelectorAll('input[name="invitation_email"]:checked')]
-        .map((checkbox) => checkbox.value)
-        .filter(Boolean);
-      withScreen(loadAdminOrganizations, (module) =>
-        module.sendAdminOrganizationMemberInvitation(
-          organizationId, emails, module.getSelectedAdminOrganizationAssessment(organizationId),
-        ),
-      );
-      return;
-    }
-    if (form.dataset.action === 'assign-member-assessment') {
-      const formData = new FormData(form);
-      const userIds = [...card.querySelectorAll('input[name="invitation_email"]:checked')]
-        .map((checkbox) => Number(checkbox.dataset.userId))
-        .filter(Boolean);
-      withScreen(loadAdminOrganizations, (module) =>
-        module.assignAdminOrganizationAssessment(
-          organizationId, userIds, module.getSelectedAdminOrganizationAssessment(organizationId),
+    if (form.dataset.action === 'send-member-invitations' || form.dataset.action === 'assign-member-assessment') {
+      withScreen(loadAdminOrganizations, (module) => {
+        const selected = module.getAdminBulkParticipants(form, organizationId);
+        if (!selected.length) return;
+        const assessment = module.getSelectedAdminOrganizationAssessment(organizationId);
+        if (form.dataset.action === 'send-member-invitations') {
+          return module.sendAdminOrganizationMemberInvitation(organizationId, selected.map((field) => field.value), assessment);
+        }
+        const formData = new FormData(form);
+        return module.assignAdminOrganizationAssessment(
+          organizationId, selected.map((field) => Number(field.dataset.userId)), assessment,
           formData.get('role_profile_version_id') || null,
-        ),
-      );
+        );
+      });
       return;
     }
     if (form.dataset.action === 'connect-assessment-program') {
@@ -1857,7 +1849,7 @@ if (adminOrganizationsList) {
       }
       file.text().then((csvText) => {
         withScreen(loadAdminOrganizations, async (module) => {
-          await module.importAdminOrganizationMembers(organizationId, csvText);
+          await module.importAdminOrganizationMembers(organizationId, csvText, file.name);
           form.reset();
         });
       });
@@ -1883,24 +1875,6 @@ if (adminOrganizationsList) {
     const field = event.target instanceof HTMLInputElement && event.target.name === 'assignment_ref'
       ? event.target : null;
     if (field) field.dataset.previousAssessmentRef = field.value;
-  });
-
-  adminOrganizationsList.addEventListener('change', (event) => {
-    const checkbox = event.target instanceof HTMLInputElement ? event.target : null;
-    const card = checkbox?.closest('[data-organization-id]');
-    if (!checkbox || !card || !['invitation_email', 'select_all_participants'].includes(checkbox.name)) return;
-    const participants = [...card.querySelectorAll('input[name="invitation_email"]')];
-    if (checkbox.name === 'select_all_participants') participants.forEach((item) => { item.checked = checkbox.checked; });
-    const selectedCount = participants.filter((item) => item.checked).length;
-    const selectAll = card.querySelector('input[name="select_all_participants"]');
-    if (selectAll && checkbox.name !== 'select_all_participants') {
-      selectAll.checked = selectedCount === participants.length && participants.length > 0;
-      selectAll.indeterminate = selectedCount > 0 && selectedCount < participants.length;
-    }
-    const counter = card.querySelector('[data-selected-count]');
-    if (counter) counter.textContent = String(selectedCount);
-    const bulkActions = card.querySelector('[data-bulk-actions]');
-    if (bulkActions) bulkActions.hidden = selectedCount === 0;
   });
 
   adminOrganizationsList.addEventListener('toggle', (event) => {

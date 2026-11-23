@@ -67,8 +67,13 @@ async function settled(page) {
 }
 async function forceAssignment(page) {
   await view(page, 'Участники оценки');
+  const assignment = card(page).locator('form[data-action="assign-member-assessment"]');
+  if (await page.locator('#admin-organizations-panel').getAttribute('data-superadmin') === 'false') {
+    await expect(assignment).toHaveCount(0);
+    return;
+  }
   await card(page).locator('input[name="invitation_email"]').check();
-  await forcedSubmit(card(page).locator('form[data-action="assign-member-assessment"]'));
+  await forcedSubmit(assignment);
   await settled(page);
 }
 async function evidence(page, state, info, label) {
@@ -356,16 +361,20 @@ for (const superadmin of [false, true]) {
       ? 'Программа оценки не подключена. Подключите опубликованную программу.'
       : 'Программа оценки не подключена. Обратитесь к суперадминистратору.';
     const readiness = card(page).locator('.admin-assignment-readiness');
-    await expect(readiness.locator('.form-status li')).toHaveText([message]);
-    await expect(readiness.locator('[data-program-next-step]')).toContainText(superadmin
-      ? 'подключите опубликованную программу' : 'попросите суперадминистратора подключить опубликованную программу');
-    await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
-    await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
-    await expect(readiness).not.toContainText('Оценка не выбрана');
     if (superadmin) {
+      await expect(readiness.locator('.form-status li')).toHaveText([message]);
+      await expect(readiness.locator('[data-program-next-step]')).toContainText('подключите опубликованную программу');
+      await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
+      await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
+      await expect(readiness).not.toContainText('Оценка не выбрана');
       await expect(manual(page)).toHaveCount(0);
       await expect(csv(page)).toHaveCount(0);
     } else {
+      await expect(readiness).toHaveCount(0);
+      const help = card(page).locator('.admin-member-action-help');
+      await help.locator('summary').click();
+      await expect(help.getByText(message, { exact: true })).toBeVisible();
+      await expect(card(page).locator('form[data-action="assign-member-assessment"]')).toHaveCount(0);
       await view(page, 'Данные организации');
       await expect(manual(page).locator('[name="assignment_ref"]')).toHaveCount(0);
       await expect(card(page).locator('.admin-data-readiness')).toContainText(message);
@@ -398,14 +407,20 @@ for (const superadmin of [false, true]) {
 for (const superadmin of [false, true]) test(`ADM-PROGRAM AC02 unknown ${superadmin ? 'superadmin' : 'admin'}: no invented scope`, async ({ page }, info) => {
   const state = await fixture(page, { superadmin, unknown: true });
   const readiness = card(page).locator('.admin-assignment-readiness');
-  await expect(readiness.locator('.form-status li')).toHaveCount(1);
-  await expect(readiness).toContainText('Подключение программы пока не подтверждено');
-  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
-  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
-  await expect(readiness).not.toContainText('Оценка не выбрана');
   if (superadmin) {
+    await expect(readiness.locator('.form-status li')).toHaveCount(1);
+    await expect(readiness).toContainText('Подключение программы пока не подтверждено');
+    await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText('ещё не проверена для программы');
+    await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText('ещё не проверена для программы');
+    await expect(readiness).not.toContainText('Оценка не выбрана');
     await expect(manual(page)).toHaveCount(0);
     await expect(csv(page)).toHaveCount(0);
+  } else {
+    await expect(readiness).toHaveCount(0);
+    const help = card(page).locator('.admin-member-action-help');
+    await help.locator('summary').click();
+    await expect(help).toContainText('Подключение программы пока не подтверждено');
+    await expect(help.getByRole('button', { name: 'Проверить состояние подключения' })).toBeVisible();
   }
   for (const [label, form] of (superadmin ? [] : [['Данные организации', manual(page)], ['Анкета', csv(page)]])) {
     await view(page, label);
@@ -707,24 +722,28 @@ for (const scenario of [
 ]) test(`ADM-PROGRAM readiness confirmed: ${scenario.name}`, async ({ page }, info) => {
   const state = await fixture(page, { superadmin: false, rolesMode: scenario.rolesMode,
     saved: [revision(scenario.confirmed ? 'pilot-11' : 'old-program')] });
-  const readiness = card(page).locator('.admin-assignment-readiness');
-  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText(scenario.label);
-  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText(scenario.confirmed ? 'подтверждена' : 'не подтверждена');
-  await expect(readiness.locator('.form-status li')).toHaveCount(scenario.blockers);
-  if (scenario.reason) await expect(readiness).toContainText(scenario.reason);
-  await expect(readiness).not.toContainText('Оценка не выбрана');
-  await card(page).locator('input[name="invitation_email"]').check();
+  await expect(card(page).locator('.admin-assignment-readiness')).toHaveCount(0);
+  const help = card(page).locator('.admin-member-action-help');
   const button = card(page).locator('form[data-action="assign-member-assessment"] button');
   if (scenario.blockers) {
-    await expect(button).toBeDisabled();
+    await help.locator('summary').click();
+    await expect(help).toContainText(scenario.reason);
+    await expect(help.locator('p, li').filter({ hasText: /роль|роли|Анкета/ })).toHaveCount(scenario.blockers);
+    if (!scenario.confirmed) await expect(help.getByRole('button', { name: 'Открыть данные организации' })).toBeVisible();
+    await expect(button).toHaveCount(0);
     expect(scopedPosts(state)).toEqual([]);
   } else {
+    await expect(help).toHaveCount(0);
+    await card(page).locator('input[name="invitation_email"]').check();
     await expect(button).toBeEnabled(); await button.click();
     await expect.poll(() => scopedPosts(state).length).toBe(1);
     expect(scopedPosts(state)[0].body.assignment_ref).toBe('pilot-11');
     expect(scopedPosts(state)[0].body.role_profile_version_id).toBe(92);
   }
   await view(page, 'Данные организации');
+  const readiness = card(page).locator('.admin-data-readiness');
+  await expect(readiness.locator('dt:text-is("Роль в оценке") + dd')).toHaveText(scenario.label);
+  await expect(readiness.locator('dt:text-is("Анкета") + dd')).toHaveText(scenario.confirmed ? 'подтверждена' : 'не подтверждена');
   await expect(card(page).locator('form[data-action="update-profile"]')).toHaveCount(0);
   await evidence(page, state, info, 'confirmed-readiness-' + scenario.rolesMode);
 });

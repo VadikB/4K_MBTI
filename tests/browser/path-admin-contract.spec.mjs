@@ -78,7 +78,7 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     let committed;
     await page.route(url, async (route) => {
       const real = await route.fetch(); // REAL request commits in PostgreSQL.
-      committed = { status: real.status(), items: (await real.json()).items };
+      committed = { status: real.status(), items: (await real.json()).items, command: route.request().postDataJSON() };
       await route.abort('failed'); // Lose delivery only, never fulfill a fake success.
     }, { times: 1 });
     await assign.click();
@@ -91,14 +91,18 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     expect(afterLost.assignments).toHaveLength(2);
     expect(afterLost.bindings).toHaveLength(2);
     expect(afterLost.cycles).toBe(0);
-    events.push({ phase: 'committed_response_aborted', real_response: committed, sql: afterLost });
+    events.push({ phase: 'committed_response_aborted', status: committed.status, items: committed.items, sql: afterLost });
 
     await page.reload();
     await expect(card).toBeVisible();
-    await select(emails[1]);
-    await assign.click();
-    await expect(card.locator('[data-operation-status]').first())
-      .toContainText('Synthetic contract subject: эта оценка уже назначена');
+    await people.click();
+    const assignedParticipant = card.locator('[data-member-user-id="' + committed.command.user_ids[0] + '"]');
+    await expect(assignedParticipant.getByRole('button', { name: 'Назначить оценку' })).toHaveCount(0);
+    await expect(assignedParticipant.locator('input[data-bulk-for~="assign"]')).toHaveCount(0);
+    // Read idempotency through the same HTTP contract after the row becomes ineligible.
+    const replay = await page.request.post(url, { data: { ...committed.command, operation_id: randomUUID() } });
+    expect(replay.status()).toBe(200);
+    expect((await replay.json()).items).toMatchObject([{ status: 'already_assigned' }]);
     for (let i = 0; i < 2; i += 1) {
       const read = await page.request.get(base + '/users/admin/organizations');
       expect(read.status()).toBe(200);

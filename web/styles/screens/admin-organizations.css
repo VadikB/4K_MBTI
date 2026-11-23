@@ -1796,7 +1796,8 @@
 
 .admin-organizations-panel[data-superadmin="false"] .admin-organization-head,
 .admin-people-list,
-.admin-people-add {
+.admin-people-add > form,
+.admin-people-import {
     border: 1px solid var(--palette-graphite-200);
     border-radius: var(--radius-sm);
     background: #fff;
@@ -1833,9 +1834,9 @@
 }
 
 .admin-people-list,
-.admin-people-add {
+.admin-people-add > form {
     min-width: 0;
-    padding: 20px 24px;
+    padding: 24px;
 }
 
 .admin-people-list-heading {
@@ -1844,6 +1845,8 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 4px 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--palette-graphite-200);
 }
 
 .admin-people-list-heading h4,
@@ -1853,24 +1856,81 @@
     line-height: 28px;
 }
 
-.admin-people-list .admin-assignment-readiness {
-    margin-block: 8px;
-    padding: 0 0 8px;
+.admin-people-list :is(.admin-appeals-filter, .admin-people-batch .text-button, .admin-member-action-help .text-button) {
+    min-height: 32px;
+    padding: 5px 0;
     border: 0;
-    border-bottom: 1px solid var(--palette-graphite-200);
-    border-radius: 0;
+    background: transparent;
+    color: var(--palette-outcome-link);
+    font: inherit;
+    text-align: start;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+    cursor: pointer;
 }
 
-.admin-people-list .admin-assignment-readiness summary,
+.admin-people-list .admin-appeals-filter[aria-pressed="true"] {
+    background: transparent;
+    color: var(--text-main);
+    font-weight: var(--fw-semibold);
+}
+
+.admin-people-list .admin-people-batch .text-button:disabled {
+    color: var(--text-muted);
+    text-decoration: none;
+    cursor: default;
+}
+
+.admin-people-batch {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--palette-graphite-200);
+    font-size: var(--fs-meta);
+}
+
+.admin-people-select {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    cursor: pointer;
+}
+
+.admin-people-select input,
+.admin-people-list .admin-organization-member-select input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    flex: 0 0 18px;
+    accent-color: var(--text-main);
+}
+
+.admin-people-batch form { min-width: 0; }
+.admin-people-batch form label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-block: 4px;
+}
+.admin-people-batch form label[hidden] { display: none; }
+.admin-people-batch select {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 36px;
+    font: inherit;
+}
+.admin-people-batch [data-bulk-recipients] { margin: 0; color: var(--text-muted); }
+.admin-people-list > .admin-organizations-empty { padding-top: 14px; }
+
 .org-admin-member-card summary {
     min-height: 36px;
     padding-block: 7px;
     cursor: pointer;
     font-weight: var(--fw-semibold);
-}
-
-.admin-people-list .admin-assignment-readiness dl {
-    margin-block: 4px 12px;
 }
 
 .admin-people-list .admin-organization-members {
@@ -1884,11 +1944,12 @@
     gap: 7px 14px;
     padding: 18px 0;
     border: 0;
-    border-top: 1px solid var(--palette-graphite-200);
+    border-bottom: 1px solid var(--palette-graphite-200);
     border-radius: 0;
     background: transparent;
 }
 
+.admin-people-list .admin-organization-member:last-child { border-bottom: 0; }
 .admin-people-list .admin-organization-member-main { grid-area: identity; }
 .admin-organization-member-name-line { display: flex; align-items: center; gap: 8px; }
 .admin-organization-member-name-line .admin-organization-member-select { flex: 0 0 44px; }
@@ -1901,6 +1962,7 @@
 .admin-people-list .admin-organization-member-name {
     color: var(--text-main) !important;
     min-width: 0;
+    overflow-wrap: anywhere;
     font-size: var(--fs-body-sm);
     line-height: 20px;
     font-weight: var(--fw-semibold);
@@ -1955,18 +2017,57 @@
     overflow-wrap: anywhere;
 }
 
-.admin-people-add > form {
+.admin-member-action-help {
+    grid-area: help;
+    color: var(--text-muted);
+    font-size: var(--fs-meta);
+    overflow-wrap: anywhere;
+}
+.admin-member-action-help summary {
+    width: fit-content;
+    margin-inline-start: auto;
+    padding-block: 6px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.admin-member-action-help p, .admin-member-action-help ul { margin: 6px 0; }
+.admin-member-action-help ul { padding-inline-start: 18px; }
+.admin-people-list .admin-organization-member:has(.admin-member-action-help) {
+    grid-template-areas: "identity stage actions" "help help help";
+}
+
+.admin-people-add {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+.admin-people-add form {
     grid-template-columns: minmax(0, 1fr);
     margin: 0;
 }
-.admin-people-add form + form {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--palette-graphite-200);
-}
+.admin-people-add > form { gap: 0; align-items: start; }
+.admin-people-add .admin-organization-member-form h4 { margin-bottom: 8px; }
+.admin-people-add .admin-organization-member-form label { margin-bottom: 24px; }
 .admin-people-add input { width: 100%; }
-.admin-people-add .primary-button { justify-self: start; }
-.admin-people-add .admin-organization-import-form > span { overflow-wrap: anywhere; }
+.admin-people-add button[type="submit"] { justify-self: start; }
+.admin-people-import { padding: 8px 16px; }
+.admin-people-import > summary {
+    min-height: 32px;
+    padding-block: 6px;
+    color: var(--palette-outcome-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.admin-people-import form { margin-block: 8px; }
+.admin-people-import .admin-organization-import-form > span { overflow-wrap: anywhere; }
+.admin-people-add summary:focus-visible,
+.admin-people-list summary:focus-visible,
+.admin-people-list .text-button:focus-visible {
+    outline: 2px solid var(--palette-outcome-link);
+    outline-offset: 2px;
+}
 
 .org-admin-member-card,
 .admin-member-assignment-dialog {
@@ -2115,10 +2216,13 @@
     text-underline-offset: 3px;
 }
 
+.admin-organizations-panel[data-superadmin="false"] [data-admin-view="people"] {
+    gap: 20px;
+}
+
 @media (min-width: 861px) {
     .admin-organizations-panel[data-superadmin="false"] [data-admin-view="people"] {
         grid-template-columns: minmax(0, 1fr) 254px;
-        gap: 20px;
     }
 }
 
@@ -2151,7 +2255,7 @@
         padding-block: 5px;
         font-size: var(--fs-meta);
     }
-    .admin-organizations-panel[data-superadmin="false"] :is(.admin-people-list, .admin-people-add, .admin-questionnaire-upload) {
+    .admin-organizations-panel[data-superadmin="false"] :is(.admin-people-list, .admin-people-add > form, .admin-questionnaire-upload) {
         padding: 20px;
     }
     .admin-organizations-panel[data-superadmin="false"] .admin-organization-head {
@@ -2166,6 +2270,9 @@
         grid-template-columns: minmax(0, 1fr) auto;
         grid-template-areas: "identity actions" "stage stage";
         column-gap: 10px;
+    }
+    .admin-people-list .admin-organization-member:has(.admin-member-action-help) {
+        grid-template-areas: "identity actions" "stage stage" "help help";
     }
     .admin-people-list .admin-organization-member-actions { max-width: 140px; }
     .org-admin-member-card dl { grid-template-columns: minmax(0, 1fr); gap: 3px; }

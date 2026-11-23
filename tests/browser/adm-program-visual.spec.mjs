@@ -22,14 +22,25 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
       await expect(card).toBeVisible();
       await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
       await card.locator(`.admin-organization-step[data-view="${view}"]`).click();
-      const form = view === 'people' ? card.locator('.admin-assignment-readiness')
-        : card.locator(`form[data-action="${view === 'questionnaire' ? 'preview-questionnaire' : 'preview-early-data'}"]`);
+      const participantHelp = view === 'people' && role === 'admin';
+      const form = view === 'people'
+        ? card.locator(participantHelp ? '.admin-member-action-help' : '.admin-assignment-readiness')
+        : card.locator('form[data-action="' + (view === 'questionnaire' ? 'preview-questionnaire' : 'preview-early-data') + '"]');
+      const sourceSelector = participantHelp ? 'summary' : view === 'people' ? 'input[name="invitation_email"]'
+        : view === 'questionnaire' ? 'input[type="file"]' : '[name="purpose"]';
+      const buttonSelector = participantHelp ? 'summary' : view === 'people'
+        ? 'form[data-action="assign-member-assessment"] button[type="submit"]' : 'button[type="submit"]';
+      const formScope = view === 'people' && !participantHelp ? card : form;
+      const author = formScope.locator(sourceSelector);
+      const button = formScope.locator(buttonSelector);
       await expect(form).toBeVisible();
-      const author = view === 'people' ? card.locator('input[name="invitation_email"]')
-        : view === 'questionnaire' ? form.locator('input[type="file"]') : form.locator('[name="purpose"]');
-      if (view === 'people') await author.check();
+      if (participantHelp) {
+        await author.click();
+        await expect(form).toHaveAttribute('open', '');
+        await expect(card.locator('form[data-action="assign-member-assessment"]')).toHaveCount(0);
+      } else if (view === 'people') await author.check();
       else if (view === 'organization-data') await author.fill('synthetic-contact@example.test');
-      if (view === 'questionnaire') await form.locator('input[type="file"]').setInputFiles({
+      if (view === 'questionnaire') await author.setInputFiles({
         name: 'synthetic-questionnaire-long-file-name.csv', mimeType: 'text/csv',
         buffer: Buffer.from('question_id,field,value\nC01,name,Синтетическая организация\n'),
       });
@@ -47,17 +58,15 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
       }
       await author.focus();
       await expect(author).toBeFocused();
-      const button = view === 'people' ? card.locator('form[data-action="assign-member-assessment"] button[type="submit"]')
-        : form.locator('button[type="submit"]');
-      if (status === 'confirmed' && view !== 'people') await expect(button).toBeEnabled();
-      else await expect(button).toBeDisabled();
+      if (!participantHelp) {
+        if (status === 'confirmed' && view !== 'people') await expect(button).toBeEnabled();
+        else await expect(button).toBeDisabled();
+      }
       await button.scrollIntoViewIfNeeded();
-      const metrics = await form.evaluate((node) => {
-        const isReadiness = node.classList.contains('admin-assignment-readiness');
-        const scope = isReadiness ? node.closest('[data-organization-id]') : node;
-        const source = scope.querySelector(isReadiness ? 'input[name="invitation_email"]'
-          : node.dataset.action === 'preview-questionnaire' ? 'input[type="file"]' : '[name="purpose"]');
-        const submit = scope.querySelector(isReadiness ? 'form[data-action="assign-member-assessment"] button[type="submit"]' : 'button[type="submit"]');
+      const metrics = await form.evaluate((node, { sourceSelector, buttonSelector }) => {
+        const scope = node.classList.contains('admin-assignment-readiness') ? node.closest('[data-organization-id]') : node;
+        const source = scope.querySelector(sourceSelector);
+        const submit = scope.querySelector(buttonSelector);
         return { viewport: innerWidth,
         document: document.documentElement.scrollWidth, form: node.getBoundingClientRect().toJSON(),
         authorFontPx: getComputedStyle(source).fontSize,
@@ -69,7 +78,7 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
         horizontalOutliers: [...node.querySelectorAll('*')].filter((element) => {
           const rect = element.getBoundingClientRect(); return rect.width && (rect.x < 0 || rect.right > innerWidth + 1);
         }).map((element) => ({ tag: element.tagName, name: element.getAttribute('name'), text: element.textContent.slice(0, 80) })) };
-      });
+      }, { sourceSelector, buttonSelector });
       rows.push({ role, status, width, view, textScale, ...metrics });
       await info.attach(`${view}-${width}-text${textScale * 100}-metrics`, { body: JSON.stringify(rows.at(-1), null, 2), contentType: 'application/json' });
       await page.screenshot({ path: info.outputPath(`${role}-${status}-${view}-${width}-text${textScale * 100}.png`), fullPage: true });

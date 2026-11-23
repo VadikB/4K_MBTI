@@ -51,15 +51,13 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     const card = page.locator('.admin-organization-card');
     const organizationId = await card.getAttribute('data-organization-id');
     await expect(card.locator('.admin-organization-head')).toContainText('ADM28 synthetic Specialist pilot');
-    await expect(card.locator('.admin-assignment-readiness')).toContainText('Специалист / эксперт');
-    await expect(card.locator('.admin-assignment-readiness')).not.toContainText('ADM28 isolated');
-    await expect(card.locator('.admin-assignment-readiness')).toContainText('не подтверждена');
-    await expect(card.locator('[data-bulk-actions]')).toBeHidden();
-    await card.locator('input[name="invitation_email"]').first().check();
-    await expect(card.locator('[data-bulk-actions]')).toBeVisible();
-    await expect(card.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true })).toBeDisabled();
-    await card.locator('input[name="invitation_email"]').first().uncheck();
-    await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+    const reason = card.locator('.admin-member-action-help').first();
+    await reason.locator('summary').click();
+    await expect(reason).toContainText('Анкета для выбранной оценки не подтверждена');
+    await expect(card.locator('form[data-action="assign-member-assessment"]')).toHaveCount(0);
+    await reason.getByRole('button', { name: 'Открыть данные организации' }).click();
+    await expect(card.locator('.admin-data-readiness')).toContainText('Специалист / эксперт');
+    await expect(card.locator('.admin-data-readiness')).not.toContainText('ADM28 isolated');
     const form = card.locator('form[data-action="preview-early-data"]');
     await expect(form.locator('[name="assignment_ref"]')).toHaveAttribute('type', 'hidden');
     await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
@@ -133,6 +131,7 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await add.locator('[name="role_description"]').fill('Синтетический специалист');
     await add.getByRole('button', { name: 'Добавить', exact: true }).click();
     await expect(add.locator('[data-operation-status]')).toContainText('Участник привязан');
+    await card.locator('.admin-people-import summary').click();
     const imported = card.locator('form[data-action="import-members"]');
     await imported.locator('[name="csv"]').setInputFiles({ name: 'synthetic.csv', mimeType: 'text/csv',
       buffer: Buffer.from('email,full_name,role_description,job_instructions\nimported@example.test,Синтетический импорт,Специалист,Проверять примеры\n') });

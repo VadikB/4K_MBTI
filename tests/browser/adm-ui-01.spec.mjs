@@ -78,7 +78,8 @@ test('ADM-UI-01 organization cabinet on owned PostgreSQL', async ({ page, contex
     await expect(row('assign').getByRole('button', { name: 'Пригласить', exact: true })).toBeVisible();
     const addForm = card.locator('form[data-action="add-member"]');
     for (const name of ['Email', 'ФИО', 'Должность']) await expect(addForm.getByLabel(name)).toBeEditable();
-    await expect(card.getByLabel('Файл списка участников')).toBeVisible();
+    await expect(card.locator('.admin-people-import summary')).toHaveText('Импорт списка');
+    await expect(card.getByLabel('Файл списка участников')).toBeHidden();
 
     const geometry = [];
     const footerColors = [];

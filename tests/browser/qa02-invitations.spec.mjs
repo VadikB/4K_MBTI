@@ -93,8 +93,8 @@ test('QA02 mixed lost response recovers the same command without duplicate',asyn
   test.setTimeout(20000);const run=await setup(page,{mixed:true});
   const organization = page.locator('[data-organization-id="3"]');
   await expect(organization.locator('[data-admin-view="questionnaire"]')).toContainText('Ранний минимум подтверждён');
-  await organization.getByRole('checkbox', { name: 'Выбрать всех' }).check();
-  await expect(organization.locator('[data-selected-count]')).toHaveText('3');
+  await organization.getByRole('checkbox', { name: 'Выбрать доступных' }).check();
+  await expect(organization.locator('input[name="invitation_email"]:checked')).toHaveCount(3);
   await organization.locator('[data-action="send-member-invitations"] button').click();
   await expect(page.locator('#admin-organizations-status')).toContainText('Приняты сервисом: 1. Не отправлены: 1. Исход уточняется: 1');
   expect(run.posts[0].emails).toEqual(['person0@example.test', 'person1@example.test', 'person2@example.test']);

@@ -218,8 +218,8 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       expect(draft.effective_confirmed.id).toBe(confirmedRevision.id);
       await admin.reload();
       await expect(card).toBeVisible();
-      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-      await expect(card.locator('.admin-assignment-readiness')).toContainText(
+      await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+      await expect(card.locator('.admin-data-readiness')).toContainText(
         `действует подтверждённая редакция #${confirmedRevision.id}; новый черновик ещё не подтверждён`);
       const freshAdminContext = await pathBrowser.newContext();
       extraContexts.push(freshAdminContext);
@@ -231,10 +231,9 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await freshAdmin.locator('#verify-magic-link-button').click();
       const freshCard = freshAdmin.locator(`[data-organization-id="${state.path29.organization_id}"]`);
       await expect(freshCard).toBeVisible();
-      await freshCard.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-      await expect(freshCard.locator('.admin-assignment-readiness')).toContainText(
-        `действует подтверждённая редакция #${confirmedRevision.id}; новый черновик ещё не подтверждён`);
       await freshCard.getByRole('button', { name: 'Данные организации', exact: true }).click();
+      await expect(freshCard.locator('.admin-data-readiness')).toContainText(
+        `действует подтверждённая редакция #${confirmedRevision.id}; новый черновик ещё не подтверждён`);
       await expect(freshCard.locator('[data-action="preview-early-data"] [name="organization_name"]'))
         .toHaveValue(values.organization_name + ' — черновик');
       save('f05-confirmed-draft-assignment', { confirmed_revision_id: confirmedRevision.id,
@@ -251,20 +250,20 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       await admin.reload();
       await expect(card).toBeVisible();
       await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-      await expect(card.locator('.admin-questionnaire-load-state.error').first()).toBeAttached();
-      const readiness = card.locator('.admin-assignment-readiness');
+      await expect(card.locator('form[data-action="assign-member-assessment"]')).toHaveCount(0);
+      await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
+      await expect(card.locator('.admin-questionnaire-load-state.error').first()).toBeVisible();
+      const readiness = card.locator('.admin-data-readiness dt:text-is("Анкета") + dd');
       save('ps02-read-error', { organization_id: state.path29.organization_id,
         assignment_ref: state.path29.assignment_ref, confirmed_before_reload: true,
         injected_failure: 'GET questionnaire HTTP 503; no write',
-        actual_readiness: await readiness.innerText() });
+        actual_readiness: await readiness.textContent() });
       await admin.screenshot({ path: path.join(dir, 'ps02-read-error.png'), fullPage: true });
-      await expect(readiness).not.toContainText('Анкета для выбранной оценки не подтверждена');
-      await expect(readiness).not.toContainText('Можно назначать');
+      await expect(readiness).toContainText('актуальность не проверена');
       await admin.unroute(questionnaireUrl);
       await card.getByRole('button', { name: 'Данные организации', exact: true }).click();
       await card.getByRole('button', { name: 'Повторить', exact: true }).filter({ visible: true }).click();
-      await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-      await expect(readiness).toContainText('Можно назначать');
+      await expect(readiness).toHaveText('подтверждена');
     }
     await card.getByRole('button', { name: 'Участники оценки', exact: true }).click();
     const add = card.locator('[data-action="add-member"]');

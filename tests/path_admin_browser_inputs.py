@@ -12,6 +12,77 @@ sys.path.insert(0, str(ROOT))
 from scripts.test_stand import environment, owned
 
 
+def allow_second_organization(connection, admin_id):
+    from Api.schema_bootstrap import fingerprint
+    from psycopg import sql
+
+    # Only the synthetic administrator can belong to two organizations in this owned stand.
+    connection.execute('DROP INDEX uq_organization_memberships_user')
+    connection.execute(sql.SQL('CREATE UNIQUE INDEX uq_organization_memberships_user '
+                               'ON organization_memberships(user_id) WHERE user_id <> {}').format(sql.Literal(admin_id)))
+    connection.execute('UPDATE app_bootstrap SET schema_hash=%s', (fingerprint(connection),))
+
+
+def seed_participants(scope):
+    from Api.auth_service import _hash_password
+    from Api.database import get_connection
+
+    with get_connection() as c:
+        empty = c.execute("""INSERT INTO organizations(code,name)
+            VALUES('adm-vis-03-empty','Синтетическая организация без программы') RETURNING id""").fetchone()['id']
+        allow_second_organization(c, scope['admin'])
+        c.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,is_participant)
+            VALUES(%s,%s,'admin',FALSE)""", (empty, scope['admin']))
+        for key, name in [('member', 'Синтетический новый участник'), ('second', 'Синтетический автор обращения')]:
+            c.execute('UPDATE users SET full_name=%s WHERE id=%s', (name, scope[key]))
+        registered_email = 'registered-adm-vis-03@example.test'
+        registered = c.execute("""INSERT INTO users(email,full_name,job_description)
+            VALUES(%s,'Синтетический зарегистрированный участник','Аналитик') RETURNING id""",
+            (registered_email,)).fetchone()['id']
+        c.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,admission_source,admitted_at)
+            VALUES(%s,%s,'member','admin_add',NOW())""", (scope['org'], registered))
+        salt, digest = _hash_password('Synthetic!' + uuid4().hex)
+        c.execute("""INSERT INTO auth_password_credentials(user_id,email,password_hash,password_salt)
+            VALUES(%s,%s,%s,%s)""", (registered, registered_email, digest, salt))
+        c.commit()
+    return {'empty_organization_id': empty, 'foreign_organization_id': scope['foreign'],
+            'member_id': scope['member'], 'appeal_member_id': scope['second'], 'registered_id': registered,
+            'ref': scope['ref'], 'role': scope['role'], 'unavailable_role': scope['student']}
+
+
+def prepare_participant_appeal(scope):
+    from Api import acquaintance
+    from Api.database import get_connection
+    from tests.path_admin_contract_checks import payload, ready, session
+
+    with session(scope['admin']) as client:
+        revision = ready(client, scope)['id']
+        result = client.post(f"/users/admin/organizations/{scope['org']}/assessment-assignments",
+                             json=payload(scope, user_ids=[scope['second']], role_profile_version_id=scope['role']))
+        assert result.status_code == 200, result.text
+    assignment = result.json()['items'][0]['assignment_id']
+    with get_connection() as c:
+        issue = acquaintance.report_issue(c, user_id=scope['second'], message='Синтетическое обращение о должности',
+                                          operation_id=uuid4(), assignment_id=assignment, questionnaire_revision_id=revision)
+        c.commit()
+    return issue['id']
+
+
+def serve_participants(state):
+    import uvicorn
+    from Api import routes
+    from main import app
+
+    def synthetic_delivery(*, email, purpose, **_):
+        assert email.endswith('@example.test') and purpose == 'organization_invitation'
+
+    # Call the real HTTP handler and database transaction, with an isolated mail sink.
+    routes.settings.auth_invitation_token_secret = uuid4().hex + uuid4().hex
+    routes.settings.email_provider = 'postmark'
+    routes.send_auth_action_email = synthetic_delivery
+    uvicorn.run(app, host='127.0.0.1', port=state['port'], lifespan='off', access_log=False)
+
+
 def seed_appeals_reentry(scope):
     from Api.auth_service import _hash_password, auth_service
     from Api.database import get_connection
@@ -210,8 +281,6 @@ def seed_cabinet_programs(c, scope):
     from Api.assessment_programs import current_connection, definition_checksum
     from Api.m5_case_runtime import checksum
     from Api.pilot_plan_admission import CONTRACT
-    from Api.schema_bootstrap import fingerprint
-    from psycopg import sql
     from psycopg.types.json import Jsonb
 
     ordinary = current_connection(c, organization_id=scope['org'])
@@ -249,11 +318,7 @@ def seed_cabinet_programs(c, scope):
     current = pilot_version('test.2', scope['ref'])
     peer_org = c.execute("""INSERT INTO organizations(code,name)
         VALUES('cabinet-peer','Вторая организация') RETURNING id""").fetchone()['id']
-    # Allow the synthetic admin to exercise two organizations in the owned stand.
-    c.execute('DROP INDEX uq_organization_memberships_user')
-    c.execute(sql.SQL('CREATE UNIQUE INDEX uq_organization_memberships_user '
-                      'ON organization_memberships(user_id) WHERE user_id <> {}').format(sql.Literal(scope['admin'])))
-    c.execute('UPDATE app_bootstrap SET schema_hash=%s', (fingerprint(c),))
+    allow_second_organization(c, scope['admin'])
     c.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,admission_source)
         VALUES(%s,%s,'admin','admin_add')""", (peer_org, scope['admin']))
     c.execute("""INSERT INTO organization_assessment_program_connections
@@ -385,7 +450,8 @@ def seed_cabinet_report(c, member_id, cycle, cycle_id, status, *, newer_unpublis
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['prepare', 'cabinet', 'visual-states', 'readback', 'appeals-reentry',
-                                           'cabinet-state', 'cabinet-race-start'])
+                                           'cabinet-state', 'cabinet-race-start', 'participants',
+                                           'prepare-participant-appeal', 'serve-participants'])
     parser.add_argument('--state', required=True, type=Path)
     parser.add_argument('--internal', action='store_true')
     args = parser.parse_args()
@@ -393,8 +459,10 @@ def main():
     with owned(state):
         pass
     if not args.internal:
-        subprocess.run([sys.executable, __file__, args.action, '--state', str(args.state), '--internal'],
-                       env=environment(state), cwd=ROOT, check=True, timeout=60)
+        command = [sys.executable, __file__, args.action, '--state', str(args.state), '--internal']
+        if args.action == 'serve-participants':
+            os.execve(sys.executable, command, environment(state))
+        subprocess.run(command, env=environment(state), cwd=ROOT, check=True, timeout=60)
         return
     if os.getenv('AGENT4K_ISOLATED_STAND') != '1':
         raise RuntimeError('ISOLATED_STAND_REQUIRED')
@@ -403,7 +471,18 @@ def main():
     from Api.web_session_service import web_session_service
     from Api.routes import SESSION_COOKIE_NAME
     try:
-        if args.action in {'prepare', 'cabinet', 'visual-states', 'appeals-reentry'}:
+        if args.action == 'serve-participants':
+            serve_participants(state)
+        elif args.action == 'prepare-participant-appeal':
+            print(json.dumps({'issue_id': prepare_participant_appeal(state['path_admin'])}))
+        elif args.action == 'participants':
+            scope = create_scope()
+            fixture = seed_participants(scope)
+            state['path_admin'] = scope
+            args.state.write_text(json.dumps(state, default=str))
+            print(json.dumps({**fixture, 'organization_id': scope['org'], 'cookie_name': SESSION_COOKIE_NAME,
+                              'session': web_session_service.create_session(scope['admin'])}))
+        elif args.action in {'prepare', 'cabinet', 'visual-states', 'appeals-reentry'}:
             with_cabinet = args.action in {'cabinet', 'visual-states'}
             scope = create_scope(include_second_role=with_cabinet)
             with session(scope['admin']) as client:
