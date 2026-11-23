@@ -279,7 +279,6 @@ def test_spec02_provider_requests_and_admission(tmp_path, control, profession, r
     for call in gateway.calls:
         role = call["role"]
         payload = json.loads(call["messages"][-1]["content"])
-        assert payload["case_content_contract"] == contract
         assert payload["m2_indicator_descriptors"] == {"K1.I09": descriptor}
         assert payload["profile"] == snapshot["profile"]
         assert payload["profile"]["user_context"]["position_or_status"] == PROFESSIONS[profession][0]
@@ -289,8 +288,10 @@ def test_spec02_provider_requests_and_admission(tmp_path, control, profession, r
         assert payload["normative_indicator_targets"] == snapshot["case_version"]["indicator_targets"]
         assert "author_as_example" not in payload and "author_assessment_situation" not in payload
         if role == "generation":
+            assert payload["case_content_contract"] == contract
             assert "case_content_contract" in call["messages"][0]["content"]
         elif role == "repair":
+            assert payload["case_content_contract"] == contract
             assert "case_content_contract" in call["messages"][2]["content"]
             assert service.checksum(payload["rejected_candidate_as"]) == initial_checksum
             assert payload["blocking_failures"] == before["aggregation"]["blocking_failures"]
@@ -299,6 +300,10 @@ def test_spec02_provider_requests_and_admission(tmp_path, control, profession, r
             assert checksum == service.checksum(payload["candidate_as"])
             assert any("case_content" in message["content"] for message in call["messages"][:-1])
             rows = (payload["applicability_plan"]["required_checks"] if role == "tester" else payload["protected_checks"])
+            inline_requirements = {row["check_id"] for row in rows} & contract["requirements"].keys()
+            assert payload["case_content_contract"] == {**contract, "requirements": {
+                key: value for key, value in contract["requirements"].items() if key not in inline_requirements
+            }}
             for row in rows:
                 check_id = row["check_id"]
                 if check_id in CHECKS:
