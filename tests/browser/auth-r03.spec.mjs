@@ -667,10 +667,6 @@ test('P4K-SUP-UX-01 superadmin restores the platform organizations cabinet', asy
 
 async function reloadSuperadminOrganizations(page) {
   await page.reload();
-  await expect(page.locator('#admin-panel:not(.hidden), #admin-organizations-panel:not(.hidden)')).toHaveCount(1);
-  if (await page.locator('#admin-open-organizations-button').isVisible()) {
-    await page.locator('#admin-open-organizations-button').click();
-  }
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
 }
 
@@ -711,6 +707,7 @@ for (const firstReply of ['confirmed', 'lost', 'service-error']) {
     });
     await page.goto(base);
     await page.locator('#admin-open-organizations-button').click();
+    await page.getByRole('link', { name: 'Создать организацию' }).click();
     const name = page.locator('#admin-organization-name-input');
     const code = page.locator('#admin-organization-code-input');
     const button = page.locator('#admin-organization-create-button');
@@ -725,29 +722,29 @@ for (const firstReply of ['confirmed', 'lost', 'service-error']) {
       await name.press('Enter');
       expect(posts).toHaveLength(1);
     } finally { releaseCreate(); }
-    await expect(status).toHaveAttribute('data-tone', firstReply === 'confirmed' ? 'success' : 'error');
-    await expect(button).toBeEnabled();
+    if (firstReply === 'service-error') {
+      await expect(status).toContainText('Организация с этим кодом пока не найдена');
+      await expect(button).toBeEnabled();
+      await button.click();
+      await expect.poll(() => posts.length).toBe(2);
+      expect(posts[1]).toEqual(posts[0]);
+    } else {
+      await expect(status).toContainText(firstReply === 'lost' ? 'Создание подтверждено по коду' : 'Организация создана');
+      expect(posts).toHaveLength(1);
+    }
+    await expect(page).toHaveURL(/org=3/);
+    await expect(page.locator('[data-organization-id="3"]')).toBeVisible();
     await reloadSuperadminOrganizations(page);
-    await expect(page.locator('[data-organization-id="3"]')).toHaveCount(firstReply === 'service-error' ? 0 : 1);
-    await name.fill('Owned synthetic AC02');
-    await code.fill('owned-ac02');
-    await button.click();
-    await expect.poll(() => posts.length).toBe(2);
-    await expect(status).toHaveAttribute('data-tone', firstReply === 'service-error' ? 'success' : 'error');
-    if (firstReply !== 'service-error') await expect(status).toContainText('Organization with this code already exists');
+    await expect(page.locator('[data-organization-id="3"]')).toBeVisible();
+    await expect(page.locator('#admin-organizations-title')).toHaveText('Owned synthetic AC02');
     expect(items).toHaveLength(1);
-    expect(posts[1]).toEqual(posts[0]);
-    await expect(button).toBeEnabled();
-    await reloadSuperadminOrganizations(page);
-    await expect(page.locator('[data-organization-id="3"]')).toHaveCount(1);
-    await expect(page.locator('[data-organization-id="3"]')).toContainText('Owned synthetic AC02');
     await page.screenshot({ path: testInfo.outputPath('ac02-result.png') });
   });
 }
 
 for (const lostCommandResponse of [false, true]) {
   for (const readbackFailure of ['deadline', 'http503', 'network', 'invalid-json', 'null', 'foreign-program']) {
-    test(`PATH-START AC05 ${readbackFailure} GET after ${lostCommandResponse ? 'lost' : 'confirmed'} PUT is finite, unknown and safely repeatable`, async ({ page }, testInfo) => {
+    test(`PATH-START AC05 ${readbackFailure} GET after ${lostCommandResponse ? 'lost' : 'confirmed'} PUT has an exact outcome and safe recovery`, async ({ page }, testInfo) => {
       testInfo.annotations.push({ type: 'synthetic_http', description: 'Real entry/dist and unmodified 15s deadline; HTTP faults only, no DB/provider.' });
       const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
       const connection = { organization_id: 3, program_definition_id: 11,
@@ -791,40 +788,51 @@ for (const lostCommandResponse of [false, true]) {
       });
       await page.goto(base);
       await page.locator('#admin-open-organizations-button').click();
+      await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
       const form = page.locator('[data-action="connect-assessment-program"]');
       const button = form.getByRole('button', { name: 'Подключить', exact: true });
       await form.locator('[name="program_definition_id"]').selectOption('11');
       await button.click();
       const status = form.locator('[data-operation-status]');
+      const unknown = !['null', 'foreign-program'].includes(readbackFailure);
+      const check = form.getByRole('button', { name: 'Проверить состояние подключения' });
       try {
-        await expect(status).toHaveAttribute('data-tone', 'error', { timeout: 22000 });
-        await expect(status).not.toContainText('Выполняем действие');
-        await expect(status).toContainText('Результат подключения не подтверждён');
-        await expect(button).toBeEnabled();
-        await expect(page.locator('[data-organization-id="3"]')).not.toContainText(/не подключена/i);
-        await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
-        await expect(form).not.toContainText('Foreign program');
+        await expect(status).toHaveAttribute('data-tone', readbackFailure === 'null' ? 'muted' : 'error', { timeout: 22000 });
+        await expect(status).toContainText(unknown ? 'Результат подключения не подтверждён'
+          : readbackFailure === 'null' ? 'Проверено: программа не подключена' : 'Подключена другая версия: Foreign program');
+        if (unknown) {
+          await expect(button).toBeDisabled();
+          await expect(check).toBeVisible();
+        } else await expect(button).toBeEnabled();
         await page.screenshot({ path: testInfo.outputPath('ac05-unknown.png') });
       } finally { releaseReadback(); }
       if (readbackFailure === 'http503' && !lostCommandResponse) {
-        await page.locator('#admin-open-organizations-button').click();
+        await page.reload();
         await expect(form.locator('[data-program-connection-state]')).toContainText('пока не подтверждён');
         for (const width of [1440, 320, 390, 768]) {
           await page.setViewportSize({ width, height: 1000 });
-          await button.scrollIntoViewIfNeeded();
-          await expect(button).toBeVisible();
+          await check.scrollIntoViewIfNeeded();
+          await expect(check).toBeVisible();
           const box = await form.boundingBox();
           expect(box.x).toBeGreaterThanOrEqual(0);
           expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
           await page.screenshot({ path: testInfo.outputPath(`ac05-unknown-${width}.png`) });
         }
       }
-      await button.click();
+      if (unknown) {
+        await check.click();
+        expect(operationIds).toHaveLength(1);
+      } else {
+        await form.locator('[name="program_definition_id"]').selectOption('11');
+        await button.click();
+      }
       await expect(form.locator('[data-operation-status]')).toHaveAttribute('data-tone', 'success');
       await expect(form).toContainText('Подключено: Owned AC05 pilot · synthetic-v1');
-      expect(operationIds).toHaveLength(2);
-      expect(operationIds[1]).toBe(operationIds[0]);
-      expect(new Set(operationIds).size).toBe(1);
+      if (!unknown) {
+        expect(operationIds).toHaveLength(2);
+        if (readbackFailure === 'foreign-program') expect(operationIds[1]).not.toBe(operationIds[0]);
+        else expect(operationIds[1]).toBe(operationIds[0]);
+      }
       expect(getCount).toBe(2);
       await reloadSuperadminOrganizations(page);
       await expect(form).toContainText('Подключено: Owned AC05 pilot · synthetic-v1');
@@ -873,6 +881,7 @@ test('PROGRAM01 R10 finishes exact program connection while questionnaire refres
   });
   await page.goto(base);
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   const form = page.locator('[data-action="connect-assessment-program"]');
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
@@ -883,7 +892,7 @@ test('PROGRAM01 R10 finishes exact program connection while questionnaire refres
   await expect(form.locator('[data-operation-status]')).toContainText('Опубликованная версия программы подключена');
 });
 
-test('PROGRAM01 R10 shows a terminal error when exact readback is null', async ({ page }) => {
+test('PROGRAM01 R10 shows verified absence when exact readback is null', async ({ page }) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const organization = {
     id: 3, code: 'r10-null', name: 'R10 Null Organization', is_active: true, domains: [], admins: [],
@@ -913,11 +922,12 @@ test('PROGRAM01 R10 shows a terminal error when exact readback is null', async (
   });
   await page.goto(base);
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   const form = page.locator('[data-action="connect-assessment-program"]');
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
   await expect(form.locator('[data-operation-status]')).toContainText(
-    'Сервер не подтвердил точную версию подключённой программы',
+    'Проверено: программа не подключена',
   );
   await expect(form.locator('[data-operation-status]')).not.toContainText('Выполняем действие');
   await expect(form.getByRole('button', { name: 'Подключить' })).toBeEnabled();
@@ -960,16 +970,16 @@ for (const lostCommandResponse of [false, true]) {
     });
     await page.goto(base);
     await page.locator('#admin-open-organizations-button').click();
+    await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
     const form = page.locator('[data-action="connect-assessment-program"]');
     await form.locator('[name="program_definition_id"]').selectOption('11');
     await form.getByRole('button', { name: 'Подключить' }).click();
     const status = form.locator('[data-operation-status]');
     await expect(status).toHaveAttribute('data-tone', 'error');
     await expect(form).not.toContainText('Foreign organization pilot');
-    await expect(form.getByRole('button', { name: 'Подключить' })).toBeEnabled();
-    await form.getByRole('button', { name: 'Подключить' }).click();
-    await expect.poll(() => operationIds.length).toBe(2);
-    expect(operationIds[1]).toBe(operationIds[0]);
+    await expect(form.getByRole('button', { name: 'Подключить' })).toBeDisabled();
+    await form.getByRole('button', { name: 'Проверить состояние подключения' }).click();
+    expect(operationIds).toHaveLength(1);
     await expect(status).toHaveAttribute('data-tone', 'error');
   });
 }
@@ -1009,6 +1019,7 @@ test('PROGRAM01 R10 confirms a committed connection after the PUT response is lo
   });
   await page.goto(base);
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   const form = page.locator('[data-action="connect-assessment-program"]');
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
@@ -1026,7 +1037,7 @@ test('PROGRAM01 R10 restores the exact connected program after reopening the car
   let serverConnected = false;
   await page.route('**/users/**', (route) => {
     const pathname = new URL(route.request().url()).pathname;
-    if (pathname === '/users/session/restore') return fulfillJson(route, {
+    if (['/users/session/restore', '/users/18/session-bootstrap'].includes(pathname)) return fulfillJson(route, {
       authenticated: true, user: adminUser, is_admin: true, admin_dashboard: dashboard,
     });
     if (pathname === '/users/version') return fulfillJson(route, { version: 'r10-test' });
@@ -1050,11 +1061,12 @@ test('PROGRAM01 R10 restores the exact connected program after reopening the car
   });
   await page.goto(base);
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   const form = page.locator('[data-action="connect-assessment-program"]');
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
   await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
-  await page.locator('#admin-open-organizations-button').click();
+  await page.reload();
   await expect(page.locator('[data-action="connect-assessment-program"]'))
     .toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
 });
@@ -1093,6 +1105,7 @@ test('PROGRAM01 R10 does not render the old connection result after logout', asy
   });
   await page.goto(base);
   await page.locator('#admin-open-organizations-button').click();
+  await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   const form = page.locator('[data-action="connect-assessment-program"]');
   await form.locator('[name="program_definition_id"]').selectOption('11');
   await form.getByRole('button', { name: 'Подключить' }).click();
@@ -1173,6 +1186,9 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
   await page.locator('#magic-token-input').fill('legacy-password');
   await page.locator('#verify-magic-link-button').click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
+  if (isSuperadmin) {
+    await page.locator('#platform-org-rows [data-org-id="' + organization.id + '"]:not([data-org-admins])').click();
+  }
   if (organization.members.length) {
     await page.locator('input[name="invitation_email"]').first().waitFor();
   } else {
@@ -2986,7 +3002,8 @@ test('R04 shared footer stays in document flow and stacks on mobile', async ({ p
   await expect(footer.getByText('Политика конфиденциальности')).toBeVisible();
   await expect(footer.getByText('Согласие на обработку персональных данных')).toBeVisible();
   await expect(footer.getByText('© 2026 LIDUM')).toBeVisible();
-  await expect(footer.locator('a')).toHaveCount(0);
+  await expect(footer.getByRole('link', { name: 'Согласие на обработку персональных данных' }))
+    .toHaveAttribute('href', '/web/assets/docs/personal-data-consent.pdf');
   await expect(footer).toHaveCSS('position', 'static');
   await page.setViewportSize({ width: 360, height: 760 });
   await expect(page.locator('#email-input')).toHaveCSS('font-size', '16px');

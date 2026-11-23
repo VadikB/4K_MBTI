@@ -7,6 +7,12 @@
     overflow-wrap: anywhere;
 }
 
+.shell:has(> #admin-organizations-panel[data-superadmin="true"]:not(.hidden)),
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-shell {
+    background: var(--palette-outcome-canvas);
+}
+.admin-organizations-panel[data-superadmin="true"] { min-height: 0; }
+
 .platform-navigation { display: none; }
 .admin-organizations-panel[data-superadmin="true"] .platform-navigation {
     display: flex;
@@ -54,6 +60,158 @@
 }
 .admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero .section-label { display: none; }
 .admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero h2 { font-size: 28px; line-height: 36px; }
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero {
+    flex-wrap: wrap;
+    gap: 14px;
+}
+[data-platform-org-state]:not(:empty) { margin-top: 12px; }
+.platform-org-breadcrumb,
+.platform-org-actions,
+.platform-org-card-nav,
+.platform-org-summary-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.platform-org-breadcrumb,
+.platform-org-note { color: var(--palette-outcome-text); }
+.platform-org-breadcrumb a,
+.platform-org-breadcrumb span { font-size: 14px; }
+.platform-org-actions a,
+.admin-organizations-hero [data-platform-org-view="create"] { text-decoration: none; }
+.admin-organizations-hero [data-platform-org-view="create"],
+.platform-org-summary-panel .primary-button,
+.platform-org-actions .primary-button { min-height: 44px; }
+.platform-org-card-nav { border-bottom: 1px solid var(--participant-border); gap: 4px; }
+.platform-org-card-nav a {
+    padding: 10px 12px;
+    color: var(--palette-outcome-text);
+    font-size: 14px;
+    text-decoration: none;
+}
+.platform-org-card-nav a:hover { text-decoration: underline; }
+.platform-org-card-nav a:focus-visible,
+.platform-org-registry a:focus-visible,
+.platform-org-summary a:focus-visible {
+    outline: 2px solid var(--palette-outcome-link);
+    outline-offset: 3px;
+}
+.platform-org-registry .text-link,
+.platform-org-summary .text-link,
+.platform-org-breadcrumb .text-link { color: var(--palette-outcome-link); }
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-create-card { width: min(100%, 650px); }
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-form { grid-template-columns: minmax(0, 1fr); }
+.platform-org-registry { padding: 0; min-width: 0; }
+.platform-org-toolbar {
+    display: flex;
+    align-items: end;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 18px 20px;
+}
+.platform-org-toolbar > label:first-child { flex: 1 1 220px; max-width: 420px; }
+.platform-org-toolbar .admin-filter-field > span, .admin-organizations-create-card .admin-filter-field > span {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 14px;
+}
+.platform-org-toolbar input, .platform-org-toolbar select { min-height: 42px; }
+.platform-org-registry table { text-align: left; border-collapse: collapse; width: 100%; font-size: 14px; }
+.platform-org-registry th,
+.platform-org-registry td { padding: 13px 18px; border-top: 1px solid var(--participant-border); }
+.platform-org-registry thead { background: var(--palette-graphite-050); color: var(--palette-outcome-text); }
+.platform-org-registry th { font-weight: 550; }
+.platform-org-name { display: flex; align-items: center; gap: 12px; }
+.platform-org-name small { display: block; text-transform: uppercase; color: var(--palette-outcome-text); }
+.platform-org-symbol {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--palette-cyan-050);
+    color: var(--palette-outcome-link);
+}
+.platform-org-state {
+    display: inline-block;
+    border-radius: 6px;
+    padding: 4px 10px;
+    background: var(--palette-cyan-050);
+    color: var(--palette-outcome-link);
+    font-size: 13px;
+    font-weight: 600;
+}
+.platform-org-state.is-inactive { background: var(--palette-graphite-050); color: var(--palette-outcome-text); }
+.platform-org-empty { text-align: center; }
+.platform-org-empty p,
+#platform-org-count { color: var(--palette-outcome-text); }
+#platform-org-count { margin: 0; padding: 11px 20px; border-top: 1px solid var(--participant-border); font-size: 14px; }
+.platform-org-summary, .platform-org-pair { display: grid; gap: 16px; }
+.platform-org-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.platform-org-summary-panel {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    align-content: start;
+    padding: 20px;
+    border: 1px solid var(--participant-border);
+    border-radius: var(--radius-md);
+    background: white;
+}
+.platform-org-summary-panel h3, .platform-org-summary-panel p { margin: 0; }
+.platform-org-summary-heading { justify-content: space-between; }
+.platform-org-summary-panel form > p, .platform-org-summary-panel form > .text-button { grid-column: 1 / -1; }
+.platform-org-summary-panel .text-button { justify-self: start; text-align: left; }
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-list-card > .report-card-head { display: none; }
+.admin-organizations-panel[data-superadmin="true"] .admin-organizations-list-card,
+.admin-organizations-panel[data-superadmin="true"] .admin-organization-card {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+}
+@media (max-width: 720px) {
+    .platform-org-toolbar { padding: 14px; }
+    .platform-org-registry tbody,
+    .platform-org-registry tr,
+    .platform-org-registry td,
+    .platform-org-registry tbody th { display: block; }
+    .platform-org-registry thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+    .platform-org-registry tbody tr { padding: 12px 14px; border-top: 1px solid var(--participant-border); }
+    .platform-org-registry tbody th, .platform-org-registry td { padding: 5px 0; border: 0; }
+    .platform-org-registry td[data-label] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 10px;
+        align-items: baseline;
+        justify-items: start;
+    }
+    .platform-org-registry td[data-label]::before { content: attr(data-label); color: var(--palette-outcome-text); }
+    .platform-org-pair, .platform-org-summary-panel form { grid-template-columns: minmax(0, 1fr); }
+    .platform-org-summary-panel { padding: 15px; }
+}
+@media (max-width: 700px) {
+    .admin-organizations-panel[data-superadmin="true"] .admin-organizations-hero h2 {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 32px;
+        letter-spacing: normal;
+    }
+}
+@media (max-width: 479px) {
+    .shell:has(> #admin-organizations-panel[data-superadmin="true"]:not(.hidden)) > .app-footer {
+        gap: 10px;
+        padding-block: 16px calc(16px + env(safe-area-inset-bottom));
+    }
+}
 .platform-availability { width: min(100%, 1144px); min-height: 50vh; margin: 0 auto; padding: 38px 32px; }
 .platform-availability h1 { margin: 0 0 12px; font-size: 28px; line-height: 36px; }
 .platform-availability p { max-width: 65ch; color: var(--palette-outcome-text); }
@@ -1325,9 +1483,7 @@
 }
 
 @media (max-width: 480px) {
-    .admin-organizations-panel[data-superadmin="true"] .admin-organizations-shell,
-    .admin-organizations-panel[data-superadmin="true"] .admin-organizations-list-card,
-    .admin-organizations-panel[data-superadmin="true"] .admin-organization-card {
+    .admin-organizations-panel[data-superadmin="true"] .admin-organizations-shell {
         padding: var(--space-3);
     }
 

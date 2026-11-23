@@ -38,7 +38,7 @@ test('AC09 actual HTTP+PostgreSQL: double click, committed lost response, reload
     const superPage = await superContext.newPage();
     await superPage.goto(base);
     await expect(superPage.locator('#admin-organizations-panel')).toBeVisible();
-    await superPage.locator('#admin-organization-select').selectOption(String(prepared.organization_id));
+    await superPage.locator('#platform-org-rows [data-org-id="' + prepared.organization_id + '"]:not([data-org-admins])').click();
     const superCard = superPage.locator(`[data-organization-id="${prepared.organization_id}"]`);
     await capturePathViewports(superPage, dir, 'superadmin-program', [
       { name: 'program', locator: superCard.locator('select[name="program_definition_id"]') },

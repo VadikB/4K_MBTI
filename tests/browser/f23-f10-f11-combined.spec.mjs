@@ -68,7 +68,7 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     await superPage.locator('#magic-token-input').fill(prepared.password);
     await superPage.locator('#verify-magic-link-button').click();
     await expect(superPage.locator('#admin-organizations-panel')).toBeVisible();
-    await superPage.locator('#admin-organization-select').selectOption(String(orgId));
+    await superPage.locator('#platform-org-rows [data-org-id="' + orgId + '"]:not([data-org-admins])').click();
     const superCard = superPage.locator(`[data-organization-id="${orgId}"]`);
     await expect(superCard).toBeVisible();
     const connect = superCard.locator('form[data-action="connect-assessment-program"]');

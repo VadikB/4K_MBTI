@@ -42,7 +42,7 @@ test('F02 AC03/04 current people, real clicks, HTTP and owned PostgreSQL: failur
     const openOrganizations = async () => {
       await page.goto(base);
       await expect(page.locator('#admin-organizations-panel')).toBeVisible();
-      await page.locator('#admin-organization-select').selectOption(String(prepared.organization_id));
+      await page.locator('#platform-org-rows [data-org-id="' + prepared.organization_id + '"]:not([data-org-admins])').click();
     };
     await openOrganizations();
     const status = page.locator('#admin-organizations-panel [data-operation-status]:visible, #admin-organizations-status:visible').last();

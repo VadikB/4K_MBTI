@@ -5,35 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>4К Ассистент</title>
   <!-- CSS is modularized under /web/styles/. Load order: tokens → base → components → screens → utilities. -->
-  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/support-preparation.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.69">
-  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.69">
+  <link rel="stylesheet" href="/web/styles/tokens.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/base.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/components.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/auth.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/onboarding.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/processing.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/profile.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/report.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/ai-welcome.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/prechat.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/chat.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/interview.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/dashboard.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/reports.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/app-loader.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/admin.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/admin-organizations.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/support-preparation.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/admin-reports.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/admin-methodology.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/screens/admin-prompt-lab.css?v=2.1.70">
+  <link rel="stylesheet" href="/web/styles/utilities.css?v=2.1.70">
       <!--Favicons-->
   <link rel="icon" href="/favicons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">
   <link rel="manifest" href="/favicons/site.webmanifest">
-  <link rel="stylesheet" href="/web/styles/preparation-status.css?v=2.1.69">
+  <link rel="stylesheet" href="/web/styles/preparation-status.css?v=2.1.70">
 </head>
 <body>
   <div id="app-loader" class="app-loader hidden" aria-live="polite">
@@ -57,7 +57,7 @@
     <header class="auth-header" aria-label="4К Ассистент">
       <span class="auth-header-brand product-brand">4К Ассистент</span>
       <span class="auth-waiting-section">Оценка</span>
-      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.69</span></span>
+      <span class="auth-release-badge" data-app-release-badge>Релиз <span data-app-release-number>2.1.70</span></span>
     </header>
     <nav id="participant-area-navigation" class="participant-area-navigation hidden" aria-label="Разделы аккаунта">
       <button id="participant-return-management-button" class="ghost-button compact-ghost" type="button">Управление</button>
@@ -448,35 +448,58 @@
       <section class="platform-problems hidden" id="platform-problems" aria-labelledby="platform-problems-title"></section>
 
       <div class="admin-shell admin-organizations-shell">
+        <nav class="platform-org-breadcrumb hidden" aria-label="Путь к организации">
+          <a class="text-link" data-platform-org-view="registry" href="/?screen=admin-organizations">Организации</a>
+          <span aria-hidden="true">/</span><span data-platform-org-location></span>
+        </nav>
         <section class="card card--lg admin-hero-card admin-organizations-hero">
           <div>
             <p class="section-label accent-label">Управление</p>
-            <h2 id="admin-organizations-title">Участники оценки</h2>
+            <h2 id="admin-organizations-title" tabindex="-1">Участники оценки</h2>
             <p id="admin-organizations-subtitle">Добавьте сотрудников и следите за ходом выбранной оценки.</p>
+            <div data-platform-org-state></div>
           </div>
-        </section>
-
-        <section class="card card--lg admin-organizations-create-card">
-          <div class="report-card-head">
-            <div>
-              <p class="section-label accent-label">Новая организация</p>
-              <h3>Создать организацию</h3>
-            </div>
-          </div>
-          <form id="admin-organization-create-form" class="admin-organizations-form">
-            <label class="admin-filter-field">
-              <span>Название</span>
-              <input id="admin-organization-name-input" type="text" autocomplete="off" placeholder="Например, ACME">
-            </label>
-            <label class="admin-filter-field">
-              <span>Код</span>
-              <input id="admin-organization-code-input" type="text" autocomplete="off" placeholder="acme">
-            </label>
-            <button id="admin-organization-create-button" type="submit" class="primary-button compact-primary">Создать</button>
-          </form>
+          <a class="primary-button compact-primary hidden" data-platform-org-view="create"
+             href="/?screen=admin-organizations&amp;view=create">Создать организацию</a>
         </section>
 
         <div id="admin-organizations-status" class="admin-organizations-status hidden" role="status" aria-live="polite" tabindex="-1"></div>
+
+        <section class="card card--lg admin-organizations-create-card hidden" aria-labelledby="admin-organizations-title">
+          <form id="admin-organization-create-form" class="admin-organizations-form">
+            <label class="admin-filter-field">
+              <span>Название организации</span>
+              <input id="admin-organization-name-input" type="text" autocomplete="off" required maxlength="255" placeholder="Например, ООО «Пример»">
+            </label>
+            <label class="admin-filter-field">
+              <span>Код организации</span>
+              <input id="admin-organization-code-input" type="text" autocomplete="off" autocapitalize="characters" required maxlength="80" placeholder="Например, PRIMER">
+            </label>
+            <div class="platform-org-actions">
+              <button id="admin-organization-create-button" type="submit" class="primary-button compact-primary">Создать</button>
+              <a class="ghost-button compact-ghost" data-platform-org-view="registry" href="/?screen=admin-organizations">Отмена</a>
+            </div>
+          </form>
+        </section>
+
+        <section id="platform-org-registry" class="card platform-org-registry hidden" aria-label="Реестр организаций">
+          <div class="platform-org-toolbar">
+            <label class="admin-filter-field"><span>Поиск организации</span>
+              <input type="search" id="platform-org-query" placeholder="Название или код">
+            </label>
+            <label class="admin-filter-field"><span>Статус</span>
+              <select id="platform-org-filter"><option value="">Все статусы</option>
+                <option value="active">Активные</option><option value="inactive">Неактивные</option>
+              </select>
+            </label>
+          </div>
+          <table>
+            <thead><tr><th scope="col">Организация</th><th scope="col">Статус</th><th scope="col">Программа</th>
+              <th scope="col">Администраторы</th><th scope="col">Проблемы</th></tr></thead>
+            <tbody id="platform-org-rows"></tbody>
+          </table>
+          <p id="platform-org-count" role="status"></p>
+        </section>
 
         <section class="card card--lg admin-organizations-list-card">
           <div class="report-card-head">
@@ -1728,9 +1751,9 @@
     <footer class="app-footer" aria-label="Правовая информация" aria-hidden="false">
       <div class="app-footer-documents">
         <span>Политика конфиденциальности</span>
-        <span>Согласие на обработку персональных данных</span>
+        <a href="/web/assets/docs/personal-data-consent.pdf">Согласие на обработку персональных данных</a>
       </div>
-      <span class="app-footer-release">Версия <span data-app-release-number>2.1.69</span></span>
+      <span class="app-footer-release">Версия <span data-app-release-number>2.1.70</span></span>
       <span class="app-footer-copyright">© <span data-app-footer-year></span> LIDUM</span>
     </footer>
   </main>
@@ -1746,6 +1769,6 @@
 
   <script src="/app-config.js"></script>
   <script src="/web/vendor/chart.js/chart.umd.min.js" defer></script>
-  <script type="module" src="/web/dist/main.js?v=2.1.69"></script>
+  <script type="module" src="/web/dist/main.js?v=2.1.70"></script>
 </body>
 </html>

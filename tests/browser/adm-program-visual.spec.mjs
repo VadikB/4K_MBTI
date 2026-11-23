@@ -9,13 +9,14 @@ test.afterAll(async () => { await preview?.close(); });
 for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unknown', 'confirmed']) {
   test(`ADM-PROGRAM AC06 ${role} ${status}: forms and readiness 1440/390/320 and text200`, async ({ page }, info) => {
     const rows = [];
-    for (const width of [1440, 390, 320]) for (const textScale of [1, 2]) for (const view of ['organization-data', 'questionnaire', 'people']) {
+    for (const width of [1440, 390, 320]) for (const textScale of [1, 2]) for (const view of (role === 'superadmin' ? ['people'] : ['organization-data', 'questionnaire', 'people'])) {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`${preview.base}/demo/${role}/${status}/`);
       if (role === 'superadmin') {
         await expect.poll(async () => await page.locator('#admin-open-organizations-button').isVisible() ||
           await page.locator('#admin-organizations-panel').isVisible()).toBe(true);
         if (await page.locator('#admin-open-organizations-button').isVisible()) await page.locator('#admin-open-organizations-button').click();
+        await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
       }
       const card = page.locator('[data-organization-id="3"]');
       await expect(card).toBeVisible();

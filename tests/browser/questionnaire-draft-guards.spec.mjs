@@ -57,7 +57,7 @@ async function fixture(page, { status = 200, items = [] } = {}) {
   const done = new Promise((resolve) => { initialDone = resolve; });
   const state = { authenticated: true, userId: 18, loginId: 28, status, items, reads: 0, initialHeld: false,
     programs: { 3: 11, 4: 11 }, nextRead: null, mutations: [] };
-  const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
+  const dashboard = { is_superadmin: false, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const user = () => ({ id: state.userId, email: `admin-${state.userId}@example.test`, full_name: `Synthetic admin ${state.userId}` });
   const auth = () => ({ authenticated: true, exists: true, user: user(), is_admin: true, admin_dashboard: dashboard });
   const connection = (id) => ({ organization_id: id, program_definition_id: state.programs[id],
@@ -77,7 +77,7 @@ async function fixture(page, { status = 200, items = [] } = {}) {
       state.userId = state.loginId; state.authenticated = true; return json(route, auth());
     }
     if (pathname === '/users/admin/dashboard') return json(route, dashboard);
-    if (pathname === '/users/admin/organizations') return json(route, { is_superadmin: true,
+    if (pathname === '/users/admin/organizations') return json(route, { is_superadmin: false,
       assessment_programs: [11, 12].map((id) => ({ id, name: `Synthetic pilot ${id}`, version: 'synthetic-1' })),
       items: [3, 4].map((id) => ({ id, code: `synthetic-${id}`, name: `Synthetic organization ${id}`,
         is_active: true, domains: [], admins: [], members: [], members_count: 0, reports_count: 0,
@@ -101,8 +101,6 @@ async function fixture(page, { status = 200, items = [] } = {}) {
     return json(route, {}, 404);
   });
   await page.goto(base);
-  await expect(page.locator('#admin-open-organizations-button')).toBeVisible();
-  await page.locator('#admin-open-organizations-button').click();
   await expect(card(page)).toBeVisible();
   await expect.poll(() => state.initialHeld).toBe(true);
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
@@ -231,16 +229,15 @@ test('Q-DRAFT pending read of organization A cannot overwrite organization B dra
 });
 test('Q-DRAFT pending read cannot clone a draft into a different connected assessment', async ({ page }) => {
   const f = await fixture(page); await fill(page, fields('A'));
-  const connect = card(page).locator('[data-action="connect-assessment-program"]');
-  await connect.locator('[name="program_definition_id"]').selectOption('12');
-  await connect.getByRole('button', { name: 'Подключить', exact: true }).click();
-  await expect(connect).toContainText('Подключено: Synthetic pilot 12');
+  f.state.programs[3] = 12;
+  await page.locator('#admin-organizations-panel [data-admin-area="management"]').click();
+  await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(form(page).locator('[name="assignment_ref"]')).toHaveValue('pilot-12');
   await assertValues(page, empty); await fill(page, fields('B'));
   await finishRead(page, f); await assertValues(page, fields('B'));
-  await connect.locator('[name="program_definition_id"]').selectOption('11');
-  await connect.getByRole('button', { name: 'Подключить', exact: true }).click();
-  await expect(connect).toContainText('Подключено: Synthetic pilot 11');
+  f.state.programs[3] = 11;
+  await page.locator('#admin-organizations-panel [data-admin-area="management"]').click();
+  await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await assertValues(page, fields('A'));
 });
 test('ADM-UI-02 restores pending confirmation only for its account, organization and assessment', async ({ page }) => {
@@ -271,10 +268,6 @@ test('ADM-UI-02 restores pending confirmation only for its account, organization
   await expect(form(page).locator('.admin-data-confirmation-recovery')).toBeVisible();
 
   const openData = async (org, assessmentRef) => {
-    const landing = page.locator('#admin-open-organizations-button');
-    const management = page.locator('#admin-organizations-panel');
-    await expect.poll(async () => await landing.isVisible() || await management.isVisible()).toBe(true);
-    if (await landing.isVisible()) await landing.click();
     await page.locator('#admin-organization-select').selectOption(String(org));
     await card(page, org).getByRole('button', { name: 'Данные организации', exact: true }).click();
     await expect(form(page, org).locator('[name="assignment_ref"]')).toHaveValue(assessmentRef);
@@ -327,6 +320,7 @@ test('Q-DRAFT old account read cannot erase or restore drafts after re-login', a
   await page.locator('#magic-token-input').fill('synthetic-password');
   await page.locator('#verify-magic-link-button').click();
   await expect(page.locator('#admin-organizations-account-name')).toHaveText('Synthetic admin 28');
+  await page.locator('#admin-organization-select').selectOption('3');
   await card(page).getByRole('button', { name: 'Данные организации', exact: true }).click();
   await expect(card(page).locator('[data-admin-view="organization-data"] .admin-questionnaire-load-state')).toHaveCount(0);
   await assertValues(page, empty); await fill(page, fields('B'));
