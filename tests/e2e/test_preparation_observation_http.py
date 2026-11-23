@@ -39,6 +39,8 @@ def test_status_read_is_owned_read_only_and_matches_admin_projection(monkeypatch
     admin=routes._project_admin_assessment_stage({'assignment_id':1,'preparation_status':'running',
         'preparation_operation_id':'safe-operation','preparation':operation['preparation']})
     assert admin['preparation']==one.json()['preparation']
+    assert admin['preparation']['stage_code'] == 'checking'
+    assert project({**operation, 'status': 'failed'}, now=now)['stage_code'] is None
     assert reads==[('safe-operation',99),('safe-operation',99),('foreign-operation',99)]
 
 

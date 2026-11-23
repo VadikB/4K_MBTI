@@ -32,7 +32,7 @@ def lineage_db(test_database_url):
             'participant_acquaintance_confirmations': 'id bigint,user_id bigint,organization_id bigint,assignment_ref text,questionnaire_revision_id bigint,personalized_profile_id bigint,confirmed_at timestamp',
             'assessment_preparation_jobs': 'id bigint,operation_id text,status text,user_id bigint,personalized_profile_id bigint,created_at timestamp',
             'product_cycle_preparation_operations': 'id bigint,operation_id text,status text,user_id bigint,request_json jsonb,created_at timestamp,result_json jsonb',
-            'm5_cycles': 'id bigint,cycle_id text,status text,owner_user_id bigint,organization_id bigint,assignment_id bigint,usage_scope text,personalized_profile_id bigint,created_at timestamp,collection_closed_at timestamp',
+            'm5_cycles': 'id bigint,cycle_id text,status text,owner_user_id bigint,organization_id bigint,assignment_id bigint,usage_scope text,personalized_profile_id bigint,created_at timestamp,collection_closed_at timestamp,started_at timestamp',
             'm8_results': 'id bigint,cycle_db_id bigint',
             'm8_result_revisions': 'id bigint,results_id bigint,revision_no int,payload_json jsonb',
             'm8_reports': 'id bigint,result_revision_id bigint,audience text,revision_no int,status text,c67_json jsonb',
@@ -67,6 +67,17 @@ def test_two_assignments_same_configuration_keep_their_exact_profile_job(lineage
     rows = project(lineage_db)
     assert (rows['A']['preparation_operation_id'], rows['A']['preparation_status']) == ('job-A', 'completed')
     assert (rows['B']['preparation_operation_id'], rows['B']['preparation_status']) == ('job-B', 'failed')
+
+
+def test_cancellation_availability_uses_the_exact_cycle_and_rejects_unbound_legacy(lineage_db):
+    assert {ref: row['can_cancel'] for ref, row in project(lineage_db).items()} == {'A': True, 'B': True}
+    lineage_db.execute("""INSERT INTO m5_cycles(id,cycle_id,status,owner_user_id,organization_id,assignment_id,
+        usage_scope,personalized_profile_id,created_at,started_at) VALUES
+        (1,'started-A','prepared',1,10,41,'assessment',101,NOW(),NOW()),
+        (2,'legacy-B','prepared',1,10,NULL,'assessment',102,NOW(),NULL)""")
+    assert {ref: row['can_cancel'] for ref, row in project(lineage_db).items()} == {'A': False, 'B': False}
+    lineage_db.execute('UPDATE m5_cycles SET assignment_id=42 WHERE id=2')
+    assert project(lineage_db)['B']['can_cancel'] is True
 
 
 def test_exact_product_operation_overrides_legacy_job_not_foreign_scope(lineage_db):

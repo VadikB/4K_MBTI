@@ -176,6 +176,7 @@ def project(operation, observation=None, *, source='cycle', now=None, kind=None)
     if operation.get('retry_allowed') is True:
         actions.append('retry')
     return {'operation_id': str(operation['operation_id']), 'kind': kind, 'status': status,
+            'stage_code': stage if stage in STAGES else None,
             'stage_label': label, 'explanation': explanation,
             'started_at': started.isoformat() if started else None,
             'stage_started_at': changed.isoformat() if changed else None,
