@@ -3759,6 +3759,49 @@ def get_admin_organizations(request: Request) -> AdminOrganizationsResponse:
         return _build_admin_organizations(connection, scope, actor_user_id=int(user.id))
 
 
+@router.get('/admin/organizations/{organization_id}/history')
+def read_admin_organization_history(organization_id: int, request: Request) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        organization = connection.execute(
+            "SELECT id, is_active FROM organizations WHERE id=%s", (organization_id,),
+        ).fetchone()
+        if organization is None:
+            raise HTTPException(404, detail="Organization not found")
+        # updated_at also changes on profile edits, so it cannot date lifecycle events.
+        events = connection.execute(
+            """
+            SELECT 'created' AS kind, created_at AS occurred_at, id AS source_id,
+                   NULL AS subject, NULL AS actor
+            FROM organizations WHERE id=%s AND created_at IS NOT NULL
+            UNION ALL
+            SELECT 'program_connected', c.connected_at, c.id, p.name || ' · ' || p.version,
+                   COALESCE(NULLIF(actor.full_name, ''), 'ID ' || actor.id::text)
+            FROM organization_assessment_program_connections c
+            JOIN assessment_program_definitions p ON p.id=c.program_definition_id
+            LEFT JOIN users actor ON actor.id=c.connected_by_user_id
+            WHERE c.organization_id=%s
+            UNION ALL
+            SELECT 'administrator_added', m.admitted_at, m.id,
+                   COALESCE(NULLIF(target.full_name, ''), 'ID ' || target.id::text),
+                   COALESCE(NULLIF(actor.full_name, ''), 'ID ' || actor.id::text)
+            FROM organization_memberships m
+            JOIN users target ON target.id=m.user_id
+            LEFT JOIN users actor ON actor.id=m.admitted_by_user_id
+            WHERE m.organization_id=%s AND m.role='admin' AND NOT m.is_participant
+              AND m.admission_source='admin_add' AND m.admitted_at=m.created_at
+            ORDER BY occurred_at DESC, kind, source_id DESC
+            """,
+            (organization_id, organization_id, organization_id),
+        ).fetchall()
+        return {
+            'organization_id': organization['id'],
+            'is_active': organization['is_active'],
+            'events': [dict(event) for event in events],
+        }
+
+
 @router.get('/admin/organizations/{organization_id}/purge-preview')
 def preview_admin_organization_purge(organization_id: int, request: Request) -> dict:
     user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
@@ -3794,6 +3837,7 @@ def preview_admin_organization_purge(organization_id: int, request: Request) -> 
             raise
         return {'target_type':'organization','target_id':organization_id,
             'fingerprint':purge_plan_fingerprint(connection),
+            'execution_available':_physical_organization_purge_available(),
             'tables':counts,'total_rows':sum(counts.values()),
             'accounts':preview_accounts,
             'execution_blockers':[{'user_id': account['user_id'], 'email': account['email'],
@@ -4847,6 +4891,28 @@ def restore_admin_organization(organization_id: int, request: Request) -> AdminO
         )
         connection.commit()
         return _build_admin_organizations(connection)
+
+
+@router.get("/admin/organizations/{organization_id}/purge/operations/{operation_id}")
+def read_admin_organization_purge_operation(
+    organization_id: int,
+    operation_id: str,
+    request: Request,
+    preview_fingerprint: str = Query(min_length=64, max_length=64),
+) -> dict:
+    user = web_session_service.get_user_by_token(request.cookies.get(SESSION_COOKIE_NAME))
+    with get_connection() as connection:
+        _require_superadmin(connection, user)
+        try:
+            receipt = read_receipt(
+                connection, operation_id=operation_id, target_type="organization",
+                target_id=organization_id, fingerprint=preview_fingerprint, actor_user_id=int(user.id),
+            )
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
+        if receipt is None:
+            raise HTTPException(404, detail="DELETION_RECEIPT_NOT_FOUND")
+        return {"ok": True, "organization_id": organization_id, "operation_id": receipt["operation_id"]}
 
 
 @router.post("/admin/organizations/{organization_id}/purge", response_model=AdminOrganizationsResponse)

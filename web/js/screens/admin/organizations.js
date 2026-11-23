@@ -21,6 +21,7 @@ import { participantReportAudience } from '../../readiness-presentation.js';
 import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
 import { questionnaireAssignmentState } from './questionnaire-assignment-state.js';
 import { buildInitials } from '../../utils/format.js';
+import { mountOrganizationHistory, mountOrganizationPurgeRecovery, pendingOrganizationPurges } from './organization-history.js';
 import adminContextChoices from '../../../../assessment_definitions/contexts/competencies_4k/1.1/admin_context_choices.json' with { type: 'json' };
 
 let selectedOrganizationId = null;
@@ -2240,46 +2241,6 @@ export const checkAdminOrganizationConfirmation = async (organizationId, revisio
   }
 };
 
-export const deleteOrDeactivateAdminOrganization = async (organizationId, organizationName = '') => {
-  const previousItems = Array.isArray(state.adminOrganizations?.items) ? state.adminOrganizations.items : [];
-  const previousOrg = previousItems.find((item) => Number(item.id) === Number(organizationId));
-  const label = String(organizationName || previousOrg?.name || 'Организация').trim();
-  try {
-    const data = await requestOrganizations(
-      '/users/admin/organizations/' + organizationId,
-      { method: 'DELETE', headers: {} },
-      'Не удалось удалить или деактивировать организацию.',
-    );
-    const nextItems = Array.isArray(data?.items) ? data.items : [];
-    const nextOrg = nextItems.find((item) => Number(item.id) === Number(organizationId));
-    if (!nextOrg) {
-      setStatus('Организация «' + label + '» удалена.', 'success');
-      return;
-    }
-    if (nextOrg.is_active === false) {
-      setStatus('Организация «' + label + '» деактивирована.', 'success');
-      return;
-    }
-    setStatus('Организация «' + label + '» обновлена.', 'success');
-  } catch (error) {
-    setStatus(error.message || 'Не удалось удалить или деактивировать организацию «' + label + '».', 'error');
-  }
-};
-
-export const restoreAdminOrganization = async (organizationId, organizationName = '') => {
-  const label = String(organizationName || 'Организация').trim();
-  try {
-    await requestOrganizations(
-      '/users/admin/organizations/' + organizationId + '/restore',
-      { method: 'POST', headers: {} },
-      'Не удалось восстановить организацию.',
-    );
-    setStatus('Организация «' + label + '» восстановлена.', 'success');
-  } catch (error) {
-    setStatus(error.message || 'Не удалось восстановить организацию «' + label + '».', 'error');
-  }
-};
-
 const readAdminOrganizationProgram = async (organizationId, identityEpoch, identityKey) => {
   const readGeneration = organizationsRequestGeneration;
   const response = await fetch('/users/admin/organizations/' + organizationId + '/assessment-program', {
@@ -2462,38 +2423,6 @@ export const connectAdminOrganizationProgram = async (organizationId, programDef
   } finally {
     if (state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey) programConnectionRequestsInFlight.delete(connectionKey);
   }
-};
-
-export const purgeAdminOrganization = async (organizationId, confirmationCode, previewFingerprint, organizationName = '') => {
-  const label = String(organizationName || 'Организация').trim();
-  try {
-    await requestOrganizations(
-      '/users/admin/organizations/' + organizationId + '/purge',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          confirmation_code: String(confirmationCode || '').trim(),
-          preview_fingerprint: String(previewFingerprint || '').trim(),
-          operation_id: createOperationId(),
-          acknowledge_irreversible: true,
-        }),
-      },
-      'Не удалось физически удалить организацию.',
-    );
-    setStatus(
-      'Организация «' + label + '», все связанные данные и orphan-аккаунты физически удалены. Аккаунты участников других организаций сохранены.',
-      'success',
-    );
-  } catch (error) {
-    setStatus(error.message || 'Не удалось физически удалить организацию «' + label + '».', 'error');
-  }
-};
-
-export const previewAdminOrganizationPurge = async (organizationId) => {
-  const response = await fetch('/users/admin/organizations/' + organizationId + '/purge-preview', {
-    credentials: 'same-origin',
-  });
-  return readApiResponse(response, 'Не удалось построить состав полного удаления.');
 };
 
 export const pendingAdminAccountPurges = () => getPendingAccountPurges(Number(currentIdentityKey()));
@@ -3064,6 +2993,15 @@ const registryFilter = document.getElementById('platform-org-filter');
 const registryRows = document.getElementById('platform-org-rows');
 const registryCount = document.getElementById('platform-org-count');
 const organizationPageUrl = (id) => '/?screen=admin-organizations&org=' + Number(id);
+const platformOrganizationTabs = (id, history = false) =>
+  '<nav class="platform-org-card-nav" aria-label="Разделы организации">' +
+  (history
+    ? '<a href="' + organizationPageUrl(id) + '" data-platform-org-view="card" data-org-id="' + id + '">Обзор</a>' +
+      '<a href="' + organizationPageUrl(id) + '#platform-org-admins-heading" data-platform-org-view="card" data-org-admins data-org-id="' + id + '">Администраторы</a>'
+    : '<a href="#platform-org-overview" data-platform-org-jump aria-current="page">Обзор</a>' +
+      '<a href="#platform-org-admins-heading" data-platform-org-jump>Администраторы</a>') +
+  '<a href="' + organizationPageUrl(id) + '&amp;view=history" data-platform-org-view="history" data-org-id="' + id + '"' +
+  (history ? ' aria-current="page"' : '') + '>Журнал и операции</a></nav>';
 const preparationProblemsUrl = (id) => '/?screen=admin-platform-problems&org=' + Number(id);
 const problemCount = (id) => preparationProblemCounts === null ? '—' : String(preparationProblemCounts.get(Number(id)) || 0);
 const renderPreparationProblemCounts = () => {
@@ -3156,8 +3094,14 @@ adminOrganizationsPanel?.addEventListener('click', (event) => {
     clearProgramConnectionFeedback();
     setStatus('');
     platformOrganizationView = link.dataset.platformOrgView;
-    syncUrlState('admin-organizations', { organizationView: platformOrganizationView });
+    const organizationId = platformOrganizationView === 'history' ? Number(link.dataset.orgId) : null;
+    if (organizationId) selectedOrganizationId = organizationId;
+    syncUrlState('admin-organizations', { organizationId, organizationView: platformOrganizationView });
     renderAdminOrganizations();
+    if (organizationId) {
+      adminOrganizationsList.querySelector('#org-history-heading')?.focus();
+      return;
+    }
   }
   adminOrganizationsTitle?.focus();
 });
@@ -3169,14 +3113,15 @@ export const renderAdminOrganizations = () => {
   const organizations = Array.isArray(data?.items) ? data.items : [];
   clearInaccessibleOrganizationState(organizations);
   const isSuperadmin = Boolean(data?.is_superadmin);
+  const isHistory = isSuperadmin && platformOrganizationView === 'history';
   const selectedOrganization = organizations.find((org) => Number(org.id) === Number(selectedOrganizationId))
-    || (isSuperadmin && platformOrganizationView === 'card' ? null
+    || (isSuperadmin && (platformOrganizationView === 'card' || isHistory) ? null
       : organizations.find((org) => org.is_active !== false) || organizations[0]);
   selectedOrganizationId = selectedOrganization ? Number(selectedOrganization.id) : null;
   const view = managementCopy[organizationViews.get(selectedOrganizationId) || 'people'];
   renderAdminOrganizationAccount(selectedOrganization?.name);
   const showingCreate = isSuperadmin && platformOrganizationView === 'create';
-  const showingCard = isSuperadmin && platformOrganizationView === 'card' && selectedOrganization;
+  const showingCard = isSuperadmin && (platformOrganizationView === 'card' || isHistory) && selectedOrganization;
   const showingRegistry = isSuperadmin && !showingCreate && !showingCard;
   if (adminOrganizationsTitle) adminOrganizationsTitle.textContent = showingCreate ? 'Создать организацию' :
     showingCard ? selectedOrganization.name : isSuperadmin ? 'Организации' : view.title;
@@ -3188,6 +3133,29 @@ export const renderAdminOrganizations = () => {
   if (stateBadge) stateBadge.innerHTML = showingCard ? organizationStateBadge(selectedOrganization) : '';
   const physicalPurgeAvailable = Boolean(data?.physical_purge_available);
   const purgePreviewAvailable = Boolean(data?.purge_preview_available);
+  const actorId = Number(currentIdentityKey());
+  const identityEpoch = state.identityEpoch;
+  const isCurrent = () => Number(currentIdentityKey()) === actorId && state.identityEpoch === identityEpoch &&
+    state.adminOrganizations?.is_superadmin === true;
+  const onPurged = (id) => {
+    if (!isCurrent()) return;
+    state.adminOrganizations.items = state.adminOrganizations.items.filter((item) => Number(item.id) !== id);
+    persistAssessmentContext();
+    if (state.currentScreen !== 'admin-organizations') return;
+    if (Number(selectedOrganizationId) === id && platformOrganizationView !== 'registry') {
+      platformOrganizationView = 'registry';
+      syncUrlState('admin-organizations', { replace: true });
+    } else if (platformOrganizationView !== 'registry') {
+      return;
+    }
+    renderAdminOrganizations();
+    setStatus('Полное удаление организации подтверждено квитанцией.', 'success', null);
+  };
+  const pendingOrganizations = isSuperadmin ? pendingOrganizationPurges(actorId) : [];
+  const organizationPurgeRecoveryMarkup = pendingOrganizations.map((command) =>
+    '<section class="platform-org-summary-panel" data-org-purge-recovery="' + command.organizationId +
+    '"><h3>Удаление организации · ' + escapeHtml(command.confirmation_code) + '</h3><div></div></section>',
+  ).join('');
   const pendingPurges = pendingAdminAccountPurges();
   const purgeRecoveryMarkup = pendingPurges.length ? '<section class="card card--inset admin-purge-recovery" role="status">' +
     '<h3>Проверка полного удаления</h3><p>Исход подтверждённой операции пока не установлен. ' +
@@ -3217,10 +3185,14 @@ export const renderAdminOrganizations = () => {
   registry?.classList.toggle('hidden', !showingRegistry);
   if (showingRegistry) renderOrganizationRegistry();
   const listCard = adminOrganizationsList.closest('.admin-organizations-list-card');
-  listCard?.classList.toggle('hidden', showingCreate || (showingRegistry && !staleMarkup && !purgeRecoveryMarkup));
+  listCard?.classList.toggle('hidden', showingCreate || (showingRegistry && !staleMarkup && !purgeRecoveryMarkup && !organizationPurgeRecoveryMarkup));
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', isSuperadmin || organizations.length <= 1);
   if (showingCreate || showingRegistry) {
-    adminOrganizationsList.innerHTML = showingRegistry ? purgeRecoveryMarkup + staleMarkup : '';
+    adminOrganizationsList.innerHTML = showingRegistry ? organizationPurgeRecoveryMarkup + purgeRecoveryMarkup + staleMarkup : '';
+    if (showingRegistry) for (const command of pendingOrganizations) {
+      mountOrganizationPurgeRecovery(adminOrganizationsList.querySelector('[data-org-purge-recovery="' +
+        command.organizationId + '"] > div'), command, { isCurrent, onPurged });
+    }
     if (showingCreate) showOrganizationCreateAttempt();
     return;
   }
@@ -3229,6 +3201,22 @@ export const renderAdminOrganizations = () => {
     adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + '<p class="report-empty-state">' + (isSuperadmin
       ? 'Организации пока не созданы.'
       : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
+    return;
+  }
+  if (isHistory && selectedOrganization) {
+    const id = Number(selectedOrganization.id);
+    adminOrganizationsList.innerHTML = staleMarkup + platformOrganizationTabs(id, true) +
+      '<div class="platform-org-summary organization-history"></div>';
+    mountOrganizationHistory(adminOrganizationsList.querySelector('.organization-history'), selectedOrganization, {
+      actorId, isCurrent, onPurged, purgePreviewAvailable, physicalPurgeAvailable,
+      onAvailability: (organizationId, isActive) => {
+        const item = state.adminOrganizations?.items?.find((org) => Number(org.id) === organizationId);
+        if (!item) return;
+        item.is_active = isActive;
+        persistAssessmentContext();
+        if (stateBadge) stateBadge.innerHTML = organizationStateBadge(item);
+      },
+    });
     return;
   }
   const pendingInvitations = pendingInvitationOperations().filter((operation) =>
@@ -3576,10 +3564,7 @@ export const renderAdminOrganizations = () => {
         '" data-organization-active="' +
         (isActive ? 'true' : 'false') +
         '">' +
-        (isSuperadmin ? '<nav class="platform-org-card-nav" aria-label="Разделы организации">' +
-        '<a href="#platform-org-overview" data-platform-org-jump>Обзор</a>' +
-        '<a href="#platform-org-admins-heading" data-platform-org-jump>Администраторы</a>' +
-        '<a href="#platform-org-operations" data-platform-org-jump>Операции</a></nav>' +
+        (isSuperadmin ? platformOrganizationTabs(orgId) +
         '<div class="platform-org-summary" id="platform-org-overview" tabindex="-1">' +
         '<div class="platform-org-pair">' + programMarkup +
         '<section class="platform-org-summary-panel"><h3>Администраторы</h3><p>' +
@@ -3593,16 +3578,10 @@ export const renderAdminOrganizations = () => {
         '<p class="platform-org-note">Анкету загружает администратор в своём кабинете. Чтобы помочь с анкетой, ' +
         (isActive ? '<a class="text-link" href="#platform-org-add-admin" data-platform-org-jump>добавьте сотрудника вашей команды</a>'
           : 'добавьте сотрудника вашей команды') + ' по его именной рабочей почте.</p></section></div>' +
-        '<div class="admin-organization-head" id="platform-org-operations" tabindex="-1"><div class="admin-organization-stats">' +
+        '<div class="admin-organization-head"><div class="admin-organization-stats">' +
         '<button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
         (batchIsRunning || !isActive ? ' disabled' : '') +
-        '>Подготовить кейсы всем</button>' +
-        (isActive
-          ? '<button class="ghost-button compact-ghost danger" type="button" data-action="delete-organization">Деактивировать</button>'
-          : '<button class="ghost-button compact-ghost" type="button" data-action="restore-organization">Восстановить</button>') +
-        (purgePreviewAvailable
-          ? '<button class="ghost-button compact-ghost danger" type="button" data-action="purge-organization" data-execution-available="' +
-            String(physicalPurgeAvailable) + '">Удалить полностью</button>' : '') + '</div>' +
+        '>Подготовить кейсы всем</button></div>' +
         '</div>' : tabsMarkup + (activeView === 'people' ? peopleContext : '')) +
         renderOrganizationBatchProgress(orgId) +
         (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
@@ -3728,7 +3707,7 @@ export const openAdminOrganizations = async ({
   const platformAccess = state.adminDashboard?.is_superadmin || state.adminOrganizations?.is_superadmin;
   const requestedOrganization = platformAccess && /^[1-9][0-9]*$/.test(organizationParam || '')
     && Number.isSafeInteger(Number(organizationParam)) ? Number(organizationParam) : null;
-  platformOrganizationView = requestedOrganization ? 'card' :
+  platformOrganizationView = requestedOrganization ? (params.get('view') === 'history' ? 'history' : 'card') :
     !openRegistry && platformAccess && params.get('view') === 'create' ? 'create' : 'registry';
   if (requestedOrganization) selectedOrganizationId = requestedOrganization;
   const identityEpoch = state.identityEpoch;

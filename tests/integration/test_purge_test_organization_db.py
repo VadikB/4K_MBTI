@@ -1,12 +1,19 @@
 import hashlib
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from types import SimpleNamespace
 from uuid import uuid4
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 import psycopg
+from psycopg.rows import dict_row, tuple_row
 import pytest
 
+from Api import org_access, routes
 from Api.deletion_ledger import append_intent, assert_reconciled, ensure_receipt_schema, record_receipt
+from Api.schemas import AdminOrganizationsResponse
 from scripts.purge_test_organization import (
     build_account_purge_plan, build_purge_plan, purge_account,
     purge_organization, purge_plan_fingerprint,
@@ -138,6 +145,157 @@ def purge_db(test_database_url):
     finally:
         with psycopg.connect(test_database_url) as connection:
             connection.execute(psycopg.sql.SQL("DROP SCHEMA {} CASCADE").format(psycopg.sql.Identifier(schema)))
+
+
+@pytest.fixture
+def organization_http(purge_db, monkeypatch):
+    purge_db.execute("""ALTER TABLE organizations ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT '2026-11-17 09:30',
+        ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT '2026-11-22 15:00'""")
+    purge_db.execute("ALTER TABLE users ADD COLUMN full_name TEXT")
+    purge_db.execute("UPDATE users SET full_name='Синтетический администратор' WHERE id=10")
+    purge_db.execute("""ALTER TABLE organization_memberships
+        ADD COLUMN role TEXT NOT NULL DEFAULT 'member',
+        ADD COLUMN is_participant BOOLEAN NOT NULL DEFAULT TRUE,
+        ADD COLUMN admission_source TEXT, ADD COLUMN admitted_by_user_id BIGINT,
+        ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT '2026-11-19 10:30',
+        ADD COLUMN admitted_at TIMESTAMP""")
+    purge_db.execute("""UPDATE organization_memberships SET role='admin', is_participant=FALSE,
+        admission_source='admin_add', admitted_at=created_at, admitted_by_user_id=20
+        WHERE organization_id=1 AND user_id=10""")
+    purge_db.execute("""CREATE TABLE assessment_program_definitions(
+        id BIGINT PRIMARY KEY, name TEXT NOT NULL, version TEXT NOT NULL)""")
+    purge_db.execute("INSERT INTO assessment_program_definitions VALUES (1111, 'Синтетическая программа', '1.2')")
+    purge_db.execute("""ALTER TABLE organization_assessment_program_connections
+        ADD COLUMN connected_at TIMESTAMP NOT NULL DEFAULT '2026-11-18 14:12',
+        ADD COLUMN program_definition_id BIGINT NOT NULL DEFAULT 1111 REFERENCES assessment_program_definitions(id)""")
+    purge_db.execute("""INSERT INTO organization_assessment_program_connections
+        (id,organization_id,connected_by_user_id,is_current,program_ref)
+        VALUES (923,1,20,TRUE,'synthetic')""")
+    purge_db.execute("""INSERT INTO organization_assessment_assignments
+        VALUES (913,1,30,20,'active','synthetic')""")
+    ensure_receipt_schema(purge_db)
+    purge_db.commit()
+
+    actors = {
+        "super": SimpleNamespace(id=99, email="operator@example.test"),
+        "other-super": SimpleNamespace(id=98, email="other-operator@example.test"),
+        "org-admin": SimpleNamespace(id=10, email="orphan@example.test"),
+        "member": SimpleNamespace(id=30, email="shared@example.test"),
+    }
+
+    @contextmanager
+    def get_connection():
+        purge_db.row_factory = dict_row
+        try:
+            yield purge_db
+        finally:
+            purge_db.rollback()
+            purge_db.row_factory = tuple_row
+
+    monkeypatch.setattr(routes, "get_connection", get_connection)
+    monkeypatch.setattr(routes.web_session_service, "get_user_by_token", actors.get)
+    monkeypatch.setattr(org_access, "has_superadmin_access", lambda _db, actor: actor.id in {98, 99})
+    monkeypatch.setattr(org_access, "is_platform_protected_account", lambda *_a, **_kw: False)
+    monkeypatch.setattr(org_access, "assign_user_organization_from_email", lambda *_a, **_kw: None)
+    monkeypatch.setattr(routes.settings, "db_name", "product4k_pytest_ux04")
+    monkeypatch.setattr(routes.settings, "deletion_ledger_path", "")
+    monkeypatch.setattr(routes, "_invalidate_deleted_accounts", lambda _ids: None)
+    monkeypatch.setattr(routes, "_protected_account_emails", lambda: set())
+    monkeypatch.setattr(routes, "_build_admin_organizations", lambda _db: AdminOrganizationsResponse(
+        title="Организации", subtitle="", is_superadmin=True, physical_purge_available=True, items=[],
+    ))
+    app = FastAPI()
+    app.include_router(routes.router)
+    with TestClient(app) as client:
+        client.cookies.set(routes.SESSION_COOKIE_NAME, "super")
+        yield client, actors
+
+
+def test_organization_history_and_lifecycle_preserve_report_assignment_and_current_scope(purge_db, organization_http):
+    http, actors = organization_http
+    url = "/users/admin/organizations/1"
+    history = http.get(f"{url}/history").json()
+    assert history["organization_id"] == 1 and history["is_active"] is True
+    assert [(event["kind"], event["occurred_at"], event["actor"]) for event in history["events"]] == [
+        ("administrator_added", "2026-11-19T10:30:00", "ID 20"),
+        ("program_connected", "2026-11-18T14:12:00", "ID 20"),
+        ("created", "2026-11-17T09:30:00", None),
+    ]
+    assert http.get("/users/admin/organizations/999/history").status_code == 404
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "org-admin")
+    assert http.get(f"{url}/history").status_code == 403
+    assert http.get(f"{url}/purge-preview").status_code == 403
+    assert http.delete(url).status_code == 403
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "super")
+
+    def assert_scope(expected):
+        purge_db.row_factory = dict_row
+        try:
+            assert org_access.get_admin_scope(purge_db, actors["org-admin"]).organization_ids == expected
+            assert not org_access.get_admin_scope(purge_db, actors["member"]).can_admin
+        finally:
+            purge_db.rollback()
+            purge_db.row_factory = tuple_row
+
+    def retained_rows():
+        return (
+            purge_db.execute("SELECT * FROM organization_assessment_assignments WHERE organization_id=1").fetchall(),
+            purge_db.execute("SELECT * FROM assessment_results").fetchall(),
+            purge_db.execute("SELECT * FROM organization_memberships WHERE organization_id=1 ORDER BY id").fetchall(),
+        )
+
+    before = retained_rows()
+    assert all(before)
+    assert_scope((1,))
+    assert http.delete(url).status_code == 200
+    assert http.get(f"{url}/history").json() == {**history, "is_active": False}
+    assert_scope(())
+    assert retained_rows() == before
+    assert http.post(f"{url}/restore").status_code == 200
+    assert http.get(f"{url}/history").json() == history
+    assert_scope((1,))
+    assert retained_rows() == before
+
+
+def test_organization_purge_receipt_matches_original_target_actor_and_preview(purge_db, organization_http, monkeypatch):
+    http, _ = organization_http
+    url = "/users/admin/organizations/1"
+    monkeypatch.setattr(routes, "_protected_account_emails", lambda: {"orphan@example.test"})
+    protected = http.get(f"{url}/purge-preview").json()
+    assert protected["execution_blockers"] == [
+        {"email": "orphan@example.test", "reason": "configured_account", "user_id": 10},
+    ]
+    command = {"confirmation_code": "purge-me", "acknowledge_irreversible": True,
+        "preview_fingerprint": protected["fingerprint"], "operation_id": "ux04-purge-operation"}
+    assert http.post(f"{url}/purge", json=command).json()["detail"] == "CANNOT_PURGE_ORGANIZATION_WITH_CONFIGURED_ACCOUNT"
+    monkeypatch.setattr(routes, "_protected_account_emails", lambda: set())
+    preview = http.get(f"{url}/purge-preview").json()
+    assert preview["execution_available"] is True
+    assert {account["email"]: account["will_delete_account"] for account in preview["accounts"]} == {
+        "orphan@example.test": True, "shared@example.test": False,
+    }
+    command["preview_fingerprint"] = preview["fingerprint"]
+    receipt_url = f"{url}/purge/operations/{command['operation_id']}"
+    assert http.get(receipt_url, params={"preview_fingerprint": preview["fingerprint"]}).status_code == 404
+    purge_db.execute("UPDATE organization_invitations SET payload='changed' WHERE id=701")
+    purge_db.commit()
+    assert http.post(f"{url}/purge", json=command).json()["detail"] == "PURGE_PREVIEW_STALE"
+    command["preview_fingerprint"] = http.get(f"{url}/purge-preview").json()["fingerprint"]
+    assert http.post(f"{url}/purge", json=command).status_code == 200
+    assert http.get(f"{url}/history").status_code == 404
+    params = {"preview_fingerprint": command["preview_fingerprint"]}
+    expected = {"ok": True, "organization_id": 1, "operation_id": command["operation_id"]}
+    assert http.get(receipt_url, params=params).json() == expected
+    assert http.get(receipt_url, params={"preview_fingerprint": "0" * 64}).status_code == 409
+    assert http.get(receipt_url.replace("/1/", "/2/"), params=params).status_code == 409
+    assert http.post(f"{url}/purge", json=command).status_code == 200
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "other-super")
+    assert http.get(receipt_url, params=params).json()["detail"] == "DELETION_RECEIPT_ACTOR_MISMATCH"
+    http.cookies.set(routes.SESSION_COOKIE_NAME, "member")
+    assert http.get(receipt_url, params=params).status_code == 403
+    assert purge_db.execute("SELECT id FROM organizations").fetchall() == [(2,)]
+    assert purge_db.execute("SELECT id FROM users ORDER BY id").fetchall() == [(20,), (30,)]
 
 
 def test_dry_run_plan_does_not_change_data(purge_db):
