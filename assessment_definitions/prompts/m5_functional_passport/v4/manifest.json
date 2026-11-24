@@ -10,7 +10,7 @@
     },
     {
       "name": "challenger.md",
-      "sha256": "7d0a25968c5681c00c9465e6c344437de564ff25edcee60debee80134ad71157"
+      "sha256": "7f1ff53cb85c744fd2a1757f0ea1d7fe128689f239a7f9bf9ff4584fd223294c"
     },
     {
       "name": "generator.md",
@@ -26,7 +26,7 @@
     },
     {
       "name": "tester-addendum.md",
-      "sha256": "20849ab3f70a9929c7c753588bbe63546f9f88ed633b02b36af32573677bbcc9"
+      "sha256": "d3795bcfd7a45818cc5bb1631abc28350fb22d1d4fe16fb31a19462a36ae0eb8"
     },
     {
       "name": "tester-protocol.json",
