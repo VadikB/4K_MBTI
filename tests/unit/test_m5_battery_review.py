@@ -7,6 +7,7 @@ import pytest
 from Api import m5_functional_generation_service as service
 from Api.cycle_execution_manifest import BATTERY_CASE_PACKAGE, M5_BATTERY_REVIEW_PACKAGE, ROOT
 from Api.m5_battery_contract import RULE_PACKAGE
+from Api.m5_functional_tester import aggregate, normalize_results
 from Api.m5_passport_generation import CURRENT_AS_PACKAGE, load_bank_case
 from tests.integration.test_m5_battery_scenario_db import PreparationGateway, reference
 
@@ -57,6 +58,69 @@ def test_resolve_all_nine_before_gateway():
     spec02 = {c["check_id"]: c for c in snapshot(2)["applicability_plan"]["required_checks"]}
     assert "выборка является существенным условием" in spec02["invariant:CASE.SPEC.02.I05"]["requirement"]["case_content"]
     assert "сообщении коллеге или черновике заказчику" in spec02["indicator:K1.I09"]["requirement"]["case_content"]
+
+
+
+def test_replay_spec02_challenger_009_requires_five_resolutions():
+    # Exact stored response from the synthetic SPEC.02 v0.6 admission on 2026-11-24.
+    recorded = json.loads(
+        (ROOT / "tests/fixtures/m5/spec02-challenger-009-response.txt").read_text(encoding="utf-8")
+    )
+    check_ids = (
+        "indicator:K4.I13", "indicator:K4.I14", "indicator:K4.I16", "indicator:K4.I17",
+        "indicator:K1.I06", "indicator:K1.I09", "critical_prohibition:01", "critical_prohibition:02",
+    )
+    plan = {
+        "required_checks": [{"check_id": check_id, "mandatory": True, "protected": True}
+                            for check_id in check_ids],
+        "not_applicable_checks": [],
+    }
+    candidate_checksum = "6dd4ebfd727a9bbaaa9bf0d865b66867500e7c4cac4fa564031982e1639880dc"
+    deterministic = {"status": "PASS", "checks": [{"result": "PASS"}]}
+    resolutions = {
+        "indicator:K4.I16": (
+            "M01 задаёт четыре независимых требования. M02 и M03 различают плановый и подтверждённый "
+            "срок A, M04 отдельно описывает план B. Эти сведения позволяют сравнить A и B по требованиям M01."
+        ),
+        "indicator:K4.I17": (
+            "M03 подтверждает ручной этап и срок A от восьми дней. M04 помечает срок и охват B как плановые. "
+            "Участник может отдельно оценить риск задержки A и риск неподтверждённого результата B."
+        ),
+        "indicator:K1.I06": (
+            "P00 задаёт две письменные задачи, M01 отделяет требования заказчика, а M05 ограничивает "
+            "доказательство выборкой. Участник может выбрать факты, относящиеся к задаче, и указать границы вывода."
+        ),
+        "critical_prohibition:01": (
+            "M01 задаёт срок, охват, критерии и подтверждённый объём. Условия A в M02–M03 и B в M04–M05 "
+            "описывают те же параметры без ценового преимущества как основания выбора."
+        ),
+        "critical_prohibition:02": (
+            "M04 обозначает охват B в 40 заявок как план. M05 подтверждает данные по 12 заявкам и "
+            "явно ограничивает вывод выборкой. Пригодность B на весь охват остаётся открытой."
+        ),
+    }
+
+    original = service._bound_batch_checks(recorded, plan["required_checks"], candidate_checksum)
+    assert [row["check_id"] for row in original] == list(check_ids)
+    assert all(row["status"] == "PASS" and row["reason"] for row in original)
+    assert {row["check_id"] for row in original if not row["adversarial_review"]["resolution"]} == set(resolutions)
+    before = aggregate(deterministic, normalize_results(plan, original))
+    assert before["status"] == "INCOMPLETE"
+    assert not before["admitted_for_participant"]
+    assert {row["check_id"]: row["status"] for row in before["incomplete_checks"]} == dict.fromkeys(
+        resolutions, "TECHNICAL_ERROR",
+    )
+
+    control = deepcopy(recorded)
+    for row in control["checks"]:
+        if row["check_id"] in resolutions:
+            assert row["adversarial_review"] == {"candidate_conflicts": [], "resolution": ""}
+            row["adversarial_review"]["resolution"] = resolutions[row["check_id"]]
+    corrected = service._bound_batch_checks(control, plan["required_checks"], candidate_checksum)
+    after = aggregate(deterministic, normalize_results(plan, corrected))
+    assert after["status"] == "PASS"
+    assert after["admitted_for_participant"]
+    assert after["verification_errors"] == []
 
 
 class PairedGateway(PreparationGateway):
@@ -169,6 +233,30 @@ def test_paired_decisions(mode, outcome):
         if mode == "malformed":
             assert batch["calls"][1]["response_content"] == "["
             assert len(batch["parse_failures"]) == 2
+
+
+
+def test_battery_review_requests_explicit_resolution_from_both_roles():
+    frozen, gateway = snapshot(2), PreparationGateway("pass")
+    generated = service.generate(frozen, gateway)
+    service.test_candidate(frozen, generated, gateway)
+
+    reviewers = set()
+    for routing, messages, payload in gateway.calls:
+        role = routing.split(":")[1]
+        if role not in {"tester", "challenger"}:
+            continue
+        reviewers.add(role)
+        resolution = payload["required_output"]["checks"][0]["adversarial_review"]["resolution"]
+        assert "PASS по обязательному защищённому критерию" in resolution
+        assert "из evidence_paths" in resolution
+        assert "При пустом candidate_conflicts" in resolution
+        assert "каждый указанный конфликт" in resolution
+        assert "Пустая строка даёт TECHNICAL_ERROR" in resolution
+        prompt = messages[0 if role == "challenger" else 1]["content"]
+        assert "adversarial_review.resolution" in prompt
+        assert "Пустой resolution даёт TECHNICAL_ERROR" in prompt
+    assert reviewers == {"tester", "challenger"}
 
 
 def test_server_detects_lost_recipient_without_a_reviewer():

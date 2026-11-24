@@ -808,7 +808,15 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         }
         payload_base.update(review_ref, risk_context=plan["risk_context"],
                             m2_indicator_descriptors=plan["indicator_descriptors"])
-        payload_base["required_output"]["checks"][0]["findings"][0].update(
+        required_check_output = payload_base["required_output"]["checks"][0]
+        required_check_output["adversarial_review"]["resolution"] = (
+            "Для PASS по обязательному защищённому критерию заполни содержательную строку со ссылками "
+            "на материалы и поля из evidence_paths, даже если вывод уже есть в reason. "
+            "При пустом candidate_conflicts укажи, какие материалы сопоставил и почему критерий выполнен. "
+            "При непустом candidate_conflicts объясни, как разрешён каждый указанный конфликт. "
+            "Пустая строка даёт TECHNICAL_ERROR. Для FAIL она допустима."
+        )
+        required_check_output["findings"][0].update(
             requirement_ref="exact check_id", expected="known requirement, if available",
             actual="observed value, if available",
         )
