@@ -642,6 +642,9 @@ class ProductCyclePreparationQueue:
                     package_ref=generation_package_ref,
                     provider_contract=load_provider_contract(provider_path),
                     project_role=project_role, project_role_prompt=project_role_prompt,
+                    battery_pilot=(frozen_cycle.get("catalog_ref_json") or {}).get("battery_pilot") is True,
+                    battery_scenario_package=(resolve_cycle_dependency(dict(frozen_cycle), "m5_battery_scenario")
+                                              if "m5_battery_scenario" in dependencies else None),
                 )
                 provider = snapshot["refs"]["provider_contract"]
                 try:

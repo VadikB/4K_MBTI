@@ -6,6 +6,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 
+from Api.m5_battery_contract import source_case_version
 from Api.m5_functional_tester import checksum
 from Api.m5_passport_v12 import INVARIANT_LINKS, REFERENCE_ID
 
@@ -24,7 +25,7 @@ def build_plan(snapshot: dict, protocol: dict, contract_path: Path, m2: dict) ->
     overlay = contract.get("cases", {}).get(case_id, {})
     if (contract.get("id"), contract.get("version"), contract.get("schema_version"), contract.get("scope"),
             overlay.get("case_version"), overlay.get("passport_sha256")) != (
-        "m5-functional-passport-content", "2.0.0", 2, "battery_v0.3_qa", version, source["sha256"],
+        "m5-functional-passport-content", "2.0.0", 2, "battery_v0.3_qa", source_case_version(version, pilot=snapshot.get("battery_pilot", False)), source["sha256"],
     ):
         raise ValueError("M5_BATTERY_REVIEW_CASE_VERSION_MISMATCH")
     contract_ref = {key: contract[key] for key in ("id", "version", "sources")}

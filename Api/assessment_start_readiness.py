@@ -65,7 +65,7 @@ def plan_gate(content: dict, cycle: dict) -> dict | None:
 
 def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
     """Check mandatory stages and the terminal candidate; never alter admission."""
-    from Api.m5_functional_generation_service import checksum as candidate_checksum
+    from Api.m5_functional_generation_service import checksum as candidate_checksum, review_dispatches_match
     from Api.m5_functional_tester import aggregate
     candidate = trace.get("accepted_as")
     _require(isinstance(candidate, dict) and candidate_checksum(candidate) == trace.get("candidate_checksum"),
@@ -87,6 +87,9 @@ def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
     if repair:
         _require((repair.get("repair_generation_operation") or {}).get("operation_id") == generation["operation_id"],
                  "FINAL_REPAIR_MISMATCH")
+    _require(review_dispatches_match(tester, candidate_sha256=trace["candidate_checksum"],
+                                    review_round=2 if repair else 1, operation_id=operation_id),
+             "REVIEW_DISPATCH_MISMATCH")
     batch_ids = [generation["operation_id"]]
     for name in ("provider_operation", "challenger_operation"):
         operation = tester.get(name) or {}
@@ -140,11 +143,15 @@ def read(connection, *, cycle_id: str, user_id: int) -> dict:
             _require(len(operations) == 1, "PREPARATION_OPERATION_MISSING")
             op = operations[0]
             legacy = 'assignment_id' not in op['request_json']
-            _require(op["status"] == "completed"
-                     and all(op["request_json"].get(key) == value for key, value in scope.items()
-                             if not (legacy and key == 'assignment_id'))
-                     and str((op.get("result_json") or {}).get("plan", {}).get("cycle_id")) == str(cycle_id),
-                     "PREPARATION_SCOPE_MISMATCH")
+            mismatches = [key for key, value in scope.items()
+                          if op["request_json"].get(key) != value and not (legacy and key == "assignment_id")]
+            if op["status"] != "completed":
+                mismatches.append("status")
+            elif str((op.get("result_json") or {}).get("plan", {}).get("cycle_id")) != str(cycle_id):
+                mismatches.append("result.plan.cycle_id")
+            if mismatches:
+                result["preparation_mismatch_fields"] = mismatches
+            _require(not mismatches, "PREPARATION_SCOPE_MISMATCH")
             result["preparation_operation_id"] = str(op["operation_id"])
         if binding:
             current = pilot_plan_binding.program_for_profile(connection, profile)

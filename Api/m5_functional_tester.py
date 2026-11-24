@@ -16,6 +16,7 @@ PROTOCOL_PATH = ROOT / "docs/evc/protocols/m5-functional-personalization-tester-
 RESULT_STATUSES = {"PASS", "FAIL", "NOT_APPLICABLE", "NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"}
 PROTECTED_CATEGORIES = {"invariant", "indicator_observability", "authority", "confidentiality", "scenario_executability", "target_integrity"}
 PATH_STEP = re.compile(r"""\.([^.[\]]+)|\[("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]'"]+)\]""")
+SERVER_BOUND_PROTOCOL = "3.1.0"
 CANDIDATE_COLLECTION_IDS = {
     "Материалы": "MaterialID", "События": "EventID", "Активные персонажи": "CharacterID",
     "IndicatorObservability": "IndicatorID", "Закрытые фиксированные факты": "FactID",
@@ -32,7 +33,7 @@ def checksum(value: Any) -> str:
 def load_protocol(path: Path = PROTOCOL_PATH) -> dict[str, Any]:
     raw = path.read_bytes()
     value = json.loads(raw)
-    expected_schema = {"2.0.0": 2, "2.1.0": 2, "3.0.0": 3}.get(value.get("version"))
+    expected_schema = {"2.0.0": 2, "2.1.0": 2, "3.0.0": 3, SERVER_BOUND_PROTOCOL: 3}.get(value.get("version"))
     if expected_schema is None or (value.get("schema_version"), value.get("id"), value.get("status")) != (
         expected_schema, "m5-functional-personalization-tester", "draft"
     ):
@@ -136,10 +137,18 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     }
 
 
-def _candidate_path_parts(path: str) -> list[str] | None:
+def _candidate_path_parts(path: str, *, mixed_paths: bool = False) -> list[str] | None:
     """Accept slash pointers and the dotted/bracket addresses used by reviewers."""
     path = path.strip()
-    if path.startswith(("/", "candidate_as/")):
+    if mixed_paths and path.startswith("candidate_as/") and "[" in path:
+        parts = ["candidate_as"]
+        for segment in path.removeprefix("candidate_as/").split("/"):
+            key, bracket, selectors = segment.partition("[")
+            decoded = _candidate_path_parts(f"[{selectors}") if bracket else []
+            if not key or decoded is None:
+                return None
+            parts.extend((key, *decoded))
+    elif path.startswith(("/", "candidate_as/")):
         if re.search(r"~(?![01])", path):
             return None
         parts = [part.replace("~1", "/").replace("~0", "~") for part in path.removeprefix("/").split("/")]
@@ -167,9 +176,16 @@ def _candidate_path_parts(path: str) -> list[str] | None:
 
 
 def _locate_candidate_path(candidate: dict, path: str, *,
-                           allow_missing_parent: bool = False) -> tuple[tuple[str, ...], bool] | None:
+                           allow_missing_parent: bool = False,
+                           mixed_paths: bool = False, fact_id_field: str = "FactID") -> tuple[tuple[str, ...], bool] | None:
     """Normalize ID selectors to indexes, reporting the first absent element when requested."""
-    parts = _candidate_path_parts(path)
+    parts = _candidate_path_parts(path, mixed_paths=mixed_paths)
+    if mixed_paths and path.strip().startswith("candidate_as/") and "[" in path:
+        literal = _locate_candidate_path(candidate, path, fact_id_field=fact_id_field)
+        if literal is not None and literal[1]:
+            if parts != list(literal[0]):
+                return None
+            return literal
     if parts is None:
         return None
     node = candidate
@@ -184,6 +200,8 @@ def _locate_candidate_path(candidate: dict, path: str, *,
                 exists = key < len(node)
             else:
                 id_key = CANDIDATE_COLLECTION_IDS.get(address[-1]) if address else None
+                if id_key == "FactID":
+                    id_key = fact_id_field
                 matches = [index for index, row in enumerate(node)
                            if id_key is not None and isinstance(row, dict) and row.get(id_key) == part]
                 if len(matches) > 1:
@@ -204,7 +222,8 @@ def _supports_finding(locations: list[tuple[str, ...]], sections: set[tuple[str,
     for address in locations:
         if address in missing_containers:
             return True
-        if len(address) == 3 and CANDIDATE_COLLECTION_IDS.get(address[0]) == address[2]:
+        if len(address) == 3 and (CANDIDATE_COLLECTION_IDS.get(address[0]) == address[2]
+                                  or address[0] == "Закрытые фиксированные факты" and address[2] == "ФактID"):
             continue
         if any(address[:len(section)] == section for section in sections):
             return True
@@ -213,7 +232,8 @@ def _supports_finding(locations: list[tuple[str, ...]], sections: set[tuple[str,
 
 def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
                    missing_paths: Collection[tuple[str, ...]] = (),
-                   evidence_sections: Collection[str] = ()) -> list[dict[str, Any]]:
+                   evidence_sections: Collection[str] = (), mixed_paths: bool = False,
+                   fact_id_field: str = "FactID") -> list[dict[str, Any]]:
     """Validate evidence before it can be interpreted as a candidate defect."""
     findings = item.get("findings", [])
     errors = []
@@ -231,7 +251,8 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
     sections = set()
     if candidate_as is not None and findings:
         for section in evidence_sections:
-            located = _locate_candidate_path(candidate_as, section, allow_missing_parent=True)
+            located = _locate_candidate_path(candidate_as, section, allow_missing_parent=True,
+                                             mixed_paths=mixed_paths, fact_id_field=fact_id_field)
             if located is not None and (located[1] or located[0] in missing_paths):
                 sections.add(located[0])
     missing_containers = {path[:-1] for path in missing_paths
@@ -258,7 +279,7 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
         elif candidate_as is not None:
             locations = []
             for path_index, value in enumerate(paths):
-                located = _locate_candidate_path(candidate_as, value)
+                located = _locate_candidate_path(candidate_as, value, mixed_paths=mixed_paths, fact_id_field=fact_id_field)
                 if located is not None:
                     address, exists = located
                     if (exists and (address or top_level_field_missing)) or address in missing_paths:
@@ -272,8 +293,13 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
 
 
 def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: dict | None = None,
-                      missing_required_paths: Iterable[str] = ()) -> list[dict[str, Any]]:
+                      missing_required_paths: Iterable[str] = (), reviewer: str = "tester",
+                      review_paths_version: str | None = None, passport_version: str | None = None) -> list[dict[str, Any]]:
     battery_review = plan.get("protocol", {}).get("scope") == "battery_v0.3_qa"
+    updated_paths = (review_paths_version or plan.get("protocol", {}).get("version")) == SERVER_BOUND_PROTOCOL
+    fact_id_field = "ФактID" if updated_paths and passport_version == "1.1" else "FactID"
+    address_options = {"mixed_paths": updated_paths, "fact_id_field": fact_id_field}
+    reviewer_label = {"tester": "Tester", "challenger": "Challenger"}[reviewer]
     provided = {}
     duplicates = set()
     if isinstance(raw_checks, list):
@@ -287,7 +313,7 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
     missing_paths = set()
     if candidate_as is not None:
         for path in missing_required_paths:
-            located = _locate_candidate_path(candidate_as, path)
+            located = _locate_candidate_path(candidate_as, path, **address_options)
             if located is not None and not located[1]:
                 missing_paths.add(located[0])
     normalized = []
@@ -296,9 +322,9 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
         status = item.get("status")
         reason = str(item.get("reason") or "").strip()
         if definition["check_id"] in duplicates:
-            status, reason = "TECHNICAL_ERROR", "Tester вернул повторяющийся check_id."
+            status, reason = "TECHNICAL_ERROR", f"{reviewer_label} вернул повторяющийся check_id."
         elif not isinstance(status, str) or status not in RESULT_STATUSES:
-            status, reason = "NOT_RUN", "Tester не вернул обязательный результат."
+            status, reason = "NOT_RUN", f"{reviewer_label} не вернул обязательный результат."
         elif status == "NOT_APPLICABLE":
             status, reason = "TECHNICAL_ERROR", "LLM не может исключить проверку, которую план применимости пометил обязательной."
         findings = item.get("findings") if isinstance(item.get("findings"), list) else []
@@ -311,7 +337,7 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
             sections = requirement.get("finding_evidence_sections", ())
         protocol_errors = finding_errors(
             item, candidate_as=candidate_as if localized else None, missing_paths=missing_paths,
-            evidence_sections=sections,
+            evidence_sections=sections, **address_options,
         )
         if battery_review and status == "PASS":
             paths = item.get("evidence_paths")
@@ -319,9 +345,9 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
             relevant = set()
             if candidate_as is not None and isinstance(paths, list):
                 evidence = [located[0] for path in paths if isinstance(path, str)
-                            and (located := _locate_candidate_path(candidate_as, path)) and located[1]]
+                            and (located := _locate_candidate_path(candidate_as, path, **address_options)) and located[1]]
                 relevant = {located[0] for path in sections
-                            if (located := _locate_candidate_path(candidate_as, path)) and located[1]}
+                            if (located := _locate_candidate_path(candidate_as, path, **address_options)) and located[1]}
             if not evidence or len(evidence) != len(paths) or not _supports_finding(evidence, relevant, set()):
                 protocol_errors.append({
                     "error_class": "verification_protocol", "code": "REVIEW_EVIDENCE_REQUIRED",
@@ -346,9 +372,22 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
                             not isinstance(path, str) or not path.strip() for path in conflicts
                         )))):
                     status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки с неполным adversarial review не допускается."
+        evidence_paths = item.get("evidence_paths") if isinstance(item.get("evidence_paths"), list) else []
+        if updated_paths and candidate_as is not None and not protocol_errors:
+            def pointer(path):
+                located = _locate_candidate_path(candidate_as, path, **address_options) if isinstance(path, str) else None
+                if not located:
+                    return path
+                return "/candidate_as" + "".join(
+                    "/" + token.replace("~", "~0").replace("/", "~1") for token in located[0]
+                )
+
+            evidence_paths = [pointer(path) for path in evidence_paths]
+            for finding in findings:
+                finding["paths"] = [pointer(path) for path in finding["paths"]]
         normalized.append({
             **deepcopy(definition), "status": status, "reason": reason,
-            "evidence_paths": item.get("evidence_paths") if isinstance(item.get("evidence_paths"), list) else [],
+            "evidence_paths": evidence_paths,
             "findings": [finding for finding in findings if isinstance(finding, dict)],
             "adversarial_review": adversarial,
             "protocol_errors": protocol_errors or ([{

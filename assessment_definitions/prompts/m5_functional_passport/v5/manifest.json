@@ -1,0 +1,44 @@
+{
+  "artifacts": [
+    {
+      "name": "as-contract.json",
+      "sha256": "6ed271ae23ab2afbf0cb580ccb2ca0778df100d1d83fd61477ee67d5e3dc813c"
+    },
+    {
+      "name": "case-content-contract.json",
+      "sha256": "0a1cb811b2c18b2e5f474b38f3e1b5866d92af6766a49c567eeb607f6206716d"
+    },
+    {
+      "name": "challenger.md",
+      "sha256": "7f1ff53cb85c744fd2a1757f0ea1d7fe128689f239a7f9bf9ff4584fd223294c"
+    },
+    {
+      "name": "generator.md",
+      "sha256": "b7762655c397a7c46c4c5f3e984fca7a41abd03d06ad339c0c5106f687e4cc65"
+    },
+    {
+      "name": "json-retry.md",
+      "sha256": "f7e5914203ec462e6279d4e6a9f2a3f8f2ddff640cb1991e676d587e66d6a077"
+    },
+    {
+      "name": "repair.md",
+      "sha256": "7319d4b622657abc5f25537f6d700a43b77a4f83364208c02ab07602d925b09e"
+    },
+    {
+      "name": "tester-addendum.md",
+      "sha256": "ba103d3c6ade72d4626d3a65a1e26a98af96d63a41e10887b81451d14f05b5c6"
+    },
+    {
+      "name": "tester-protocol.json",
+      "sha256": "ba2dd7ec7cd2bb0be1eed0ea32b43602ea44178ed985972552d5ce98d0584249"
+    },
+    {
+      "name": "tester.md",
+      "sha256": "d3d8c8a49fcef8683d97a82537998a49a7046826f121661ec682c5bca57c4866"
+    }
+  ],
+  "id": "m5-functional-passport",
+  "schema_version": 1,
+  "status": "draft",
+  "version": "5.0.0"
+}

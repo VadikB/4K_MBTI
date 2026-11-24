@@ -151,13 +151,18 @@ def validate_program(program: dict, role_ids: list[int], snapshot: dict) -> dict
     """Only a new version with unchanged accepted baseline sources may opt in."""
     design = validate_snapshot(snapshot)
     baseline = design["program"]
-    for name in ("code", "name", "assignment_ref", "mode", "assessment_configuration_id", "catalog_version_id"):
+    target = design.get("release_program")
+    for name in ("code", "name", "assignment_ref", "mode"):
         _require(program.get(name) == baseline[name], "PROGRAM_SCOPE_MISMATCH")
+    for name in ("assessment_configuration_id", "catalog_version_id"):
+        _require(program.get(name) == (target or baseline)[name], "PROGRAM_SCOPE_MISMATCH")
     _require(isinstance(program.get("version"), str) and bool(program["version"].strip())
              and program["version"] != baseline["version"], "NEW_PROGRAM_VERSION_REQUIRED")
+    if target is not None:
+        _require(program["version"] == target["version"], "PROGRAM_SCOPE_MISMATCH")
     sources = program.get("source_refs_json") or {}
     _require({key: value for key, value in sources.items() if key != "pilot_plan_admission"}
-             == baseline["source_refs_json"], "PROGRAM_SCOPE_MISMATCH")
+             == (target or baseline)["source_refs_json"], "PROGRAM_SCOPE_MISMATCH")
     _require(set(role_ids) == {role["id"] for role in design["role_refs"]}, "ROLE_SCOPE_MISMATCH")
     return design
 
@@ -177,14 +182,24 @@ def project_plan(snapshot: dict, *, targets: list[dict], catalog: list[dict],
     available = {(row["case_id"], row["case_version"]): row for row in catalog}
     _require(set(available) == {(row["case_id"], row["version"]) for row in design["cases"]},
              "CATALOG_CASE_SET_MISMATCH")
-    route = []
-    for wanted in design["proposed_primary_route"]:
-        actual = available[(wanted["case_id"], wanted["version"])]
-        _require(actual["eligible"] is True and set(actual["target_ids"]) == set(wanted["target_ids"]),
-                 "ROUTE_NOT_ADMITTED")
-        route.append({**actual, "purpose_target_ids": wanted["new_purpose_target_ids"],
-                      "duration_source": "M5 CaseVersion planned range", "conditional": True, "reserve_for": []})
-    return {"planned_targets": [row for row in targets if row["indicator_id"] in design["proposed_target_ids"]],
+    planned_targets = [row for row in targets if row["indicator_id"] in design["proposed_target_ids"]]
+    if "release_program" in design:
+        from Api.m7_cycle_planner import ranked_route
+
+        for expected in design["cases"]:
+            actual = available[(expected["case_id"], expected["version"])]
+            _require(set(actual["target_ids"]) == set(expected["target_ids"]), "CASE_TARGET_SET_MISMATCH")
+        route, uncovered = ranked_route(catalog, planned_targets)
+        _require(bool(route) and not uncovered, "PLANNED_TARGET_GAP")
+    else:
+        route = []
+        for wanted in design["proposed_primary_route"]:
+            actual = available[(wanted["case_id"], wanted["version"])]
+            _require(actual["eligible"] is True and set(actual["target_ids"]) == set(wanted["target_ids"]),
+                     "ROUTE_NOT_ADMITTED")
+            route.append({**actual, "purpose_target_ids": wanted["new_purpose_target_ids"],
+                          "duration_source": "M5 CaseVersion planned range", "conditional": True, "reserve_for": []})
+    return {"planned_targets": planned_targets,
             "outside_plan_target_ids": design["absent_target_ids"], "route": route,
             "timing": {name: design["timing_basis"][name]
                        for name in ("time_budget_seconds", "calendar_window_seconds")}}

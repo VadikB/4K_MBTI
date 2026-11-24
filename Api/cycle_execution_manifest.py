@@ -14,6 +14,7 @@ SCHEMA_VERSION = 2
 CHECKSUM_KIND = "sha256-canonical-json-v1"
 CONTENT_CHECKSUM_KIND = "sha256-raw-bytes-v1"
 M5_FUNCTIONAL_AS_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v3"
+M5_BATTERY_PILOT_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v5"
 M5_BATTERY_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v4"
 PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
 BATTERY_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.7"
@@ -119,6 +120,14 @@ def build_manifest(
 
             dependencies["m5_battery_scenario"] = RULE_PACKAGE
             dependencies["m5_functional_as"] = M5_BATTERY_REVIEW_PACKAGE
+    if catalog_ref and catalog_ref.get("battery_pilot") is True:
+        from Api.m5_battery_contract import RULE_PACKAGE
+
+        dependencies = {
+            **dependencies, "m5_functional_package": BATTERY_CASE_PACKAGE,
+            "m5_functional_runtime": BATTERY_RULE_PACKAGE, "m5_battery_scenario": RULE_PACKAGE,
+            "m5_functional_as": M5_BATTERY_PILOT_REVIEW_PACKAGE,
+        }
     if project_role is not None:
         dependencies = {**dependencies, "m5_educational_role_interactions": PROJECT_ROLE_PROMPT}
     snapshot = deepcopy(_dependency_snapshot(root, tuple(sorted(dependencies.items()))))
