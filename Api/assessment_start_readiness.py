@@ -154,14 +154,16 @@ def read(connection, *, cycle_id: str, user_id: int) -> dict:
             _require(not mismatches, "PREPARATION_SCOPE_MISMATCH")
             result["preparation_operation_id"] = str(op["operation_id"])
         if binding:
-            current = pilot_plan_binding.program_for_profile(connection, profile)
-            _require(current is not None and current["id"] == binding["program_ref"]["id"]
-                     and current["connection_id"] == binding["program_ref"]["connection_id"]
-                     and current["definition_checksum"] == binding["program_ref"]["checksum"], "PROGRAM_SCOPE_MISMATCH")
-            snapshot = pilot_plan_binding.validate_published_program(connection, current)
+            program = pilot_plan_binding.program_for_profile(
+                connection, profile, connection_id=binding["program_ref"]["connection_id"],
+            )
+            _require(program is not None and program["id"] == binding["program_ref"]["id"]
+                     and program["connection_id"] == binding["program_ref"]["connection_id"]
+                     and program["definition_checksum"] == binding["program_ref"]["checksum"], "PROGRAM_SCOPE_MISMATCH")
+            snapshot = pilot_plan_binding.validate_published_program(connection, program)
             _require(snapshot == binding["admission_snapshot"], "PROGRAM_SCOPE_MISMATCH")
             actual_scope = pilot_plan_binding.assignment_scope(connection, profile=profile,
-                assignment_id=cycle["assignment_id"], assignment_ref=current["assignment_ref"])
+                assignment_id=cycle["assignment_id"], assignment_ref=program["assignment_ref"])
             _require(actual_scope == binding["assignment_scope"], "ASSIGNMENT_SCOPE_MISMATCH")
             for source in binding["timing_sources"].values():
                 revision = connection.execute("SELECT * FROM m7_parameter_revisions WHERE id=%s", (source["revision_id"],)).fetchone()
@@ -246,12 +248,13 @@ def require(connection, *, cycle_id: str, user_id: int) -> dict:
         connection.execute("""SELECT operation_id FROM product_cycle_preparation_operations
             WHERE operation_id=%s FOR SHARE""", (result["preparation_operation_id"],)).fetchone()
     if result.get("pilot_admission"):
-        connection.execute("""SELECT link.id FROM organization_assessment_program_connections link
-            JOIN assessment_program_definitions program ON program.id=link.program_definition_id
-            WHERE link.organization_id=%s AND link.is_current=TRUE FOR SHARE OF link,program""",
-            (cycle["organization_id"],)).fetchall()
         from Api.m7_planning_repository import read_plan
         binding = read_plan(connection, cycle_id)["content_json"]["pilot_plan_binding"]
+        connection.execute("""SELECT link.id FROM organization_assessment_program_connections link
+            JOIN assessment_program_definitions program ON program.id=link.program_definition_id
+            WHERE link.organization_id=%s AND (link.id=%s OR link.is_current=TRUE)
+            ORDER BY link.id FOR SHARE OF link,program""",
+            (cycle["organization_id"], binding["program_ref"]["connection_id"])).fetchall()
         for source in binding["timing_sources"].values():
             connection.execute("SELECT id FROM m7_parameter_revisions WHERE id=%s FOR SHARE",
                                (source["revision_id"],)).fetchone()
