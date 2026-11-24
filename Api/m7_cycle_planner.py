@@ -31,6 +31,8 @@ def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
         rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
             array_agg(t.indicator_id ORDER BY t.display_order) AS target_ids
             FROM m5_case_versions cv JOIN m5_case_targets t ON t.case_version_id=cv.id
+            JOIN m5_packages package ON package.id=cv.package_id
+            WHERE package.manifest_json->'diagnostic_only' IS DISTINCT FROM 'true'::jsonb
             GROUP BY cv.id ORDER BY cv.case_id,cv.case_version""").fetchall()
     else:
         rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
@@ -99,6 +101,8 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         role=role_ref["code"]
     catalog_ref=resolve_configuration_catalog(connection,
         configuration_id=int(profile.get("assessment_configuration_id") or 0),usage_scope=usage_scope)
+    if catalog_ref.get("diagnostic_only"):
+        raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     if catalog_ref["organization_id"] is not None and int(catalog_ref["organization_id"]) != int(profile["organization_id"]):
         raise ValueError("M5_CATALOG_ORGANIZATION_MISMATCH")
     if catalog_ref["m2_checksum"] != "legacy" and catalog_ref["m2_checksum"] != profile.get("provenance_json",{}).get("m2_checksum",catalog_ref["m2_checksum"]):

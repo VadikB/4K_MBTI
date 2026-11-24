@@ -294,8 +294,11 @@ def save_assessment_situation(connection, *, situation: dict, execution_payload:
     case_row = connection.execute(
         "SELECT id,case_id,case_version FROM m5_case_versions WHERE id=%s"
         if case_version_db_id is not None else
-        "SELECT id,case_id,case_version FROM m5_case_versions "
-        "WHERE case_id=%s AND case_version=%s ORDER BY package_id DESC LIMIT 1",
+        "SELECT cv.id,cv.case_id,cv.case_version FROM m5_case_versions cv "
+        "JOIN m5_packages p ON p.id=cv.package_id "
+        "WHERE cv.case_id=%s AND cv.case_version=%s "
+        "AND p.manifest_json->'diagnostic_only' IS DISTINCT FROM 'true'::jsonb "
+        "ORDER BY cv.package_id DESC LIMIT 1",
         (case_version_db_id,) if case_version_db_id is not None else
         (value.case_ref.id, value.case_ref.version),
     ).fetchone()
@@ -382,10 +385,14 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
         case_row = connection.execute("""
             SELECT cv.id,cv.content_json,p.manifest_json,p.runtime_rules_json
             FROM m5_case_versions cv JOIN m5_packages p ON p.id=cv.package_id
-            WHERE cv.case_id=%s AND cv.case_version=%s ORDER BY p.id DESC LIMIT 1
+            WHERE cv.case_id=%s AND cv.case_version=%s
+              AND p.manifest_json->'diagnostic_only' IS DISTINCT FROM 'true'::jsonb
+            ORDER BY p.id DESC LIMIT 1
         """, (case_id, case_version)).fetchone()
     if not case_row:
         raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
+    if case_row["manifest_json"].get("diagnostic_only") is True:
+        raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     refs = [{"id": "m2-competencies-4k", "version": "1.1",
              "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
     if usage_scope == "assessment" and catalog_db_id is None and not legacy_unbound:

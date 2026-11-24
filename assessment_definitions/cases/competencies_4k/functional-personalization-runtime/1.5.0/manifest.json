@@ -1,0 +1,22 @@
+{
+  "artifacts": [
+    {
+      "name": "event-bindings.json",
+      "sha256": "a7f10e3f644709b28c13c29405cb205b07f2aa2d2f6c53eb96a50004acbf0a91"
+    }
+  ],
+  "id": "m5-functional-personalization-runtime",
+  "owner": "PM-04",
+  "schema_version": 2,
+  "source": {
+    "as_contract_ref": {
+      "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+      "id": "m5-functional-as",
+      "version": "2.0.0"
+    },
+    "case_package_id": "m5-functional-personalization-cases",
+    "case_package_version": "0.7"
+  },
+  "status": "draft",
+  "version": "1.5.0"
+}

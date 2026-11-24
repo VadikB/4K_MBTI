@@ -240,11 +240,15 @@ class AssessmentAuthoringService:
             raise ValueError("Only draft assessment configurations can be published.")
         if current["methodology_status"] != "published" or current["scenario_status"] != "published":
             raise ValueError("Configuration components must remain published.")
-        if current["catalog_version_id"] is not None and connection.execute(
-            "SELECT 1 FROM m5_catalogs WHERE id=%s AND status='published'",
-            (current["catalog_version_id"],),
-        ).fetchone() is None:
-            raise ValueError("Configuration catalog must remain published.")
+        if current["catalog_version_id"] is not None:
+            catalog = connection.execute(
+                "SELECT manifest_json FROM m5_catalogs WHERE id=%s AND status='published'",
+                (current["catalog_version_id"],),
+            ).fetchone()
+            if catalog is None:
+                raise ValueError("Configuration catalog must remain published.")
+            if make_default and catalog["manifest_json"].get("diagnostic_only") is True:
+                raise ValueError("M5_DIAGNOSTIC_CONFIGURATION_CANNOT_BE_DEFAULT")
         prompt_bundle = load_active_prompt_bundle(connection)
         agent_definitions = load_published_agent_definition_bundle(
             connection,

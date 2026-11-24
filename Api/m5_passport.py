@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from Api.assessment_case_contracts import CaseVersionV4
 from Api.m5_case_type_catalog import load_case_type_catalog
 from Api.m5_package import digest
+from Api.m5_passport_v12 import scenario_projection
 from scripts.build_m3_base_roles import CARD_FIELDS, DESCRIPTION_FIELDS
 from scripts.build_m4_context_package import USER_CONTEXT_FIELDS
 from scripts.build_m5_sales_package import _minutes, _ref
@@ -143,8 +145,26 @@ def load_m2(path: Path, source_manifest: Path) -> tuple[dict, dict]:
 
 
 def compile_passport(*, raw: dict, case_id: str, version: str, status: str, source: dict,
-                     m2: dict, m3: dict, as_contract_ref: dict, selected_base_role: str | None = None) -> dict:
-    passport = project_passport(raw, case_id, version)
+                     m2: dict, m3: dict, as_contract_ref: dict, selected_base_role: str | None = None,
+                     passport_version: str = "1.1") -> dict:
+    v12 = passport_version == "1.2"
+    if v12:
+        for field in PASSPORT_FIELDS:
+            if not raw.get(field):
+                raise missing(case_id, version, field)
+        if set(raw) != set(PASSPORT_FIELDS) or (raw[PASSPORT_FIELDS[0]], raw[PASSPORT_FIELDS[6]]) != (case_id, version):
+            raise missing(case_id, version, "Паспорт/поля и идентичность")
+        passport = {field: raw[field] for field in PASSPORT_FIELDS}
+        materials, scenario, locations = scenario_projection(passport, source, lambda path: missing(case_id, version, path))
+    else:
+        passport = project_passport(raw, case_id, version)
+        materials = []
+        locations = {}
+        scenario = [
+            {"step_id": event["EventID"], "order": index + 1, "content": event,
+             "source": {**source, "pointer": f"/Паспорт/17 Сценарий Dialogue/События/{index}"}}
+            for index, event in enumerate(passport[PASSPORT_FIELDS[16]]["События"])
+        ]
     prefix = dict(case_id=case_id, version=version, status=status, passport=passport)
     role_labels = passport["6 ApplicableBaseRoles"]
     role_codes = {role["description"]["name"]: role["code"] for role in m3["base_roles"]}
@@ -157,8 +177,18 @@ def compile_passport(*, raw: dict, case_id: str, version: str, status: str, sour
         raise missing(case_id, version, "6 ApplicableBaseRoles→BaseRole")
     case_types = passport["3 CaseTypeIDs"]
     load_case_type_catalog().validate(case_types, case_id=case_id, pointer=f"/{version}/3 CaseTypeIDs")
-    if not isinstance(passport["4 Логика связи CT"], str):
+    logic = passport["4 Логика связи CT"]
+    if not v12 and not isinstance(logic, str):
         raise missing(case_id, version, "4 Логика связи CT")
+    if v12:
+        if isinstance(logic, dict):
+            logic_ids = set(logic) - {"Связь"}
+        elif isinstance(logic, list):
+            logic_ids = {item.get("CaseTypeID") for item in logic if isinstance(item, dict)}
+        else:
+            logic_ids = set(re.findall(r"\bCT\d{2}\b", logic)) if isinstance(logic, str) else set()
+        if logic_ids != set(case_types):
+            raise missing(case_id, version, "4 Логика связи CT→3 CaseTypeIDs")
     applicability_rows = passport["14 Applicability"]
     if not isinstance(applicability_rows, list) or any(
         not isinstance(row, dict) or not isinstance(row.get("SkillID"), str)
@@ -168,7 +198,6 @@ def compile_passport(*, raw: dict, case_id: str, version: str, status: str, sour
         raise missing(case_id, version, "14 Applicability/SkillID,ComponentIDs")
     applicability = [{"skill_id": row["SkillID"], "component_id": component, "required": True}
                      for row in applicability_rows for component in row["ComponentIDs"]]
-    scenarios = passport["17 Сценарий Dialogue"]
     target_fields = passport["22 IndicatorIDs"]
     exact, conditions, versions = (target_fields.get(name) for name in ("Точный перечень", "Проектные условия", "Версии M2"))
     if (not isinstance(exact, list) or not exact or not all(isinstance(key, str) for key in exact)
@@ -189,13 +218,16 @@ def compile_passport(*, raw: dict, case_id: str, version: str, status: str, sour
                 or {"skill_id": norm["skill_id"], "component_id": norm["component_id"], "required": True}
                 not in applicability):
             raise missing(case_id, version, f"22/{indicator_id}→Applicability,M2")
-        condition = row.get("Проектное условие") or row.get("Функциональные условия")
+        condition = row.get("Условие возникновения") if v12 else (
+            row.get("Проектное условие") or row.get("Функциональные условия")
+        )
         if not condition or not row.get("Доступная форма проявления") or not row.get("Риск потери"):
             raise missing(case_id, version, f"22/{indicator_id}/Проектное условие, форма, риск")
         targets.append({
             "indicator_id": indicator_id, "skill_id": norm["skill_id"], "component_id": norm["component_id"],
             "m2_version": norm["m2_version"], "observation_condition": "\n".join(condition) if isinstance(condition, list) else condition,
-            "scenario_locations": [], "branch_condition": None, "event_condition": row.get("Условие возникновения"),
+            "scenario_locations": row["Место в сценарии"] if v12 else [],
+            "branch_condition": None, "event_condition": row.get("Условие возникновения"),
             "observable_action": row["Доступная форма проявления"], "validity_risk": row["Риск потери"],
             "normative_source": norm["source"], "source": {
                 **source, "pointer": f"/Паспорт/22 IndicatorIDs/Проектные условия/{index}",
@@ -206,18 +238,26 @@ def compile_passport(*, raw: dict, case_id: str, version: str, status: str, sour
         low, high = _minutes({key: value for key, value in time.items() if key != "Правило"})
     except ValueError as exc:
         raise missing(case_id, version, "20 Плановое время") from exc
+    case_format = passport["5 Формат Case"]
+    if v12:
+        label = case_format.casefold() if isinstance(case_format, str) else ""
+        case_format = next((value for prefix, value in (
+            ("диалогов", "Диалоговый"), ("многоролев", "Многоролевой"),
+            ("аналитико-рефлексивный письменный", "Письменный"),
+        ) if label.startswith(prefix)), None)
+        if case_format is None:
+            raise missing(case_id, version, "5 Формат Case")
     return CaseVersionV4.model_validate({
-        **prefix, "schema_version": 4, "passport_version": "1.1", "as_contract_ref": as_contract_ref,
+        **prefix, "schema_version": 4, "passport_version": passport_version, "as_contract_ref": as_contract_ref,
         "passport_source": source, "title": passport["2 Название"], "base_role": selected_base_role,
-        "format": passport["5 Формат Case"], "planned_min_minutes": low, "planned_max_minutes": high,
+        "format": case_format, "planned_min_minutes": low, "planned_max_minutes": high,
         "case_type_ids": case_types, "applicability": applicability, "indicator_targets": targets,
-        "passport_sources": {key: {**source, "pointer": _ref("passport", source["sha256"], "Паспорт", key)["pointer"]}
-                             for key in passport},
-        "characters": [], "materials": [], "scenario": [
-            {"step_id": event["EventID"], "order": index + 1, "content": event,
-             "source": {**source, "pointer": f"/Паспорт/17 Сценарий Dialogue/События/{index}"}}
-            for index, event in enumerate(scenarios["События"])
-        ],
+        "passport_sources": {
+            **{key: {**source, "pointer": _ref("passport", source["sha256"], "Паспорт", key)["pointer"]}
+               for key in passport},
+            **{key: {**source, "pointer": pointer} for key, pointer in locations.items()},
+        },
+        "characters": [], "materials": materials, "scenario": scenario,
     }).model_dump(exclude_unset=True)
 
 

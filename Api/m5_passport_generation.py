@@ -114,6 +114,8 @@ def load_bank_case(case_id: str, directory: Path = BANK_PACKAGE) -> tuple[dict, 
 
 def normalize_case(case: dict, as_contract_ref: dict, *, m2_path: Path = M2,
                    m3_path: Path = M3) -> tuple[dict, dict, dict]:
+    if case.get("passport_version") == "1.2":
+        raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     case_id, version = case["case_id"], case["version"]
     old_source = case.get("author_case_source") if case.get("schema_version") == 3 else case.get("passport_source")
     if not old_source:

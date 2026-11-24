@@ -15,6 +15,8 @@ CHECKSUM_KIND = "sha256-canonical-json-v1"
 CONTENT_CHECKSUM_KIND = "sha256-raw-bytes-v1"
 M5_FUNCTIONAL_AS_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v3"
 PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
+BATTERY_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.7"
+BATTERY_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.5.0"
 
 # Logical names are part of the persisted contract. Paths always identify an
 # immutable, versioned publication; callers must never replace them with latest/current.
@@ -105,6 +107,12 @@ def build_manifest(
     root: Path = ROOT,
     dependencies: Mapping[str, str] = DEFAULT_DEPENDENCIES,
 ) -> tuple[dict[str, Any], str]:
+    if catalog_ref and catalog_ref.get("diagnostic_only") is True:
+        dependencies = {
+            **dependencies,
+            "m5_functional_package": BATTERY_CASE_PACKAGE,
+            "m5_functional_runtime": BATTERY_RULE_PACKAGE,
+        }
     if project_role is not None:
         dependencies = {**dependencies, "m5_educational_role_interactions": PROJECT_ROLE_PROMPT}
     snapshot = deepcopy(_dependency_snapshot(root, tuple(sorted(dependencies.items()))))
