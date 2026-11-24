@@ -10,6 +10,7 @@ from Api.assessment_contexts import confirm_user_context, create_personalized_pr
 from Api.m5_battery_preparation import prepare_next
 from Api.m5_cycle_runtime import create_cycle_session_for_case, start_session
 from Api.m5_functional_generation_service import checksum
+from Api.m5_functional_tester import _locate_candidate_path
 from Api.m5_rule_engine import DeepSeekCharacterAdapter, DeepSeekSemanticAdapter
 from Api.m5_scenario_runtime import build_c45, start, submit_turn_detached, trace, transition
 from Api.m10_product_flow import participant_trace
@@ -53,9 +54,12 @@ def synthetic_as(payload):
 class PreparationGateway(CaptureGateway):
     def chat_with_trace(self, messages, **kwargs):
         routing = kwargs["routing_key"]
+        payload = json.loads(next(message["content"] for message in reversed(messages) if message["role"] == "user"))
         if ":generation:" not in routing:
-            return super().chat_with_trace(messages, **kwargs)
-        payload = json.loads(messages[-1]["content"])
+            if "review_package" not in payload:
+                return super().chat_with_trace(messages, **kwargs)
+            self.calls.append((routing, deepcopy(messages), payload))
+            return self.review(routing, payload)
         self.calls.append((routing, deepcopy(messages), payload))
         result = synthetic_as(payload)
         if self.mode in {"repair", "reject"} and (":repair:" not in routing or self.mode == "reject"):
@@ -67,6 +71,25 @@ class PreparationGateway(CaptureGateway):
         result["События"] = [{"EventID": "STALE"}]
         return SimpleNamespace(content=json.dumps(result, ensure_ascii=False), sent={},
                                provider={"finish_reason": "stop"})
+
+    def review(self, routing, payload):
+        definitions = (payload.get("applicability_plan") or {}).get("required_checks") or payload["protected_checks"]
+        candidate = payload["candidate_as"]
+        checks = []
+        for check in definitions:
+            paths = check["finding_evidence_sections"]
+            path = next((path for path in paths if (found := _locate_candidate_path(candidate, path)) and found[1]),
+                        "candidate_as/CaseID")
+            checks.append({"check_id": check["check_id"], "status": "PASS", "reason": "Ответ тестового шлюза",
+                           "evidence_paths": [path], "findings": [],
+                           "adversarial_review": {"candidate_conflicts": [], "resolution": f"Проверено {path}"}})
+        return self.review_response(routing, payload, checks)
+
+    def review_response(self, routing, payload, checks):
+        return SimpleNamespace(
+            content=json.dumps({"candidate_checksum": payload["candidate_checksum"], "checks": checks}, ensure_ascii=False),
+            sent={}, provider={"finish_reason": "stop"},
+        )
 
 
 class TurnGateway:
@@ -203,6 +226,20 @@ def test_battery_case_matrix(product_db, specialist, number):
         receipts.add(generation["repair"]["original_candidate_checksum"])
     reviewer_calls = [(route, body) for route, _, body in gateway.calls if "candidate_as" in body]
     assert all(body["candidate_checksum"] == checksum(body["candidate_as"]) for route, body in reviewer_calls)
+    review_source = generation["tester"]["review_source"]
+    assert review_source["review_package"]["version"] == "4.0.0"
+    assert {(body["source_ref"]["case_id"], body["source_ref"]["case_version"]) for _, body in reviewer_calls} == {reference(number)}
+    assert all(body["source_ref"] == review_source["source_ref"] for _, body in reviewer_calls)
+    assert all(body["as_version"] == body["candidate_as"]["Version"] for _, body in reviewer_calls)
+    for sha in receipts:
+        same_candidate = [body["candidate_as"] for _, body in reviewer_calls if body["candidate_checksum"] == sha]
+        assert all(value == same_candidate[0] for value in same_candidate)
+    for role, operation in (("tester", "provider_operation"), ("challenger", "challenger_operation")):
+        batches = generation["tester"][operation]["batches"]
+        checks = generation["tester"]["independent_checks"][role]
+        assert all(check["status"] == "PASS" and check["operation_id"] for check in checks)
+        assert all(batch["reviewer"] == role and json.loads(batch["calls"][0]["response_content"])["candidate_checksum"]
+                   == generation["candidate_checksum"] for batch in batches)
     for sha in receipts:
         assert {role for role in ("tester", "challenger") if any(
             f":{role}:" in route and body["candidate_checksum"] == sha for route, body in reviewer_calls

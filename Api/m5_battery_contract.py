@@ -145,42 +145,98 @@ def bind(snapshot: dict, proposed: object) -> object:
     return bound
 
 
-def validate_candidate(snapshot: dict, value: dict, check) -> None:
+def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = False) -> list[str]:
     from Api.m5_passport_generation import ADAPTED_FIELDS, REF_FIELDS, _indexed, _ids, _text
+
+    missing_paths = []
+
+    def validate(code, passed, path, actual, expected, reason):
+        if detailed:
+            check(code, passed, actual, path=path, expected=expected, reason=reason)
+        else:
+            check(code, passed, path=path)
+
+    def record_missing(path, expected, actual):
+        if detailed:
+            missing_paths.extend(f"{path}/{key}" for key in sorted(set(expected) - set(actual)))
 
     design = snapshot["battery_scenario"]
     generated_fields = set(snapshot["as_contract"]["fields"])
     sealed = bind(snapshot, {})
-    check("battery_candidate_fields", set(value) == generated_fields | sealed.keys())
+    fields = generated_fields | sealed.keys()
+    validate("battery_candidate_fields", set(value) == fields, "candidate_as", sorted(value), sorted(fields),
+             "Набор полей AS задан контрактом генерации и закреплёнными полями паспорта.")
+    record_missing("candidate_as", fields, value)
+    if detailed:
+        for key, expected in sealed.items():
+            actual = value.get(key)
+            if key == "RuntimeBindings" and isinstance(actual, dict) and actual.keys() == expected.keys():
+                for event_id, rule in expected.items():
+                    actual_rule = actual[event_id]
+                    if isinstance(actual_rule, dict) and actual_rule.keys() == rule.keys():
+                        for field, target in rule.items():
+                            validate("battery_event_binding", actual_rule[field] == target,
+                                     f"candidate_as/{key}/{event_id}/{field}", actual_rule[field], target,
+                                     "Параметр события должен совпадать с закреплённой привязкой сценария.")
+                        continue
+                    validate("battery_event_binding", actual_rule == rule, f"candidate_as/{key}/{event_id}",
+                             actual_rule, rule, "Привязка события должна полностью совпадать с закреплённым правилом.")
+                continue
+            validate("battery_server_binding", actual == expected, f"candidate_as/{key}", actual, expected,
+                     "Значение закреплено точной версией паспорта и сценария.")
     for field in ("AssessmentSituationID", "Version", "Название"):
-        check("required_text", _text(value.get(field)), path=f"candidate_as/{field}")
-    check("required_list", isinstance(value.get("Применённые замены"), list), path="candidate_as/Применённые замены")
+        actual = value.get(field)
+        validate("required_text", _text(actual), f"candidate_as/{field}", actual, "non_empty_string",
+                 "Поле идентификации или представления должно быть непустым текстом.")
+    substitutions = value.get("Применённые замены")
+    validate("required_list", isinstance(substitutions, list), "candidate_as/Применённые замены",
+             substitutions, "array", "Замены передаются списком.")
     tables = (
         ("Материалы", "MaterialID", design["material_ids"], ("Название", "Текст")),
         ("Закрытые фиксированные факты", "FactID", design["fact_ids"], ("Текст",)),
         ("Активные персонажи", "CharacterID", design["roles"], ("Имя", "Текст")),
     )
     indexed = {}
-    for field, key, ids, fields in tables:
-        rows = _indexed(value.get(field), key)
-        check("battery_namespace", rows is not None and rows.keys() == set(ids), path=f"candidate_as/{field}")
+    for field, key, ids, required_text in tables:
+        path = f"candidate_as/{field}"
+        raw_rows = value.get(field)
+        rows = _indexed(raw_rows, key)
+        actual = ([row.get(key) if isinstance(row, dict) else None for row in raw_rows]
+                  if isinstance(raw_rows, list) else raw_rows)
+        validate("battery_namespace", rows is not None and rows.keys() == set(ids),
+                 path, actual, sorted(ids), "Требуется по одной записи с каждым закреплённым идентификатором.")
         indexed[field] = rows or {}
+        if rows is not None:
+            record_missing(path, ids, rows)
         for identifier, row in indexed[field].items():
-            check("battery_content_fields", set(row) == {key, *fields}
-                  and all(_text(row.get(name)) for name in fields), path=f"candidate_as/{field}/{identifier}")
-    documents = indexed["Материалы"]
-    closed = [row for key, row in documents.items() if key not in design["start_ids"]]
-    closed.extend(indexed["Закрытые фиксированные факты"].values())
-    for key in design["start_ids"]:
-        text = documents.get(key, {}).get("Текст")
-        if _text(text):
-            check("battery_closed_content", not any(
-                _text(row.get("Текст")) and row["Текст"].casefold() in text.casefold() for row in closed
-            ), path=f"candidate_as/Материалы/{key}/Текст")
-    observed = _indexed(value.get("IndicatorObservability"), "IndicatorID")
-    targets = snapshot["case_version"]["indicator_targets"]
-    check("battery_target_set", observed is not None and observed.keys() == {row["indicator_id"] for row in targets},
-          path="candidate_as/IndicatorObservability")
+            row_path = f"{path}/{identifier}"
+            expected_fields = {key, *required_text}
+            invalid_text = {name: row.get(name) for name in required_text if not _text(row.get(name))}
+            validate("battery_content_fields", set(row) == expected_fields and not invalid_text, row_path,
+                     {"fields": sorted(row), "invalid_text": invalid_text},
+                     {"fields": sorted(expected_fields), "non_empty_text_fields": list(required_text)},
+                     "Запись должна содержать поля контракта и непустой текст.")
+            record_missing(row_path, expected_fields, row)
+    if not detailed:  # Preserve the substring check for the frozen 02 protocol.
+        documents = indexed["Материалы"]
+        closed = [row for key, row in documents.items() if key not in design["start_ids"]]
+        closed.extend(indexed["Закрытые фиксированные факты"].values())
+        for key in design["start_ids"]:
+            text = documents.get(key, {}).get("Текст")
+            if _text(text):
+                check("battery_closed_content", not any(
+                    _text(row.get("Текст")) and row["Текст"].casefold() in text.casefold() for row in closed
+                ), path=f"candidate_as/Материалы/{key}/Текст")
+    raw_observed = value.get("IndicatorObservability")
+    observed = _indexed(raw_observed, "IndicatorID")
+    targets = {row["indicator_id"] for row in snapshot["case_version"]["indicator_targets"]}
+    actual = ([row.get("IndicatorID") if isinstance(row, dict) else None for row in raw_observed]
+              if isinstance(raw_observed, list) else raw_observed)
+    validate("battery_target_set", observed is not None and observed.keys() == targets,
+             "candidate_as/IndicatorObservability", actual, sorted(targets),
+             "Карта наблюдаемости содержит ровно по одной записи для каждой закреплённой цели.")
+    if observed is not None:
+        record_missing("candidate_as/IndicatorObservability", targets, observed)
     allowed = {
         "material_refs": set(design["material_ids"]), "event_refs": {row["id"] for row in design["events"]}
         | {design["finish"].get("ID", "SCENARIO_COMPLETION")},
@@ -188,11 +244,21 @@ def validate_candidate(snapshot: dict, value: dict, check) -> None:
     }
     for indicator, row in (observed or {}).items():
         path = f"candidate_as/IndicatorObservability/{indicator}"
-        check("battery_observability", set(row) == {"IndicatorID", *ADAPTED_FIELDS, *REF_FIELDS}
-              and all(_text(row.get(field)) for field in ADAPTED_FIELDS), path=path)
+        fields = {"IndicatorID", *ADAPTED_FIELDS, *REF_FIELDS}
+        invalid_text = {name: row.get(name) for name in ADAPTED_FIELDS if not _text(row.get(name))}
+        validate("battery_observability", set(row) == fields and not invalid_text, path,
+                 {"fields": sorted(row), "invalid_text": invalid_text},
+                 {"fields": sorted(fields), "non_empty_text_fields": list(ADAPTED_FIELDS)},
+                 "Для наблюдаемости нужны конкретное условие, форма проявления и риск потери.")
+        record_missing(path, fields, row)
         for field, namespace in allowed.items():
             refs = row.get(field)
-            check("battery_observability_reference", _ids(refs) and set(refs) <= namespace, path=f"{path}/{field}")
+            bound = design["observability_references"].get(indicator, {}).get(field)
+            validate("battery_observability_reference",
+                     _ids(refs) and set(refs) <= namespace and (not detailed or bound is None or refs == bound),
+                     f"{path}/{field}", refs, bound if bound is not None else {"allowed_ids": sorted(namespace)},
+                     "Ссылки должны совпадать с закреплёнными местами проектного условия.")
+    return missing_paths
 
 
 def compile_candidate(snapshot: dict, candidate: dict, checksum: str) -> tuple[dict, dict]:

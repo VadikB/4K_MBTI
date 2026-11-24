@@ -81,7 +81,8 @@ def prepare_next(connection_factory, *, cycle_id: str, assessment_situation_id: 
     prepared = preparation.prepare(snapshot, gateway)
     if not prepared["admitted_for_participant"]:
         return {"status": "preparation_rejected", "candidate_checksum": prepared["candidate_checksum"],
-                "validation": prepared["deterministic_validation"]}
+                "validation": prepared["deterministic_validation"],
+                **({"preparation_trace": prepared} if "review_source" in prepared["tester"] else {})}
     generation = preparation.build_persistence_trace(snapshot, prepared)
     with connection_factory() as connection:
         current, current_session, latest, saved = _selection(connection, cycle_id, actor, assessment_situation_id, lock=True)
