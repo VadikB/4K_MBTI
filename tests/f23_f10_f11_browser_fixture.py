@@ -33,8 +33,15 @@ def readback(connection, state):
         profile_ref_json,selected_role_ref_json,target_set_json,parameter_sources_json,status
         FROM m5_cycles WHERE owner_user_id=%s AND organization_id=%s ORDER BY id""",
         (user_id, organization_id)).fetchall()
+    reports = connection.execute("""SELECT p.id,p.c67_checksum
+        FROM m8_reports p JOIN m8_result_revisions rr ON rr.id=p.result_revision_id
+        JOIN m8_results r ON r.id=rr.results_id JOIN m5_cycles c ON c.id=r.cycle_db_id
+        WHERE c.owner_user_id=%s AND c.organization_id=%s ORDER BY p.id""", (user_id, organization_id)).fetchall()
     return {
         "membership": dict(membership) if membership else None,
+        "role_only": connection.execute("""SELECT u.email, m.role, m.is_participant
+            FROM users u LEFT JOIN organization_memberships m ON m.user_id=u.id
+            WHERE u.email='role-only@example.test'""").fetchone(),
         "connections": [dict(row) for row in connections],
         "control_connections": connection.execute("""SELECT COUNT(*) AS n
             FROM organization_assessment_program_connections WHERE organization_id=%s""",
@@ -42,6 +49,7 @@ def readback(connection, state):
         "assignment": dict(assignment) if assignment else None,
         "binding": dict(binding) if binding else None,
         "cycles": [dict(row) for row in cycles],
+        "reports": reports,
         "superadmin_memberships": connection.execute("""SELECT COUNT(*) AS n
             FROM organization_memberships WHERE user_id=%s""", (data["superadmin_id"],)).fetchone()["n"],
     }
@@ -85,6 +93,8 @@ def main():
             with get_connection() as connection:
                 print(json.dumps(readback(connection, state), default=str))
         else:
+            from tests.path_admin_browser_inputs import seed_cabinet_report
+
             with get_connection() as connection:
                 data = readback(connection, state)
                 if not data["assignment"] or not data["binding"]:
@@ -94,21 +104,23 @@ def main():
                     (state["f23_f10_f11"]["user_id"], state["f23_f10_f11"]["organization_id"])).fetchone()
                 if profile is None:
                     raise RuntimeError("OWNED_PROFILE_REQUIRED")
-                connection.execute("""INSERT INTO m5_cycles(cycle_id,owner_user_id,organization_id,
+                cycle_id = uuid4()
+                cycle = connection.execute("""INSERT INTO m5_cycles(cycle_id,owner_user_id,organization_id,
                     assignment_id,personalized_profile_id,profile_ref_json,selected_role_ref_json,
                     target_set_json,target_set_checksum,time_budget_seconds,calendar_window_seconds,
-                    parameter_sources_json,usage_scope,status,created_by)
+                    parameter_sources_json,usage_scope,status,created_by,started_at,collection_closed_at)
                     VALUES(%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,%s,600,3600,%s::jsonb,
-                        'qa','prepared',%s)""",
-                    (uuid4(), state["f23_f10_f11"]["user_id"],
+                        'assessment','calculated',%s,NOW(),NOW()) RETURNING id""",
+                    (cycle_id, state["f23_f10_f11"]["user_id"],
                      state["f23_f10_f11"]["organization_id"], data["assignment"]["id"],
                      profile["id"], json.dumps({"synthetic": True,
                          "assessment_configuration_id": data["binding"]["assessment_configuration_id"]}),
                      json.dumps({"role_profile_version_id": data["binding"]["role_profile_version_id"]}),
                      json.dumps({"synthetic": True}), "synthetic-frozen-target",
-                     json.dumps({"synthetic": True}), state["f23_f10_f11"]["superadmin_id"]))
+                     json.dumps({"synthetic": True}), state["f23_f10_f11"]["superadmin_id"])).fetchone()
+                report = seed_cabinet_report(connection, state["f23_f10_f11"]["user_id"], cycle["id"], cycle_id, "ready")
                 connection.commit()
-            print(json.dumps({"synthetic_saved_cycle": True}))
+            print(json.dumps(report))
 
 
 if __name__ == "__main__":

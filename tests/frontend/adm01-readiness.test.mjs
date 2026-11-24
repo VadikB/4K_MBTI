@@ -25,12 +25,12 @@ test('ADM01 admin surface uses the accepted readiness and control colors', () =>
 });
 
 test('PILOT31-03 shows exact assignment readiness and blocks an invalid submit', () => {
-  assert.match(organizations, /Готовность назначения/);
+  assert.match(organizations, /const assignmentHelp = !assignmentBlockers\.length/);
   assert.match(organizations, /Программа оценки не подключена/);
   assert.match(organizations, /Выбранная оценка не соответствует подключённой программе/);
   assert.match(organizations, /questionnaireAssignmentState\(questionnaireLoadState, Boolean\(publishedRevision\)\)/);
   assert.match(questionnaire, /Анкета для выбранной оценки не подтверждена/);
   assert.match(organizations, /нет доступной роли для назначения/);
-  assert.match(organizations, /assignmentBlockers\.length \? ' disabled' : ''/);
-  assert.match(organizations, /назначение не запускает оценку/);
+  assert.match(organizations, /canAssign: isActive && !assignmentBlockers\.length/);
+  assert.match(organizations, /const canAssignMember = canAssign && assignmentCandidate/);
 });

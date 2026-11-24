@@ -142,12 +142,14 @@ export const navigateToScreen = (screen) => {
 };
 
 export const syncUrlState = (screen, options = {}) => {
-  const { replace = false, organizationId, organizationView } = options;
+  const { replace = false, organizationId, organizationView, organizationAnchor } = options;
   const params = new URLSearchParams();
   params.set('screen', screen);
   if (screen === 'admin-organizations' && organizationId) params.set('org', organizationId);
   if (screen === 'admin-organizations' && organizationView === 'create') params.set('view', 'create');
-  if (screen === 'admin-organizations' && organizationId && organizationView === 'history') params.set('view', 'history');
+  if (screen === 'admin-organizations' && organizationId && ['admins', 'history'].includes(organizationView)) {
+    params.set('view', organizationView);
+  }
   params.set('ui', String(Date.now()));
   if (state.assessmentRuntimeKind === 'cycle' && state.productCycleId) params.set('cycle_id', state.productCycleId);
 
@@ -168,8 +170,10 @@ export const syncUrlState = (screen, options = {}) => {
     params.set('total_cases', String(state.assessmentTotalCases));
   }
 
-  const nextUrl = '/?' + params.toString();
-  const currentUrl = window.location.pathname + window.location.search;
+  const anchor = screen === 'admin-organizations' && organizationId && organizationAnchor
+    ? '#' + encodeURIComponent(organizationAnchor) : '';
+  const nextUrl = '/?' + params.toString() + anchor;
+  const currentUrl = window.location.pathname + window.location.search + window.location.hash;
   if (currentUrl === nextUrl) {
     return;
   }

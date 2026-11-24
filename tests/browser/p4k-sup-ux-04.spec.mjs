@@ -16,7 +16,6 @@ const createOrganization = (id, code, name, active, reports) => ({
 const historyLink = (page) => page.getByRole('link', { name: 'Журнал и операции' });
 const badge = (page) => page.locator('[data-platform-org-state]');
 const showPurge = async (page) => {
-  await page.getByText('Полное удаление организации', { exact: true }).click();
   await page.getByRole('button', { name: 'Посмотреть состав удаления' }).click();
   await expect(page.getByRole('heading', { name: 'Состав полного удаления' })).toBeVisible();
 };
@@ -150,7 +149,17 @@ test('lifecycle confirms by ID once after a lost response and restores keyboard 
 
 test('preview enforces safeguards and reload recovers the original purge receipt by GET', async ({ page }) => {
   const state = await fixture(page);
-  await openHistory(page, 'ООО «Вектор»');
+  await page.getByRole('link', { name: 'ООО «Вектор»', exact: true }).click();
+  const openPurge = page.getByRole('link', { name: 'Удалить организацию', exact: true });
+  await openPurge.focus();
+  await page.keyboard.press('Enter');
+  const heading = page.getByRole('heading', { name: 'Полное удаление организации' });
+  await expect(heading).toBeFocused();
+  await expect(page).toHaveURL(/org=3&view=history.*#org-purge-heading$/u);
+  await expect(page.getByRole('link', { name: 'Журнал и операции' })).toHaveAttribute('aria-current', 'page');
+  await page.reload();
+  await expect(heading).toBeFocused();
+  expect(state.requests.filter(({ method }) => method !== 'GET')).toEqual([]);
   await showPurge(page);
   await expect(page.getByText('Команда полного удаления недоступна в этом контуре.').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Удалить полностью' })).toHaveCount(0);
@@ -158,6 +167,7 @@ test('preview enforces safeguards and reload recovers the original purge receipt
   const reopen = () => page.getByRole('button', { name: 'Посмотреть состав удаления' }).click();
   state.blocked = state.execution = true;
   await close();
+  await expect(page.getByRole('button', { name: 'Посмотреть состав удаления' })).toBeFocused();
   await reopen();
   await expect(page.getByText('Аккаунт защищён настройками доступа')).toBeVisible();
   await expect(page.getByText(/Удаление пока заблокировано/)).toBeVisible();
@@ -169,7 +179,7 @@ test('preview enforces safeguards and reload recovers the original purge receipt
   const code = page.getByRole('textbox', { name: 'Код организации' });
   const ack = page.getByRole('checkbox', { name: /Подтверждаю полное удаление/ });
   const send = page.getByRole('button', { name: 'Удалить полностью' });
-  await code.fill('wrong');
+  await code.fill('vector ');
   await ack.check();
   await send.click();
   await expect(page.getByText(/Введите точный код/)).toBeVisible();
@@ -222,6 +232,16 @@ test('an absent receipt permits an explicit retry of the same confirmed command'
   await page.getByRole('button', { name: 'Удалить полностью' }).click();
   await expect(page.getByText(/Квитанция пока отсутствует/)).toBeVisible();
   expect(state.posts).toHaveLength(1);
+  const check = page.getByRole('button', { name: 'Проверить результат удаления' });
+  state.execution = false;
+  await page.reload();
+  await check.click();
+  await expect(page.getByText(/Повтор команды недоступен/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Повторить ту же команду' })).toBeHidden();
+  expect(state.posts).toHaveLength(1);
+  state.execution = true;
+  await page.reload();
+  await check.click();
   await page.getByRole('button', { name: 'Повторить ту же команду' }).click();
   await expect(page.getByText(/подтверждено квитанцией/)).toBeVisible();
   expect(state.posts).toEqual([state.posts[0], state.posts[0]]);

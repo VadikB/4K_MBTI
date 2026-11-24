@@ -91,8 +91,9 @@ const wiring = fs.readFileSync('web/js/wiring.js', 'utf8');
 const start = wiring.indexOf('const confirmAdminAccountPurge =');
 const end = wiring.indexOf('const memberRow =', start);
 const handler = wiring.slice(start, end);
-const click = async ({ module, action = 'purge-account', state = { pendingUser: { id: 1 } } }) => {
-  const button = { closest: () => null, dataset: { action, userId: '20', email: 'owned@example.test' }, disabled: false };
+const click = async ({ module, action = 'purge-account', state = { pendingUser: { id: 1 }, currentScreen: 'admin-organizations' } }) => {
+  const button = { closest: () => null, isConnected: true,
+    dataset: { action, userId: '20', email: 'owned@example.test' }, disabled: false };
   const alerts = [];
   vm.runInNewContext(handler + '\nconfirmAdminAccountPurge(button);', {
     button, state, loadAdminOrganizations: async () => module, accountPurgeErrorMessage,

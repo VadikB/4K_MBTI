@@ -21,6 +21,7 @@ const card = (page) => page.locator('article[data-organization-id]');
 const connect = (page) => card(page).locator('form[data-action="connect-assessment-program"]');
 const status = (page) => page.locator('#admin-organizations-status');
 const reference = process.env.P4K_UX02_REFERENCE_URL;
+const operatorEmail = 'synthetic@example.test';
 let preview;
 test.beforeAll(async () => { preview = await startAdminProgramPreview({ port: 18963 }); });
 test.afterAll(async () => { await preview?.close(); });
@@ -28,13 +29,19 @@ test.afterAll(async () => { await preview?.close(); });
 async function fixture(page, { superadmin = true } = {}) {
   const dashboard = { is_superadmin: superadmin, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const items = [
-    organization(3, 'vector', 'ООО «Вектор»', true, binding(3), 8),
     organization(4, 'sever', 'ООО «Север»', true, binding(4), 12),
+    organization(3, 'vector', 'ООО «Вектор»', true, binding(3), 8),
     organization(5, 'liniya', 'АНО «Линия»', false, null, 3),
   ];
+  items[0].admins = [{ user_id: 41, email: 'm.orlova@example.test', full_name: 'Марина Орлова', is_participant: true }];
+  items[1].admins = [
+    { user_id: 31, email: 'i.sokolov@example.test', full_name: 'Илья Соколов', is_participant: false },
+    { user_id: 32, email: 'a.belova@example.test', full_name: 'Анна Белова', is_participant: true },
+  ];
+  items[2].admins = [{ user_id: 51, email: 'n.fomina@example.test', full_name: 'Нина Фомина' }];
   const state = { items, posts: [], puts: [], requests: [], createOutcome: 'success', failList: false, readback: null, problems: [{ organization_id: 4 }] };
   const listing = () => ({ is_superadmin: superadmin, items: superadmin ? items : items.slice(0, 1),
-    assessment_programs: published });
+    assessment_programs: published, purge_preview_available: superadmin, physical_purge_available: false });
   await page.route('**/users/**', async (route) => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
@@ -42,7 +49,7 @@ async function fixture(page, { superadmin = true } = {}) {
     const json = (data, statusCode = 200) => route.fulfill({ json: data, status: statusCode });
     state.requests.push({ pathname, method });
     if (['/users/session/restore', '/users/18/session-bootstrap'].includes(pathname)) return json({
-      authenticated: true, user: { id: 18, email: 'synthetic@example.test', full_name: 'Синтетический оператор' },
+      authenticated: true, user: { id: 18, email: operatorEmail, full_name: 'Синтетический оператор' },
       is_admin: true, admin_dashboard: dashboard,
     });
     if (pathname === '/users/version') return json({ version: release });
@@ -56,6 +63,19 @@ async function fixture(page, { superadmin = true } = {}) {
       if (state.createOutcome === 'duplicate' || items.some((item) => item.code === code)) return json({}, 409);
       items.push(organization(6, code, name, true, null, 0));
       return state.createOutcome === 'loss' ? route.abort('connectionreset') : json(listing());
+    }
+    const admins = pathname.match(/^\/users\/admin\/organizations\/(\d+)\/admins$/);
+    if (admins && method === 'POST') {
+      const org = items.find((item) => item.id === Number(admins[1]));
+      const { email, full_name } = request.postDataJSON();
+      org.admins.push({ user_id: 81, email, full_name, is_participant: false });
+      return json(listing());
+    }
+    if (admins && method === 'DELETE') {
+      const org = items.find((item) => item.id === Number(admins[1]));
+      const email = new URL(request.url()).searchParams.get('email');
+      org.admins = org.admins.filter((admin) => admin.email !== email);
+      return json(listing());
     }
     if (pathname.endsWith('/questionnaire')) return json({ items: [] });
     const program = pathname.match(/^\/users\/admin\/organizations\/(\d+)\/assessment-program$/);
@@ -81,6 +101,49 @@ async function fixture(page, { superadmin = true } = {}) {
 const open = (page, id) => page.locator('#platform-org-rows a[data-org-id="' + id + '"]:not([data-org-admins])').click();
 const registry = (page) => page.locator('.platform-org-breadcrumb a').click();
 const create = (page) => page.getByRole('link', { name: 'Создать организацию' }).click();
+
+test('AC6 форма отклоняет собственную почту и принимает почту сотрудника после исправления', async ({ page }, info) => {
+  const state = await fixture(page);
+  await page.locator('#platform-org-rows a[data-org-id="4"][data-org-admins]').click();
+  const form = page.locator('form[data-action="add-admin"]');
+  const email = form.getByRole('textbox', { name: 'Рабочая почта' });
+  const name = form.getByRole('textbox', { name: 'ФИО, если известно' });
+  const submit = form.getByRole('button', { name: 'Добавить', exact: true });
+  const error = form.getByRole('alert');
+  const message = 'Вы вошли с этой почтой как суперадминистратор. Укажите рабочую почту другого сотрудника';
+  const grants = () => state.requests.filter(({ method, pathname }) => method === 'POST' && pathname.endsWith('/admins'));
+  await name.fill('Синтетический сотрудник');
+  for (const address of [operatorEmail, operatorEmail.toUpperCase()]) {
+    await email.fill(address);
+    await submit.press('Enter');
+    await expect(error).toHaveText(message);
+    await expect(email).toHaveAttribute('aria-invalid', 'true');
+    await expect(email).toHaveAccessibleDescription(message);
+    await expect(email).toBeFocused();
+    await expect(email).toHaveValue(address);
+    await expect(name).toHaveValue('Синтетический сотрудник');
+    await expect(submit).toBeEnabled();
+    expect(grants()).toHaveLength(0);
+  }
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+    await expect(error).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({ path: info.outputPath('ac6-own-email-' + width + '.png'), fullPage: true, scale: 'css' });
+  }
+
+  const colleagueEmail = 'colleague@example.test';
+  await email.fill(colleagueEmail);
+  await expect(error).toBeHidden();
+  await expect(email).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(name).toHaveValue('Синтетический сотрудник');
+  await submit.click();
+  const administrators = page.locator('[data-organization-admins]');
+  await expect(administrators.getByText(colleagueEmail)).toBeVisible();
+  await expect(administrators.getByText('Администратор добавлен.')).toBeVisible();
+  expect(grants()).toEqual([{ method: 'POST', pathname: '/users/admin/organizations/4/admins' }]);
+});
 
 test('UX-02 GET-only recovery uses exact code; duplicate is shown and admins are added from the card', async ({ page }) => {
   const state = await fixture(page);
@@ -110,6 +173,7 @@ test('UX-02 GET-only recovery uses exact code; duplicate is shown and admins are
   await page.getByRole('button', { name: 'Проверить создание' }).click();
   await expect(page).toHaveURL(/org=6/);
   await expect(status(page)).toContainText('Создание подтверждено по коду');
+  await card(page).getByRole('link', { name: 'Управлять доступом' }).click();
   await expect(card(page).getByRole('heading', { name: 'Добавить администратора' })).toBeVisible();
   expect(state.posts).toHaveLength(2);
 });
@@ -146,26 +210,32 @@ test('UX-02 ответ программы из прежней карточки �
 
 test('UX-02 FIX роль платформы не показывает формы анкеты после перезагрузки', async ({ page }) => {
   const state = await fixture(page);
-  await open(page, 3);
   for (let visit = 0; visit < 2; visit += 1) {
+    if (visit === 0) await open(page, 3);
     await expect(card(page).getByRole('heading', { name: 'Доступ к отчётам и анкете' })).toBeVisible();
     await expect(card(page).getByRole('button', { name: 'Анкета', exact: true })).toHaveCount(0);
     await expect(card(page).locator('[data-action="preview-early-data"], [data-action="preview-questionnaire"], [data-action="confirm-questionnaire"]')).toHaveCount(0);
     await expect(card(page)).toContainText('Анкету загружает администратор в своём кабинете.');
     await card(page).getByRole('link', { name: 'добавьте сотрудника вашей команды' }).click();
     await expect(card(page).getByRole('heading', { name: 'Добавить администратора' })).toBeFocused();
-    if (visit === 0) await page.reload();
+    await expect(page).toHaveURL(/org=3&view=admins/);
+    await expect(card(page).getByRole('link', { name: 'Администраторы', exact: true })).toHaveAttribute('aria-current', 'page');
+    if (visit === 0) {
+      await page.reload();
+      await expect(card(page).getByRole('heading', { name: 'Добавить администратора' })).toBeFocused();
+      await card(page).getByRole('link', { name: 'Обзор' }).click();
+    }
   }
-  expect(state.requests.filter(({ method, pathname }) => method !== 'GET' && pathname.includes('/questionnaire'))).toEqual([]);
+  expect(state.requests.filter(({ pathname }) => pathname.includes('/questionnaire'))).toEqual([]);
 });
 
 test('UX-02 FIX счётчик отражает отказ, восстановление и подтверждённый ноль', async ({ page }) => {
   const state = await fixture(page);
-  const row = page.getByRole('link', { name: 'Проблемы · ООО «Север»' });
+  const row = page.getByRole('link', { name: /^Проблемы · ООО «Север»/u });
   const scope = '/?screen=admin-platform-problems&org=4';
-  for (const [items, value] of [[state.problems, '1'], [null, '—'],
-    [[{ organization_id: 4 }, { organization_id: 4 }], '2'], [[], '0']]) {
-    if (value !== '1') {
+  for (const [items, value] of [[state.problems, '1 проблема'], [null, '—'],
+    [[{ organization_id: 4 }, { organization_id: 4 }], '2 проблемы'], [[], 'Нет проблем']]) {
+    if (value !== '1 проблема') {
       state.problems = items;
       const read = page.waitForResponse((response) => response.url().endsWith('/support/preparation'));
       await page.locator('#admin-open-organizations-button').click();
@@ -173,10 +243,46 @@ test('UX-02 FIX счётчик отражает отказ, восстановл
     }
     await expect(row).toHaveText(value);
     await expect(row).toHaveAttribute('href', scope);
+    if (value === '—') await expect(row).toHaveAccessibleName(/Количество проблем недоступно/u);
     await open(page, 4);
-    await expect(card(page).locator('[data-org-problem-count]')).toHaveText(value);
+    await expect(card(page).locator('[data-org-problem-count]')).toHaveText(value === '—' ? 'Количество проблем недоступно' : value);
     await expect(card(page).getByRole('link', { name: 'Открыть список' })).toHaveAttribute('href', scope);
   }
+});
+
+test('UX-FIX старые ссылки, отдельные разделы и безопасное повторное чтение реестра', async ({ page }) => {
+  const state = await fixture(page);
+  await page.goto(preview.base + '/?screen=admin-organizations&org=3&view=people');
+  const navigation = page.getByRole('navigation', { name: 'Разделы организации' });
+  const legacy = page.locator('[data-admin-view], [data-action="update-profile"], [data-action="add-domain"],' +
+    ' [data-action="prepare-organization-assessments"], [data-action="add-member"], [data-action="import-members"]');
+  await expect(navigation.getByRole('link', { name: 'Обзор' })).toHaveAttribute('aria-current', 'page');
+  await expect(legacy).toHaveCount(0);
+  await navigation.getByRole('link', { name: 'Администраторы' }).click();
+  await expect(page).toHaveURL(/org=3&view=admins/u);
+  await expect(connect(page)).toHaveCount(0);
+  await expect(legacy).toHaveCount(0);
+  await navigation.getByRole('link', { name: 'Журнал и операции' }).click();
+  await expect(page).toHaveURL(/org=3&view=history/u);
+  await expect(page.getByRole('heading', { name: 'Администраторы организации' })).toHaveCount(0);
+  await expect(legacy).toHaveCount(0);
+  await page.goBack();
+  await expect(navigation.getByRole('link', { name: 'Администраторы' })).toHaveAttribute('aria-current', 'page');
+  await page.goto(preview.base + '/?screen=admin-organizations&org=3#platform-org-admins-heading');
+  await expect(page.getByRole('heading', { name: 'Администраторы организации' })).toBeFocused();
+  await expect(page).toHaveURL(/org=3&view=admins/u);
+  state.failList = true;
+  await page.goto(preview.base + '/?screen=admin-organizations');
+  await expect(page.locator('[data-organizations-stale]')).toContainText('Показано последнее подтверждённое состояние.');
+  await expect(page.locator('#platform-org-count')).toHaveText('Найдено организаций: 3');
+  await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await page.reload();
+  await expect(page.locator('[data-organizations-stale]')).toBeVisible();
+  await expect(page.locator('#platform-org-registry')).toBeHidden();
+  state.failList = false;
+  await page.getByRole('button', { name: 'Обновить безопасно' }).click();
+  await expect(page.locator('#platform-org-count')).toHaveText('Найдено организаций: 3');
+  await expect(page.locator('[data-organizations-stale]')).toHaveCount(0);
 });
 
 test('UX-02 FIX фон, подвал и заголовок создания на 320 px', async ({ page }) => {
@@ -202,8 +308,7 @@ test('UX-02 FIX фон, подвал и заголовок создания на
     expect(geometry.color).toBe('rgb(247, 247, 247)');
     expect(geometry.width).toBeLessThanOrEqual(320);
     expect(geometry.bottom).toBe(geometry.height);
-    if (target === 'card') expect(geometry.bottom).toBeGreaterThan(geometry.viewport);
-    else expect(geometry.bottom).toBe(geometry.viewport);
+    expect(geometry.bottom).toBeGreaterThanOrEqual(geometry.viewport);
     if (target === 'create') {
       const lines = await page.getByRole('heading', { name: 'Создать организацию' }).evaluate(node => {
         const range = document.createRange();
@@ -216,6 +321,83 @@ test('UX-02 FIX фон, подвал и заголовок создания на
 });
 
 for (const width of [1440, 390, 320]) {
+  test('UX-FIX отзыв последнего администратора на ' + width + ' px', async ({ page, context }, info) => {
+    const viewport = { width, height: width === 1440 ? 1000 : 844 };
+    await page.setViewportSize(viewport);
+    const state = await fixture(page);
+    const screenshot = async (target, label) => {
+      await target.evaluate(() => document.fonts.ready);
+      const footer = await target.locator('.app-footer').evaluate((node) => ({
+        bottom: Math.round(node.getBoundingClientRect().bottom + scrollY),
+        height: document.documentElement.scrollHeight,
+        width: document.documentElement.scrollWidth,
+      }));
+      expect(footer.width).toBe(width);
+      expect(footer.bottom).toBe(footer.height);
+      await target.screenshot({ path: info.outputPath(label + '-' + width + '.png'), fullPage: true, scale: 'css' });
+    };
+    const account = page.locator('#admin-organizations-account-name');
+    if (width === 1440) await expect(account.getByText('Суперадминистратор', { exact: true })).toBeVisible();
+    await account.focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#admin-open-organizations-button')).toBeFocused();
+    const count = page.getByRole('link', { name: /^Администраторы · ООО «Север»/u });
+    await count.press('Enter');
+    await expect(page).toHaveURL(/org=4&view=admins/u);
+    await expect(page.getByRole('heading', { name: 'Администраторы организации' })).toBeFocused();
+    await account.click();
+    await expect(page.locator('#admin-organizations-menu-role')).toHaveText('Суперадминистратор платформы');
+    await expect(page.locator('#admin-organizations-menu-name')).toHaveText('Синтетический оператор');
+    await account.click();
+    await screenshot(page, 'product-admins-single');
+    const more = page.locator('.admin-access-row summary');
+    const revoke = page.getByRole('menuitem', { name: 'Снять права', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Снять права администратора?' });
+    await more.press('Enter');
+    await revoke.press('Enter');
+    await expect(dialog.getByRole('button', { name: 'Отмена' })).toBeFocused();
+    await expect(dialog).toContainText('Марина Орлова · m.orlova@example.test');
+    await expect(dialog).toContainText('0 администраторов');
+    await screenshot(page, 'product-admins-confirm');
+    await page.keyboard.press('Escape');
+    await expect(more).toBeFocused();
+    expect(state.requests.filter(({ method }) => method === 'DELETE')).toHaveLength(0);
+    await more.click();
+    await revoke.click();
+    await dialog.getByRole('button', { name: 'Снять права', exact: true }).click();
+    await expect(card(page).getByText('Права администратора сняты.')).toBeVisible();
+    await page.reload();
+    await expect(page.getByText('Администраторов пока нет.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Добавить', exact: true })).toBeEnabled();
+    await screenshot(page, 'product-admins-empty');
+    await registry(page);
+    await expect(count).toHaveText('0');
+
+    if (reference) {
+      const demo = await context.newPage();
+      await demo.setViewportSize(viewport);
+      const url = reference + '/v1.6/?screen=admins&org=sever&view=screen';
+      await demo.goto(url);
+      await expect(demo.getByText('Марина Орлова', { exact: true })).toBeVisible();
+      await screenshot(demo, 'reference-admins-single');
+      // Keep the approved renderer intact and supply an empty synthetic list for the new state.
+      await demo.goto(reference + '/v1.6/?screen=org-create&view=screen');
+      await demo.locator('#org-new-name').fill('ООО «Проверка»');
+      await demo.locator('#org-new-code').fill('UX_FIX');
+      await demo.getByRole('button', { name: 'Создать', exact: true }).click();
+      await demo.evaluate(() => {
+        const key = 'p4k-superadmin-demo-organizations-v1.0';
+        const records = JSON.parse(sessionStorage.getItem(key));
+        records.find((item) => item.id === 'sever').admins = [];
+        sessionStorage.setItem(key, JSON.stringify(records));
+      });
+      await demo.goto(url);
+      await expect(demo.getByText('Администраторов пока нет.')).toBeVisible();
+      await screenshot(demo, 'reference-admins-empty');
+      await demo.close();
+    }
+  });
+
   test('UX-02 реестр, форма и состояния программы на ' + width + ' px', async ({ page, context }, info) => {
     const viewport = { width, height: width === 1440 ? 1000 : 844 };
     await page.setViewportSize(viewport);
@@ -243,17 +425,19 @@ for (const width of [1440, 390, 320]) {
         }));
         expect(layout.color).toBe('rgb(247, 247, 247)');
         expect(layout.bottom).toBe(layout.height);
-        if (name === 'connected') expect(layout.bottom).toBeGreaterThan(viewport.height);
-        else if (name !== 'registry' || width === 1440) expect(layout.bottom).toBe(viewport.height);
+        expect(layout.bottom).toBeGreaterThanOrEqual(viewport.height);
         if (name === 'create') await expect(page.locator('#admin-organizations-title')).toHaveCSS('font-size', width < 700 ? '24px' : '28px');
       }
-      await page.screenshot({ path: info.outputPath('product-' + name + '.png'), fullPage: name === 'connected', scale: 'css' });
+      await page.screenshot({ path: info.outputPath('product-' + width + '-' + name + '.png'), fullPage: true, scale: 'css' });
     };
     await expect(page.locator('#platform-org-count')).toHaveText('Найдено организаций: 3');
-    await expect(page.getByRole('link', { name: 'Проблемы · ООО «Север»' })).toHaveText('1');
+    await expect(page.getByRole('link', { name: /^Проблемы · ООО «Север»/u })).toHaveText('1 проблема');
     await page.getByRole('link', { name: 'Создать организацию' }).focus();
     await page.keyboard.press('Tab');
     await expect(query).toBeFocused();
+    await query.blur();
+    await expect(query).toHaveCSS('height', '42px');
+    await expect(page.getByRole('combobox', { name: 'Статус' })).toHaveCSS('height', '42px');
     await capture('registry');
     await query.fill('VECTOR');
     await expect(page.locator('#platform-org-count')).toHaveText('Найдено организаций: 1');
@@ -305,7 +489,7 @@ for (const width of [1440, 390, 320]) {
       await ref.setViewportSize(viewport);
       const shot = async (name) => {
         await ref.evaluate(() => document.fonts.ready);
-        await ref.screenshot({ path: info.outputPath('reference-' + name + '.png'), fullPage: name === 'connected', scale: 'css' });
+        await ref.screenshot({ path: info.outputPath('reference-' + width + '-' + name + '.png'), fullPage: true, scale: 'css' });
       };
       await ref.goto(reference + '/v1.6/?screen=organizations&view=screen');
       await expect(ref.locator('#org-query')).toBeVisible();

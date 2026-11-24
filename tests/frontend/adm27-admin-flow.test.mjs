@@ -5,9 +5,9 @@ import test from 'node:test';
 const organizations = readFileSync(new URL('../../web/js/screens/admin/organizations.js', import.meta.url), 'utf8');
 const wiring = readFileSync(new URL('../../web/js/wiring.js', import.meta.url), 'utf8');
 
-test('registered members can receive an organization assessment invitation', () => {
-  assert.match(organizations, /const invitationButton =[\s\S]*?send-member-invitation/);
-  assert.doesNotMatch(organizations, /const invitationButton = isRegistered \? ''/);
+test('the organization administrator can invite eligible participants in the people list', () => {
+  assert.match(organizations, /const invitationCandidate = activeOrganization && !registered && awaitingParticipant/);
+  assert.match(organizations, /const send = canSend \?[^\n]+send-member-invitation/);
 });
 
 test('member form resets only after confirmed success', () => {
@@ -24,7 +24,7 @@ test('manual questionnaire draft fields are not blocked by publish required attr
 
 test('ADM 1A uses the accepted navigation, groups and provenance wording', () => {
   assert.match(organizations, /people:\s*\{\s*title: 'Участники оценки'/);
-  assert.match(organizations, /managementSections\.filter\(\(view\) => !isSuperadmin \|\| view !== 'questionnaire'\)\.map\(viewButton\)/);
+  assert.match(organizations, /managementSections\.map\(viewButton\)/);
   assert.match(organizations, /<legend>Об организации<\/legend>/);
   assert.match(organizations, /<legend>Сведения для знакомства<\/legend>/);
   assert.match(organizations, /<legend>Настройки контекста для ситуаций<\/legend>/);

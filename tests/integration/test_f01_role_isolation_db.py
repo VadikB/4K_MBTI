@@ -210,7 +210,7 @@ def test_repeated_admin_grant_and_revoke_preserve_participant_and_timestamps(rol
                                      ).fetchone()["n"] == 0
 
 
-def test_last_admin_is_preserved_by_two_concurrent_revoke_requests(role_http):
+def test_two_concurrent_revoke_requests_leave_zero_admins_and_keep_accounts(role_http):
     app, get_connection = role_http
     path = "/users/admin/organizations/4/admins"
     addrs = ["first@example.test", "second@example.test"]
@@ -227,13 +227,12 @@ def test_last_admin_is_preserved_by_two_concurrent_revoke_requests(role_http):
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         responses = list(pool.map(revoke, addrs))
-    assert sorted(response.status_code for response in responses) == [200, 409]
-    refused = next(response for response in responses if response.status_code == 409)
-    assert refused.json()["detail"] == "LAST_ORGANIZATION_ADMIN"
+    assert [response.status_code for response in responses] == [200, 200]
     with get_connection() as connection:
         rows = connection.execute("SELECT role,is_participant FROM organization_memberships").fetchall()
-        assert rows == [{"role": "admin", "is_participant": False}]
-        assert connection.execute("SELECT COUNT(*) AS n FROM configured_access_suppressions").fetchone()["n"] == 1
+        assert rows == []
+        assert connection.execute("SELECT COUNT(*) AS n FROM configured_access_suppressions").fetchone()["n"] == 2
+        assert connection.execute("SELECT COUNT(*) AS n FROM users WHERE email=ANY(%s)", (addrs,)).fetchone()["n"] == 2
 
 
 def test_configured_admin_is_administrative_only_and_stays_revoked(role_http, monkeypatch):
@@ -250,13 +249,32 @@ def test_configured_admin_is_administrative_only_and_stays_revoked(role_http, mo
         ).fetchone() == {"role": "admin", "is_participant": False, "admission_source": "configured_admin"}
 
     with TestClient(app) as http:
-        assert http.delete(path, params={"email": email}).json()["detail"] == "LAST_ORGANIZATION_ADMIN"
-        assert http.post(path, json={"email": "replacement@example.test"}).status_code == 200
-        assert http.delete(path, params={"email": email}).status_code == 200
+        for _ in range(2):
+            assert http.delete(path, params={"email": email}).status_code == 200
+        with get_connection() as connection:
+            assert not org_access.get_admin_scope(connection, actor).can_admin
+            assert not org_access.email_has_organization_access(connection, email=email)
+            assert connection.execute("SELECT role FROM organization_memberships WHERE user_id=72").fetchone() is None
+            assert connection.execute("SELECT email FROM users WHERE id=72").fetchone()["email"] == email
+        assert http.post(path, json={"email": email}).status_code == 200
+        with get_connection() as connection:
+            assert org_access.get_admin_scope(connection, actor).organization_ids == (4,)
+            assert connection.execute("SELECT 1 FROM configured_access_suppressions WHERE email=%s", (email,)).fetchone() is None
+
+
+def test_platform_account_remains_protected_during_admin_revoke(role_http, monkeypatch):
+    app, get_connection = role_http
+    email = "existing@example.test"
+    monkeypatch.setattr(org_access.settings, "superadmin_emails_raw", email)
     with get_connection() as connection:
-        assert not org_access.get_admin_scope(connection, actor).can_admin
-        assert not org_access.email_has_organization_access(connection, email=email)
-        assert connection.execute("SELECT role FROM organization_memberships WHERE user_id=72").fetchone() is None
+        connection.execute("""INSERT INTO organization_memberships (organization_id,user_id,role,is_participant)
+            VALUES(4,72,'admin',FALSE)""")
+    with TestClient(app) as http:
+        response = http.delete("/users/admin/organizations/4/admins", params={"email": email})
+    assert response.status_code == 409
+    with get_connection() as connection:
+        assert connection.execute("SELECT role FROM organization_memberships WHERE user_id=72").fetchone()["role"] == "admin"
+        assert connection.execute("SELECT 1 FROM configured_access_suppressions WHERE email=%s", (email,)).fetchone() is None
 
 
 def test_admin_grant_keeps_email_identity_with_its_existing_account(role_http):
