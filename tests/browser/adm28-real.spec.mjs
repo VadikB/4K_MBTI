@@ -66,6 +66,36 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
       activity_description: 'Синтетическая проверка', purpose: 'Синтетическая цель', results_usage: 'Для развития',
       organizer: 'Синтетический HR',
       case_reality_level: 'Близко к реальной работе', organization_name_usage_rules: 'Можно использовать настоящее название' };
+    const questionnaireUrl = `${base}/users/admin/organizations/${organizationId}/questionnaire`;
+    const confirm = form.getByRole('button', { name: 'Подтвердить сведения', exact: true });
+    await test.step('Сохранить пустые и частичные сведения без публикации имени', async () => {
+      const saveDraft = async () => {
+        const pending = page.waitForResponse((response) =>
+          response.request().method() === 'POST' && response.url() === questionnaireUrl + '/preview');
+        await confirm.click();
+        const response = await pending;
+        expect(response.status()).toBe(201);
+        const draft = await response.json();
+        expect(draft.effective_confirmed).toBeNull();
+        await expect(form.locator('[data-organization-confirmed]')).toBeHidden();
+        await expect(confirm).toBeEnabled();
+        return draft;
+      };
+      const empty = await saveDraft();
+      expect(empty.answers_json.C01.name).toBe(values.organization_name);
+      const rejectedName = values.organization_name + ' · черновик';
+      await form.locator('[name="organization_name"]').fill(rejectedName);
+      for (const name of ['organization_type', 'industry', 'activity_description']) {
+        await form.locator(`[name="${name}"]`).fill(values[name]);
+      }
+      const partial = await saveDraft();
+      expect(partial.answers_json.C01.name).toBe(rejectedName);
+      const revisionUrl = `${questionnaireUrl}/${partial.id}`;
+      expect((await page.request.post(revisionUrl + '/confirm', { data: {} })).status()).toBe(409);
+      const readback = await page.request.get(revisionUrl);
+      expect(readback.status()).toBe(200);
+      expect((await readback.json()).organization_name_current).toBe(values.organization_name);
+    });
     for (const [name, value] of Object.entries(values)) {
       if (!['source_author', 'organizer'].includes(name)) {
         const field = form.locator(`[name="${name}"]`);
@@ -77,7 +107,6 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
       response.request().method() === 'POST' && response.url().endsWith('/questionnaire/preview'));
     const confirmationResponse = page.waitForResponse((response) =>
       response.request().method() === 'POST' && response.url().endsWith('/confirm'));
-    const confirm = form.getByRole('button', { name: 'Подтвердить сведения', exact: true });
     await confirm.focus();
     await confirm.press('Enter');
     const previewReply = await previewResponse;
@@ -106,6 +135,16 @@ test('ADM28 real isolated backend: draft, publication, self-assignment and own j
     await expect(form.locator('[name="source_author"]')).toHaveCount(0);
     await expect(form.locator('[name="purpose"]')).toHaveValue(values.purpose);
     await expect(form.locator('[data-organization-confirmed]')).toBeVisible();
+    const readiness = card.locator('.admin-data-readiness');
+    const readinessSummary = readiness.locator('summary');
+    const questionnaireStatus = readiness.locator('dt:text-is("Анкета") + dd');
+    await expect(readinessSummary).toHaveText(/^Готовность оценки · /);
+    await expect(questionnaireStatus).toBeHidden();
+    await readinessSummary.press('Enter');
+    await expect(questionnaireStatus).toBeVisible();
+    await expect(questionnaireStatus).toHaveText('подтверждена');
+    await readinessSummary.press('Enter');
+    await expect(questionnaireStatus).toBeHidden();
     await form.locator('[name="purpose"]').fill('Правка после подтверждения');
     await expect(confirm).toBeVisible();
     await expect(form.locator('[data-previous-organization-revision]')).toBeVisible();
