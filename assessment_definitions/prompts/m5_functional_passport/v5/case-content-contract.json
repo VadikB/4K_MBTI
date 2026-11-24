@@ -1,0 +1,86 @@
+{
+  "schema_version": 2,
+  "id": "m5-functional-passport-content",
+  "version": "2.0.0",
+  "scope": "battery_v0.3_qa",
+  "sources": [
+    "M5.Methodology v1.2 §§6.3–6.9",
+    "M5.CasePassport v1.2 §§2, 5, 7",
+    "Change 01 И-3/И-6, C-23/C-34",
+    "M2 по normative_source каждого назначения"
+  ],
+  "cases": {
+    "CASE.SPEC.01": {
+      "case_version": "v0.6",
+      "passport_sha256": "8e7afe2978de8541a4dcc1c321d274c193e34d63317152af7c9073da47d0b599",
+      "requirements": {}
+    },
+    "CASE.SPEC.02": {
+      "case_version": "v0.7",
+      "passport_sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a",
+      "requirements": {
+        "invariant:CASE.SPEC.02.I05": {
+          "requirement": "M05 задаёт автора, дату или версию, статус, проверенный аспект B, способ или условия, результат и границу вывода. Укажи, чего проверка не охватила. Если проверки будущего шага нет, её недоступность может быть явно указана. Размер выборки нужен только когда выборка является существенным условием фактически описанной проверки.",
+          "source_fields": [
+            "17.2/M03",
+            "17.2/M04",
+            "17.2/M05",
+            "18"
+          ],
+          "finding_evidence_sections": [
+            "candidate_as/Материалы/M03",
+            "candidate_as/Материалы/M04",
+            "candidate_as/Материалы/M05"
+          ]
+        },
+        "indicator:K1.I09": {
+          "requirement": "Из доступных со старта источников и двух адресных задач участник может самостоятельно ясно выразить существенное различие заявленного, подтверждённого и условного в сообщении коллеге или черновике заказчику. Рабочий срок и следующий шаг сохраняют свои статусы. Допустимы условные формулировки и эквивалентные термины. Один термин может относиться к разным статусам, когда контекст различает их. Дополнительный словарь в P00 не требуется.",
+          "source_fields": [
+            "17.1",
+            "17.4",
+            "22/K1.I09"
+          ],
+          "finding_evidence_sections": [
+            "candidate_as/Материалы",
+            "candidate_as/IndicatorObservability/K1.I09"
+          ]
+        }
+      }
+    },
+    "CASE.SPEC.03": {
+      "case_version": "v0.5",
+      "passport_sha256": "0ff7e2c0893badbabe5443d1bc9cc366adef3abcac5ae9795fd079e70dc0d0c1",
+      "requirements": {}
+    },
+    "CASE.SPEC.04": {
+      "case_version": "v0.6",
+      "passport_sha256": "3b6b7a6507a23f6072d935263068d0447e8d9f44dd4fed7e447f1b55e1826112",
+      "requirements": {}
+    },
+    "CASE.SPEC.05": {
+      "case_version": "v0.6",
+      "passport_sha256": "2833de56142e89dcd5a4d77f9bac62946fb7f054b1838dba39f46c5012389af6",
+      "requirements": {}
+    },
+    "CASE.SPEC.06": {
+      "case_version": "v0.5",
+      "passport_sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf",
+      "requirements": {}
+    },
+    "CASE.SPEC.07": {
+      "case_version": "v0.5",
+      "passport_sha256": "6d8ec887387a770605c2bd896ca126fde49ecca619ec8ff0dccf96837a76d3fd",
+      "requirements": {}
+    },
+    "CASE.SPEC.08": {
+      "case_version": "v0.5",
+      "passport_sha256": "5699ce51ce70d25da71296a1aeaa9e71114f472bcc05922f2c977c9d3558b2ca",
+      "requirements": {}
+    },
+    "CASE.SPEC.09": {
+      "case_version": "v0.5",
+      "passport_sha256": "0dd8fe0a718d9560a5e55b9340753cdb0433831e93da2f4369094bff20e01218",
+      "requirements": {}
+    }
+  }
+}

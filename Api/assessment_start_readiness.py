@@ -65,7 +65,7 @@ def plan_gate(content: dict, cycle: dict) -> dict | None:
 
 def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
     """Check mandatory stages and the terminal candidate; never alter admission."""
-    from Api.m5_functional_generation_service import checksum as candidate_checksum
+    from Api.m5_functional_generation_service import checksum as candidate_checksum, review_dispatches_match
     from Api.m5_functional_tester import aggregate
     candidate = trace.get("accepted_as")
     _require(isinstance(candidate, dict) and candidate_checksum(candidate) == trace.get("candidate_checksum"),
@@ -87,6 +87,9 @@ def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
     if repair:
         _require((repair.get("repair_generation_operation") or {}).get("operation_id") == generation["operation_id"],
                  "FINAL_REPAIR_MISMATCH")
+    _require(review_dispatches_match(tester, candidate_sha256=trace["candidate_checksum"],
+                                    review_round=2 if repair else 1, operation_id=operation_id),
+             "REVIEW_DISPATCH_MISMATCH")
     batch_ids = [generation["operation_id"]]
     for name in ("provider_operation", "challenger_operation"):
         operation = tester.get(name) or {}
@@ -140,21 +143,27 @@ def read(connection, *, cycle_id: str, user_id: int) -> dict:
             _require(len(operations) == 1, "PREPARATION_OPERATION_MISSING")
             op = operations[0]
             legacy = 'assignment_id' not in op['request_json']
-            _require(op["status"] == "completed"
-                     and all(op["request_json"].get(key) == value for key, value in scope.items()
-                             if not (legacy and key == 'assignment_id'))
-                     and str((op.get("result_json") or {}).get("plan", {}).get("cycle_id")) == str(cycle_id),
-                     "PREPARATION_SCOPE_MISMATCH")
+            mismatches = [key for key, value in scope.items()
+                          if op["request_json"].get(key) != value and not (legacy and key == "assignment_id")]
+            if op["status"] != "completed":
+                mismatches.append("status")
+            elif str((op.get("result_json") or {}).get("plan", {}).get("cycle_id")) != str(cycle_id):
+                mismatches.append("result.plan.cycle_id")
+            if mismatches:
+                result["preparation_mismatch_fields"] = mismatches
+            _require(not mismatches, "PREPARATION_SCOPE_MISMATCH")
             result["preparation_operation_id"] = str(op["operation_id"])
         if binding:
-            current = pilot_plan_binding.program_for_profile(connection, profile)
-            _require(current is not None and current["id"] == binding["program_ref"]["id"]
-                     and current["connection_id"] == binding["program_ref"]["connection_id"]
-                     and current["definition_checksum"] == binding["program_ref"]["checksum"], "PROGRAM_SCOPE_MISMATCH")
-            snapshot = pilot_plan_binding.validate_published_program(connection, current)
+            program = pilot_plan_binding.program_for_profile(
+                connection, profile, connection_id=binding["program_ref"]["connection_id"],
+            )
+            _require(program is not None and program["id"] == binding["program_ref"]["id"]
+                     and program["connection_id"] == binding["program_ref"]["connection_id"]
+                     and program["definition_checksum"] == binding["program_ref"]["checksum"], "PROGRAM_SCOPE_MISMATCH")
+            snapshot = pilot_plan_binding.validate_published_program(connection, program)
             _require(snapshot == binding["admission_snapshot"], "PROGRAM_SCOPE_MISMATCH")
             actual_scope = pilot_plan_binding.assignment_scope(connection, profile=profile,
-                assignment_id=cycle["assignment_id"], assignment_ref=current["assignment_ref"])
+                assignment_id=cycle["assignment_id"], assignment_ref=program["assignment_ref"])
             _require(actual_scope == binding["assignment_scope"], "ASSIGNMENT_SCOPE_MISMATCH")
             for source in binding["timing_sources"].values():
                 revision = connection.execute("SELECT * FROM m7_parameter_revisions WHERE id=%s", (source["revision_id"],)).fetchone()
@@ -239,12 +248,13 @@ def require(connection, *, cycle_id: str, user_id: int) -> dict:
         connection.execute("""SELECT operation_id FROM product_cycle_preparation_operations
             WHERE operation_id=%s FOR SHARE""", (result["preparation_operation_id"],)).fetchone()
     if result.get("pilot_admission"):
-        connection.execute("""SELECT link.id FROM organization_assessment_program_connections link
-            JOIN assessment_program_definitions program ON program.id=link.program_definition_id
-            WHERE link.organization_id=%s AND link.is_current=TRUE FOR SHARE OF link,program""",
-            (cycle["organization_id"],)).fetchall()
         from Api.m7_planning_repository import read_plan
         binding = read_plan(connection, cycle_id)["content_json"]["pilot_plan_binding"]
+        connection.execute("""SELECT link.id FROM organization_assessment_program_connections link
+            JOIN assessment_program_definitions program ON program.id=link.program_definition_id
+            WHERE link.organization_id=%s AND (link.id=%s OR link.is_current=TRUE)
+            ORDER BY link.id FOR SHARE OF link,program""",
+            (cycle["organization_id"], binding["program_ref"]["connection_id"])).fetchall()
         for source in binding["timing_sources"].values():
             connection.execute("SELECT id FROM m7_parameter_revisions WHERE id=%s FOR SHARE",
                                (source["revision_id"],)).fetchone()

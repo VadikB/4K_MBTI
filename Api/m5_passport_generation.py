@@ -49,6 +49,7 @@ def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
         "2.0.0": (V2_FILES, "1.0.0"),
         "3.0.0": (V2_FILES, "2.0.0"),
         "4.0.0": (V2_FILES, "2.0.0"),
+        "5.0.0": (V2_FILES, "2.1.0"),
     }.get(manifest.get("version"))
     if layout is None or (manifest.get("schema_version"), manifest.get("id"), manifest.get("status")) != (
         1, "m5-functional-passport", "draft"
@@ -69,7 +70,7 @@ def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
     contract = json.loads((directory / PROMPT_FILES["generation_contract"]).read_bytes())
     if (contract.get("schema_version"), contract.get("id"), contract.get("version")) != (1, "m5-functional-as", as_version):
         raise ValueError("M5_AS_PROMPT_PACKAGE_INVALID")
-    if as_version == "2.0.0" and not (
+    if as_version in {"2.0.0", "2.1.0"} and not (
         isinstance(contract.get("case_as_contract_ref"), dict)
         and isinstance(contract.get("event_material_rules"), dict)
     ):

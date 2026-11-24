@@ -8,7 +8,7 @@ from Api.m5_case_runtime import checksum
 from Api.pilot_plan_admission import _require, validate_program, validate_snapshot
 
 
-def program_for_profile(connection, profile: dict) -> dict | None:
+def program_for_profile(connection, profile: dict, *, connection_id: int | None = None) -> dict | None:
     available = connection.execute(
         "SELECT to_regclass(current_schema()||'.assessment_program_definitions') AS relation"
     ).fetchone()
@@ -17,9 +17,18 @@ def program_for_profile(connection, profile: dict) -> dict | None:
     rows = connection.execute("""SELECT program.*,link.id AS connection_id,link.organization_id
         FROM organization_assessment_program_connections link
         JOIN assessment_program_definitions program ON program.id=link.program_definition_id
-        WHERE link.organization_id=%s AND link.is_current=TRUE
-          AND program.assessment_configuration_id=%s""",
-        (profile["organization_id"], profile["assessment_configuration_id"])).fetchall()
+        WHERE link.organization_id=%s AND program.assessment_configuration_id=%s
+          AND ((%s::bigint IS NULL AND link.is_current=TRUE)
+               OR (link.id=%s AND (link.is_current=TRUE OR (
+                   link.superseded_at IS NOT NULL AND EXISTS (
+                       SELECT 1 FROM organization_assessment_program_connections current_link
+                       JOIN assessment_program_definitions current_program ON current_program.id=current_link.program_definition_id
+                       WHERE current_link.organization_id=link.organization_id AND current_link.is_current=TRUE
+                         AND (current_program.assessment_configuration_id<>program.assessment_configuration_id
+                              OR current_program.id=program.id)
+                   )
+               ))))""",
+        (profile["organization_id"], profile["assessment_configuration_id"], connection_id, connection_id)).fetchall()
     _require(len(rows) <= 1, "PROGRAM_SCOPE_AMBIGUOUS")
     return dict(rows[0]) if rows else None
 

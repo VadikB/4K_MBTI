@@ -21,6 +21,8 @@ from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_runtime_rules import load_runtime_rule_package
 from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE
 from scripts.build_m5_passport_bank import BATTERY_PACKAGE, BATTERY_RUNTIME
+from Api.cycle_execution_manifest import M5_BATTERY_PILOT_REVIEW_PACKAGE
+from Api.m5_battery_contract import PILOT_CASE_SUFFIX, RULE_PACKAGE
 from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as BANK_RUNTIME_DIR
 
 
@@ -208,7 +210,8 @@ def build_release_artifacts(
     passport_bank = package["schema_version"] == 4
     addressed_rules = runtime["manifest"]["schema_version"] == 3
     release_series = "passport.2" if addressed_rules else ("passport.1" if passport_bank else "admitted.1")
-    release_suffix = f"-{release_series}{scope_suffix}"
+    battery_pilot = package_dir == BATTERY_PACKAGE
+    release_suffix = PILOT_CASE_SUFFIX if battery_pilot else f"-{release_series}{scope_suffix}"
     source_manifest = json.loads((package_dir / "manifest.json").read_text())
     source_package = json.loads((package_dir / "case-package.json").read_text())
     source_ref = {
@@ -238,12 +241,17 @@ def build_release_artifacts(
             for item in source_manifest["artifacts"]
         ],
     }
+    if battery_pilot:
+        manifest.pop("diagnostic_only")
+        manifest["battery_pilot"] = True
+
     runtime_manifest = runtime["manifest"]
     source_runtime_ref = {
         "id": runtime_manifest["id"], "version": runtime_manifest["version"],
         "manifest_checksum": runtime["manifest_checksum"],
     }
-    runtime_series = "1.4.1" if addressed_rules else ("1.3.1" if passport_bank else "1.2.1")
+    runtime_series = ("1.5.1" if battery_pilot else
+                      ("1.4.1" if addressed_rules else ("1.3.1" if passport_bank else "1.2.1")))
     runtime_version = f"{runtime_series}{scope_suffix}"
     bindings["version"] = runtime_version
     bindings.pop("artifact_checksum")
@@ -264,7 +272,10 @@ def build_release_artifacts(
 
 def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scope: str,
                              evidence_path: Path | None) -> tuple[dict, dict, dict]:
-    if json.loads((package_dir / "manifest.json").read_bytes()).get("diagnostic_only") is True:
+    battery_pilot = package_dir == BATTERY_PACKAGE
+    if json.loads((package_dir / "manifest.json").read_bytes()).get("diagnostic_only") is True and (
+        not battery_pilot or usage_scope != "assessment"
+    ):
         raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     package = json.loads((package_dir / "case-package.json").read_bytes())
     runtime = load_runtime_rule_package(runtime_dir, package["cases"], expected_case_package_version=package["version"])
@@ -280,6 +291,21 @@ def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scop
         artifact = evidence_path
         raw = artifact.read_bytes()
         evidence = json.loads(raw)
+        if battery_pilot:
+            from Api.m5_battery_contract import load_scenario
+            from Api.m5_passport_generation import read_as_package
+
+            _, as_contract, review_refs = read_as_package(ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGE)
+            scenario_refs = [load_scenario(case, ROOT / RULE_PACKAGE)["ref"] for case in package["cases"]]
+            if (not str(evidence.get("human_review_ref") or "").strip()
+                    or evidence.get("scenario_ref") != scenario_refs[0]
+                    or evidence.get("review_package") != review_refs["protocol_package"]
+                    or evidence.get("prepared_as_contract_ref") != as_contract
+                    or evidence.get("runtime_rule_ref") != {
+                        "id": runtime["manifest"]["id"], "version": runtime["manifest"]["version"],
+                        "manifest_checksum": runtime["manifest_checksum"],
+                    }):
+                raise ValueError("M5_BATTERY_PILOT_REVIEW_EVIDENCE_MISMATCH")
         if (evidence.get("as_contract_ref") != package["as_contract_ref"] or evidence.get("cases") != expected
                 or evidence.get("scopes") != {key: "PASS" for key in ADMISSION_EVIDENCE}
                 or (runtime["manifest"]["schema_version"] == 3 and evidence.get("runtime_rule_ref") != {
@@ -371,7 +397,8 @@ def main() -> int:
     sources = parser.add_mutually_exclusive_group()
     sources.add_argument("--historical-0.5", dest="historical_0_5", action="store_true", help="Replay the historical release.")
     sources.add_argument("--passport-01", action="store_true", help="Replay the M5-01 passport release.")
-    sources.add_argument("--diagnostic-battery", action="store_true", help="Select WORKING battery v0.3.")
+    sources.add_argument("--diagnostic-battery", action="store_true", help="Select WORKING battery v0.3 for QA.")
+    sources.add_argument("--pilot-battery", action="store_true", help="Select the reviewed ordinary pilot release.")
     parser.add_argument("--assessment-evidence", type=Path, help="Reviewed admission evidence for the passport bank.")
     parser.add_argument("--publish-admitted-catalog", action="store_true")
     parser.add_argument("--published-by", type=int)
@@ -408,6 +435,11 @@ def main() -> int:
     package_dir, runtime_dir = ((PACKAGE_DIR, RUNTIME_DIR) if args.historical_0_5
                                 else (BANK_PACKAGE, BANK_RUNTIME_DIR if args.passport_01 else ADDRESSED_RUNTIME))
     default_version = "1.0" if args.historical_0_5 else ("1.1" if args.passport_01 else "1.2")
+    if args.pilot_battery:
+        if args.usage_scope != "assessment" or (args.apply_import and not args.publish_admitted_catalog):
+            parser.error("The pilot release requires explicit assessment catalog publication.")
+        package_dir, runtime_dir = BATTERY_PACKAGE, BATTERY_RUNTIME
+        default_version = "1.3"
     if not args.historical_0_5 and args.usage_scope == "qa":
         default_version += "-qa"
     catalog_version = args.catalog_version or default_version

@@ -311,13 +311,14 @@ def test_battery_case_matrix(product_db, specialist, number):
         assert not ids(events, "information_transferred")
         assert message not in json.dumps(calls, ensure_ascii=False)
         assert design["concrete_materials"]["M04"] not in calls[0]["character"]["known_facts"]
-        events, _ = submit(product_db, as_id, "C2, перешлите C3 только оговорку о подтверждённых условиях сейчас.", {
-            "E02_FORWARD": matched(recipient_ids=["C3"], text="проверяем только подтверждённые условия."), "@accepted": matched(),
+        quote = design["concrete_materials"]["M04"]["Текст"].splitlines()[0]
+        events, _ = submit(product_db, as_id, "C2, перешлите C3 только этот фрагмент сейчас: " + quote, {
+            "E02_FORWARD": matched(recipient_ids=["C3"], text=quote), "@accepted": matched(),
         }, recipients=("C2",), responses={"C2": "Принимаю и направляю C3 сейчас."})
         transfer = next(event["payload_json"] for event in events if event["event_type"] == "information_transferred")
         assert transfer["sender_id"] == "C2" and transfer["recipient_ids"] == ["C3"]
         assert transfer["scenario_event_id"] == "E02_TRANSFER"
-        assert transfer["text"] == "проверяем только подтверждённые условия."
+        assert transfer["text"] == quote
     elif number == 4:
         events, calls = submit(product_db, as_id, "Предлагаю согласовать новый порядок с вами и оставить резерв времени.",
                                {"E01_REVIEW": matched(speaker_ids=["CUSTOMER"]), "E01_STATE_LIMIT": matched(speaker_ids=["CUSTOMER"])})

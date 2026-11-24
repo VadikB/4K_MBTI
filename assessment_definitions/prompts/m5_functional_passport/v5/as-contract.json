@@ -1,0 +1,84 @@
+{
+  "case_as_contract_ref": {
+    "checksum": "c07a8800bfd7228a4c4b91e55dfff4901505821fcf8d8a85b9df7fb3eebd1655",
+    "id": "m5-functional-as",
+    "version": "1.0.0"
+  },
+  "event_material_rules": {
+    "CASE.SPEC.01": {
+      "52cf0579a04aec67d34acddf6e802f2b679ada4c84846bb87307e02a7307dc1d": {
+        "E01_DOCUMENT": {
+          "function": "material_update",
+          "material_ids": [
+            "M02"
+          ]
+        }
+      }
+    },
+    "CASE.SPEC.02": {
+      "532c03915912d0e9e10d32e727e1f6b45a0244c9b60c41f4ce88c4017f7b529f": {
+        "E01_FACT": {
+          "function": "facilitator_action",
+          "material_ids": []
+        }
+      }
+    },
+    "CASE.SPEC.03": {
+      "affdd16e1f82211040d1cb09518cc82b676846e7a392782adeddb1e64fba207e": {
+        "E01_UPDATE": {
+          "function": "material_update",
+          "material_ids": [
+            "M04"
+          ]
+        }
+      }
+    }
+  },
+  "fields": {
+    "AssessmentSituationID": "Новый технический идентификатор данной AS",
+    "BaseRole": "Выбранный код BaseRole из входа",
+    "CaseID": "Точный CaseID из входа",
+    "CaseTypeIDs": "Точный упорядоченный список из паспорта",
+    "CaseVersion": "Закреплённая версия Case из входа",
+    "IndicatorIDs": "Точный упорядоченный перечень поля 22",
+    "IndicatorObservability": "По одному элементу на IndicatorID: IndicatorID, Конкретное условие, Форма проявления, Дефект потери, material_refs, event_refs, character_refs, authority_refs. Для authority_refs допустимы participant и character:<CharacterID>",
+    "RuntimeBindings": "Карта EventID → {function, speaker_ids, material_ids}. Список material_ids задаёт только первое предъявление документов на этом событии. Связи обсуждаемых сведений указывай в содержании и IndicatorObservability.material_refs. Соблюдай event_material_delivery для каждого события. Если там задан точный material_ids, его можно опустить: сервер соберёт поле по паспорту. Для facilitator_action с пустой выдачей корректно перечисленные стартовые ID будут удалены. Чужой, неизвестный или повторный ID, потеря обязательной выдачи и несовместимый тип действия сохраняются как ошибки допуска. Если заданы allowed_material_ids, выбери выдачу по условию события. Каждый отложенный документ предъявляется один раз.",
+    "Version": "Версия данной AS",
+    "Активные персонажи": "Массив: CharacterID, Имя, Роль, Текст, Начальные знания и границы доступа, мандат, условия реакций",
+    "Версии M2": "Точное соответствие поля 22",
+    "Закрытые фиксированные факты": "Список конкретных фактов и правил раскрытия из сценария",
+    "Материалы": "Массив с MaterialID, Название и полным текстом в Текст; полный набор согласно Функции материалов",
+    "Название": "Короткий заголовок конкретной ситуации",
+    "Применённые замены": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "Место",
+          "Источник",
+          "Что заменено",
+          "Предел"
+        ],
+        "properties": {
+          "Место": "непустая строка",
+          "Источник": "непустая строка",
+          "Что заменено": "непустая строка",
+          "Предел": "непустая строка"
+        },
+        "additionalProperties": false
+      }
+    },
+    "События": "Массив в порядке поля 17: EventID, Действие, Изменение состояния, Когда запрещено, Повторение, Сведения и аудитория, Условие запуска",
+    "Стартовые MaterialIDs": "Упорядоченные стартовые MaterialID поля 17; P00 содержит вводную"
+  },
+  "id": "m5-functional-as",
+  "maximum_output_characters": 60000,
+  "schema_version": 1,
+  "source": "Product Architecture Change 01 C-34; M5 v1.1 §§4, 5.9, 6.3; CasePassport v1.1; поле 17 закреплённых паспортов и событийный контракт runtime",
+  "version": "2.1.0",
+  "battery_case_as_contract_ref": {
+    "id": "m5-functional-as",
+    "version": "2.0.0",
+    "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d"
+  }
+}

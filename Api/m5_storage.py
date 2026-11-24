@@ -397,6 +397,13 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
                 or generation_trace.get("compiled_case_checksum") != checksum(case_value_override)
                 or generation_trace.get("execution_rules_checksum") != checksum(runtime_rules_override)):
             raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
+    if case_row["manifest_json"].get("battery_pilot") is True and (
+        usage_scope != "assessment" or not catalog_ref.get("battery_pilot")
+        or not generation_trace or not generation_trace.get("admitted_for_participant")
+        or generation_trace.get("compiled_case_checksum") != checksum(case_value_override)
+        or generation_trace.get("execution_rules_checksum") != checksum(runtime_rules_override)
+    ):
+        raise ValueError("M5_BATTERY_PILOT_GENERATED_AS_REQUIRED")
     refs = [{"id": "m2-competencies-4k", "version": "1.1",
              "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
     if usage_scope == "assessment" and catalog_db_id is None and not legacy_unbound:

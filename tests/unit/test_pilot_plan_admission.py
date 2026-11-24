@@ -134,3 +134,35 @@ def test_projection_rejects_unapproved_source_or_missing_planned_opportunity(mut
     mutate(args)
     with pytest.raises(ValueError, match="PILOT_PLAN_"):
         project_plan(s, **args)
+
+
+def test_approved_release_ranks_applicable_cases_for_the_same_goal():
+    value = snapshot()
+    design = value["review"]["payload"]
+    design["release_program"] = {
+        "version": "synthetic-next-version",
+        "assessment_configuration_id": 12, "catalog_version_id": 7,
+        "source_refs_json": design["program"]["source_refs_json"],
+    }
+    proposal_checksum = checksum(design)
+    value["review"]["proposal_payload_checksum"] = proposal_checksum
+    value["owner_decision"]["proposal_payload_checksum"] = proposal_checksum
+    value["owner_decision_ref"]["content_checksum"] = checksum(value["owner_decision"])
+    seal(value)
+    target = program(value)
+    target.update(assessment_configuration_id=12, catalog_version_id=7)
+    validate_program(target, [design["role_refs"][0]["id"]], value)
+    with pytest.raises(ValueError, match="PILOT_PLAN_PROGRAM_SCOPE_MISMATCH"):
+        validate_program({**target, "catalog_version_id": 8}, [design["role_refs"][0]["id"]], value)
+
+    options = inputs(value)
+    planned = set(design["proposed_target_ids"])
+    for actual, expected in zip(options["catalog"], design["cases"], strict=True):
+        actual["contribution_target_ids"] = sorted(planned & set(actual["target_ids"]))
+        actual["planned_max_minutes"] = expected["planned_max_minutes"]
+        if actual["case_id"] == "CASE.SPEC.09":
+            actual["eligible"] = False
+    projected = project_plan(value, **options)
+    assert "CASE.SPEC.09" not in {row["case_id"] for row in projected["route"]}
+    assert {row["indicator_id"] for row in projected["planned_targets"]} == planned
+    assert set().union(*(set(row["purpose_target_ids"]) for row in projected["route"])) == planned

@@ -26,13 +26,14 @@ def _profile_role(profile: dict) -> str:
 
 
 def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
-             catalog_db_id: int | None, usage_scope: str) -> list[dict]:
+             catalog_db_id: int | None, usage_scope: str, battery_profile: dict | None = None) -> list[dict]:
     if catalog_db_id is None:
         rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
             array_agg(t.indicator_id ORDER BY t.display_order) AS target_ids
             FROM m5_case_versions cv JOIN m5_case_targets t ON t.case_version_id=cv.id
             JOIN m5_packages package ON package.id=cv.package_id
             WHERE package.manifest_json->'diagnostic_only' IS DISTINCT FROM 'true'::jsonb
+              AND package.manifest_json->'battery_pilot' IS DISTINCT FROM 'true'::jsonb
             GROUP BY cv.id ORDER BY cv.case_id,cv.case_version""").fetchall()
     else:
         rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
@@ -46,6 +47,15 @@ def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
     for row in rows:
         content=row["content_json"];reasons=[]
         if row["base_role"] != role:reasons.append("ROLE_NOT_ALLOWED")
+        if battery_profile is not None:
+            from Api.cycle_execution_manifest import ROOT
+            from Api.m5_battery_contract import RULE_PACKAGE, load_scenario, validate_profile
+
+            design = load_scenario(content, ROOT / RULE_PACKAGE, pilot=True)
+            try:
+                validate_profile(battery_profile, design)
+            except ValueError as exc:
+                reasons.append(str(exc))
         if catalog_db_id is None:
             evidence={item["scope"]:item["result"] for item in connection.execute(
                 "SELECT DISTINCT ON(scope) scope,result FROM m5_qa_evidence "
@@ -73,6 +83,18 @@ def _rank(candidates: list[dict], uncovered: set[str], target_meta: dict[str,dic
         skills={target_meta[x]["skill_id"].split('.')[0] for x in contribution}
         return (-len(contribution),-len(skills),item["planned_max_minutes"],item["case_id"],item["case_version"])
     return sorted((x for x in candidates if x["eligible"] and set(x["contribution_target_ids"]) & uncovered),key=key)
+
+
+def ranked_route(catalog: list[dict], targets: list[dict]) -> tuple[list[dict], set[str]]:
+    metadata = {item["indicator_id"]: item for item in targets}
+    route, uncovered = [], set(metadata)
+    while ranked := _rank(catalog, uncovered, metadata):
+        chosen = ranked[0]
+        contribution = sorted(set(chosen["contribution_target_ids"]) & uncovered)
+        route.append({**chosen, "purpose_target_ids": contribution,
+                      "duration_source": "M5 CaseVersion planned range", "conditional": True, "reserve_for": []})
+        uncovered.difference_update(contribution)
+    return route, uncovered
 
 
 def create_plan(connection, *, personalized_profile_id: int, selected_skills: list[str], created_by: int,
@@ -108,15 +130,9 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     if catalog_ref["m2_checksum"] != "legacy" and catalog_ref["m2_checksum"] != profile.get("provenance_json",{}).get("m2_checksum",catalog_ref["m2_checksum"]):
         raise ValueError("M5_CATALOG_M2_DEPENDENCY_MISMATCH")
     catalog=_catalog(connection,role=role,rules=rules,planned_ids=target_ids,
-                     catalog_db_id=catalog_ref["db_id"],usage_scope=usage_scope)
-    uncovered=set(target_ids);route=[]
-    while True:
-        ranked=_rank(catalog,uncovered,{x["indicator_id"]:x for x in targets})
-        if not ranked:break
-        chosen=ranked[0];contribution=sorted(set(chosen["contribution_target_ids"])&uncovered)
-        route.append({**chosen,"purpose_target_ids":contribution,"duration_source":"M5 CaseVersion planned range",
-                      "conditional":True,"reserve_for":[]})
-        uncovered-=set(contribution)
+                     catalog_db_id=catalog_ref["db_id"],usage_scope=usage_scope,
+                     battery_profile=profile["content_json"] if catalog_ref.get("battery_pilot") else None)
+    route, uncovered = ranked_route(catalog, targets)
     overrides={name:value for name,value in {
         "time_budget_seconds":time_budget_seconds,"calendar_window_seconds":calendar_window_seconds}.items()
         if value is not None}
@@ -127,11 +143,15 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     from Api import pilot_plan_binding
     from Api.pilot_plan_admission import project_plan
     program = pilot_plan_binding.program_for_profile(connection, profile) if usage_scope == "assessment" else None
+    if catalog_ref.get("battery_pilot") and not (program and (program.get("source_refs_json") or {}).get("pilot_plan_admission")):
+        raise ValueError("PILOT_PLAN_APPROVED_BINDING_REQUIRED")
     admission = None
     planned_targets = targets
     projection = None
     if program and (program.get("source_refs_json") or {}).get("pilot_plan_admission") is not None:
         admission = pilot_plan_binding.validate_published_program(connection, program)
+        if catalog_ref.get("battery_pilot") and "release_program" not in admission["review"]["payload"]:
+            raise ValueError("PILOT_PLAN_APPROVED_RELEASE_REQUIRED")
         pilot_plan_binding.validate_case_sources(connection, admission, catalog_ref["db_id"])
         projection = project_plan(admission, targets=targets, catalog=catalog,
                                   catalog_ref=catalog_ref, role_ref=role_ref)
@@ -147,7 +167,8 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         parameter_sources={"time_budget":resolved["sources"]["time_budget_seconds"],
                            "calendar_window":resolved["sources"]["calendar_window_seconds"],
                            "resolution_checksum":resolved["resolved_checksum"]},usage_scope=usage_scope,
-        catalog_ref={key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum","db_id")})
+        catalog_ref=(catalog_ref if catalog_ref.get("battery_pilot") else
+                     {key:catalog_ref[key] for key in ("id","version","checksum","package_checksum","m2_checksum","db_id")}))
     session=create_session(connection,cycle_id=str(cycle["cycle_id"]),created_by=created_by)
     total=sum(x["planned_max_minutes"]*60 for x in route)
     status="READY" if not uncovered else ("LIMITED" if route else "NO_ROUTE")

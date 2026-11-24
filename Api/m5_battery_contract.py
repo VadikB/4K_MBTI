@@ -14,9 +14,16 @@ from scripts.build_m5_sales_package import _participant_presentation, _ref
 
 RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.6.0"
 FACILITATOR = "FACILITATOR"
+PILOT_CASE_SUFFIX = "-pilot.1"
 
 
-def load_scenario(case: dict, directory: Path) -> dict:
+def source_case_version(version: str, *, pilot: bool) -> str:
+    if pilot and not version.endswith(PILOT_CASE_SUFFIX):
+        raise ValueError("M5_BATTERY_PILOT_CASE_VERSION_INVALID")
+    return version.removesuffix(PILOT_CASE_SUFFIX) if pilot else version
+
+
+def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
     manifest = json.loads((directory / "manifest.json").read_bytes())
     raw = (directory / "scenario-rules.json").read_bytes()
     checksum = digest(raw)
@@ -28,7 +35,7 @@ def load_scenario(case: dict, directory: Path) -> dict:
     case_id, version = case["case_id"], case["version"]
     overlay = package["cases"].get(case_id)
     if not overlay or (overlay["case_version"], overlay["passport_sha256"]) != (
-        version, case["passport_source"]["sha256"],
+        source_case_version(version, pilot=pilot), case["passport_source"]["sha256"],
     ):
         raise missing(case_id, version, "17→scenario rule package")
     passport = case["passport"]
@@ -189,8 +196,21 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
         validate("required_text", _text(actual), f"candidate_as/{field}", actual, "non_empty_string",
                  "Поле идентификации или представления должно быть непустым текстом.")
     substitutions = value.get("Применённые замены")
-    validate("required_list", isinstance(substitutions, list), "candidate_as/Применённые замены",
-             substitutions, "array", "Замены передаются списком.")
+    substitution_schema = snapshot["as_contract"]["fields"]["Применённые замены"]
+    if not isinstance(substitution_schema, dict):
+        validate("required_list", isinstance(substitutions, list), "candidate_as/Применённые замены",
+                 substitutions, "array", "Замены передаются списком.")
+    else:
+        if not isinstance(substitutions, list):
+            validate("battery_substitution_type", False, "candidate_as/Применённые замены",
+                     type(substitutions).__name__, substitution_schema, "Поле должно быть массивом объектов.")
+        else:
+            expected_fields = set(substitution_schema["items"]["required"])
+            for index, row in enumerate(substitutions):
+                validate("battery_substitution_item", isinstance(row, dict) and set(row) == expected_fields
+                         and all(_text(item) for item in row.values()), f"candidate_as/Применённые замены/{index}",
+                         row, substitution_schema["items"],
+                         "Подстановка должна содержать место, источник, содержание и предел замены.")
     tables = (
         ("Материалы", "MaterialID", design["material_ids"], ("Название", "Текст")),
         ("Закрытые фиксированные факты", "FactID", design["fact_ids"], ("Текст",)),

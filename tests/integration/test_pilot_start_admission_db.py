@@ -685,3 +685,29 @@ def test_w02_unstarted_readback_does_not_start_or_duplicate_first_situation(pilo
         assert c.execute("SELECT count(*) n FROM m5_cycle_time_intervals WHERE cycle_db_id=%s AND interval_type='collecting'", (before['id'],)).fetchone()['n'] == 1
         assert c.execute("""SELECT count(*) n FROM m5_dialogue_turns t JOIN m5_assessment_situations s
             ON s.id=t.assessment_situation_db_id WHERE s.cycle_db_id=%s AND t.speaker_type='assessee'""", (before['id'],)).fetchone()['n'] == 0
+
+
+def test_prepared_cycle_starts_with_its_frozen_program_after_organization_switch(pilot_db):
+    factory, cycle_id, _, previous_program_id = pilot_db
+    with factory() as connection:
+        assert start_readiness(connection, cycle_id=cycle_id, user_id=99)["can_start"]
+        old_program = connection.execute("SELECT * FROM assessment_program_definitions WHERE id=%s",
+                                         (previous_program_id,)).fetchone()
+        connection.execute("""INSERT INTO assessment_configurations
+            (id,methodology_version_id,status,code,name,catalog_version_id)
+            VALUES (2,1,'published','next-catalog','Synthetic next configuration',%s)""",
+            (old_program["catalog_version_id"],))
+        new_program = connection.execute("""INSERT INTO assessment_program_definitions
+            (code,version,name,assignment_ref,mode,status,assessment_configuration_id,
+             catalog_version_id,source_refs_json,definition_checksum)
+            VALUES(%s,'activation-test-next',%s,%s,%s,'published',2,%s,'{}',%s) RETURNING id""",
+            (old_program["code"], old_program["name"], old_program["assignment_ref"], old_program["mode"],
+             old_program["catalog_version_id"], "0" * 64)).fetchone()
+        assessment_programs.connect(connection, organization_id=10, program_definition_id=new_program["id"],
+                                    actor_user_id=99, operation_id="switch-for-new-assignments")
+        ready = start_readiness(connection, cycle_id=cycle_id, user_id=99)
+        assert ready["can_start"]
+        assert ready["pilot_admission"]["program_ref"]["id"] == previous_program_id
+        result = start_prepared(connection, user_id=99, cycle_id=cycle_id, key="start-after-switch")
+        assert str(result["decision"]["assessment_situation_id"]) == ready["assessment_situation_id"]
+        connection.rollback()

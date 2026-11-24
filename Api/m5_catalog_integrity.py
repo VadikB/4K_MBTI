@@ -198,6 +198,12 @@ def resolve_configuration_catalog(connection, *, configuration_id: int, usage_sc
     if row["catalog_manifest"].get("diagnostic_only") is True:
         ref.update(diagnostic_only=True, package_version=row["manifest_json"]["version"],
                    runtime_rule_ref=row["catalog_manifest"]["runtime_rule_ref"])
+    if row["manifest_json"].get("battery_pilot") is True:
+        if (row["catalog_manifest"].get("battery_pilot") is not True
+                or checksum(row["catalog_manifest"]) != row["manifest_checksum"]):
+            raise ValueError("M5_BATTERY_PILOT_CATALOG_CHECKSUM_MISMATCH")
+        ref.update(battery_pilot=True, package_version=row["manifest_json"]["version"],
+                   runtime_rule_ref=row["catalog_manifest"]["runtime_rule_ref"])
     return ref
 
 
@@ -212,6 +218,10 @@ def publication_plan(
     diagnostic = package["manifest_json"].get("diagnostic_only") is True
     if diagnostic and (usage_scope != "qa" or organization_id is None or not selected):
         raise ValueError("M5_DIAGNOSTIC_CATALOG_REQUIRES_SCOPED_QA")
+    battery_pilot = package["manifest_json"].get("battery_pilot") is True
+    if battery_pilot and (usage_scope != "assessment" or runtime_rule_version_id is None
+                          or len(selected) != len(package["package_json"]["cases"])):
+        raise ValueError("M5_BATTERY_PILOT_CATALOG_CASE_SET_MISMATCH")
     cases = connection.execute(
         "SELECT id,case_id,case_version,status,content_json,content_checksum "
         "FROM m5_case_versions WHERE package_id=%s AND id=ANY(%s) ORDER BY id",
@@ -264,6 +274,7 @@ def publication_plan(
         ],
         "publishable": diagnostic or all(item["admitted"] for item in decisions),
         **({"diagnostic_only": True} if diagnostic else {}),
+        **({"battery_pilot": True} if battery_pilot else {}),
     }
 
 
@@ -306,6 +317,8 @@ def publish_catalog(
                 "usage_scope": usage_scope, "case_version_ids": plan["case_version_ids"]}
     if plan.get("diagnostic_only"):
         manifest["diagnostic_only"] = True
+    if plan.get("battery_pilot"):
+        manifest["battery_pilot"] = True
     if runtime_rule_version_id is not None:
         runtime = connection.execute(
             "SELECT artifact_id,artifact_version,manifest_checksum,rules_checksum "
