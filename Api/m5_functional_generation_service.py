@@ -175,11 +175,19 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
                             selected_base_role: str | None = None,
                             runtime_rule_ref: dict | None = None, package_ref: dict | None = None,
                             project_role: dict | None = None,
-                            project_role_prompt: Path | None = None) -> dict:
+                            project_role_prompt: Path | None = None,
+                            battery_scenario_package: Path | None = None) -> dict:
+    from Api import m5_battery_contract
+
     contract, contract_ref, refs = passport_generation.read_as_package(as_package)
     case_contract_ref = contract.pop("case_as_contract_ref", contract_ref)
     event_material_rules = contract.pop("event_material_rules", None)
     actual = runtime_checksum(case_version)
+    battery = case_version.get("passport_version") == "1.2"
+    if battery:
+        if not synthetic or battery_scenario_package is None:
+            raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
+        case_contract_ref = contract_ref
     if case_version_checksum and case_version_checksum != actual:
         raise missing(case_version["case_id"], case_version["version"], "content_checksum")
     projected, m2_ref, m2 = passport_generation.normalize_case(
@@ -189,11 +197,18 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
         raise missing(projected["case_id"], projected["version"], "BaseRole→profile")
     case = {"CaseID": projected["case_id"], "Version": projected["version"], "Паспорт": projected["passport"]}
     design = (runtime_rule_ref or {}).get("scenario_contract")
+    battery_design = None
+    if battery:
+        battery_design = m5_battery_contract.load_scenario(projected, battery_scenario_package)
+        m5_battery_contract.validate_profile(profile, battery_design)
+        contract = m5_battery_contract.candidate_contract(contract)
+        refs["battery_scenario"] = battery_design["ref"]
+        package_ref = {**(package_ref or {}), "compiler": {"source_schema_profile": "functional-passport-v1.2"}}
     if design is not None:
         validate_scenario_contract(projected, design)
         contract = passport_generation.addressed_candidate_contract(contract, design)
     delivery = (passport_generation.build_event_material_delivery(projected, event_material_rules)
-                if event_material_rules is not None and design is None else None)
+                if event_material_rules is not None and design is None and not battery else None)
     refs.update({
         "package": package_ref or {"compiler": {"source_schema_profile": "functional-passport-v1"}},
         "case": {"passport": projected["passport_source"], "case_version_checksum": actual},
@@ -220,17 +235,18 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
         **({"project_role": {**project_role, "interactions": list(project_role["interactions"])}}
            if project_role is not None else {}),
         **({"scenario_contract": design} if design is not None else {}),
+        **({"battery_scenario": battery_design} if battery_design is not None else {}),
         **({"event_material_delivery": delivery} if delivery is not None else {}),
     }
     # Resolve all mandatory checks before entering the provider.
     try:
         if "tester_protocol" in refs:
             protocol = load_protocol(_frozen_file(snapshot, "tester_protocol"))
-            content = passport_generation.read_case_content_contract(
+            content = None if battery else passport_generation.read_case_content_contract(
                 _frozen_file(snapshot, "case_content_contract"), projected["case_id"],
             )
             snapshot["applicability_plan"] = build_applicability_plan(
-                case, protocol, case_content_contract=content,
+                case, protocol, case_content_contract=content, scenario_qa=battery,
             )
             if content:
                 indicator_ids = content["indicator_fields"].keys() | set(content["initial_material_refs_required"])
@@ -281,7 +297,13 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
             return set()
         violations = sorted(forbidden_keys(candidate))
         check("no_premature_assessment", not violations, violations)
-        missing_paths = passport_generation.validate_candidate(snapshot, candidate, check)
+        if "battery_scenario" in snapshot:
+            from Api.m5_battery_contract import validate_candidate
+
+            validate_candidate(snapshot, candidate, check)
+            missing_paths = []
+        else:
+            missing_paths = passport_generation.validate_candidate(snapshot, candidate, check)
         return {"status": "FAIL" if errors else "PASS", "checks": checks, "errors": errors,
                 **({"missing_required_paths": missing_paths} if missing_paths else {})}
     expected = snapshot["author_as_example"]
@@ -595,7 +617,10 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
 
 def _generation_instructions(snapshot: dict) -> tuple[str, str]:
     design = snapshot.get("scenario_contract")
-    if design:
+    if "battery_scenario" in snapshot:
+        instruction = snapshot["battery_scenario"]["instructions"]["generation"]
+        contract = json.dumps(snapshot["as_contract"], ensure_ascii=False)
+    elif design:
         instruction = design["candidate_contract"]["instruction"]
         contract = json.dumps(snapshot["as_contract"], ensure_ascii=False)
     else:
@@ -612,7 +637,12 @@ def _generation_instructions(snapshot: dict) -> tuple[str, str]:
 def _assemble_candidate(snapshot: dict, raw: Any) -> dict:
     proposed, depth = extract_candidate_as(raw)
     condition_changes = []
-    if "as_contract" in snapshot:
+    if "battery_scenario" in snapshot:
+        from Api.m5_battery_contract import bind
+
+        candidate, changes = bind(snapshot, proposed), []
+        source = "frozen_input_snapshot.battery_scenario"
+    elif "as_contract" in snapshot:
         candidate, changes = passport_generation.bind_event_materials(snapshot, proposed)
         candidate, condition_changes = passport_generation.bind_event_conditions(snapshot, candidate)
         source = "frozen_input_snapshot.case_version.passport"
@@ -972,7 +1002,13 @@ def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path 
     compiled_case = None
     execution_rules = None
     if tested["aggregation"]["admitted_for_participant"]:
-        if "as_contract" in snapshot:
+        if "battery_scenario" in snapshot:
+            from Api.m5_battery_contract import compile_candidate
+
+            compiled_case, execution_rules = compile_candidate(
+                snapshot, generation["candidate_as"], generation["candidate_checksum"],
+            )
+        elif "as_contract" in snapshot:
             compiled_case, execution_rules = passport_generation.compile_candidate(
                 snapshot, generation["candidate_as"], generation["candidate_checksum"],
             )

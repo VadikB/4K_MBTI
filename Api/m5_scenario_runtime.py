@@ -10,7 +10,7 @@ from fastapi.encoders import jsonable_encoder
 
 from Api.m5_case_runtime import checksum
 from Api.m5_functional_generation_service import checksum as functional_checksum
-from Api import m5_addressed_scenario, m5_cycle_runtime
+from Api import m5_addressed_scenario, m5_battery_scenario, m5_cycle_runtime
 from Api.m5_rule_engine import (
     CharacterResponseAdapter,
     CharacterReply,
@@ -206,6 +206,14 @@ def append_event(connection, *, as_db_id: int, event_type: str, event_key: str, 
     return dict(row)
 
 
+def _sealed_runtime(payload):
+    if m5_battery_scenario.scenario_contract(payload):
+        return m5_battery_scenario
+    if m5_addressed_scenario.scenario_contract(payload):
+        return m5_addressed_scenario
+    return None
+
+
 def _state(connection, row: dict, *, lock: bool = False) -> dict:
     suffix = " FOR UPDATE" if lock else ""
     saved = connection.execute(
@@ -215,7 +223,7 @@ def _state(connection, row: dict, *, lock: bool = False) -> dict:
         return dict(saved)
     rules = row["execution_payload_json"].get("runtime_rules", {})
     stages = sorted(row["execution_payload_json"].get("scenario", []), key=lambda x: x["order"])
-    if m5_addressed_scenario.scenario_contract(row["execution_payload_json"]):
+    if _sealed_runtime(row["execution_payload_json"]):
         initial_stage = "S2"
     else:
         initial_stage = stages[0]["step_id"] if stages else "S1"
@@ -438,7 +446,8 @@ def _append_character_turn(connection, *, row: dict, speaker_id: str, content: s
 
 def _persist_character_reply(connection, *, row: dict, saved: dict, state: dict, material: dict,
                              decision_row: dict, trigger_turn: dict, reply: CharacterReply,
-                             scenario_event_id: str | None = None) -> dict | None:
+                             scenario_event_id: str | None = None, recipient_ids=None,
+                             scenario_event_ids=None) -> dict | None:
     effect_key = f"character-response:{material['material_id']}:{trigger_turn['turn_id']}"
     if effect_key in state["applied_effects"]:
         return None
@@ -467,7 +476,9 @@ def _persist_character_reply(connection, *, row: dict, saved: dict, state: dict,
         material_id=material["material_id"],
         payload={"speaker_id": speaker_id, "response": reply.content, "adapter": reply.adapter,
                  "model": reply.model, "controlled_test": reply.controlled_test, "prompt_ref": reply.prompt_ref,
-                 **({"scenario_event_id": scenario_event_id, "recipient_ids": ["assessee"]} if scenario_event_id else {})})
+                 **({"scenario_event_id": scenario_event_id, "recipient_ids": recipient_ids or ["assessee"]}
+                    if scenario_event_id else {}),
+                 **({"scenario_event_ids": scenario_event_ids} if scenario_event_ids is not None else {})})
     state["applied_effects"].append(effect_key)
     connection.execute("""
         INSERT INTO m5_effect_applications
@@ -506,6 +517,19 @@ def start(connection, assessment_situation_id: str) -> dict:
         if material_id not in state["disclosed_materials"]:
             state["disclosed_materials"].append(material_id)
     design = m5_addressed_scenario.scenario_contract(row["execution_payload_json"])
+    battery = m5_battery_scenario.scenario_contract(row["execution_payload_json"])
+    if battery and battery["opening"] and "battery:opening" not in state["applied_effects"]:
+        opening = battery["opening"]
+        material_id = opening["material_id"]
+        turn = _append_character_turn(connection, row=row, speaker_id=opening["speaker_id"],
+                                      content=battery["concrete_materials"][material_id]["Текст"],
+                                      request_id="scenario-opening")
+        state["applied_effects"].append("battery:opening")
+        state["disclosed_materials"].append(material_id)
+        state.setdefault("battery_audiences", {})[str(turn["turn_id"])] = ["assessee"]
+        append_event(connection, as_db_id=row["id"], event_type="opening_message", event_key="battery:opening",
+                     cause={"character_turn_id": str(turn["turn_id"])}, material_id=material_id,
+                     payload={**opening, "recipient_ids": ["assessee"]})
     if design and not connection.execute(
         "SELECT 1 FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s AND request_id='scenario-opening'",
         (row["id"],),
@@ -674,7 +698,8 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
             raise ValueError("M5_AS_NOT_ACTIVE")
         saved = _state(connection, row, lock=True)
         payload = row["execution_payload_json"]
-        is_addressed = m5_addressed_scenario.scenario_contract(payload) is not None
+        sealed_runtime = _sealed_runtime(payload)
+        is_addressed = sealed_runtime is not None
         request_checksum = checksum({"turn_id": turn_id, "content": content})
         existing_operation = connection.execute(
             "SELECT * FROM m5_turn_operations WHERE assessment_situation_db_id=%s AND request_id=%s FOR UPDATE",
@@ -730,7 +755,7 @@ def submit_turn_detached(*, assessment_situation_id: str, request_id: str, turn_
         responder = character_adapter or DeepSeekCharacterAdapter(operation=operations["character_response"])
         addressed_plan = None
         if is_addressed:
-            addressed_plan = m5_addressed_scenario.plan_turn(
+            addressed_plan = sealed_runtime.plan_turn(
                 payload, factual_state, text=content, turn_id=turn_id, semantic=adapter, character=responder,
             )
         else:
@@ -845,7 +870,7 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
                 semantic_adapter: SemanticDecisionAdapter | None = None,
                 character_adapter: CharacterResponseAdapter | None = None,
                 expected_revision: int | None = None,
-                addressed_plan: m5_addressed_scenario.TurnPlan | None = None,
+                addressed_plan: m5_addressed_scenario.TurnPlan | m5_battery_scenario.BatteryTurn | None = None,
                 addressed_attempt_no: int | None = None,
                 enqueue_interim_by: int | None = None) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
@@ -875,7 +900,7 @@ def submit_turn(connection, *, assessment_situation_id: str, request_id: str, tu
         raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "Frozen character AI configuration is missing.")
     adapter = semantic_adapter or DeepSeekSemanticAdapter(operation=operations["semantic_decision"])
     responder = character_adapter or DeepSeekCharacterAdapter(operation=operations["character_response"])
-    if m5_addressed_scenario.scenario_contract(payload):
+    if _sealed_runtime(payload):
         return _submit_addressed_turn(
             connection, row=row, saved=saved, state=state, turn=turn, existing=bool(existing),
             plan=addressed_plan, semantic=adapter, character=responder, detached=expected_revision is not None,
@@ -973,7 +998,7 @@ def _submit_addressed_turn(connection, *, row: dict, saved: dict, state: dict, t
     payload = row["execution_payload_json"]
     design = m5_addressed_scenario.scenario_contract(payload)
     if plan is None:
-        plan = m5_addressed_scenario.plan_turn(
+        plan = _sealed_runtime(payload).plan_turn(
             payload, _factual_state(connection, row, state, turn), text=turn["content_text"],
             turn_id=turn_id, semantic=semantic, character=character,
         )
@@ -989,16 +1014,25 @@ def _submit_addressed_turn(connection, *, row: dict, saved: dict, state: dict, t
                                                decision=decision, ai_attempt_no=ai_attempt_no)
 
     if plan.ending:
+        battery = m5_battery_scenario.scenario_contract(payload)
         result = transition(
             connection, assessment_situation_id=str(row["assessment_situation_id"]), action="scenario_end",
             reason="participant_final_submission" if plan.ending == "FINAL" else "participant_ended_scenario",
             request_id=f"turn:{turn_id}",
+            scenario_event_id=(battery["finish"].get("ID", "SCENARIO_COMPLETION")
+                               if battery and plan.ending == "FINAL" else None),
         )
         if enqueue_interim_by is not None:
             from Api.m10_orchestration import enqueue_handoff
             handoff = build_c45(connection, str(row["assessment_situation_id"]), mode="interim")
             enqueue_handoff(connection, handoff_id=str(handoff["handoff_id"]), created_by=enqueue_interim_by)
         return {"turn": dict(turn), "events": [result["event"]], "idempotent": False}
+
+    if isinstance(plan, m5_battery_scenario.BatteryTurn):
+        events = _apply_battery_plan(connection, row, saved, state, turn, plan, decisions)
+        if state != saved["state_json"]:
+            _save_state(connection, saved, state)
+        return {"turn": dict(turn), "events": events, "idempotent": False}
 
     events = []
     if plan.fragments is not None:
@@ -1068,8 +1102,66 @@ def _submit_addressed_turn(connection, *, row: dict, saved: dict, state: dict, t
     return {"turn": dict(turn), "events": events, "idempotent": False}
 
 
+def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
+    design = m5_battery_scenario.scenario_contract(row["execution_payload_json"])
+    turn_id = str(turn["turn_id"])
+    state.setdefault("battery_fragments", {})[turn_id] = plan.fragments
+    audiences = state.setdefault("battery_audiences", {})
+    events = []
+    def record_transfer(rule_id, transfer):
+        binding = next(rule for rule in design["events"] if rule["id"] == rule_id)
+        message = turn
+        if transfer.sender_id != "assessee":
+            message = _append_character_turn(connection, row=row, speaker_id=transfer.sender_id,
+                                             content=transfer.text, request_id=f"forward:{turn['request_id']}:{rule_id}")
+            audiences[str(message["turn_id"])] = list(transfer.recipient_ids)
+        events.append(append_event(
+            connection, as_db_id=row["id"], event_type="information_transferred", event_key=f"transfer:{turn_id}:{rule_id}",
+            material_id=binding["requires_material_id"],
+            cause={"turn_id": turn_id, "message_turn_id": str(message["turn_id"]),
+                   "decision_id": str(decisions[rule_id if transfer.sender_id == "assessee"
+                                               else f"{rule_id}:accepted"]["decision_id"])},
+            payload={"scenario_event_id": binding.get("record_as", rule_id), "sender_id": transfer.sender_id,
+                     "recipient_ids": list(transfer.recipient_ids), "text": transfer.text},
+        ))
+    for rule_id, transfer in plan.transfers:
+        if transfer.sender_id == "assessee":
+            record_transfer(rule_id, transfer)
+    for reply in plan.replies:
+        rule_id = reply.rule_ids[0]
+        event = _persist_character_reply(
+            connection, row=row, saved=saved, state=state,
+            material={"material_id": f"CHARACTER.{reply.speaker}", "speaker_id": reply.speaker},
+            decision_row=decisions[rule_id], trigger_turn=turn, reply=reply.response,
+            scenario_event_id=rule_id, scenario_event_ids=reply.occurred_rule_ids, recipient_ids=reply.recipients,
+        )
+        if event:
+            audiences[event["cause_json"]["character_turn_id"]] = list(reply.recipients)
+            events.append(event)
+    for rule_id, transfer in plan.transfers:
+        if transfer.sender_id != "assessee":
+            record_transfer(rule_id, transfer)
+    for rule in plan.deliveries:
+        material_id = rule["delivery_id"]
+        content = design["concrete_materials"][material_id]
+        speaker_id = rule["speaker_ids"][0]
+        event = _apply_material(
+            connection, row=row, saved=saved, state=state,
+            material={"material_id": material_id, "participant_payload": content,
+                      "disclosure_condition": {"type": "mandatory"}},
+            decision_row=decisions[rule["id"]], turn_id=turn_id, event_type="mandatory_update",
+            delivery={"scenario_event_id": rule["id"], "speaker_id": speaker_id, "author_id": rule["author_id"],
+                      "recipient_ids": ["assessee"], "content": {
+                          "material_id": material_id, "title": content["Название"], "text": content["Текст"],
+                      }},
+        )
+        if event:
+            events.append(event)
+    return events
+
+
 def transition(connection, *, assessment_situation_id: str, action: str, reason: str, request_id: str,
-               participant_command: bool = False) -> dict:
+               participant_command: bool = False, scenario_event_id: str | None = None) -> dict:
     row = _as_row(connection, assessment_situation_id, lock=True)
     event_types = {"pause": "interaction_paused", "resume": "interaction_resumed", "scenario_end": "scenario_completed",
                    "terminate": "interaction_terminated", "close": "assessment_situation_closed"}
@@ -1110,7 +1202,8 @@ def transition(connection, *, assessment_situation_id: str, action: str, reason:
     timestamps = ", scenario_ended_at=NOW()" if target in {"scenario_ended", "terminated"} else ", closed_at=NOW()" if target == "closed" else ""
     connection.execute(f"UPDATE m5_assessment_situations SET status=%s{timestamps} WHERE id=%s", (target, row["id"]))
     event = append_event(connection, as_db_id=int(row["id"]), event_type=event_types[action], event_key=f"transition:{request_id}",
-                         cause={"reason": reason, "from": row["status"], "to": target}, payload={"status": target})
+                         cause={"reason": reason, "from": row["status"], "to": target},
+                         payload={"status": target, **({"scenario_event_id": scenario_event_id} if scenario_event_id else {})})
     saved = _state(connection, row, lock=True)
     state = deepcopy(saved["state_json"])
     state["status"] = target
@@ -1124,6 +1217,10 @@ def trace(connection, assessment_situation_id: str) -> dict:
     row = _as_row(connection, assessment_situation_id)
     turns = [dict(x) for x in connection.execute("SELECT * FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s ORDER BY sequence_no", (row["id"],)).fetchall()]
     character_names = {x['character_id']: x['name_and_role'] for x in row['execution_payload_json'].get('characters', [])}
+    if m5_battery_scenario.scenario_contract(row["execution_payload_json"]):
+        from Api.m5_battery_contract import FACILITATOR
+
+        character_names[FACILITATOR] = "Ведущий"
     for turn in turns:
         if turn['speaker_type'] == 'character':
             turn['speaker_name'] = character_names.get(turn['speaker_id'])
@@ -1211,6 +1308,21 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
              "status": "DELIVERED" if refs["event_refs"][0] in happened else "NOT_ARISEN",
              "occurred_event_refs": [event_id for event_id in refs["event_refs"] if event_id in happened]}
             for indicator_id, refs in design["required_observability"].items()
+        ]
+    elif m5_battery_scenario.scenario_contract(row["execution_payload_json"]):
+        happened = {event_id for event in saved["events"] for event_id in (
+            event["payload_json"].get("scenario_event_ids", [event["payload_json"].get("scenario_event_id")])
+        ) if event_id}
+        disclosed = {event["material_id"] for event in saved["events"]
+                     if event["event_type"] in {"opening_message", "material_disclosed", "mandatory_update"}}
+        envelope["conditional_opportunities"] = [
+            {"indicator_id": target["indicator_id"], "event_refs": target["event_refs"],
+             "occurred_event_refs": [key for key in target["event_refs"] if key in happened],
+             "occurred_material_refs": [key for key in target["material_refs"] if key in disclosed],
+             "status": "DELIVERED" if (happened.intersection(target["event_refs"]) or (
+                 not target["event_refs"] and target["material_refs"] and set(target["material_refs"]) <= disclosed
+             )) else "NOT_ARISEN"}
+            for target in row["execution_payload_json"]["indicator_targets"]
         ]
     digest = checksum(envelope)
     return dict(connection.execute("""

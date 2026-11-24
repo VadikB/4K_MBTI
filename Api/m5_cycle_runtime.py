@@ -134,10 +134,13 @@ def create_cycle(
     sources = parameter_sources
     target_set_checksum = checksum(normalized_targets)
     project_role = None
-    if assignment_id is not None:
+    role_assignment_id = assignment_id
+    if usage_scope == "qa" and catalog_ref and catalog_ref.get("scenario_test_route"):
+        role_assignment_id = _assignment_for_profile(connection, profile, personalized_profile_id)
+    if role_assignment_id is not None:
         from Api.telegram_channel import project_role_for_cycle
 
-        project_role = project_role_for_cycle(connection, assignment_id=assignment_id, profile=profile)
+        project_role = project_role_for_cycle(connection, assignment_id=role_assignment_id, profile=profile)
     execution_manifest, execution_manifest_checksum = build_manifest(
         profile_ref=profile_ref,
         selected_role_ref=selected_role_ref,
@@ -226,9 +229,14 @@ def create_cycle_session_for_case(
     time_budget_seconds: int | None = None,
     calendar_window_seconds: int | None = None,
     diagnostic: bool = False,
+    scenario_tests: bool = False,
+    next_cases: tuple[tuple[str, str], ...] = (),
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     profile = _profile_row(connection, personalized_profile_id)
     catalog = None
+    route_ids = []
+    if (scenario_tests and not diagnostic) or (next_cases and not scenario_tests):
+        raise ValueError("M5_BATTERY_SCENARIO_REQUIRES_DIAGNOSTIC_CYCLE")
     if diagnostic:
         if usage_scope != "qa":
             raise ValueError("M5_DIAGNOSTIC_CATALOG_REQUIRES_SCOPED_QA")
@@ -246,6 +254,19 @@ def create_cycle_session_for_case(
         if selected is None:
             raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
         catalog["selected_case"] = {key: selected[key] for key in ("case_id", "case_version", "base_role", "content_checksum")}
+        if scenario_tests:
+            catalog["scenario_test_route"] = [catalog["selected_case"]]
+            for next_id, next_version in next_cases:
+                item = connection.execute(
+                    """SELECT cv.id,cv.case_id,cv.case_version,cv.base_role,cv.content_checksum
+                       FROM m5_catalog_case_versions member JOIN m5_case_versions cv ON cv.id=member.case_version_id
+                       WHERE member.catalog_db_id=%s AND cv.case_id=%s AND cv.case_version=%s""",
+                    (catalog["db_id"], next_id, next_version),
+                ).fetchone()
+                if item is None or item["base_role"] != selected["base_role"]:
+                    raise ValueError("M5_BATTERY_SCENARIO_ROUTE_CASE_INVALID")
+                route_ids.append(item["id"])
+                catalog["scenario_test_route"].append({key: value for key, value in item.items() if key != "id"})
     else:
         selected = connection.execute(
             """SELECT candidate.id FROM m5_case_versions candidate
@@ -259,10 +280,10 @@ def create_cycle_session_for_case(
             raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
     targets = connection.execute(
         """
-        SELECT indicator_id,m2_version FROM m5_case_targets
-        WHERE case_version_id=%s ORDER BY display_order
+        SELECT indicator_id,m2_version,min(display_order) AS position FROM m5_case_targets
+        WHERE case_version_id=ANY(%s) GROUP BY indicator_id,m2_version ORDER BY position,indicator_id
         """,
-        (selected["id"],),
+        ([selected["id"], *route_ids],),
     ).fetchall()
     if not targets:
         raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
@@ -311,7 +332,8 @@ def start_session(connection, *, session_id: str) -> dict[str, Any]:
     ).fetchone()
     if not session or session["status"] not in {"prepared", "paused"}:
         raise ValueError("M7_SESSION_CANNOT_START")
-    if (session.get("catalog_ref_json") or {}).get("diagnostic_only") is True:
+    catalog = session.get("catalog_ref_json") or {}
+    if catalog.get("diagnostic_only") is True and not catalog.get("scenario_test_route"):
         raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     if session["cycle_status"] not in {"prepared", "interrupted", "active", "paused"}:
         raise ValueError("M7_CYCLE_COLLECTION_CLOSED")

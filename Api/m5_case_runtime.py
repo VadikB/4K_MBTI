@@ -98,7 +98,8 @@ def _materialize_v3_presentation(
             material["text"] = _replace_casefold(material["text"], target.source_value, replacement)
     presentation.pop("substitution_targets", None)
     if source_schema_profile in {
-        "functional-personalization-indicator-v1", "functional-personalization-indicator-v2", "functional-passport-v1",
+        "functional-personalization-indicator-v1", "functional-personalization-indicator-v2",
+        "functional-passport-v1", "functional-passport-v1.2",
     }:
         # Functional AS defines its public copy in P00 + explicit start materials
         # (Generation_contract_v0.2 / 05_participant). Passport 8–13 describes the

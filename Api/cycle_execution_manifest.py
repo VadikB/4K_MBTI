@@ -113,6 +113,10 @@ def build_manifest(
             "m5_functional_package": BATTERY_CASE_PACKAGE,
             "m5_functional_runtime": BATTERY_RULE_PACKAGE,
         }
+        if catalog_ref.get("scenario_test_route"):
+            from Api.m5_battery_contract import RULE_PACKAGE
+
+            dependencies["m5_battery_scenario"] = RULE_PACKAGE
     if project_role is not None:
         dependencies = {**dependencies, "m5_educational_role_interactions": PROJECT_ROLE_PROMPT}
     snapshot = deepcopy(_dependency_snapshot(root, tuple(sorted(dependencies.items()))))
