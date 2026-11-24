@@ -114,8 +114,6 @@ def load_bank_case(case_id: str, directory: Path = BANK_PACKAGE) -> tuple[dict, 
 
 def normalize_case(case: dict, as_contract_ref: dict, *, m2_path: Path = M2,
                    m3_path: Path = M3) -> tuple[dict, dict, dict]:
-    if case.get("passport_version") == "1.2":
-        raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     case_id, version = case["case_id"], case["version"]
     old_source = case.get("author_case_source") if case.get("schema_version") == 3 else case.get("passport_source")
     if not old_source:
@@ -124,7 +122,8 @@ def normalize_case(case: dict, as_contract_ref: dict, *, m2_path: Path = M2,
     projected = compile_passport(raw=case["passport"], case_id=case_id, version=version,
                                  status=case["status"], source=old_source, m2=m2,
                                  m3=json.loads(m3_path.read_bytes()), as_contract_ref=as_contract_ref,
-                                 selected_base_role=case["base_role"])
+                                 selected_base_role=case["base_role"],
+                                 passport_version=case.get("passport_version", "1.1"))
     if case.get("schema_version") == 4 and case.get("as_contract_ref") != as_contract_ref:
         raise missing(case_id, version, "as_contract_ref")
     for key in ("base_role", "case_type_ids", "applicability"):
@@ -150,6 +149,7 @@ def provider_basis(snapshot: dict) -> dict:
             **({"project_role": {key: snapshot["project_role"][key] for key in ("code", "interactions")}}
                if "project_role" in snapshot else {}),
             **({"scenario_contract": snapshot["scenario_contract"]} if "scenario_contract" in snapshot else {}),
+            **({"scenario_contract": snapshot["battery_scenario"]} if "battery_scenario" in snapshot else {}),
             **({"case_content_contract": case_content,
                 "m2_indicator_descriptors": snapshot["m2_indicator_descriptors"]} if case_content else {}),
             **({"event_material_delivery": snapshot["event_material_delivery"]}

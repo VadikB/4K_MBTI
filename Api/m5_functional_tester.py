@@ -46,7 +46,8 @@ def load_protocol(path: Path = PROTOCOL_PATH) -> dict[str, Any]:
 
 
 def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | None = None, *,
-                             case_content_contract: dict[str, Any] | None = None) -> dict[str, Any]:
+                             case_content_contract: dict[str, Any] | None = None,
+                             scenario_qa: bool = False) -> dict[str, Any]:
     protocol = deepcopy(protocol or load_protocol())
     passport = case.get("Паспорт")
     if not isinstance(passport, dict):
@@ -57,11 +58,25 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     indicators = passport.get("22 IndicatorIDs", {}).get("Проектные условия")
     personalization = passport.get("18 Правила персонализации и ролевой адаптации")
     prohibitions = personalization.get("Критические запреты") if isinstance(personalization, dict) else None
+    if scenario_qa:
+        # Temporary technical protocol for 02. The passport-specific review
+        # plan for v1.2 is owned by 03; v1.1 case-specific checks stay pinned.
+        prohibitions = []
+        protocol["conditional_checks"] = []
+        protocol["case_content_checks"] = {}
     if (not case_id or not version or not isinstance(invariants, list)
             or not isinstance(indicators, list) or not isinstance(prohibitions, list)
-            or not prohibitions or not all(isinstance(item, str) and item.strip() for item in prohibitions)):
+            or (not scenario_qa and not prohibitions)
+            or (scenario_qa and not isinstance(personalization, dict))
+            or not all(isinstance(item, str) and item.strip() for item in prohibitions)):
         raise ValueError("M5_FUNCTIONAL_CASE_CHECK_SOURCES_REQUIRED")
     checks = [deepcopy(item) for item in protocol["common_checks"]]
+    if scenario_qa:
+        checks.append({
+            "check_id": "passport:adaptation", "category": "authority", "mandatory": True, "protected": True,
+            "requirement": personalization,
+            "source_ref": {"case_id": case_id, "case_version": version, "field": "18"},
+        })
     checks.extend({
         "check_id": "invariant:" + item["InvariantID"], "category": "invariant",
         "mandatory": True, "protected": True, "requirement": item["Условие"],
@@ -75,6 +90,8 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
             "designed_condition": item.get("Проектное условие", []),
             "materials": item.get("Материалы и факты по функции", []),
             "opportunity": item.get("Условие возникновения"),
+            **({"locations": item["Место в сценарии"], "observable_form": item["Доступная форма проявления"],
+                "validity_risk": item["Риск потери"]} if scenario_qa else {}),
         },
         "source_ref": {"case_id": case_id, "case_version": version, "field": "22", "indicator_id": item["IndicatorID"]},
     } for item in indicators)

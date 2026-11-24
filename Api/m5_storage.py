@@ -392,7 +392,11 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
     if not case_row:
         raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
     if case_row["manifest_json"].get("diagnostic_only") is True:
-        raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
+        if (usage_scope != "qa" or cycle["usage_scope"] != "qa" or not catalog_ref.get("scenario_test_route")
+                or not generation_trace or not generation_trace.get("admitted_for_participant")
+                or generation_trace.get("compiled_case_checksum") != checksum(case_value_override)
+                or generation_trace.get("execution_rules_checksum") != checksum(runtime_rules_override)):
+            raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     refs = [{"id": "m2-competencies-4k", "version": "1.1",
              "checksum": case_row["manifest_json"]["dependencies"]["m2"]}]
     if usage_scope == "assessment" and catalog_db_id is None and not legacy_unbound:
@@ -472,12 +476,16 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
         } for item in case_rules.get("characters", [])]
         initial_materials = situation["participant_payload"].get("initial_materials", [])
         design = case_rules.get("scenario_contract")
-        if design:
+        battery = case_rules.get("battery_scenario")
+        if design or battery:
             initial_materials = [
                 {"material_id": "P00", "text": situation["participant_payload"]["introduction"]},
                 *initial_materials,
             ]
-            if [item["material_id"] for item in initial_materials] != design["start_material_ids"]:
+            expected = design["start_material_ids"] if design else [
+                key for key in battery["start_ids"] if key != (battery["opening"] or {}).get("material_id")
+            ]
+            if [item["material_id"] for item in initial_materials] != expected:
                 raise ValueError("M5_ADDRESSED_START_MATERIALS_MISMATCH")
         initial_runtime_materials = [{
             "material_id": item["material_id"], "kind": "initial_material", "speaker_id": None,
