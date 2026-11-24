@@ -133,6 +133,8 @@ test('ADMIN-02 offers approved context choices to a new organization draft', asy
   await finishRead(page, f);
   const reality = form(page).locator('select[name="case_reality_level"]');
   const nameUsage = form(page).locator('select[name="organization_name_usage_rules"]');
+  await expect(reality).toHaveValue('');
+  await expect(nameUsage).toHaveValue('');
   await expect(reality.locator('option')).toHaveText([
     'Выберите вариант', 'Обобщённые рабочие ситуации', 'Близко к реальной работе',
   ]);
@@ -145,25 +147,33 @@ test('ADMIN-02 offers approved context choices to a new organization draft', asy
   await expect(nameUsage).toHaveValue('Использовать условное название');
 });
 
-test('ADM-UI-02 keeps the participant preview visible for first and partial input', async ({ page }) => {
+test('ADM-VIS-04 keeps the participant preview visible for first and partial input', async ({ page }) => {
   const f = await fixture(page, { items: [{
     ...confirmed, status: 'invalid',
-    answers_json: { C01: { name: 'Synthetic organization 3', organization_type: 'Компания',
+    answers_json: { C01: { name: '', organization_type: 'Компания',
       industry: 'ИТ', activity_description: 'Разрабатывает рабочие инструменты.' } },
   }] });
   const currentForm = form(page);
   const preview = card(page).locator('[data-organization-participant-preview]');
   await expect(currentForm.locator('[name="organization_name"]')).toHaveValue('Synthetic organization 3');
-  await expect(preview.locator('[data-preview-value="purpose"]')).toHaveText('Цель пока не указана.');
+  await expect(preview.locator('[data-preview-value="purpose"]')).toHaveText('Здесь появится цель оценки.');
+  await expect(preview.locator('[data-preview-value="results_usage"]')).toHaveText('Здесь появится текст для участника.');
   await finishRead(page, f);
+  await expect(currentForm.getByRole('textbox', { name: 'Название организации', exact: true })).toHaveValue('Synthetic organization 3');
   await expect(currentForm.locator('[name="organization_type"]')).toHaveValue('Компания');
   await expect(currentForm.locator('[name="industry"]')).toHaveValue('ИТ');
-  await expect(currentForm.locator('[name="activity_description"]')).toHaveValue('Разрабатывает рабочие инструменты.');
+  await expect(currentForm.getByRole('textbox', { name: 'Чем занимается организация' })).toHaveValue('Разрабатывает рабочие инструменты.');
+  await expect(currentForm.getByText('Участники увидят эти тексты перед началом оценки.')).toBeVisible();
+  await expect(currentForm.getByRole('textbox', { name: 'Зачем проводится оценка' }))
+    .toHaveAccessibleDescription('Коротко и понятным участнику языком.');
   await expect(currentForm.locator('[name="case_reality_level"]')).toHaveValue('');
-  await fill(page, { purpose: 'Цель для участника', results_usage: 'Для развития' });
-  await expect(preview.locator('[data-preview-value="purpose"]')).toHaveText('Цель для участника');
-  await expect(preview.locator('[data-preview-value="results_usage"]')).toHaveText('Для развития');
-  await expect(preview).toContainText('Вы и действующие администраторы вашей организации.');
+  await expect(currentForm.locator('[name="organization_name_usage_rules"]')).toHaveValue('');
+  const purpose = 'Понять, как участники решают рабочие задачи и взаимодействуют с коллегами.';
+  const resultsUsage = 'Обсудим с участником направления развития. ' + 'Длинноеслово'.repeat(12);
+  await fill(page, { purpose, results_usage: resultsUsage });
+  await expect(preview.locator('[data-preview-value="purpose"]')).toHaveText(purpose);
+  await expect(preview.locator('[data-preview-value="results_usage"]')).toHaveText(resultsUsage);
+  await expect(preview.getByText('Отчёт доступен вам и действующим администраторам вашей организации.', { exact: true })).toBeVisible();
   await expect(currentForm.locator('fieldset legend')).toHaveText([
     'Об организации', 'Сведения для знакомства', 'Настройки контекста для ситуаций',
   ]);
@@ -175,6 +185,9 @@ test('ADM-UI-02 keeps the participant preview visible for first and partial inpu
     const panel = await preview.boundingBox();
     const action = await currentForm.locator('[data-early-data-submit]').boundingBox();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    expect(await preview.locator('dd').evaluateAll((fields) => fields.every((field) =>
+      field.scrollWidth === field.clientWidth && field.scrollHeight > parseFloat(getComputedStyle(field).lineHeight),
+    ))).toBe(true);
     expect(action.x + action.width).toBeLessThanOrEqual(width);
     if (width === 1440) {
       expect(panel.width).toBeGreaterThanOrEqual(230);

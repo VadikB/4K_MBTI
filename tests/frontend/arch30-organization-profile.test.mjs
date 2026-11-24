@@ -9,12 +9,12 @@ test('ARCH30 removes the duplicate legacy organization profile field from both a
   assert.doesNotMatch(organizations, /Профиль организации/);
   assert.doesNotMatch(organizations, /textarea name="profile"/);
   assert.doesNotMatch(wiring, /profile: String\(formData\.get\('profile'\)/);
-  assert.match(organizations, /Описание деятельности/);
+  assert.match(organizations, /Чем занимается организация/);
   assert.match(organizations, /name="activity_description"/);
 });
 
 test('ARCH30 exposes a legacy profile as an explicit C01 migration draft without automatic overwrite', () => {
-  assert.match(organizations, /Сохранённое описание из прежней карточки/);
+  assert.match(organizations, /<details class="admin-organization-legacy-profile"><summary>Сохранённое описание из прежней карточки/);
   assert.match(organizations, /data-action="use-legacy-profile"/);
   assert.match(organizations, /currentActivityDescription/);
   assert.match(organizations, /не перезаписывает подтверждённые сведения/);

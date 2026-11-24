@@ -17,7 +17,6 @@ import {
 } from '../../dom.js';
 import { hideAllPanels, syncUrlState } from '../../router.js';
 import { persistAssessmentContext, setCurrentScreen, state, safeStorage } from '../../state.js';
-import { participantReportAudience } from '../../readiness-presentation.js';
 import { createAdminOrganizationDraftKey } from './organization-draft-key.js';
 import { questionnaireAssignmentState } from './questionnaire-assignment-state.js';
 import { buildInitials } from '../../utils/format.js';
@@ -689,9 +688,9 @@ const organizationDataReadiness = (programState, readiness, roleLabel, questionn
 const participantPreviewMarkup = '<aside class="admin-data-participant-preview" data-organization-participant-preview>' +
   '<h4>Как увидит участник</h4><div class="admin-data-participant-briefing">' +
   '<h5 data-preview-value="organization_name" data-empty="Название организации"></h5>' +
-  '<dl><dt>Зачем проводится оценка</dt><dd data-preview-value="purpose" data-empty="Цель пока не указана."></dd>' +
-  '<dt>Как будут использоваться результаты</dt><dd data-preview-value="results_usage" data-empty="Использование результатов пока не указано."></dd>' +
-  '<dt>Кто увидит результат</dt><dd>' + participantReportAudience + '</dd></dl></div></aside>';
+  '<dl><div><dt>Зачем проводится оценка</dt><dd data-preview-value="purpose" data-empty="Здесь появится цель оценки."></dd></div>' +
+  '<div><dt>Как будут использоваться результаты</dt><dd data-preview-value="results_usage" data-empty="Здесь появится текст для участника."></dd></div></dl>' +
+  '<p>Отчёт доступен вам и действующим администраторам вашей организации.</p></div></aside>';
 
 const operationRoot = () => {
   if (!operationAnchor || operationAnchor.identity !== currentIdentityKey()) return null;
@@ -3512,16 +3511,16 @@ export const renderAdminOrganizations = () => {
       const confirmedForm = programConfirmed && currentRevision?.status === 'confirmed' &&
         (revisionAnswers.C01?.name ?? org.name) === org.name;
       const organizationName = escapeHtml(currentRevision?.status === 'confirmed'
-        ? org.name : revisionAnswers.C01?.name ?? org.name);
+        ? org.name : revisionAnswers.C01?.name || org.name);
       const legacyProfile = String(org.profile || '').trim();
       const currentActivityDescription = String(revisionAnswers?.C01?.activity_description || '').trim();
       const legacyProfileMarkup = !legacyProfile ? '' :
-        '<aside class="admin-organization-legacy-profile" role="note"><strong>Сохранённое описание из прежней карточки</strong>' +
+        '<details class="admin-organization-legacy-profile"><summary>Сохранённое описание из прежней карточки</summary>' +
         '<p>' + escapeHtml(legacyProfile) + '</p>' +
         (currentActivityDescription
           ? '<p class="admin-organization-legacy-profile-note">В текущем черновике C01 уже есть описание деятельности. Старое значение оставлено только для сверки и не перезаписывает подтверждённые сведения.</p>'
           : '<button type="button" class="ghost-button compact-ghost" data-action="use-legacy-profile">Перенести в описание деятельности</button>') +
-        '</aside>';
+        '</details>';
       const viewButton = (view) => '<button type="button" class="admin-organization-step' +
         (activeView === view ? ' current' : '') + '" data-action="show-admin-view" data-view="' + view +
         '" aria-pressed="' + String(activeView === view) + '">' + managementCopy[view].title + '</button>';
@@ -3565,9 +3564,9 @@ export const renderAdminOrganizations = () => {
           '<button type="button" class="ghost-button compact-ghost" data-action="check-questionnaire-confirmation" data-value="' +
           Number(confirmationOutcome.revisionId) + '">Проверить результат</button></div>' : '';
       const participant = questionnairePreview?.participant_preview || {};
-      const fieldLabels = { organization_name: 'Организация', organization_type: 'Тип организации',
-        industry: 'Сфера деятельности', activity_description: 'Описание деятельности', purpose: 'Цель оценки',
-        results_usage: 'Использование результатов' };
+      const fieldLabels = { organization_name: 'Название организации', organization_type: 'Тип организации',
+        industry: 'Сфера деятельности', activity_description: 'Чем занимается организация', purpose: 'Зачем проводится оценка',
+        results_usage: 'Как будут использоваться результаты' };
       const validationLabels = { C01: 'сведения об организации', C02a: 'цель оценки', C03: 'использование результатов',
         C17: 'правила кейсов' };
       const changes = Array.isArray(questionnairePreview?.changes) ? questionnairePreview.changes : [];
@@ -3615,10 +3614,13 @@ export const renderAdminOrganizations = () => {
       const sourceRevision = publishedRevision || savedRevision;
       const sourceMarkup = sourceRevision ? revisionAttribution(sourceRevision) : '';
       const confirmationMarkup = '<div class="admin-questionnaire-confirmation">' +
-        (publishedRevision ? '<p data-previous-organization-revision hidden>Действуют ранее подтверждённые сведения, пока вы не подтвердите изменения.</p>' : '') +
-        '<p data-organization-confirmed role="status" tabindex="-1" hidden>Сведения подтверждены</p>' +
+        '<p data-organization-confirmed role="status" tabindex="-1" hidden>' +
+        '<span class="admin-data-confirmed-icon" aria-hidden="true">✓</span><span>Сведения подтверждены</span></p>' +
         resultCheck + savedChoiceWarning + previewMarkup +
-        '<button class="primary-button compact-primary" type="submit" data-early-data-submit>Подтвердить сведения</button></div>';
+        '<button class="primary-button compact-primary" type="submit" data-early-data-submit>Подтвердить сведения</button>' +
+        (publishedRevision ? '<p data-previous-organization-revision hidden>Действуют ранее подтверждённые сведения, пока вы не подтвердите изменения.</p>' : '') +
+        '</div>';
+      const purposeHintId = 'admin-data-purpose-hint-' + orgId;
       const tabsMarkup = '<nav class="admin-organization-steps" aria-label="Разделы управления">' +
         managementSections.filter((view) => !isSuperadmin || view !== 'questionnaire').map(viewButton).join('') + '</nav>';
       const reportsLink = !isSuperadmin && isActive ? '<button type="button" class="text-button admin-organization-reports-link" data-action="open-organization-reports" data-program-definition-id="' +
@@ -3770,15 +3772,18 @@ export const renderAdminOrganizations = () => {
         (!programConfirmed || questionnaireLoadState?.accessDenied ? ' data-confirmation-unavailable' : '') + '>' +
         (programConfirmed ? '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '">' : '') +
         '<fieldset class="admin-questionnaire-field-group"><legend>Об организации</legend>' +
-        '<label class="admin-organization-profile-wide"><span>Название организации</span><input name="organization_name" value="' + organizationName + '" required></label>' +
-        '<label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
-        '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '"></label>' +
-        '<label class="admin-organization-profile-wide"><span>Описание деятельности</span><textarea name="activity_description">' + answer('C01', 'activity_description') + '</textarea></label>' +
+        '<label><span>Название организации</span><input name="organization_name" value="' + organizationName + '" required></label>' +
+        '<div class="admin-data-basic-fields"><label><span>Тип организации</span><input name="organization_type" value="' + answer('C01', 'organization_type') + '"></label>' +
+        '<label><span>Сфера деятельности</span><input name="industry" value="' + answer('C01', 'industry') + '"></label></div>' +
+        '<label><span>Чем занимается организация</span><textarea name="activity_description" rows="2">' + answer('C01', 'activity_description') + '</textarea></label>' +
         legacyProfileMarkup + '</fieldset>' +
-        '<fieldset class="admin-questionnaire-field-group admin-data-text-fields"><legend>Сведения для знакомства</legend>' +
-        '<label><span>Зачем проводится оценка</span><textarea name="purpose">' + answer('C02a', 'participant_text') + '</textarea></label>' +
-        '<label><span>Как будут использоваться результаты</span><textarea name="results_usage">' + answer('C03', 'participant_text') + '</textarea></label></fieldset>' +
-        '<fieldset class="admin-questionnaire-field-group admin-data-text-fields"><legend>Настройки контекста для ситуаций</legend>' +
+        '<fieldset class="admin-questionnaire-field-group"><legend>Сведения для знакомства</legend>' +
+        '<p>Участники увидят эти тексты перед началом оценки.</p>' +
+        '<div class="admin-data-purpose-field"><label><span>Зачем проводится оценка</span><textarea name="purpose" rows="2" aria-describedby="' +
+        purposeHintId + '">' + answer('C02a', 'participant_text') + '</textarea></label>' +
+        '<small id="' + purposeHintId + '">Коротко и понятным участнику языком.</small></div>' +
+        '<label><span>Как будут использоваться результаты</span><textarea name="results_usage" rows="2">' + answer('C03', 'participant_text') + '</textarea></label></fieldset>' +
+        '<fieldset class="admin-questionnaire-field-group"><legend>Настройки контекста для ситуаций</legend>' +
         '<label><span>Близость ситуаций к реальной работе</span>' + contextChoiceSelect('case_reality_level', revisionAnswers?.C17?.case_reality_level) + '</label>' +
         '<label><span>Название организации в ситуациях</span>' + contextChoiceSelect('organization_name_usage_rules', revisionAnswers?.C17?.organization_name_usage_rules) + '</label></fieldset>' +
         confirmationMarkup + '</form>' + participantPreviewMarkup + '</div>') + '</section>' +

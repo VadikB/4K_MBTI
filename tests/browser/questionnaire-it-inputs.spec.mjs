@@ -67,6 +67,15 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
     await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
     const form = card.locator('[data-action="preview-early-data"]');
     await expect(form.locator('[name="assignment_ref"]')).toHaveValue('ADM28 isolated');
+    const nameField = form.getByRole('textbox', { name: 'Название организации', exact: true });
+    const originalName = 'Синтетическая организация ADM28';
+    await expect(nameField).toBeEditable();
+    await expect(nameField).toHaveValue(originalName);
+    const storedOrganizationName = async () => {
+      const response = await page.request.get(base + '/users/admin/organizations');
+      expect(response.status()).toBe(200);
+      return (await response.json()).items.find((item) => String(item.id) === organizationId)?.name;
+    };
     for (const [name, value] of Object.entries(values)) {
       if (!['source_author', 'organizer'].includes(name)) {
         const field = form.locator(`[name="${name}"]`);
@@ -118,6 +127,8 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       expect(replay.request().postDataJSON().idempotency_key).toBe(firstKey);
       expect((await replay.json()).id).toBe(firstPreview.id);
       await expect(preview.getByRole('button', { name: 'Подтвердить сведения', exact: true })).toBeEnabled();
+      await expect(preview.locator('[data-organization-rename]')).toContainText(`с «${originalName}» на «${values.organization_name}»`);
+      expect(await storedOrganizationName()).toBe(originalName);
       expect(await preview.getAttribute('data-questionnaire-revision-id')).toBe(String(firstPreview.id));
       const afterReload = readDb(firstPreview.id);
       expect(afterReload.counts).toEqual(afterWrite.counts);
@@ -170,6 +181,9 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
         id: Number(revisionId), assignment_ref: 'ADM28 isolated', status: 'confirmed',
       });
       await expect(card.locator('[data-organization-confirmed]')).toBeVisible();
+      await expect(card.locator('.admin-data-confirmed-icon')).toHaveText('✓');
+      await expect(form.locator('[data-early-data-submit]')).toBeHidden();
+      expect(await storedOrganizationName()).toBe(values.organization_name);
       const recoveryRequests = requests.slice(beforeReload).filter((request) => request.path.startsWith(questionnairePath));
       expect(recoveryRequests[0]).toEqual({ method: 'GET', path: revisionPath });
       expect(recoveryRequests.every((request) => request.method === 'GET')).toBe(true);
@@ -260,7 +274,9 @@ test('IT questionnaire: actual preview, confirmation, reload and PostgreSQL read
       }
     }
     const draftName = values.organization_name + ' — черновик';
-    await form.locator('[name="organization_name"]').fill(draftName);
+    await nameField.fill(draftName);
+    await expect(form.locator('[data-organization-confirmed]')).toBeHidden();
+    await expect(card.locator('[data-preview-value="organization_name"]')).toHaveText(draftName);
     const draftResponse = page.waitForResponse((response) => response.request().method() === 'POST'
       && response.url().endsWith(`/users/admin/organizations/${organizationId}/questionnaire/preview`));
     await form.getByRole('button', { name: 'Подтвердить сведения', exact: true }).click();

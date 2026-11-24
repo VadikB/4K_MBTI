@@ -1753,6 +1753,8 @@ test('ARCH30 offers an explicit one-way legacy profile copy into an empty C01 dr
   await expect(legacy).toContainText('Старое описание деятельности');
   const target = page.locator('textarea[name="activity_description"]');
   await expect(target).toHaveValue('');
+  await expect(legacy.getByRole('button', { name: 'Перенести в описание деятельности' })).toBeHidden();
+  await legacy.locator('summary').press('Enter');
   await legacy.getByRole('button', { name: 'Перенести в описание деятельности' }).click();
   await expect(target).toHaveValue('Старое описание деятельности');
   await expect(legacy.getByRole('button')).toHaveText('Перенесено в черновик');
