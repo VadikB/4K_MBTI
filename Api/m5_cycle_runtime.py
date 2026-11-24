@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 from Api.m5_case_runtime import checksum
 from Api.cycle_execution_manifest import build_manifest
+from Api.m5_catalog_integrity import resolve_configuration_catalog, resolve_profile_base_role
 
 
 def _profile_row(connection, personalized_profile_id: int) -> dict[str, Any]:
@@ -94,6 +95,15 @@ def create_cycle(
         raise ValueError("M7_TIME_LIMIT_INVALID")
     if usage_scope not in {"assessment", "qa"}:
         raise ValueError("M7_USAGE_SCOPE_INVALID")
+    if catalog_ref and catalog_ref.get("diagnostic_only") is True:
+        configured = resolve_configuration_catalog(
+            connection, configuration_id=int(profile.get("assessment_configuration_id") or 0),
+            usage_scope=usage_scope,
+        )
+        if (configured.get("diagnostic_only") is not True
+                or {key: catalog_ref.get(key) for key in configured} != configured
+                or configured["organization_id"] != profile.get("organization_id")):
+            raise ValueError("M5_DIAGNOSTIC_CONFIGURATION_MISMATCH")
     display_snapshot = None
     if profile.get("assessment_configuration_id") is not None:
         configuration = connection.execute(
@@ -215,17 +225,44 @@ def create_cycle_session_for_case(
     usage_scope: str,
     time_budget_seconds: int | None = None,
     calendar_window_seconds: int | None = None,
+    diagnostic: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     profile = _profile_row(connection, personalized_profile_id)
+    catalog = None
+    if diagnostic:
+        if usage_scope != "qa":
+            raise ValueError("M5_DIAGNOSTIC_CATALOG_REQUIRES_SCOPED_QA")
+        catalog = resolve_configuration_catalog(
+            connection, configuration_id=int(profile.get("assessment_configuration_id") or 0), usage_scope="qa",
+        )
+        if not catalog.get("diagnostic_only") or catalog["organization_id"] != profile.get("organization_id"):
+            raise ValueError("M5_DIAGNOSTIC_CONFIGURATION_MISMATCH")
+        selected = connection.execute(
+            """SELECT cv.id,cv.case_id,cv.case_version,cv.base_role,cv.content_checksum
+               FROM m5_catalog_case_versions member JOIN m5_case_versions cv ON cv.id=member.case_version_id
+               WHERE member.catalog_db_id=%s AND cv.case_id=%s AND cv.case_version=%s""",
+            (catalog["db_id"], case_id, case_version),
+        ).fetchone()
+        if selected is None:
+            raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
+        catalog["selected_case"] = {key: selected[key] for key in ("case_id", "case_version", "base_role", "content_checksum")}
+    else:
+        selected = connection.execute(
+            """SELECT candidate.id FROM m5_case_versions candidate
+               JOIN m5_packages source ON source.id=candidate.package_id
+               WHERE candidate.case_id=%s AND candidate.case_version=%s
+                 AND source.manifest_json->'diagnostic_only' IS DISTINCT FROM 'true'::jsonb
+               ORDER BY candidate.package_id DESC LIMIT 1""",
+            (case_id, case_version),
+        ).fetchone()
+        if selected is None:
+            raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
     targets = connection.execute(
         """
-        SELECT t.indicator_id,t.m2_version
-        FROM m5_case_versions cv JOIN m5_case_targets t ON t.case_version_id=cv.id
-        WHERE cv.id=(SELECT id FROM m5_case_versions WHERE case_id=%s AND case_version=%s
-                     ORDER BY package_id DESC LIMIT 1)
-        ORDER BY t.display_order
+        SELECT indicator_id,m2_version FROM m5_case_targets
+        WHERE case_version_id=%s ORDER BY display_order
         """,
-        (case_id, case_version),
+        (selected["id"],),
     ).fetchall()
     if not targets:
         raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
@@ -236,6 +273,10 @@ def create_cycle_session_for_case(
         "version": str(role.get("version") or "1"),
         "checksum": str(role.get("checksum") or profile["checksum"]),
     }
+    if catalog:
+        role_ref = resolve_profile_base_role(connection, role_profile_version_id=profile["role_profile_version_id"])
+        if role_ref["code"] != selected["base_role"]:
+            raise ValueError("ROLE_NOT_ALLOWED")
     cycle = create_cycle(
         connection,
         personalized_profile_id=personalized_profile_id,
@@ -245,9 +286,11 @@ def create_cycle_session_for_case(
         time_budget_seconds=time_budget_seconds,
         calendar_window_seconds=calendar_window_seconds,
         usage_scope=usage_scope,
+        catalog_ref=catalog,
     )
     session = create_session(connection, cycle_id=str(cycle["cycle_id"]), created_by=created_by)
-    session = start_session(connection, session_id=str(session["session_id"]))
+    if not diagnostic:
+        session = start_session(connection, session_id=str(session["session_id"]))
     return cycle, session
 
 
@@ -261,12 +304,15 @@ def start_session(connection, *, session_id: str) -> dict[str, Any]:
         raise ValueError("M7_SESSION_CANNOT_START")
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(owner["owner_user_id"]),))
     session = connection.execute(
-        "SELECT s.*, c.status AS cycle_status,c.assignment_id,c.owner_user_id FROM m5_cycle_sessions s JOIN m5_cycles c ON c.id=s.cycle_db_id "
+        "SELECT s.*, c.status AS cycle_status,c.assignment_id,c.owner_user_id,c.catalog_ref_json "
+        "FROM m5_cycle_sessions s JOIN m5_cycles c ON c.id=s.cycle_db_id "
         "WHERE s.session_id=%s FOR UPDATE OF s,c",
         (UUID(session_id),),
     ).fetchone()
     if not session or session["status"] not in {"prepared", "paused"}:
         raise ValueError("M7_SESSION_CANNOT_START")
+    if (session.get("catalog_ref_json") or {}).get("diagnostic_only") is True:
+        raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     if session["cycle_status"] not in {"prepared", "interrupted", "active", "paused"}:
         raise ValueError("M7_CYCLE_COLLECTION_CLOSED")
     if session.get("assignment_id") is not None and not connection.execute(

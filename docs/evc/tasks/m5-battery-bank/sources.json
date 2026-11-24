@@ -1,0 +1,42 @@
+{
+  "archive": "P4K_M5_Battery_Review_2026-11-24.zip",
+  "files": [
+    {
+      "path": "01_BANK.md",
+      "sha256": "866b80f507443a4baf2dc87a2df9e9b16c6bb4305332710ea824578423f6ef7a"
+    },
+    {
+      "path": "START.md",
+      "sha256": "633f8f38b07342a2dfdfaf2ac7c914378f7a27d001721d6e4edbbea15042884f"
+    },
+    {
+      "path": "inputs/01_battery_v0.3_WORKING.zip",
+      "sha256": "7d956ce603c9767054bfe3f2b48c9d8021db2c83fb08578d3967356791349bdc"
+    },
+    {
+      "path": "inputs/02_passport_v1.2_supplied.docx",
+      "sha256": "2371e0a895b7f6c63af59fbca10f7e5a0a2513f135108a5973e9c09a761a1591"
+    },
+    {
+      "path": "inputs/03_methodology_v1.2_FROZEN.docx",
+      "sha256": "137782a81cad62852564a98feb24525dcc212576b081979c49a4c69778b1f44a"
+    },
+    {
+      "path": "inputs/04_M5_publication_note.docx",
+      "sha256": "e746e11ec8388d32d2f53b0e19094c39f38e156a9fa124337c961125370eac71"
+    },
+    {
+      "path": "inputs/05_passport_v1.2_referenced.docx",
+      "sha256": "f84bbcf7a737f247dc25b84abdc17cfcb62f0aa8ebeb44df2e259cc6c4023a87"
+    },
+    {
+      "path": "inputs/06_common_glossary_WORKING.json",
+      "sha256": "adef3ab38424c6b3bc4dcc6ca28be50e42b79535fbd9f9166197af8c4d989315"
+    },
+    {
+      "path": "inputs/07_M0_Governance.md",
+      "sha256": "fb8e16dc44a520f812b98fb3785a31a70726d6999d7fe10790dc19604e7cfbdf"
+    }
+  ],
+  "battery_manifest_sha256": "23df70f8597f9ce5fb525362fd3b9c28282bd840b53a31f1f74a37e967e86c05"
+}

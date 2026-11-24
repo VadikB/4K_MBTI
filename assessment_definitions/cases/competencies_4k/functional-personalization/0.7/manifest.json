@@ -1,0 +1,138 @@
+{
+  "artifacts": [
+    {
+      "name": "case-package.json",
+      "sha256": "7eed5a8616653daee647c6e92dc94d3311be6ab0fc9f11efd52bfe66cbddf2db"
+    },
+    {
+      "name": "case.schema.json",
+      "sha256": "1d40767cc8cd2119057bcb6cdd576b8330f2df7f742e3ec5beeb4a08f3619fb4"
+    },
+    {
+      "name": "execution-rules.json",
+      "sha256": "809a63ae9736430efcbca7766a4d60113d2a242abb41987d72bd4567f1acff50"
+    },
+    {
+      "name": "passport-index.json",
+      "sha256": "964ed9e02769ddc78b5488c667f29974e2e90785fec05163c0436c7b37c82329"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_01_v0.6_WORKING.json",
+      "sha256": "8e7afe2978de8541a4dcc1c321d274c193e34d63317152af7c9073da47d0b599"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_02_v0.7_WORKING.json",
+      "sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_03_v0.5_WORKING.json",
+      "sha256": "0ff7e2c0893badbabe5443d1bc9cc366adef3abcac5ae9795fd079e70dc0d0c1"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_04_v0.6_WORKING.json",
+      "sha256": "3b6b7a6507a23f6072d935263068d0447e8d9f44dd4fed7e447f1b55e1826112"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_05_v0.6_WORKING.json",
+      "sha256": "2833de56142e89dcd5a4d77f9bac62946fb7f054b1838dba39f46c5012389af6"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_06_v0.5_WORKING.json",
+      "sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_07_v0.5_WORKING.json",
+      "sha256": "6d8ec887387a770605c2bd896ca126fde49ecca619ec8ff0dccf96837a76d3fd"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_08_v0.5_WORKING.json",
+      "sha256": "5699ce51ce70d25da71296a1aeaa9e71114f472bcc05922f2c977c9d3558b2ca"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_09_v0.5_WORKING.json",
+      "sha256": "0dd8fe0a718d9560a5e55b9340753cdb0433831e93da2f4369094bff20e01218"
+    },
+    {
+      "name": "sources/manifest.json",
+      "sha256": "23df70f8597f9ce5fb525362fd3b9c28282bd840b53a31f1f74a37e967e86c05"
+    },
+    {
+      "name": "verification-report.json",
+      "sha256": "e25f07c57d9ad71a881cb90c44fc47cfede38bd28027bdcdb976bb6f0b3b3f4e"
+    }
+  ],
+  "as_contract_ref": {
+    "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+    "id": "m5-functional-as",
+    "version": "2.0.0"
+  },
+  "battery_source": {
+    "file": "sources/manifest.json",
+    "provenance": {
+      "archive": "P4K_M5_Battery_Review_2026-11-24.zip",
+      "battery_manifest_sha256": "23df70f8597f9ce5fb525362fd3b9c28282bd840b53a31f1f74a37e967e86c05",
+      "files": [
+        {
+          "path": "01_BANK.md",
+          "sha256": "866b80f507443a4baf2dc87a2df9e9b16c6bb4305332710ea824578423f6ef7a"
+        },
+        {
+          "path": "START.md",
+          "sha256": "633f8f38b07342a2dfdfaf2ac7c914378f7a27d001721d6e4edbbea15042884f"
+        },
+        {
+          "path": "inputs/01_battery_v0.3_WORKING.zip",
+          "sha256": "7d956ce603c9767054bfe3f2b48c9d8021db2c83fb08578d3967356791349bdc"
+        },
+        {
+          "path": "inputs/02_passport_v1.2_supplied.docx",
+          "sha256": "2371e0a895b7f6c63af59fbca10f7e5a0a2513f135108a5973e9c09a761a1591"
+        },
+        {
+          "path": "inputs/03_methodology_v1.2_FROZEN.docx",
+          "sha256": "137782a81cad62852564a98feb24525dcc212576b081979c49a4c69778b1f44a"
+        },
+        {
+          "path": "inputs/04_M5_publication_note.docx",
+          "sha256": "e746e11ec8388d32d2f53b0e19094c39f38e156a9fa124337c961125370eac71"
+        },
+        {
+          "path": "inputs/05_passport_v1.2_referenced.docx",
+          "sha256": "f84bbcf7a737f247dc25b84abdc17cfcb62f0aa8ebeb44df2e259cc6c4023a87"
+        },
+        {
+          "path": "inputs/06_common_glossary_WORKING.json",
+          "sha256": "adef3ab38424c6b3bc4dcc6ca28be50e42b79535fbd9f9166197af8c4d989315"
+        },
+        {
+          "path": "inputs/07_M0_Governance.md",
+          "sha256": "fb8e16dc44a520f812b98fb3785a31a70726d6999d7fe10790dc19604e7cfbdf"
+        }
+      ]
+    },
+    "sha256": "23df70f8597f9ce5fb525362fd3b9c28282bd840b53a31f1f74a37e967e86c05"
+  },
+  "compiler": {
+    "id": "m5-functional-json-compiler",
+    "source_schema_profile": "functional-passport-v1.2",
+    "version": "0.7.0"
+  },
+  "dependencies": {
+    "m2": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "m3": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+  },
+  "diagnostic_only": true,
+  "id": "m5-functional-personalization-cases",
+  "prompt_package": {
+    "checksum": "692c7704fe0cc028778c21d555dd262e8c31030bb0227f2f1016490cff54b273",
+    "id": "m5-functional-passport",
+    "path": "assessment_definitions/prompts/m5_functional_passport/v3",
+    "version": "3.0.0"
+  },
+  "runtime_enabled": false,
+  "runtime_rule_version": "1.5.0",
+  "schema_version": 5,
+  "source_status": "WORKING",
+  "status": "draft",
+  "version": "0.7"
+}

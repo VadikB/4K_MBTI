@@ -1,0 +1,142 @@
+{
+  "case_bindings": {
+    "CASE.SPEC.01": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "4245bfefed78544675d4d5439aaf7947f16e6ccf8359840e2a61243dc852e4da",
+      "case_version": "v0.6",
+      "event_ids": [
+        "E01_DOCUMENT",
+        "E02_REPLY",
+        "E03_CAUSE_LIMIT",
+        "E04_DOCUMENT_REPLY",
+        "E05_NEXT_STEP"
+      ]
+    },
+    "CASE.SPEC.02": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "98cd3e1b3749ed86b7a5132ee15bc0db1962feed42c5a055808b44d4b3519c7f",
+      "case_version": "v0.7",
+      "event_ids": [
+        "E01_FACT",
+        "E03_UNKNOWN",
+        "E02_SUBMISSION"
+      ]
+    },
+    "CASE.SPEC.03": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "01ac81445f92dddb9e5649ddccae00122a8e134e28dad4ba4cf77a7d3c9f52e1",
+      "case_version": "v0.5",
+      "event_ids": [
+        "E01_UPDATE",
+        "E02_TRANSFER",
+        "E02_FORWARD",
+        "E03_REPLY",
+        "E04_BOUNDARY"
+      ]
+    },
+    "CASE.SPEC.04": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "f57c84ff29a6e7f7852074e2e41b4a86d3011f38cacfa943d552c5404a91f3ec",
+      "case_version": "v0.6",
+      "event_ids": [
+        "E01_REVIEW",
+        "E01_STATE_LIMIT",
+        "E01_CONSENT_STEP",
+        "E02_REVISION",
+        "E03_FACT"
+      ]
+    },
+    "CASE.SPEC.05": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "f30ef196540f93055466e01b2550bcb64b247cd751777a857c0673b9fbe6ed87",
+      "case_version": "v0.6",
+      "event_ids": [
+        "E01_COLLEAGUE",
+        "E02_PROMISE",
+        "E03_SUPPORT",
+        "E04_RESERVATION"
+      ]
+    },
+    "CASE.SPEC.06": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "f362d8aebb0f2479082c7fac30450142fc4ada665887f82b6fa6bf569f8d19a8",
+      "case_version": "v0.5",
+      "event_ids": [
+        "E01_DISCUSS",
+        "E01_ACCEPT",
+        "E01_HOLD",
+        "E02_LIMIT"
+      ]
+    },
+    "CASE.SPEC.07": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "e87a9e48affa23871e7c85bb45ccf9d3cd0a94b5e0cd05411d50e07bfcb14342",
+      "case_version": "v0.5",
+      "event_ids": [
+        "E01_EXPLAIN",
+        "E03_UNAVAILABLE",
+        "E02_SUBMISSION"
+      ]
+    },
+    "CASE.SPEC.08": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "9aee4334e9e27e5f05c5ceb8b39db635655750d4fd550fd74a390139688d0d95",
+      "case_version": "v0.5",
+      "event_ids": [
+        "E01_HANDOVER",
+        "E01_RECEIPT",
+        "E02_CORRECT",
+        "E03_PENDING",
+        "E04_CLARIFY"
+      ]
+    },
+    "CASE.SPEC.09": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "05f5fa0963d3a23d39850b1735c4338dfdcd7811cc6aba75febf139f772ecf35",
+      "case_version": "v0.5",
+      "event_ids": [
+        "E01_MANAGER",
+        "E02_BOUNDARY"
+      ]
+    }
+  },
+  "owner_task": "M5-01",
+  "schema_version": 3,
+  "status": "structured_draft"
+}

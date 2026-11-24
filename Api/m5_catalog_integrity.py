@@ -174,6 +174,7 @@ def resolve_configuration_catalog(connection, *, configuration_id: int, usage_sc
                 "m2_checksum": "legacy", "organization_id": None, "usage_scope": usage_scope}
     row = connection.execute(
         """SELECT catalog.id,catalog.catalog_id,catalog.catalog_version,catalog.manifest_checksum,
+                  catalog.manifest_json AS catalog_manifest,
                   catalog.package_db_id,package.package_checksum,package.manifest_json,
                   catalog.organization_id,catalog.usage_scope
            FROM assessment_configurations configuration
@@ -188,12 +189,16 @@ def resolve_configuration_catalog(connection, *, configuration_id: int, usage_sc
         raise ValueError("M5_CATALOG_REF_REQUIRED")
     if row["usage_scope"] != usage_scope and not (row["usage_scope"] == "qa" and usage_scope == "qa"):
         raise ValueError("M5_CATALOG_USAGE_SCOPE_MISMATCH")
-    return {
+    ref = {
         "db_id": int(row["id"]), "id": row["catalog_id"], "version": row["catalog_version"],
         "checksum": row["manifest_checksum"], "package_db_id": int(row["package_db_id"]),
         "package_checksum": row["package_checksum"], "m2_checksum": row["manifest_json"]["dependencies"]["m2"],
         "organization_id": row["organization_id"], "usage_scope": row["usage_scope"],
     }
+    if row["catalog_manifest"].get("diagnostic_only") is True:
+        ref.update(diagnostic_only=True, package_version=row["manifest_json"]["version"],
+                   runtime_rule_ref=row["catalog_manifest"]["runtime_rule_ref"])
+    return ref
 
 
 def publication_plan(
@@ -204,8 +209,12 @@ def publication_plan(
     if package is None:
         raise ValueError("M5_PACKAGE_NOT_FOUND")
     selected = sorted(set(int(value) for value in case_version_ids))
+    diagnostic = package["manifest_json"].get("diagnostic_only") is True
+    if diagnostic and (usage_scope != "qa" or organization_id is None or not selected):
+        raise ValueError("M5_DIAGNOSTIC_CATALOG_REQUIRES_SCOPED_QA")
     cases = connection.execute(
-        "SELECT case_id,content_json FROM m5_case_versions WHERE package_id=%s AND id=ANY(%s) ORDER BY id",
+        "SELECT id,case_id,case_version,status,content_json,content_checksum "
+        "FROM m5_case_versions WHERE package_id=%s AND id=ANY(%s) ORDER BY id",
         (package_db_id, selected),
     ).fetchall() if selected else []
     if len(cases) != len(selected):
@@ -226,7 +235,22 @@ def publication_plan(
         ).fetchall()
         if {int(item["case_version_id"]) for item in covered} != set(selected):
             raise ValueError("M5_RUNTIME_RULE_CASE_SET_MISMATCH")
-    decisions = [case_admission(connection, case_version_id=value, usage_scope=usage_scope) for value in selected]
+    if diagnostic:
+        from Api.m5_runtime_rules import resolve_preparation_binding
+
+        if len(selected) != len(package["package_json"]["cases"]):
+            raise ValueError("M5_DIAGNOSTIC_CATALOG_CASE_SET_MISMATCH")
+        for case in cases:
+            content = case["content_json"]
+            if (case["status"] != "WORKING" or content.get("passport_version") != "1.2"
+                    or checksum(content) != case["content_checksum"]):
+                raise ValueError(f"M5_DIAGNOSTIC_CASE_INVALID:{case['case_id']}")
+            rule = resolve_preparation_binding(connection, {**case, "runtime_rule_version_id": runtime_rule_version_id})
+            if not rule or rule["version"] != package["manifest_json"]["runtime_rule_version"]:
+                raise ValueError(f"M5_DIAGNOSTIC_RULE_VERSION_MISMATCH:{case['case_id']}")
+        decisions = [{"case": case, "admitted": False, "reasons": ["DIAGNOSTIC_ONLY"]} for case in cases]
+    else:
+        decisions = [case_admission(connection, case_version_id=value, usage_scope=usage_scope) for value in selected]
     return {
         "package_db_id": package_db_id, "package_id": package["package_id"],
         "package_version": package["package_version"], "package_checksum": package["package_checksum"],
@@ -238,7 +262,8 @@ def publication_plan(
             {"case_id": item["case"]["case_id"], "case_version": item["case"]["case_version"],
              "admitted": item["admitted"], "reasons": item["reasons"]} for item in decisions
         ],
-        "publishable": all(item["admitted"] for item in decisions),
+        "publishable": diagnostic or all(item["admitted"] for item in decisions),
+        **({"diagnostic_only": True} if diagnostic else {}),
     }
 
 
@@ -279,6 +304,8 @@ def publish_catalog(
                 "m2_checksum": plan["m2_checksum"], "case_type_catalog_ref": plan["case_type_catalog_ref"],
                 "organization_id": organization_id,
                 "usage_scope": usage_scope, "case_version_ids": plan["case_version_ids"]}
+    if plan.get("diagnostic_only"):
+        manifest["diagnostic_only"] = True
     if runtime_rule_version_id is not None:
         runtime = connection.execute(
             "SELECT artifact_id,artifact_version,manifest_checksum,rules_checksum "

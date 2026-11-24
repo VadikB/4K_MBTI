@@ -20,6 +20,7 @@ from Api.m5_case_runtime import checksum
 from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_runtime_rules import load_runtime_rule_package
 from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE
+from scripts.build_m5_passport_bank import BATTERY_PACKAGE, BATTERY_RUNTIME
 from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as BANK_RUNTIME_DIR
 
 
@@ -167,6 +168,33 @@ def build_admitted_materials(decision_basis: str) -> tuple[dict[str, Any], dict[
     return admitted, runtime, evidence_refs
 
 
+def publish_diagnostic_battery(connection, *, published_by: int, organization_id: int,
+                               catalog_id: str, catalog_version: str, idempotency_key: str,
+                               decision_basis: str) -> dict[str, Any]:
+    """Import the exact WORKING battery and publish its organization-scoped QA catalog."""
+    from Api.m5_catalog_integrity import catalog_readback, publish_catalog
+    from Api.m5_runtime_rules import import_runtime_rule_version
+    from Api.m5_storage import import_package_directory, package_readback
+
+    build_trace(BATTERY_PACKAGE, BATTERY_RUNTIME)
+    imported = import_package_directory(connection, BATTERY_PACKAGE)
+    package_id = imported["package_db_id"]
+    readback = package_readback(connection, package_id)
+    package = readback["package"]
+    runtime = load_runtime_rule_package(
+        BATTERY_RUNTIME, package["package_json"]["cases"], expected_case_package_version=package["package_version"],
+    )
+    bound = import_runtime_rule_version(connection, runtime, package["runtime_rules_json"], package_db_id=package_id)
+    catalog = publish_catalog(
+        connection, catalog_id=catalog_id, catalog_version=catalog_version, package_db_id=package_id,
+        case_version_ids=[case["id"] for case in readback["cases"]], usage_scope="qa",
+        published_by=published_by, organization_id=organization_id, decision_basis=decision_basis,
+        idempotency_key=idempotency_key, runtime_rule_version_id=bound["id"],
+    )
+    return {"import": imported, "runtime": bound, "readback": readback, "catalog": catalog,
+            "catalog_readback": catalog_readback(connection, catalog["catalog_db_id"])}
+
+
 def build_release_artifacts(
     package: dict[str, Any], runtime: dict[str, Any], *, usage_scope: str,
     package_dir: Path = PACKAGE_DIR,
@@ -236,6 +264,8 @@ def build_release_artifacts(
 
 def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scope: str,
                              evidence_path: Path | None) -> tuple[dict, dict, dict]:
+    if json.loads((package_dir / "manifest.json").read_bytes()).get("diagnostic_only") is True:
+        raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     package = json.loads((package_dir / "case-package.json").read_bytes())
     runtime = load_runtime_rule_package(runtime_dir, package["cases"], expected_case_package_version=package["version"])
     expected = {case["case_id"]: checksum(case) for case in package["cases"]}
@@ -341,6 +371,7 @@ def main() -> int:
     sources = parser.add_mutually_exclusive_group()
     sources.add_argument("--historical-0.5", dest="historical_0_5", action="store_true", help="Replay the historical release.")
     sources.add_argument("--passport-01", action="store_true", help="Replay the M5-01 passport release.")
+    sources.add_argument("--diagnostic-battery", action="store_true", help="Select WORKING battery v0.3.")
     parser.add_argument("--assessment-evidence", type=Path, help="Reviewed admission evidence for the passport bank.")
     parser.add_argument("--publish-admitted-catalog", action="store_true")
     parser.add_argument("--published-by", type=int)
@@ -352,6 +383,28 @@ def main() -> int:
     parser.add_argument("--usage-scope", choices=("assessment", "qa"), default="assessment",
                         help="Publication scope; qa uses synthetic evidence and separate artifact versions.")
     args = parser.parse_args()
+    if args.diagnostic_battery:
+        if args.publish_admitted_catalog:
+            parser.error("The diagnostic battery cannot be published as an admitted catalog.")
+        result = build_trace(BATTERY_PACKAGE, BATTERY_RUNTIME)
+        if args.apply_import:
+            if (args.usage_scope != "qa" or args.organization_id is None or args.published_by is None
+                    or not args.decision_basis or not args.catalog_version):
+                parser.error("Diagnostic import requires --usage-scope qa, --organization-id, --published-by, "
+                             "--decision-basis and --catalog-version.")
+            from Api.database import get_connection
+
+            catalog_id = "specialist-battery-diagnostic" if args.catalog_id == "specialist-pilot" else args.catalog_id
+            with get_connection() as connection:
+                result["database"] = publish_diagnostic_battery(
+                    connection, published_by=args.published_by, organization_id=args.organization_id,
+                    catalog_id=catalog_id, catalog_version=args.catalog_version,
+                    idempotency_key=args.idempotency_key or f"{catalog_id}-{args.catalog_version}",
+                    decision_basis=args.decision_basis,
+                )
+                connection.commit()
+        print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
+        return 0
     package_dir, runtime_dir = ((PACKAGE_DIR, RUNTIME_DIR) if args.historical_0_5
                                 else (BANK_PACKAGE, BANK_RUNTIME_DIR if args.passport_01 else ADDRESSED_RUNTIME))
     default_version = "1.0" if args.historical_0_5 else ("1.1" if args.passport_01 else "1.2")

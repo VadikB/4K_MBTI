@@ -471,7 +471,7 @@ def test_product_cycle_preparation_reclaim_fences_late_worker(product_db, monkey
 def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases(
         product_db, monkeypatch, tmp_path, explicit_profile, close_during_provider, crash_phase,
         tester_outcome, *, first_case_only=False, next_failure=None, next_expiry=False, passport_bank=False,
-        refresh_profile_before_recovery=False):
+        refresh_profile_before_recovery=False, after_first_prepared=None):
     if not passport_bank:
         from Api.cycle_execution_manifest import DEFAULT_DEPENDENCIES
         monkeypatch.delitem(DEFAULT_DEPENDENCIES, "m5_functional_as")
@@ -823,6 +823,10 @@ def test_functional_catalog_builds_a_separate_product_cycle_without_legacy_cases
     cycle_id = str(prepared["plan"]["cycle_id"])
     first_as = str(prepared["decision"]["assessment_situation_id"])
     generation_calls = FunctionalGateway.call_count
+    if after_first_prepared is not None:
+        with product_db() as connection:
+            after_first_prepared(connection, cycle_id, first_as)
+            connection.commit()
 
     # Refresh/retry and an explicit next while the current AS is still open reuse
     # persisted state. Neither path may call generator/tester again.
