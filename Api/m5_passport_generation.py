@@ -48,6 +48,7 @@ def read_as_package(directory: Path = AS_PACKAGE) -> tuple[dict, dict, dict]:
         "1.0.0": (PROMPT_FILES, "1.0.0"),
         "2.0.0": (V2_FILES, "1.0.0"),
         "3.0.0": (V2_FILES, "2.0.0"),
+        "4.0.0": (V2_FILES, "2.0.0"),
     }.get(manifest.get("version"))
     if layout is None or (manifest.get("schema_version"), manifest.get("id"), manifest.get("status")) != (
         1, "m5-functional-passport", "draft"

@@ -18,7 +18,7 @@ PROTECTED_CATEGORIES = {"invariant", "indicator_observability", "authority", "co
 PATH_STEP = re.compile(r"""\.([^.[\]]+)|\[("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]'"]+)\]""")
 CANDIDATE_COLLECTION_IDS = {
     "Материалы": "MaterialID", "События": "EventID", "Активные персонажи": "CharacterID",
-    "IndicatorObservability": "IndicatorID",
+    "IndicatorObservability": "IndicatorID", "Закрытые фиксированные факты": "FactID",
 }
 
 
@@ -32,15 +32,18 @@ def checksum(value: Any) -> str:
 def load_protocol(path: Path = PROTOCOL_PATH) -> dict[str, Any]:
     raw = path.read_bytes()
     value = json.loads(raw)
-    if (value.get("schema_version"), value.get("id"), value.get("status")) != (
-        2, "m5-functional-personalization-tester", "draft"
-    ) or value.get("version") not in {"2.0.0", "2.1.0"}:
+    expected_schema = {"2.0.0": 2, "2.1.0": 2, "3.0.0": 3}.get(value.get("version"))
+    if expected_schema is None or (value.get("schema_version"), value.get("id"), value.get("status")) != (
+        expected_schema, "m5-functional-personalization-tester", "draft"
+    ):
         raise ValueError("M5_FUNCTIONAL_TESTER_PROTOCOL_INVALID")
     if set(value.get("result_statuses", [])) != RESULT_STATUSES:
         raise ValueError("M5_FUNCTIONAL_TESTER_PROTOCOL_INVALID")
     content_checks = value.get("case_content_checks")
     if value["version"] == "2.1.0" and not (isinstance(content_checks, dict) and content_checks):
         raise ValueError("M5_FUNCTIONAL_TESTER_CASE_CONTENT_CHECKS_REQUIRED")
+    if expected_schema == 3 and (value.get("scope") != "battery_v0.3_qa" or not value.get("common_checks")):
+        raise ValueError("M5_BATTERY_REVIEW_PROTOCOL_INVALID")
     value["checksum"] = hashlib.sha256(raw).hexdigest()
     return value
 
@@ -59,8 +62,7 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     personalization = passport.get("18 Правила персонализации и ролевой адаптации")
     prohibitions = personalization.get("Критические запреты") if isinstance(personalization, dict) else None
     if scenario_qa:
-        # Temporary technical protocol for 02. The passport-specific review
-        # plan for v1.2 is owned by 03; v1.1 case-specific checks stay pinned.
+        # Replay of diagnostic cycles pinned to the temporary 02 protocol.
         prohibitions = []
         protocol["conditional_checks"] = []
         protocol["case_content_checks"] = {}
@@ -181,7 +183,7 @@ def _locate_candidate_path(candidate: dict, path: str, *,
                 key = int(part)
                 exists = key < len(node)
             else:
-                id_key = CANDIDATE_COLLECTION_IDS.get(address[-1])
+                id_key = CANDIDATE_COLLECTION_IDS.get(address[-1]) if address else None
                 matches = [index for index, row in enumerate(node)
                            if id_key is not None and isinstance(row, dict) and row.get(id_key) == part]
                 if len(matches) > 1:
@@ -271,6 +273,7 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
 
 def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: dict | None = None,
                       missing_required_paths: Iterable[str] = ()) -> list[dict[str, Any]]:
+    battery_review = plan.get("protocol", {}).get("scope") == "battery_v0.3_qa"
     provided = {}
     duplicates = set()
     if isinstance(raw_checks, list):
@@ -300,11 +303,31 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
             status, reason = "TECHNICAL_ERROR", "LLM не может исключить проверку, которую план применимости пометил обязательной."
         findings = item.get("findings") if isinstance(item.get("findings"), list) else []
         requirement = definition.get("requirement")
-        localized = isinstance(requirement, dict) and "case_content" in requirement
+        localized = battery_review or (isinstance(requirement, dict) and "case_content" in requirement)
+        sections = ()
+        if battery_review:
+            sections = definition["finding_evidence_sections"]
+        elif localized:
+            sections = requirement.get("finding_evidence_sections", ())
         protocol_errors = finding_errors(
             item, candidate_as=candidate_as if localized else None, missing_paths=missing_paths,
-            evidence_sections=requirement.get("finding_evidence_sections", ()) if localized else (),
+            evidence_sections=sections,
         )
+        if battery_review and status == "PASS":
+            paths = item.get("evidence_paths")
+            evidence = []
+            relevant = set()
+            if candidate_as is not None and isinstance(paths, list):
+                evidence = [located[0] for path in paths if isinstance(path, str)
+                            and (located := _locate_candidate_path(candidate_as, path)) and located[1]]
+                relevant = {located[0] for path in sections
+                            if (located := _locate_candidate_path(candidate_as, path)) and located[1]}
+            if not evidence or len(evidence) != len(paths) or not _supports_finding(evidence, relevant, set()):
+                protocol_errors.append({
+                    "error_class": "verification_protocol", "code": "REVIEW_EVIDENCE_REQUIRED",
+                    "check_id": definition["check_id"], "path": "evidence_paths",
+                    "actual": paths, "expected": sections,
+                })
         if localized and candidate_as is None and findings:
             protocol_errors.append({"error_class": "verification_protocol", "code": "FINDING_CANDIDATE_REQUIRED",
                                     "check_id": definition["check_id"], "path": "candidate_as"})
@@ -315,9 +338,14 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
         if status == "PASS" and definition.get("mandatory") and protected:
             if adversarial is None:
                 status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки без adversarial review не допускается."
-            elif (not isinstance(adversarial.get("candidate_conflicts"), list)
-                  or not str(adversarial.get("resolution") or "").strip()):
-                status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки с неполным adversarial review не допускается."
+            else:
+                conflicts = adversarial.get("candidate_conflicts")
+                resolution = adversarial.get("resolution")
+                if (not isinstance(conflicts, list) or not str(resolution or "").strip()
+                        or (battery_review and (not isinstance(resolution, str) or any(
+                            not isinstance(path, str) or not path.strip() for path in conflicts
+                        )))):
+                    status, reason = "TECHNICAL_ERROR", "PASS защищённой проверки с неполным adversarial review не допускается."
         normalized.append({
             **deepcopy(definition), "status": status, "reason": reason,
             "evidence_paths": item.get("evidence_paths") if isinstance(item.get("evidence_paths"), list) else [],
@@ -333,7 +361,8 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
     return normalized
 
 
-def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, Any]]) -> dict[str, Any]:
+def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, Any]], *,
+              scoped_findings: bool = False) -> dict[str, Any]:
     deterministic_checks = deterministic_validation.get("checks")
     deterministic_protocol_errors = []
     if not isinstance(deterministic_checks, list) or not deterministic_checks:
@@ -367,7 +396,10 @@ def aggregate(deterministic_validation: dict[str, Any], checks: list[dict[str, A
             continue
         has_blocking = "blocking" in severities
         if has_blocking:
-            blocking_failures.append(item)
+            blocking_failures.append(
+                {**item, "findings": [finding for finding in findings if finding["severity"] == "blocking"]}
+                if scoped_findings else item
+            )
             continue
         if item.get("mandatory") and status in {"NOT_RUN", "INDETERMINATE", "TECHNICAL_ERROR"}:
             incomplete.append(item)

@@ -242,6 +242,15 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     try:
         if "tester_protocol" in refs:
             protocol = load_protocol(_frozen_file(snapshot, "tester_protocol"))
+            if protocol.get("scope") == "battery_v0.3_qa":
+                from Api.m5_battery_review import build_plan
+
+                if not battery:
+                    raise ValueError("M5_BATTERY_REVIEW_REQUIRES_DIAGNOSTIC_PASSPORT")
+                snapshot["applicability_plan"] = build_plan(
+                    snapshot, protocol, _frozen_file(snapshot, "case_content_contract"), m2,
+                )
+                return snapshot
             content = None if battery else passport_generation.read_case_content_contract(
                 _frozen_file(snapshot, "case_content_contract"), projected["case_id"],
             )
@@ -257,7 +266,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
         else:
             build_applicability_plan(case)
     except (KeyError, TypeError, ValueError) as exc:
-        raise missing(projected["case_id"], projected["version"], "16,18,22→Tester") from exc
+        raise missing(projected["case_id"], projected["version"], "16–18,21–22→Tester") from exc
     return snapshot
 
 
@@ -274,20 +283,29 @@ def _frozen_file(snapshot: dict[str, Any], ref_name: str) -> Path:
 def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     errors = []
+    battery_review = snapshot.get("applicability_plan", {}).get("protocol", {}).get("scope") == "battery_v0.3_qa"
+
     def check(code: str, passed: bool, actual: Any = None, *, path: str = "candidate_as", **diagnostic: Any) -> None:
         row = {"code": code, "result": "PASS" if passed else "FAIL", "actual": actual}
-        if not passed and diagnostic:
+        if not passed and (diagnostic or battery_review):
             row.update(path=path, **diagnostic)
         checks.append(row)
         if not passed:
             errors.append({"error_class": "candidate_validation", "check": code, "path": path})
-    check("json_object", isinstance(candidate, dict))
+    check("json_object", isinstance(candidate, dict), **(
+        {"actual": type(candidate).__name__, "expected": "object", "reason": "Подготовка принимает объект AS."}
+        if battery_review else {}
+    ))
     if not isinstance(candidate, dict):
         return {"status": "FAIL", "checks": checks, "errors": errors}
     if "as_contract" in snapshot:
         serialized = json.dumps(candidate, ensure_ascii=False, separators=(",", ":"))
         check("response_size", len(serialized) <= snapshot["as_contract"]["maximum_output_characters"],
-              len(serialized))
+              len(serialized), **(
+                  {"expected": {"maximum": snapshot["as_contract"]["maximum_output_characters"]},
+                   "reason": "Размер AS должен укладываться в контракт генерации."}
+                  if battery_review else {}
+              ))
         forbidden = {"Evidence", "IA", "participant_score", "participant_level", "author_assessment_situation", "author_as_example"}
         def forbidden_keys(value):
             if isinstance(value, dict):
@@ -296,12 +314,14 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
                 return set().union(*(forbidden_keys(item) for item in value))
             return set()
         violations = sorted(forbidden_keys(candidate))
-        check("no_premature_assessment", not violations, violations)
+        check("no_premature_assessment", not violations, violations, **(
+            {"expected": [], "reason": "В AS отсутствуют поля оценки, Evidence и авторские AS."}
+            if battery_review else {}
+        ))
         if "battery_scenario" in snapshot:
             from Api.m5_battery_contract import validate_candidate
 
-            validate_candidate(snapshot, candidate, check)
-            missing_paths = []
+            missing_paths = validate_candidate(snapshot, candidate, check, detailed=battery_review)
         else:
             missing_paths = passport_generation.validate_candidate(snapshot, candidate, check)
         return {"status": "FAIL" if errors else "PASS", "checks": checks, "errors": errors,
@@ -551,7 +571,9 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
                       retry_instruction: str, review_checks: list[dict[str, Any]] | None = None,
                       candidate_checksum: str | None = None,
                       calls: list[dict[str, Any]] | None = None,
-                      initial_fingerprint: tuple[str, int] | None = None) -> tuple[Any, Any, list[dict[str, Any]]]:
+                      initial_fingerprint: tuple[str, int] | None = None,
+                      record_response: bool = False, allow_invalid_repair: bool = False,
+                      ) -> tuple[Any, Any, list[dict[str, Any]]]:
     """Retry one malformed provider envelope; never salvage or merge partial JSON."""
     failures: list[dict[str, Any]] = []
     current = list(messages)
@@ -573,6 +595,7 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
             calls.append({
                 "attempt": attempt, "input_checksum": input_checksum, "message_count": len(current),
                 "messages_utf8_bytes": messages_size, "elapsed_ms": round(elapsed_ms, 3),
+                **({"response_content": response.content} if record_response else {}),
                 "model": response.sent.get("model"), "parameters": response.sent.get("parameters"),
                 "provider": {key: response.provider.get(key) for key in (
                     "model", "revision", "finish_reason", "usage", "queue_wait_ms", "transport_attempts",
@@ -591,6 +614,8 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
                         "reason": "Исчерпан технический повтор JSON-ответа проверки.",
                         "protocol_error_code": "PROVIDER_JSON_INVALID_RETRY_EXHAUSTED",
                     } for item in review_checks]}, response, failures
+                if allow_invalid_repair:
+                    return None, response, failures
                 raise ValueError("M5_FUNCTIONAL_PROVIDER_JSON_INVALID") from exc
             current = [*messages, {"role": "system", "content": retry_instruction}]
     raise AssertionError("unreachable")
@@ -608,7 +633,7 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
             return [{"check_id": check_id, "status": "TECHNICAL_ERROR", "reason": reason,
                      "protocol_error_code": ("CANDIDATE_CHECKSUM_REQUIRED" if actual is None
                                              else "CANDIDATE_CHECKSUM_MISMATCH")}
-                    for check_id in ids]
+                    for check_id in (item["check_id"] for item in batch_checks)]
     checks = raw.get("checks") if isinstance(raw, dict) else None
     return [item for item in checks if isinstance(item, dict)
             and isinstance(item.get("check_id"), str) and item["check_id"] in ids] \
@@ -721,9 +746,12 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
 def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway: Any) -> dict[str, Any]:
     plan = snapshot.get("applicability_plan") or build_applicability_plan(snapshot["case"])
     batch_size = 8
-    concrete_candidate = concrete_adapted_candidate(generation["candidate_as"])
+    battery_review = plan["protocol"].get("scope") == "battery_v0.3_qa"
+    concrete_candidate = (generation["candidate_as"] if battery_review
+                          else concrete_adapted_candidate(generation["candidate_as"]))
+    layers = ({} if battery_review else generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}))
     review_basis = {
-        "candidate_as": concrete_candidate,
+        "candidate_as": concrete_candidate if isinstance(concrete_candidate, dict) else None,
         "missing_required_paths": generation["deterministic_validation"].get("missing_required_paths", ()),
     }
     protocol_ref = (snapshot.get("refs") or {}).get("protocol_package") or {}
@@ -733,8 +761,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     payload_base = {"case": snapshot["case"], "profile": snapshot["profile"],
                "candidate_as": concrete_candidate,
                **({"candidate_checksum": candidate_checksum} if candidate_binding else {}),
-               "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
-               "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
+               "author_indicator_layer": layers.get("author"),
+               "adapted_indicator_layer": layers.get("adapted"),
                "deterministic_validation": generation["deterministic_validation"],
                "protocol_rules": {"evaluate_every_required_check_exactly_once": True,
                  "llm_must_not_change_applicability": True,
@@ -768,6 +796,22 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "required_output": payload_base["required_output"],
             "deterministic_validation": generation["deterministic_validation"],
         }
+    review_ref = {}
+    if battery_review:
+        review_ref = {
+            "source_ref": plan["case_ref"], "protocol": plan["protocol"],
+            "review_package": snapshot["refs"]["protocol_package"],
+            "scenario_source": snapshot["refs"]["battery_scenario"], "m2_source": snapshot["refs"]["m2"],
+            "candidate_checksum": candidate_checksum,
+            "assessment_situation_id": concrete_candidate.get("AssessmentSituationID") if isinstance(concrete_candidate, dict) else None,
+            "as_version": concrete_candidate.get("Version") if isinstance(concrete_candidate, dict) else None,
+        }
+        payload_base.update(review_ref, risk_context=plan["risk_context"],
+                            m2_indicator_descriptors=plan["indicator_descriptors"])
+        payload_base["required_output"]["checks"][0]["findings"][0].update(
+            requirement_ref="exact check_id", expected="known requirement, if available",
+            actual="observed value, if available",
+        )
     adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
     tester_operations = []
@@ -776,6 +820,9 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     for batch_no, offset in enumerate(range(0, len(required_checks), batch_size), start=1):
         batch_checks = required_checks[offset:offset + batch_size]
         batch_plan = {**plan, "required_checks": batch_checks, "not_applicable_checks": []}
+        if battery_review:
+            batch_plan.pop("indicator_descriptors")
+            batch_plan.pop("risk_context")
         payload = {**payload_base, "applicability_plan": batch_plan}
         messages = [{"role": "system", "content": _frozen_file(snapshot, "tester_prompt").read_text(encoding="utf-8")},
                     {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
@@ -790,7 +837,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
             review_checks=batch_checks, candidate_checksum=candidate_checksum,
-            calls=calls, initial_fingerprint=fingerprint,
+            calls=calls, initial_fingerprint=fingerprint, record_response=battery_review,
         )
         tester_raw_checks.extend(_bound_batch_checks(raw, batch_checks, candidate_checksum))
         tester_operations.append({
@@ -798,6 +845,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                      input_checksum=input_checksum),
             "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
             "parse_failures": parse_failures, "calls": calls,
+            **({**review_ref, "reviewer": "tester"} if battery_review else {}),
         })
     checks = [{**item, "reviewer": "tester", "candidate_checksum": generation["candidate_checksum"]}
               for item in normalize_results(plan, tester_raw_checks, **review_basis)]
@@ -808,8 +856,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         }),
         "candidate_as": concrete_candidate,
         **({"candidate_checksum": candidate_checksum} if candidate_binding else {}),
-        "author_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("author"),
-        "adapted_indicator_layer": generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}).get("adapted"),
+        "author_indicator_layer": layers.get("author"),
+        "adapted_indicator_layer": layers.get("adapted"),
         "protected_checks": protected,
         "required_output": payload_base["required_output"],
         "rules": {
@@ -838,6 +886,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             **passport_basis, "candidate_as": concrete_candidate, "candidate_checksum": candidate_checksum,
             "protected_checks": protected, "required_output": payload_base["required_output"],
         }
+    if battery_review:
+        challenge_payload = {**payload_base, "protected_checks": protected}
     challenger_operations = []
     challenger_raw_checks = []
     for batch_no, offset in enumerate(range(0, len(protected), batch_size), start=1):
@@ -845,6 +895,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         batch_payload = {**challenge_payload, "protected_checks": batch_checks}
         challenge_messages = [
             {"role": "system", "content": _frozen_file(snapshot, "protocol_challenger").read_text(encoding="utf-8")},
+            *([{"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")}]
+              if battery_review else []),
             *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
               if adaptation_contract else []),
             _review_message(batch_payload, batch_checks, passport=passport_basis is not None),
@@ -857,7 +909,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
             retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
             review_checks=batch_checks, candidate_checksum=candidate_checksum,
-            calls=calls, initial_fingerprint=fingerprint,
+            calls=calls, initial_fingerprint=fingerprint, record_response=battery_review,
         )
         challenger_raw_checks.extend(_bound_batch_checks(challenge_raw, batch_checks, candidate_checksum))
         challenger_operations.append({
@@ -866,10 +918,18 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                      input_checksum=challenge_checksum),
             "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
             "parse_failures": challenge_failures, "calls": calls,
+            **({**review_ref, "reviewer": "challenger"} if battery_review else {}),
         })
     challenge_plan = {**plan, "required_checks": protected, "not_applicable_checks": []}
     challenge_checks = [{**item, "reviewer": "challenger", "candidate_checksum": generation["candidate_checksum"]}
                         for item in normalize_results(challenge_plan, challenger_raw_checks, **review_basis)]
+    if battery_review:
+        for records, batches in ((checks, tester_operations), (challenge_checks, challenger_operations)):
+            batch_by_id = {check_id: batch for batch in batches for check_id in batch["required_check_ids"]}
+            for record in records:
+                batch = batch_by_id[record["check_id"]]
+                record.update(review_package=review_ref["review_package"], batch_no=batch["batch_no"],
+                              operation_id=batch["operation_id"], as_version=review_ref["as_version"])
     challenge_by_id = {item["check_id"]: item for item in challenge_checks
                        if item.get("status") != "NOT_APPLICABLE"}
     merged_checks = []
@@ -882,12 +942,14 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         else:
             merged_checks.append(item)
     # Aggregate both independent records: neither can overwrite the other.
-    aggregation = aggregate(generation["deterministic_validation"], [*checks, *challenge_checks])
+    aggregation = aggregate(generation["deterministic_validation"], [*checks, *challenge_checks],
+                            scoped_findings=battery_review)
     tester_input_checksum = checksum([item["input_checksum"] for item in tester_operations])
     challenger_input_checksum = checksum([item["input_checksum"] for item in challenger_operations])
     return {"protocol": plan["protocol"], "checks": merged_checks, "aggregation": aggregation,
             "candidate_checksum": generation["candidate_checksum"],
             "reviewed_candidate_checksum": candidate_checksum,
+            **({"review_source": review_ref} if battery_review else {}),
             "independent_checks": {"tester": checks, "challenger": challenge_checks},
             "provider_operation": {"kind": "independent_tester_v2_batched",
                                    "operation_id": f"{snapshot['operation_id']}:tester:batched",
@@ -903,15 +965,26 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
                      gateway: Any) -> dict[str, Any]:
     """Request one corrected AS and assemble the same server-bound fields as in generation."""
     instruction, contract = _generation_instructions(snapshot)
+    battery_review = "review_source" in tested
     if "as_contract" in snapshot:
         repair_instruction = _frozen_file(snapshot, "repair_prompt").read_text(encoding="utf-8")
         repair_prompt_ref = snapshot["refs"]["repair_prompt"]
+        blocking = tested["aggregation"]["blocking_failures"]
+        if battery_review:
+            blocking = [{
+                **{key: item[key] for key in ("check_id", "reviewer", "operation_id", "source_ref")},
+                "findings": [{key: finding[key] for key in ("code", "paths", "reason", "expected", "actual")
+                              if key in finding} for finding in item["findings"]],
+            } for item in blocking]
         payload = {
             **passport_generation.provider_basis(snapshot),
             "rejected_candidate_as": generation["candidate_as"],
-            "blocking_failures": tested["aggregation"]["blocking_failures"],
+            "blocking_failures": blocking,
             "deterministic_failures": tested["aggregation"]["deterministic_failures"],
-            "validation_errors": generation["deterministic_validation"]["errors"],
+            **({"validation_errors": generation["deterministic_validation"]["errors"]} if not battery_review else {
+                "source_ref": tested["review_source"]["source_ref"],
+                "rejected_candidate_checksum": generation["candidate_checksum"],
+            }),
         }
     else:
         repair_instruction, repair_prompt_ref = _load_repair_instruction(ROOT / snapshot["refs"]["repair_package"]["path"])
@@ -959,9 +1032,10 @@ def repair_candidate(snapshot: dict[str, Any], generation: dict[str, Any], teste
     raw, response, parse_failures = _strict_json_call(
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.1,
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-        calls=calls, initial_fingerprint=fingerprint,
+        calls=calls, initial_fingerprint=fingerprint, record_response=battery_review, allow_invalid_repair=battery_review,
     )
     return {**_assemble_candidate(snapshot, raw),
+            **({"invalid_repair_response": True} if battery_review and len(parse_failures) == 2 else {}),
             "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation_repair",
                                               input_checksum=input_checksum),
                                    "prompt_ref": repair_prompt_ref,
@@ -994,11 +1068,19 @@ def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path 
             "original_tester": tested,
             "repair_generation_operation": repaired["provider_operation"],
         }
-        if snapshot.get("case_content_contract") and repaired["candidate_checksum"] == generation["candidate_checksum"]:
+        battery_review = "review_source" in tested
+        if battery_review:
+            repair["original_candidate_as"] = generation["candidate_as"]
+        if repaired.get("invalid_repair_response"):
+            repair["outcome"] = "INVALID_REPAIR_RESPONSE"
+        elif ((snapshot.get("case_content_contract") or battery_review)
+              and repaired["candidate_checksum"] == generation["candidate_checksum"]):
             repair["outcome"] = "UNCHANGED_CANDIDATE"
         else:
             observation.progress('checking')
             generation, tested = repaired, test_candidate(snapshot, repaired, gateway)
+            if battery_review:
+                repair["outcome"] = tested["aggregation"]["status"]
     compiled_case = None
     execution_rules = None
     if tested["aggregation"]["admitted_for_participant"]:
