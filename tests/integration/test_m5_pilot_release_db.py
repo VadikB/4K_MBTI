@@ -3,10 +3,12 @@ import json
 
 import pytest
 
-from Api.cycle_execution_manifest import M5_BATTERY_PILOT_REVIEW_PACKAGE, ROOT
+from Api.cycle_execution_manifest import (
+    M5_BATTERY_PILOT_REVIEW_PACKAGE, ROOT, build_manifest, resolve_dependency,
+)
 from Api.m5_battery_contract import RULE_PACKAGE, load_scenario
 from Api.m5_case_runtime import checksum
-from Api.m5_catalog_integrity import case_admission
+from Api.m5_catalog_integrity import case_admission, resolve_configuration_catalog
 from Api.m5_functional_generation_service import build_passport_snapshot, prepare
 from Api.m5_passport_generation import read_as_package
 from scripts.plan_specialist_program_release import (
@@ -14,7 +16,7 @@ from scripts.plan_specialist_program_release import (
 )
 from tests.integration.test_m5_battery_bank_db import install_battery
 from tests.integration.test_m10_product_path_db import product_db
-from tests.unit.test_m5_pilot_review import PilotGateway
+from tests.unit.test_m5_pilot_review import PilotGateway, V6_PACKAGE
 
 pytestmark = pytest.mark.integration
 
@@ -40,10 +42,10 @@ def test_approved_battery_releases_all_nine_without_changing_qa_sources(product_
         "cases": {case["case_id"]: checksum(case) for case in bank["cases"]},
     }
 
-    def publish(evidence_path):
+    def publish(evidence_path, *, version="1.3"):
         return publish_admitted_catalog(
             source, published_by=99, decision_basis="Isolated release contract test",
-            catalog_id="synthetic-battery", catalog_version="1.3", idempotency_key="battery-pilot-05",
+            catalog_id="synthetic-battery", catalog_version=version, idempotency_key=f"battery-pilot-05-{version}",
             organization_id=10, package_dir=BATTERY_PACKAGE, runtime_dir=BATTERY_RUNTIME,
             evidence_path=evidence_path,
         )
@@ -83,3 +85,52 @@ def test_approved_battery_releases_all_nine_without_changing_qa_sources(product_
             assert prepared["admitted_for_participant"]
             assert prepared["compiled_case"]["version"] == value["version"]
         assert install_battery(connection)["catalog_readback"] == old_qa["catalog_readback"]
+
+    _, _, v6_refs = read_as_package(V6_PACKAGE)
+    v6_ref = v6_refs["protocol_package"]
+    assert "review_package" not in released["catalog_readback"]["manifest"]
+
+    def freeze_config(connection, catalog):
+        connection.execute("UPDATE assessment_configurations SET catalog_version_id=%s", (catalog["catalog_db_id"],))
+        ref = resolve_configuration_catalog(connection, configuration_id=1, usage_scope="assessment")
+        return build_manifest(
+            profile_ref={"id": "synthetic", "version": "1", "checksum": "synthetic"},
+            selected_role_ref={"id": "specialist_expert", "version": "1", "checksum": "synthetic"},
+            target_set_checksum="synthetic", parameter_sources={}, catalog_ref=ref,
+        )
+
+    with product_db() as connection:
+        connection.execute(
+            "ALTER TABLE assessment_configurations ADD COLUMN catalog_version_id BIGINT REFERENCES m5_catalogs(id)"
+        )
+        old_cycle = freeze_config(connection, released["catalog"])
+        connection.commit()
+
+    proof_path.write_text(json.dumps({**proof, "review_package": {**v6_ref, "checksum": "0" * 64}}))
+    with pytest.raises(ValueError, match="PILOT_REVIEW_EVIDENCE_MISMATCH"):
+        publish(proof_path, version="1.4")
+    proof_path.write_text(json.dumps({**proof, "review_package": v6_ref}))
+    revised = publish(proof_path, version="1.4")
+    assert revised["catalog_readback"]["manifest"]["review_package"] == v6_ref
+    with pytest.raises(ValueError, match="IDEMPOTENCY_CONFLICT"):
+        publish(proof_path)
+    with product_db() as connection:
+        new_cycle = freeze_config(connection, revised["catalog"])
+    assert resolve_dependency(*old_cycle, "m5_functional_as") == review_path
+    selected = resolve_dependency(*new_cycle, "m5_functional_as")
+    assert selected == V6_PACKAGE
+    value = next(row for row in revised["readback"]["cases"] if row["case_id"] == "CASE.SPEC.04")
+    with product_db() as connection:
+        persisted = case_admission(connection, case_version_id=value["id"], usage_scope="assessment",
+                                   catalog_db_id=revised["catalog"]["catalog_db_id"])["case"]["content_json"]
+    frozen = build_passport_snapshot(
+        case_version=persisted, profile={"user_context": {"regular_tasks": ["Рабочая аналитика"]}},
+        operation_id="pilot-v6-SPEC04", battery_pilot=True, as_package=selected,
+        battery_scenario_package=ROOT / RULE_PACKAGE, case_version_checksum=value["content_checksum"],
+    )
+    gateway = PilotGateway()
+    result = prepare(frozen, gateway)
+    assert result["admitted_for_participant"]
+    assert result["tester"]["protocol"]["version"] == "3.2.0"
+    assert all(payload["review_dispatch"]["check_ids"] for _, _, payload in gateway.calls
+               if "review_dispatch" in payload)

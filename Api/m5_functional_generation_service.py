@@ -19,7 +19,8 @@ from Api.m5_addressed_contract import validate_scenario_contract
 from Api.m5_passport import allowed_profile, missing
 from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import (
-    SERVER_BOUND_PROTOCOL, aggregate, build_applicability_plan, load_protocol, normalize_results,
+    EXPLICIT_REVIEW_BATCH_PROTOCOL, SERVER_BOUND_REVIEW_PACKAGES,
+    aggregate, build_applicability_plan, load_protocol, normalize_results,
 )
 from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
@@ -188,7 +189,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     battery = case_version.get("passport_version") == "1.2"
     if battery:
         if (not (synthetic or battery_pilot) or battery_scenario_package is None
-                or (battery_pilot and refs["protocol_package"]["version"] != "5.0.0")):
+                or (battery_pilot and refs["protocol_package"]["version"] not in SERVER_BOUND_REVIEW_PACKAGES.values())):
             raise ValueError("M5_BATTERY_PREPARATION_NOT_ENABLED")
     if battery_pilot and not battery:
         raise ValueError("M5_BATTERY_PILOT_CASE_VERSION_INVALID")
@@ -249,6 +250,8 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     try:
         if "tester_protocol" in refs:
             protocol = load_protocol(_frozen_file(snapshot, "tester_protocol"))
+            if battery_pilot and SERVER_BOUND_REVIEW_PACKAGES.get(protocol["version"]) != refs["protocol_package"]["version"]:
+                raise ValueError("M5_FUNCTIONAL_REVIEW_PROTOCOL_MISMATCH")
             if protocol.get("scope") == "battery_v0.3_qa":
                 from Api.m5_battery_review import build_plan
 
@@ -561,6 +564,11 @@ def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) 
 
 
 def _review_message(payload: dict, batch_checks: list[dict], *, passport: bool) -> dict[str, str]:
+    if payload.get("protocol", {}).get("version") == EXPLICIT_REVIEW_BATCH_PROTOCOL:
+        required_output = deepcopy(payload["required_output"])
+        required_output["checks"][0]["check_id"] = "Copy each id from review_dispatch.check_ids exactly once"
+        dispatch = {**payload["review_dispatch"], "check_ids": [item["check_id"] for item in batch_checks]}
+        payload = {**payload, "required_output": required_output, "review_dispatch": dispatch}
     if passport:
         payload = passport_generation.compact_review_payload(payload, batch_checks)
     return {"role": "user", "content": json.dumps(
@@ -773,7 +781,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     plan = snapshot.get("applicability_plan") or build_applicability_plan(snapshot["case"])
     batch_size = 8
     battery_review = plan["protocol"].get("scope") == "battery_v0.3_qa"
-    server_bound = plan["protocol"].get("version") == SERVER_BOUND_PROTOCOL
+    server_bound = plan["protocol"].get("version") in SERVER_BOUND_REVIEW_PACKAGES
     concrete_candidate = (generation["candidate_as"] if battery_review
                           else concrete_adapted_candidate(generation["candidate_as"]))
     layers = ({} if battery_review else generation["candidate_as"].get(INDICATOR_LAYER_FIELD, {}))
@@ -1192,10 +1200,12 @@ def prepare(snapshot: dict[str, Any], gateway: Any, *, functional_package: Path 
 
 def review_dispatches_match(tester: dict, *, candidate_sha256: str, review_round: int,
                             operation_id: str | None = None) -> bool:
-    if tester.get("protocol", {}).get("version") != SERVER_BOUND_PROTOCOL:
+    protocol_version = tester.get("protocol", {}).get("version")
+    package_version = SERVER_BOUND_REVIEW_PACKAGES.get(protocol_version)
+    if package_version is None:
         return True
     package = tester.get("review_source", {}).get("review_package")
-    if not isinstance(package, dict) or package.get("version") != "5.0.0":
+    if not isinstance(package, dict) or package.get("version") != package_version:
         return False
     for reviewer, trace_key in (("tester", "provider_operation"), ("challenger", "challenger_operation")):
         batches = tester.get(trace_key, {}).get("batches") or []
@@ -1242,7 +1252,7 @@ def build_persistence_trace(snapshot: dict[str, Any], prepared: dict[str, Any]) 
         raise ValueError("M5_FUNCTIONAL_REVIEWED_CANDIDATE_MISMATCH")
     if not isinstance(tester.get("provider_operation", {}).get("input_checksum"), str):
         raise ValueError("M5_FUNCTIONAL_TESTER_INPUT_TRACE_REQUIRED")
-    if (snapshot.get("applicability_plan", {}).get("protocol", {}).get("version") == SERVER_BOUND_PROTOCOL
+    if (snapshot.get("applicability_plan", {}).get("protocol", {}).get("version") in SERVER_BOUND_REVIEW_PACKAGES
             and tester.get("protocol") != snapshot["applicability_plan"]["protocol"]):
         raise ValueError("M5_FUNCTIONAL_REVIEW_PROTOCOL_MISMATCH")
     if not review_dispatches_match(tester, candidate_sha256=prepared["candidate_checksum"],

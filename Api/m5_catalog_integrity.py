@@ -204,6 +204,8 @@ def resolve_configuration_catalog(connection, *, configuration_id: int, usage_sc
             raise ValueError("M5_BATTERY_PILOT_CATALOG_CHECKSUM_MISMATCH")
         ref.update(battery_pilot=True, package_version=row["manifest_json"]["version"],
                    runtime_rule_ref=row["catalog_manifest"]["runtime_rule_ref"])
+        if "review_package" in row["catalog_manifest"]:
+            ref["review_package"] = row["catalog_manifest"]["review_package"]
     return ref
 
 
@@ -282,13 +284,20 @@ def publish_catalog(
     connection, *, catalog_id: str, catalog_version: str, package_db_id: int,
     case_version_ids: list[int], usage_scope: str, published_by: int, decision_basis: str,
     idempotency_key: str, organization_id: int | None = None, dry_run: bool = False,
-    runtime_rule_version_id: int | None = None,
+    runtime_rule_version_id: int | None = None, review_package: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not str(decision_basis or "").strip():
         raise ValueError("M5_CATALOG_DECISION_BASIS_REQUIRED")
     plan = publication_plan(connection, package_db_id=package_db_id, case_version_ids=case_version_ids,
                             usage_scope=usage_scope, organization_id=organization_id,
                             runtime_rule_version_id=runtime_rule_version_id)
+    if review_package is not None:
+        from Api.cycle_execution_manifest import battery_pilot_review_path
+
+        if not plan.get("battery_pilot"):
+            raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
+        battery_pilot_review_path(review_package)
+        plan["review_package"] = review_package
     request = {**plan, "catalog_id": catalog_id, "catalog_version": catalog_version,
                "published_by": published_by, "decision_basis": decision_basis.strip()}
     request_hash = checksum(request)
@@ -319,6 +328,8 @@ def publish_catalog(
         manifest["diagnostic_only"] = True
     if plan.get("battery_pilot"):
         manifest["battery_pilot"] = True
+        if review_package is not None:
+            manifest["review_package"] = review_package
     if runtime_rule_version_id is not None:
         runtime = connection.execute(
             "SELECT artifact_id,artifact_version,manifest_checksum,rules_checksum "

@@ -1,0 +1,162 @@
+{
+  "schema_version": 3,
+  "id": "m5-functional-personalization-tester",
+  "version": "3.2.0",
+  "status": "draft",
+  "result_statuses": [
+    "PASS",
+    "FAIL",
+    "NOT_APPLICABLE",
+    "NOT_RUN",
+    "INDETERMINATE",
+    "TECHNICAL_ERROR"
+  ],
+  "aggregate_statuses": [
+    "PASS",
+    "PASS_WITH_WARNINGS",
+    "FAIL",
+    "INCOMPLETE",
+    "REVIEW_REQUIRED"
+  ],
+  "common_checks": [
+    {
+      "check_id": "common.professional_consistency",
+      "category": "invariant",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Сверь профессиональный предмет, функцию, задачу, единицы, шкалу времени, авторов, термины и статусы по всему кандидату. Согласованная замена и учебные значения допустимы в пределах поля 18 и подтверждённого профиля M4. Одного названия должности недостаточно.",
+      "source_fields": [
+        "8",
+        "10",
+        "12",
+        "17.2",
+        "18"
+      ],
+      "finding_evidence_sections": [
+        "candidate_as/Материалы",
+        "candidate_as/Активные персонажи",
+        "candidate_as/Закрытые фиксированные факты",
+        "candidate_as/События",
+        "candidate_as/IndicatorObservability",
+        "candidate_as/Применённые замены"
+      ]
+    },
+    {
+      "check_id": "common.authority",
+      "category": "authority",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Сохрани функционально различимые позиции, вклады и исходные знания персонажей. Отдели намерение, свой вклад и явное подтверждение от решения, ресурса или действия другого субъекта. Проверь мандат, источник доступа и допустимые связанные замены для данного профиля.",
+      "source_fields": [
+        "10",
+        "11",
+        "13",
+        "17.2",
+        "17.3",
+        "18"
+      ],
+      "finding_evidence_sections": [
+        "candidate_as/Материалы",
+        "candidate_as/Активные персонажи",
+        "candidate_as/Закрытые фиксированные факты",
+        "candidate_as/События",
+        "candidate_as/RuntimeBindings"
+      ]
+    },
+    {
+      "check_id": "common.confidentiality",
+      "category": "confidentiality",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Сверь стартовые, отложенные и закрытые сведения с конкретными источниками, допущенными получателями и условиями предъявления. Проверь смысл текста на утечку закрытого факта и подмену адресата, включая частичную осведомлённость.",
+      "source_fields": [
+        "11",
+        "17.1",
+        "17.2",
+        "17.3"
+      ],
+      "finding_evidence_sections": [
+        "candidate_as/Материалы",
+        "candidate_as/Активные персонажи",
+        "candidate_as/Закрытые фиксированные факты",
+        "candidate_as/События",
+        "candidate_as/RuntimeBindings"
+      ]
+    },
+    {
+      "check_id": "common.scenario_executability",
+      "category": "scenario_executability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Проверь полноту источников для данной задачи, связность условий и реакций, возможность частичного результата и предусмотренный порядок завершения. Содержание реакции и выдачи должно опираться на состоявшееся действие, доступные данные и правильного адресата. Письменный ведущий даёт только предусмотренные нейтральные реакции.",
+      "source_fields": [
+        "5",
+        "12",
+        "13",
+        "15",
+        "17.1",
+        "17.2",
+        "17.3",
+        "17.4",
+        "19",
+        "20"
+      ],
+      "finding_evidence_sections": [
+        "candidate_as/Материалы",
+        "candidate_as/Активные персонажи",
+        "candidate_as/Закрытые фиксированные факты",
+        "candidate_as/События",
+        "candidate_as/RuntimeBindings"
+      ]
+    },
+    {
+      "check_id": "common.independent_observation",
+      "category": "indicator_observability",
+      "mandatory": true,
+      "protected": true,
+      "requirement": "Доступные материалы и реакции дают возможность выполнить свой анализ или действие. Вводная, карта и реакции не предрешают вывод, способ, договорённость или будущий результат. Отдели проектную возможность от фактического проявления и оценки. Авторское предположение персонажа допустимо в отведённой ему функции.",
+      "source_fields": [
+        "12",
+        "15",
+        "17.1",
+        "17.2",
+        "17.3",
+        "17.4",
+        "22"
+      ],
+      "finding_evidence_sections": [
+        "candidate_as/Материалы",
+        "candidate_as/Активные персонажи",
+        "candidate_as/Закрытые фиксированные факты",
+        "candidate_as/События",
+        "candidate_as/IndicatorObservability"
+      ]
+    },
+    {
+      "check_id": "quality.clarity",
+      "category": "presentation_quality",
+      "mandatory": true,
+      "protected": false,
+      "requirement": "Отметь редакционные шероховатости, которые не мешают наблюдению и не нарушают другие критерии. Существенная неоднозначность статуса, адресата или единицы относится к соответствующему защищённому критерию.",
+      "source_fields": [
+        "12",
+        "17.1",
+        "17.2"
+      ],
+      "finding_evidence_sections": [
+        "candidate_as/Материалы",
+        "candidate_as/Активные персонажи"
+      ]
+    }
+  ],
+  "aggregation": {
+    "deterministic_fail": "FAIL",
+    "blocking_fail": "FAIL",
+    "mandatory_not_run_or_indeterminate_or_technical_error": "INCOMPLETE",
+    "mandatory_not_applicable": "INCOMPLETE",
+    "protected_non_blocking_finding": "REVIEW_REQUIRED",
+    "only_unprotected_non_blocking_findings": "PASS_WITH_WARNINGS",
+    "all_required_pass": "PASS"
+  },
+  "scope": "battery_v0.3_qa"
+}

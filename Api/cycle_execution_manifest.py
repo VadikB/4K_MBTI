@@ -15,6 +15,10 @@ CHECKSUM_KIND = "sha256-canonical-json-v1"
 CONTENT_CHECKSUM_KIND = "sha256-raw-bytes-v1"
 M5_FUNCTIONAL_AS_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v3"
 M5_BATTERY_PILOT_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v5"
+M5_BATTERY_PILOT_REVIEW_PACKAGES = {
+    "5.0.0": M5_BATTERY_PILOT_REVIEW_PACKAGE,
+    "6.0.0": "assessment_definitions/prompts/m5_functional_passport/v6",
+}
 M5_BATTERY_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v4"
 PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
 BATTERY_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.7"
@@ -98,6 +102,16 @@ def _dependency_snapshot(root: Path, dependency_items: tuple[tuple[str, str], ..
     }
 
 
+def battery_pilot_review_path(ref: Mapping[str, Any], *, root: Path = ROOT) -> str:
+    version = ref.get("version") if isinstance(ref, Mapping) else None
+    path = M5_BATTERY_PILOT_REVIEW_PACKAGES.get(version) if isinstance(version, str) else None
+    if path is None or ref.get("path") != path or ref.get("id") != "m5-functional-passport":
+        raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
+    if ref.get("checksum") != hashlib.sha256((root / path / "manifest.json").read_bytes()).hexdigest():
+        raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
+    return path
+
+
 def build_manifest(
     *,
     profile_ref: Mapping[str, Any],
@@ -123,10 +137,12 @@ def build_manifest(
     if catalog_ref and catalog_ref.get("battery_pilot") is True:
         from Api.m5_battery_contract import RULE_PACKAGE
 
+        review_path = (battery_pilot_review_path(catalog_ref["review_package"], root=root)
+                       if "review_package" in catalog_ref else M5_BATTERY_PILOT_REVIEW_PACKAGE)
         dependencies = {
             **dependencies, "m5_functional_package": BATTERY_CASE_PACKAGE,
             "m5_functional_runtime": BATTERY_RULE_PACKAGE, "m5_battery_scenario": RULE_PACKAGE,
-            "m5_functional_as": M5_BATTERY_PILOT_REVIEW_PACKAGE,
+            "m5_functional_as": review_path,
         }
     if project_role is not None:
         dependencies = {**dependencies, "m5_educational_role_interactions": PROJECT_ROLE_PROMPT}
