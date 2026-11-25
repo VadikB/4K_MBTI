@@ -157,6 +157,28 @@ def test_spec08_late_opening_is_tied_to_delivered_source(product_db, v04, mode):
         assert not knows_fragment(after) and not state.get("battery_opened_materials") and not opens
 
 
+def test_spec08_opening_after_a_resend_uses_one_delivery(product_db, v04):
+    cycle, session = start_case(product_db, v04[0][0], 8)
+    as_id, _ = prepare_and_start(product_db, cycle, session, ReadbackGateway())
+    first_text = f"Получатель, передаю {SPEC08_LINK}."
+    resent_text = f"Получатель, ещё раз отправляю {SPEC08_LINK}."
+    rules = {"E01_RECEIPT": matched(recipient_ids=[RECIPIENT], text=SPEC08_LINK)}
+    first, initial_calls = submit(product_db, as_id, first_text, rules, recipients=(RECIPIENT,),
+                                  responses={RECIPIENT: "Ссылку вижу. Открою позже."}, replay=True)
+    resent, resent_calls = submit(product_db, as_id, resent_text, {**rules, "@confirmed:E01_RECEIPT": matched()},
+                                  recipients=(RECIPIENT,), responses={RECIPIENT: OPENING}, replay=True)
+    delivery, confirmation = resent
+    after = recipient_turn(product_db, as_id, "Какие рабочие сведения вы получили?")
+    opened, = after["context"]["opened_materials"]
+    export("ecd-opening-resent.json", {"delivery_turn": first_text, "resent_turn": resent_text, "extracted": SPEC08_LINK,
+           "first": first, "initial_calls": initial_calls, "resent": resent, "resent_calls": resent_calls, "after": after})
+    assert not any(knows_fragment(call) for call in initial_calls + resent_calls)
+    assert opened["delivery_turn_id"] == delivery["cause_json"]["turn_id"]
+    assert opened["delivery_event_id"] == delivery["event_id"] != first[0]["event_id"]
+    assert confirmation["payload_json"]["opened_source"]["delivery_event_id"] == delivery["event_id"]
+    assert opened["confirmation_turn_id"] == confirmation["cause_json"]["character_turn_id"]
+
+
 @pytest.mark.parametrize("version,repair", [("rev-4", True), ("ред-4", True), ("ред 4", True), ("ред 4", False)])
 def test_spec08_technical_version_has_one_contract(product_db, v04, version, repair):
     cycle, _ = start_case(product_db, v04[0][0], 8)

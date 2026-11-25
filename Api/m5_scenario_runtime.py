@@ -1132,11 +1132,13 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
         events.append(event)
         if follow_up and link:
             pending = state.setdefault("battery_pending_materials", [])
+            source = link["source"]
             for recipient in transfer.recipient_ids:
-                if any(item["recipient_id"] == recipient and item["source"] == link["source"]
-                       for item in (*pending, *state.get("battery_opened_materials", []))):
+                if any(item["recipient_id"] == recipient and item["source"] == source
+                       for item in state.get("battery_opened_materials", [])):
                     continue
-                pending.append({"source": link["source"], "recipient_id": recipient,
+                pending[:] = [item for item in pending if (item["recipient_id"], item["source"]) != (recipient, source)]
+                pending.append({"source": source, "recipient_id": recipient,
                                 "delivery_turn_id": turn_id, "delivery_event_id": str(event["event_id"])})
     for rule_id, transfer in plan.transfers:
         if transfer.sender_id == "assessee":
@@ -1146,7 +1148,8 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
         opened = reply.opened_material
         pending = state.get("battery_pending_materials", [])
         delivery = next((item for item in pending if opened and item["recipient_id"] == opened["recipient_id"]
-                         and item["source"] == opened["source"]), None)
+                         and item["source"] == opened["source"] and item["delivery_turn_id"] == opened["delivery_turn_id"]),
+                        None)
         event = _persist_character_reply(
             connection, row=row, saved=saved, state=state,
             material={"material_id": f"CHARACTER.{reply.speaker}", "speaker_id": reply.speaker},
