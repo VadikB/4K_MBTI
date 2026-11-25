@@ -1,0 +1,437 @@
+{
+  "battery": "M5 Specialist",
+  "version": "v0.4",
+  "date": "2026-11-25",
+  "status": "WORKING",
+  "current": false,
+  "base_role": {
+    "code": "specialist_expert",
+    "label": "Специалист / эксперт"
+  },
+  "basis": {
+    "passport_template": {
+      "version": "v1.2",
+      "status": "WORKING",
+      "current": false,
+      "library_file_id": "libfile_fde3_f-1a61093c228c81919c856b2eeaa0af01_d45b765f9f6c8191a5c71b065febd7de",
+      "library_version": "2"
+    },
+    "previous_battery": {
+      "version": "v0.3",
+      "library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de"
+    },
+    "task": {
+      "name": "M5_Case_2_0_Specialist_TZ_WORKING.md",
+      "sha256": "b97e99705e004e8e5994596efbf2d7710ac6f97567d22f170147222015988587"
+    },
+    "case_type_catalog": {
+      "version": "v1.0",
+      "library_file_id": "libfile_d5dc30641fd48191ad69bf1245094259"
+    },
+    "m2_versions": {
+      "K1": "v1.1",
+      "K2": "v1.0",
+      "K3": "v1.1",
+      "K4": "v1.0"
+    }
+  },
+  "totals": {
+    "cases": 9,
+    "assigned_indicators": 55,
+    "distinct_indicators": 39,
+    "distinct_skills": 14,
+    "by_competency": {
+      "K1": {
+        "assigned": 12,
+        "distinct": 9
+      },
+      "K2": {
+        "assigned": 13,
+        "distinct": 8
+      },
+      "K3": {
+        "assigned": 12,
+        "distinct": 8
+      },
+      "K4": {
+        "assigned": 18,
+        "distinct": 14
+      }
+    },
+    "time_min": 122,
+    "time_max": 155,
+    "format_counts": {
+      "Диалоговый": 4,
+      "Письменный": 2,
+      "Многоролевой": 3
+    }
+  },
+  "checks": {
+    "passport_structure_local_references_and_m2": "PASS",
+    "xlsx_structure_and_content": "PASS",
+    "as_preparation_and_runs": "NOT_RUN",
+    "product_compatibility_and_admission": "NOT_RUN",
+    "pilot_and_timing": "NOT_RUN"
+  },
+  "cases": [
+    {
+      "case_id": "CASE.SPEC.01",
+      "title": "Неоднозначный запрос заказчика",
+      "version": "v0.7",
+      "previous_version": "v0.6",
+      "source_library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Диалоговый",
+      "ct_ids": [
+        "CT02",
+        "CT16"
+      ],
+      "time_min": 8,
+      "time_max": 8,
+      "indicator_ids": [
+        "K1.I01",
+        "K1.I13",
+        "K1.I14",
+        "K4.I06"
+      ],
+      "m2_versions": {
+        "K1": "v1.1",
+        "K4": "v1.0"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_01_v0.7_WORKING.json",
+          "sha256": "ff1d20f719141de06d2635d165d57d94b0f1feb4696d7011f040072eca2b4685"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_01_v0.7_WORKING.xlsx",
+          "sha256": "f9594e91d51d9dcd8492e62ae87524713c43c46e723a77f024990754d53bac2d"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "title": "Выбор профессионального предложения при расхождении сведений",
+      "version": "v0.7",
+      "previous_version": "v0.6",
+      "source_library_file_id": "libfile_fde3_f-20db9fbf5dc48191bb0ba432bd9b8b74_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Письменный",
+      "ct_ids": [
+        "CT08",
+        "CT15",
+        "CT10"
+      ],
+      "time_min": 15,
+      "time_max": 18,
+      "indicator_ids": [
+        "K4.I03",
+        "K4.I05",
+        "K4.I12",
+        "K4.I13",
+        "K4.I14",
+        "K4.I16",
+        "K4.I17",
+        "K1.I06",
+        "K1.I09"
+      ],
+      "m2_versions": {
+        "K4": "v1.0",
+        "K1": "v1.1"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_02_v0.7_WORKING.json",
+          "sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_02_v0.7_WORKING.xlsx",
+          "sha256": "4def058570bf2850f5673a777c54e1c1fac83d52928842b96b3a5bd8a75d33e4"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "title": "Разногласие коллег при подготовке общего предложения",
+      "version": "v0.5",
+      "previous_version": "v0.4",
+      "source_library_file_id": "libfile_fde3_f-ed020b5febac8191a94b6008e8e33ec7_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Многоролевой",
+      "ct_ids": [
+        "CT04",
+        "CT05",
+        "CT03"
+      ],
+      "time_min": 18,
+      "time_max": 25,
+      "indicator_ids": [
+        "K2.I01",
+        "K2.I06",
+        "K2.I07",
+        "K2.I08",
+        "K2.I10",
+        "K2.I13",
+        "K2.I14",
+        "K1.I15",
+        "K1.I17"
+      ],
+      "m2_versions": {
+        "K2": "v1.0",
+        "K1": "v1.1"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_03_v0.5_WORKING.json",
+          "sha256": "0ff7e2c0893badbabe5443d1bc9cc366adef3abcac5ae9795fd079e70dc0d0c1"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_03_v0.5_WORKING.xlsx",
+          "sha256": "326b8c9032a0789c0bc2e7d7cdc4b74a803b266c2d12e1e8e0cf0e2f96ad26b2"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "title": "Ошибка исправлена, но последствия и сомнения остались",
+      "version": "v0.7",
+      "previous_version": "v0.6",
+      "source_library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Диалоговый",
+      "ct_ids": [
+        "CT01",
+        "CT12",
+        "CT14"
+      ],
+      "time_min": 15,
+      "time_max": 20,
+      "indicator_ids": [
+        "K3.I03",
+        "K3.I06",
+        "K3.I09",
+        "K3.I10",
+        "K3.I11",
+        "K1.I16",
+        "K4.I18"
+      ],
+      "m2_versions": {
+        "K3": "v1.1",
+        "K1": "v1.1",
+        "K4": "v1.0"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_04_v0.7_WORKING.json",
+          "sha256": "4ca89df32ea68e0bdaa8df2b710088a054a223548eb00da039d07d89ec6cb411"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_04_v0.7_WORKING.xlsx",
+          "sha256": "6d52c5a47bfd1ccf0438576c8d5839f257d6e7f687fea71b57e725d4dd9160f4"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "title": "Стандартный способ отклонён, а рабочая цель сохраняется",
+      "version": "v0.6",
+      "previous_version": "v0.5",
+      "source_library_file_id": "libfile_fde3_f-97121fbdb4708191ae0ab11b787c4a9f_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Диалоговый",
+      "ct_ids": [
+        "CT13",
+        "CT12"
+      ],
+      "time_min": 12,
+      "time_max": 15,
+      "indicator_ids": [
+        "K3.I01",
+        "K3.I03",
+        "K3.I06",
+        "K3.I07",
+        "K4.I07",
+        "K4.I08"
+      ],
+      "m2_versions": {
+        "K3": "v1.1",
+        "K4": "v1.0"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_05_v0.6_WORKING.json",
+          "sha256": "2833de56142e89dcd5a4d77f9bac62946fb7f054b1838dba39f46c5012389af6"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_05_v0.6_WORKING.xlsx",
+          "sha256": "63abd819dbbb49ac9bb598de4e89f41c6e78690405f49741fef94fd1c157586d"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "title": "Согласование ожиданий от одного общего пилота",
+      "version": "v0.5",
+      "previous_version": "v0.4",
+      "source_library_file_id": "libfile_fde3_f-0dfc7dc059bc8191ab307e16b83ecf31_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Многоролевой",
+      "ct_ids": [
+        "CT03",
+        "CT05"
+      ],
+      "time_min": 15,
+      "time_max": 20,
+      "indicator_ids": [
+        "K2.I02",
+        "K2.I06",
+        "K2.I14",
+        "K3.I09",
+        "K4.I15"
+      ],
+      "m2_versions": {
+        "K2": "v1.0",
+        "K3": "v1.1",
+        "K4": "v1.0"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_06_v0.5_WORKING.json",
+          "sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_06_v0.5_WORKING.xlsx",
+          "sha256": "d9ee97451d33c0d846092663584f356fb1c127b321f0e4643532c74c6d9972a0"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "title": "Рабочее использование после ограниченной проверки средства",
+      "version": "v0.6",
+      "previous_version": "v0.5",
+      "source_library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Письменный",
+      "ct_ids": [
+        "CT06",
+        "CT09",
+        "CT12"
+      ],
+      "time_min": 12,
+      "time_max": 16,
+      "indicator_ids": [
+        "K4.I02",
+        "K4.I06",
+        "K4.I07",
+        "K4.I10",
+        "K3.I02",
+        "K3.I06"
+      ],
+      "m2_versions": {
+        "K4": "v1.0",
+        "K3": "v1.1"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_07_v0.6_WORKING.json",
+          "sha256": "b657f72583bcfff182edc47b5e5354b542c21759ac5aa9acad2d1b1d8312e49f"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_07_v0.6_WORKING.xlsx",
+          "sha256": "3f6151a3847a986b94c59bcd4739305c28eca686ed824b4be4a692bde880daf0"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "title": "Потери информации при передаче работы между специалистами",
+      "version": "v0.6",
+      "previous_version": "v0.5",
+      "source_library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Многоролевой",
+      "ct_ids": [
+        "CT04",
+        "CT03"
+      ],
+      "time_min": 12,
+      "time_max": 15,
+      "indicator_ids": [
+        "K2.I07",
+        "K2.I08",
+        "K2.I14",
+        "K1.I11"
+      ],
+      "m2_versions": {
+        "K2": "v1.0",
+        "K1": "v1.1"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_08_v0.6_WORKING.json",
+          "sha256": "9e17c33cbad8d2aa83b89425289ae2d246fd1a194bd7c794b72d7f6dfc2c15cb"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_08_v0.6_WORKING.xlsx",
+          "sha256": "b47b8e52c270222883da116f774adaed1cdff05060705804d78ac7a19e64142a"
+        }
+      }
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "title": "Разные рекомендации специалиста и руководителя по кандидату",
+      "version": "v0.6",
+      "previous_version": "v0.5",
+      "source_library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de",
+      "source_library_version": "0",
+      "status": "WORKING",
+      "current": false,
+      "format": "Диалоговый",
+      "ct_ids": [
+        "CT03",
+        "CT15",
+        "CT10"
+      ],
+      "time_min": 15,
+      "time_max": 18,
+      "indicator_ids": [
+        "K1.I01",
+        "K1.I16",
+        "K1.I17",
+        "K4.I12",
+        "K4.I16"
+      ],
+      "m2_versions": {
+        "K1": "v1.1",
+        "K4": "v1.0"
+      },
+      "file_refs": {
+        "json": {
+          "path": "JSON/Case_SPEC_09_v0.6_WORKING.json",
+          "sha256": "60f065faf31b8b97779c894d7b1e93f229942109babe4b070bb1f5c4c42526ec"
+        },
+        "xlsx": {
+          "path": "Excel/Case_SPEC_09_v0.6_WORKING.xlsx",
+          "sha256": "c5cb16e3cf52bcd0ec759ba3d55631fa68f92af28637b4ab4206bd6c0e1d07d5"
+        }
+      }
+    }
+  ]
+}

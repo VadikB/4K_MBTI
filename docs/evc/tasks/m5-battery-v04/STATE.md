@@ -1,0 +1,107 @@
+# M5 v0.4 · Батарея специалиста в изолированном QA
+
+Основание — `M5_v04_01_QA.md` и прямое поручение владельца от 25.11.2026. Ветка
+`codex/m5-v04-01-qa` от `origin/main` `97d53ca1922569f1a22c4bc7f1ec0b64bd5ab2d2`
+с PR #299. Область включает импорт, закрепление зависимостей, PM-03, PM-04,
+контроль C-45 и расчёт M7 для нового каталога. `branch_push=true`, `pr=true`,
+`merge=false`, `deploy=false`, `version_bump=false`, `artifact_publish=false`.
+Записи для проверки публикационного пути созданы в отдельной синтетической БД.
+
+## Источники
+
+- [Архив и исходный манифест](sources.json). Имя приложенного ZIP — `M5_Battery_v04.zip`.
+  SHA-256 совпал с заданием для `M5_Battery_v04(1).zip`. Проверены все 18 файлов.
+  В пяти обновлённых книгах найдены все 49 изменившихся текстовых значений полей.
+  JSON и Excel для SPEC.02, .03, .05 и .06 совпали с контрольными суммами v0.3.
+- Архив прежних трасс и формы `M5_05_Review_Evidence_v0.3.zip`, SHA-256
+  `7686b3792fd6948f151eaff1141d44c5847b6a68a79459877ed432ea7da74dac`.
+  В новом прогоне четырёх неизменённых кейсов использованы материалы управляемых AS v5,
+  а ход, заявки обеим ролям и решение сервера записаны на связке v0.4.
+- Исходный манифест v0.4 указывает Паспорт Case v1.2 WORKING, редакция 2. Это
+  происхождение сохранено. Для методологической сверки применены Паспорт Case v1.2
+  FROZEN (`f84bbcf7a737f247dc25b84abdc17cfcb62f0aa8ebeb44df2e259cc6c4023a87`),
+  поля 16–18, 21–22, и Методология M5 v1.2 FROZEN §§6.7–6.9
+  (`137782a81cad62852564a98feb24525dcc212576b081979c49a4c69778b1f44a`).
+  Определения этих полей совпали с ранее приложенным паспортом v1.2 FROZEN
+  (`2371e0a895b7f6c63af59fbca10f7e5a0a2513f135108a5973e9c09a761a1591`).
+- [Product 4K v1.0, Change 01 И-3, И-4, И-6](../../../architecture/product-4k/1.0/updates/2026-10-01/README.md),
+  [ADR-002](../../../adr/002-cycle-as-dialogue-contracts.md) и [Registry](../../../architecture/product-4k/registry.md).
+  C-23/C-34 закрепляют источники и точные цели, C-45 передаёт состоявшиеся ходы и условные возможности.
+  `ARCH-A05` из [реестра решений](../../decision-register.md) отделяет покрытие каталога, план Cycle и фактические возможности.
+  [Порядок штатного выпуска](../m5-battery-pilot/STATE.md) сохранён для этапа 05 после содержательного решения.
+
+## Версии
+
+| Компонент | Версия | SHA-256 |
+| --- | --- | --- |
+| [Манифест исходников](../../../../assessment_definitions/cases/competencies_4k/functional-personalization/0.8/sources/manifest.json) | v0.4 WORKING, CURRENT=NO | `794a28482ea05efd47117c82daee64e686f0c41830c740e011c2568619f55663` |
+| [Манифест банка](../../../../assessment_definitions/cases/competencies_4k/functional-personalization/0.8/manifest.json) | 0.8 | `d1dbef14eb0f46f71d2f8a190df9fc5800265951545608b9edad0458f898402b` |
+| [Манифест правил](../../../../assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.7.0/manifest.json) | 1.7.0 | `35cfae0dea90e1b17e12778b51b90e0214123d99b411f72e2910bae689bb0d43` |
+| [Манифест сценария](../../../../assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.0/manifest.json) | 1.8.0 | `0686f96a40b3ab85cdec06898d71cb703aadf58ae3c759db43734333fac17414` |
+| [Правила сценария, закреплённые в C-34](../../../../assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.0/scenario-rules.json) | 1.8.0 | `3bacb1ee55c21bcc88784ceb8d13f7275067d338b590da21edbc97f8c5597631` |
+| [Манифест пакета рецензирования](../../../../assessment_definitions/prompts/m5_functional_passport/v7/manifest.json) | 7.0.0 | `36d025d22b0773981e461337fe91c98d9926ce07af5ae157d2e933cc1a9a593a` |
+| [Протокол](../../../../assessment_definitions/prompts/m5_functional_passport/v7/tester-protocol.json) | 3.3.0 | `5a2371bfbd03deac0735f01ba2f86f1633c103043b34eb1e9af265f488fccac0` |
+| [Требования пакета](../../../../assessment_definitions/prompts/m5_functional_passport/v7/case-content-contract.json) | 2.0.2 | `48607f59ce56181e29c8a5a3c82467455109deb9e0847feb5e609120b68fb46b` |
+| [Контракт подготовленной AS](../../../../assessment_definitions/prompts/m5_functional_passport/v7/as-contract.json) | 2.1.0 | `6ed271ae23ab2afbf0cb580ccb2ca0778df100d1d83fd61477ee67d5e3dc813c` |
+
+QA-каталог `specialist-battery-diagnostic@0.8-qa` прочитан с SHA манифеста
+`a70fbeb8edcda6adcab54fecce7c902d4295a873d4cf185c9de7a71ca44a1310`.
+[Чтение будущей штатной связки в синтетической БД](../../evidence/m5-battery-v04/M7-readback.json)
+сохранило `0.8-pilot.1`, правила `1.7.1` и каталог `1.4`. Контрольная сумма
+манифеста этого экземпляра каталога `79221092d7d9f9ec977ec5536db04f9927e6043d6161ca0fca38d841ee601796`.
+CaseVersion ссылается на базовый контракт 2.0.0. Подготовка AS использует 2.1.0.
+
+## Контракты и проверка
+
+Импорт переиспользует существующий компилятор, проверку SHA исходного архива и
+манифеста, имён и байтов файлов. Каталог выбирает путь версии. Манифест Cycle
+закрепляет зависимости, а читатели проверяют их контрольные суммы. Пакет 7.0.0
+передаёт полный план обеим ролям, сохраняет привязку запроса и ответа к кандидату,
+а также точный адрес `candidate_as/RuntimeBindings/E01_CONSENT_STEP/reply_confirmation`
+для I06. SPEC.08 предъявляет оцениваемому полный M02. Получатель получает
+разрешённые разделы M02 и фактически адресованные фрагменты в контексте диалога.
+Право открыть материал, доставка, подтверждение, пригодность к подготовке и
+исполнение имеют отдельные основания поля 17. Для чтения прежних Cycle доступны
+исторические версии артефактов и правила выбора по закреплённому манифесту.
+
+| Кейс | Паспорт | Управляемый шлюз и решение сервера | Фактическая проверка |
+| --- | --- | --- | --- |
+| [SPEC.01](../../evidence/m5-battery-v04/CASE.SPEC.01.json) | v0.7 | PASS | F04 и F05 до M02, черновик один раз, ранний финал без выдачи |
+| [SPEC.02](../../evidence/m5-battery-v04/CASE.SPEC.02.json) | v0.7 | PASS | Предел проверки B и письменная сдача |
+| [SPEC.03](../../evidence/m5-battery-v04/CASE.SPEC.03.json) | v0.5 | PASS | M04 появляется в адресной истории C3 после пересылки C2 |
+| [SPEC.04](../../evidence/m5-battery-v04/CASE.SPEC.04.json) | v0.7 | PASS | Предметный отклик, доработка, согласие и I06 |
+| [SPEC.05](../../evidence/m5-battery-v04/CASE.SPEC.05.json) | v0.6 | PASS | Вклад коллеги и граница распоряжения ресурсом |
+| [SPEC.06](../../evidence/m5-battery-v04/CASE.SPEC.06.json) | v0.5 | PASS | Три функции, вклад в подготовку и открытый результат |
+| [SPEC.07](../../evidence/m5-battery-v04/CASE.SPEC.07.json) | v0.6 | PASS | Открытая письменная задача, основания M02–M04, repair формы замен и C-45 |
+| [SPEC.08](../../evidence/m5-battery-v04/CASE.SPEC.08.json) | v0.6 | PASS | Входы персонажа до и после передачи, повтор, подтверждение и предел исполнения |
+| [SPEC.09](../../evidence/m5-battery-v04/CASE.SPEC.09.json) | v0.6 | PASS | Один M03, пояснение руководителя, рекомендация, согласие и явная кадровая реплика |
+
+- Сборка из приложенного ZIP и повторная побайтная сборка из сохранённых JSON — PASS.
+  `scripts/plan_specialist_program_release.py --diagnostic-battery-v0.4` и
+  `--pilot-battery-v0.4` — PASS в режиме расчёта. Банк содержит 55 назначений,
+  39 уникальных IndicatorID и 14 навыков.
+- `PYTHON_DOTENV_DISABLED=1 DB_POOL_MIN_SIZE=0 npm run test:backend` — 1458 PASS.
+- `.venv/bin/python -m pytest --run-integration` с тестами `test_m5_battery_v04_db`,
+  `test_m5_battery_bank_db`, `test_m5_battery_scenario_db`, `test_m5_pilot_release_db`,
+  `test_m5_addressed_spec03_db`, `test_m5_cycle_runtime_db` — 56 PASS на PostgreSQL 16.
+  Первый общий запуск встретил единичный обратный ход времени БД в `end_blocking_wait`.
+  Адресное и общее повторения прошли. Часы и интервалы не входили в этот diff.
+- [First → Next, ранний финал и отсутствие мандата](../../evidence/m5-battery-v04/first-next-and-mandate.json).
+  [Пауза, возобновление и Next на прежнем каталоге](../../evidence/m5-battery-v04/legacy-resume.json).
+- M7 прочитал новый будущий каталог, применил проверку мандата и пересчитал
+  маршрут на 39 целей. Порядок совпал с архивным. В маршруте восемь кейсов,
+  50 условий наблюдаемости и 107–137 паспортных минут.
+- Свежая модель, эмпирическое время, пилот и решение методолога — NOT_RUN.
+  PASS сервера подтверждает технический результат на управляемых данных.
+
+## Передача на этап 05
+
+Локальная папка содержит девять HTML-карточек, фактические трассы, исходные версии,
+план M7, архивную форму и `form-05-data.json`. Конструкция, диалог и ситуация
+ожидают решения методолога. Для SPEC.02 согласовать способ измерения и достаточность
+порога B: в README указано 500 заявок за пять дней, в архивном примере M05/M06 — 112
+заявок в рабочий день. Новую формулировку следует согласовать для обеих записей.
+
+Штатный выбор связки для новых назначений относится к этапу 05 после решений по
+содержанию и плану. Откат выбора для новых запусков выполняется возвратом к прежней
+версии конфигурации. Для начатых Cycle сохраняется чтение закреплённой версии.

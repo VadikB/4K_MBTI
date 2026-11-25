@@ -1,0 +1,102 @@
+{
+  "schema_version": 2,
+  "id": "m5-functional-passport-content",
+  "version": "2.0.2",
+  "scope": "battery_v0.4_qa",
+  "sources": [
+    "M5.Methodology v1.2 §§6.3–6.9",
+    "M5.CasePassport v1.2 §§2, 5, 7",
+    "Change 01 И-3/И-6, C-23/C-34",
+    "M2 по normative_source каждого назначения"
+  ],
+  "cases": {
+    "CASE.SPEC.01": {
+      "case_version": "v0.7",
+      "passport_sha256": "ff1d20f719141de06d2635d165d57d94b0f1feb4696d7011f040072eca2b4685",
+      "requirements": {}
+    },
+    "CASE.SPEC.02": {
+      "case_version": "v0.7",
+      "passport_sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a",
+      "requirements": {
+        "invariant:CASE.SPEC.02.I05": {
+          "requirement": "M05 задаёт автора, дату или версию, статус, проверенный аспект B, способ или условия, результат и границу вывода. Укажи, чего проверка не охватила. Если проверки будущего шага нет, её недоступность может быть явно указана. Размер выборки нужен только когда выборка является существенным условием фактически описанной проверки.",
+          "source_fields": [
+            "17.2/M03",
+            "17.2/M04",
+            "17.2/M05",
+            "18"
+          ],
+          "finding_evidence_sections": [
+            "candidate_as/Материалы/M03",
+            "candidate_as/Материалы/M04",
+            "candidate_as/Материалы/M05"
+          ]
+        },
+        "indicator:K1.I09": {
+          "requirement": "Из доступных со старта источников и двух адресных задач участник может самостоятельно ясно выразить существенное различие заявленного, подтверждённого и условного в сообщении коллеге или черновике заказчику. Рабочий срок и следующий шаг сохраняют свои статусы. Допустимы условные формулировки и эквивалентные термины. Один термин может относиться к разным статусам, когда контекст различает их. Дополнительный словарь в P00 не требуется.",
+          "source_fields": [
+            "17.1",
+            "17.4",
+            "22/K1.I09"
+          ],
+          "finding_evidence_sections": [
+            "candidate_as/Материалы",
+            "candidate_as/IndicatorObservability/K1.I09"
+          ]
+        }
+      }
+    },
+    "CASE.SPEC.03": {
+      "case_version": "v0.5",
+      "passport_sha256": "0ff7e2c0893badbabe5443d1bc9cc366adef3abcac5ae9795fd079e70dc0d0c1",
+      "requirements": {}
+    },
+    "CASE.SPEC.04": {
+      "case_version": "v0.7",
+      "passport_sha256": "4ca89df32ea68e0bdaa8df2b710088a054a223548eb00da039d07d89ec6cb411",
+      "requirements": {
+        "invariant:CASE.SPEC.04.I06": {
+          "requirement": "Сопоставь позицию и ограничения из M04 и F04 с тремя разными событиями: реакцией E01_REVIEW, ограничением E01_STATE_LIMIT и явным согласием E01_CONSENT_STEP. Для условия явного согласия цитируй /candidate_as/RuntimeBindings/E01_CONSENT_STEP/reply_confirmation. Согласие с конкретным шагом в собственном мандате само по себе не подтверждает решение следующего уровня или исполнение.",
+          "source_fields": [
+            "16/I06",
+            "17.2/M04",
+            "17.2/F04",
+            "17.3/E01_REVIEW",
+            "17.3/E01_STATE_LIMIT",
+            "17.3/E01_CONSENT_STEP",
+            "17.4"
+          ],
+          "finding_evidence_sections": [
+            "candidate_as/RuntimeBindings/E01_CONSENT_STEP/reply_confirmation"
+          ]
+        }
+      }
+    },
+    "CASE.SPEC.05": {
+      "case_version": "v0.6",
+      "passport_sha256": "2833de56142e89dcd5a4d77f9bac62946fb7f054b1838dba39f46c5012389af6",
+      "requirements": {}
+    },
+    "CASE.SPEC.06": {
+      "case_version": "v0.5",
+      "passport_sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf",
+      "requirements": {}
+    },
+    "CASE.SPEC.07": {
+      "case_version": "v0.6",
+      "passport_sha256": "b657f72583bcfff182edc47b5e5354b542c21759ac5aa9acad2d1b1d8312e49f",
+      "requirements": {}
+    },
+    "CASE.SPEC.08": {
+      "case_version": "v0.6",
+      "passport_sha256": "9e17c33cbad8d2aa83b89425289ae2d246fd1a194bd7c794b72d7f6dfc2c15cb",
+      "requirements": {}
+    },
+    "CASE.SPEC.09": {
+      "case_version": "v0.6",
+      "passport_sha256": "60f065faf31b8b97779c894d7b1e93f229942109babe4b070bb1f5c4c42526ec",
+      "requirements": {}
+    }
+  }
+}

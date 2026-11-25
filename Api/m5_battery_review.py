@@ -23,10 +23,12 @@ def build_plan(snapshot: dict, protocol: dict, contract_path: Path, m2: dict) ->
     case_id, version = case["case_id"], case["version"]
     source = case["passport_source"]
     overlay = contract.get("cases", {}).get(case_id, {})
-    if contract.get("version") not in {"2.0.0", "2.0.1"} or (
+    versions = {"battery_v0.3_qa": {"2.0.0", "2.0.1"}, "battery_v0.4_qa": {"2.0.2"}}
+    if contract.get("version") not in versions.get(protocol.get("scope"), ()) or (
         contract.get("id"), contract.get("schema_version"), contract.get("scope"),
             overlay.get("case_version"), overlay.get("passport_sha256")) != (
-        "m5-functional-passport-content", 2, "battery_v0.3_qa", source_case_version(version, pilot=snapshot.get("battery_pilot", False)), source["sha256"],
+        "m5-functional-passport-content", 2, protocol["scope"],
+        source_case_version(version, pilot=snapshot.get("battery_pilot", False)), source["sha256"],
     ):
         raise ValueError("M5_BATTERY_REVIEW_CASE_VERSION_MISMATCH")
     contract_ref = {key: contract[key] for key in ("id", "version", "sources")}

@@ -18,11 +18,15 @@ M5_BATTERY_PILOT_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_
 M5_BATTERY_PILOT_REVIEW_PACKAGES = {
     "5.0.0": M5_BATTERY_PILOT_REVIEW_PACKAGE,
     "6.0.0": "assessment_definitions/prompts/m5_functional_passport/v6",
+    "7.0.0": "assessment_definitions/prompts/m5_functional_passport/v7",
 }
 M5_BATTERY_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v4"
 PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
 BATTERY_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.7"
 BATTERY_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.5.0"
+BATTERY_V04_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.8"
+BATTERY_V04_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.7.0"
+BATTERY_V04_SCENARIO_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.0"
 
 # Logical names are part of the persisted contract. Paths always identify an
 # immutable, versioned publication; callers must never replace them with latest/current.
@@ -112,6 +116,16 @@ def battery_pilot_review_path(ref: Mapping[str, Any], *, root: Path = ROOT) -> s
     return path
 
 
+def battery_scenario_path(package_version: str) -> str:
+    from Api.m5_battery_contract import PILOT_CASE_SUFFIX, RULE_PACKAGE
+
+    source_version = package_version.removesuffix(PILOT_CASE_SUFFIX)
+    paths = {"0.7": RULE_PACKAGE, "0.8": BATTERY_V04_SCENARIO_PACKAGE}
+    if source_version not in paths:
+        raise ValueError("M5_BATTERY_PACKAGE_VERSION_INVALID")
+    return paths[source_version]
+
+
 def build_manifest(
     *,
     profile_ref: Mapping[str, Any],
@@ -123,27 +137,26 @@ def build_manifest(
     root: Path = ROOT,
     dependencies: Mapping[str, str] = DEFAULT_DEPENDENCIES,
 ) -> tuple[dict[str, Any], str]:
-    if catalog_ref and catalog_ref.get("diagnostic_only") is True:
+    if catalog_ref and (catalog_ref.get("diagnostic_only") is True or catalog_ref.get("battery_pilot") is True):
+        pilot = catalog_ref.get("battery_pilot") is True
+        package_version = catalog_ref["package_version"]
+        scenario_path = battery_scenario_path(package_version)
+        v04 = scenario_path == BATTERY_V04_SCENARIO_PACKAGE
         dependencies = {
             **dependencies,
-            "m5_functional_package": BATTERY_CASE_PACKAGE,
-            "m5_functional_runtime": BATTERY_RULE_PACKAGE,
+            "m5_functional_package": BATTERY_V04_CASE_PACKAGE if v04 else BATTERY_CASE_PACKAGE,
+            "m5_functional_runtime": BATTERY_V04_RULE_PACKAGE if v04 else BATTERY_RULE_PACKAGE,
         }
-        if catalog_ref.get("scenario_test_route"):
-            from Api.m5_battery_contract import RULE_PACKAGE
-
-            dependencies["m5_battery_scenario"] = RULE_PACKAGE
-            dependencies["m5_functional_as"] = M5_BATTERY_REVIEW_PACKAGE
-    if catalog_ref and catalog_ref.get("battery_pilot") is True:
-        from Api.m5_battery_contract import RULE_PACKAGE
-
-        review_path = (battery_pilot_review_path(catalog_ref["review_package"], root=root)
-                       if "review_package" in catalog_ref else M5_BATTERY_PILOT_REVIEW_PACKAGE)
-        dependencies = {
-            **dependencies, "m5_functional_package": BATTERY_CASE_PACKAGE,
-            "m5_functional_runtime": BATTERY_RULE_PACKAGE, "m5_battery_scenario": RULE_PACKAGE,
-            "m5_functional_as": review_path,
-        }
+        if pilot or catalog_ref.get("scenario_test_route"):
+            review_v04 = M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]
+            if pilot:
+                review_path = (battery_pilot_review_path(catalog_ref["review_package"], root=root)
+                               if "review_package" in catalog_ref else M5_BATTERY_PILOT_REVIEW_PACKAGE)
+                if v04 != (review_path == review_v04):
+                    raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
+            else:
+                review_path = review_v04 if v04 else M5_BATTERY_REVIEW_PACKAGE
+            dependencies.update(m5_battery_scenario=scenario_path, m5_functional_as=review_path)
     if project_role is not None:
         dependencies = {**dependencies, "m5_educational_role_interactions": PROJECT_ROLE_PROMPT}
     snapshot = deepcopy(_dependency_snapshot(root, tuple(sorted(dependencies.items()))))

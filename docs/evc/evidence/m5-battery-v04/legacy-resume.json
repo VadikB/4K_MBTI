@@ -1,0 +1,48 @@
+{
+  "old_catalog": {
+    "id": "specialist-battery-diagnostic",
+    "db_id": 1,
+    "version": "0.7-qa",
+    "checksum": "4140ef55cd6020883b1185e9f239c543f641d57fa63c25687192f435549c34fa",
+    "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "usage_scope": "qa",
+    "package_db_id": 2,
+    "selected_case": {
+      "case_id": "CASE.SPEC.01",
+      "base_role": "specialist_expert",
+      "case_version": "v0.6",
+      "content_checksum": "4245bfefed78544675d4d5439aaf7947f16e6ccf8359840e2a61243dc852e4da"
+    },
+    "diagnostic_only": true,
+    "organization_id": 10,
+    "package_version": "0.7",
+    "package_checksum": "cd28360b366846b83b04e9c939a4dff1de3dfedbf28b8216eb444c79419d924c",
+    "runtime_rule_ref": {
+      "artifact_id": "m5-functional-personalization-runtime",
+      "rules_checksum": "61d43d47bd36da976ec14e27421fb0194e3bbe1473bbdee059c140b7f867939f",
+      "artifact_version": "1.5.0",
+      "manifest_checksum": "9318588c3232689357c6f5eeac5c100abf81dca6cbed6f31535e0fc92a881ce1"
+    },
+    "scenario_test_route": [
+      {
+        "case_id": "CASE.SPEC.01",
+        "base_role": "specialist_expert",
+        "case_version": "v0.6",
+        "content_checksum": "4245bfefed78544675d4d5439aaf7947f16e6ccf8359840e2a61243dc852e4da"
+      },
+      {
+        "case_id": "CASE.SPEC.02",
+        "base_role": "specialist_expert",
+        "case_version": "v0.7",
+        "content_checksum": "98cd3e1b3749ed86b7a5132ee15bc0db1962feed42c5a055808b44d4b3519c7f"
+      }
+    ]
+  },
+  "new_catalog": "0.8-qa",
+  "old_snapshot_equal": true,
+  "next_case": {
+    "id": "CASE.SPEC.02",
+    "version": "v0.7",
+    "checksum": "f5701d12fa743d91fd12cabe2ca7f193e5d1c7988185f66a24864b4345ceb8c0"
+  }
+}

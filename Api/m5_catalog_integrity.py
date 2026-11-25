@@ -291,13 +291,20 @@ def publish_catalog(
     plan = publication_plan(connection, package_db_id=package_db_id, case_version_ids=case_version_ids,
                             usage_scope=usage_scope, organization_id=organization_id,
                             runtime_rule_version_id=runtime_rule_version_id)
-    if review_package is not None:
-        from Api.cycle_execution_manifest import battery_pilot_review_path
+    if plan.get("battery_pilot"):
+        from Api.cycle_execution_manifest import (
+            BATTERY_V04_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES, battery_pilot_review_path,
+            battery_scenario_path,
+        )
 
-        if not plan.get("battery_pilot"):
+        v04 = battery_scenario_path(plan["package_version"]) == BATTERY_V04_SCENARIO_PACKAGE
+        path = battery_pilot_review_path(review_package) if review_package is not None else None
+        if v04 != (path == M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]):
             raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
-        battery_pilot_review_path(review_package)
-        plan["review_package"] = review_package
+        if review_package is not None:
+            plan["review_package"] = review_package
+    elif review_package is not None:
+        raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
     request = {**plan, "catalog_id": catalog_id, "catalog_version": catalog_version,
                "published_by": published_by, "decision_basis": decision_basis.strip()}
     request_hash = checksum(request)

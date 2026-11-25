@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from uuid import UUID, uuid4
 
 from Api.m5_case_runtime import checksum
@@ -26,7 +27,8 @@ def _profile_role(profile: dict) -> str:
 
 
 def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
-             catalog_db_id: int | None, usage_scope: str, battery_profile: dict | None = None) -> list[dict]:
+             catalog_db_id: int | None, usage_scope: str, battery_profile: dict | None = None,
+             battery_scenario_package: Path | None = None) -> list[dict]:
     if catalog_db_id is None:
         rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
             array_agg(t.indicator_id ORDER BY t.display_order) AS target_ids
@@ -51,7 +53,8 @@ def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
             from Api.cycle_execution_manifest import ROOT
             from Api.m5_battery_contract import RULE_PACKAGE, load_scenario, validate_profile
 
-            design = load_scenario(content, ROOT / RULE_PACKAGE, pilot=True)
+            design = load_scenario(content, battery_scenario_package or ROOT / RULE_PACKAGE,
+                                   pilot=usage_scope == "assessment")
             try:
                 validate_profile(battery_profile, design)
             except ValueError as exc:
@@ -129,9 +132,15 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
         raise ValueError("M5_CATALOG_ORGANIZATION_MISMATCH")
     if catalog_ref["m2_checksum"] != "legacy" and catalog_ref["m2_checksum"] != profile.get("provenance_json",{}).get("m2_checksum",catalog_ref["m2_checksum"]):
         raise ValueError("M5_CATALOG_M2_DEPENDENCY_MISMATCH")
+    battery_scenario_package = None
+    if catalog_ref.get("battery_pilot"):
+        from Api.cycle_execution_manifest import ROOT, battery_scenario_path
+
+        battery_scenario_package = ROOT / battery_scenario_path(catalog_ref["package_version"])
     catalog=_catalog(connection,role=role,rules=rules,planned_ids=target_ids,
                      catalog_db_id=catalog_ref["db_id"],usage_scope=usage_scope,
-                     battery_profile=profile["content_json"] if catalog_ref.get("battery_pilot") else None)
+                     battery_profile=profile["content_json"] if catalog_ref.get("battery_pilot") else None,
+                     battery_scenario_package=battery_scenario_package)
     route, uncovered = ranked_route(catalog, targets)
     overrides={name:value for name,value in {
         "time_budget_seconds":time_budget_seconds,"calendar_window_seconds":calendar_window_seconds}.items()

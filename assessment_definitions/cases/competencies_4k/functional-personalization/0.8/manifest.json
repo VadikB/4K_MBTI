@@ -1,0 +1,129 @@
+{
+  "artifacts": [
+    {
+      "name": "case-package.json",
+      "sha256": "0b7fbd4d95c1e12188a54ac96088f96457aa00ea68c0949a0655c685400cf7e1"
+    },
+    {
+      "name": "case.schema.json",
+      "sha256": "1d40767cc8cd2119057bcb6cdd576b8330f2df7f742e3ec5beeb4a08f3619fb4"
+    },
+    {
+      "name": "execution-rules.json",
+      "sha256": "e8512ec91315730fc369f1add1a32f4f0b9e4b81f70ae3551fef73992cce0a83"
+    },
+    {
+      "name": "passport-index.json",
+      "sha256": "b94f6ca42e56747d0aa099465370f7ef5dfbf57014ae9221e99e76e3bb3afdd4"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_01_v0.7_WORKING.json",
+      "sha256": "ff1d20f719141de06d2635d165d57d94b0f1feb4696d7011f040072eca2b4685"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_02_v0.7_WORKING.json",
+      "sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_03_v0.5_WORKING.json",
+      "sha256": "0ff7e2c0893badbabe5443d1bc9cc366adef3abcac5ae9795fd079e70dc0d0c1"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_04_v0.7_WORKING.json",
+      "sha256": "4ca89df32ea68e0bdaa8df2b710088a054a223548eb00da039d07d89ec6cb411"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_05_v0.6_WORKING.json",
+      "sha256": "2833de56142e89dcd5a4d77f9bac62946fb7f054b1838dba39f46c5012389af6"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_06_v0.5_WORKING.json",
+      "sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_07_v0.6_WORKING.json",
+      "sha256": "b657f72583bcfff182edc47b5e5354b542c21759ac5aa9acad2d1b1d8312e49f"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_08_v0.6_WORKING.json",
+      "sha256": "9e17c33cbad8d2aa83b89425289ae2d246fd1a194bd7c794b72d7f6dfc2c15cb"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_09_v0.6_WORKING.json",
+      "sha256": "60f065faf31b8b97779c894d7b1e93f229942109babe4b070bb1f5c4c42526ec"
+    },
+    {
+      "name": "sources/manifest.json",
+      "sha256": "794a28482ea05efd47117c82daee64e686f0c41830c740e011c2568619f55663"
+    },
+    {
+      "name": "verification-report.json",
+      "sha256": "59653eed258c83707f4c9e2e48f60d829f6e2a709a44d1c2a5e8201fd27cb7f5"
+    }
+  ],
+  "as_contract_ref": {
+    "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+    "id": "m5-functional-as",
+    "version": "2.0.0"
+  },
+  "battery_source": {
+    "file": "sources/manifest.json",
+    "provenance": {
+      "archive": "M5_Battery_v04.zip",
+      "battery_archive_sha256": "13210c5be34e8fa7f784ee30c21156607a1bc94233a06828bd72be0caf07a74e",
+      "battery_manifest_sha256": "794a28482ea05efd47117c82daee64e686f0c41830c740e011c2568619f55663",
+      "methodology": "M5.Methodology v1.2 FROZEN §§6.7–6.9; M5.CasePassport v1.2 FROZEN, поля 16–18, 21–22; Product 4K v1.0 Change 01 И-3/И-4/И-6",
+      "source_basis": {
+        "case_type_catalog": {
+          "library_file_id": "libfile_d5dc30641fd48191ad69bf1245094259",
+          "version": "v1.0"
+        },
+        "m2_versions": {
+          "K1": "v1.1",
+          "K2": "v1.0",
+          "K3": "v1.1",
+          "K4": "v1.0"
+        },
+        "passport_template": {
+          "current": false,
+          "library_file_id": "libfile_fde3_f-1a61093c228c81919c856b2eeaa0af01_d45b765f9f6c8191a5c71b065febd7de",
+          "library_version": "2",
+          "status": "WORKING",
+          "version": "v1.2"
+        },
+        "previous_battery": {
+          "library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de",
+          "version": "v0.3"
+        },
+        "task": {
+          "name": "M5_Case_2_0_Specialist_TZ_WORKING.md",
+          "sha256": "b97e99705e004e8e5994596efbf2d7710ac6f97567d22f170147222015988587"
+        }
+      }
+    },
+    "sha256": "794a28482ea05efd47117c82daee64e686f0c41830c740e011c2568619f55663"
+  },
+  "compiler": {
+    "id": "m5-functional-json-compiler",
+    "source_schema_profile": "functional-passport-v1.2",
+    "version": "0.7.0"
+  },
+  "dependencies": {
+    "m2": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "m3": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+  },
+  "diagnostic_only": true,
+  "id": "m5-functional-personalization-cases",
+  "prompt_package": {
+    "checksum": "692c7704fe0cc028778c21d555dd262e8c31030bb0227f2f1016490cff54b273",
+    "id": "m5-functional-passport",
+    "path": "assessment_definitions/prompts/m5_functional_passport/v3",
+    "version": "3.0.0"
+  },
+  "runtime_enabled": false,
+  "runtime_rule_version": "1.7.0",
+  "schema_version": 5,
+  "source_status": "WORKING",
+  "status": "draft",
+  "version": "0.8"
+}

@@ -1,0 +1,1342 @@
+{
+  "scope": "SYNTHETIC isolated database only",
+  "catalog": {
+    "id": 3,
+    "catalog_id": "synthetic-specialist-pilot",
+    "catalog_version": "1.4",
+    "status": "published",
+    "manifest": {
+      "catalog_id": "synthetic-specialist-pilot",
+      "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+      "package_ref": {
+        "id": "m5-functional-personalization-cases",
+        "version": "0.8-pilot.1",
+        "checksum": "221d5bb76ee9831d09d5e970f5c70b3f78ded9ef6b25a839b5da88765d5d574f"
+      },
+      "usage_scope": "assessment",
+      "battery_pilot": true,
+      "review_package": {
+        "id": "m5-functional-passport",
+        "path": "assessment_definitions/prompts/m5_functional_passport/v7",
+        "version": "7.0.0",
+        "checksum": "36d025d22b0773981e461337fe91c98d9926ce07af5ae157d2e933cc1a9a593a"
+      },
+      "schema_version": 1,
+      "catalog_version": "1.4",
+      "organization_id": 10,
+      "case_version_ids": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "runtime_rule_ref": {
+        "artifact_id": "m5-functional-personalization-runtime",
+        "rules_checksum": "71308bdf17e4b649d830af5785c4096e45054b4add34d117959cd469f292b4be",
+        "artifact_version": "1.7.1",
+        "manifest_checksum": "a4c200ada5c31aabe62deba00514c2d59681988ab3d684de68952564005524ff"
+      },
+      "case_type_catalog_ref": {
+        "id": "m5-case-type-catalog",
+        "version": "1.0",
+        "checksum": "d748e390933a45eabca44f305027f757c7568a6c4ef343ee5bc7f104c210b7c0"
+      }
+    },
+    "manifest_checksum": "79221092d7d9f9ec977ec5536db04f9927e6043d6161ca0fca38d841ee601796"
+  },
+  "runtime_ref": {
+    "id": "m5-functional-personalization-runtime",
+    "version": "1.7.0",
+    "manifest_checksum": "35cfae0dea90e1b17e12778b51b90e0214123d99b411f72e2910bae689bb0d43"
+  },
+  "review_ref": {
+    "id": "m5-functional-passport",
+    "version": "7.0.0",
+    "checksum": "36d025d22b0773981e461337fe91c98d9926ce07af5ae157d2e933cc1a9a593a",
+    "path": "assessment_definitions/prompts/m5_functional_passport/v7"
+  },
+  "scenario_ref": {
+    "id": "m5-battery-scenario",
+    "version": "1.8.0",
+    "checksum": "3bacb1ee55c21bcc88784ceb8d13f7275067d338b590da21edbc97f8c5597631"
+  },
+  "cycle_manifest_checksum": "305a545e5bae14ebdc6adfd477736b414bdd354a6d628166bebbd9d6f256cfba",
+  "assignments": 55,
+  "targets": [
+    {
+      "indicator_id": "K1.I01",
+      "m2_version": "v1.1",
+      "skill_id": "K1.1",
+      "component_id": "K1.C01"
+    },
+    {
+      "indicator_id": "K1.I06",
+      "m2_version": "v1.1",
+      "skill_id": "K1.2",
+      "component_id": "K1.C03"
+    },
+    {
+      "indicator_id": "K1.I09",
+      "m2_version": "v1.1",
+      "skill_id": "K1.2",
+      "component_id": "K1.C04"
+    },
+    {
+      "indicator_id": "K1.I11",
+      "m2_version": "v1.1",
+      "skill_id": "K1.2",
+      "component_id": "K1.C05"
+    },
+    {
+      "indicator_id": "K1.I13",
+      "m2_version": "v1.1",
+      "skill_id": "K1.3",
+      "component_id": "K1.C07"
+    },
+    {
+      "indicator_id": "K1.I14",
+      "m2_version": "v1.1",
+      "skill_id": "K1.3",
+      "component_id": "K1.C07"
+    },
+    {
+      "indicator_id": "K1.I15",
+      "m2_version": "v1.1",
+      "skill_id": "K1.4",
+      "component_id": "K1.C08"
+    },
+    {
+      "indicator_id": "K1.I16",
+      "m2_version": "v1.1",
+      "skill_id": "K1.4",
+      "component_id": "K1.C09"
+    },
+    {
+      "indicator_id": "K1.I17",
+      "m2_version": "v1.1",
+      "skill_id": "K1.4",
+      "component_id": "K1.C09"
+    },
+    {
+      "indicator_id": "K2.I01",
+      "m2_version": "v1.0",
+      "skill_id": "K2.1",
+      "component_id": "K2.C01"
+    },
+    {
+      "indicator_id": "K2.I02",
+      "m2_version": "v1.0",
+      "skill_id": "K2.1",
+      "component_id": "K2.C01"
+    },
+    {
+      "indicator_id": "K2.I06",
+      "m2_version": "v1.0",
+      "skill_id": "K2.1",
+      "component_id": "K2.C03"
+    },
+    {
+      "indicator_id": "K2.I07",
+      "m2_version": "v1.0",
+      "skill_id": "K2.2",
+      "component_id": "K2.C04"
+    },
+    {
+      "indicator_id": "K2.I08",
+      "m2_version": "v1.0",
+      "skill_id": "K2.2",
+      "component_id": "K2.C05"
+    },
+    {
+      "indicator_id": "K2.I10",
+      "m2_version": "v1.0",
+      "skill_id": "K2.3",
+      "component_id": "K2.C07"
+    },
+    {
+      "indicator_id": "K2.I13",
+      "m2_version": "v1.0",
+      "skill_id": "K2.3",
+      "component_id": "K2.C09"
+    },
+    {
+      "indicator_id": "K2.I14",
+      "m2_version": "v1.0",
+      "skill_id": "K2.3",
+      "component_id": "K2.C09"
+    },
+    {
+      "indicator_id": "K3.I01",
+      "m2_version": "v1.1",
+      "skill_id": "K3.1",
+      "component_id": "K3.C01"
+    },
+    {
+      "indicator_id": "K3.I02",
+      "m2_version": "v1.1",
+      "skill_id": "K3.1",
+      "component_id": "K3.C01"
+    },
+    {
+      "indicator_id": "K3.I03",
+      "m2_version": "v1.1",
+      "skill_id": "K3.1",
+      "component_id": "K3.C02"
+    },
+    {
+      "indicator_id": "K3.I06",
+      "m2_version": "v1.1",
+      "skill_id": "K3.2",
+      "component_id": "K3.C03"
+    },
+    {
+      "indicator_id": "K3.I07",
+      "m2_version": "v1.1",
+      "skill_id": "K3.2",
+      "component_id": "K3.C05"
+    },
+    {
+      "indicator_id": "K3.I09",
+      "m2_version": "v1.1",
+      "skill_id": "K3.3",
+      "component_id": "K3.C06"
+    },
+    {
+      "indicator_id": "K3.I10",
+      "m2_version": "v1.1",
+      "skill_id": "K3.3",
+      "component_id": "K3.C07"
+    },
+    {
+      "indicator_id": "K3.I11",
+      "m2_version": "v1.1",
+      "skill_id": "K3.3",
+      "component_id": "K3.C08"
+    },
+    {
+      "indicator_id": "K4.I02",
+      "m2_version": "v1.0",
+      "skill_id": "K4.1",
+      "component_id": "K4.C01"
+    },
+    {
+      "indicator_id": "K4.I03",
+      "m2_version": "v1.0",
+      "skill_id": "K4.1",
+      "component_id": "K4.C02"
+    },
+    {
+      "indicator_id": "K4.I05",
+      "m2_version": "v1.0",
+      "skill_id": "K4.1",
+      "component_id": "K4.C03"
+    },
+    {
+      "indicator_id": "K4.I06",
+      "m2_version": "v1.0",
+      "skill_id": "K4.1",
+      "component_id": "K4.C03"
+    },
+    {
+      "indicator_id": "K4.I07",
+      "m2_version": "v1.0",
+      "skill_id": "K4.2",
+      "component_id": "K4.C04"
+    },
+    {
+      "indicator_id": "K4.I08",
+      "m2_version": "v1.0",
+      "skill_id": "K4.2",
+      "component_id": "K4.C04"
+    },
+    {
+      "indicator_id": "K4.I10",
+      "m2_version": "v1.0",
+      "skill_id": "K4.2",
+      "component_id": "K4.C05"
+    },
+    {
+      "indicator_id": "K4.I12",
+      "m2_version": "v1.0",
+      "skill_id": "K4.3",
+      "component_id": "K4.C07"
+    },
+    {
+      "indicator_id": "K4.I13",
+      "m2_version": "v1.0",
+      "skill_id": "K4.3",
+      "component_id": "K4.C07"
+    },
+    {
+      "indicator_id": "K4.I14",
+      "m2_version": "v1.0",
+      "skill_id": "K4.3",
+      "component_id": "K4.C08"
+    },
+    {
+      "indicator_id": "K4.I15",
+      "m2_version": "v1.0",
+      "skill_id": "K4.4",
+      "component_id": "K4.C09"
+    },
+    {
+      "indicator_id": "K4.I16",
+      "m2_version": "v1.0",
+      "skill_id": "K4.4",
+      "component_id": "K4.C10"
+    },
+    {
+      "indicator_id": "K4.I17",
+      "m2_version": "v1.0",
+      "skill_id": "K4.4",
+      "component_id": "K4.C10"
+    },
+    {
+      "indicator_id": "K4.I18",
+      "m2_version": "v1.0",
+      "skill_id": "K4.4",
+      "component_id": "K4.C10"
+    }
+  ],
+  "profiles": {
+    "mandate_confirmed": {
+      "catalog": [
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "eligible": true,
+          "reasons": []
+        }
+      ],
+      "route": [
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I02",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I01",
+            "K3.I07",
+            "K4.I08"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K2.I02",
+            "K4.I15"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I11"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        }
+      ]
+    },
+    "mandate_missing": {
+      "catalog": [
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "eligible": false,
+          "reasons": [
+            "M5_BATTERY_PROFILE_CLARIFICATION_REQUIRED:18/professional_recommendation"
+          ]
+        }
+      ],
+      "route": [
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I02",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I01",
+            "K3.I07",
+            "K4.I08"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K2.I02",
+            "K4.I15"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I11"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        }
+      ]
+    }
+  }
+}

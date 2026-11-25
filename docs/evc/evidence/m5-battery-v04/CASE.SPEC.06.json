@@ -1,0 +1,811 @@
+{
+  "case_id": "CASE.SPEC.06",
+  "passport_version": "v0.5",
+  "passport_sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf",
+  "case_version_checksum": "f362d8aebb0f2479082c7fac30450142fc4ada665887f82b6fa6bf569f8d19a8",
+  "as_checksum": "0bb3b3d1b37e2974340aa5652efd14eddacb615e846967255d585fa2a1174e36",
+  "cycle_manifest_checksum": "b31a0146c4f121143340ed170bfdc248bc132edc222ba76ebe090e46f0d729b9",
+  "scenario_ref": {
+    "id": "m5-battery-scenario",
+    "version": "1.8.0",
+    "checksum": "3bacb1ee55c21bcc88784ceb8d13f7275067d338b590da21edbc97f8c5597631"
+  },
+  "review_package": {
+    "id": "m5-functional-passport",
+    "version": "7.0.0",
+    "checksum": "36d025d22b0773981e461337fe91c98d9926ce07af5ae157d2e933cc1a9a593a",
+    "path": "assessment_definitions/prompts/m5_functional_passport/v7"
+  },
+  "prepared_as_contract_ref": {
+    "id": "m5-functional-as",
+    "version": "2.1.0",
+    "checksum": "6ed271ae23ab2afbf0cb580ccb2ca0778df100d1d83fd61477ee67d5e3dc813c"
+  },
+  "synthetic_gateway": true,
+  "live_model": "NOT_RUN",
+  "control": "Три стороны ответили по своим функциям. Подтверждён вклад C1 в подготовку, совместная проба ещё не проведена.",
+  "opening_material_ids": [
+    "P00",
+    "M01",
+    "M02",
+    "M03"
+  ],
+  "materials": [
+    {
+      "MaterialID": "P00",
+      "Название": "Вводная и инструкция к обсуждению",
+      "Текст": "Вы — специалист по учебной аналитике Учебного бюро 06. Ваша роль — вести обсуждение ограниченной профессиональной пробы и согласовывать вклады сторон; распорядительной власти у вас нет, вы действуете через экспертизу и согласование.\n\nВ общем рабочем чате с вами участвуют три стороны:\n— Владелец средства или процедуры (C1);\n— Заказчик рабочего результата (C2);\n— Представитель следующего решения (C3).\n\nПредмет обсуждения — одна общая ограниченная проба внутренней процедуры регистрации обращений. Срок предварительной договорённости — 3 рабочих дня. Ресурс — одна проба одного предмета; три независимые пробы и полная доказательная проверка в ресурс не помещаются.\n\nЗадание: «Обсудите со сторонами предварительный замысел одной общей пробы. Предложите следующее рабочее действие и укажите, что удалось согласовать. Можно продолжать обсуждение, зафиксировать частичную договорённость или завершить с обоснованным отказом от запуска. Полный протокол не требуется».\n\nВам доступны материалы M01 (общие ресурсные условия одной пробы), M02 (различающиеся ожидания трёх сторон) и M03 (исходное наблюдение и открытые границы вывода). Ознакомьтесь с ними перед первым сообщением.\n\nВсе имена, данные и события вымышлены. Поиск внешних данных и выполнение пробы в рамках этой ситуации не требуются."
+    },
+    {
+      "MaterialID": "M01",
+      "Название": "Общие ресурсные условия одной пробы",
+      "Текст": "Ресурс: одна ограниченная проба одного предмета — внутренней процедуры регистрации обращений.\n\nСроки и окна:\n— Срок предварительной договорённости сторон — 3 рабочих дня с момента старта обсуждения.\n— Окно подготовки средства или процедуры (C1) — вторник, 10:00–14:00.\n— Два окна участия работников (C2): среда, 09:00–12:00 и четверг, 09:00–12:00. Работники в чате не участвуют.\n— Допустимая длительность пробы — не более 3 часов в один рабочий день.\n— Срок рассмотрения оснований (C3) — до конца пятницы той же недели.\n\nДоступные рабочие примеры и данные: журнал регистрации обращений за прошлый вторник (40 обращений) и журнал за день пробы.\n\nГраницы: дополнительные группы, отдельные пробы и полная доказательная проверка в ресурс не помещаются. Окна — это границы доступности, по которым владелец может обсуждать конкретный вклад; они не равны согласию на предложенную схему. Готовый график, распределение задач и чужие обязательства здесь не заданы."
+    },
+    {
+      "MaterialID": "M02",
+      "Название": "Различающиеся ожидания трёх сторон",
+      "Текст": "Три исходные позиции по одному предмету — одной общей пробе процедуры регистрации.\n\nC1, владелец средства или процедуры: «Для меня приоритет — работоспособность процедуры в конкретных условиях. Мне важно убедиться, что процедура выполняется так, как задумано, при заданных условиях. Полезность для рабочего задания и основания следующего решения — не мой предмет, это подтверждают другие стороны».\n\nC2, заказчик рабочего результата: «Для меня смысл пробы — польза для реальной рабочей задачи при допустимой нагрузке. Мне недостаточно того, что процедура технически работает: нужно видеть, что она снижает лишнюю работу. Основания следующего решения и подготовку процедуры я не подтверждаю — это не мой мандат».\n\nC3, представитель следующего решения: «Мне нужно понятное основание для следующего рассмотрения. Работоспособность и полезность сами по себе не дают мне пригодного вывода. Ресурс C1 и C2 я не выделяю и полученный эффект без данных не подтверждаю».\n\nИсходные высказывания расходятся по признаку результата и не составляют согласованного определения успеха. Объединяющий план, отметка общего согласия или готовый итог здесь не даны."
+    },
+    {
+      "MaterialID": "M03",
+      "Название": "Исходное наблюдение и открытые границы вывода",
+      "Текст": "Исходное наблюдение: по журналу регистрации за прошлый вторник из 40 обращений 14 (35%) потребовали повторного обращения по той же причине в течение рабочего дня. Источник — внутренний журнал регистрации; объём — один рабочий день; условия — действующая процедура без изменений; статус — единичное наблюдение.\n\nОриентир одной из сторон: C2 считает желательным «не более 5 повторных обращений за день». Это ориентир C2, а не результат и не общий порог решения.\n\nДоступный след будущего ограниченного наблюдения: журнал регистрации за день пробы в заданных условиях. Существенные ограничения сопоставимости и повторяемости остаются открытыми: база за один день, условия дня пробы могут отличаться, повторяемость не установлена, причинный эффект процедуры не доказан.\n\nРезультаты будущей пробы и её эффект до начала неизвестны всем сторонам. Готовый метод проверки, общий критерий успеха и формулировка причинного вывода здесь не предложены."
+    }
+  ],
+  "turns": [
+    {
+      "input": "Что каждая сторона может подготовить для общей пробы?",
+      "events": [
+        {
+          "type": "character_response",
+          "model": "deepseek-flash",
+          "adapter": "deepseek",
+          "response": "C1: это пока не подтверждено.",
+          "prompt_ref": {
+            "id": "m5_character_response",
+            "path": "assessment_definitions/prompts/m5_character_response/v2",
+            "version": "v2",
+            "checksum": "177675ea4bb921c61da9dd97c67b776d372ab7ffd1c19eedc75d214d9c088384"
+          },
+          "speaker_id": "C1",
+          "recipient_ids": [
+            "C2",
+            "C3",
+            "assessee"
+          ],
+          "controlled_test": false,
+          "scenario_event_id": "E01_DISCUSS",
+          "scenario_event_ids": [
+            "E01_DISCUSS"
+          ]
+        },
+        {
+          "type": "character_response",
+          "model": "deepseek-flash",
+          "adapter": "deepseek",
+          "response": "C2: это пока не подтверждено.",
+          "prompt_ref": {
+            "id": "m5_character_response",
+            "path": "assessment_definitions/prompts/m5_character_response/v2",
+            "version": "v2",
+            "checksum": "177675ea4bb921c61da9dd97c67b776d372ab7ffd1c19eedc75d214d9c088384"
+          },
+          "speaker_id": "C2",
+          "recipient_ids": [
+            "C1",
+            "C3",
+            "assessee"
+          ],
+          "controlled_test": false,
+          "scenario_event_id": "E01_DISCUSS",
+          "scenario_event_ids": [
+            "E01_DISCUSS"
+          ]
+        },
+        {
+          "type": "character_response",
+          "model": "deepseek-flash",
+          "adapter": "deepseek",
+          "response": "C3: это пока не подтверждено.",
+          "prompt_ref": {
+            "id": "m5_character_response",
+            "path": "assessment_definitions/prompts/m5_character_response/v2",
+            "version": "v2",
+            "checksum": "177675ea4bb921c61da9dd97c67b776d372ab7ffd1c19eedc75d214d9c088384"
+          },
+          "speaker_id": "C3",
+          "recipient_ids": [
+            "C1",
+            "C2",
+            "assessee"
+          ],
+          "controlled_test": false,
+          "scenario_event_id": "E01_DISCUSS",
+          "scenario_event_ids": [
+            "E01_DISCUSS"
+          ]
+        }
+      ]
+    },
+    {
+      "input": "C1, возьмёте подготовку?",
+      "events": [
+        {
+          "type": "character_response",
+          "model": "deepseek-flash",
+          "adapter": "deepseek",
+          "response": "Подготовку беру. Пробу пока не проводили.",
+          "prompt_ref": {
+            "id": "m5_character_response",
+            "path": "assessment_definitions/prompts/m5_character_response/v2",
+            "version": "v2",
+            "checksum": "177675ea4bb921c61da9dd97c67b776d372ab7ffd1c19eedc75d214d9c088384"
+          },
+          "speaker_id": "C1",
+          "recipient_ids": [
+            "assessee"
+          ],
+          "controlled_test": false,
+          "scenario_event_id": "E01_ACCEPT",
+          "scenario_event_ids": [
+            "E01_ACCEPT"
+          ]
+        }
+      ]
+    },
+    {
+      "input": "Сдаю текущий результат. На этом заканчиваю. Уточнения потом?",
+      "events": [
+        {
+          "type": "scenario_completed",
+          "status": "scenario_ended",
+          "scenario_event_id": "SCENARIO_COMPLETION"
+        }
+      ]
+    }
+  ],
+  "review": {
+    "tester": [
+      {
+        "check_id": "common.professional_consistency",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "common.authority",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "common.confidentiality",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "common.independent_observation",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "quality.clarity",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I01",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I02",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:01:e35b0d355ff5"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I03",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I04",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I05",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "indicator:K2.I02",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/0"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K2.I02"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "indicator:K2.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/1"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K2.I06"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "indicator:K2.I14",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/2"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K2.I14"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "indicator:K3.I09",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/3"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K3.I09"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:02:856fe42abcb4"
+      },
+      {
+        "check_id": "indicator:K4.I15",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/4"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I15"
+        },
+        "batch_no": 3,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:tester:03:5acd74582792"
+      }
+    ],
+    "challenger": [
+      {
+        "check_id": "common.professional_consistency",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "common.authority",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "common.confidentiality",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "common.independent_observation",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "quality.clarity",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I01",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I02",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:01:6db742e33a85"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I03",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I04",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I05",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.06.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "indicator:K2.I02",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/0"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K2.I02"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "indicator:K2.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/1"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K2.I06"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "indicator:K2.I14",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/2"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K2.I14"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "indicator:K3.I09",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/3"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K3.I09"
+        },
+        "batch_no": 2,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:02:f7106155a4b1"
+      },
+      {
+        "check_id": "indicator:K4.I15",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/4"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I15"
+        },
+        "batch_no": 3,
+        "operation_id": "a471b412-4e5d-453c-b489-27995d5a8aff:challenger:03:525d60f3b59f"
+      }
+    ]
+  },
+  "server": {
+    "status": "PASS",
+    "admitted_for_participant": true,
+    "deterministic_failures": [],
+    "deterministic_protocol_errors": [],
+    "blocking_failures": [],
+    "incomplete_checks": [],
+    "verification_errors": [],
+    "review_required": [],
+    "warnings": []
+  },
+  "c45": {
+    "contract": "C-45",
+    "boundary": {
+      "turn_ids": [
+        "2462500a-3bca-48d5-be02-2b1f043f584d",
+        "2d916352-a657-4896-84c4-65666d6c8d2f",
+        "f6e23254-e700-44b5-b51b-e90f74f93ac7",
+        "6d6d0037-32cb-47ff-bb2f-7d663b84c4b4",
+        "f32af6be-bcdb-489d-bbeb-a4cf1bd4438a",
+        "bb50cf5d-1861-449e-9389-3916eec69572",
+        "409bb46f-be66-480b-9788-e1bf76fa83fd"
+      ],
+      "event_ids": [
+        "97b9b93a-3f51-45ea-888b-57f20f6fcb9a",
+        "ce87c7f8-91d9-4360-8c32-0550d4dc5ab8",
+        "94a8dc84-d58e-4d04-8601-ad7ea61422b0",
+        "5e6fbc6d-382d-4d48-a002-00e8e4fe0d45",
+        "582c6883-2fe3-42a9-b5ad-7a6e16c1bdb5",
+        "8764be56-c8da-4905-bd11-c4e1acfdb32c",
+        "82fdf18b-2a53-4d34-aaba-99418a876199",
+        "3d418465-a15f-4a9d-90d7-935a6ad6dacc",
+        "133d6acf-b157-41a7-9c17-c326d4ac3bfa",
+        "7c7cfc6e-55a3-4889-81f8-4a5f895e6985",
+        "eb050e86-659f-41ec-83bd-990fb567584f"
+      ],
+      "inclusive_sequence": 18
+    },
+    "case_ref": {
+      "id": "CASE.SPEC.06",
+      "version": "v0.5",
+      "checksum": "84f1dcb081116e7c260f36953560480a8cd8fe8aaa51a0ea81dcb45a61c25c8d"
+    },
+    "conditional_opportunities": [
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E01_DISCUSS",
+          "E01_ACCEPT",
+          "E01_HOLD"
+        ],
+        "indicator_id": "K2.I02",
+        "occurred_event_refs": [
+          "E01_DISCUSS",
+          "E01_ACCEPT"
+        ],
+        "occurred_material_refs": [
+          "M02"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E01_DISCUSS",
+          "E01_ACCEPT",
+          "E01_HOLD"
+        ],
+        "indicator_id": "K2.I06",
+        "occurred_event_refs": [
+          "E01_DISCUSS",
+          "E01_ACCEPT"
+        ],
+        "occurred_material_refs": [
+          "M01",
+          "M02"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E01_DISCUSS",
+          "E01_ACCEPT",
+          "E01_HOLD",
+          "SCENARIO_COMPLETION"
+        ],
+        "indicator_id": "K2.I14",
+        "occurred_event_refs": [
+          "E01_DISCUSS",
+          "E01_ACCEPT",
+          "SCENARIO_COMPLETION"
+        ],
+        "occurred_material_refs": [
+          "M02"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E01_DISCUSS"
+        ],
+        "indicator_id": "K3.I09",
+        "occurred_event_refs": [
+          "E01_DISCUSS"
+        ],
+        "occurred_material_refs": [
+          "P00",
+          "M01",
+          "M03"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_LIMIT",
+          "SCENARIO_COMPLETION"
+        ],
+        "indicator_id": "K4.I15",
+        "occurred_event_refs": [
+          "SCENARIO_COMPLETION"
+        ],
+        "occurred_material_refs": [
+          "M01",
+          "M02",
+          "M03"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "case_after_next": {
+    "id": "CASE.SPEC.02",
+    "version": "v0.7",
+    "checksum": "73b6871ecc4d7ad46ebcdd784898e42cba0dae9c755a3fd42bc792361b1d2bbe"
+  },
+  "case_id": "CASE.SPEC.01",
+  "early_final_events": [
+    {
+      "id": 4,
+      "assessment_situation_db_id": 1,
+      "event_id": "6d87a29c-828f-4103-a4c2-9a3652e23794",
+      "event_type": "scenario_completed",
+      "event_key": "transition:turn:0f323637-c7a4-4b74-a087-78fbfca15eda",
+      "cause_json": {
+        "to": "scenario_ended",
+        "from": "active",
+        "reason": "participant_final_submission"
+      },
+      "material_id": null,
+      "payload_json": {
+        "status": "scenario_ended",
+        "scenario_event_id": "SCENARIO_COMPLETION"
+      },
+      "sequence_no": 5,
+      "created_at": "2026-11-25T19:38:38.294991+03:00"
+    }
+  ],
+  "early_final_m02": "absent",
+  "replay": true,
+  "missing_mandate": "M5_BATTERY_PROFILE_CLARIFICATION_REQUIRED:18/professional_recommendation",
+  "missing_mandate_provider_calls": 0
+}

@@ -57,9 +57,20 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
                 or row["kind"] not in {"reply", "delivery", "transfer", "forward", "transfer_reply"}):
             raise missing(case_id, version, f"17.3/{row['id']}→scenario rule")
     material_by_id = {row["ID"]: row for row in materials}
+    material_sections = overlay.get("material_sections", {})
+    for material_id, headings in material_sections.items():
+        if (material_id not in material_ids - fact_ids or not isinstance(headings, list) or not headings
+                or any(not isinstance(heading, str) or not heading.strip() or "\n" in heading for heading in headings)
+                or len(set(headings)) != len(headings)):
+            raise missing(case_id, version, f"17.2/{material_id}/sections")
     for key, role in roles.items():
         if not set(role["known_material_ids"] + role.get("partial_material_ids", [])) <= material_ids - fact_ids:
             raise missing(case_id, version, f"17.2/{key}/Кому известно до начала")
+        for material_id, allowed in role.get("known_material_sections", {}).items():
+            if (material_id not in role.get("partial_material_ids", ()) or material_id in role["known_material_ids"]
+                    or not isinstance(allowed, list) or not allowed or len(allowed) != len(set(allowed))
+                    or not set(allowed) < set(material_sections.get(material_id, ()))):
+                raise missing(case_id, version, f"17.2/{material_id}/{key}/sections")
     opening = overlay["opening"]
     if opening and (opening["speaker_id"] not in roles or opening["material_id"] not in start["Последовательность предъявления"]):
         raise missing(case_id, version, "17.1/Первая реплика")
@@ -96,12 +107,30 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
         "instructions": package["instructions"],
         "observability_references": locations,
         "roles": role_sources,
+        **({"material_sections": material_sections} if material_sections else {}),
         "events": [
             {**row, "passport": event_by_id[row["id"]],
              "source": case["passport_sources"][f"17.3/{row['id']}"]}
             for row in settings
         ],
     }
+
+
+def _material_sections(text: str, headings: list[str]) -> dict[str, str]:
+    sections: dict[str, list[str]] = {}
+    heading = None
+    for line in text.splitlines():
+        if line.strip() in headings:
+            heading = line.strip()
+            if heading in sections:
+                return {}
+            sections[heading] = []
+        elif heading is not None:
+            sections[heading].append(line)
+        elif line.strip():
+            return {}
+    result = {key: "\n".join(lines).strip() for key, lines in sections.items()}
+    return result if list(result) == headings and all(result.values()) else {}
 
 
 def validate_profile(profile: dict, design: dict) -> None:
@@ -237,6 +266,11 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
                      {"fields": sorted(expected_fields), "non_empty_text_fields": list(required_text)},
                      "Запись должна содержать поля контракта и непустой текст.")
             record_missing(row_path, expected_fields, row)
+    for material_id, headings in design.get("material_sections", {}).items():
+        text = indexed["Материалы"].get(material_id, {}).get("Текст")
+        validate("battery_material_sections", isinstance(text, str) and bool(_material_sections(text, headings)),
+                 f"candidate_as/Материалы/{material_id}/Текст", None, headings,
+                 "Разделы с разными правами знания должны иметь точные заголовки, порядок и непустой текст.")
     if not detailed:  # Preserve the substring check for the frozen 02 protocol.
         documents = indexed["Материалы"]
         closed = [row for key, row in documents.items() if key not in design["start_ids"]]
@@ -288,6 +322,14 @@ def compile_candidate(snapshot: dict, candidate: dict, checksum: str) -> tuple[d
     opening = design["opening"]
     visible_docs = [key for key in design["start_ids"] if not opening or key != opening["material_id"]]
     materials = {row["MaterialID"]: (index, row) for index, row in enumerate(candidate["Материалы"])}
+    scoped_materials = {}
+    for speaker, role in design["roles"].items():
+        for material_id, headings in role.get("known_material_sections", {}).items():
+            document = materials[material_id][1]
+            sections = _material_sections(document["Текст"], design["material_sections"][material_id])
+            scoped_materials.setdefault(speaker, []).append({
+                **document, "Текст": "\n\n".join(f"{heading}\n{sections[heading]}" for heading in headings),
+            })
     case["materials"] = [
         {"material_id": key, "order": order, "content": materials[key][1],
          "participant_visible_initially": key in visible_docs,
@@ -316,6 +358,7 @@ def compile_candidate(snapshot: dict, candidate: dict, checksum: str) -> tuple[d
     runtime = {
         "case_version": case["version"], "characters": case["characters"], "materials": [], "scenario": [],
         "battery_scenario": {**design, "concrete_materials": {key: row for key, (_, row) in materials.items()},
+                             **({"scoped_materials": scoped_materials} if scoped_materials else {}),
                              "concrete_facts": {row["FactID"]: row["Текст"] for row in candidate["Закрытые фиксированные факты"]}},
     }
     return prepared, {"schema_version": 2, "cases": {case["case_id"]: runtime}}

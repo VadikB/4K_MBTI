@@ -18,9 +18,13 @@ PROTECTED_CATEGORIES = {"invariant", "indicator_observability", "authority", "co
 PATH_STEP = re.compile(r"""\.([^.[\]]+)|\[("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]'"]+)\]""")
 SERVER_BOUND_PROTOCOL = "3.1.0"
 EXPLICIT_REVIEW_BATCH_PROTOCOL = "3.2.0"
+BATTERY_V04_REVIEW_PROTOCOL = "3.3.0"
+EXPLICIT_REVIEW_BATCH_PROTOCOLS = {EXPLICIT_REVIEW_BATCH_PROTOCOL, BATTERY_V04_REVIEW_PROTOCOL}
+BATTERY_REVIEW_SCOPES = {"battery_v0.3_qa", "battery_v0.4_qa"}
 SERVER_BOUND_REVIEW_PACKAGES = {
     SERVER_BOUND_PROTOCOL: "5.0.0",
     EXPLICIT_REVIEW_BATCH_PROTOCOL: "6.0.0",
+    BATTERY_V04_REVIEW_PROTOCOL: "7.0.0",
 }
 CANDIDATE_COLLECTION_IDS = {
     "Материалы": "MaterialID", "События": "EventID", "Активные персонажи": "CharacterID",
@@ -49,7 +53,8 @@ def load_protocol(path: Path = PROTOCOL_PATH) -> dict[str, Any]:
     content_checks = value.get("case_content_checks")
     if value["version"] == "2.1.0" and not (isinstance(content_checks, dict) and content_checks):
         raise ValueError("M5_FUNCTIONAL_TESTER_CASE_CONTENT_CHECKS_REQUIRED")
-    if expected_schema == 3 and (value.get("scope") != "battery_v0.3_qa" or not value.get("common_checks")):
+    scope = "battery_v0.4_qa" if value["version"] == BATTERY_V04_REVIEW_PROTOCOL else "battery_v0.3_qa"
+    if expected_schema == 3 and (value.get("scope") != scope or not value.get("common_checks")):
         raise ValueError("M5_BATTERY_REVIEW_PROTOCOL_INVALID")
     value["checksum"] = hashlib.sha256(raw).hexdigest()
     return value
@@ -301,7 +306,7 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
 def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: dict | None = None,
                       missing_required_paths: Iterable[str] = (), reviewer: str = "tester",
                       review_paths_version: str | None = None, passport_version: str | None = None) -> list[dict[str, Any]]:
-    battery_review = plan.get("protocol", {}).get("scope") == "battery_v0.3_qa"
+    battery_review = plan.get("protocol", {}).get("scope") in BATTERY_REVIEW_SCOPES
     updated_paths = (review_paths_version or plan.get("protocol", {}).get("version")) in SERVER_BOUND_REVIEW_PACKAGES
     fact_id_field = "ФактID" if updated_paths and passport_version == "1.1" else "FactID"
     address_options = {"mixed_paths": updated_paths, "fact_id_field": fact_id_field}

@@ -183,6 +183,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
         role_card = {"character_id": speaker, "role_card": authority,
                      "knowledge_limits": design["roles"].get(speaker, {}).get("knowledge_limits", {}), "known_facts": [
             *[documents[key] for key in sorted(known_ids)],
+            *design.get("scoped_materials", {}).get(speaker, ()),
             *[facts[key] for key in sorted(permitted_facts)],
         ]}
         rules = [event["passport"] for event, _ in selected_rules]
