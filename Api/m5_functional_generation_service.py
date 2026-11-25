@@ -678,7 +678,10 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
 def _generation_instructions(snapshot: dict) -> tuple[str, str]:
     design = snapshot.get("scenario_contract")
     if "battery_scenario" in snapshot:
-        instruction = snapshot["battery_scenario"]["instructions"]["generation"]
+        battery = snapshot["battery_scenario"]
+        instruction = battery["instructions"]["generation"]
+        if addendum := battery.get("generation_addendum"):
+            instruction = f"{instruction}\n\n{addendum}"
         contract = json.dumps(snapshot["as_contract"], ensure_ascii=False)
     elif design:
         instruction = design["candidate_contract"]["instruction"]

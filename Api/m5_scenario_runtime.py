@@ -1110,6 +1110,7 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
     events = []
     def record_transfer(rule_id, transfer):
         binding = next(rule for rule in design["events"] if rule["id"] == rule_id)
+        link = plan.link_deliveries.get(rule_id)
         message = turn
         if transfer.sender_id != "assessee":
             message = _append_character_turn(connection, row=row, speaker_id=transfer.sender_id,
@@ -1117,12 +1118,13 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
             audiences[str(message["turn_id"])] = list(transfer.recipient_ids)
         events.append(append_event(
             connection, as_db_id=row["id"], event_type="information_transferred", event_key=f"transfer:{turn_id}:{rule_id}",
-            material_id=binding["requires_material_id"],
+            material_id=link["source"]["material_id"] if link else binding["requires_material_id"],
             cause={"turn_id": turn_id, "message_turn_id": str(message["turn_id"]),
                    "decision_id": str(decisions[rule_id if transfer.sender_id == "assessee"
                                                else f"{rule_id}:accepted"]["decision_id"])},
             payload={"scenario_event_id": binding.get("record_as", rule_id), "sender_id": transfer.sender_id,
-                     "recipient_ids": list(transfer.recipient_ids), "text": transfer.text},
+                     "recipient_ids": list(transfer.recipient_ids), "text": transfer.text,
+                     **({"addressed_source": link["source"]} if link else {})},
         ))
     for rule_id, transfer in plan.transfers:
         if transfer.sender_id == "assessee":
@@ -1138,6 +1140,11 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
         if event:
             audiences[event["cause_json"]["character_turn_id"]] = list(reply.recipients)
             events.append(event)
+            if opened := reply.opened_material:
+                knowledge = state.setdefault("battery_opened_materials", [])
+                if not any(item["recipient_id"] == opened["recipient_id"] and item["source"] == opened["source"]
+                           for item in knowledge):
+                    knowledge.append({**opened, "confirmation_turn_id": event["cause_json"]["character_turn_id"]})
     for rule_id, transfer in plan.transfers:
         if transfer.sender_id != "assessee":
             record_transfer(rule_id, transfer)

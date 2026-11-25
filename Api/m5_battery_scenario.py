@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 
 from Api.m5_addressed_scenario import SemanticTurnError, Transfer, _character_text, _fragment_bounds, _ids, _unique_start
 from Api.m5_battery_contract import FACILITATOR
@@ -19,6 +20,7 @@ class Reply:
     rule_ids: tuple[str, ...]
     response: CharacterReply
     occurred_rule_ids: tuple[str, ...] | None = None
+    opened_material: dict | None = None
 
 
 @dataclass
@@ -27,6 +29,7 @@ class BatteryTurn:
     replies: list[Reply] = field(default_factory=list)
     deliveries: list[dict] = field(default_factory=list)
     transfers: list[tuple[str, Transfer]] = field(default_factory=list)
+    link_deliveries: dict[str, dict] = field(default_factory=dict)
     fragments: list[dict] = field(default_factory=list)
     ending: str | None = None
 
@@ -73,6 +76,8 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
     documents = design["concrete_materials"]
     facts = design["concrete_facts"]
     public_documents = {key: documents[key] for key in disclosed if key in documents}
+    material_source = design.get("material_source") or {}
+    linked_material = design.get("linked_material")
     context = {
         "material_ids_already_available": sorted(disclosed),
         "prior_turns": [item for item in state["dialogue_history"] if item["turn_id"] != turn_id],
@@ -128,6 +133,8 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
                      "instruction": "Для реакции выбери затронутых говорящих. Для фактов выбери только затронутые ID."
                                     " Для передачи укажи точную переданную цитату и её фактических получателей."
                                     " Для пересылки укажи адресатов конкретной просьбы и точную разрешённую цитату из уже предъявленного материала."}
+        if rule_id == material_source.get("event_id"):
+            condition["instruction"] += " Для ссылки укажи её точный адрес без окружающего текста."
         if kind == "delivery":
             shape = {"MATCH": {"required": ["speaker_ids"]}} if event.get("requires_prior_replies") else {}
         elif kind in {"transfer", "transfer_reply"}:
@@ -149,6 +156,12 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
             scoped = (_restrict_quote(plan.fragments, text, quote, recipients)
                       if _ids(recipients, selected) and isinstance(quote, str) and quote.strip() else None)
             if scoped is not None:
+                if rule_id == material_source.get("event_id") and re.search(r"[a-z][a-z0-9+.-]*://|\bwww\.", quote, re.I):
+                    if (not linked_material or quote != linked_material["source"]["link"]
+                            or not set(recipients) <= set(material_source["reader_ids"])
+                            or material_source["material_id"] not in disclosed):
+                        continue
+                    plan.link_deliveries[rule_id] = linked_material
                 plan.fragments = scoped
                 mapping = {speaker: _character_text(text, scoped, speaker) for speaker in mapping}
                 plan.transfers.append((rule_id, Transfer("assessee", tuple(recipients), quote)))
@@ -190,8 +203,16 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
         reaction = {"material_id": f"CHARACTER.{speaker}", "reaction_rule": {
             "authority": design["instructions"]["authority"], "rules": rules,
         }}
+        speaker_context = {"dialogue_history": _private_history(state, speaker, turn_id)}
+        if material_source:
+            speaker_context["opened_materials"] = [item for item in state.get("battery_opened_materials", [])
+                                                   if item["recipient_id"] == speaker]
+            openable = [plan.link_deliveries[event["id"]]["source"] for event, _ in selected_rules
+                        if event["id"] in plan.link_deliveries]
+            if openable:
+                speaker_context["addressed_readable_links"] = openable
         reply = character.respond(material=reaction, character=role_card, text=mapping[speaker], turn_id=turn_id,
-                                  context={"dialogue_history": _private_history(state, speaker, turn_id)})
+                                  context=speaker_context)
         if reply.status != "COMPLETED" or not reply.content:
             continue
         restricted = [value for key, value in facts.items() if key not in permitted_facts]
@@ -205,17 +226,24 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
                     recipients.update(fragment["recipient_ids"])
         rule_ids = tuple(event["id"] for event, _ in selected_rules)
         occurred = []
+        opened_material = None
         for event, _ in selected_rules:
             if not event.get("reply_confirmation"):
                 occurred.append(event["id"])
                 continue
+            link = plan.link_deliveries.get(event["id"])
             confirmation = decide(f"{event['id']}:confirmed:{speaker}", {
-                "instruction": design["instructions"]["confirm_reply"], "effect": event["reply_confirmation"],
+                "instruction": design["instructions"]["confirm_reply"],
+                "effect": material_source["opening_confirmation"] if link else event["reply_confirmation"],
                 "event_id": event["id"], "speaker": speaker, "participant_message": mapping[speaker],
+                **({"addressed_readable_link": link["source"]} if link else {}),
             }, input_text=reply.content)
             if (confirmation.code, confirmation.outcome) == ("MATCH", RuleOutcome.TRUE):
                 occurred.append(event["id"])
-        plan.replies.append(Reply(speaker, tuple(sorted(recipients - {speaker})), rule_ids, reply, tuple(occurred)))
+                if link:
+                    opened_material = {**link, "recipient_id": speaker, "delivery_turn_id": turn_id}
+        plan.replies.append(Reply(speaker, tuple(sorted(recipients - {speaker})), rule_ids, reply, tuple(occurred),
+                                  opened_material))
         for event, _ in selected_rules:
             if "forward_to" not in event:
                 continue

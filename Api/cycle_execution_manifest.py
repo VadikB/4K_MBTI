@@ -27,6 +27,7 @@ BATTERY_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-
 BATTERY_V04_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.8"
 BATTERY_V04_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.7.0"
 BATTERY_V04_SCENARIO_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.0"
+BATTERY_V04_SCENARIO_PATCH = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.1"
 
 # Logical names are part of the persisted contract. Paths always identify an
 # immutable, versioned publication; callers must never replace them with latest/current.
@@ -116,13 +117,23 @@ def battery_pilot_review_path(ref: Mapping[str, Any], *, root: Path = ROOT) -> s
     return path
 
 
-def battery_scenario_path(package_version: str) -> str:
+def battery_scenario_ref(path: str, *, root: Path = ROOT) -> dict[str, str]:
+    raw = (root / path / "scenario-rules.json").read_bytes()
+    value = json.loads(raw)
+    return {"id": value["id"], "version": value["version"], "checksum": hashlib.sha256(raw).hexdigest()}
+
+
+def battery_scenario_path(package_version: str, ref: Mapping[str, Any] | None = None, *, root: Path = ROOT) -> str:
     from Api.m5_battery_contract import PILOT_CASE_SUFFIX, RULE_PACKAGE
 
     source_version = package_version.removesuffix(PILOT_CASE_SUFFIX)
     paths = {"0.7": RULE_PACKAGE, "0.8": BATTERY_V04_SCENARIO_PACKAGE}
     if source_version not in paths:
         raise ValueError("M5_BATTERY_PACKAGE_VERSION_INVALID")
+    if ref is not None:
+        if source_version != "0.8" or ref != battery_scenario_ref(BATTERY_V04_SCENARIO_PATCH, root=root):
+            raise ValueError("M5_BATTERY_SCENARIO_REF_INVALID")
+        return BATTERY_V04_SCENARIO_PATCH
     return paths[source_version]
 
 
@@ -140,8 +151,8 @@ def build_manifest(
     if catalog_ref and (catalog_ref.get("diagnostic_only") is True or catalog_ref.get("battery_pilot") is True):
         pilot = catalog_ref.get("battery_pilot") is True
         package_version = catalog_ref["package_version"]
-        scenario_path = battery_scenario_path(package_version)
-        v04 = scenario_path == BATTERY_V04_SCENARIO_PACKAGE
+        scenario_path = battery_scenario_path(package_version, catalog_ref.get("scenario_ref"), root=root)
+        v04 = scenario_path in {BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH}
         dependencies = {
             **dependencies,
             "m5_functional_package": BATTERY_V04_CASE_PACKAGE if v04 else BATTERY_CASE_PACKAGE,

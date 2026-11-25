@@ -9,7 +9,10 @@ from zipfile import ZipFile
 import pytest
 
 from Api.assessment_contexts import create_personalized_profile
-from Api.cycle_execution_manifest import ROOT, build_manifest, resolve_cycle_dependency, resolve_dependency
+from Api.cycle_execution_manifest import (
+    BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH, ROOT, battery_scenario_ref,
+    build_manifest, resolve_cycle_dependency, resolve_dependency,
+)
 from Api.m5_battery_contract import load_scenario
 from Api.m5_battery_preparation import prepare_next
 from Api.m5_case_runtime import checksum
@@ -33,7 +36,8 @@ from tests.unit.test_m5_pilot_review import CONSENT_CHECK, CONSENT_FIELD, PilotG
 
 pytestmark = pytest.mark.integration
 BANK = json.loads((BATTERY_V04_PACKAGE / "case-package.json").read_bytes())
-SCENARIO = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.0"
+SCENARIO = ROOT / BATTERY_V04_SCENARIO_PATCH
+SPEC08_LINK = "m5-material://M02/4"
 REVIEW = ROOT / "assessment_definitions/prompts/m5_functional_passport/v7"
 CURRENT_FRAGMENT = "Версия 4. Пакет проверен для 24 записей при ручной сверке. Автоматический запуск не проверялся."
 RECIPIENT_CARD = "Карточка передачи показывает версию 3. Владелец карточки — координатор."
@@ -104,6 +108,10 @@ class V04Gateway(PilotGateway):
                 candidate[field] = prior[field]
         for material in candidate["Материалы"]:
             material["Текст"] = MATERIALS.get(number, {}).get(material["MaterialID"], material["Текст"])
+            if number == 8 and material["MaterialID"] == "M02" and body["scenario_contract"].get("material_source"):
+                material["Текст"] = material["Текст"].replace("[Актуальный профильный фрагмент]\n",
+                                                               "[Актуальный профильный фрагмент]\nВерсия: 4\n")
+                material["Текст"] += f" Адресная ссылка доступна получателю на чтение.\n{SPEC08_LINK}"
         if number == 1:
             facts = {"F04": "Целевой эффект — 8 из 10 поисков не дольше двух минут.",
                      "F05": "Причину задержки ещё не подтвердили. Зафиксированы три повторных поиска."}
@@ -142,7 +150,8 @@ def v04(product_db, specialist):
 def install_v04(connection):
     return publish_diagnostic_battery(
         connection, published_by=99, organization_id=10, catalog_id="specialist-battery-diagnostic",
-        catalog_version="0.8-qa", idempotency_key="m5-v04-synthetic", decision_basis="SYNTHETIC QA", battery_v04=True,
+        catalog_version="0.8-qa.1", idempotency_key="m5-v04-synthetic-181", decision_basis="SYNTHETIC QA", battery_v04=True,
+        scenario_ref=battery_scenario_ref(BATTERY_V04_SCENARIO_PATCH),
     )
 
 
@@ -319,13 +328,26 @@ def test_v04_case_matrix(product_db, v04, number):
                           responses={"R_MANAGER": "Моё кадровое решение сейчас — отложить решение о найме до повторной проверки."})
         assert "Моё кадровое решение" in effects[0]["payload_json"]["response"]
 
-    effects, calls = turn("Сдаю текущий результат. На этом заканчиваю. Уточнения потом?", {}, control="FINAL", replay=True)
+    written_answers = {
+        2: "Коллеге. В M05 для B отражено среднее 112 заявок в рабочий день в границах тестового потока. "
+           "Это не подтверждает мощность в дальнейшей эксплуатации. Перед рекомендацией заказчику "
+           "я сверю с инженером способ измерения и сопоставимость потока с нашим объёмом. "
+           "До уточнения предложу заказчику условный следующий шаг и укажу, что предел проверки остаётся открытым.",
+        7: "В рабочем режиме 9 из 12 сотрудников имели доступ, но полный результат зарегистрирован у 3. "
+           "Пробная запись подтверждает только возможность создать запись. Возможные причины отклонения — ограничение "
+           "процесса после получения доступа либо другой состав рабочих задач. Проверю цепочку до результата на небольшой "
+           "группе пользователей и сверю, какие результаты приняла принимающая сторона. До проверки причину считаю гипотезой.",
+    }
+    final_text = (written_answers[number] + " Сдаю эту запись как итог." if number in written_answers
+                  else "Сдаю текущий результат. На этом заканчиваю. Уточнения потом?")
+    effects, calls = turn(final_text, {}, control="FINAL", replay=True)
     assert [event["event_type"] for event in effects] == ["scenario_completed"] and not calls
     with product_db() as connection:
         transition(connection, assessment_situation_id=as_id, action="close", reason="synthetic QA", request_id="qa-close")
         handoff = build_c45(connection, as_id)["envelope_json"]
     if number in {2, 7}:
         assert any("E02_SUBMISSION" in row["occurred_event_refs"] for row in handoff["conditional_opportunities"])
+        assert final_text in json.dumps(handoff["dialogue"], ensure_ascii=False)
     export(f"CASE.SPEC.{number:02d}/trace.json", {
         "gateway": "SYNTHETIC CONTROLLED", "live_model": "NOT_RUN", "catalog": cycle["catalog_ref_json"],
         "execution_manifest_checksum": cycle["execution_manifest_checksum"], "source": generation["source_snapshot"]["refs"],
@@ -382,8 +404,43 @@ def test_install_v04_during_legacy_cycle(product_db, specialist):
     assert saved["snapshot"]["case_ref"]["id"] == "CASE.SPEC.02"
     assert saved["execution_payload"]["runtime_rules"]["battery_scenario"]["ref"]["version"] == "1.6.0"
     assert resolve_cycle_dependency(cycle, "m5_functional_as").name == "v4"
-    export("legacy-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": "0.8-qa",
+    export("legacy-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": "0.8-qa.1",
            "old_snapshot_equal": resumed["snapshot_json"] == previous["snapshot"], "next_case": saved["snapshot"]["case_ref"]})
+
+
+def test_v04_catalog_without_scenario_ref_keeps_original_scenario(product_db, specialist):
+    with product_db() as connection:
+        published = publish_diagnostic_battery(
+            connection, published_by=99, organization_id=10, catalog_id="specialist-battery-diagnostic",
+            catalog_version="0.8-qa", idempotency_key="m5-v04-original", decision_basis="SYNTHETIC legacy 1.8.0",
+            battery_v04=True,
+        )
+        connection.execute("""INSERT INTO assessment_configurations
+            (id,methodology_version_id,status,code,name,catalog_version_id)
+            VALUES (3,1,'published','m5-v04-old','SYNTHETIC M5 v0.4 original',%s)""", (published["catalog"]["catalog_db_id"],))
+        context = connection.execute("""SELECT organization_context_version_id,user_context_version_id,
+            role_profile_version_id FROM assessment_personalized_profiles WHERE id=%s""", (specialist[0],)).fetchone()
+        profile = create_personalized_profile(connection, user_id=99, assessment_configuration_id=3, **context)["id"]
+        connection.commit()
+    cycle, session = start_case(product_db, profile, 8, 2)
+    assert resolve_cycle_dependency(cycle, "m5_battery_scenario") == ROOT / BATTERY_V04_SCENARIO_PACKAGE
+    gateway = V04Gateway()
+    as_id, original = prepare_and_start(product_db, cycle, session, gateway)
+    with product_db() as connection:
+        transition(connection, assessment_situation_id=as_id, action="pause", reason="SYNTHETIC QA", request_id="pause-v04")
+        replacement = install_v04(connection)
+        transition(connection, assessment_situation_id=as_id, action="resume", reason="SYNTHETIC QA", request_id="resume-v04")
+        connection.commit()
+    replay = prepare_next(product_db, cycle_id=str(cycle["cycle_id"]), assessment_situation_id=as_id, actor=99, gateway=gateway)
+    assert replay["snapshot_json"] == original["snapshot"]
+    submit(product_db, as_id, "Заканчиваю.", {}, control="FINAL")
+    with product_db() as connection:
+        transition(connection, assessment_situation_id=as_id, action="close", reason="SYNTHETIC QA", request_id="close-v04")
+        connection.commit()
+    _, saved = prepare_and_start(product_db, cycle, session, gateway, first=False)
+    assert saved["execution_payload"]["runtime_rules"]["battery_scenario"]["ref"]["version"] == "1.8.0"
+    export("legacy-180-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": replacement["catalog_readback"],
+           "old_snapshot_equal": replay["snapshot_json"] == original["snapshot"], "next_case": saved["snapshot"]["case_ref"]})
 
 
 def test_future_catalog_readback_and_m7_rank(product_db, v04, monkeypatch, tmp_path):
@@ -403,7 +460,7 @@ def test_future_catalog_readback_and_m7_rank(product_db, v04, monkeypatch, tmp_p
     def publish(path):
         return publish_admitted_catalog(
             source, published_by=99, decision_basis="SYNTHETIC isolated import contract", catalog_id="synthetic-specialist-pilot",
-            catalog_version="1.4", idempotency_key="synthetic-v04-pilot", organization_id=10,
+            catalog_version="1.4.1", idempotency_key="synthetic-v04-pilot-181", organization_id=10,
             package_dir=BATTERY_V04_PACKAGE, runtime_dir=BATTERY_V04_RUNTIME, evidence_path=path,
         )
 
@@ -411,6 +468,10 @@ def test_future_catalog_readback_and_m7_rank(product_db, v04, monkeypatch, tmp_p
         publish(None)
     _, _, legacy_review = read_as_package(REVIEW.with_name("v6"))
     proof.write_text(json.dumps({**evidence, "review_package": legacy_review["protocol_package"]}))
+    with pytest.raises(ValueError, match="M5_BATTERY_PILOT_REVIEW_EVIDENCE_MISMATCH"):
+        publish(proof)
+    old_scenario = load_scenario(BANK["cases"][0], ROOT / BATTERY_V04_SCENARIO_PACKAGE)["ref"]
+    proof.write_text(json.dumps({**evidence, "scenario_ref": old_scenario}))
     with pytest.raises(ValueError, match="M5_BATTERY_PILOT_REVIEW_EVIDENCE_MISMATCH"):
         publish(proof)
     proof.write_text(json.dumps(evidence))
@@ -447,5 +508,6 @@ def test_future_catalog_readback_and_m7_rank(product_db, v04, monkeypatch, tmp_p
     export("M7-readback.json", {"scope": "SYNTHETIC isolated database only", "catalog": released["catalog_readback"],
            "runtime_ref": evidence["runtime_rule_ref"], "review_ref": evidence["review_package"],
            "scenario_ref": evidence["scenario_ref"], "cycle_manifest_checksum": frozen[1],
+           "case_versions": released["readback"]["cases"],
            "assignments": sum(len(case["indicator_targets"]) for case in BANK["cases"]),
            "targets": targets, "profiles": profiles})

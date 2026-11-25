@@ -136,7 +136,7 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     if catalog_ref.get("battery_pilot"):
         from Api.cycle_execution_manifest import ROOT, battery_scenario_path
 
-        battery_scenario_package = ROOT / battery_scenario_path(catalog_ref["package_version"])
+        battery_scenario_package = ROOT / battery_scenario_path(catalog_ref["package_version"], catalog_ref.get("scenario_ref"))
     catalog=_catalog(connection,role=role,rules=rules,planned_ids=target_ids,
                      catalog_db_id=catalog_ref["db_id"],usage_scope=usage_scope,
                      battery_profile=profile["content_json"] if catalog_ref.get("battery_pilot") else None,
