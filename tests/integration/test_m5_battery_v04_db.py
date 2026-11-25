@@ -10,7 +10,7 @@ import pytest
 
 from Api.assessment_contexts import create_personalized_profile
 from Api.cycle_execution_manifest import (
-    BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH, ROOT, battery_scenario_ref,
+    BATTERY_V04_SCENARIO_CURRENT, BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH, ROOT, battery_scenario_ref,
     build_manifest, resolve_cycle_dependency, resolve_dependency,
 )
 from Api.m5_battery_contract import load_scenario
@@ -36,7 +36,7 @@ from tests.unit.test_m5_pilot_review import CONSENT_CHECK, CONSENT_FIELD, PilotG
 
 pytestmark = pytest.mark.integration
 BANK = json.loads((BATTERY_V04_PACKAGE / "case-package.json").read_bytes())
-SCENARIO = ROOT / BATTERY_V04_SCENARIO_PATCH
+SCENARIO = ROOT / BATTERY_V04_SCENARIO_CURRENT
 SPEC08_LINK = "m5-material://M02/4"
 REVIEW = ROOT / "assessment_definitions/prompts/m5_functional_passport/v7"
 CURRENT_FRAGMENT = "Версия 4. Пакет проверен для 24 записей при ручной сверке. Автоматический запуск не проверялся."
@@ -150,8 +150,8 @@ def v04(product_db, specialist):
 def install_v04(connection):
     return publish_diagnostic_battery(
         connection, published_by=99, organization_id=10, catalog_id="specialist-battery-diagnostic",
-        catalog_version="0.8-qa.1", idempotency_key="m5-v04-synthetic-181", decision_basis="SYNTHETIC QA", battery_v04=True,
-        scenario_ref=battery_scenario_ref(BATTERY_V04_SCENARIO_PATCH),
+        catalog_version="0.8-qa.2", idempotency_key="m5-v04-synthetic-182", decision_basis="SYNTHETIC QA", battery_v04=True,
+        scenario_ref=battery_scenario_ref(BATTERY_V04_SCENARIO_CURRENT),
     )
 
 
@@ -404,16 +404,19 @@ def test_install_v04_during_legacy_cycle(product_db, specialist):
     assert saved["snapshot"]["case_ref"]["id"] == "CASE.SPEC.02"
     assert saved["execution_payload"]["runtime_rules"]["battery_scenario"]["ref"]["version"] == "1.6.0"
     assert resolve_cycle_dependency(cycle, "m5_functional_as").name == "v4"
-    export("legacy-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": "0.8-qa.1",
+    export("legacy-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": "0.8-qa.2",
            "old_snapshot_equal": resumed["snapshot_json"] == previous["snapshot"], "next_case": saved["snapshot"]["case_ref"]})
 
 
-def test_v04_catalog_without_scenario_ref_keeps_original_scenario(product_db, specialist):
+@pytest.mark.parametrize("prior", [BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH])
+def test_v04_catalog_keeps_original_scenario(product_db, specialist, prior):
+    original_version = prior.rsplit("/", 1)[-1]
+    prior_ref = battery_scenario_ref(prior) if prior == BATTERY_V04_SCENARIO_PATCH else None
     with product_db() as connection:
         published = publish_diagnostic_battery(
             connection, published_by=99, organization_id=10, catalog_id="specialist-battery-diagnostic",
             catalog_version="0.8-qa", idempotency_key="m5-v04-original", decision_basis="SYNTHETIC legacy 1.8.0",
-            battery_v04=True,
+            battery_v04=True, scenario_ref=prior_ref,
         )
         connection.execute("""INSERT INTO assessment_configurations
             (id,methodology_version_id,status,code,name,catalog_version_id)
@@ -423,7 +426,7 @@ def test_v04_catalog_without_scenario_ref_keeps_original_scenario(product_db, sp
         profile = create_personalized_profile(connection, user_id=99, assessment_configuration_id=3, **context)["id"]
         connection.commit()
     cycle, session = start_case(product_db, profile, 8, 2)
-    assert resolve_cycle_dependency(cycle, "m5_battery_scenario") == ROOT / BATTERY_V04_SCENARIO_PACKAGE
+    assert resolve_cycle_dependency(cycle, "m5_battery_scenario") == ROOT / prior
     gateway = V04Gateway()
     as_id, original = prepare_and_start(product_db, cycle, session, gateway)
     with product_db() as connection:
@@ -438,8 +441,8 @@ def test_v04_catalog_without_scenario_ref_keeps_original_scenario(product_db, sp
         transition(connection, assessment_situation_id=as_id, action="close", reason="SYNTHETIC QA", request_id="close-v04")
         connection.commit()
     _, saved = prepare_and_start(product_db, cycle, session, gateway, first=False)
-    assert saved["execution_payload"]["runtime_rules"]["battery_scenario"]["ref"]["version"] == "1.8.0"
-    export("legacy-180-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": replacement["catalog_readback"],
+    assert saved["execution_payload"]["runtime_rules"]["battery_scenario"]["ref"]["version"] == original_version
+    export(f"legacy-{original_version.replace('.', '')}-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": replacement["catalog_readback"],
            "old_snapshot_equal": replay["snapshot_json"] == original["snapshot"], "next_case": saved["snapshot"]["case_ref"]})
 
 
@@ -460,7 +463,7 @@ def test_future_catalog_readback_and_m7_rank(product_db, v04, monkeypatch, tmp_p
     def publish(path):
         return publish_admitted_catalog(
             source, published_by=99, decision_basis="SYNTHETIC isolated import contract", catalog_id="synthetic-specialist-pilot",
-            catalog_version="1.4.1", idempotency_key="synthetic-v04-pilot-181", organization_id=10,
+            catalog_version="1.4.2", idempotency_key="synthetic-v04-pilot-182", organization_id=10,
             package_dir=BATTERY_V04_PACKAGE, runtime_dir=BATTERY_V04_RUNTIME, evidence_path=path,
         )
 

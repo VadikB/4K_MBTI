@@ -22,7 +22,7 @@ from Api.m5_runtime_rules import load_runtime_rule_package
 from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE
 from scripts.build_m5_passport_bank import BATTERY_PACKAGE, BATTERY_RUNTIME, BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME
 from Api.cycle_execution_manifest import (
-    BATTERY_V04_SCENARIO_PATCH, M5_BATTERY_PILOT_REVIEW_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES,
+    BATTERY_V04_SCENARIO_CURRENT, M5_BATTERY_PILOT_REVIEW_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES,
     battery_pilot_review_path, battery_scenario_path, battery_scenario_ref,
 )
 from Api.m5_battery_contract import PILOT_CASE_SUFFIX
@@ -314,7 +314,7 @@ def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scop
             if review_path != M5_BATTERY_PILOT_REVIEW_PACKAGE:
                 review_package = review_refs["protocol_package"]
             if package_dir == BATTERY_V04_PACKAGE:
-                scenario_ref = battery_scenario_ref(BATTERY_V04_SCENARIO_PATCH)
+                scenario_ref = battery_scenario_ref(BATTERY_V04_SCENARIO_CURRENT)
             scenario_dir = ROOT / battery_scenario_path(package["version"], scenario_ref)
             scenario_refs = [load_scenario(case, scenario_dir)["ref"] for case in package["cases"]]
             if (not str(evidence.get("human_review_ref") or "").strip()
@@ -457,7 +457,7 @@ def main() -> int:
                     idempotency_key=args.idempotency_key or f"{catalog_id}-{args.catalog_version}",
                     decision_basis=args.decision_basis,
                     battery_v04=args.diagnostic_battery_v04,
-                    scenario_ref=battery_scenario_ref(BATTERY_V04_SCENARIO_PATCH) if args.diagnostic_battery_v04 else None,
+                    scenario_ref=battery_scenario_ref(BATTERY_V04_SCENARIO_CURRENT) if args.diagnostic_battery_v04 else None,
                 )
                 connection.commit()
         print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
@@ -469,7 +469,7 @@ def main() -> int:
         if args.usage_scope != "assessment" or (args.apply_import and not args.publish_admitted_catalog):
             parser.error("The pilot release requires explicit assessment catalog publication.")
         if args.pilot_battery_v04:
-            package_dir, runtime_dir, default_version = BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, "1.4.1"
+            package_dir, runtime_dir, default_version = BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, "1.4.2"
         else:
             package_dir, runtime_dir, default_version = BATTERY_PACKAGE, BATTERY_RUNTIME, "1.3"
     if not args.historical_0_5 and args.usage_scope == "qa":

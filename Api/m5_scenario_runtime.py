@@ -447,7 +447,7 @@ def _append_character_turn(connection, *, row: dict, speaker_id: str, content: s
 def _persist_character_reply(connection, *, row: dict, saved: dict, state: dict, material: dict,
                              decision_row: dict, trigger_turn: dict, reply: CharacterReply,
                              scenario_event_id: str | None = None, recipient_ids=None,
-                             scenario_event_ids=None) -> dict | None:
+                             scenario_event_ids=None, opened_source: dict | None = None) -> dict | None:
     effect_key = f"character-response:{material['material_id']}:{trigger_turn['turn_id']}"
     if effect_key in state["applied_effects"]:
         return None
@@ -478,7 +478,8 @@ def _persist_character_reply(connection, *, row: dict, saved: dict, state: dict,
                  "model": reply.model, "controlled_test": reply.controlled_test, "prompt_ref": reply.prompt_ref,
                  **({"scenario_event_id": scenario_event_id, "recipient_ids": recipient_ids or ["assessee"]}
                     if scenario_event_id else {}),
-                 **({"scenario_event_ids": scenario_event_ids} if scenario_event_ids is not None else {})})
+                 **({"scenario_event_ids": scenario_event_ids} if scenario_event_ids is not None else {}),
+                 **({"opened_source": opened_source} if opened_source else {})})
     state["applied_effects"].append(effect_key)
     connection.execute("""
         INSERT INTO m5_effect_applications
@@ -1107,6 +1108,8 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
     turn_id = str(turn["turn_id"])
     state.setdefault("battery_fragments", {})[turn_id] = plan.fragments
     audiences = state.setdefault("battery_audiences", {})
+    material_source = design.get("material_source", {})
+    follow_up = material_source.get("opening_follow_up")
     events = []
     def record_transfer(rule_id, transfer):
         binding = next(rule for rule in design["events"] if rule["id"] == rule_id)
@@ -1116,7 +1119,7 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
             message = _append_character_turn(connection, row=row, speaker_id=transfer.sender_id,
                                              content=transfer.text, request_id=f"forward:{turn['request_id']}:{rule_id}")
             audiences[str(message["turn_id"])] = list(transfer.recipient_ids)
-        events.append(append_event(
+        event = append_event(
             connection, as_db_id=row["id"], event_type="information_transferred", event_key=f"transfer:{turn_id}:{rule_id}",
             material_id=link["source"]["material_id"] if link else binding["requires_material_id"],
             cause={"turn_id": turn_id, "message_turn_id": str(message["turn_id"]),
@@ -1125,26 +1128,45 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
             payload={"scenario_event_id": binding.get("record_as", rule_id), "sender_id": transfer.sender_id,
                      "recipient_ids": list(transfer.recipient_ids), "text": transfer.text,
                      **({"addressed_source": link["source"]} if link else {})},
-        ))
+        )
+        events.append(event)
+        if follow_up and link:
+            pending = state.setdefault("battery_pending_materials", [])
+            for recipient in transfer.recipient_ids:
+                if any(item["recipient_id"] == recipient and item["source"] == link["source"]
+                       for item in (*pending, *state.get("battery_opened_materials", []))):
+                    continue
+                pending.append({"source": link["source"], "recipient_id": recipient,
+                                "delivery_turn_id": turn_id, "delivery_event_id": str(event["event_id"])})
     for rule_id, transfer in plan.transfers:
         if transfer.sender_id == "assessee":
             record_transfer(rule_id, transfer)
     for reply in plan.replies:
         rule_id = reply.rule_ids[0]
+        opened = reply.opened_material
+        pending = state.get("battery_pending_materials", [])
+        delivery = next((item for item in pending if opened and item["recipient_id"] == opened["recipient_id"]
+                         and item["source"] == opened["source"]), None)
         event = _persist_character_reply(
             connection, row=row, saved=saved, state=state,
             material={"material_id": f"CHARACTER.{reply.speaker}", "speaker_id": reply.speaker},
             decision_row=decisions[rule_id], trigger_turn=turn, reply=reply.response,
-            scenario_event_id=rule_id, scenario_event_ids=reply.occurred_rule_ids, recipient_ids=reply.recipients,
+            scenario_event_id=material_source["event_id"] if opened and follow_up else rule_id,
+            scenario_event_ids=reply.occurred_rule_ids, recipient_ids=reply.recipients,
+            opened_source=({"source": opened["source"], "delivery_event_id": delivery["delivery_event_id"],
+                            "recipient_id": opened["recipient_id"]} if delivery else None),
         )
         if event:
             audiences[event["cause_json"]["character_turn_id"]] = list(reply.recipients)
             events.append(event)
-            if opened := reply.opened_material:
+            if opened:
                 knowledge = state.setdefault("battery_opened_materials", [])
                 if not any(item["recipient_id"] == opened["recipient_id"] and item["source"] == opened["source"]
                            for item in knowledge):
-                    knowledge.append({**opened, "confirmation_turn_id": event["cause_json"]["character_turn_id"]})
+                    knowledge.append({**opened, **({"delivery_event_id": delivery["delivery_event_id"]} if delivery else {}),
+                                      "confirmation_turn_id": event["cause_json"]["character_turn_id"]})
+                    if delivery:
+                        pending.remove(delivery)
     for rule_id, transfer in plan.transfers:
         if transfer.sender_id != "assessee":
             record_transfer(rule_id, transfer)

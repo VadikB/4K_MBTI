@@ -16,6 +16,12 @@ from scripts.build_m5_sales_package import _participant_presentation, _ref
 RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.6.0"
 FACILITATOR = "FACILITATOR"
 PILOT_CASE_SUFFIX = "-pilot.1"
+_MATERIAL_LINK = re.compile(r"(?<![\w+/=:@.%-])m5-material://[^\s<>\"'`«»“”‘’(){}\[\]]+")
+
+
+def material_links(text: str) -> list[tuple[int, str]]:
+    """Read complete internal link tokens, keeping suffixes inside the address."""
+    return [(match.start(), match.group().rstrip(".,;:!?")) for match in _MATERIAL_LINK.finditer(text)]
 
 
 def source_case_version(version: str, *, pilot: bool) -> str:
@@ -89,6 +95,10 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
                        or heading in roles.get(reader, {}).get("known_material_sections", {}).get(material_id, ())
                        for reader in readers)):
             raise missing(case_id, version, f"17.2/{material_id}/material_source")
+        if identifier := material_source.get("version_identifier"):
+            examples = ", ".join(identifier["examples"])
+            generation_addendum += (f"\n{identifier['instruction']} Формат: {identifier['pattern']}. "
+                                    f"Примеры идентификаторов: {examples}.")
     opening = overlay["opening"]
     if opening and (opening["speaker_id"] not in roles or opening["material_id"] not in start["Последовательность предъявления"]):
         raise missing(case_id, version, "17.1/Первая реплика")
@@ -156,11 +166,16 @@ def _source_fragment(binding: dict, sections: dict[str, str]) -> dict | None:
     first, _, text = sections[binding["section"]].partition("\n")
     label = binding["version_label"]
     version = first[len(label):].strip() if first.startswith(label) else ""
-    if not text.strip() or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", version):
+    identifier = binding.get("version_identifier")
+    version_pattern = identifier["pattern"] if identifier else r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}"
+    if not text.strip() or not re.fullmatch(version_pattern, version):
         return None
     material_id = binding["material_id"]
     link = f"m5-material://{material_id}/{version}"
-    if link not in re.findall(r"m5-material://[A-Za-z0-9._/-]+", sections[binding["link_section"]]):
+    link_text = sections[binding["link_section"]]
+    available_links = ([token for _, token in material_links(link_text)] if identifier
+                       else re.findall(r"m5-material://[A-Za-z0-9._/-]+", link_text))
+    if link not in available_links:
         return None
     text = text.strip()
     return {"source": {"material_id": material_id, "section": binding["section"], "version": version,
@@ -322,9 +337,12 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
         if not protected or not sections:
             continue
         source = _source_fragment(binding, sections)
+        identifier = binding.get("version_identifier")
         validate("battery_material_source", source is not None, path,
                  {"first_line": sections[binding["section"]].splitlines()[0], "link_section": binding["link_section"]},
-                 {"version_label": binding["version_label"], "link_template": f"m5-material://{material_id}/<версия>"},
+                 {"version_label": binding["version_label"], "link_template": f"m5-material://{material_id}/<версия>",
+                  **({"pattern": identifier["pattern"], "examples": identifier["examples"],
+                      "link_example": f"m5-material://{material_id}/{identifier['examples'][0]}"} if identifier else {})},
                  "Укажите точную версию исходного фрагмента и соответствующую ей адресную ссылку.")
         if source is None:
             continue
@@ -341,6 +359,15 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
                              {"role": speaker, "visible_section": location, "source": source["source"]},
                              {"protected_section": binding["section"]},
                              "Полная копия закрытого фрагмента попала в начальное знание адресата. Удалите её из видимого текста.")
+            if identifier:
+                visible_ids = set(role["known_material_ids"]) | role.get("known_material_sections", {}).keys()
+                for visible_id in sorted(visible_ids):
+                    title = documents.get(visible_id, {}).get("Название")
+                    if isinstance(title, str) and protected_text in _normalized_text(title):
+                        validate("battery_material_knowledge_leak", False, f"candidate_as/Материалы/{visible_id}/Название",
+                                 {"role": speaker, "visible_material": visible_id, "source": source["source"]},
+                                 {"protected_section": binding["section"]},
+                                 "Полная копия закрытого фрагмента попала в видимое название. Оставьте только обычный заголовок.")
     if not detailed:  # Preserve the substring check for the frozen 02 protocol.
         documents = indexed["Материалы"]
         closed = [row for key, row in documents.items() if key not in design["start_ids"]]
