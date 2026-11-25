@@ -17,6 +17,11 @@ RESULT_STATUSES = {"PASS", "FAIL", "NOT_APPLICABLE", "NOT_RUN", "INDETERMINATE",
 PROTECTED_CATEGORIES = {"invariant", "indicator_observability", "authority", "confidentiality", "scenario_executability", "target_integrity"}
 PATH_STEP = re.compile(r"""\.([^.[\]]+)|\[("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\[\]'"]+)\]""")
 SERVER_BOUND_PROTOCOL = "3.1.0"
+EXPLICIT_REVIEW_BATCH_PROTOCOL = "3.2.0"
+SERVER_BOUND_REVIEW_PACKAGES = {
+    SERVER_BOUND_PROTOCOL: "5.0.0",
+    EXPLICIT_REVIEW_BATCH_PROTOCOL: "6.0.0",
+}
 CANDIDATE_COLLECTION_IDS = {
     "Материалы": "MaterialID", "События": "EventID", "Активные персонажи": "CharacterID",
     "IndicatorObservability": "IndicatorID", "Закрытые фиксированные факты": "FactID",
@@ -33,7 +38,8 @@ def checksum(value: Any) -> str:
 def load_protocol(path: Path = PROTOCOL_PATH) -> dict[str, Any]:
     raw = path.read_bytes()
     value = json.loads(raw)
-    expected_schema = {"2.0.0": 2, "2.1.0": 2, "3.0.0": 3, SERVER_BOUND_PROTOCOL: 3}.get(value.get("version"))
+    schemas = {"2.0.0": 2, "2.1.0": 2, "3.0.0": 3, **dict.fromkeys(SERVER_BOUND_REVIEW_PACKAGES, 3)}
+    expected_schema = schemas.get(value.get("version"))
     if expected_schema is None or (value.get("schema_version"), value.get("id"), value.get("status")) != (
         expected_schema, "m5-functional-personalization-tester", "draft"
     ):
@@ -296,7 +302,7 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
                       missing_required_paths: Iterable[str] = (), reviewer: str = "tester",
                       review_paths_version: str | None = None, passport_version: str | None = None) -> list[dict[str, Any]]:
     battery_review = plan.get("protocol", {}).get("scope") == "battery_v0.3_qa"
-    updated_paths = (review_paths_version or plan.get("protocol", {}).get("version")) == SERVER_BOUND_PROTOCOL
+    updated_paths = (review_paths_version or plan.get("protocol", {}).get("version")) in SERVER_BOUND_REVIEW_PACKAGES
     fact_id_field = "ФактID" if updated_paths and passport_version == "1.1" else "FactID"
     address_options = {"mixed_paths": updated_paths, "fact_id_field": fact_id_field}
     reviewer_label = {"tester": "Tester", "challenger": "Challenger"}[reviewer]

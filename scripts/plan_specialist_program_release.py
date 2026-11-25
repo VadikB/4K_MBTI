@@ -21,7 +21,7 @@ from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_runtime_rules import load_runtime_rule_package
 from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE
 from scripts.build_m5_passport_bank import BATTERY_PACKAGE, BATTERY_RUNTIME
-from Api.cycle_execution_manifest import M5_BATTERY_PILOT_REVIEW_PACKAGE
+from Api.cycle_execution_manifest import M5_BATTERY_PILOT_REVIEW_PACKAGE, battery_pilot_review_path
 from Api.m5_battery_contract import PILOT_CASE_SUFFIX, RULE_PACKAGE
 from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as BANK_RUNTIME_DIR
 
@@ -271,7 +271,7 @@ def build_release_artifacts(
 
 
 def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scope: str,
-                             evidence_path: Path | None) -> tuple[dict, dict, dict]:
+                             evidence_path: Path | None) -> tuple[dict, dict, dict, dict | None]:
     battery_pilot = package_dir == BATTERY_PACKAGE
     if json.loads((package_dir / "manifest.json").read_bytes()).get("diagnostic_only") is True and (
         not battery_pilot or usage_scope != "assessment"
@@ -280,6 +280,7 @@ def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scop
     package = json.loads((package_dir / "case-package.json").read_bytes())
     runtime = load_runtime_rule_package(runtime_dir, package["cases"], expected_case_package_version=package["version"])
     expected = {case["case_id"]: checksum(case) for case in package["cases"]}
+    review_package = None
     if usage_scope == "qa":
         # Only QA scope receives synthetic evidence. Assessment requires review of
         # the exact passport checksums AND the new AS result contract.
@@ -295,7 +296,14 @@ def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scop
             from Api.m5_battery_contract import load_scenario
             from Api.m5_passport_generation import read_as_package
 
-            _, as_contract, review_refs = read_as_package(ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGE)
+            try:
+                review_path = battery_pilot_review_path(evidence.get("review_package"))
+            except ValueError as exc:
+                raise ValueError("M5_BATTERY_PILOT_REVIEW_EVIDENCE_MISMATCH") from exc
+            _, as_contract, review_refs = read_as_package(ROOT / review_path)
+            # A pre-existing v5 publication used an implicit pin in its manifest.
+            if review_path != M5_BATTERY_PILOT_REVIEW_PACKAGE:
+                review_package = review_refs["protocol_package"]
             scenario_refs = [load_scenario(case, ROOT / RULE_PACKAGE)["ref"] for case in package["cases"]]
             if (not str(evidence.get("human_review_ref") or "").strip()
                     or evidence.get("scenario_ref") != scenario_refs[0]
@@ -317,7 +325,7 @@ def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scop
     ref = {"path": path, "sha256": digest(raw)}
     for case in package["cases"]:
         case["status"] = "FROZEN"
-    return package, runtime, {scope: ref for scope in ADMISSION_EVIDENCE}
+    return package, runtime, {scope: ref for scope in ADMISSION_EVIDENCE}, review_package
 
 
 def publish_admitted_catalog(
@@ -332,11 +340,12 @@ def publish_admitted_catalog(
     from Api.m5_storage import import_package, package_readback
     if not str(decision_basis or "").strip():
         raise ValueError("SPECIALIST_ADMISSION_DECISION_BASIS_REQUIRED")
+    review_package = None
     if package_dir == PACKAGE_DIR:
         package, loaded_runtime, evidence_refs = build_admitted_materials(decision_basis)
     else:
         verify_package_directory(package_dir)
-        package, loaded_runtime, evidence_refs = build_passport_admission(
+        package, loaded_runtime, evidence_refs, review_package = build_passport_admission(
             package_dir, runtime_dir, usage_scope=usage_scope, evidence_path=evidence_path,
         )
     manifest, execution_rules = build_release_artifacts(
@@ -380,7 +389,7 @@ def publish_admitted_catalog(
             case_version_ids=[int(case["id"]) for case in cases], usage_scope=usage_scope,
             organization_id=organization_id, published_by=published_by,
             decision_basis=decision_basis, idempotency_key=idempotency_key,
-            runtime_rule_version_id=runtime["id"],
+            runtime_rule_version_id=runtime["id"], review_package=review_package,
         )
         result = {
             "import": imported, "runtime": runtime, "readback": readback,
