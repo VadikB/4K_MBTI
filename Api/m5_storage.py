@@ -428,6 +428,10 @@ def prepare_assessment_situation(connection, *, assessment_situation_id: str, ca
         )
     if usage_scope == "assessment" and not admission["admitted"]:
         raise ValueError("M5_CASE_NOT_ADMITTED:" + ",".join(admission["reasons"]))
+    if admission.get("publisher_release"):
+        # Package admission was verified against the frozen catalog. Generated
+        # AS validation and the mandatory reviewer stages still run as usual.
+        policy = {**policy, "required_evidence_scopes": []}
     evidence = [{key:item[key] for key in ("scope","result","artifact_ref","checksum")}
                 for item in admission["evidence"]]
     case_value = case_value_override or case_row["content_json"]

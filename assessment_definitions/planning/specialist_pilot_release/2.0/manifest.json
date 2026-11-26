@@ -1,0 +1,17 @@
+{
+  "contract": "specialist_pilot_release/1",
+  "program": {
+    "code": "specialist_pilot",
+    "version": "2.0",
+    "name": "Пилот 4К · 9 кейсов",
+    "assignment_ref": "specialist-pilot",
+    "mode": "dialogue"
+  },
+  "baseline_version": "1.2",
+  "configuration_code": "specialist_pilot_v2",
+  "catalog_id": "specialist-pilot",
+  "catalog_version": "1.4.4",
+  "archive_sha256": "c89f344f00c594fef52dbd51153b8b1bbd98c44a1262467b4ecf7c8c98d3a38b",
+  "proposal_sha256": "cb6e09465f1a07c40606bbcded4a5dac81cf5caea89a060cfa6f87f016370a35",
+  "proposal_content_sha": "d8119f80183e24f916168314c90e1d231f4ec918fe75e5d260517a193d921599"
+}

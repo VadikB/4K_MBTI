@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 from Api import assessment_programs
@@ -73,19 +72,11 @@ def main() -> int:
             connection.rollback()
             print('VALIDATED_ONLY: rerun with --publish through the authorized release process.')
             return 0
-        row = connection.execute("""INSERT INTO assessment_program_definitions
-            (code,version,name,assignment_ref,mode,status,assessment_configuration_id,
-             catalog_version_id,source_refs_json,definition_checksum,published_by_user_id)
-            VALUES(%s,%s,%s,%s,%s,'draft',%s,%s,%s::jsonb,%s,%s) RETURNING id""",
-            (args.code,args.version,args.name,args.assignment_ref,args.mode,
-             configuration['id'],configuration['catalog_version_id'],json.dumps(source_refs),
-             checksum,args.publisher_user_id)).fetchone()
-        for order, role_id in enumerate(role_ids):
-            connection.execute("""INSERT INTO assessment_program_allowed_roles
-                (program_definition_id,role_profile_version_id,display_order) VALUES(%s,%s,%s)""",
-                (row['id'],role_id,order))
-        connection.execute("""UPDATE assessment_program_definitions
-            SET status='published',published_at=NOW() WHERE id=%s""", (row['id'],))
+        row = assessment_programs.publish_definition(connection, program={
+            'code': args.code, 'version': args.version, 'name': args.name, 'assignment_ref': args.assignment_ref,
+            'mode': args.mode, 'assessment_configuration_id': configuration['id'],
+            'catalog_version_id': configuration['catalog_version_id'], 'source_refs_json': source_refs,
+        }, role_ids=role_ids, publisher_user_id=args.publisher_user_id)
         connection.commit()
         print(f'PUBLISHED id={row["id"]}')
     return 0

@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from Api.assessment_programs import definition_checksum
 from Api.m5_case_runtime import checksum
-from Api.pilot_plan_admission import _require, validate_program, validate_snapshot
+from Api.pilot_plan_admission import PUBLISHER_CONTRACT, _require, validate_program, validate_snapshot
 
 
 def program_for_profile(connection, profile: dict, *, connection_id: int | None = None) -> dict | None:
@@ -46,6 +46,9 @@ def validate_published_program(connection, program: dict) -> dict:
     snapshot = program["source_refs_json"].get("pilot_plan_admission")
     _require(isinstance(snapshot, dict), "APPROVED_BINDING_REQUIRED")
     design = validate_program(program, roles, snapshot)
+    if snapshot["contract"] == PUBLISHER_CONTRACT:
+        _require(snapshot["publisher_release"]["publisher_user_id"] == program["published_by_user_id"],
+                 "PUBLISHER_RELEASE_INVALID")
     configuration = connection.execute("""SELECT id,code,status,catalog_version_id,methodology_version_id,
         scenario_version_id,prompt_bundle_checksum FROM assessment_configurations WHERE id=%s""",
         (program["assessment_configuration_id"],)).fetchone()
@@ -60,6 +63,17 @@ def validate_published_program(connection, program: dict) -> dict:
 
 def validate_case_sources(connection, snapshot: dict, catalog_db_id: int) -> None:
     design = validate_snapshot(snapshot)
+    publisher_release = snapshot.get("publisher_release") if snapshot["contract"] == PUBLISHER_CONTRACT else None
+    if publisher_release is not None:
+        from Api.m5_catalog_integrity import catalog_readback
+
+        catalog = catalog_readback(connection, catalog_db_id)
+        _require(catalog["manifest_checksum"] == design["catalog_ref"]["manifest_checksum"],
+                 "CATALOG_SCOPE_MISMATCH")
+        release = catalog["manifest"].get("publisher_release")
+        if release is not None:
+            _require(all(release.get(key) == publisher_release[key] for key in
+                         ("archive_sha256", "proposal_content_sha")), "PUBLISHER_RELEASE_INVALID")
     rows = connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.content_checksum,cv.content_json
         FROM m5_case_versions cv JOIN m5_catalog_case_versions member ON member.case_version_id=cv.id
         WHERE member.catalog_db_id=%s""", (catalog_db_id,)).fetchall()
@@ -70,10 +84,17 @@ def validate_case_sources(connection, snapshot: dict, catalog_db_id: int) -> Non
         row = by_ref[(expected["case_id"], expected["version"])]
         _require(checksum(row["content_json"]) == row["content_checksum"] == expected["admitted_checksum"],
                  "CASE_CHECKSUM_MISMATCH")
-        evidence = connection.execute("""SELECT evidence_checksum FROM m5_qa_evidence
-            WHERE case_version_id=%s AND assessment_situation_id IS NULL AND result='PASS'""", (row["id"],)).fetchall()
-        _require(set(expected["qa_checksums"]) <= {item["evidence_checksum"] for item in evidence},
-                 "CASE_QA_SOURCE_MISMATCH")
+        if publisher_release is not None:
+            from Api.m5_catalog_integrity import case_admission
+
+            admission = case_admission(connection, case_version_id=row["id"], usage_scope="assessment",
+                                       catalog_db_id=catalog_db_id)
+            _require(admission["admitted"], "CASE_NOT_ADMITTED")
+        else:
+            evidence = connection.execute("""SELECT evidence_checksum FROM m5_qa_evidence
+                WHERE case_version_id=%s AND assessment_situation_id IS NULL AND result='PASS'""", (row["id"],)).fetchall()
+            _require(set(expected["qa_checksums"]) <= {item["evidence_checksum"] for item in evidence},
+                     "CASE_QA_SOURCE_MISMATCH")
 
 
 def assignment_scope(connection, *, profile: dict, assignment_id: int | None,

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from Api.m5_case_runtime import checksum
@@ -89,11 +90,28 @@ def case_admission(
         raise ValueError("M5_CASE_VERSION_NOT_IMPORTED")
     case = dict(case)
     reasons: list[str] = []
-    if catalog_db_id is not None and connection.execute(
-        "SELECT 1 FROM m5_catalog_case_versions WHERE catalog_db_id=%s AND case_version_id=%s",
-        (catalog_db_id, case_version_id),
-    ).fetchone() is None:
-        reasons.append("CASE_OUTSIDE_FROZEN_CATALOG")
+    release = None
+    if catalog_db_id is not None:
+        membership = connection.execute(
+            """SELECT c.manifest_json,c.manifest_checksum,c.usage_scope
+               FROM m5_catalog_case_versions m JOIN m5_catalogs c ON c.id=m.catalog_db_id
+               WHERE m.catalog_db_id=%s AND m.case_version_id=%s""",
+            (catalog_db_id, case_version_id),
+        ).fetchone()
+        if membership is None:
+            reasons.append("CASE_OUTSIDE_FROZEN_CATALOG")
+        else:
+            manifest = membership["manifest_json"]
+            release = manifest.get("publisher_release")
+            if release is not None and (
+                membership["usage_scope"] != "assessment" or usage_scope != "assessment"
+                or manifest.get("battery_pilot") is not True
+                or checksum(manifest) != membership["manifest_checksum"]
+                or case_version_id not in manifest["case_version_ids"]
+                or release["case_checksums"].get(case["case_id"]) != case["content_checksum"]
+                or checksum(case["content_json"]) != case["content_checksum"]
+            ):
+                raise ValueError("M5_PUBLISHER_RELEASE_CASE_MISMATCH")
     if case["status"] not in policy["allowed_case_statuses"]:
         reasons.append(f"CASE_STATUS_NOT_ADMITTED:{case['status']}")
     if (case.get("content_json") or {}).get("unresolved_decisions"):
@@ -110,10 +128,13 @@ def case_admission(
         latest.setdefault(str(raw["scope"]), dict(raw))
     accepted: list[dict[str, Any]] = []
     considered: list[dict[str, Any]] = []
+    # Publisher releases do not depend on a human QA row. Any independent QA
+    # evidence that exists still has to pass the usual validation.
     for scope in policy["required_evidence_scopes"]:
         row = latest.get(scope)
         if row is None:
-            reasons.append(_reason("QA_EVIDENCE_MISSING", scope))
+            if release is None:
+                reasons.append(_reason("QA_EVIDENCE_MISSING", scope))
             continue
         item_reasons = _validate_evidence(row=row, case=case, usage_scope=usage_scope, policy=policy)
         reasons.extend(item_reasons)
@@ -134,6 +155,7 @@ def case_admission(
         "case": case,
         "evidence": accepted,
         "evidence_considered": considered,
+        **({"publisher_release": True} if release is not None else {}),
         "policy_ref": {"id": policy["id"], "version": policy["version"], "checksum": policy["checksum"]},
     }
 
@@ -216,6 +238,7 @@ def resolve_configuration_catalog(connection, *, configuration_id: int, usage_sc
 def publication_plan(
     connection, *, package_db_id: int, case_version_ids: list[int], usage_scope: str,
     organization_id: int | None = None, runtime_rule_version_id: int | None = None,
+    release_case_checksums: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     package = connection.execute("SELECT * FROM m5_packages WHERE id=%s", (package_db_id,)).fetchone()
     if package is None:
@@ -265,6 +288,16 @@ def publication_plan(
             if not rule or rule["version"] != package["manifest_json"]["runtime_rule_version"]:
                 raise ValueError(f"M5_DIAGNOSTIC_RULE_VERSION_MISMATCH:{case['case_id']}")
         decisions = [{"case": case, "admitted": False, "reasons": ["DIAGNOSTIC_ONLY"]} for case in cases]
+    elif release_case_checksums is not None:
+        if not battery_pilot or organization_id is not None or usage_scope != "assessment":
+            raise ValueError("M5_PUBLISHER_RELEASE_SCOPE_MISMATCH")
+        policy = load_policy()
+        if (release_case_checksums != {row["case_id"]: row["content_checksum"] for row in cases}
+                or any(row["status"] not in policy["allowed_case_statuses"]
+                       or row["content_json"].get("unresolved_decisions")
+                       or checksum(row["content_json"]) != row["content_checksum"] for row in cases)):
+            raise ValueError("M5_PUBLISHER_RELEASE_CASE_MISMATCH")
+        decisions = [{"case": case, "admitted": True, "reasons": []} for case in cases]
     else:
         decisions = [case_admission(connection, case_version_id=value, usage_scope=usage_scope) for value in selected]
     return {
@@ -290,12 +323,21 @@ def publish_catalog(
     idempotency_key: str, organization_id: int | None = None, dry_run: bool = False,
     runtime_rule_version_id: int | None = None, review_package: dict[str, Any] | None = None,
     scenario_ref: dict[str, Any] | None = None,
+    publisher_release: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not str(decision_basis or "").strip():
         raise ValueError("M5_CATALOG_DECISION_BASIS_REQUIRED")
+    if publisher_release is not None:
+        require_release_publisher(connection, published_by)
     plan = publication_plan(connection, package_db_id=package_db_id, case_version_ids=case_version_ids,
                             usage_scope=usage_scope, organization_id=organization_id,
-                            runtime_rule_version_id=runtime_rule_version_id)
+                            runtime_rule_version_id=runtime_rule_version_id,
+                            release_case_checksums=(publisher_release["case_checksums"]
+                                                    if publisher_release is not None else None))
+    if publisher_release is not None:
+        if not scenario_ref or not review_package:
+            raise ValueError("M5_PUBLISHER_RELEASE_SOURCES_REQUIRED")
+        plan["publisher_release"] = publisher_release
     if plan.get("battery_pilot"):
         from Api.cycle_execution_manifest import (
             BATTERY_V04_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES, battery_pilot_review_path,
@@ -345,6 +387,8 @@ def publish_catalog(
                 "usage_scope": usage_scope, "case_version_ids": plan["case_version_ids"]}
     if plan.get("diagnostic_only"):
         manifest["diagnostic_only"] = True
+    if publisher_release is not None:
+        manifest["publisher_release"] = {**publisher_release, "publisher_user_id": published_by}
     if scenario_ref is not None:
         manifest["scenario_ref"] = scenario_ref
     if plan.get("battery_pilot"):
@@ -376,6 +420,13 @@ def publish_catalog(
         )
     return {"dry_run": False, "idempotent": False, "catalog_db_id": int(row["id"]),
             "manifest_checksum": manifest_checksum}
+
+
+def require_release_publisher(connection, user_id: int) -> None:
+    from Api.platform_access import require_platform_permission
+
+    row = connection.execute("SELECT id,email FROM users WHERE id=%s", (user_id,)).fetchone()
+    require_platform_permission(connection, SimpleNamespace(**row) if row else None, "configuration.publish")
 
 
 def catalog_readback(connection, catalog_db_id: int) -> dict[str, Any]:

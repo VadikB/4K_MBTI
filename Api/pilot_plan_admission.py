@@ -14,6 +14,7 @@ from Api.m5_case_runtime import checksum
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = "m7_pilot_plan_admission/1"
+PUBLISHER_CONTRACT = "m7_pilot_plan_admission/2"
 
 
 def _require(condition: bool, code: str) -> None:
@@ -33,10 +34,44 @@ def pairs(rows: list[dict]) -> set[tuple[str, str]]:
     return set(values)
 
 
+def _validate_legacy_review(snapshot: dict, design: dict, review: dict) -> None:
+    decision = snapshot["owner_decision"]
+    _require(snapshot["owner_decision_ref"]["content_checksum"] == checksum(decision)
+             and _hash(snapshot["owner_decision_ref"].get("sha256")),
+             "DECISION_CHECKSUM_MISMATCH")
+    _require(decision["proposal_id"] == design["proposal_id"]
+             and decision["proposal_version"] == design["version"]
+             and decision["proposal_payload_checksum"] == review["proposal_payload_checksum"],
+             "DECISION_SCOPE_MISMATCH")
+    _require(bool(decision.get("human_owner")) and bool(decision.get("decision_id"))
+             and decision.get("origin", {}).get("type") == "current_chat_user_message"
+             and bool(decision["origin"].get("user_reply_verbatim")), "HUMAN_DECISION_MISSING")
+    for role, ids in (("productologist", ["P1", "P2", "P3"]),
+                      ("methodologist", ["M1", "M2", "M3", "M4"])):
+        _require(decision.get(role, {}).get("status") == "APPROVED_FOR_EXACT_PROPOSAL"
+                 and decision[role].get("decision_ids") == ids, "HUMAN_DECISION_MISSING")
+    for name, reference in snapshot["source_files"].items():
+        _require(_hash(reference) and decision["reviewed_files_sha256"].get(name) == reference,
+                 "REVIEW_SOURCE_MISMATCH")
+    _require(bool(snapshot["source_files"]), "REVIEW_SOURCE_MISMATCH")
+
+
+def _validate_legacy_summary(decision: dict, design: dict) -> None:
+    summary = decision["accepted_plan_summary"]
+    timing = design["timing_basis"]
+    _require(summary["full_m2_count"] == len(design["full_m2_matrix"])
+             and summary["planned_target_count"] == len(design["proposed_target_ids"])
+             and summary["outside_plan_target_count"] == len(design["absent_target_ids"])
+             and summary["primary_route"] == [row["case_id"] for row in design["proposed_primary_route"]]
+             and summary["source_observation_row_count"] == len(design["observation_occurrences"])
+             and all(summary[name] == timing[name] for name in
+                     ("time_budget_seconds", "calendar_window_seconds")), "DECISION_SCOPE_MISMATCH")
+
+
 def validate_snapshot(snapshot: dict) -> dict:
     """Return the accepted design; an unchecked client JSON never grants start."""
     try:
-        _require(isinstance(snapshot, dict) and snapshot.get("contract") == CONTRACT,
+        _require(isinstance(snapshot, dict) and snapshot.get("contract") in {CONTRACT, PUBLISHER_CONTRACT},
                  "CONTRACT_UNSUPPORTED")
         _require(all(isinstance(snapshot.get(key), str) and bool(snapshot[key].strip())
                      for key in ("artifact_id", "artifact_version"))
@@ -49,25 +84,18 @@ def validate_snapshot(snapshot: dict) -> dict:
         # between the reviewed payload and the encompassing runtime snapshot.
         _require(review["canonicalization"] == "compact sorted UTF-8 JSON + LF"
                  and checksum(design) == review["proposal_payload_checksum"], "REVIEW_CHECKSUM_MISMATCH")
-        decision = snapshot["owner_decision"]
-        _require(snapshot["owner_decision_ref"]["content_checksum"] == checksum(decision)
-                 and _hash(snapshot["owner_decision_ref"].get("sha256")),
-                 "DECISION_CHECKSUM_MISMATCH")
-        _require(decision["proposal_id"] == design["proposal_id"]
-                 and decision["proposal_version"] == design["version"]
-                 and decision["proposal_payload_checksum"] == review["proposal_payload_checksum"],
-                 "DECISION_SCOPE_MISMATCH")
-        _require(bool(decision.get("human_owner")) and bool(decision.get("decision_id"))
-                 and decision.get("origin", {}).get("type") == "current_chat_user_message"
-                 and bool(decision["origin"].get("user_reply_verbatim")), "HUMAN_DECISION_MISSING")
-        for role, ids in (("productologist", ["P1", "P2", "P3"]),
-                          ("methodologist", ["M1", "M2", "M3", "M4"])):
-            _require(decision.get(role, {}).get("status") == "APPROVED_FOR_EXACT_PROPOSAL"
-                     and decision[role].get("decision_ids") == ids, "HUMAN_DECISION_MISSING")
-        for name, reference in snapshot["source_files"].items():
-            _require(_hash(reference) and decision["reviewed_files_sha256"].get(name) == reference,
-                     "REVIEW_SOURCE_MISMATCH")
-        _require(bool(snapshot["source_files"]), "REVIEW_SOURCE_MISMATCH")
+        if snapshot["contract"] == CONTRACT:
+            _validate_legacy_review(snapshot, design, review)
+        else:
+            release = snapshot["publisher_release"]
+            _require("release_program" in design
+                     and snapshot.get("owner_decision") is None
+                     and type(release.get("publisher_user_id")) is int
+                     and release["publisher_user_id"] > 0
+                     and bool(release.get("principal"))
+                     and _hash(release.get("archive_sha256"))
+                     and _hash(release.get("proposal_content_sha")),
+                     "PUBLISHER_RELEASE_INVALID")
         _require(isinstance(snapshot.get("participant_notice"), str) and bool(snapshot["participant_notice"].strip()),
                  "PARTICIPANT_NOTICE_REQUIRED")
         full = pairs(design["full_m2_matrix"])
@@ -101,14 +129,11 @@ def validate_snapshot(snapshot: dict) -> dict:
         timing = design["timing_basis"]
         _require(all(type(timing[name]) is int and timing[name] > 0
                      for name in ("time_budget_seconds", "calendar_window_seconds")), "TIMING_INVALID")
-        summary = decision["accepted_plan_summary"]
-        _require(summary["full_m2_count"] == len(full)
-                 and summary["planned_target_count"] == len(planned)
-                 and summary["outside_plan_target_count"] == len(outside)
-                 and summary["primary_route"] == [row["case_id"] for row in route]
-                 and summary["source_observation_row_count"] == len(opportunities)
-                 and all(summary[name] == timing[name] for name in
-                         ("time_budget_seconds", "calendar_window_seconds")), "DECISION_SCOPE_MISMATCH")
+        if snapshot["contract"] == CONTRACT:
+            _validate_legacy_summary(snapshot["owner_decision"], design)
+        else:
+            _require(all(_hash(case.get("admitted_checksum")) for case in cases.values()),
+                     "CASE_CHECKSUM_MISMATCH")
         return deepcopy(design)
     except (KeyError, TypeError, AttributeError) as exc:
         raise ValueError("PILOT_PLAN_SNAPSHOT_INVALID") from exc
