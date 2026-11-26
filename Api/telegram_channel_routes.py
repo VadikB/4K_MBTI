@@ -1,4 +1,4 @@
-"""Opt-in, single-tenant Telegram assessment transport. No account endpoints."""
+"""Opt-in Telegram assessment transport scoped to one organization."""
 
 from __future__ import annotations
 
@@ -80,12 +80,14 @@ def authorize(authorization: str | None) -> None:
         raise HTTPException(503, detail="TELEGRAM_CHANNEL_DISABLED")
 
 
-def require_subject(subject: str, organization_id: int) -> None:
-    if (
-        organization_id != settings.tg_student_organization_id
-        or str(subject) not in settings.tg_student_allowed_subjects
-    ):
-        raise HTTPException(404, detail="EDUCATIONAL_ASSIGNMENT_NOT_FOUND")
+def require_subject(subject: str, organization_id: int) -> str:
+    if organization_id == settings.tg_student_organization_id:
+        if subject in settings.tg_student_allowed_subjects:
+            return settings.tg_student_allowed_project_code
+        project_code = settings.tg_student_additional_subject_projects.get(subject)
+        if project_code:
+            return project_code
+    raise HTTPException(404, detail="EDUCATIONAL_ASSIGNMENT_NOT_FOUND")
 
 
 def authorize_context(ref: str) -> dict:
@@ -94,10 +96,10 @@ def authorize_context(ref: str) -> dict:
             row = channel.context(c, ref)
         except ValueError as exc:
             raise HTTPException(404, detail="EDUCATIONAL_ASSIGNMENT_NOT_FOUND") from exc
-        require_subject(str(row["external_subject_ref"]), int(row["organization_id"]))
-        if (row["snapshot_json"].get("project") or {}).get(
-            "code"
-        ) != settings.tg_student_allowed_project_code:
+        allowed_project = require_subject(
+            str(row["external_subject_ref"]), int(row["organization_id"])
+        )
+        if (row["snapshot_json"].get("project") or {}).get("code") != allowed_project:
             raise HTTPException(404, detail="EDUCATIONAL_ASSIGNMENT_NOT_FOUND")
         return row
 
@@ -179,10 +181,8 @@ def prepare_context(
     subject = str(
         (payload.snapshot.get("participant") or {}).get("external_subject_ref") or ""
     )
-    require_subject(subject, settings.tg_student_organization_id)
-    if (payload.snapshot.get("project") or {}).get(
-        "code"
-    ) != settings.tg_student_allowed_project_code:
+    allowed_project = require_subject(subject, settings.tg_student_organization_id)
+    if (payload.snapshot.get("project") or {}).get("code") != allowed_project:
         raise HTTPException(404, detail="EDUCATIONAL_ASSIGNMENT_NOT_FOUND")
     try:
         with get_connection() as c:
