@@ -42,3 +42,15 @@ M1 v1.4 FROZEN / CURRENT=NO и границы PM-03/PM-04 применимы к 
 test-службу, сохранив существующую конфигурацию. Опубликованные данные
 не удаляются. После выпуска проверить связь назначения №2, сохранение
 snapshot и текущий шаг 4К. Согласие и ответы в Telegram даёт участник.
+
+Локальный результат:
+
+- `pytest tests/e2e/test_telegram_subject_channel_http.py tests/test_telegram_project_context.py` — 21 PASS.
+- `pytest --run-integration -m integration tests/integration/test_telegram_subjects_db.py`
+  — 4 PASS на PostgreSQL 15, UTF-8, `product4k_pytest_tg_scope_utf8`.
+  Ошибка начальной проверки на SQL_ASCII устранена пересозданием отдельной БД.
+- Backend-набор — 1449 PASS, 9 проверок системных процессов ограничила
+  песочница macOS. В разрешённом повторе модуль `test_synthetic_limits.py`
+  прошёл целиком, 19 PASS.
+- `npm run lint:js`, `npm run ready:prepare -- --candidate 2.1.84`,
+  `git diff --check` — PASS.
