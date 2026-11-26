@@ -1639,7 +1639,7 @@ const confirmAdminAccountPurge = (button) => {
         return;
       }
       const preview = await module.previewAdminAccountPurge(userId);
-      if (Number(state.pendingUser?.id) !== actorId) return;
+      if (Number(state.pendingUser?.id) !== actorId || !button.isConnected || state.currentScreen !== 'admin-organizations') return;
       const tables = Object.entries(preview.tables || {}).filter(([, count]) => Number(count) > 0)
         .map(([name, count]) => name + ': ' + Number(count)).join(', ');
       const typed = window.prompt('Будут удалены аккаунт и связанные данные (' + tables + '). ' +
@@ -1788,6 +1788,15 @@ if (adminOrganizationsList) {
     }
     if (form.dataset.action === 'add-admin') {
       const fields = new FormData(form);
+      const emailField = form.elements.email;
+      const email = normalizeCredentialEmail(emailField.value);
+      if (email && email === normalizeCredentialEmail(state.pendingUser?.email)) {
+        emailField.setAttribute('aria-invalid', 'true');
+        form.querySelector('[data-admin-email-error]').textContent =
+          'Вы вошли с этой почтой как суперадминистратор. Укажите рабочую почту другого сотрудника';
+        emailField.focus();
+        return;
+      }
       const submit = form.querySelector('button[type="submit"]');
       submit.disabled = true;
       withScreen(loadAdminOrganizations, async (module) => {
@@ -1934,7 +1943,16 @@ if (adminOrganizationsList) {
     withScreen(loadAdminOrganizations, (module) =>
       module.markAdminOrganizationQuestionnairePreviewStale(organizationId, assessmentRef));
   };
-  adminOrganizationsList.addEventListener('input', markQuestionnairePreviewStale);
+  adminOrganizationsList.addEventListener('input', (event) => {
+    const field = event.target;
+    if (field instanceof HTMLInputElement &&
+        field.matches('form[data-action="add-admin"] input[name="email"][aria-invalid="true"]') &&
+        normalizeCredentialEmail(field.value) !== normalizeCredentialEmail(state.pendingUser?.email)) {
+      field.removeAttribute('aria-invalid');
+      field.form.querySelector('[data-admin-email-error]').textContent = '';
+    }
+    markQuestionnairePreviewStale(event);
+  });
   adminOrganizationsList.addEventListener('change', markQuestionnairePreviewStale);
   adminOrganizationsList.addEventListener('change', (event) => {
     const fileInput = event.target;
@@ -2101,6 +2119,26 @@ if (adminOrganizationsList) {
       });
       return;
     }
+    if (button.dataset.action === 'open-organization-account-appeals') {
+      const userId = Number(button.dataset.userId);
+      if (!userId || !state.adminOrganizations?.is_superadmin) return;
+      const epoch = state.identityEpoch;
+      const dialog = document.createElement('dialog');
+      dialog.className = 'admin-member-card-dialog';
+      dialog.setAttribute('aria-labelledby', 'organization-account-appeals-title');
+      dialog.innerHTML = '<form method="dialog"><h3 id="organization-account-appeals-title"></h3>' +
+        '<div data-card-actions></div><button class="primary-button" type="submit">Закрыть</button></form>';
+      dialog.querySelector('h3').textContent = value;
+      document.body.append(dialog);
+      dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
+      dialog.showModal();
+      void import('./screens/admin/appeals.js').then((module) => {
+        if (dialog.open && state.identityEpoch === epoch) {
+          module.mountMemberAppeals(dialog, organizationId, userId, { focus: true });
+        }
+      });
+      return;
+    }
     const checkPreparation = button.dataset.action === 'check-member-preparation';
     if (checkPreparation && state.adminOrganizations?.is_superadmin) {
       withScreen(loadAdminOrganizations, (module) => module.refreshAdminOrganizationsSafely());
@@ -2233,7 +2271,8 @@ if (adminOrganizationsList) {
       const epoch = state.identityEpoch;
       const consequences = revoke
         ? 'Сотрудник потеряет доступ к управлению организацией, анкете и архиву отчётов. Отчёты останутся в организации.' +
-          (participant === 'true' ? ' Участие сотрудника в оценке сохранится.' : '')
+          (participant === 'true' ? ' Участие сотрудника в оценке сохранится.' : '') +
+          (button.dataset.lastAdmin === 'true' ? ' После снятия прав у организации будет 0 администраторов.' : '')
         : (button.dataset.active === 'true'
           ? 'Администратор может работать с анкетой и открыть все отчёты этой организации, включая прежние.'
           : 'Доступ временно остановлен, пока организация неактивна.') +

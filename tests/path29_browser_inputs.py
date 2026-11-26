@@ -31,6 +31,7 @@ def seed(state_path, state):
     from scripts.build_m5_sales_package import build_execution_rules
     from Api import assessment_programs
     second_org_id = None
+    second_admin_email = None
     with get_connection() as c:
         org = None
         if full_path:
@@ -205,6 +206,17 @@ def seed(state_path, state):
             if state.get('f06_second_org') is True:
                 second_org_id = c.execute("""INSERT INTO organizations(code,name)
                     VALUES('path29_f06_second','Синтетическая вторая организация F06') RETURNING id""").fetchone()['id']
+                second_admin_email = 'path29-secondary-admin@example.test'
+                second_admin_id = c.execute("""INSERT INTO users(full_name,email)
+                    VALUES('Синтетический администратор второй организации',%s) RETURNING id""",
+                    (second_admin_email,)).fetchone()['id']
+                c.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,admission_source,admitted_at)
+                    VALUES(%s,%s,'admin','admin_add',NOW())""", (second_org_id, second_admin_id))
+                salt, digest = _hash_password(state['password'])
+                c.execute("""INSERT INTO auth_password_credentials(user_id,email,password_hash,password_salt)
+                    VALUES(%s,%s,%s,%s)""", (second_admin_id, second_admin_email, digest, salt))
+                c.execute("""INSERT INTO user_identities(user_id,provider,email,is_primary,is_verified,verified_at)
+                    VALUES(%s,'email_magic_link',%s,TRUE,TRUE,NOW())""", (second_admin_id, second_admin_email))
                 assessment_programs.connect(c, organization_id=second_org_id,
                     program_definition_id=program_id, actor_user_id=actor,
                     operation_id='path29-f06-connect-second')
@@ -212,7 +224,7 @@ def seed(state_path, state):
         c.commit()
     state['path29'] = {'organization_id': None if full_path else org, 'configuration_id': other['id'], 'program_id': program_id,
                       'role_version_id': role_id,
-                      'second_organization_id': second_org_id,
+                      'second_organization_id': second_org_id, 'second_admin_email': second_admin_email,
                       'input_mode': 'functional-diagnostic' if full_path else 'legacy-static',
                       'admin_email': 'path29-admin@example.test', 'participant_email': 'path29-new@example.test'}
     state_path.write_text(json.dumps(state))

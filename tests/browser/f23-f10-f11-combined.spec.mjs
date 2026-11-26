@@ -77,11 +77,36 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     // Текст option виден до завершения команды; ждём точный readback подключения.
     await expect(connect.locator('[data-program-connection-state]'))
       .toContainText('Подключено: Синтетическая программа 1.0 · 1.0');
+    const overview = superCard.getByRole('link', { name: 'Обзор', exact: true });
+    const adminsTab = superCard.getByRole('link', { name: 'Администраторы', exact: true });
+    await adminsTab.click();
     const administrators = superCard.locator('[data-organization-admins]');
     const grant = administrators.locator('form[data-action="add-admin"]');
+    const revokeOnlyAdmin = async (row, participant) => {
+      await row.locator('summary').click();
+      await row.getByRole('menuitem', { name: 'Снять права', exact: true }).click();
+      const confirmation = superPage.getByRole('dialog', { name: 'Снять права администратора?' });
+      await expect(confirmation).toContainText('у организации будет 0 администраторов');
+      if (participant) await expect(confirmation).toContainText('Участие сотрудника в оценке сохранится.');
+      await confirmation.getByRole('button', { name: 'Снять права', exact: true }).click();
+      await expect(administrators).toContainText('Права администратора сняты.');
+      await superPage.reload();
+      await expect(administrators).toContainText('Администраторов пока нет.');
+      await expect(grant.getByRole('button', { name: 'Добавить', exact: true })).toBeEnabled();
+    };
+    const roleOnlyEmail = 'role-only@example.test';
+    await grant.getByLabel('Рабочая почта').fill(roleOnlyEmail);
+    await grant.getByRole('button', { name: 'Добавить', exact: true }).click();
+    const roleOnly = administrators.locator('.admin-access-row').filter({ hasText: roleOnlyEmail });
+    await expect(roleOnly).toContainText('Только административный доступ');
+    await revokeOnlyAdmin(roleOnly, false);
+    const roleOnlyReadback = fixture('readback').role_only;
+    expect(roleOnlyReadback).toMatchObject({ email: roleOnlyEmail, role: null, is_participant: null });
+    save('revoked-admin-only', roleOnlyReadback);
+
     await grant.locator('input[type="email"]').fill('participant@example.test');
     await grant.getByRole('button', { name: 'Добавить', exact: true }).click();
-    await expect(grant).toContainText('Администратор добавлен.');
+    await expect(administrators).toContainText('Администратор добавлен.');
     const grantListingResponse = await superPage.request.get(`${base}/users/admin/organizations`);
     expect(grantListingResponse.status()).toBe(200);
     const grantListing = await grantListingResponse.json();
@@ -89,8 +114,7 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
       .toContainEqual(expect.objectContaining({ email: 'participant@example.test', is_participant: true }));
     const participantAdmin = administrators.locator('.admin-access-row').filter({ hasText: 'participant@example.test' });
     await expect(participantAdmin).toContainText('Также участник оценки');
-    await expect(administrators.locator('[data-action="delete-admin"]')).toHaveCount(0);
-    await expect(administrators).toContainText('Чтобы снять права у последнего администратора, сначала добавьте другого сотрудника.');
+    await expect(administrators.locator('[data-action="delete-admin"]')).toHaveCount(1);
     const afterGrant = fixture('readback');
     expect(afterGrant.membership).toEqual({ role: 'admin', is_participant: true });
     expect(afterGrant.superadmin_memberships).toBe(0);
@@ -147,10 +171,16 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     await expect(userPage.locator('#admin-organizations-panel')).toBeVisible();
     expect(fixture('readback').cycles).toHaveLength(0);
 
-    expect(fixture('seed-cycle')).toEqual({ synthetic_saved_cycle: true });
+    const report = fixture('seed-cycle');
+    const ownedReport = `${base}/users/assessment/m8/reports/${report.report_id}`;
+    const adminReport = `${base}/users/admin/m8-access/reports/${report.report_id}`;
+    const beforeRevoke = await userPage.request.get(ownedReport);
+    expect(beforeRevoke.status()).toBe(200);
+    expect((await userPage.request.get(adminReport)).status()).toBe(200);
     const frozen = fixture('readback');
     expect(frozen.cycles).toHaveLength(1);
     save('saved-a', frozen);
+    await overview.click();
     await connect.locator('[name="program_definition_id"]').selectOption(String(programB.id));
     await connect.getByRole('button', { name: 'Подключить', exact: true }).click();
     await expect(connect.locator('[data-program-connection-state]'))
@@ -165,32 +195,39 @@ test('F23/F10/F11: superadmin connects A, grants U, U assigns self, A survives B
     expect(switched.assignment).toEqual(frozen.assignment);
     expect(switched.binding).toEqual(frozen.binding);
     expect(switched.cycles).toEqual(frozen.cycles);
+    expect(switched.reports).toEqual(frozen.reports);
     expect(switched.control_connections).toBe(0);
     save('switched-b', switched);
 
-    const replacementEmail = 'replacement-admin@example.test';
-    await grant.getByLabel('Рабочая почта').fill(replacementEmail);
-    await grant.getByRole('button', { name: 'Добавить', exact: true }).click();
-    const replacement = administrators.locator('.admin-access-row').filter({ hasText: replacementEmail });
-    await expect(replacement).toContainText('Только административный доступ');
-
-    await participantAdmin.locator('summary').click();
-    await participantAdmin.getByRole('menuitem', { name: 'Снять права', exact: true }).click();
-    const confirmation = superPage.getByRole('dialog', { name: 'Снять права администратора?' });
-    await expect(confirmation).toContainText('Участие сотрудника в оценке сохранится.');
-    await confirmation.getByRole('button', { name: 'Снять права', exact: true }).click();
-    await expect(participantAdmin).toHaveCount(0);
-    await expect(replacement).toBeVisible();
-    await expect(superCard).toContainText('Права администратора сняты.');
-    await expect.poll(() => fixture('readback').membership.role).toBe('member');
+    await adminsTab.click();
+    await revokeOnlyAdmin(participantAdmin, true);
+    const lostScope = await userPage.request.get(`${base}/users/admin/organizations/${orgId}/questionnaire`);
+    expect(lostScope.status()).toBe(403);
+    expect((await userPage.request.get(adminReport)).status()).toBe(403);
+    expect((await userPage.request.get(adminReport + '/pdf')).status()).toBe(403);
+    const stillOwnsReport = await userPage.request.get(ownedReport);
+    expect(stillOwnsReport.status()).toBe(200);
+    expect(await stillOwnsReport.json()).toEqual(await beforeRevoke.json());
+    await userPage.reload();
+    await expect(userPage.locator('#admin-organizations-panel')).toBeHidden();
     const revoked = fixture('readback');
-    expect(revoked.membership.is_participant).toBe(true);
+    expect(revoked.membership).toEqual({ role: 'member', is_participant: true });
     expect(revoked.assignment).toEqual(frozen.assignment);
     expect(revoked.binding).toEqual(frozen.binding);
     expect(revoked.cycles).toEqual(frozen.cycles);
+    expect(revoked.reports).toEqual(frozen.reports);
     expect(revoked.superadmin_memberships).toBe(0);
     expect(revoked.control_connections).toBe(0);
     save('revoked', revoked);
+    await superPage.locator('.platform-org-breadcrumb a').click();
+    const zero = superPage.locator('#platform-org-rows a[data-org-id="' + orgId + '"][data-org-admins]');
+    await expect(zero).toHaveText('0');
+    await zero.click();
+    await grant.getByLabel('Рабочая почта').fill('participant@example.test');
+    await grant.getByRole('button', { name: 'Добавить', exact: true }).click();
+    await expect(participantAdmin).toContainText('Также участник оценки');
+    expect(fixture('readback').membership).toEqual({ role: 'admin', is_participant: true });
+    expect((await userPage.request.get(adminReport)).status()).toBe(200);
   } finally {
     try {
       await Promise.allSettled([superContext.close(), userContext.close()]);

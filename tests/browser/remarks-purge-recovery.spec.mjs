@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-test('F02 AC03/04 current people, real clicks, HTTP and owned PostgreSQL: failure, lost reply before/after commit, reload, same receipt', async ({ browser }) => {
+test('F02 AC03/04 organization history, HTTP and owned PostgreSQL: failure, lost reply before/after commit, reload, same receipt', async ({ browser }) => {
   test.setTimeout(180000);
   if (!process.env.STAND_ADMIN_URL) throw new Error('Explicit owned localhost STAND_ADMIN_URL required');
   const python = process.env.BROWSER_PYTHON || path.join(process.cwd(), '.venv/bin/python');
@@ -42,15 +42,18 @@ test('F02 AC03/04 current people, real clicks, HTTP and owned PostgreSQL: failur
     const openOrganizations = async () => {
       await page.goto(base);
       await expect(page.locator('#admin-organizations-panel')).toBeVisible();
-      await page.locator('#platform-org-rows [data-org-id="' + prepared.organization_id + '"]:not([data-org-admins])').click();
+      await page.locator('#platform-org-rows [data-org-id="' + prepared.organization_id + '"][data-platform-org-view="card"]').click();
+      await page.getByRole('link', { name: 'Журнал и операции', exact: true }).click();
     };
     await openOrganizations();
     const status = page.locator('#admin-organizations-panel [data-operation-status]:visible, #admin-organizations-status:visible').last();
     const before = prepared.users.before, after = prepared.users.after;
-    const purge = (user) => page.locator(`button[data-action="purge-account"][data-user-id="${user.id}"]`);
+    const account = page.locator('[data-org-account-actions="purge"]');
+    const purge = (user) => account.locator(`button[data-action="purge-account"][data-user-id="${user.id}"]`);
     const clickPurge = async (user) => {
-      const menu = purge(user).locator('xpath=ancestor::details');
-      if (await menu.getAttribute('open') === null) await menu.locator('summary').click();
+      if (await account.getAttribute('open') === null) await account.locator('summary').click();
+      await account.getByRole('searchbox', { name: 'Рабочая почта' }).fill(user.email);
+      await expect(purge(user)).toBeEnabled();
       await purge(user).click();
     };
     const recovery = (user) => page.locator(`.admin-purge-recovery button[data-action="recover-purge-account"][data-user-id="${user.id}"]`);

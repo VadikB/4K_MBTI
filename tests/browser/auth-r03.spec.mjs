@@ -840,7 +840,7 @@ for (const lostCommandResponse of [false, true]) {
   }
 }
 
-test('PROGRAM01 R10 finishes exact program connection while questionnaire refresh is pending', async ({ page }) => {
+test('PROGRAM01 R10 confirms the exact program connection in the platform cabinet without loading the questionnaire', async ({ page }) => {
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const connection = {
     organization_id: 3, program_definition_id: 11, program_name: 'Пилот 4К · 9 кейсов',
@@ -850,8 +850,6 @@ test('PROGRAM01 R10 finishes exact program connection while questionnaire refres
     id: 3, code: 'r10', name: 'R10 Organization', is_active: true, domains: [], admins: [],
     members_count: 0, reports_count: 0, members: [], assessment_program: null,
   };
-  let releaseQuestionnaire;
-  const questionnairePending = new Promise((resolve) => { releaseQuestionnaire = resolve; });
   let questionnaireRequests = 0;
   await page.route('**/users/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname;
@@ -868,7 +866,6 @@ test('PROGRAM01 R10 finishes exact program connection while questionnaire refres
     }
     if (pathname === '/users/admin/organizations/3/questionnaire') {
       questionnaireRequests += 1;
-      await questionnairePending;
       return fulfillJson(route, { detail: 'synthetic questionnaire unavailable' }, 503);
     }
     if (pathname === '/users/admin/organizations/3/assessment-program' && route.request().method() === 'PUT') {
@@ -887,9 +884,7 @@ test('PROGRAM01 R10 finishes exact program connection while questionnaire refres
   await form.getByRole('button', { name: 'Подключить' }).click();
   await expect(form).toContainText('Подключено: Пилот 4К · 9 кейсов · 1.1');
   await expect(form.locator('[data-operation-status]')).toContainText('Опубликованная версия программы подключена');
-  expect(questionnaireRequests).toBeGreaterThanOrEqual(1);
-  releaseQuestionnaire();
-  await expect(form.locator('[data-operation-status]')).toContainText('Опубликованная версия программы подключена');
+  expect(questionnaireRequests).toBe(0);
 });
 
 test('PROGRAM01 R10 shows verified absence when exact readback is null', async ({ page }) => {
@@ -1194,6 +1189,7 @@ async function openAdminOrganizations(page, invitationHandler, organization = ad
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
   if (isSuperadmin) {
     await page.locator('#platform-org-rows [data-org-id="' + organization.id + '"]:not([data-org-admins])').click();
+    return;
   }
   if (organization.members.length) {
     await page.locator('[data-action="open-member-card"]').first().waitFor();
@@ -1644,11 +1640,11 @@ for (const [status, detail] of [[403, 'Недостаточно прав.'], [50
   });
 }
 
-test('PROGRAM01 R05 keeps privileged password reset in the card and exposes only an authorized exact report', async ({ page }) => {
+test('PROGRAM01 R05 keeps privileged password reset and the exact report in organization support', async ({ page }) => {
   const reportId = '11111111-1111-4111-8111-111111111111';
   const organization = {
     ...adminOrganization,
-    members: [{ ...adminOrganization.members[0], has_password: true,
+    members: [{ ...adminOrganization.members[0], has_password: true, issue_count: 1,
       invitation_created_at: '2026-11-01T10:00:00Z', invitation_expires_at: '2026-11-04T10:00:00Z',
       assessment_assignments: ['competencies_4k'], assessment_stages: {
         competencies_4k: { code: 'report_ready', label: 'Отчёт готов', action: 'open_report',
@@ -1657,15 +1653,22 @@ test('PROGRAM01 R05 keeps privileged password reset in the card and exposes only
       } }],
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization, null, true);
-  const row = page.locator('.admin-organization-member').first();
-  await expect(row.getByRole('button', { name: 'Открыть отчёт' })).toHaveAttribute('data-report-id', reportId);
-  await row.locator('.admin-organization-member-menu summary').click();
-  await expect(row.getByRole('menuitem', { name: 'Сбросить пароль' })).toHaveCount(0);
-  await row.locator('[data-action="open-member-card"]').click();
-  const card = page.locator('.admin-member-card-dialog');
-  await expect(card).not.toContainText('История приглашения');
-  await expect(row.locator('.admin-organization-member-invitation')).toContainText('Ссылка');
-  await expect(card.getByRole('button', { name: 'Сбросить пароль' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Сбросить пароль' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Журнал и операции' }).click();
+  const support = page.locator('[data-org-account-actions="support"]');
+  await support.locator('summary').click();
+  await support.getByRole('searchbox', { name: 'Рабочая почта' }).fill(organization.members[0].email);
+  await expect(support.getByRole('button', { name: 'Сбросить пароль' })).toBeVisible();
+  await expect(support.getByRole('button', { name: 'Открыть отчёт' })).toHaveAttribute('data-report-id', reportId);
+  const appeals = '/users/admin/organizations/3/members/' + organization.members[0].user_id + '/issues';
+  await page.route('**' + appeals, (route) => fulfillJson(route, { items: [] }));
+  const read = page.waitForResponse((response) => response.url().endsWith(appeals));
+  const trigger = support.getByRole('button', { name: 'Открыть обращения' });
+  await trigger.click();
+  expect((await read).status()).toBe(200);
+  await expect(page.getByRole('heading', { name: 'Обращения участника' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
 });
 
 test('ADM-UI-01 keeps the sent menu to two items and moves deletion and incident facts to the card', async ({ page }) => {
@@ -1847,51 +1850,23 @@ test('QA19-03 keeps long participant rows readable and actions associated after 
   await expect(page.locator('.admin-purge-recovery')).toHaveCount(0);
 });
 
-test('ADM-STATUS-01 keeps superadmin participant cards readable on narrow viewports', async ({ page }) => {
-  const longEmail = 'very.long.participant.name.for.superadmin.layout@example.invalid';
+test('ADM-STATUS-01 keeps administrator identity and access readable on narrow viewports', async ({ page }) => {
+  const longEmail = 'very.long.administrator.name.for.superadmin.layout@example.invalid';
   const organization = {
     ...adminOrganization,
-    members: [{ ...adminOrganization.members[0], email: longEmail,
-      full_name: 'Очень длинное имя участника для мобильной карточки суперадмина',
-      raw_position: 'Руководитель направления корпоративных внедрений',
-      invitation_delivery_status: 'accepted' }],
+    admins: [{ user_id: 21, email: longEmail, is_participant: true,
+      full_name: 'Очень длинное имя администратора для мобильной карточки организации' }],
   };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization, null, true);
-  const row = page.locator('.admin-organization-member').first();
-
+  await page.getByRole('link', { name: 'Администраторы', exact: true }).click();
+  const row = page.locator('.admin-access-row');
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(page.locator('.app-footer')).toHaveCSS('background-color', 'rgb(246, 249, 249)');
-    const layout = await row.evaluate((member) => {
-      const main = member.querySelector('.admin-organization-member-main').getBoundingClientRect();
-      const name = member.querySelector('.admin-organization-member-name').getBoundingClientRect();
-      const stage = member.querySelector('.admin-organization-member-stage').getBoundingClientRect();
-      const menu = member.querySelector('.admin-organization-member-menu').getBoundingClientRect();
-      return {
-        documentWidth: document.documentElement.scrollWidth,
-        viewportWidth: document.documentElement.clientWidth,
-        rowWidth: member.getBoundingClientRect().width,
-        mainWidth: main.width,
-        nameWidth: name.width,
-        mainRight: main.right,
-        mainBottom: main.bottom,
-        stageX: stage.x,
-        stageY: stage.y,
-        menuWidth: menu.width,
-        menuHeight: menu.height,
-      };
-    });
-    expect(layout.documentWidth, JSON.stringify(layout)).toBeLessThanOrEqual(layout.viewportWidth + 1);
-    expect(layout.rowWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(width <= 390 ? 190 : 400);
-    expect(layout.mainWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(width <= 390 ? 150 : 180);
-    expect(layout.nameWidth, JSON.stringify(layout)).toBeGreaterThanOrEqual(width <= 390 ? 150 : 180);
-    if (layout.stageY < layout.mainBottom - 1) {
-      expect(layout.mainRight, JSON.stringify(layout)).toBeLessThanOrEqual(layout.stageX + 1);
-    } else {
-      expect(layout.stageY, JSON.stringify(layout)).toBeGreaterThanOrEqual(layout.mainBottom - 1);
-    }
-    expect(layout.menuWidth).toBeGreaterThanOrEqual(44);
-    expect(layout.menuHeight).toBeGreaterThanOrEqual(44);
+    await expect(row.getByText(longEmail)).toBeVisible();
+    await expect(row.getByText('Также участник оценки')).toBeVisible();
+    expect(await row.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(await row.evaluate((element) => element.clientWidth));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
   }
 });
 

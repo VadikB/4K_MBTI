@@ -137,7 +137,7 @@ const purgeResult = async (command, mode, isCurrent) => {
   }
 };
 
-export function mountOrganizationPurgeRecovery(root, command, { isCurrent, onPurged, initialResult, onRefused }) {
+export function mountOrganizationPurgeRecovery(root, command, { isCurrent, onPurged, initialResult, onRefused, allowRetry }) {
   root.innerHTML = '<div class="org-history-actions">' +
     button('Проверить результат удаления', 'read') +
     button('Повторить ту же команду', 'retry', 'ghost-button compact-ghost', ' hidden') +
@@ -145,17 +145,19 @@ export function mountOrganizationPurgeRecovery(root, command, { isCurrent, onPur
   const read = root.querySelector('[data-history-action="read"]');
   const retry = root.querySelector('[data-history-action="retry"]');
   const status = root.querySelector('[role="status"]');
-  if (initialResult) {
-    status.textContent = initialResult.error;
-    retry.hidden = !initialResult.missing;
-  }
+  const showResult = (result) => {
+    status.textContent = result.missing && !allowRetry
+      ? 'Квитанция пока отсутствует. Повтор команды недоступен в этом контуре.' : result.error;
+    retry.hidden = !allowRetry || !result.missing;
+  };
+  if (initialResult) showResult(initialResult);
   const run = async (mode) => {
     read.disabled = retry.disabled = true;
     status.textContent = 'Проверяем квитанцию…';
     const result = await purgeResult(command, mode, isCurrent);
     if (!result || !isCurrent()) return;
     if (result.confirmed) return onPurged(command.organizationId);
-    status.textContent = result.error;
+    showResult(result);
     try {
       if (!pendingPurge(command.actorId, command.organizationId)) {
         if (onRefused) return onRefused(result.error);
@@ -166,11 +168,10 @@ export function mountOrganizationPurgeRecovery(root, command, { isCurrent, onPur
       status.textContent = 'Не удалось прочитать сохранённую операцию.';
     }
     read.disabled = retry.disabled = false;
-    retry.hidden = !result.missing;
     read.focus({ preventScroll: true });
   };
   read.addEventListener('click', () => void run('read'));
-  retry.addEventListener('click', () => void run('retry'));
+  retry.addEventListener('click', () => { if (allowRetry) void run('retry'); });
 }
 
 const accountEffect = (account) => {
@@ -205,19 +206,23 @@ export function mountOrganizationHistory(root, organization, context) {
   const { actorId, isCurrent, onAvailability, onPurged, purgePreviewAvailable, physicalPurgeAvailable } = context;
   const id = Number(organization.id);
   const lifecycleKey = actorId + ':' + id;
+  let executionAvailable = physicalPurgeAvailable;
   const visible = () => root.isConnected && isCurrent();
   root.innerHTML = '<section class="platform-org-summary-panel" aria-labelledby="org-history-heading">' +
     '<h3 id="org-history-heading" tabindex="-1">Журнал организации</h3><div data-history-events></div></section>' +
     '<section class="platform-org-summary-panel" aria-labelledby="org-availability-heading">' +
     '<h3 id="org-availability-heading">Управление доступностью</h3>' +
     '<p data-availability-note></p><div class="org-history-actions" data-lifecycle-actions></div>' +
-    '<p data-lifecycle-status class="platform-org-note" tabindex="-1" role="status"></p>' +
-    (purgePreviewAvailable ? '<details class="org-history-details"><summary>Полное удаление организации</summary>' +
-      '<p data-execution-availability>' + (physicalPurgeAvailable ? 'Сервер проверит состав и ограничения перед исполнением.'
-        : 'Команда полного удаления недоступна в этом контуре.') + '</p>' +
-      '<div data-org-purge>' + button('Посмотреть состав удаления', 'preview') + '</div></details>' : '') +
-    '<details class="org-history-details"><summary>Удаление человека и его аккаунта</summary>' +
-    '<p>Состав удаления аккаунта доступен в разделе участников. Отзыв прав администратора выполняется в разделе администраторов.</p></details></section>';
+    '<p data-lifecycle-status class="platform-org-note" tabindex="-1" role="status"></p></section>' +
+    '<section class="platform-org-summary-panel org-history-details" aria-labelledby="org-purge-heading">' +
+    '<h3 id="org-purge-heading" tabindex="-1">Полное удаление организации</h3><p>' +
+    escapeHtml(organization.name) + ' · код ' + escapeHtml(organization.code) + '</p>' +
+    '<p>Связанные данные будут удалены без возможности восстановления.</p>' +
+    '<p class="platform-org-note" role="status" data-execution-availability>' +
+    (purgePreviewAvailable && physicalPurgeAvailable ? 'Доступность исполнения уточняется при просмотре состава.'
+      : 'Команда полного удаления недоступна в этом контуре.') + '</p><div data-org-purge>' +
+    (purgePreviewAvailable ? button('Посмотреть состав удаления', 'preview') : '<p>Состав удаления недоступен.</p>') +
+    '</div></section>';
   const list = root.querySelector('[data-history-events]');
   const actions = root.querySelector('[data-lifecycle-actions]');
   const status = root.querySelector('[data-lifecycle-status]');
@@ -286,10 +291,12 @@ export function mountOrganizationHistory(root, organization, context) {
     if (focus) purge.querySelector('button').focus();
   };
   const recover = (command, initialResult) => {
-    purge.closest('details').open = true;
     mountOrganizationPurgeRecovery(purge, command, {
-      isCurrent, onPurged, initialResult,
-      onRefused: (message) => showPreviewButton(message, true),
+      isCurrent, onPurged, initialResult, allowRetry: executionAvailable && purgePreviewAvailable,
+      onRefused: (message) => {
+        if (purgePreviewAvailable) showPreviewButton(message, true);
+        else purge.textContent = message;
+      },
     });
   };
   if (purge) {
@@ -310,15 +317,17 @@ export function mountOrganizationHistory(root, organization, context) {
       if (preview.target_id !== id || preview.target_type !== 'organization' ||
           !preview.fingerprint || !preview.tables || !Array.isArray(preview.accounts) ||
           !Array.isArray(preview.execution_blockers)) throw new Error('Сервер не подтвердил состав для этой организации.');
-      root.querySelector('[data-execution-availability]').textContent = preview.execution_available === true
-        ? 'Сервер сверит подтверждённый состав перед исполнением.' : 'Команда полного удаления недоступна в этом контуре.';
+      executionAvailable = preview.execution_available === true;
+      root.querySelector('[data-execution-availability]').textContent = !executionAvailable
+        ? 'Команда полного удаления недоступна в этом контуре.'
+        : preview.execution_blockers.length ? 'Исполнение заблокировано.' : 'Команда полного удаления доступна.';
       purge.innerHTML = previewContent(organization, preview);
       purge.querySelector('[data-purge-preview-title]').focus();
       const form = purge.querySelector('form');
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!visible()) return;
-        const code = form.elements.confirmation_code.value.trim();
+        const code = form.elements.confirmation_code.value;
         const feedback = purge.querySelector('[data-purge-feedback]');
         if (code !== organization.code || !form.elements.acknowledge_irreversible.checked) {
           feedback.textContent = 'Введите точный код организации и подтвердите необратимость.';

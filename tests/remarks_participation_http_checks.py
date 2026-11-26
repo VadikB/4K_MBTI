@@ -39,6 +39,8 @@ from Api.web_session_service import web_session_service
 
 EVENTS = []
 SNAPSHOTS = []
+CONFIGURED_EMAIL = 'configured-only@example.test'
+CONFIGURED_ORGANIZATION = 'remarks_configured'
 
 
 class Client:
@@ -74,16 +76,21 @@ class Client:
         return data
 
 
+def table_snapshot(connection, tables):
+    result = {}
+    for table in tables:
+        rows = connection.execute(f'SELECT to_jsonb(t) AS row FROM {table} t ORDER BY to_jsonb(t)::text').fetchall()
+        raw = json.dumps([row['row'] for row in rows], sort_keys=True, default=str).encode()
+        result[table] = {'count': len(rows), 'sha256': hashlib.sha256(raw).hexdigest()}
+    return result
+
+
 def snapshot():
     tables = ('organization_assessment_assignments', 'organization_assessment_source_bindings',
         'questionnaire_response_revisions', 'assessment_personalized_profiles', 'm5_cycles',
         'assessment_preparation_jobs', 'product_cycle_preparation_operations')
     with get_connection() as connection:
-        result = {}
-        for table in tables:
-            rows = connection.execute(f'SELECT to_jsonb(t) AS row FROM {table} t ORDER BY to_jsonb(t)::text').fetchall()
-            raw = json.dumps([row['row'] for row in rows], sort_keys=True, default=str).encode()
-            result[table] = {'count': len(rows), 'sha256': hashlib.sha256(raw).hexdigest()}
+        result = table_snapshot(connection, tables)
         result['user_profile_selection'] = [dict(row) for row in connection.execute('''
             SELECT id,active_profile_id,selected_role_profile_version_id FROM users ORDER BY id''').fetchall()]
     return result
@@ -103,6 +110,87 @@ def assert_managed_guards(client, user_id, role_id):
     SNAPSHOTS.append({'context': 'managed_guards', 'user_id': user_id,
         'before': before, 'after': after, 'unchanged': before == after})
     assert before == after, 'managed refusal changed sources, profiles, assignments or Cycle'
+
+
+def assert_configured_admin_login_after_revoke(base, superadmin):
+    from Api.auth_service import _hash_password
+
+    with get_connection() as connection:
+        user_id = connection.execute('INSERT INTO users(email,full_name) VALUES(%s,%s) RETURNING id',
+            (CONFIGURED_EMAIL, 'Synthetic configured admin')).fetchone()['id']
+        salt, digest = _hash_password(state['password'])
+        connection.execute("""INSERT INTO auth_password_credentials(user_id,email,password_hash,password_salt)
+            VALUES(%s,%s,%s,%s)""", (user_id, CONFIGURED_EMAIL, digest, salt))
+        connection.commit()
+    login = '/users/auth/email/password-login'
+    credentials = {'email': CONFIGURED_EMAIL, 'password': state['password']}
+    configured = Client(base)
+    configured.request('POST', login, payload=credentials)
+    listed = configured.request('GET', '/users/admin/organizations')
+    (org,) = listed['items']
+    assert org['code'] == CONFIGURED_ORGANIZATION
+    assert [item['is_participant'] for item in org['admins']] == [False]
+    admins = f"/users/admin/organizations/{org['id']}/admins"
+    changed = superadmin.request('DELETE', admins, params={'email': CONFIGURED_EMAIL})
+    assert next(item for item in changed['items'] if item['id'] == org['id'])['admins'] == []
+    Client(base).request('POST', login, payload=credentials, expected=403)
+    with get_connection() as connection:
+        assert connection.execute('SELECT role FROM organization_memberships WHERE user_id=%s',
+            (user_id,)).fetchone() is None
+        assert connection.execute('SELECT email FROM auth_password_credentials WHERE user_id=%s',
+            (user_id,)).fetchone()['email'] == CONFIGURED_EMAIL
+        assert connection.execute("""SELECT reason FROM configured_access_suppressions
+            WHERE email=%s AND access_kind='organization_admin' AND organization_code=%s""",
+            (CONFIGURED_EMAIL, CONFIGURED_ORGANIZATION)).fetchone()['reason'] == 'superadmin_revoke'
+    superadmin.request('POST', admins, payload={'email': CONFIGURED_EMAIL})
+    restored = Client(base)
+    restored.request('POST', login, payload=credentials)
+    assert [item['id'] for item in restored.request('GET', '/users/admin/organizations')['items']] == [org['id']]
+
+
+def assert_superadmin_self_grant_refused(superadmin, actor_id, organization_id):
+    alias = 'superadmin-verified-alias@example.test'
+    tables = ('users', 'user_identities', 'organization_memberships', 'user_platform_roles',
+        'platform_role_permissions', 'configured_access_suppressions', 'configured_organization_membership_suppressions')
+    url = f'/users/admin/organizations/{organization_id}/admins'
+    with get_connection() as connection:
+        email = connection.execute('SELECT email FROM users WHERE id=%s', (actor_id,)).fetchone()['email']
+        org_code = connection.execute('SELECT code FROM organizations WHERE id=%s', (organization_id,)).fetchone()['code']
+        connection.execute("""INSERT INTO user_identities
+            (user_id,provider,provider_subject,email,is_primary,is_verified,verified_at)
+            VALUES(%s,'email_magic_link',%s,%s,FALSE,TRUE,NOW())""", (actor_id, alias, alias))
+        for address in (email, alias):
+            connection.execute("""INSERT INTO configured_access_suppressions
+                (email,access_kind,organization_code,reason,created_by_user_id)
+                VALUES(%s,'organization_admin',%s,'superadmin_revoke',%s)""", (address, org_code, actor_id))
+        connection.execute("""INSERT INTO configured_organization_membership_suppressions
+            (user_id,organization_id,reason,created_by_user_id)
+            VALUES(%s,%s,'superadmin_revoke',%s)""", (actor_id, organization_id, actor_id))
+        connection.commit()
+        before = table_snapshot(connection, tables)
+
+    for case, address, code in (
+        ('session_email', email, None),
+        ('normalized_session_email', f'  {email.upper()}  ', None),
+        ('linked_email', alias, 'ADMIN_EMAIL_ALREADY_LINKED'),
+    ):
+        superadmin.request('POST', url, payload={'email': address, 'full_name': 'Synthetic AC6 attempt'},
+            expected=409, code=code)
+        with get_connection() as connection:
+            after = table_snapshot(connection, tables)
+        SNAPSHOTS.append({'context': 'ac6_superadmin_self_grant_refused', 'case': case,
+            'before': before, 'after': after, 'unchanged': before == after})
+        assert after == before, f'AC6 {case} changed account, roles, memberships or suppressions'
+
+    colleague = 'ac6-colleague@example.test'
+    granted = superadmin.request('POST', url, payload={'email': colleague, 'full_name': 'Synthetic AC6 colleague'})
+    assert granted['is_superadmin'] is True
+    org = next(item for item in granted['items'] if item['id'] == organization_id)
+    assert [(item['email'], item['is_participant']) for item in org['admins']] == [(colleague, False)]
+    with get_connection() as connection:
+        assert connection.execute("""SELECT m.role,m.is_participant FROM organization_memberships m
+            JOIN users u ON u.id=m.user_id WHERE m.organization_id=%s AND u.email=%s""",
+            (organization_id, colleague)).fetchone() == {'role': 'admin', 'is_participant': False}
 
 
 def main(base):
@@ -183,25 +271,30 @@ def main(base):
     superadmin.request('POST', f'/users/admin/users/{candidate_id}/transfer-organization', expected=410,
         code='ORGANIZATION_TRANSFER_REMOVED', payload={'expected_source_organization_id': org,
             'target_organization_id': foreign_org, 'target_role': 'member', 'operation_id': 'removed-transfer-test'})
-    # Preserve one organization administrator, then revoke the dual role.
-    superadmin.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'},
-        expected=409, code='LAST_ORGANIZATION_ADMIN')
+    # The platform can revoke the only administrator without removing participation.
+    admin.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'}, expected=403)
+    member.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'}, expected=403)
+    for _ in range(2):
+        changed = superadmin.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'})
+        current = next(item for item in changed['items'] if item['id'] == org)
+        assert current['admins'] == [] and current['members_count'] == 3
+    admin.request('GET', org_path + '/assessment-source-options', expected=403)
+    admin.request('GET', org_path + '/questionnaire', expected=403)
+    assert snapshot() == frozen
     replacement_email = 'replacement-admin@example.test'
     changed = superadmin.request('POST', org_path + '/admins', payload={
         'email': replacement_email, 'full_name': 'Synthetic replacement admin'})
     current = next(item for item in changed['items'] if item['id'] == org)
     assert current['members_count'] == 3
-    assert {item['email']: item['is_participant'] for item in current['admins']} == {
-        'other@example.test': True, replacement_email: False,
-    }
-    superadmin.request('DELETE', org_path + '/admins', params={'email': 'other@example.test'})
-    admin.request('GET', org_path + '/assessment-source-options', expected=403)
+    assert {item['email']: item['is_participant'] for item in current['admins']} == {replacement_email: False}
     with get_connection() as connection:
         assert connection.execute('''SELECT role,is_participant FROM organization_memberships
             WHERE user_id=%s''', (admin_id,)).fetchone() == {'role': 'member', 'is_participant': True}
         assert connection.execute('SELECT COUNT(*) AS n FROM organizations WHERE id=%s', (foreign_org,)).fetchone()['n'] == 1
         assert connection.execute("SELECT COUNT(*) AS n FROM users WHERE email='foreign-control@example.test'").fetchone()['n'] == 1
         assert connection.execute('SELECT id FROM users WHERE id=%s', (detached_id,)).fetchone()['id'] == detached_id
+    assert_configured_admin_login_after_revoke(base, superadmin)
+    assert_superadmin_self_grant_refused(superadmin, users['superadmin@example.test'], foreign_org)
 
 
 def run_http_checks(checker, *, evidence_file_env='REMARKS_PARTICIPATION_EVIDENCE',
@@ -251,4 +344,5 @@ def run_http_checks(checker, *, evidence_file_env='REMARKS_PARTICIPATION_EVIDENC
 
 
 if __name__ == '__main__':
+    os.environ['ORG_ADMIN_EMAILS'] = CONFIGURED_ORGANIZATION + ':' + CONFIGURED_EMAIL
     run_http_checks(main)

@@ -5232,13 +5232,6 @@ def delete_admin_organization_admin(organization_id: int, email: str, request: R
         if target is not None:
             user_id = int(target["user_id"])
             _reject_platform_protected_account(connection, email=normalized_email, user_id=user_id)
-            has_other_admin = connection.execute(
-                """SELECT 1 FROM organization_memberships
-                   WHERE organization_id=%s AND role='admin' AND user_id<>%s LIMIT 1""",
-                (organization_id, user_id),
-            ).fetchone()
-            if not has_other_admin:
-                raise HTTPException(status_code=409, detail="LAST_ORGANIZATION_ADMIN")
             connection.execute(
                 """INSERT INTO configured_access_suppressions(
                        email,access_kind,organization_code,reason,created_by_user_id

@@ -22,7 +22,6 @@ class _Connection:
         self.rowcount = 0
         self.delete_rowcount = delete_rowcount
         self.is_active = False
-        self.has_other_admin = True
 
     def execute(self, query, params=None):
         self.queries.append((" ".join(query.split()), params))
@@ -37,8 +36,6 @@ class _Connection:
         query = self.queries[-1][0]
         if "SELECT om.user_id" in query:
             return {"user_id": 18}
-        if "user_id<>%s" in query:
-            return {"exists": 1} if self.has_other_admin else None
         if "JOIN user_platform_roles" in query:
             return None
         return {"id": 3, "code": "synthetic-org", "is_active": self.is_active}
@@ -242,16 +239,16 @@ def test_paused_organization_refuses_admin_writes(monkeypatch, membership_http, 
                    for query, _ in connection.queries)
 
 
-def test_last_admin_rejection_preserves_membership_and_config(monkeypatch, membership_http):
+def test_last_admin_revoke_commits_suppression_and_confirms_empty_list(monkeypatch, membership_http):
     http, connection = membership_http
     connection.is_active = True
-    connection.has_other_admin = False
     monkeypatch.setattr(routes, "_require_superadmin", lambda *_args: None)
     response = http.delete("/users/admin/organizations/4/admins", params={"email": "person@example.test"})
-    assert response.status_code == 409
-    assert response.json()["detail"] == "LAST_ORGANIZATION_ADMIN"
-    assert not connection.committed
-    assert not any("INSERT INTO" in query or "DELETE FROM" in query for query, _ in connection.queries)
+    assert response.status_code == 200
+    assert connection.committed
+    assert any("FOR NO KEY UPDATE" in query for query, _ in connection.queries)
+    assert any("INSERT INTO configured_access_suppressions" in query for query, _ in connection.queries)
+    assert any("DELETE FROM organization_memberships" in query for query, _ in connection.queries)
 
 
 def test_removed_transfer_endpoint_is_gone_for_superadmin(monkeypatch, membership_http):

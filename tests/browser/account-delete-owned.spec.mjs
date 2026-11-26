@@ -41,6 +41,28 @@ test('F02 current people → HTTP → PostgreSQL, full graph, scope guards, rece
     await page.goto(base);
     await expect(page.locator('#admin-organizations-panel')).toBeVisible();
     const users = prepared.users;
+    const superPage = await superContext.newPage();
+    await superPage.goto(base);
+    await superPage.locator('#platform-org-rows [data-platform-org-view="card"][data-org-id="' + prepared.organization_id + '"]').click();
+    await superPage.getByRole('link', { name: 'Журнал и операции' }).click();
+    const accountActions = superPage.locator('[data-org-account-actions="purge"]');
+    await accountActions.locator('summary').click();
+    const email = accountActions.getByRole('searchbox', { name: 'Рабочая почта' });
+    await email.fill(users.foreign.email);
+    await expect(accountActions.getByText('Аккаунт с такой почтой не найден в этой организации.')).toBeVisible();
+    await expect(accountActions.getByRole('button', { name: 'Удалить человека' })).toHaveCount(0);
+    for (const target of [users.member, users.admin]) {
+      await email.fill(target.email);
+      const action = accountActions.getByRole('button', { name: 'Удалить человека' });
+      await expect(action).toHaveAttribute('data-user-id', String(target.id));
+    }
+    await email.fill(users.member.email);
+    const preview = superPage.waitForResponse((response) => response.url().endsWith('/users/' + users.member.id + '/purge-preview'));
+    superPage.once('dialog', (dialog) => dialog.dismiss());
+    await accountActions.getByRole('button', { name: 'Удалить человека' }).click();
+    expect((await preview).status()).toBe(200);
+    expect(inputs('readback').member).toEqual(initial.member);
+
     const purge = (user) => page.locator(`button[data-action="purge-account"][data-user-id="${user.id}"]`);
     const clickPurge = async (user) => {
       await page.locator('[data-action="open-member-card"][data-user-id="' + user.id + '"]').click();

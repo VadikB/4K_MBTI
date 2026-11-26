@@ -258,9 +258,12 @@ def test_organization_history_and_lifecycle_preserve_report_assignment_and_curre
     assert retained_rows() == before
 
 
-def test_organization_purge_receipt_matches_original_target_actor_and_preview(purge_db, organization_http, monkeypatch):
+@pytest.mark.parametrize("active", [True, False], ids=["active", "inactive"])
+def test_organization_purge_receipt_matches_original_target_actor_and_preview(purge_db, organization_http, monkeypatch, active):
     http, _ = organization_http
     url = "/users/admin/organizations/1"
+    purge_db.execute("UPDATE organizations SET is_active=%s WHERE id=1", (active,))
+    purge_db.commit()
     monkeypatch.setattr(routes, "_protected_account_emails", lambda: {"orphan@example.test"})
     protected = http.get(f"{url}/purge-preview").json()
     assert protected["execution_blockers"] == [

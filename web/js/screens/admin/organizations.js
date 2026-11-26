@@ -1,7 +1,7 @@
 import { mountInvitationDetails } from './invitation-details.js';
 import { mountPreparationProblems } from './support-preparation.js';
-import { invitationMessage, invitationFacts, invitationSummary, invitationCommonMessage, exactInvitationItems, invitationLinkMessage, safeInvitationItem, invitationMissingText } from './invitation-presentation.js';
-import { preparationHtml, renderPreparation, preparationPresentation } from '../../preparation-status.js';
+import { invitationMessage, invitationFacts, invitationSummary, invitationCommonMessage, exactInvitationItems, invitationLinkMessage, safeInvitationItem } from './invitation-presentation.js';
+import { renderPreparation, preparationPresentation } from '../../preparation-status.js';
 import { createOperationId, readApiResponse, fetchWithDeadline as fetch, previewAccountPurge,
   getPendingAccountPurges, confirmAccountPurge, executeAccountPurge, accountPurgeErrorMessage } from '../../api.js';
 import {
@@ -363,7 +363,6 @@ const membershipErrorMessage = (error, fallback) => {
     return message.split('ORGANIZATION_MEMBERSHIP_CONFLICT:', 2)[1].trim();
   }
   if (message === 'ORGANIZATION_ACCESS_PAUSED') return 'Организация неактивна. Изменение доступа станет доступно после восстановления.';
-  if (message === 'LAST_ORGANIZATION_ADMIN') return 'Чтобы снять права у последнего администратора, сначала добавьте другого сотрудника.';
   if (message === 'ADMIN_EMAIL_ALREADY_LINKED') return 'Эта почта уже привязана к другому аккаунту. Укажите отдельную именную почту.';
   if (error?.status === 401) return 'Сессия истекла. Войдите снова; введённые данные формы сохранены в этой вкладке.';
   if (error?.name === 'RequestDeadlineError') return 'Не удалось подтвердить результат операции. Обновите список перед безопасным повтором.';
@@ -828,7 +827,8 @@ const trackOperation = (event) => {
   const button = event.type === 'click' ? target?.closest('button[data-action]') : null;
   if (!form && (!button || ['show-admin-view', 'refresh-questionnaire-preview', 'use-legacy-profile',
     'open-member-card', 'open-member-appeals', 'open-member-report', 'toggle-appeals-filter',
-    'check-member-preparation', 'open-member-processing', 'view-admin-access'].includes(button.dataset.action))) return;
+    'check-member-preparation', 'open-member-processing', 'view-admin-access',
+    'open-organization-account-appeals'].includes(button.dataset.action))) return;
   const root = form || button.closest('.admin-questionnaire-preview') || button.parentElement;
   const card = root?.closest('[data-organization-id]');
   if (!card) return;
@@ -843,10 +843,14 @@ const trackOperation = (event) => {
         : '[data-admin-view="' + CSS.escape(root.closest('[data-admin-view]')?.dataset.adminView || 'people') + '"]';
   if (selector !== '[data-people-batch-status]') card.querySelector('[data-people-batch-status]')?.replaceChildren();
   operationAnchor = { identity: currentIdentityKey(), organizationId: Number(card.dataset.organizationId), selector };
+  if (form?.dataset.action === 'add-admin') {
+    setStatus('', 'muted', card.querySelector('[data-organization-admins]'));
+    return;
+  }
   // Keep the result anchor, but a confirmation dialog is not a running command.
   if (form?.dataset.action !== 'preview-early-data' &&
       !['cancel-member-assignment', 'revoke-member-invitation', 'open-member-assignment', 'purge-account', 'delete-admin', 'retry-questionnaire-load',
-        'confirm-questionnaire', 'check-questionnaire-confirmation', 'open-organization-reports'].includes(button?.dataset.action)) {
+        'confirm-questionnaire', 'check-questionnaire-confirmation', 'open-organization-reports', 'reset-member-password'].includes(button?.dataset.action)) {
     setStatus('Выполняем действие…', 'loading');
   }
 };
@@ -914,6 +918,10 @@ export const refreshAdminOrganizationsSafely = async ({ isCurrent = () => true, 
       'Не удалось обновить организации.', { isCurrent },
     );
     if (!data || !isCurrent()) return false;
+    if (data.is_superadmin && preparationProblemCounts === null && state.currentScreen === 'admin-organizations') {
+      void loadPreparationProblemCounts(() => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
+        state.currentScreen === 'admin-organizations');
+    }
     if (announce) setStatus('Состояние организаций обновлено.', 'success', undefined, { focus: false });
     return true;
   } catch (error) {
@@ -939,10 +947,11 @@ export const loadAdminOrganizations = async ({ isCurrent = () => true } = {}) =>
   } catch (error) {
     if (!isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey ||
         organizationsRequestGeneration !== requestGeneration) return null;
-    markOrganizationsReadStale('Не удалось подтвердить актуальное подключение программы.');
+    markOrganizationsReadStale(error.message || 'Не удалось загрузить организации.');
     throw error;
   }
   if (!data || !isCurrent() || state.identityEpoch !== identityEpoch || currentIdentityKey() !== identityKey) return null;
+  if (data.is_superadmin) return data;
   await Promise.all((data.items || []).map((org) => loadQuestionnaireRevisions(
     org.id, { identityEpoch, identityKey, render: false, isCurrent },
   )));
@@ -1117,14 +1126,16 @@ export const createAdminOrganization = async () => {
   }
 };
 
-export const selectAdminOrganization = (organizationId) => {
+export const selectAdminOrganization = (organizationId, { view = 'card', anchor } = {}) => {
   assignmentViewGeneration += 1;
   clearProgramConnectionFeedback();
   captureAdminOrganizationsDraft();
   selectedOrganizationId = Number(organizationId) || null;
   if (state.adminOrganizations?.is_superadmin && selectedOrganizationId) {
-    platformOrganizationView = 'card';
-    syncUrlState('admin-organizations', { organizationId: selectedOrganizationId });
+    platformOrganizationView = view;
+    syncUrlState('admin-organizations', {
+      organizationId: selectedOrganizationId, organizationView: view, organizationAnchor: anchor,
+    });
     setStatus('');
   }
   saveManagementSelection();
@@ -1132,7 +1143,7 @@ export const selectAdminOrganization = (organizationId) => {
 };
 
 export const selectAdminOrganizationView = (organizationId, view) => {
-  if (state.adminOrganizations?.is_superadmin && view === 'questionnaire') return;
+  if (state.adminOrganizations?.is_superadmin) return;
   const restoreFocus = document.activeElement?.matches('[data-action="show-admin-view"]');
   assignmentViewGeneration += 1;
   captureAdminOrganizationsDraft();
@@ -1255,6 +1266,7 @@ export const addAdminOrganizationAdmin = async (organizationId, { email, full_na
   const normalizedEmail = String(email || '').trim();
   if (!normalizedEmail) return false;
   const fallback = 'Не удалось добавить администратора.';
+  setStatus('Добавляем администратора…', 'loading', organizationAdminSection(organizationId));
   try {
     const identityEpoch = state.identityEpoch;
     const identityKey = currentIdentityKey();
@@ -2366,7 +2378,9 @@ const applyAdminOrganizationProgramReadback = (organizationId, connection) => {
 };
 
 const refreshAdminOrganizationQuestionnaireInBackground = (organizationId, identityEpoch, identityKey) => {
-  void loadQuestionnaireRevisions(organizationId, { identityEpoch, identityKey, render: false });
+  if (!state.adminOrganizations?.is_superadmin) {
+    void loadQuestionnaireRevisions(organizationId, { identityEpoch, identityKey, render: false });
+  }
 };
 
 const isExactProgramConnection = (connection, organizationId, programDefinitionId) =>
@@ -2586,19 +2600,11 @@ export const mountAdminMemberPurge = (dialog, organizationId, userId) => {
   }
 };
 
-const renderOrganizationDomains = (domains) => domains.length
-  ? '<div class="admin-organizations-tags">' + domains.map((domain) =>
-    '<span class="admin-organizations-tag domain"><span>' + escapeHtml(domain) + '</span>' +
-    '<button type="button" data-action="delete-domain" data-value="' + escapeHtml(domain) +
-    '" aria-label="Удалить домен">×</button></span>').join('') + '</div>'
-  : '<p class="admin-organizations-empty">Домены не заданы.</p>';
-
-const renderOrganizationAdmins = (org, canDeletePerson) => {
+const renderOrganizationAdmins = (org) => {
   const admins = org.admins || [];
   const active = org.is_active !== false;
-  const canRevoke = active && admins.length > 1;
   const note = !active ? 'Организация неактивна. Изменение доступа станет доступно после восстановления.'
-    : admins.length === 1 ? 'Чтобы снять права у последнего администратора, сначала добавьте другого сотрудника.' : '';
+    : '';
   const rows = admins.map((item) => {
     const name = escapeHtml(item.full_name || item.email);
     const email = escapeHtml(item.email);
@@ -2610,16 +2616,14 @@ const renderOrganizationAdmins = (org, canDeletePerson) => {
     const identity = '<button class="text-button admin-access-name"' + viewAccessData + '>' + name + '</button>';
     const view = '<button class="text-button admin-access-link"' + viewAccessData +
       ' aria-label="Права доступа · ' + name + '">Права доступа</button>';
-    const revoke = canRevoke ? '<button class="ghost-button compact-ghost" type="button" data-action="delete-admin"' +
-      accessData + '>Снять права</button>' : '';
-    const purge = renderAccountPurgeButton(item, { available: canDeletePerson });
-    const actions = revoke + purge;
+    const revoke = active ? '<button class="ghost-button compact-ghost" type="button" data-action="delete-admin" data-last-admin="' +
+      String(admins.length === 1) + '"' + accessData + '>Снять права</button>' : '';
     return '<li class="admin-access-row"><div>' + identity +
       (item.full_name ? '<p>' + email + '</p>' : '') + '</div>' +
       '<div><strong class="admin-access-role' + (active ? '' : ' is-paused') + '">' +
       (active ? 'Администратор' : 'Доступ приостановлен') + '</strong><p>' + participation + '</p></div>' +
       '<div class="admin-access-actions">' + view +
-      (actions ? renderMemberMenu(actions, 'Другие действия · ' + (item.full_name || item.email)) : '') + '</div></li>';
+      (revoke ? renderMemberMenu(revoke, 'Другие действия · ' + (item.full_name || item.email)) : '') + '</div></li>';
   }).join('');
   return '<section class="admin-access-workspace' + (active ? '' : ' is-paused') + '" data-organization-admins>' +
     '<div class="admin-access-panel"><h4 id="platform-org-admins-heading" tabindex="-1">Администраторы организации</h4>' +
@@ -2628,7 +2632,9 @@ const renderOrganizationAdmins = (org, canDeletePerson) => {
     (note ? '<p class="admin-access-note">' + note + '</p>' : '') + '</div>' +
     (active ? '<form class="admin-access-panel admin-access-form" data-action="add-admin">' +
       '<h4 id="platform-org-add-admin" tabindex="-1">Добавить администратора</h4><label><span>Рабочая почта</span>' +
-      '<input type="email" name="email" placeholder="name@example.test" maxlength="254" required></label>' +
+      '<input type="email" name="email" placeholder="name@example.test" maxlength="254" ' +
+      'aria-describedby="platform-org-add-admin-email-error" required></label>' +
+      '<p id="platform-org-add-admin-email-error" class="admin-access-email-error" data-admin-email-error role="alert"></p>' +
       '<label><span>ФИО, если известно</span><input name="full_name" maxlength="180"></label>' +
       '<p class="admin-access-note">Укажите именную почту сотрудника. Ему будут доступны анкета и все отчёты организации, включая прежние.</p>' +
       '<button class="primary-button compact-primary" type="submit">Добавить</button></form>' : '') + '</section>';
@@ -2643,13 +2649,12 @@ const stageLabels = {
   report_ready: 'Отчёт готов', failed: 'Обработка завершилась с ошибкой', cancelled: 'Назначение отменено',
 };
 
-const observedPreparation = (stage, isSuperadmin = false) => {
+const observedPreparation = (stage) => {
   // A historical preparation cannot override cancellation or a start blocker.
   const model = stage?.preparation;
   if (!model) return null;
   if (['preparing', 'preparation_failed'].includes(stage.code) && model.kind !== 'report') return model;
-  if (['active', 'paused', 'interrupted'].includes(stage.code) && (model.kind === 'next' || isSuperadmin)) return model;
-  return isSuperadmin && ['processing', 'failed', 'report_ready'].includes(stage.code) ? model : null;
+  return ['active', 'paused', 'interrupted'].includes(stage.code) && model.kind === 'next' ? model : null;
 };
 
 const preparationFailed = (stage) => stage?.code === 'preparation_failed' || observedPreparation(stage)?.status === 'failed';
@@ -2661,14 +2666,13 @@ const canCheckPreparation = (stage) => {
 
 const situationCount = new Intl.PluralRules('ru');
 
-const assessmentStageView = (stage, hasAssignment, isSuperadmin = false) => {
+const assessmentStageView = (stage, hasAssignment) => {
   const code = stage?.code;
   const label = stage?.label || stageLabels[stage?.code] || stage?.code ||
     (hasAssignment ? 'Оценка назначена' : 'Оценка не назначена');
   const fallback = code === 'cancelled' ? 'Назначение отменено.' :
     stage || hasAssignment ? 'Ожидаем следующего действия участника или системы.' : 'Для выбранной оценки назначения нет.';
   const critical = ['preparation_failed', 'start_blocked', 'failed'].includes(code);
-  if (isSuperadmin) return { label, description: stage?.description || fallback, critical };
   const model = observedPreparation(stage);
   const preparation = model ? preparationPresentation(model, { readError: organizationsReadStale }) : null;
   const planned = stage?.progress?.planned;
@@ -2715,14 +2719,23 @@ const renderMemberMenu = (items, label = 'Другие действия') =>
   '" aria-haspopup="menu" aria-expanded="false">⋯</summary><div role="menu" aria-label="' + escapeHtml(label) + '">' +
   items.replaceAll(' role="menuitem"', '').replaceAll('<button ', '<button role="menuitem" ') + '</div></details>';
 
+const renderMemberReportButton = (stage, isSuperadmin) =>
+  stage?.action === 'open_report' && stage.report_id &&
+    (isSuperadmin || (stage.cycle_id && stage.report_access === 'customer'))
+    ? '<button type="button" data-action="open-member-report" data-report-id="' + escapeHtml(stage.report_id) +
+      '" data-cycle-id="' + escapeHtml(stage.cycle_id || '') + '" data-report-access="' +
+      escapeHtml(stage.report_access || '') + '">' +
+      (['insufficient', 'without_score'].includes(stage.result_summary?.kind) ? 'Открыть пояснение' : 'Открыть отчёт') + '</button>'
+    : '';
+
 const renderMemberList = (items, {
-  isSuperadmin = false, canDeletePerson = false, canAssign = false, activeOrganization = true,
+  canAssign = false, activeOrganization = true,
   selectedAssessmentRef = '', selectedAssessmentLabel = '', organizationId = selectedOrganizationId, appealsOnly = false,
   assignmentHelp = '',
 } = {}) => {
   if (!items.length) {
     return { markup: '<p class="admin-organizations-empty">' +
-      (appealsOnly ? 'Участников с обращениями нет.' : isSuperadmin ? 'Участники не привязаны.' : 'Участников пока нет.') + '</p>' };
+      (appealsOnly ? 'Участников с обращениями нет.' : 'Участников пока нет.') + '</p>' };
   }
   const pendingOperations = pendingInvitationOperations().filter((operation) =>
     operation.organizationId === Number(organizationId) && operation.assignmentRef === selectedAssessmentRef);
@@ -2732,7 +2745,6 @@ const renderMemberList = (items, {
     items
       .map((item) => {
         const email = String(item.email || '');
-        const hasPassword = item.has_password === true;
         const participantName = item.full_name || email;
         const issueCount = Number(item.issue_count || 0);
         const issueButton = issueCount > 0
@@ -2742,31 +2754,14 @@ const renderMemberList = (items, {
         const details = item.raw_position || item.job_description || item.role_description || item.raw_duties || '';
         const scopedStage = item.assessment_stages?.[selectedAssessmentRef] || null;
         const preparationStatus = String(scopedStage?.code || '');
-        const preparationModel = observedPreparation(scopedStage, isSuperadmin);
         const failedPreparation = preparationFailed(scopedStage);
-        const isPreparing = preparationStatus === 'preparing';
-        const isPrepared = ['preparation_complete', 'start_blocked', 'ready_to_start', 'active', 'paused', 'interrupted', 'processing', 'report_ready'].includes(preparationStatus);
-        const canPrepare = item.assessment_profile_ready === true && !isPreparing && !isPrepared;
-        const preparationButton = !isSuperadmin ? '' : isPrepared
-          ? '<span class="admin-organization-preparation-state ready">Кейсы готовы</span>'
-          : isPreparing
-            ? '<span class="admin-organization-preparation-state">Подготовка…</span>'
-            : '<button class="admin-organization-prepare-button" type="button" data-action="prepare-member-assessment" data-user-id="' +
-              Number(item.user_id) +
-              '"' +
-              (canPrepare ? '' : ' disabled title="Заполните роль, обязанности и сферу деятельности"') +
-              '>Подготовить кейсы</button>';
-        const removeButton = isSuperadmin ? renderAccountPurgeButton(item, { available: canDeletePerson }) : '';
         const invitation = invitationFor(organizationId, selectedAssessmentRef, item);
         const invitationStatus = String(item.invitation_status || 'not_sent');
-        const invitationLabels = { not_sent: 'Письмо не отправлено', queued: 'Письмо в очереди', sending: 'Исход отправки уточняется', accepted: 'Письмо принято провайдером', error: 'Ошибка отправки', revoked: 'Ссылка отозвана', expired: 'Ссылка истекла', used: 'Регистрация завершена' };
         const invitationExpiry = localDateTime(invitation.expires_at || item.invitation_expires_at);
         const registrationLabel = item.registration_status === 'registered' ? 'Регистрация: завершена' : 'Регистрация: ожидается';
-        const invitationLabel = invitationLabels[invitationStatus] || 'Статус письма неизвестен';
-        const deliveryLabel = invitationFacts(invitation).outcome === 'failed' ? 'Приглашение не отправлено' : invitationMessage(invitation, { compact: true });
         const linkLabel = invitationLinkMessage(invitation.link_status || item.invitation_link_status, invitationExpiry);
         const hasAssignment = (item.assessment_assignments || []).includes(selectedAssessmentRef);
-        const { label: currentStage, description: stageDescription, critical } = assessmentStageView(scopedStage, hasAssignment, isSuperadmin);
+        const { label: currentStage, description: stageDescription, critical } = assessmentStageView(scopedStage, hasAssignment);
         const assignmentHistory = (item.assessment_history || [])
           .filter((entry) => !selectedAssessmentRef || entry.assignment_ref === selectedAssessmentRef)
           .map((entry) => {
@@ -2779,7 +2774,6 @@ const renderMemberList = (items, {
             return ['Назначение #' + entry.assignment_id + ': ' + status, created ? 'создано ' + created : '',
               revoked ? 'отменено ' + revoked : '', cycle].filter(Boolean).join(', ');
           }).join(' · ') || 'История точного назначения отсутствует';
-        const sendLabel = item.invitation_id ? 'Отправить письмо повторно' : 'Пригласить';
         const pendingInvitation = pendingOperations.find((operation) => operation.emails.includes(email.toLowerCase()));
         const pendingCheck = pendingInvitation
           ? '<button type="button" data-action="recover-member-invitation" data-receipt-only data-request-key="' +
@@ -2788,42 +2782,23 @@ const renderMemberList = (items, {
             '>Проверить отправку</button>' : '';
         const saved = savedInvitation(item);
         const receiptRef = String(item.invitation_assignment_ref || '').trim();
-        const separateReceipt = !isSuperadmin && saved.invitation_id && (!receiptRef || receiptRef !== selectedAssessmentRef);
+        const separateReceipt = saved.invitation_id && (!receiptRef || receiptRef !== selectedAssessmentRef);
         const savedReceiptUnresolved = ['unknown', 'pending'].includes(invitationFacts(saved).outcome);
         const savedCheck = saved.invitation_id && saved.operation_id && receiptRef && savedReceiptUnresolved
           ? '<button type="button" data-action="check-member-invitation" data-value="' + escapeHtml(saved.email) +
             '" data-operation-id="' + escapeHtml(saved.operation_id) + '" data-assignment-ref="' + escapeHtml(receiptRef) +
             '" data-invitation-id="' + saved.invitation_id + '">Проверить отправку</button>' : '';
-        const invitationButton = invitationStatus === 'used' ? '' : ['unknown', 'pending'].includes(invitationFacts(invitation).outcome) && invitation.delivery_status !== 'not_sent'
-          ? pendingCheck || savedCheck
-          : '<button type="button" data-action="send-member-invitation" data-value="' + escapeHtml(email) + '">' + sendLabel + '</button>';
-        const revokeButton = (invitationStatus === 'accepted' || invitationStatus === 'queued' || invitationStatus === 'sending')
-          ? '<button type="button" role="menuitem" data-action="revoke-member-invitation" data-participant-name="' + escapeHtml(participantName) + '" data-invitation-id="' + Number(item.invitation_id) + '" data-value="' + escapeHtml(email) + '">Отозвать приглашение</button>'
-          : '';
         const cancellableStage = ['assigned', 'acquaintance', 'acquaintance_complete', 'preparing', 'preparation_failed', 'preparation_complete', 'start_blocked', 'ready_to_start'].includes(preparationStatus);
-        const cancelButton = scopedStage?.assignment_id && cancellableStage && (isSuperadmin || scopedStage.can_cancel !== false)
+        const cancelButton = scopedStage?.assignment_id && cancellableStage && scopedStage.can_cancel !== false
           ? '<button type="button" role="menuitem" data-action="cancel-member-assignment" data-assignment-id="' + Number(scopedStage.assignment_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) + '" data-assessment-label="' + escapeHtml(selectedAssessmentLabel || 'выбранная оценка') + '" data-value="' + escapeHtml(email) + '">Отменить назначение оценки</button>'
           : '';
-        const reportButton = scopedStage?.action === 'open_report' && scopedStage.report_id &&
-          (isSuperadmin || (scopedStage.cycle_id && scopedStage.report_access === 'customer'))
-          ? '<button type="button" data-action="open-member-report" data-report-id="' + escapeHtml(scopedStage.report_id) +
-            '" data-cycle-id="' + escapeHtml(scopedStage.cycle_id || '') + '" data-report-access="' +
-            escapeHtml(scopedStage.report_access || '') + '">' +
-            (['insufficient', 'without_score'].includes(scopedStage.result_summary?.kind) ? 'Открыть пояснение' : 'Открыть отчёт') + '</button>' : '';
-        const checkPreparationButton = (isSuperadmin
-          ? scopedStage?.action === 'check_preparation' || (preparationStatus === 'preparation_failed' && scopedStage?.operation_id)
-          : canCheckPreparation(scopedStage))
-          ? '<button type="button" data-action="check-member-preparation"' + (isSuperadmin ? '' : ' aria-haspopup="dialog"') +
-            '>Проверить состояние</button>' : '';
+        const reportButton = renderMemberReportButton(scopedStage, false);
+        const checkPreparationButton = canCheckPreparation(scopedStage)
+          ? '<button type="button" data-action="check-member-preparation" aria-haspopup="dialog">Проверить состояние</button>' : '';
         const processingButton = scopedStage?.action === 'open_processing'
           ? '<button type="button" data-action="open-member-processing" aria-haspopup="dialog"' +
             (preparationStatus === 'failed' ? ' data-processing-failed' : '') + ' data-stage-description="' +
             escapeHtml(stageDescription) + '">Подробнее об обработке</button>' : '';
-        const legacyPrimary = reportButton || processingButton || checkPreparationButton ||
-          (!hasAssignment && ['not_sent', 'error', 'revoked', 'expired'].includes(invitationStatus) ? invitationButton : '');
-        const legacyExtras = (legacyPrimary === invitationButton ? '' : invitationButton) +
-          revokeButton + cancelButton + preparationButton + removeButton;
-
         const link = ['used', 'revoked', 'expired'].includes(item.invitation_link_status)
           ? item.invitation_link_status : invitation.link_status || item.invitation_link_status;
         const registered = link === 'used' || item.registration_status === 'registered' || item.has_password === true;
@@ -2879,11 +2854,8 @@ const renderMemberList = (items, {
           ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '';
         const extraActions = [checkInvitation, send, assign, revoke, cancelButton, reviewOrganization]
           .filter((action) => action && action !== primary).join('');
-        const actions = isSuperadmin
-          ? legacyPrimary + ((legacyExtras.match(/<button\b/g) || []).length > 1
-            ? renderMemberMenu(legacyExtras) : legacyExtras.replace(' role="menuitem"', ''))
-          : failedPreparation ? checkPreparationButton
-            : reportButton || primary + (extraActions ? renderMemberMenu(extraActions, 'Действия для ' + participantName) : '');
+        const actions = failedPreparation ? checkPreparationButton
+          : reportButton || primary + (extraActions ? renderMemberMenu(extraActions, 'Действия для ' + participantName) : '');
 
         const compactStageMarkup = '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' +
           (critical || delivery === 'failed' && invitationStage ? ' is-critical' : '') + '">' +
@@ -2897,12 +2869,12 @@ const renderMemberList = (items, {
         batchInvite ||= canInviteInBatch;
         batchAssign ||= canAssignMember;
         const bulkFor = [canInviteInBatch && 'invite', canAssignMember && 'assign'].filter(Boolean).join(' ');
-        const selection = isSuperadmin || bulkFor
+        const selection = bulkFor
           ? '<label class="admin-organization-member-select"><input type="checkbox" name="invitation_email" value="' +
             escapeHtml(email) + '" data-user-id="' + Number(item.user_id) + '" data-bulk-for="' + bulkFor +
-            '" aria-label="Выбрать ' + escapeHtml(isSuperadmin ? email : participantName) + '"></label>'
+            '" aria-label="Выбрать ' + escapeHtml(participantName) + '"></label>'
           : '';
-        const assignmentBlocked = !isSuperadmin && assignmentCandidate && !canAssign && assignmentHelp;
+        const assignmentBlocked = assignmentCandidate && !canAssign && assignmentHelp;
         const invitationBlocked = invitationCandidate && !selectedAssessmentRef;
         const actionHelp = assignmentBlocked
           ? '<details class="admin-member-action-help"><summary>' + (invitationBlocked
@@ -2910,35 +2882,22 @@ const renderMemberList = (items, {
           : '';
         const name = '<button type="button" class="admin-organization-member-name" data-action="open-member-card" data-user-id="' +
           Number(item.user_id) + '" data-participant-name="' + escapeHtml(participantName) + '" data-email="' + escapeHtml(email) +
-          '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(isSuperadmin ? currentStage : invitationStage || currentStage) +
-          '" data-stage-description="' + escapeHtml(isSuperadmin ? stageDescription : cardDescription) + '" data-assignment-history="' +
+          '" data-position="' + escapeHtml(details) + '" data-stage="' + escapeHtml(invitationStage || currentStage) +
+          '" data-stage-description="' + escapeHtml(cardDescription) + '" data-assignment-history="' +
           escapeHtml(assignmentHistory) + '" data-admission="' + escapeHtml(item.admission_status === 'denied' ? 'Запрещён' : 'Разрешён') +
           '" data-invitation-info="' + escapeHtml(JSON.stringify(priorInvitationInCard ? saved : invitation)) +
           '" data-invitation-assessment="' + escapeHtml(priorInvitationInCard ? receiptRef : selectedAssessmentRef) +
           '" data-invitation-registration="' + escapeHtml(unboundRegistration) +
           '" data-assignment-id="' + escapeHtml(scopedStage?.assignment_id) + '" data-assessment-ref="' + escapeHtml(selectedAssessmentRef) +
           '" data-assessment-label="' + escapeHtml(selectedAssessmentLabel) +
-          '" data-can-reset-password="' + (isSuperadmin && hasPassword ? 'true' : 'false') + '">' + escapeHtml(participantName) + '</button>';
+          '">' + escapeHtml(participantName) + '</button>';
         return (
           '<article class="admin-organization-member" data-member-user-id="' + Number(item.user_id) + '">' +
-          (isSuperadmin ? selection : '') + '<div class="admin-organization-member-main">' + (isSuperadmin ? name :
-            '<div class="admin-organization-member-name-line">' + selection + name + '</div>') +
-          '<span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
+          '<div class="admin-organization-member-main"><div class="admin-organization-member-name-line">' +
+          selection + name + '</div><span class="admin-organization-member-email">' + escapeHtml(email) + '</span>' +
           (details ? '<span class="admin-organization-member-position">' + escapeHtml(details) + '</span>' : '') +
           issueButton +
-          (isSuperadmin ? '<span class="admin-organization-member-invitation" title="' + escapeHtml(invitationLabel) + '">' +
-          escapeHtml(deliveryLabel + ' · ' + linkLabel + ' · ' + registrationLabel) + '</span>' +
-          (['failed', 'unknown', 'pending'].includes(invitationFacts(invitation).outcome) && invitation.delivery_status !== 'not_sent' && invitationMessage(invitation, { compact: true }) !== deliveryLabel
-            ? '<span class="admin-invitation-reason">' + escapeHtml(invitationMessage(invitation, { compact: true })) +
-              (invitationMissingText(invitation) ? ' · Не заполнены: ' + escapeHtml(invitationMissingText(invitation)) : '') + '</span>' +
-              (invitation.next_action === 'review_organization' ? '<button type="button" data-action="review-invitation-organization">Проверить сведения организации</button>' : '') : '') : '') +
-          '</div>' +
-          (isSuperadmin ? (preparationModel ? preparationHtml(preparationModel, { compact: true }) :
-            '<div class="admin-organization-member-stage"><strong class="admin-organization-current-stage' +
-            (critical ? ' is-critical' : '') + '">' + escapeHtml(currentStage) + '</strong><span>' + escapeHtml(stageDescription) + '</span>' +
-            (preparationStatus === 'preparation_failed' && scopedStage?.operation_id
-              ? '<span>Номер случая: ' + escapeHtml(scopedStage.operation_id) + '</span>' : '') + '</div>') : compactStageMarkup) +
-          '<div class="admin-organization-member-actions">' + actions + '</div>' +
+          '</div>' + compactStageMarkup + '<div class="admin-organization-member-actions">' + actions + '</div>' +
           actionHelp + '</article>'
         );
       })
@@ -3076,18 +3035,19 @@ const restoreMemberMenuFocus = ({ control, wasOpen }) => {
   (item || menu?.querySelector('summary') || cardButton)?.focus({ preventScroll: true });
 };
 
-const renderAdminOrganizationAccount = (organizationName) => {
+const renderAdminOrganizationAccount = (organizationName, isSuperadmin = false) => {
   const summary = document.getElementById('admin-organizations-account-name');
   if (!summary) return;
   const fullName = state.pendingUser?.full_name?.trim().replace(/\s+/g, ' ');
   const name = fullName || state.pendingUser?.email?.trim() || 'Аккаунт';
-  summary.setAttribute('aria-label', 'Меню аккаунта: ' + name);
+  summary.setAttribute('aria-label', 'Меню аккаунта: ' + name + (isSuperadmin ? ' · Суперадминистратор' : ''));
   summary.title = name;
   summary.querySelector('.org-admin-account-name').textContent = name;
   summary.querySelector('.org-admin-account-avatar').dataset.initials = buildInitials(name);
+  summary.querySelector('.platform-account-role').textContent = isSuperadmin ? 'Суперадминистратор' : '';
   document.getElementById('admin-organizations-menu-name').textContent = name;
-  document.getElementById('admin-organizations-menu-role').textContent = organizationName
-    ? 'Администратор ' + organizationName : 'Администратор';
+  document.getElementById('admin-organizations-menu-role').textContent = isSuperadmin ? 'Суперадминистратор платформы'
+    : organizationName ? 'Администратор ' + organizationName : 'Администратор';
 };
 
 const registry = document.getElementById('platform-org-registry');
@@ -3096,54 +3056,161 @@ const registryFilter = document.getElementById('platform-org-filter');
 const registryRows = document.getElementById('platform-org-rows');
 const registryCount = document.getElementById('platform-org-count');
 const organizationPageUrl = (id) => '/?screen=admin-organizations&org=' + Number(id);
-const platformOrganizationTabs = (id, history = false) =>
+const platformOrganizationLink = (id, view, anchor = '') =>
+  ' href="' + organizationPageUrl(id) + (view === 'card' ? '' : '&amp;view=' + view) +
+  (anchor ? '#' + anchor : '') + '" data-platform-org-view="' + view + '" data-org-id="' + id + '"' +
+  (view === 'admins' ? ' data-org-admins' : '');
+const platformOrganizationTabs = (id, view) =>
   '<nav class="platform-org-card-nav" aria-label="Разделы организации">' +
-  (history
-    ? '<a href="' + organizationPageUrl(id) + '" data-platform-org-view="card" data-org-id="' + id + '">Обзор</a>' +
-      '<a href="' + organizationPageUrl(id) + '#platform-org-admins-heading" data-platform-org-view="card" data-org-admins data-org-id="' + id + '">Администраторы</a>'
-    : '<a href="#platform-org-overview" data-platform-org-jump aria-current="page">Обзор</a>' +
-      '<a href="#platform-org-admins-heading" data-platform-org-jump>Администраторы</a>') +
-  '<a href="' + organizationPageUrl(id) + '&amp;view=history" data-platform-org-view="history" data-org-id="' + id + '"' +
-  (history ? ' aria-current="page"' : '') + '>Журнал и операции</a></nav>';
+  [['card', 'Обзор'], ['admins', 'Администраторы'], ['history', 'Журнал и операции']].map(([target, label]) =>
+    '<a' + platformOrganizationLink(id, target) + (view === target ? ' aria-current="page"' : '') + '>' + label + '</a>',
+  ).join('') + '</nav>';
 const preparationProblemsUrl = (id) => '/?screen=admin-platform-problems&org=' + Number(id);
-const problemCount = (id) => preparationProblemCounts === null ? '—' : String(preparationProblemCounts.get(Number(id)) || 0);
+const problemQuantity = new Intl.PluralRules('ru');
+const problemCount = (id) => {
+  if (preparationProblemCounts === null) return '—';
+  const count = preparationProblemCounts.get(Number(id)) || 0;
+  const noun = { one: 'проблема', few: 'проблемы', many: 'проблем' };
+  return count ? count + ' ' + noun[problemQuantity.select(count)] : 'Нет проблем';
+};
+const updateProblemCount = (element) => {
+  const count = problemCount(element.dataset.orgProblemCount);
+  const label = element.dataset.problemLabel;
+  const accessibleCount = count === '—' ? 'Количество проблем недоступно' : count;
+  element.textContent = label ? count : accessibleCount;
+  if (label) {
+    element.setAttribute('aria-label', label + '. ' + accessibleCount);
+  }
+};
 const renderPreparationProblemCounts = () => {
-  renderOrganizationRegistry();
-  const cardCount = adminOrganizationsList.querySelector('[data-org-problem-count]');
-  if (cardCount) cardCount.textContent = problemCount(selectedOrganizationId);
+  adminOrganizationsPanel.querySelectorAll('[data-org-problem-count]').forEach(updateProblemCount);
 };
 const organizationStateBadge = (org) => '<span class="platform-org-state' + (org.is_active === false ? ' is-inactive' : '') +
   '">' + (org.is_active === false ? 'Неактивна' : 'Активна') + '</span>';
+
+const renderPlatformOrganizationProgram = (org, publishedPrograms) => {
+  const id = Number(org.id);
+  const program = organizationProgramState(id);
+  const current = org.assessment_program;
+  return '<section class="platform-org-summary-panel"><h3>Программа оценки</h3>' +
+    '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
+    programConnectionStateMarkup(id, current) +
+    (program.status === 'unknown' ? '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>' : '') +
+    (org.is_active !== false ? '<label><span>Опубликованная версия</span><select name="program_definition_id" required>' +
+    '<option value="">Выберите опубликованную версию</option>' + publishedPrograms.map((version) =>
+      '<option value="' + Number(version.id) + '"' +
+      (Number(current?.program_definition_id) === Number(version.id) ? ' selected' : '') + '>' +
+      'Версия ' + escapeHtml(version.version) + ' · ' + escapeHtml(version.name) + '</option>').join('') +
+    '</select></label><button class="primary-button compact-primary" type="submit"' +
+    (pendingProgramConnection(id)?.awaitingRead || !publishedPrograms.length ? ' disabled' : '') + '>Подключить</button>' +
+    (current ? '<p class="platform-org-note">При смене версии новые назначения используют её. Прежние оценки сохраняют свои снимки.</p>'
+      : '<p class="platform-org-note">Подключите опубликованную программу для назначения участников.</p>')
+      : '<p class="platform-org-note">Восстановите организацию, чтобы подключить программу.</p>') +
+    '</form></section>';
+};
+
+const renderPlatformOrganizationOverview = (org, publishedPrograms) => {
+  const id = Number(org.id);
+  return '<div class="platform-org-summary" id="platform-org-overview" tabindex="-1">' +
+    '<div class="platform-org-pair">' + renderPlatformOrganizationProgram(org, publishedPrograms) +
+    '<section class="platform-org-summary-panel"><h3>Администраторы</h3><p>' +
+    ((org.admins || []).map((admin) => escapeHtml(admin.full_name || admin.email)).join(', ') || 'Администраторов пока нет') +
+    '</p><div><a class="text-link"' + platformOrganizationLink(id, 'admins') + '>Управлять доступом</a></div></section></div>' +
+    '<section class="platform-org-summary-panel"><div class="platform-org-summary-heading"><h3>Проблемы организации</h3>' +
+    '<a class="text-link" href="' + escapeHtml(preparationProblemsUrl(id)) + '">Открыть список</a></div>' +
+    '<p data-org-problem-count="' + id + '"></p></section>' +
+    '<section class="platform-org-summary-panel"><h3>Доступ к отчётам и анкете</h3><p>Готовые отчёты: <strong>' +
+    Number(org.reports_count || 0) + '</strong>. Действующий администратор видит весь архив организации, включая прежние отчёты.</p>' +
+    '<p class="platform-org-note">Анкету загружает администратор в своём кабинете. Чтобы помочь с анкетой, ' +
+    (org.is_active !== false ? '<a class="text-link"' + platformOrganizationLink(id, 'admins', 'platform-org-add-admin') +
+      '>добавьте сотрудника вашей команды</a>' : 'после восстановления добавьте сотрудника вашей команды') +
+    ' по его именной рабочей почте.</p></section>' +
+    '<div><a class="ghost-button compact-ghost danger platform-org-purge-link"' +
+    platformOrganizationLink(id, 'history', 'org-purge-heading') + '>Удалить организацию</a></div></div>';
+};
+
+const mountOrganizationAccountActions = (root, org, available, previousHistory) => {
+  const members = org.members || [];
+  const people = new Map([...(org.admins || []), ...members]
+    .filter((person) => Number(person.user_id) && person.email)
+    .map((person) => [person.email.toLowerCase(), person]));
+  const support = (person) => {
+    const email = escapeHtml(person.email);
+    const stage = person.assessment_stages?.[org.assessment_program?.assignment_ref];
+    return (person.has_password === true ? '<button type="button" class="ghost-button compact-ghost" ' +
+      'data-action="reset-member-password" data-value="' + email + '">Сбросить пароль</button>' : '') +
+      (Number(person.issue_count) > 0 ? '<button type="button" class="ghost-button compact-ghost" ' +
+        'data-action="open-organization-account-appeals" data-user-id="' + Number(person.user_id) +
+        '" data-value="' + escapeHtml(person.full_name || person.email) + '">Открыть обращения</button>' : '') +
+      renderMemberReportButton(stage, true);
+  };
+  const panels = [
+    ['purge', 'Удаление человека и его аккаунта', 'Введите точную почту участника или администратора этой организации.',
+      (person) => renderAccountPurgeButton(person, { available })],
+    ['support', 'Поддержка аккаунта', 'Введите точную почту сотрудника этой организации.', support],
+  ];
+  for (const [key, title, help, actions] of panels) {
+    const details = document.createElement('details');
+    details.className = 'org-history-details';
+    details.dataset.orgAccountActions = key;
+    details.innerHTML = '<summary>' + title + '</summary><p>' + help + '</p>' +
+      '<label>Рабочая почта<input type="search" inputmode="email" maxlength="254" autocomplete="off"></label>' +
+      '<div data-org-account-result aria-live="polite"></div>';
+    const old = previousHistory?.querySelector('[data-org-account-actions="' + key + '"]');
+    const query = details.querySelector('input');
+    const result = details.querySelector('[data-org-account-result]');
+    if (old) {
+      details.open = old.open;
+      query.value = old.querySelector('input').value;
+    }
+    const update = () => {
+      const email = query.value.trim().toLowerCase();
+      const person = people.get(email);
+      if (!person) {
+        result.textContent = email.includes('@') ? 'Аккаунт с такой почтой не найден в этой организации.' : '';
+        return;
+      }
+      result.innerHTML = '<p><strong>' + escapeHtml(person.full_name || person.email) + '</strong></p><div class="org-history-actions">' +
+        (actions(person) || '<p>Действия для этого аккаунта недоступны.</p>') + '</div>';
+    };
+    root.append(details);
+    query.addEventListener('input', update);
+    update();
+  }
+};
 
 const renderOrganizationRegistry = () => {
   if (!registryRows || !state.adminOrganizations?.is_superadmin) return;
   const query = registryQuery.value.trim().toLocaleLowerCase('ru');
   const filter = registryFilter.value;
-  const items = (state.adminOrganizations.items || []).filter((org) =>
+  const organizations = state.adminOrganizations.items || [];
+  const items = organizations.map((org, index) => ({ org, hue: index % 3 })).filter(({ org }) =>
     (!filter || (org.is_active === false ? 'inactive' : 'active') === filter) &&
     (org.name + ' ' + org.code).toLocaleLowerCase('ru').includes(query));
-  const focused = document.activeElement?.closest('a[data-platform-org-view="card"]');
-  registryRows.innerHTML = items.map((org) => {
+  const focused = registryRows.contains(document.activeElement) ? document.activeElement : null;
+  registryRows.innerHTML = items.map(({ org, hue }) => {
     const id = Number(org.id);
     const program = organizationProgramState(id);
     const name = escapeHtml(org.name);
     const badge = escapeHtml(Array.from(org.name.match(/«([^»]+)/u)?.[1] || org.name)[0]?.toLocaleUpperCase('ru'));
     const programText = program.status === 'confirmed' ? program.program.program_name + ' · версия ' + program.program.program_version
       : program.status === 'absent' ? 'Не подключена' : 'Подключение не подтверждено';
-    const cardLink = ' href="' + escapeHtml(organizationPageUrl(id)) + '" data-platform-org-view="card" data-org-id="' + id + '"';
-    return '<tr><th scope="row"><span class="platform-org-name"><span class="platform-org-symbol" aria-hidden="true">' + badge +
-      '</span><span><a class="text-link"' + cardLink + '>' + name + '</a><small>' + escapeHtml(org.code) +
+    return '<tr><th scope="row"><span class="platform-org-name"><span class="platform-org-symbol hue-' + hue + '" aria-hidden="true">' + badge +
+      '</span><span><a class="text-link"' + platformOrganizationLink(id, 'card') + '>' + name + '</a><small>' + escapeHtml(org.code) +
       '</small></span></span></th><td data-label="Статус">' + organizationStateBadge(org) +
       '</td><td data-label="Программа">' + escapeHtml(programText) +
-      '</td><td data-label="Администраторы"><a class="text-link"' + cardLink + ' data-org-admins aria-label="Администраторы · ' + name +
-      '">' + (org.admins?.length || 0) + '</a></td><td data-label="Проблемы"><a class="text-link" href="' +
-      escapeHtml(preparationProblemsUrl(id)) + '" aria-label="Проблемы · ' + name + '">' + problemCount(id) + '</a></td></tr>';
+      '</td><td data-label="Администраторы"><a class="text-link"' + platformOrganizationLink(id, 'admins') +
+      ' aria-label="Администраторы · ' + name + ' · ' + (org.admins?.length || 0) + '">' +
+      (org.admins?.length || 0) + '</a></td><td data-label="Проблемы"><a class="text-link" href="' +
+      escapeHtml(preparationProblemsUrl(id)) + '" data-org-problem-count="' + id + '" data-problem-label="Проблемы · ' + name +
+      '"></a></td></tr>';
   }).join('') || '<tr><td colspan="5" class="platform-org-empty"><strong>Организации не найдены</strong><p>' +
     (query || filter ? 'Измените название, код или фильтр статуса.' : 'Создайте первую организацию.') + '</p></td></tr>';
   registryCount.textContent = 'Найдено организаций: ' + items.length;
-  if (focused && registry.contains(document.activeElement) === false && document.activeElement === document.body) {
-    registryRows.querySelector('a[data-org-id="' + Number(focused.dataset.orgId) + '"]' +
-      (focused.hasAttribute('data-org-admins') ? '[data-org-admins]' : ':not([data-org-admins])'))?.focus({ preventScroll: true });
+  registryRows.querySelectorAll('[data-org-problem-count]').forEach(updateProblemCount);
+  if (focused && document.activeElement === document.body) {
+    [...registryRows.querySelectorAll('a')].find((link) => link.getAttribute('href') === focused.getAttribute('href'))
+      ?.focus({ preventScroll: true });
   }
 };
 registryQuery?.addEventListener('input', renderOrganizationRegistry);
@@ -3175,38 +3242,26 @@ const loadPreparationProblemCounts = async (isCurrent) => {
 };
 
 adminOrganizationsPanel?.addEventListener('click', (event) => {
-  const jump = event.target.closest('[data-platform-org-jump]');
-  if (jump && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
-    event.preventDefault();
-    adminOrganizationsList.querySelector(jump.hash)?.focus();
-    return;
-  }
   const link = event.target.closest('a[data-platform-org-view]');
   if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||
       !state.adminOrganizations?.is_superadmin) return;
   event.preventDefault();
-  if (link.dataset.platformOrgView === 'card') {
-    selectAdminOrganization(link.dataset.orgId);
-    if (link.hasAttribute('data-org-admins')) {
-      adminOrganizationsList.querySelector('#platform-org-admins-heading')?.focus();
-      return;
-    }
+  if (link.getAttribute('aria-current') === 'page') return;
+  const view = link.dataset.platformOrgView;
+  const anchor = link.hash.slice(1);
+  if (link.dataset.orgId) {
+    selectAdminOrganization(link.dataset.orgId, { view, anchor });
   } else {
     captureAdminOrganizationsDraft();
     assignmentViewGeneration += 1;
     clearProgramConnectionFeedback();
     setStatus('');
-    platformOrganizationView = link.dataset.platformOrgView;
-    const organizationId = platformOrganizationView === 'history' ? Number(link.dataset.orgId) : null;
-    if (organizationId) selectedOrganizationId = organizationId;
-    syncUrlState('admin-organizations', { organizationId, organizationView: platformOrganizationView });
+    platformOrganizationView = view;
+    syncUrlState('admin-organizations', { organizationView: view });
     renderAdminOrganizations();
-    if (organizationId) {
-      adminOrganizationsList.querySelector('#org-history-heading')?.focus();
-      return;
-    }
   }
-  adminOrganizationsTitle?.focus();
+  const target = anchor || { admins: 'platform-org-admins-heading', history: 'org-history-heading' }[view];
+  (document.getElementById(target) || adminOrganizationsTitle)?.focus();
 });
 
 export const renderAdminOrganizations = () => {
@@ -3215,16 +3270,17 @@ export const renderAdminOrganizations = () => {
   if (!adminOrganizationsList) return;
   const organizations = Array.isArray(data?.items) ? data.items : [];
   clearInaccessibleOrganizationState(organizations);
-  const isSuperadmin = Boolean(data?.is_superadmin);
+  const isSuperadmin = Boolean(data?.is_superadmin ?? state.adminDashboard?.is_superadmin);
   const isHistory = isSuperadmin && platformOrganizationView === 'history';
+  const isOrganizationView = isSuperadmin && ['card', 'admins', 'history'].includes(platformOrganizationView);
   const selectedOrganization = organizations.find((org) => Number(org.id) === Number(selectedOrganizationId))
-    || (isSuperadmin && (platformOrganizationView === 'card' || isHistory) ? null
+    || (isOrganizationView ? null
       : organizations.find((org) => org.is_active !== false) || organizations[0]);
   selectedOrganizationId = selectedOrganization ? Number(selectedOrganization.id) : null;
   const view = managementCopy[organizationViews.get(selectedOrganizationId) || 'people'];
-  renderAdminOrganizationAccount(selectedOrganization?.name);
-  const showingCreate = isSuperadmin && platformOrganizationView === 'create';
-  const showingCard = isSuperadmin && (platformOrganizationView === 'card' || isHistory) && selectedOrganization;
+  renderAdminOrganizationAccount(selectedOrganization?.name, isSuperadmin);
+  const showingCreate = isSuperadmin && data && platformOrganizationView === 'create';
+  const showingCard = isOrganizationView && selectedOrganization;
   const showingRegistry = isSuperadmin && !showingCreate && !showingCard;
   if (adminOrganizationsTitle) adminOrganizationsTitle.textContent = showingCreate ? 'Создать организацию' :
     showingCard ? selectedOrganization.name : isSuperadmin ? 'Организации' : view.title;
@@ -3267,7 +3323,8 @@ export const renderAdminOrganizations = () => {
       '</span><button class="ghost-button compact-ghost" type="button" data-action="recover-purge-account" data-user-id="' +
       operation.targetUserId + '">Проверить результат удаления</button></div>').join('') + '</section>' : '';
   const staleMarkup = organizationsReadStale ? '<div class="form-status error" role="status" data-organizations-stale>' +
-    '<strong>Показано последнее подтверждённое состояние.</strong> ' + escapeHtml(organizationsReadStaleReason) +
+    '<strong>' + (data ? 'Показано последнее подтверждённое состояние.' : 'Реестр организаций недоступен.') + '</strong> ' +
+    escapeHtml(organizationsReadStaleReason) +
     ' <button type="button" class="text-button" data-action="refresh-admin-organizations">Обновить безопасно</button></div>' : '';
   adminOrganizationsPanel.dataset.superadmin = String(isSuperadmin);
   document.querySelectorAll('[data-platform-section]').forEach((link) => {
@@ -3281,12 +3338,12 @@ export const renderAdminOrganizations = () => {
   adminOrganizationsPanel.querySelector('.admin-organizations-shell')?.classList.remove('hidden');
   document.querySelector('[data-admin-area="assessment"]')?.classList.toggle('hidden', isSuperadmin);
   document.getElementById('admin-organization-create-form')?.closest('section')?.classList.toggle('hidden', !showingCreate);
-  adminOrganizationsPanel.querySelector('.admin-organizations-hero [data-platform-org-view="create"]')?.classList.toggle('hidden', !showingRegistry);
+  adminOrganizationsPanel.querySelector('.admin-organizations-hero [data-platform-org-view="create"]')?.classList.toggle('hidden', !showingRegistry || !data);
   const breadcrumb = adminOrganizationsPanel.querySelector('.platform-org-breadcrumb');
   breadcrumb?.classList.toggle('hidden', !showingCreate && !showingCard);
   if (breadcrumb) breadcrumb.querySelector('[data-platform-org-location]').textContent = showingCreate ? 'Создание' : selectedOrganization?.name || '';
-  registry?.classList.toggle('hidden', !showingRegistry);
-  if (showingRegistry) renderOrganizationRegistry();
+  registry?.classList.toggle('hidden', !showingRegistry || !data);
+  if (showingRegistry && data) renderOrganizationRegistry();
   const listCard = adminOrganizationsList.closest('.admin-organizations-list-card');
   listCard?.classList.toggle('hidden', showingCreate || (showingRegistry && !staleMarkup && !purgeRecoveryMarkup && !organizationPurgeRecoveryMarkup));
   document.querySelector('.admin-organization-picker')?.classList.toggle('hidden', isSuperadmin || organizations.length <= 1);
@@ -3294,7 +3351,9 @@ export const renderAdminOrganizations = () => {
     adminOrganizationsList.innerHTML = showingRegistry ? organizationPurgeRecoveryMarkup + purgeRecoveryMarkup + staleMarkup : '';
     if (showingRegistry) for (const command of pendingOrganizations) {
       mountOrganizationPurgeRecovery(adminOrganizationsList.querySelector('[data-org-purge-recovery="' +
-        command.organizationId + '"] > div'), command, { isCurrent, onPurged });
+        command.organizationId + '"] > div'), command, {
+        isCurrent, onPurged, allowRetry: physicalPurgeAvailable && purgePreviewAvailable,
+      });
     }
     if (showingCreate) showOrganizationCreateAttempt();
     return;
@@ -3304,22 +3363,6 @@ export const renderAdminOrganizations = () => {
     adminOrganizationsList.innerHTML = purgeRecoveryMarkup + staleMarkup + '<p class="report-empty-state">' + (isSuperadmin
       ? 'Организации пока не созданы.'
       : 'Закреплённая организация недоступна или доступ отозван. Обратитесь к администратору платформы.') + '</p>';
-    return;
-  }
-  if (isHistory && selectedOrganization) {
-    const id = Number(selectedOrganization.id);
-    adminOrganizationsList.innerHTML = staleMarkup + platformOrganizationTabs(id, true) +
-      '<div class="platform-org-summary organization-history"></div>';
-    mountOrganizationHistory(adminOrganizationsList.querySelector('.organization-history'), selectedOrganization, {
-      actorId, isCurrent, onPurged, purgePreviewAvailable, physicalPurgeAvailable,
-      onAvailability: (organizationId, isActive) => {
-        const item = state.adminOrganizations?.items?.find((org) => Number(org.id) === organizationId);
-        if (!item) return;
-        item.is_active = isActive;
-        persistAssessmentContext();
-        if (stateBadge) stateBadge.innerHTML = organizationStateBadge(item);
-      },
-    });
     return;
   }
   const pendingInvitations = pendingInvitationOperations().filter((operation) =>
@@ -3336,6 +3379,37 @@ export const renderAdminOrganizations = () => {
           (isSuperadmin ? 'Проверить исход' : previousScope ? 'Проверить прежнюю попытку' : 'Восстановить отправку') +
           '</button></div>';
       }).join('') + '</section>' : '';
+  if (showingCard) {
+    const id = Number(selectedOrganization.id);
+    const previousHistory = adminOrganizationsList.querySelector('[data-organization-id="' + id + '"] .organization-history');
+    const page = isHistory ? '<div class="platform-org-summary organization-history"></div>'
+      : platformOrganizationView === 'admins' ? renderOrganizationAdmins(selectedOrganization)
+        : renderPlatformOrganizationOverview(selectedOrganization, data.assessment_programs || []);
+    adminOrganizationsList.innerHTML = staleMarkup +
+      '<article class="admin-organization-card" data-organization-id="' + id + '">' +
+      platformOrganizationTabs(id, platformOrganizationView) + page +
+      (isHistory ? invitationRecoveryMarkup + purgeRecoveryMarkup : '') + '</article>';
+    if (isHistory) {
+      const history = adminOrganizationsList.querySelector('.organization-history');
+      mountOrganizationHistory(history, selectedOrganization, {
+        actorId, isCurrent, onPurged, purgePreviewAvailable, physicalPurgeAvailable,
+        onAvailability: (organizationId, isActive) => {
+          const item = organizationById(organizationId);
+          if (!item) return;
+          item.is_active = isActive;
+          persistAssessmentContext();
+          if (stateBadge) stateBadge.innerHTML = organizationStateBadge(item);
+        },
+      });
+      mountOrganizationAccountActions(history, selectedOrganization, purgePreviewAvailable, previousHistory);
+    }
+    renderPreparationProblemCounts();
+    restoreAdminOrganizationsDraft();
+    restoreProgramConnectionFeedback();
+    adminOrganizationsList.querySelectorAll('form[data-action]')
+      .forEach((form) => renderedFormSignatures.set(form, formSignature(form)));
+    return;
+  }
   if (adminOrganizationSelect) {
     adminOrganizationSelect.innerHTML = organizations
       .map(
@@ -3356,7 +3430,7 @@ export const renderAdminOrganizations = () => {
   const focusedCheckUser = document.activeElement?.matches?.('[data-action="check-member-preparation"]') ? document.activeElement.closest('.admin-organization-member')?.querySelector('[data-user-id]')?.dataset.userId : null;
   const focusedAppealControl = document.activeElement?.closest?.('[data-action="toggle-appeals-filter"], [data-action="open-member-appeals"]');
   const focusedConfirmation = document.activeElement?.matches?.('[data-organization-confirmed]');
-  const focusedMenu = !isSuperadmin && document.activeElement?.closest?.('.admin-organization-member-menu');
+  const focusedMenu = document.activeElement?.closest?.('.admin-organization-member-menu');
   // Replacing the list can dispatch focusout and close the old menu synchronously.
   const menuFocus = focusedMenu ? { control: document.activeElement, wasOpen: focusedMenu.open } : null;
   let confirmationToRestore;
@@ -3365,8 +3439,6 @@ export const renderAdminOrganizations = () => {
     .map((org) => {
       const orgId = Number(org.id);
       const isActive = org.is_active !== false;
-      const activeBatch = state.adminOrganizationPreparationBatches?.[orgId];
-      const batchIsRunning = activeBatch?.status === 'in_progress';
       const revisions = questionnaireRevisions.get(organizationKey(orgId)) || [];
       const currentProgram = org.assessment_program || null;
       const programState = organizationProgramState(orgId);
@@ -3407,10 +3479,7 @@ export const renderAdminOrganizations = () => {
       const questionnaireValidation = questionnairePreview?.validation_json || {};
       const questionnaireProblems = [...(questionnaireValidation.errors || []),
         ...(questionnaireValidation.missing || [])];
-      const savedView = organizationViews.get(orgId);
-      const activeView = isSuperadmin && savedView === 'questionnaire' ? 'people' : savedView || 'people';
-      const availablePrograms = Array.isArray(data?.assessment_programs) ? data.assessment_programs : [];
-      const pendingConnection = isSuperadmin ? pendingProgramConnection(orgId) : null;
+      const activeView = organizationViews.get(orgId) || 'people';
       const allowedRoles = Array.isArray(currentProgram?.roles) ? currentProgram.roles : [];
       const roleCapabilities = Array.isArray(currentProgram?.role_capabilities)
         ? currentProgram.role_capabilities : allowedRoles.map((role) => ({ ...role, is_available: true }));
@@ -3457,22 +3526,9 @@ export const renderAdminOrganizations = () => {
           recoveryActions.push('<button type="button" class="text-button" data-action="show-admin-view" data-view="organization-data">Открыть данные организации</button>');
         }
       }
-      const assignmentHelp = isSuperadmin || !assignmentBlockers.length ? '' :
+      const assignmentHelp = !assignmentBlockers.length ? '' :
         (assignmentBlockers.length === 1 ? '<p>' + escapeHtml(assignmentBlockers[0]) + '</p>' : '<ul>' + blockerItems + '</ul>') +
         recoveryActions.join(' ') + (rolesKnown && !roleAvailable ? '<p>Обратитесь к суперадминистратору.</p>' : '');
-      const assignmentReadinessMarkup = isSuperadmin ? '<section class="admin-assignment-readiness" aria-label="Готовность назначения"><h5>Готовность назначения</h5><dl>' +
-        '<dt>Программа</dt><dd>' + (programConnectionUnverified ? 'подключение не подтверждено' : currentProgram
-          ? escapeHtml(programIdentity(currentProgram)) + ' · версия ' + escapeHtml(currentProgram.program_version)
-          : 'не подключена') + '</dd>' +
-        '<dt>Роль в оценке</dt><dd>' + escapeHtml(assignmentRoleLabel) + '</dd>' +
-        '<dt>Анкета</dt><dd>' + escapeHtml(questionnaireAssignment.label) + '</dd></dl>' +
-        (assignmentBlockers.length
-          ? '<div class="form-status error" role="alert"><strong>Назначение пока недоступно</strong><ul>' +
-            blockerItems + '</ul></div>' +
-            (programState.status === 'absent' ? '<p data-program-next-step>Следующий шаг: подключите опубликованную программу в форме выше.</p>' : '') +
-            (programConnectionUnverified || (programConfirmed && !rolesKnown) ? checkProgram : '')
-          : '<p class="form-status success">Можно назначать. Выберите участников ниже; назначение не запускает оценку.</p>') +
-        '</section>' : '';
       const roleSelectionMarkup = roleCapabilities.length
         ? '<label><span>Роль в оценке</span><select name="role_profile_version_id" required' +
           (rolesKnown ? '' : ' disabled') + '><option value="">Выберите роль</option>' +
@@ -3492,20 +3548,6 @@ export const renderAdminOrganizations = () => {
         : '<div class="form-status" role="status" data-questionnaire-program-state="' + programState.status + '">' +
           '<p>' + escapeHtml(programState.message) + '</p>' +
           (programConnectionUnverified ? '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>' : '') + '</div>';
-      const programMarkup = isSuperadmin ? '<section class="platform-org-summary-panel"><h3>Программа оценки</h3>' +
-        '<form class="admin-organization-inline-form admin-organization-program-form" data-action="connect-assessment-program">' +
-        programConnectionStateMarkup(orgId, currentProgram) +
-        (programConnectionUnverified ? '<button type="button" class="text-button" data-action="check-program-connection">Проверить состояние подключения</button>' : '') +
-        (isActive ? '<label><span>Опубликованная версия</span><select name="program_definition_id" required>' +
-        '<option value="">Выберите опубликованную версию</option>' + availablePrograms.map((program) =>
-          '<option value="' + Number(program.id) + '"' +
-          (Number(currentProgram?.program_definition_id) === Number(program.id) ? ' selected' : '') + '>' +
-          'Версия ' + escapeHtml(program.version) + ' · ' + escapeHtml(program.name) + '</option>').join('') +
-        '</select></label><button class="primary-button compact-primary" type="submit"' +
-        (pendingConnection?.awaitingRead || !availablePrograms.length ? ' disabled' : '') + '>Подключить</button>' +
-        (currentProgram ? '<p class="platform-org-note">При смене версии новые назначения используют её. Прежние оценки сохраняют свои снимки.</p>' : '')
-          : '<p class="platform-org-note">Восстановите организацию, чтобы подключить программу.</p>') +
-        '</form></section>' : '';
       const revisionAnswers = currentRevision?.answers_json || {};
       const answer = (questionId, field) => escapeHtml(revisionAnswers?.[questionId]?.[field] || '');
       const confirmedForm = programConfirmed && currentRevision?.status === 'confirmed' &&
@@ -3527,7 +3569,7 @@ export const renderAdminOrganizations = () => {
       const key = assessmentKey(orgId, selectedRef);
       const previewIsStale = !programConfirmed || staleQuestionnairePreviews.has(key);
       let confirmationOutcome = questionnaireConfirmOutcomes.get(key);
-      if (!isSuperadmin && !confirmationOutcome && state.currentScreen === 'admin-organizations' && activeView === 'organization-data' &&
+      if (!confirmationOutcome && state.currentScreen === 'admin-organizations' && activeView === 'organization-data' &&
           programConfirmed && currentIdentityKey() &&
           !questionnaireLoadState?.accessDenied && !questionnaireConfirmRequestsInFlight.has(key)) {
         const revisionId = Number(readSessionOperation(confirmationStorageKey(key)));
@@ -3622,15 +3664,15 @@ export const renderAdminOrganizations = () => {
         '</div>';
       const purposeHintId = 'admin-data-purpose-hint-' + orgId;
       const tabsMarkup = '<nav class="admin-organization-steps" aria-label="Разделы управления">' +
-        managementSections.filter((view) => !isSuperadmin || view !== 'questionnaire').map(viewButton).join('') + '</nav>';
-      const reportsLink = !isSuperadmin && isActive ? '<button type="button" class="text-button admin-organization-reports-link" data-action="open-organization-reports" data-program-definition-id="' +
+        managementSections.map(viewButton).join('') + '</nav>';
+      const reportsLink = isActive ? '<button type="button" class="text-button admin-organization-reports-link" data-action="open-organization-reports" data-program-definition-id="' +
         (reportProgram ? Number(reportProgram.program_definition_id) : '') + '" data-program-label="' +
         escapeHtml(reportProgram ? [reportProgram.program_name, reportProgram.program_version].filter(Boolean).join(' · ') : '') +
         '">Отчёты организации</button>' : '';
       const programName = escapeHtml(programIdentity(currentProgram));
       const programLine = programConnectionUnverified ? 'Подключение не подтверждено' : currentProgram
-        ? (isSuperadmin ? programName : 'Программа «' + programName + '»') + ' · версия ' + escapeHtml(currentProgram.program_version)
-        : isSuperadmin ? 'Не подключена' : 'Программа не подключена';
+        ? 'Программа «' + programName + '»' + ' · версия ' + escapeHtml(currentProgram.program_version)
+        : 'Программа не подключена';
       const peopleContext = '<section class="admin-organization-head" aria-label="Выбранная оценка">' +
         '<div><h3>Оценка сотрудников</h3><p>' + escapeHtml(org.name) + ' · ' + programLine + '</p></div>' +
         reportsLink + '</section>';
@@ -3638,67 +3680,50 @@ export const renderAdminOrganizations = () => {
       const membersWithAppeals = allMembers.filter((item) => Number(item.issue_count || 0) > 0);
       const appealsOnly = appealsFilterOrganizations.has(orgId);
       const visibleMembers = appealsOnly ? membersWithAppeals : allMembers;
-      const appealsLabel = isSuperadmin ? 'С обращениями' : appealsOnly ? 'Все участники' :
+      const appealsLabel = appealsOnly ? 'Все участники' :
         'С обращениями' + (membersWithAppeals.length ? ' · ' + membersWithAppeals.length : '');
-      const appealsFilter = '<button type="button" class="admin-appeals-filter ' + (isSuperadmin ? 'ghost-button compact-ghost' : 'text-button') +
-        '" data-action="toggle-appeals-filter" aria-pressed="' + appealsOnly + '"' +
-        (appealsOnly && !isSuperadmin ? ' aria-describedby="admin-people-title-' + orgId + '"' : '') + '>' + appealsLabel + '</button>';
+      const appealsFilter = '<button type="button" class="admin-appeals-filter text-button" data-action="toggle-appeals-filter" aria-pressed="' + appealsOnly + '"' +
+        (appealsOnly ? ' aria-describedby="admin-people-title-' + orgId + '"' : '') + '>' + appealsLabel + '</button>';
       const peopleTitle = appealsOnly ? 'Участники с обращениями' : 'Участники';
       const members = renderMemberList(visibleMembers, {
         appealsOnly,
         assignmentHelp,
         organizationId: orgId,
-        isSuperadmin,
         activeOrganization: isActive,
         canAssign: isActive && !assignmentBlockers.length,
-        canDeletePerson: purgePreviewAvailable,
         selectedAssessmentRef: selectedRef,
         selectedAssessmentLabel: currentProgram
           ? programIdentity(currentProgram) + ' · ' + roleIdentity(allowedRoles)
           : 'выбранная оценка',
       });
-      const inviteForm = '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations"' +
-        (isSuperadmin ? '><button class="primary-button compact-primary" type="submit">' :
-          ' data-bulk-for="invite"><button class="text-button" type="submit" disabled>') +
-        'Отправить приглашения</button>' + (isSuperadmin ? '' : '<p data-bulk-recipients role="status" hidden></p>') + '</form>';
-      const assignForm = '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment"' +
-        (isSuperadmin ? '>' : ' data-bulk-for="assign">') + roleSelectionMarkup +
-        '<button class="' + (isSuperadmin ? 'primary-button compact-primary' : 'text-button') + '" type="submit"' +
-        (!isSuperadmin || assignmentBlockers.length ? ' disabled' : '') + '>Назначить оценку</button>' +
-        (isSuperadmin ? '' : '<p data-bulk-recipients role="status" hidden></p>') + '</form>';
-      const participantTools = isSuperadmin
-        ? '<div class="admin-organization-selection"><label><input type="checkbox" name="select_all_participants"> Выбрать всех</label><strong aria-live="polite"><span data-selected-count>0</span> выбрано</strong></div>' +
-          '<div class="admin-organization-bulk-actions" data-bulk-actions hidden>' + inviteForm + assignForm + '</div>'
-        : members.batchInvite || members.batchAssign
-          ? '<div class="admin-organization-bulk-actions admin-people-batch" data-bulk-actions><label class="admin-people-select"><input type="checkbox" name="select_all_participants"> Выбрать доступных</label>' +
-            (members.batchInvite ? inviteForm : '') + (members.batchAssign ? assignForm : '') + '</div>' : '';
-      const invitationFeedback = renderInvitationFeedback(orgId, selectedRef, isSuperadmin ? allMembers : visibleMembers);
+      const inviteForm = '<form class="admin-organization-bulk-invitation-form" data-action="send-member-invitations" data-bulk-for="invite">' +
+        '<button class="text-button" type="submit" disabled>Отправить приглашения</button>' +
+        '<p data-bulk-recipients role="status" hidden></p></form>';
+      const assignForm = '<form class="admin-organization-bulk-assignment-form" data-action="assign-member-assessment" data-bulk-for="assign">' +
+        roleSelectionMarkup + '<button class="text-button" type="submit" disabled>Назначить оценку</button>' +
+        '<p data-bulk-recipients role="status" hidden></p></form>';
+      const participantTools = members.batchInvite || members.batchAssign
+        ? '<div class="admin-organization-bulk-actions admin-people-batch" data-bulk-actions><label class="admin-people-select"><input type="checkbox" name="select_all_participants"> Выбрать доступных</label>' +
+          (members.batchInvite ? inviteForm : '') + (members.batchAssign ? assignForm : '') + '</div>' : '';
+      const invitationFeedback = renderInvitationFeedback(orgId, selectedRef, visibleMembers);
       const addMemberForm = '<form class="admin-organization-member-form" data-action="add-member">' +
         '<h4>Добавить участника</h4>' +
-        (isSuperadmin ? '<p>Для добавления нужны email, ФИО и должность.</p>' : '') +
-        '<label><span>Email</span><input name="email" type="email" required' +
-        (isSuperadmin ? ' placeholder="user@company.ru"' : '') + '></label>' +
-        '<label><span>ФИО</span><input name="full_name" type="text" required' +
-        (isSuperadmin ? ' placeholder="Иван Иванов"' : '') + '></label>' +
-        '<label><span>Должность</span><input name="role_description" type="text" required' +
-        (isSuperadmin ? ' placeholder="Руководитель отдела"' : '') + '></label>' +
+        '<label><span>Email</span><input name="email" type="email" required></label>' +
+        '<label><span>ФИО</span><input name="full_name" type="text" required></label>' +
+        '<label><span>Должность</span><input name="role_description" type="text" required></label>' +
         '<button class="primary-button compact-primary" type="submit">Добавить</button></form>';
       const importMembersForm = '<form class="admin-organization-import-form" data-action="import-members">' +
-        '<input name="csv" type="file" aria-label="Файл списка участников" accept=".csv,text/csv"' +
-        (isSuperadmin ? '' : ' hidden') + '>' + (isSuperadmin
-          ? '<span>CSV: email, full_name, role_description, job_instructions</span>' +
-            '<button class="ghost-button compact-ghost" type="submit">Импорт</button>'
-          : '<a class="text-link" href="/web/assets/templates/participants.csv" download="participants.csv">Скачать шаблон</a>' +
-            '<button class="ghost-button compact-ghost" type="button" data-choose-member-file aria-describedby="member-file-' + orgId + '">Выбрать файл</button>' +
-            '<span data-member-file-name id="member-file-' + orgId + '" aria-live="polite"></span>' +
-            '<button class="primary-button compact-primary" type="submit" disabled>Загрузить</button>' +
-            '<p class="admin-organizations-status hidden" data-member-import-status role="status" aria-live="polite" tabindex="-1"></p>') +
-        '</form>';
+        '<input name="csv" type="file" aria-label="Файл списка участников" accept=".csv,text/csv" hidden>' +
+        '<a class="text-link" href="/web/assets/templates/participants.csv" download="participants.csv">Скачать шаблон</a>' +
+        '<button class="ghost-button compact-ghost" type="button" data-choose-member-file aria-describedby="member-file-' + orgId + '">Выбрать файл</button>' +
+        '<span data-member-file-name id="member-file-' + orgId + '" aria-live="polite"></span>' +
+        '<button class="primary-button compact-primary" type="submit" disabled>Загрузить</button>' +
+        '<p class="admin-organizations-status hidden" data-member-import-status role="status" aria-live="polite" tabindex="-1"></p></form>';
 
       const questionnaireUpload = '<form class="admin-organization-import-form" data-action="preview-questionnaire" data-assessment-ref="' +
         escapeHtml(selectedRef) + '">' + assessmentFieldMarkup +
         '<input name="csv" type="file" accept=".csv,text/csv" required>' +
-        '<button class="' + (isSuperadmin ? 'primary-button compact-primary' : 'ghost-button compact-ghost') + '" type="submit"' +
+        '<button class="ghost-button compact-ghost" type="submit"' +
         (programConfirmed ? '' : ' disabled') + '>Загрузить заполненную анкету</button></form>' +
         '<p><a class="text-link" href="/users/admin/organizations/' + orgId + '/questionnaire/template">Скачать шаблон</a></p>' +
         (questionnairePreview?.channel === 'csv' ? '<p class="form-status success" role="status">Анкета загружена. Подтвердите сведения в «Данных организации».</p>' : '');
@@ -3711,63 +3736,21 @@ export const renderAdminOrganizations = () => {
         '" data-organization-active="' +
         (isActive ? 'true' : 'false') +
         '">' +
-        (isSuperadmin ? platformOrganizationTabs(orgId) +
-        '<div class="platform-org-summary" id="platform-org-overview" tabindex="-1">' +
-        '<div class="platform-org-pair">' + programMarkup +
-        '<section class="platform-org-summary-panel"><h3>Администраторы</h3><p>' +
-        ((org.admins || []).map((admin) => escapeHtml(admin.full_name || admin.email)).join(', ') || 'Администраторов пока нет') +
-        '</p><a class="text-link" href="#platform-org-admins-heading" data-platform-org-jump>Управлять доступом</a></section></div>' +
-        '<section class="platform-org-summary-panel"><div class="platform-org-summary-heading"><h3>Проблемы организации</h3>' +
-        '<a class="text-link" href="' + escapeHtml(preparationProblemsUrl(orgId)) + '">Открыть список</a></div>' +
-        '<p>Подготовка следующей ситуации: <strong data-org-problem-count>' + problemCount(orgId) + '</strong></p></section>' +
-        '<section class="platform-org-summary-panel"><h3>Доступ к отчётам и анкете</h3><p>Готовые отчёты: <strong>' +
-        Number(org.reports_count || 0) + '</strong>. Действующий администратор видит весь архив организации.</p>' +
-        '<p class="platform-org-note">Анкету загружает администратор в своём кабинете. Чтобы помочь с анкетой, ' +
-        (isActive ? '<a class="text-link" href="#platform-org-add-admin" data-platform-org-jump>добавьте сотрудника вашей команды</a>'
-          : 'добавьте сотрудника вашей команды') + ' по его именной рабочей почте.</p></section></div>' +
-        '<div class="admin-organization-head"><div class="admin-organization-stats">' +
-        '<button class="ghost-button compact-ghost" type="button" data-action="prepare-organization-assessments"' +
-        (batchIsRunning || !isActive ? ' disabled' : '') +
-        '>Подготовить кейсы всем</button></div>' +
-        '</div>' : tabsMarkup + (activeView === 'people' ? peopleContext : '')) +
-        renderOrganizationBatchProgress(orgId) +
-        (isSuperadmin ? '<form class="admin-organization-profile-form" data-action="update-profile">' +
-        '<div class="admin-organization-profile-heading"><div><p class="section-label accent-label">Профиль</p><h4>Сведения об организации</h4></div>' +
-        '<button class="primary-button compact-primary" type="submit">Сохранить карточку</button></div>' +
-        '<label><span>Название</span><input name="name" value="' + escapeHtml(org.name) + '" required></label>' +
-        '<label><span>Код</span><input name="code" value="' + escapeHtml(org.code) + '" required></label>' +
-        '<label><span>Год основания</span><input name="founded_year" type="number" min="1000" max="2100" value="' + escapeHtml(org.founded_year ?? '') + '" placeholder="Например, 2012"></label>' +
-        '<label><span>Численность</span><input name="employee_count" type="number" min="0" value="' + escapeHtml(org.employee_count ?? '') + '" placeholder="Количество сотрудников"></label>' +
-        '<label><span>Отрасль</span><input name="industry" type="text" value="' + escapeHtml(org.industry || '') + '" placeholder="Например, финтех"></label>' +
-        '<label><span>Сайт</span><input name="website" type="url" value="' + escapeHtml(org.website || '') + '" placeholder="https://company.ru"></label>' +
-        '<label><span>Штаб-квартира</span><input name="headquarters" type="text" value="' + escapeHtml(org.headquarters || '') + '" placeholder="Город, страна"></label>' +
-        '<label class="admin-organization-profile-wide"><span>Прочая существенная информация</span><textarea name="notes" placeholder="Структура, география, культура и другие важные сведения">' + escapeHtml(org.notes || '') + '</textarea></label>' +
-        '</form>' : '') +
-        (isSuperadmin ? '<div class="admin-organization-columns"><section><h4>Домены</h4>' +
-        renderOrganizationDomains(org.domains || []) +
-        '<form class="admin-organization-inline-form" data-action="add-domain"><input type="text" placeholder="company.ru">' +
-        '<button class="ghost-button compact-ghost" type="submit">Добавить</button></form></section></div>' +
-        renderOrganizationAdmins(org, purgePreviewAvailable) : '') +
-        (isSuperadmin ? tabsMarkup : '') +
+        tabsMarkup + (activeView === 'people' ? peopleContext : '') + renderOrganizationBatchProgress(orgId) +
         '<section class="admin-organization-members-section' + (activeView === 'people' ? '' : ' hidden') + '" data-admin-view="people">' +
-        (isSuperadmin
-          ? '<h4>' + (appealsOnly ? peopleTitle : 'Участники оценки') + '</h4>' + appealsFilter + '<dl class="admin-people-context"><div><dt>Программа оценки</dt><dd>' +
-            programLine + '</dd></div><div><dt>Роль в оценке</dt><dd>' + escapeHtml(assignmentRoleLabel) + '</dd></div></dl>' +
-            '<p>Назначение не запускает оценку.</p>' + assignmentReadinessMarkup + participantTools + invitationFeedback +
-            members.markup + addMemberForm + importMembersForm
-          : '<section class="admin-people-list" aria-labelledby="admin-people-title-' + orgId + '"><div class="admin-people-list-heading">' +
+        '<section class="admin-people-list" aria-labelledby="admin-people-title-' + orgId + '"><div class="admin-people-list-heading">' +
             '<h4 id="admin-people-title-' + orgId + '">' + peopleTitle + '</h4>' + appealsFilter + '</div>' +
             participantTools + '<div data-people-batch-status="' + escapeHtml(assessmentKey(orgId, selectedRef)) + '"></div>' +
             invitationFeedback + members.markup + '</section>' +
             '<aside class="admin-people-add">' + addMemberForm + '<details class="admin-people-import" data-member-import="' +
-            escapeHtml(organizationKey(orgId)) + '"><summary>Импорт списка</summary>' + importMembersForm + '</details></aside>') +
+            escapeHtml(organizationKey(orgId)) + '"><summary>Импорт списка</summary>' + importMembersForm + '</details></aside>' +
         '</section>' +
         '<section class="admin-organization-members-section' + (activeView === 'organization-data' ? '' : ' hidden') +
         '" data-admin-view="organization-data">' + (questionnaireLoadState?.status === 'empty' ? '' : questionnaireLoadMarkup) +
         '<div class="admin-data-overview">' + organizationDataReadiness(programState, readiness, assignmentRoleLabel,
-          isSuperadmin ? '' : questionnaireAssignment.label, sourceMarkup) +
+          questionnaireAssignment.label, sourceMarkup) +
         (activeView === 'organization-data' ? reportsLink : '') + '</div>' +
-        (isSuperadmin ? '' : '<div class="admin-organization-data-layout"><form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' +
+        '<div class="admin-organization-data-layout"><form class="admin-organization-early-data-form" data-action="preview-early-data" data-assessment-ref="' +
         escapeHtml(selectedRef) + '"' + (confirmedForm ? ' data-confirmed-form' : '') +
         (!programConfirmed || questionnaireLoadState?.accessDenied ? ' data-confirmation-unavailable' : '') + '>' +
         (programConfirmed ? '<input name="assignment_ref" type="hidden" value="' + escapeHtml(connectedRef) + '">' : '') +
@@ -3786,11 +3769,11 @@ export const renderAdminOrganizations = () => {
         '<fieldset class="admin-questionnaire-field-group"><legend>Настройки контекста для ситуаций</legend>' +
         '<label><span>Близость ситуаций к реальной работе</span>' + contextChoiceSelect('case_reality_level', revisionAnswers?.C17?.case_reality_level) + '</label>' +
         '<label><span>Название организации в ситуациях</span>' + contextChoiceSelect('organization_name_usage_rules', revisionAnswers?.C17?.organization_name_usage_rules) + '</label></fieldset>' +
-        confirmationMarkup + '</form>' + participantPreviewMarkup + '</div>') + '</section>' +
-        (isSuperadmin ? '' : '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') +
+        confirmationMarkup + '</form>' + participantPreviewMarkup + '</div></section>' +
+        '<section class="admin-organization-members-section' + (activeView === 'questionnaire' ? '' : ' hidden') +
         '" data-admin-view="questionnaire">' + questionnaireLoadMarkup + '<div class="admin-questionnaire-upload"><div class="admin-questionnaire-upload-heading">' +
             questionnaireTitle + (activeView === 'questionnaire' ? reportsLink : '') + '</div>' +
-            questionnaireUpload + '</div>' + currentReadinessMarkup + '</section>') +
+            questionnaireUpload + '</div>' + currentReadinessMarkup + '</section>' +
         '</article>'
       );
     })
@@ -3873,8 +3856,15 @@ export const openAdminOrganizations = async ({
   const platformAccess = state.adminDashboard?.is_superadmin || state.adminOrganizations?.is_superadmin;
   const requestedOrganization = platformAccess && /^[1-9][0-9]*$/.test(organizationParam || '')
     && Number.isSafeInteger(Number(organizationParam)) ? Number(organizationParam) : null;
-  platformOrganizationView = requestedOrganization ? (params.get('view') === 'history' ? 'history' : 'card') :
-    !openRegistry && platformAccess && params.get('view') === 'create' ? 'create' : 'registry';
+  const requestedView = params.get('view');
+  const hash = window.location.hash.slice(1);
+  const previousAdminsLink = !requestedView && ['platform-org-admins-heading', 'platform-org-add-admin'].includes(hash);
+  platformOrganizationView = requestedOrganization ? (previousAdminsLink ? 'admins'
+    : ['admins', 'history'].includes(requestedView) ? requestedView : 'card')
+    : !openRegistry && platformAccess && requestedView === 'create' ? 'create' : 'registry';
+  const anchor = requestedOrganization &&
+    { card: ['platform-org-overview'], admins: ['platform-org-admins-heading', 'platform-org-add-admin'],
+      history: ['org-purge-heading'] }[platformOrganizationView]?.includes(hash) ? hash : '';
   if (requestedOrganization) selectedOrganizationId = requestedOrganization;
   const identityEpoch = state.identityEpoch;
   const identityKey = currentIdentityKey();
@@ -3882,15 +3872,27 @@ export const openAdminOrganizations = async ({
   state.isAdmin = Boolean(state.canAdmin || state.isAdmin);
   setCurrentScreen('admin-organizations');
   persistAssessmentContext();
-  if (openRegistry || params.get('screen') !== 'admin-organizations') {
-    syncUrlState('admin-organizations', { organizationId: requestedOrganization, organizationView: platformOrganizationView });
+  if (openRegistry || params.get('screen') !== 'admin-organizations' || (requestedOrganization && previousAdminsLink)) {
+    syncUrlState('admin-organizations', { organizationId: requestedOrganization, organizationView: platformOrganizationView,
+      organizationAnchor: anchor, replace: Boolean(requestedOrganization && previousAdminsLink) });
   }
   hideAllPanels();
   const accountMenu = adminOrganizationsPanel?.querySelector('.org-admin-account-menu');
   if (accountMenu) accountMenu.open = false;
-  renderAdminOrganizationAccount();
+  adminOrganizationsPanel.dataset.superadmin = String(Boolean(platformAccess));
+  renderAdminOrganizationAccount(undefined, Boolean(platformAccess));
   adminOrganizationsPanel?.classList.remove('hidden');
   setStatus('');
+  registry?.classList.add('hidden');
+  adminOrganizationsPanel.querySelector('.admin-organizations-shell')?.classList.remove('hidden');
+  adminOrganizationsList.closest('.admin-organizations-list-card')?.classList.remove('hidden');
+  document.getElementById('admin-organization-create-form')?.closest('section')?.classList.add('hidden');
+  if (platformAccess) {
+    preparationProblemReadGeneration += 1;
+    preparationProblemCounts = null;
+    document.getElementById('platform-problems')?.classList.add('hidden');
+    document.getElementById('platform-availability')?.classList.add('hidden');
+  }
   adminOrganizationsList.innerHTML = '<p class="report-empty-state">Загружаем организации...</p>';
   const isCurrent = () => state.identityEpoch === identityEpoch && currentIdentityKey() === identityKey &&
     state.currentScreen === 'admin-organizations';
@@ -3905,10 +3907,13 @@ export const openAdminOrganizations = async ({
     if (data.is_superadmin) void loadPreparationProblemCounts(isCurrent);
   } catch (error) {
     if (!isCurrent()) return;
-    adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
+    if (!platformAccess) {
+      adminOrganizationsList.innerHTML = '<p class="report-empty-state">' + escapeHtml(error.message) + '</p>';
+    }
     return;
   }
   renderAdminOrganizations();
+  if (anchor) document.getElementById(anchor)?.focus();
 };
 
 export const openPlatformAvailability = (section) => {
@@ -3938,7 +3943,7 @@ export const openPlatformAvailability = (section) => {
     document.getElementById('platform-availability-description').textContent =
       'Контролируемые проверки будут доступны после подключения изолированного исполнителя.';
   }
-  renderAdminOrganizationAccount();
+  renderAdminOrganizationAccount(undefined, true);
   document.querySelectorAll('[data-platform-section]').forEach((link) => {
     if (link.dataset.platformSection === section) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
