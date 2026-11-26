@@ -19,8 +19,8 @@ from Api.m5_addressed_contract import validate_scenario_contract
 from Api.m5_passport import allowed_profile, missing
 from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import (
-    BATTERY_REVIEW_SCOPES, BATTERY_V04_REVIEW_PROTOCOL, EXPLICIT_REVIEW_BATCH_PROTOCOLS, SERVER_BOUND_REVIEW_PACKAGES,
-    aggregate, build_applicability_plan, load_protocol, normalize_results,
+    BATTERY_REVIEW_SCOPES, EXPLICIT_REVIEW_BATCH_PROTOCOLS, SERVER_BOUND_REVIEW_PACKAGES,
+    aggregate, aggregate_reviews, build_applicability_plan, load_protocol, normalize_results, reviewer_checks,
 )
 from Api.m5_case_runtime import checksum as runtime_checksum
 from scripts.build_m5_sales_package import build_execution_rules, compile_case_values
@@ -885,7 +885,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
     tester_operations = []
     tester_raw_checks = []
-    required_checks = plan["required_checks"]
+    required_checks = reviewer_checks(plan, "tester")
     for batch_no, offset in enumerate(range(0, len(required_checks), batch_size), start=1):
         batch_checks = required_checks[offset:offset + batch_size]
         batch_plan = {**plan, "required_checks": batch_checks, "not_applicable_checks": []}
@@ -922,8 +922,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         })
     checks = [{**item, "reviewer": "tester", "candidate_checksum": generation["candidate_checksum"]}
               for item in normalize_results(plan, tester_raw_checks, **review_basis)]
-    challenge_definitions = (required_checks if plan["protocol"].get("version") == BATTERY_V04_REVIEW_PROTOCOL
-                             else [item for item in required_checks if item.get("protected")])
+    challenge_definitions = reviewer_checks(plan, "challenger")
     challenge_payload = {
         **(passport_basis if passport_basis is not None else {
             "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
@@ -1025,15 +1024,15 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         else:
             merged_checks.append(item)
     # Aggregate both independent records: neither can overwrite the other.
-    aggregation = aggregate(generation["deterministic_validation"], [*checks, *challenge_checks],
-                            scoped_findings=battery_review)
+    independent_checks = {"tester": checks, "challenger": challenge_checks}
+    aggregation = aggregate_reviews(generation["deterministic_validation"], independent_checks, plan["protocol"])
     tester_input_checksum = checksum([item["input_checksum"] for item in tester_operations])
     challenger_input_checksum = checksum([item["input_checksum"] for item in challenger_operations])
     return {"protocol": plan["protocol"], "checks": merged_checks, "aggregation": aggregation,
             "candidate_checksum": generation["candidate_checksum"],
             "reviewed_candidate_checksum": candidate_checksum,
             **({"review_source": review_ref} if battery_review else {}),
-            "independent_checks": {"tester": checks, "challenger": challenge_checks},
+            "independent_checks": independent_checks,
             "provider_operation": {"kind": "independent_tester_v2_batched",
                                    "operation_id": f"{snapshot['operation_id']}:tester:batched",
                                    "input_checksum": tester_input_checksum,
@@ -1241,6 +1240,98 @@ def review_dispatches_match(tester: dict, *, candidate_sha256: str, review_round
                     }):
                 return False
     return True
+
+
+def archived_diagnostic_review_matches(refs: dict, protocol: dict) -> bool:
+    """The v3 QA hand-off froze the scenario but used the general review format."""
+    directory = passport_generation.AS_PACKAGE.with_name("v3")
+    _, _, package_refs = passport_generation.read_as_package(directory)
+    if any(refs.get(key) != ref for key, ref in package_refs.items()):
+        return False
+    expected = load_protocol(directory / "tester-protocol.json")
+    return protocol == {key: expected[key] for key in ("id", "version", "checksum")}
+
+
+def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
+                               case_version: dict | None = None) -> dict:
+    """Rebuild applicability for pre-existing traces using only pinned server inputs."""
+    from Api import m5_battery_contract, m5_battery_review
+    from Api.cycle_execution_manifest import (
+        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, battery_pilot_review_path,
+        battery_scenario_path, resolve_cycle_dependency,
+    )
+
+    refs = source["refs"]
+    package = refs["protocol_package"]
+    projected = source["case_version"]
+    if cycle is None:
+        # Standalone checks of saved traces have the same immutable package references.
+        as_path = ROOT / (M5_BATTERY_REVIEW_PACKAGE if package["version"] == "4.0.0"
+                          else battery_pilot_review_path(package))
+        scenario_ref = refs["battery_scenario"]
+        scenario_path = ROOT / battery_scenario_path(
+            refs["package"]["version"], scenario_ref if scenario_ref["version"] in BATTERY_V04_SCENARIO_REFS else None,
+        )
+        m2_path = passport_generation.M2
+        pilot = projected["version"].endswith(m5_battery_contract.PILOT_CASE_SUFFIX)
+    else:
+        as_path = resolve_cycle_dependency(cycle, "m5_functional_as")
+        scenario_path = resolve_cycle_dependency(cycle, "m5_battery_scenario")
+        m2_path = resolve_cycle_dependency(cycle, "m2_methodology") / "methodology.json"
+        pilot = cycle["catalog_ref_json"].get("battery_pilot") is True
+        if case_version != projected or runtime_checksum(case_version) != refs["case"]["case_version_checksum"]:
+            raise ValueError("PILOT_PLAN_REVIEW_CASE_MISMATCH")
+
+    _, _, package_refs = passport_generation.read_as_package(as_path)
+    if any(refs.get(key) != value for key, value in package_refs.items()):
+        raise ValueError("PILOT_PLAN_REVIEW_PROTOCOL_MISMATCH")
+    protocol = load_protocol(as_path / "tester-protocol.json")
+    if (protocol.get("scope") not in BATTERY_REVIEW_SCOPES
+            or SERVER_BOUND_REVIEW_PACKAGES.get(protocol["version"], "4.0.0") != package["version"]):
+        raise ValueError("PILOT_PLAN_REVIEW_PROTOCOL_MISMATCH")
+    scenario = m5_battery_contract.load_scenario(projected, scenario_path, pilot=pilot)
+    m2, m2_ref = passport_generation.load_m2(m2_path, passport_generation.SOURCE_MANIFEST)
+    if scenario["ref"] != refs["battery_scenario"] or m2_ref != refs["m2"]:
+        raise ValueError("PILOT_PLAN_REVIEW_SOURCE_MISMATCH")
+    return m5_battery_review.build_plan(
+        {**source, "battery_scenario": scenario, "battery_pilot": pilot},
+        protocol, as_path / "case-content-contract.json", m2,
+    )
+
+
+def bound_review_results_match(plan: dict, definitions: list[dict], records: list[dict],
+                               batches: list[dict], *, reviewer: str, candidate: dict,
+                               candidate_sha256: str, package: dict, deterministic: dict) -> bool:
+    """Check that normalized role results belong to the terminal candidate and receipts."""
+    by_id = {item["check_id"]: item for item in definitions}
+    record_by_id = {item["check_id"]: item for item in records}
+    if len(records) != len(by_id) or record_by_id.keys() != by_id.keys():
+        return False
+    raw_checks = []
+    for batch in batches:
+        for check_id in batch["required_check_ids"]:
+            result = record_by_id[check_id]
+            if (result.get("status") == "NOT_APPLICABLE"
+                    or any(result.get(key) != value for key, value in by_id[check_id].items())
+                    or any(result.get(key) != value for key, value in {
+                        "reviewer": reviewer, "candidate_checksum": candidate_sha256,
+                        "as_version": candidate["Version"], "review_package": package,
+                        "operation_id": batch["operation_id"], "batch_no": batch["batch_no"],
+                    }.items())):
+                return False
+        if plan["protocol"]["version"] in SERVER_BOUND_REVIEW_PACKAGES:
+            raw = json.loads(batch["calls"][-1]["response_content"])
+            raw_checks.extend(_bound_batch_checks(raw, [by_id[key] for key in batch["required_check_ids"]]))
+
+    if plan["protocol"]["version"] not in SERVER_BOUND_REVIEW_PACKAGES:
+        return True
+    normalized = normalize_results(
+        {**plan, "required_checks": definitions, "not_applicable_checks": []}, raw_checks,
+        candidate_as=candidate, missing_required_paths=deterministic.get("missing_required_paths", ()), reviewer=reviewer,
+    )
+    receipt_fields = {"reviewer", "candidate_checksum", "as_version", "review_package", "operation_id", "batch_no"}
+    return all(item == {key: value for key, value in record_by_id[item["check_id"]].items() if key not in receipt_fields}
+               for item in normalized)
 
 
 def build_persistence_trace(snapshot: dict[str, Any], prepared: dict[str, Any]) -> dict[str, Any]:

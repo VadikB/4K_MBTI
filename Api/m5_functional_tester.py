@@ -148,6 +148,21 @@ def build_applicability_plan(case: dict[str, Any], protocol: dict[str, Any] | No
     }
 
 
+def reviewer_checks(plan: dict, reviewer: str) -> list[dict]:
+    """Select the required checks specified by the frozen protocol for a role."""
+    checks = plan["required_checks"]
+    if reviewer == "tester" or plan["protocol"]["version"] == BATTERY_V04_REVIEW_PROTOCOL:
+        return checks
+    return [check for check in checks if check.get("protected")]
+
+
+def aggregate_reviews(deterministic: dict, independent_checks: dict, protocol: dict) -> dict:
+    return aggregate(
+        deterministic, [*independent_checks["tester"], *independent_checks["challenger"]],
+        scoped_findings=protocol.get("scope") in BATTERY_REVIEW_SCOPES,
+    )
+
+
 def _candidate_path_parts(path: str, *, mixed_paths: bool = False) -> list[str] | None:
     """Accept slash pointers and the dotted/bracket addresses used by reviewers."""
     path = path.strip()

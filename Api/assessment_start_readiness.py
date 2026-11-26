@@ -63,10 +63,16 @@ def plan_gate(content: dict, cycle: dict) -> dict | None:
     return binding
 
 
-def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
+def functional_gate(trace: dict, *, operation_id: str | None = None,
+                    cycle: dict | None = None, case_version: dict | None = None) -> None:
     """Check mandatory stages and the terminal candidate; never alter admission."""
-    from Api.m5_functional_generation_service import checksum as candidate_checksum, review_dispatches_match
-    from Api.m5_functional_tester import aggregate
+    from Api.m5_functional_generation_service import (
+        archived_diagnostic_review_matches, bound_review_results_match, checksum as candidate_checksum,
+        frozen_battery_review_plan, review_dispatches_match,
+    )
+    from Api.m5_functional_tester import (
+        BATTERY_REVIEW_SCOPES, SERVER_BOUND_REVIEW_PACKAGES, aggregate, aggregate_reviews, reviewer_checks,
+    )
     candidate = trace.get("accepted_as")
     _require(isinstance(candidate, dict) and candidate_checksum(candidate) == trace.get("candidate_checksum"),
              "FINAL_CANDIDATE_MISMATCH")
@@ -77,9 +83,6 @@ def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
     _require(trace.get("admitted_for_participant") is True
              and aggregation.get("admitted_for_participant") is True
              and aggregation.get("status") in {"PASS", "PASS_WITH_WARNINGS"}, "AS_NOT_ADMITTED")
-    recomputed = aggregate(trace.get("deterministic_validation") or {}, tester.get("checks") or [])
-    _require(recomputed["admitted_for_participant"] is True and recomputed["status"] == aggregation["status"],
-             "AS_NOT_ADMITTED")
     generation = trace.get("generation_operation") or {}
     repair = trace.get("repair")
     _require(bool(generation.get("operation_id")) and bool(generation.get("input_checksum"))
@@ -87,11 +90,38 @@ def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
     if repair:
         _require((repair.get("repair_generation_operation") or {}).get("operation_id") == generation["operation_id"],
                  "FINAL_REPAIR_MISMATCH")
+    source = trace.get("source_snapshot") or {}
+    refs = source.get("refs") or {}
+    package = refs.get("protocol_package") or {}
+    protocol = tester.get("protocol") or {}
+    battery = (cycle is not None or case_version is not None or tester.get("review_source") is not None
+               or protocol.get("scope") in BATTERY_REVIEW_SCOPES
+               or protocol.get("version") in SERVER_BOUND_REVIEW_PACKAGES
+               or package.get("version") in SERVER_BOUND_REVIEW_PACKAGES.values())
+    if refs.get("battery_scenario") and not battery:
+        _require(archived_diagnostic_review_matches(refs, protocol), "REVIEW_PROTOCOL_MISMATCH")
+    plan = None
+    deterministic = trace.get("deterministic_validation") or {}
+    if battery:
+        _require(package and refs.get("battery_scenario"), "REVIEW_SOURCE_MISMATCH")
+        plan = frozen_battery_review_plan(source, cycle=cycle, case_version=case_version)
+        _require(protocol == plan["protocol"], "REVIEW_PROTOCOL_MISMATCH")
+        _require(tester.get("review_source") == {
+            "source_ref": plan["case_ref"], "protocol": plan["protocol"], "review_package": package,
+            "scenario_source": refs["battery_scenario"], "m2_source": refs["m2"],
+            "candidate_checksum": trace["candidate_checksum"],
+            "assessment_situation_id": candidate["AssessmentSituationID"], "as_version": candidate["Version"],
+        } and tester.get("candidate_checksum") == tester.get("reviewed_candidate_checksum") == trace["candidate_checksum"],
+                 "REVIEW_CANDIDATE_MISMATCH")
+        if repair:
+            _require(repair.get("repair_generation_operation") == generation
+                     and repair.get("original_candidate_checksum") != trace["candidate_checksum"]
+                     and repair.get("outcome") == aggregation["status"], "FINAL_REPAIR_MISMATCH")
     _require(review_dispatches_match(tester, candidate_sha256=trace["candidate_checksum"],
                                     review_round=2 if repair else 1, operation_id=operation_id),
              "REVIEW_DISPATCH_MISMATCH")
     batch_ids = [generation["operation_id"]]
-    for name in ("provider_operation", "challenger_operation"):
+    for reviewer, name in (("tester", "provider_operation"), ("challenger", "challenger_operation")):
         operation = tester.get(name) or {}
         batches = operation.get("batches") or []
         _require(bool(batches) and all(batch.get("operation_id") and batch.get("input_checksum")
@@ -99,14 +129,28 @@ def functional_gate(trace: dict, *, operation_id: str | None = None) -> None:
         _require(candidate_checksum([row["input_checksum"] for row in batches]) == operation.get("input_checksum"),
                  "STAGE_INPUT_MISMATCH")
         required = [check for batch in batches for check in batch["required_check_ids"]]
-        expected = [check["check_id"] for check in tester["checks"]
-                    if check.get("status") != "NOT_APPLICABLE"
-                    and (name == "provider_operation" or check.get("protected"))]
-        _require(len(required) == len(set(required)) and set(required) == set(expected), "REQUIRED_CHECKS_MISSING")
+        if plan is not None:
+            definitions = reviewer_checks(plan, reviewer)
+            expected = {check["check_id"] for check in definitions}
+        else:
+            # Historical non-battery hand-offs predate the frozen role receipts.
+            expected = {check["check_id"] for check in tester["checks"] if check.get("status") != "NOT_APPLICABLE"
+                        and (reviewer == "tester" or check.get("protected"))}
+        _require(len(required) == len(expected) and set(required) == expected, "REQUIRED_CHECKS_MISSING")
+        if plan is not None:
+            _require(bound_review_results_match(
+                plan, definitions, (tester.get("independent_checks") or {}).get(reviewer) or [], batches,
+                reviewer=reviewer, candidate=candidate, candidate_sha256=trace["candidate_checksum"],
+                package=package, deterministic=deterministic,
+            ), "REVIEW_RESULTS_MISMATCH")
         batch_ids.extend(batch["operation_id"] for batch in batches)
     _require(len(batch_ids) == len(set(batch_ids)), "DUPLICATE_STAGE_OPERATION")
     if operation_id is not None:
         _require(all(item.startswith(operation_id + ":") for item in batch_ids), "OPERATION_SCOPE_MISMATCH")
+    recomputed = (aggregate_reviews(deterministic, tester["independent_checks"], plan["protocol"])
+                  if plan is not None else aggregate(deterministic, tester.get("checks") or []))
+    _require(recomputed["admitted_for_participant"] is True and recomputed["status"] == aggregation["status"],
+             "AS_NOT_ADMITTED")
 
 
 def read(connection, *, cycle_id: str, user_id: int) -> dict:
@@ -200,7 +244,19 @@ def read(connection, *, cycle_id: str, user_id: int) -> dict:
                 plan["content_json"]["route"][0]["case_id"], plan["content_json"]["route"][0]["case_version"]),
                 "INITIAL_ROUTE_MISMATCH")
             trace = ((situation["execution_payload_json"].get("ai_operations") or {}).get("functional_personalization") or {})
-            functional_gate(trace, operation_id=result.get("preparation_operation_id"))
+            source_case = None
+            if cycle["catalog_ref_json"].get("battery_pilot") is True:
+                source_case = connection.execute(
+                    """SELECT cv.content_json, cv.content_checksum FROM m5_case_versions cv
+                       JOIN m5_catalog_case_versions member ON member.case_version_id=cv.id
+                       WHERE member.catalog_db_id=%s AND cv.case_id=%s AND cv.case_version=%s""",
+                    (cycle["catalog_ref_json"]["db_id"], selected["selected_case_id"], selected["selected_case_version"]),
+                ).fetchone()
+                _require(source_case is not None and checksum(source_case["content_json"]) == source_case["content_checksum"],
+                         "REVIEW_CASE_MISMATCH")
+            functional_gate(trace, operation_id=result.get("preparation_operation_id"),
+                            cycle=cycle if source_case else None,
+                            case_version=source_case["content_json"] if source_case else None)
             _require(trace.get("compiled_case_checksum") == situation["snapshot_json"]["case_ref"]["checksum"]
                      and trace["accepted_as"].get("CaseID") == selected["selected_case_id"]
                      and str(trace["accepted_as"].get("CaseVersion")) == str(selected["selected_case_version"])
