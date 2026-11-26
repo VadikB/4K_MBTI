@@ -1242,6 +1242,16 @@ def review_dispatches_match(tester: dict, *, candidate_sha256: str, review_round
     return True
 
 
+def archived_diagnostic_review_matches(refs: dict, protocol: dict) -> bool:
+    """The v3 QA hand-off froze the scenario but used the general review format."""
+    directory = passport_generation.AS_PACKAGE.with_name("v3")
+    _, _, package_refs = passport_generation.read_as_package(directory)
+    if any(refs.get(key) != ref for key, ref in package_refs.items()):
+        return False
+    expected = load_protocol(directory / "tester-protocol.json")
+    return protocol == {key: expected[key] for key in ("id", "version", "checksum")}
+
+
 def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
                                case_version: dict | None = None) -> dict:
     """Rebuild applicability for pre-existing traces using only pinned server inputs."""

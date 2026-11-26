@@ -5,10 +5,11 @@ import json
 import pytest
 
 from Api import m5_functional_generation_service as service
+from Api.assessment_start_readiness import functional_gate
 from Api.cycle_execution_manifest import BATTERY_CASE_PACKAGE, M5_BATTERY_REVIEW_PACKAGE, ROOT
 from Api.m5_battery_contract import RULE_PACKAGE
 from Api.m5_functional_tester import aggregate, normalize_results
-from Api.m5_passport_generation import CURRENT_AS_PACKAGE, load_bank_case
+from Api.m5_passport_generation import AS_PACKAGE, CURRENT_AS_PACKAGE, load_bank_case
 from tests.integration.test_m5_battery_scenario_db import PreparationGateway, reference
 
 
@@ -275,13 +276,20 @@ def test_server_detects_lost_recipient_without_a_reviewer():
     }]
 
 
-def test_preexisting_battery_snapshot_can_still_run_v3():
-    frozen = snapshot(2, package=CURRENT_AS_PACKAGE)
+def test_preexisting_battery_snapshot_can_still_run_and_read_v3():
+    frozen = snapshot(2, package=AS_PACKAGE.with_name("v3"))
     gateway = PreparationGateway("pass")
     result = service.prepare(frozen, gateway)
     assert result["tester"]["protocol"]["version"] == "2.1.0"
     assert result["admitted_for_participant"]
     assert "review_source" not in result["tester"]
+    saved = json.loads(json.dumps(service.build_persistence_trace(frozen, result)))
+    assert saved["source_snapshot"]["refs"]["protocol_package"]["version"] == "3.0.0"
+    assert saved["source_snapshot"]["refs"]["battery_scenario"]
+    functional_gate(saved, operation_id=frozen["operation_id"])
+    saved["source_snapshot"]["refs"]["protocol_package"]["checksum"] = "0" * 64
+    with pytest.raises(ValueError, match="PILOT_PLAN_REVIEW_PROTOCOL_MISMATCH"):
+        functional_gate(saved, operation_id=frozen["operation_id"])
 
 
 class RepairGateway(PairedGateway):

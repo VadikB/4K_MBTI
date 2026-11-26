@@ -7,6 +7,8 @@ import pytest
 from Api.assessment_start_readiness import functional_gate
 from Api.cycle_execution_manifest import BATTERY_V04_SCENARIO_CURRENT, M5_BATTERY_PILOT_REVIEW_PACKAGES, ROOT
 from Api.m5_functional_generation_service import build_passport_snapshot, build_persistence_trace, checksum, prepare
+from Api.m5_functional_tester import load_protocol
+from Api.m5_passport_generation import AS_PACKAGE
 from scripts.release_specialist_pilot import RELEASE_DIR, load_release, release_materials
 from tests.integration.test_m5_battery_v04_db import V04Gateway
 
@@ -75,6 +77,20 @@ def test_v7_pass_with_challenger_warning_uses_independent_results(warning_trace)
     assert saved["status"] == "PASS_WITH_WARNINGS"
     assert [(item["reviewer"], item["check_id"]) for item in saved["warnings"]] == [("challenger", "quality.clarity")]
     functional_gate(trace, operation_id=operation_id)
+
+
+def test_v7_package_cannot_fall_back_to_archived_review(pilot_cases):
+    operation_id, trace = prepare_trace(pilot_cases, 2, V04Gateway())
+    tester = trace["tester"]
+    # Simulate a hand-off claiming the historical result format for a v7 package.
+    historical = load_protocol(AS_PACKAGE.with_name("v3") / "tester-protocol.json")
+    tester["protocol"] = {key: historical[key] for key in ("id", "version", "checksum")}
+    tester.pop("review_source")
+    with pytest.raises(ValueError, match="PILOT_PLAN_REVIEW_PROTOCOL_MISMATCH"):
+        functional_gate(trace, operation_id=operation_id)
+    trace["source_snapshot"]["refs"].pop("battery_scenario")
+    with pytest.raises(ValueError, match="PILOT_PLAN_REVIEW_SOURCE_MISMATCH"):
+        functional_gate(trace, operation_id=operation_id)
 
 
 @pytest.mark.parametrize("mutation", ["absent", "duplicate", "foreign", "foreign_operation", "role", "version", "sha"])

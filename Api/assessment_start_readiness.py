@@ -67,9 +67,12 @@ def functional_gate(trace: dict, *, operation_id: str | None = None,
                     cycle: dict | None = None, case_version: dict | None = None) -> None:
     """Check mandatory stages and the terminal candidate; never alter admission."""
     from Api.m5_functional_generation_service import (
-        bound_review_results_match, checksum as candidate_checksum, frozen_battery_review_plan, review_dispatches_match,
+        archived_diagnostic_review_matches, bound_review_results_match, checksum as candidate_checksum,
+        frozen_battery_review_plan, review_dispatches_match,
     )
-    from Api.m5_functional_tester import BATTERY_REVIEW_SCOPES, aggregate, aggregate_reviews, reviewer_checks
+    from Api.m5_functional_tester import (
+        BATTERY_REVIEW_SCOPES, SERVER_BOUND_REVIEW_PACKAGES, aggregate, aggregate_reviews, reviewer_checks,
+    )
     candidate = trace.get("accepted_as")
     _require(isinstance(candidate, dict) and candidate_checksum(candidate) == trace.get("candidate_checksum"),
              "FINAL_CANDIDATE_MISMATCH")
@@ -88,17 +91,24 @@ def functional_gate(trace: dict, *, operation_id: str | None = None,
         _require((repair.get("repair_generation_operation") or {}).get("operation_id") == generation["operation_id"],
                  "FINAL_REPAIR_MISMATCH")
     source = trace.get("source_snapshot") or {}
-    battery = bool(case_version is not None or (source.get("refs") or {}).get("battery_scenario")
-                   or (tester.get("protocol") or {}).get("scope") in BATTERY_REVIEW_SCOPES)
+    refs = source.get("refs") or {}
+    package = refs.get("protocol_package") or {}
+    protocol = tester.get("protocol") or {}
+    battery = (cycle is not None or case_version is not None or tester.get("review_source") is not None
+               or protocol.get("scope") in BATTERY_REVIEW_SCOPES
+               or protocol.get("version") in SERVER_BOUND_REVIEW_PACKAGES
+               or package.get("version") in SERVER_BOUND_REVIEW_PACKAGES.values())
+    if refs.get("battery_scenario") and not battery:
+        _require(archived_diagnostic_review_matches(refs, protocol), "REVIEW_PROTOCOL_MISMATCH")
     plan = None
     deterministic = trace.get("deterministic_validation") or {}
     if battery:
+        _require(package and refs.get("battery_scenario"), "REVIEW_SOURCE_MISMATCH")
         plan = frozen_battery_review_plan(source, cycle=cycle, case_version=case_version)
-        package = source["refs"]["protocol_package"]
-        _require(tester.get("protocol") == plan["protocol"], "REVIEW_PROTOCOL_MISMATCH")
+        _require(protocol == plan["protocol"], "REVIEW_PROTOCOL_MISMATCH")
         _require(tester.get("review_source") == {
             "source_ref": plan["case_ref"], "protocol": plan["protocol"], "review_package": package,
-            "scenario_source": source["refs"]["battery_scenario"], "m2_source": source["refs"]["m2"],
+            "scenario_source": refs["battery_scenario"], "m2_source": refs["m2"],
             "candidate_checksum": trace["candidate_checksum"],
             "assessment_situation_id": candidate["AssessmentSituationID"], "as_version": candidate["Version"],
         } and tester.get("candidate_checksum") == tester.get("reviewed_candidate_checksum") == trace["candidate_checksum"],
