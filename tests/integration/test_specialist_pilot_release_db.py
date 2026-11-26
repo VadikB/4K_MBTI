@@ -143,3 +143,135 @@ def test_authorized_release_without_human_forms_is_idempotent_and_preserves_star
         rows = assessment_programs.list_published(connection)
         assert [(row["id"], row["version"]) for row in rows] == [(baseline["id"], "1.2"), (first["program_id"], "2.0")]
         assert read_cycle(connection, cycle_id) == previous_cycle
+
+
+@pytest.mark.integration
+def test_synthetic_assignment_opens_the_prepared_v7_card_and_keeps_start_time(release_db, monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from Api import auth_service, product_cycle_preparation_queue as preparation, routes
+    from Api import web_session_service as sessions
+    from Api.llm import deepseek_gateway
+    from Api.preparation_observation import read as observation_read
+    from tests.integration.test_m5_battery_v04_db import V04Gateway
+
+    with release_db() as connection:
+        publisher, _, org, _, _ = seed_baseline(connection)
+        # Use a fresh participant so that no pre-existing Cycle can satisfy the test.
+        participant = connection.execute(
+            "INSERT INTO users(email, full_name) VALUES('v7-start@example.test', 'Синтетический участник') RETURNING id"
+        ).fetchone()["id"]
+        connection.execute("""INSERT INTO organization_memberships(organization_id,user_id,role,admission_source)
+            VALUES(%s,%s,'member','admin_add')""", (org, participant))
+        administrator_id = connection.execute(
+            "INSERT INTO users(email) VALUES('v7-org-admin@example.test') RETURNING id"
+        ).fetchone()["id"]
+        connection.execute("""INSERT INTO organization_memberships
+            (organization_id,user_id,role,admission_source,is_participant)
+            VALUES(%s,%s,'admin','admin_add',FALSE)""", (org, administrator_id))
+        published = release(connection, directory=RELEASE_DIR, publisher=publisher, principal="fixture-deployer")
+        assessment_programs.connect(connection, organization_id=org, program_definition_id=published["program_id"],
+                                    actor_user_id=publisher, operation_id="v7-start-connect")
+
+    monkeypatch.setattr(routes, "get_connection", release_db)
+    monkeypatch.setattr(preparation, "get_connection", release_db)
+    monkeypatch.setattr(sessions, "get_connection", release_db)
+    monkeypatch.setattr(auth_service, "get_connection", release_db)
+    auth_service.auth_service.ensure_schema()
+    gateway = V04Gateway()
+    monkeypatch.setattr(deepseek_gateway, "DeepSeekGateway", lambda **_: gateway)
+    sessions.web_session_service.ensure_schema()
+    app = FastAPI()
+    app.include_router(routes.router)
+
+    with TestClient(app) as administrator, TestClient(app) as client:
+        administrator.cookies.set(routes.SESSION_COOKIE_NAME, sessions.web_session_service.create_session(administrator_id))
+        client.cookies.set(routes.SESSION_COOKIE_NAME, sessions.web_session_service.create_session(participant))
+        admin_path = f"/users/admin/organizations/{org}"
+        form = administrator.post(admin_path + "/questionnaire/preview", json={
+            "assignment_ref": "specialist-pilot", "source_author": "Синтетическая организация",
+            "idempotency_key": "v7-start-questionnaire", "channel": "csv",
+            "csv_text": (ROOT / "assessment_definitions/questionnaires/corporate/0.1/example.synthetic.csv").read_text(),
+        })
+        assert form.status_code == 201, form.text
+        confirmed = administrator.post(admin_path + f"/questionnaire/{form.json()['id']}/confirm",
+                                       json={"recipients": ["participant"]})
+        assert confirmed.status_code == 200, confirmed.text
+        assigned = administrator.post(admin_path + "/assessment-assignments", json={
+            "user_ids": [participant], "assignment_ref": "specialist-pilot", "operation_id": "v7-start-assignment",
+        })
+        assert assigned.status_code == 200, assigned.text
+        assert assigned.json()["items"][0]["status"] == "assigned", assigned.text
+        assignment_id = assigned.json()["items"][0]["assignment_id"]
+
+        acquaintance = f"/users/{participant}/acquaintance"
+        initial = client.get(acquaintance).json()
+        assert initial["readiness"]["status"] == "ready", initial["readiness"]
+        assert initial["prepared_plan"] is None
+        consent = client.post(acquaintance + "/consent", json={
+            "version": initial["readiness"]["briefing"]["consent_version"],
+        })
+        assert consent.status_code == 200, consent.text
+        answers = client.put(acquaintance + "/answers", json={"confirm": True, "answers": {
+            "answer_1": "Сверяю рабочие предложения с требованиями и обсуждаю решения с коллегами.",
+            "answer_2": "Готовлю рекомендации, решение согласовывает руководитель.",
+            "answer_3": "Использую карточки задач и материалы проверок.",
+        }})
+        assert answers.status_code == 200, answers.text
+        resolved = client.post(acquaintance + "/resolve-profile")
+        assert resolved.status_code == 200, resolved.text
+        assert resolved.json()["late_readiness"]["status"] == "ready_to_prepare"
+
+        operation_id = "v7-start-preparation"
+        queued = client.post("/users/assessment/cycles/prepare", json={
+            "idempotency_key": operation_id, "selected_skills": ["K1", "K2", "K3", "K4"],
+        })
+        assert queued.status_code == 202, queued.text
+        worker = preparation.product_cycle_preparation_queue
+        job = worker._claim()
+        assert job["operation_id"] == operation_id
+        worker._process(job)
+        operation = client.get(f"/users/assessment/cycles/preparation/{operation_id}")
+        assert operation.status_code == 200, operation.text
+        assert operation.json()["status"] == "completed", operation.text
+        roles = {call[0].split(":")[1] for call in gateway.calls}
+        assert roles == {"generation", "tester", "challenger"}
+
+        state = client.get(acquaintance).json()
+        plan = state["prepared_plan"]
+        readiness = plan["start_readiness"]
+        cycle_id = plan["cycle_id"]
+        assert state["assignment_id"] == assignment_id
+        assert readiness["can_start"] is True and readiness["reasons"] == [], readiness
+        assert readiness["plan_revision_id"] == plan["revision_id"]
+        assert readiness["cycle_id"] == cycle_id
+        assert readiness["pilot_admission"]["program_ref"]["version"] == "2.0"
+        with release_db() as connection:
+            before = read_cycle(connection, cycle_id)
+            assert before["started_at"] is None and before["consumed_seconds"] == 0
+            assert before["catalog_ref_json"]["version"] == "1.4.4"
+            assert observation_read(connection, "cycle", operation_id)["status"] == "completed"
+
+        request = {"cycle_id": cycle_id, "idempotency_key": "v7-start-click"}
+        opened = client.post("/users/assessment/cycles/start", json=request)
+        assert opened.status_code == 201, opened.text
+        runtime = opened.json()["runtime"]
+        first = runtime["current_situation"]
+        assert first["assessment_situation_id"] == readiness["assessment_situation_id"]
+        assert first["status"] == "active" and first["participant_payload"]
+        assert runtime["trace"]
+        with release_db() as connection:
+            started_at = read_cycle(connection, cycle_id)["started_at"]
+            assert started_at is not None
+        assert client.post("/users/assessment/cycles/start", json=request).status_code == 201
+        returned = client.get(f"/users/assessment/cycles/{cycle_id}/runtime")
+        assert returned.status_code == 200, returned.text
+        assert returned.json()["current_situation"] == first
+        with release_db() as connection:
+            assert read_cycle(connection, cycle_id)["started_at"] == started_at
+            assert connection.execute("""SELECT count(*) AS n FROM m5_cycles WHERE assignment_id=%s""",
+                                      (assignment_id,)).fetchone()["n"] == 1
+            assert connection.execute("""SELECT count(*) AS n FROM m5_cycle_time_intervals
+                WHERE cycle_db_id=%s AND interval_type='collecting'""", (before["id"],)).fetchone()["n"] == 1
+        assert {call[0].split(":")[1] for call in gateway.calls} == roles
