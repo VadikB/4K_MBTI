@@ -100,6 +100,9 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
                 not isinstance(opening_evidence, str) or not opening_evidence.strip()
                 or not material_source.get("opening_follow_up")):
             raise missing(case_id, version, "17.3/E01_RECEIPT/opening_reply_evidence")
+        if "opening_plain_confirmation" in material_source and (
+                material_source["opening_plain_confirmation"] is not True or not opening_evidence):
+            raise missing(case_id, version, "17.3/E01_RECEIPT/opening_plain_confirmation")
         if identifier := material_source.get("version_identifier"):
             examples = ", ".join(identifier["examples"])
             generation_addendum += (f"\n{identifier['instruction']} Формат: {identifier['pattern']}. "

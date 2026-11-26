@@ -9,6 +9,10 @@ from Api.m5_battery_contract import FACILITATOR, material_links
 from Api.m5_rule_engine import CharacterReply, Decision, RuleOutcome, evaluate_rule
 
 
+_LINK_MARKER = re.compile(r"[a-z][a-z0-9+.-]*://|\bwww\.", re.I)
+_OPENING_LINK_MARKER = re.compile(_LINK_MARKER.pattern + r"|\bm5-material:/", re.I)
+
+
 def scenario_contract(payload: dict) -> dict | None:
     return (payload.get("runtime_rules") or {}).get("battery_scenario")
 
@@ -67,19 +71,24 @@ def _restrict_quote(fragments: list[dict], text: str, quote: str, recipients: li
     return None
 
 
-def _opening_quote_matches(reply: str, quote: str | None, link: str, question: str) -> bool:
+def _opening_quote_matches(reply: str, quote: str | None, link: str, question: str, *, allow_plain: bool) -> bool:
     if not quote:
         return False
     start = _unique_start(reply, quote)
     if start < 0:
         return False
     links = material_links(reply)
-    if links:
-        end = start + len(quote)
-        quoted_links = [(offset, token) for offset, token in links if offset < end and offset + len(token) > start]
-        return bool(quoted_links) and all(token == link and start <= offset and offset + len(token) <= end
-                                          for offset, token in quoted_links)
-    return all(token == link for _, token in material_links(question))
+    if not allow_plain and not links:
+        return all(token == link for _, token in material_links(question))
+    end = start + len(quote)
+    quoted_links = [(offset, token) for offset, token in links if offset < end and offset + len(token) > start]
+    if any(token != link or offset < start or offset + len(token) > end for offset, token in quoted_links):
+        return False
+    # MATCH ties a plain quote to the delivered version. Any explicit address in it must be a complete source token.
+    if not allow_plain:
+        return bool(quoted_links)
+    return all(any(offset <= start + marker.start() < offset + len(token) for offset, token in quoted_links)
+               for marker in _OPENING_LINK_MARKER.finditer(quote))
 
 
 def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, character) -> BatteryTurn:
@@ -97,6 +106,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
     receipt_id = material_source.get("event_id")
     follow_up = material_source.get("opening_follow_up")
     opening_evidence = material_source.get("opening_reply_evidence")
+    allow_plain = material_source.get("opening_plain_confirmation", False)
     context = {
         "material_ids_already_available": sorted(disclosed),
         "prior_turns": [item for item in state["dialogue_history"] if item["turn_id"] != turn_id],
@@ -174,9 +184,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
             recipients, quote = details.get("recipient_ids"), details.get("text")
             if not _ids(recipients, selected) or not isinstance(quote, str) or not quote.strip():
                 continue
-            link_submission = rule_id == receipt_id and re.search(
-                r"[a-z][a-z0-9+.-]*://|\bwww\.", quote, re.I,
-            )
+            link_submission = rule_id == receipt_id and _LINK_MARKER.search(quote)
             if link_submission and follow_up:
                 scopes = [_restrict_quote(plan.fragments, text, quote, recipients, start=start)
                           for start, token in material_links(text) if token == quote]
@@ -320,7 +328,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
                 }, input_text=reply.content, shape={"MATCH": {"required": ["text"]}})
                 if ((confirmation.code, confirmation.outcome) == ("MATCH", RuleOutcome.TRUE)
                         and _opening_quote_matches(reply.content, (confirmation.details or {}).get("text"),
-                                                   source["link"], mapping[speaker])):
+                                                   source["link"], mapping[speaker], allow_plain=allow_plain)):
                     if receipt_id not in occurred:
                         occurred.append(receipt_id)
                     opened_material = {"source": source, "text": link["text"], "recipient_id": speaker,

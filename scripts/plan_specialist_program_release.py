@@ -469,7 +469,7 @@ def main() -> int:
         if args.usage_scope != "assessment" or (args.apply_import and not args.publish_admitted_catalog):
             parser.error("The pilot release requires explicit assessment catalog publication.")
         if args.pilot_battery_v04:
-            package_dir, runtime_dir, default_version = BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, "1.4.3"
+            package_dir, runtime_dir, default_version = BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, "1.4.4"
         else:
             package_dir, runtime_dir, default_version = BATTERY_PACKAGE, BATTERY_RUNTIME, "1.3"
     if not args.historical_0_5 and args.usage_scope == "qa":

@@ -129,7 +129,9 @@ def test_spec08_late_opening_is_tied_to_delivered_source(product_db, v04, mode):
                "promise": "Пока только собираюсь открыть эту ссылку."}.get(mode, OPENING)
     request = "Вы какую-нибудь ссылку открывали?" if mode == "unknown" else QUESTION
     if mode == "wrong_version":
-        request = "Вы уже открыли m5-material://M02/40?"
+        wrong_link = f"{SPEC08_LINK}0"
+        request = f"Вы уже открыли {wrong_link}?"
+        opening = f"Открыл и прочитал {wrong_link}."
     observed, calls = submit(product_db, as_id, request, {
         "E04_CLARIFY": matched(speaker_ids=[speaker]),
         "@follow_up:E01_RECEIPT": matched() if mode != "unknown" else {"code": "UNKNOWN"},
