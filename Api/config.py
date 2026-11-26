@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
+from uuid import UUID
 
 from dotenv import load_dotenv
 from Api.public_origin import read_deployment_origin, validate_public_origin
@@ -24,12 +26,34 @@ DEPLOYMENT_PUBLIC_ORIGIN = (None if os.getenv("AGENT4K_ISOLATED_STAND") == "1"
                             else read_deployment_origin(BASE_DIR))
 
 
+def _parse_additional_telegram_subject_projects(raw_value: str) -> dict[str, str]:
+    try:
+        pairs = json.loads(raw_value, object_pairs_hook=list)
+        if not raw_value.lstrip().startswith("{") or not isinstance(pairs, list):
+            raise ValueError
+        projects = {}
+        for subject, project in pairs:
+            if (str(UUID(subject)) != subject or subject in projects
+                    or not isinstance(project, str) or not project
+                    or project != project.strip()):
+                raise ValueError
+            projects[subject] = project
+        return projects
+    except (TypeError, ValueError):
+        raise ValueError("INVALID_TG_STUDENT_ADDITIONAL_SUBJECT_PROJECTS") from None
+
+
 class Settings:
     tg_student_channel_enabled: bool = os.getenv("TG_STUDENT_CHANNEL_ENABLED", "false").lower() == "true"
     tg_student_allowed_project_code: str = os.getenv("TG_STUDENT_ALLOWED_PROJECT_CODE", "").strip()
     tg_student_organization_id: int = int(os.getenv("TG_STUDENT_ORGANIZATION_ID", "0"))
     tg_student_allowed_subjects: frozenset[str] = frozenset(
         x.strip() for x in os.getenv("TG_STUDENT_ALLOWED_SUBJECTS", "").split(",") if x.strip())
+    tg_student_additional_subject_projects: dict[str, str] = (
+        _parse_additional_telegram_subject_projects(
+            os.getenv("TG_STUDENT_ADDITIONAL_SUBJECT_PROJECTS", "{}")
+        )
+    )
     tg_bot_integration_token: str = os.getenv("TG_BOT_INTEGRATION_TOKEN", "").strip()
     # UX threshold only; no later than five minutes, independent of worker leases.
     preparation_delay_notice_seconds: int = int(os.getenv("PREPARATION_DELAY_NOTICE_SECONDS", "300"))
