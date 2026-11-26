@@ -109,8 +109,11 @@ for (const width of [1440, 390, 320]) {
     await expect(root.locator('.support-grid section').first()).toContainText('10:26');
     await screenshot('confirmed');
     await root.getByRole('link', { name: 'К организации' }).click();
-    await expect(page.locator('#admin-organization-select')).toHaveValue('3');
     await expect(page).toHaveURL(/org=3/);
+    const organization = page.locator('[data-organization-id="3"]');
+    await expect(organization.getByRole('link', { name: 'Обзор', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(organization.getByRole('heading', { name: 'Проблемы организации' })).toBeVisible();
+    await expect(page.locator('#admin-organizations-subtitle')).toHaveText('Код организации · synthetic-adm-program');
     await page.goto(preview.base + '/?screen=admin-platform-problems');
     await expect(root.getByRole('heading', { name: 'Проблемы' })).toBeVisible();
     await root.getByLabel('Организация').fill('3');

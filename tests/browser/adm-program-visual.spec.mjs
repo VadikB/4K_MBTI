@@ -9,7 +9,8 @@ test.afterAll(async () => { await preview?.close(); });
 for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unknown', 'confirmed']) {
   test(`ADM-PROGRAM AC06 ${role} ${status}: forms and readiness 1440/390/320 and text200`, async ({ page }, info) => {
     const rows = [];
-    for (const width of [1440, 390, 320]) for (const textScale of [1, 2]) for (const view of (role === 'superadmin' ? ['people'] : ['organization-data', 'questionnaire', 'people'])) {
+    const views = role === 'superadmin' ? ['program'] : ['organization-data', 'questionnaire', 'people'];
+    for (const width of [1440, 390, 320]) for (const textScale of [1, 2]) for (const view of views) {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`${preview.base}/demo/${role}/${status}/`);
       if (role === 'superadmin') {
@@ -21,25 +22,29 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
       const card = page.locator('[data-organization-id="3"]');
       await expect(card).toBeVisible();
       await expect(card.locator('.admin-questionnaire-load-state').filter({ hasText: 'Загружаем' })).toHaveCount(0);
-      await card.locator(`.admin-organization-step[data-view="${view}"]`).click();
-      const participantHelp = view === 'people' && role === 'admin';
-      const form = view === 'people'
-        ? card.locator(participantHelp ? '.admin-member-action-help' : '.admin-assignment-readiness')
+      if (view !== 'program') await card.locator(`.admin-organization-step[data-view="${view}"]`).click();
+      const participantHelp = view === 'people';
+      const form = view === 'program' ? card.locator('form[data-action="connect-assessment-program"]')
+        : participantHelp ? card.locator('.admin-member-action-help')
         : card.locator('form[data-action="' + (view === 'questionnaire' ? 'preview-questionnaire' : 'preview-early-data') + '"]');
-      const sourceSelector = participantHelp ? 'summary' : view === 'people' ? 'input[name="invitation_email"]'
+      const sourceSelector = participantHelp ? 'summary' : view === 'program' ? 'select[name="program_definition_id"]'
         : view === 'questionnaire' ? 'input[type="file"]' : '[name="purpose"]';
-      const buttonSelector = participantHelp ? 'summary' : view === 'people'
-        ? 'form[data-action="assign-member-assessment"] button[type="submit"]' : 'button[type="submit"]';
-      const formScope = view === 'people' && !participantHelp ? card : form;
-      const author = formScope.locator(sourceSelector);
-      const button = formScope.locator(buttonSelector);
+      const buttonSelector = participantHelp ? 'summary' : 'button[type="submit"]';
+      const author = form.locator(sourceSelector);
+      const button = form.locator(buttonSelector);
       await expect(form).toBeVisible();
       if (participantHelp) {
         await author.click();
         await expect(form).toHaveAttribute('open', '');
         await expect(card.locator('form[data-action="assign-member-assessment"]')).toHaveCount(0);
-      } else if (view === 'people') await author.check();
-      else if (view === 'organization-data') await author.fill('synthetic-contact@example.test');
+      } else if (view === 'program') {
+        const stateText = { absent: 'Программа ещё не подключена.', unknown: 'Результат подключения пока не подтверждён.',
+          confirmed: 'Подключено: Синтетическая программа оценки' };
+        await expect(form.locator('[data-program-connection-state]')).toContainText(stateText[status]);
+        await expect(author).toHaveValue(status === 'confirmed' ? '11' : '');
+        await expect(form.getByRole('button', { name: 'Проверить состояние подключения' })).toHaveCount(status === 'unknown' ? 1 : 0);
+        await expect(card.locator('form[data-action="assign-member-assessment"], .admin-organization-step')).toHaveCount(0);
+      } else if (view === 'organization-data') await author.fill('synthetic-contact@example.test');
       if (view === 'questionnaire') await author.setInputFiles({
         name: 'synthetic-questionnaire-long-file-name.csv', mimeType: 'text/csv',
         buffer: Buffer.from('question_id,field,value\nC01,name,Синтетическая организация\n'),
@@ -59,14 +64,13 @@ for (const role of ['admin', 'superadmin']) for (const status of ['absent', 'unk
       await author.focus();
       await expect(author).toBeFocused();
       if (!participantHelp) {
-        if (status === 'confirmed' && view !== 'people') await expect(button).toBeEnabled();
+        if (view === 'program' || status === 'confirmed') await expect(button).toBeEnabled();
         else await expect(button).toBeDisabled();
       }
       await button.scrollIntoViewIfNeeded();
       const metrics = await form.evaluate((node, { sourceSelector, buttonSelector }) => {
-        const scope = node.classList.contains('admin-assignment-readiness') ? node.closest('[data-organization-id]') : node;
-        const source = scope.querySelector(sourceSelector);
-        const submit = scope.querySelector(buttonSelector);
+        const source = node.querySelector(sourceSelector);
+        const submit = node.querySelector(buttonSelector);
         return { viewport: innerWidth,
         document: document.documentElement.scrollWidth, form: node.getBoundingClientRect().toJSON(),
         authorFontPx: getComputedStyle(source).fontSize,

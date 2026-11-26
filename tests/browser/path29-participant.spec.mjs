@@ -687,19 +687,30 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
       extraContexts.push(switchContext);
       const switchAdmin = await switchContext.newPage();
       await switchAdmin.goto(base);
-      await switchAdmin.locator('#email-input').fill('superadmin@example.test');
-      await switchAdmin.locator('#request-magic-link-button').click();
-      await switchAdmin.locator('#magic-token-input').fill(state.password);
-      await switchAdmin.locator('#verify-magic-link-button').click();
-      await expect(switchAdmin.locator('#admin-organizations-panel')).toBeVisible();
-      const picker = switchAdmin.locator('#admin-organization-select');
-      await picker.selectOption(String(state.path29.organization_id));
+      const enterOrganization = async (email, organizationId) => {
+        if (await switchAdmin.locator('#admin-organizations-panel').isVisible()) {
+          await switchAdmin.locator('#admin-organizations-account-name').click();
+          await switchAdmin.locator('#admin-organizations-logout-button').click();
+        }
+        await switchAdmin.locator('#email-input').fill(email);
+        await switchAdmin.locator('#request-magic-link-button').click();
+        await switchAdmin.locator('#magic-token-input').fill(state.password);
+        await switchAdmin.locator('#verify-magic-link-button').click();
+        await expect(switchAdmin.locator('[data-organization-id="' + organizationId + '"]')).toBeVisible();
+      };
+      await enterOrganization(state.path29.admin_email, state.path29.organization_id);
       const switchCard = switchAdmin.locator(`[data-organization-id="${state.path29.organization_id}"]`);
       await switchCard.getByRole('button', { name: 'Участники оценки', exact: true }).click();
-      const switchCheckbox = switchCard.locator(`input[name="invitation_email"][value="${state.path29.participant_email}"]`);
-      let releaseResponse, committedResponse;
+      const navigationEmail = 'path29-f06-navigation@example.test';
+      const switchAdd = switchCard.locator('form[data-action="add-member"]');
+      await switchAdd.locator('[name="email"]').fill(navigationEmail);
+      await switchAdd.locator('[name="full_name"]').fill('Синтетический участник для смены кабинета');
+      await switchAdd.locator('[name="role_description"]').fill('Специалист');
+      await switchAdd.getByRole('button', { name: 'Добавить', exact: true }).click();
+      await expect(switchAdd.locator('[data-operation-status]')).toContainText('Участник привязан');
+      const switchCheckbox = switchCard.locator('input[name="invitation_email"][value="' + navigationEmail + '"]');
+      let releaseResponse, committedStatus;
       const releaseGate = new Promise((resolve) => { releaseResponse = resolve; });
-      const committedGate = new Promise((resolve) => { committedResponse = resolve; });
       const assignmentPath = `**/users/admin/organizations/${state.path29.organization_id}/assessment-assignments`;
       const staleReply = Number(process.env.P4K_F06_A_B_A_REPLY || 200);
       expect([200, 409]).toContain(staleReply);
@@ -708,24 +719,25 @@ test('PATH29 owned backend: invitation → scoped chat → durable preparation �
         if (route.request().method() !== 'POST') return route.continue();
         delayedPosts += 1;
         const committed = await route.fetch();
-        expect(committed.status()).toBe(200);
-        committedResponse();
+        committedStatus = committed.status();
         await releaseGate;
         if (staleReply === 200) await route.fulfill({ response: committed });
         else await route.fulfill({ status: 409, contentType: 'application/json',
           body: JSON.stringify({ detail: 'PROGRAM_ROLE_NOT_AVAILABLE' }) });
       });
       try {
+        await expect(switchCheckbox).toBeEnabled();
         await switchCheckbox.check();
         await switchCard.locator('form[data-action="assign-member-assessment"]').getByRole('button', { name: 'Назначить оценку', exact: true }).click();
-        await committedGate;
-        await picker.selectOption(String(secondOrgId));
-        await expect(switchAdmin.locator(`[data-organization-id="${secondOrgId}"]`)).toBeVisible();
-        await picker.selectOption(String(state.path29.organization_id));
-        await expect(switchCard).toBeVisible();
+        await expect.poll(() => committedStatus).toBe(200);
+        await enterOrganization(state.path29.second_admin_email, secondOrgId);
+        await enterOrganization(state.path29.admin_email, state.path29.organization_id);
         const statusBefore = await switchAdmin.locator('#admin-organizations-status').textContent();
+        const reply = switchAdmin.waitForResponse((response) => response.request().method() === 'POST' &&
+          new URL(response.url()).pathname === '/users/admin/organizations/' + state.path29.organization_id + '/assessment-assignments');
         releaseResponse();
-        await switchAdmin.waitForTimeout(500);
+        expect((await reply).status()).toBe(staleReply);
+        await switchAdmin.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         expect(await switchAdmin.locator('#admin-organizations-status').textContent()).toBe(statusBefore);
         expect(delayedPosts).toBe(1);
         expect(await snapshot()).toEqual({ profiles: 1, cycles: 1, started: 1, operations: 1 });

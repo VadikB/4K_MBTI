@@ -244,7 +244,11 @@
 .platform-org-summary-panel form > p, .platform-org-summary-panel form > .text-button { grid-column: 1 / -1; }
 .platform-org-summary-panel .text-button { justify-self: start; text-align: left; }
 .platform-org-summary-panel .admin-organization-program-form { margin-top: 0; gap: 10px; }
-.platform-org-summary a.platform-org-purge-link { min-height: 44px; color: var(--palette-error); }
+.platform-org-summary a.platform-org-purge-link {
+    min-height: 44px;
+    color: var(--palette-error);
+    white-space: normal;
+}
 .organization-history { overflow-wrap: anywhere; }
 .org-history-timeline, .org-purge-accounts {
     list-style: none;
@@ -2528,6 +2532,11 @@
     background: #fff;
 }
 
+.admin-access-actions .admin-organization-member-menu > div button {
+    min-width: 0;
+    white-space: normal;
+}
+
 .admin-access-form button {
     min-height: 44px;
 }
@@ -2571,6 +2580,10 @@
 
     .admin-access-actions {
         justify-content: space-between;
+    }
+
+    .admin-access-actions .admin-organization-member-menu {
+        margin-inline-start: auto;
     }
 
     .admin-access-panel {

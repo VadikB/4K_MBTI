@@ -16,7 +16,7 @@ test.beforeAll(async()=>{
   await new Promise(r=>server.listen(0,'127.0.0.1',r));base=`http://127.0.0.1:${server.address().port}`;
 });
 test.afterAll(async()=>{if(server?.listening)await new Promise(r=>server.close(r));await fs.writeFile(`${evidence}/browser-cleanup.json`,JSON.stringify({listening:server?.listening,mail:0,llm:0}));});
-async function setup(page,{superadmin=false,mixed=false}={}){
+async function setup(page,{mixed=false}={}){
   const op='qa02-'+ 'x'.repeat(170);
   const members=Array.from({length:3},(_,i)=>({user_id:i+8,email:`person${i}@example.test`,full_name:`Участник ${i+1}`,has_password:false,
     registration_status:'pending',invitation_id:i+1,invitation_status:mixed?'not_sent':i===2?'accepted':'error',
@@ -35,7 +35,7 @@ async function setup(page,{superadmin=false,mixed=false}={}){
     if(p==='/users/version')return json({version:'2.1.28'});
     if(p==='/users/auth/email/request-link')return json({email:user.email,auth_mode:'password'});
     if(p==='/users/auth/email/password-login')return json({exists:true,user,is_admin:true,agent:{session_id:'admin',message:'',stage:'admin',completed:true},admin_dashboard:{metrics:[],insights:[],activity_series:[],competency_average:[]}});
-    if(p==='/users/admin/organizations')return json({is_superadmin:superadmin,items:[org]});
+    if(p==='/users/admin/organizations')return json({is_superadmin:false,items:[org]});
     if(p.endsWith('/questionnaire'))return json({items:[{id:11,assignment_ref:'competencies_4k',status:'confirmed',channel:'product_form',validation_json:{},briefing:{},readiness:{early:{status:'ready',message:'Ранний минимум подтверждён'},context:{status:'ready'},roles:{status:'ready'},preparation:{status:'idle'}}}]});
     if(p.endsWith('/personal-invitations')&&req.method()==='POST'){
       run.posts.push(req.postDataJSON());return route.abort('failed');
@@ -53,12 +53,11 @@ async function setup(page,{superadmin=false,mixed=false}={}){
   await page.goto(base);await page.locator('#email-input').fill(user.email);await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('synthetic-password');await page.locator('#verify-magic-link-button').click();
   await expect(page.locator('#admin-organizations-panel')).toBeVisible();
-  if (superadmin) await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   return run;
 }
 for(const width of [1440,390,320])test(`QA02 details and common failure at ${width}`,async({page,context})=>{
   test.setTimeout(20000);await page.setViewportSize({width,height:1000});await context.grantPermissions(['clipboard-read','clipboard-write']);
-  const run=await setup(page,{superadmin:width===1440});
+  const run=await setup(page);
   await expect(page.locator('.admin-invitation-common')).toHaveCount(1);
   await expect(page.locator('.admin-invitation-common')).toContainText('сервис отправки не настроен');
   await expect(page.locator('.admin-organization-member').first()).not.toContainText('проверьте адрес');

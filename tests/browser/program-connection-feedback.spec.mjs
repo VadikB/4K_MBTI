@@ -4,8 +4,7 @@ import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 const root = process.cwd();
-const base = 'http://127.0.0.1:18767';
-let server;
+let base, server;
 const releases = new Set();
 const gate = () => {
   let release;
@@ -22,7 +21,8 @@ test.beforeAll(async () => {
       response.end(await fs.readFile(file));
     } catch { response.statusCode = 404; response.end('missing'); }
   });
-  await new Promise((resolve) => server.listen(18767, '127.0.0.1', resolve));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  base = 'http://127.0.0.1:' + server.address().port;
 });
 test.afterEach(() => { releases.forEach((release) => release()); releases.clear(); });
 test.afterAll(async () => new Promise((resolve) => server.close(resolve)));
@@ -34,8 +34,7 @@ const status = (page) => form(page).locator('[data-operation-status]');
 const connection = (org, program) => ({ organization_id: org, program_definition_id: program,
   program_name: `Synthetic pilot ${program}`, program_version: 'synthetic-1', assignment_ref: `pilot-${program}`, roles: [], role_capabilities: [] });
 
-async function fixture(page, { questionnaireStatus = 503, lostPut = false } = {}) {
-  const questionnaire = gate();
+async function fixture(page, { lostPut = false } = {}) {
   const state = { linked: 0, puts: 0, reads: 0, questionnaires: 0, failNextPut: false, commandGate: null };
   const dashboard = { is_superadmin: true, metrics: [], insights: [], activity_series: [], competency_average: [] };
   const user = (id = 18) => ({ id, email: `admin-${id}@example.test`, full_name: `Synthetic admin ${id}` });
@@ -43,7 +42,6 @@ async function fixture(page, { questionnaireStatus = 503, lostPut = false } = {}
   const organization = (id) => ({ id, code: `synthetic-${id}`, name: `Synthetic organization ${id}`, is_active: true,
     domains: [], admins: [], members: [], members_count: 0, reports_count: 0,
     assessment_program: id === 4 ? connection(4, 11) : state.linked ? connection(3, state.linked) : null });
-  let initialQuestionnaire = true;
   await page.route('**/users/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/users/version') return json(route, { version: 'synthetic-r10-feedback' });
@@ -56,8 +54,7 @@ async function fixture(page, { questionnaireStatus = 503, lostPut = false } = {}
       items: [organization(3), organization(4)], assessment_programs: [11, 12].map((id) => ({ id, name: `Synthetic pilot ${id}`, version: 'synthetic-1' })) });
     if (pathname.endsWith('/questionnaire')) {
       state.questionnaires += 1;
-      if (pathname.includes('/3/') && initialQuestionnaire) { initialQuestionnaire = false; await questionnaire.promise; }
-      return questionnaireStatus === 200 ? json(route, { items: [] }) : json(route, { detail: 'Synthetic questionnaire unavailable' }, questionnaireStatus);
+      return json(route, { detail: 'Unexpected superadmin questionnaire read' }, 403);
     }
     if (pathname === '/users/admin/organizations/3/assessment-program') {
       if (route.request().method() === 'PUT') {
@@ -77,7 +74,7 @@ async function fixture(page, { questionnaireStatus = 503, lostPut = false } = {}
   await page.locator('#admin-open-organizations-button').click();
   await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await expect(form(page)).toBeVisible();
-  return { state, releaseQuestionnaire: questionnaire.release, message: lostPut ? recovery : success };
+  return { state, message: lostPut ? recovery : success };
 }
 async function connect(page, f) {
   await form(page).locator('[name="program_definition_id"]').selectOption('11');
@@ -85,18 +82,19 @@ async function connect(page, f) {
   await expect(status(page)).toContainText(f.message);
 }
 async function rerender(page) {
-  // Non-mutating real UI action triggers the same card renderer. This is also a
-  // deterministic barrier: assertions cannot pass just before a delayed render.
-  await page.locator('[data-organization-id="3"]').getByRole('button', { name: 'Данные организации', exact: true }).click();
+  const entry = (await fs.readdir('web/dist')).find((file) => file.startsWith('admin-organizations-'));
+  await page.evaluate(async (file) => {
+    const { refreshAdminOrganizationsSafely } = await import('/web/dist/' + file);
+    await refreshAdminOrganizationsSafely({ announce: false });
+  }, entry);
 }
-for (const questionnaireStatus of [200, 503]) for (const lostPut of [false, true]) {
-  test(`R10-STATUS ${questionnaireStatus} ${lostPut ? 'lost' : 'confirmed'} survives completion and re-render`, async ({ page }, info) => {
+for (const lostPut of [false, true]) {
+  test(`R10-STATUS ${lostPut ? 'lost' : 'confirmed'} survives completion and safe refresh`, async ({ page }, info) => {
     info.annotations.push({ type: 'synthetic_http', description: 'Real UI and render; no DB/provider or real program admission.' });
-    const f = await fixture(page, { questionnaireStatus, lostPut });
+    const f = await fixture(page, { lostPut });
     await connect(page, f);
-    expect(f.state.questionnaires).toBeGreaterThanOrEqual(2);
-    f.releaseQuestionnaire();
     await rerender(page);
+    expect(f.state.questionnaires).toBe(0);
     await expect(status(page)).toContainText(f.message);
     await expect(status(page)).toHaveAttribute('data-tone', 'success');
     await expect(form(page)).toContainText('Подключено: Synthetic pilot 11');
@@ -105,7 +103,7 @@ for (const questionnaireStatus of [200, 503]) for (const lostPut of [false, true
   });
 }
 test('R10-STATUS changing program clears the prior outcome without resurrection', async ({ page }) => {
-  const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
+  const f = await fixture(page); await connect(page, f);
   await form(page).locator('[name="program_definition_id"]').selectOption('12');
   await expect(status(page)).toHaveCount(0);
   await rerender(page); await expect(status(page)).toHaveCount(0);
@@ -114,7 +112,7 @@ test('R10-STATUS changing program clears the prior outcome without resurrection'
   expect(f.state.puts).toBe(1);
 });
 test('R10-STATUS a new failed intent cannot revive success and its error survives render', async ({ page }) => {
-  const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
+  const f = await fixture(page); await connect(page, f);
   f.state.failNextPut = true;
   await form(page).locator('[name="program_definition_id"]').selectOption('12');
   await form(page).getByRole('button', { name: 'Подключить', exact: true }).click();
@@ -125,7 +123,7 @@ test('R10-STATUS a new failed intent cannot revive success and its error survive
   expect(f.state.puts).toBe(2);
 });
 test('R10-STATUS same program in another organization never receives the old outcome', async ({ page }) => {
-  const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
+  const f = await fixture(page); await connect(page, f);
   await page.locator('.platform-org-breadcrumb a').click();
   await page.locator('#platform-org-rows [data-org-id="4"]:not([data-org-admins])').click();
   await expect(page.locator('[data-organization-id="4"]')).toContainText('Подключено: Synthetic pilot 11');
@@ -135,7 +133,7 @@ test('R10-STATUS same program in another organization never receives the old out
   await expect(status(page)).toHaveCount(0);
 });
 test('R10-STATUS logout and another account cannot restore the previous outcome', async ({ page }) => {
-  const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
+  const f = await fixture(page); await connect(page, f);
   await page.locator('#admin-organizations-account-name').click();
   await page.locator('#admin-organizations-logout-button').click();
   await expect(page.locator('#auth-panel')).toBeVisible();
@@ -143,13 +141,13 @@ test('R10-STATUS logout and another account cannot restore the previous outcome'
   await page.locator('#request-magic-link-button').click();
   await page.locator('#magic-token-input').fill('synthetic-password');
   await page.locator('#verify-magic-link-button').click();
-  await expect(page.locator('#admin-organizations-account-name')).toHaveText('Synthetic admin 28');
+  await expect(page.locator('#admin-organizations-account-name .org-admin-account-name')).toHaveText('Synthetic admin 28');
   await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
   await expect(form(page)).toContainText('Подключено: Synthetic pilot 11');
   await expect(status(page)).toHaveCount(0);
 });
 test('R10-STATUS a late command cannot restore feedback after program selection changes', async ({ page }) => {
-  const f = await fixture(page); f.releaseQuestionnaire();
+  const f = await fixture(page);
   const held = gate(); f.state.commandGate = held.promise;
   await form(page).locator('[name="program_definition_id"]').selectOption('11');
   await form(page).getByRole('button', { name: 'Подключить', exact: true }).click();
@@ -162,7 +160,7 @@ test('R10-STATUS a late command cannot restore feedback after program selection 
   await rerender(page); await expect(status(page)).toHaveCount(0);
 });
 test('R10-STATUS changed server program invalidates the saved outcome even with an old draft', async ({ page }) => {
-  const f = await fixture(page); await connect(page, f); f.releaseQuestionnaire();
+  const f = await fixture(page); await connect(page, f);
   f.state.linked = 12;
   await page.locator('#admin-open-organizations-button').click();
   await page.locator('#platform-org-rows [data-org-id="3"]:not([data-org-admins])').click();
