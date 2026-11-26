@@ -120,6 +120,8 @@ def test_spec08_acquired_knowledge_stays_with_recipient(product_db, v04, method)
         rules["@confirmed:E01_RECEIPT"] = matched()
     reply = {"quote": "Получил текст версии 4.", "unconfirmed": "Вижу ссылку, ещё не открывал."}.get(
         method, "Открыл ссылку на версию 4 и прочитал её фрагмент.")
+    if method == "link":
+        rules["@opened:E01_RECEIPT"] = matched(text=reply)
     events, on_delivery = submit(product_db, as_id, message, rules, recipients=(recipient,),
                                  responses={recipient: reply}, replay=True)
     after = recipient_turn(product_db, as_id, "Что удалось получить?")

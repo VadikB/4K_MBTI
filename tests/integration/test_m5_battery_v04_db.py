@@ -10,8 +10,8 @@ import pytest
 
 from Api.assessment_contexts import create_personalized_profile
 from Api.cycle_execution_manifest import (
-    BATTERY_V04_SCENARIO_CURRENT, BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH, ROOT, battery_scenario_ref,
-    build_manifest, resolve_cycle_dependency, resolve_dependency,
+    BATTERY_V04_SCENARIO_182, BATTERY_V04_SCENARIO_CURRENT, BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH,
+    ROOT, battery_scenario_ref, build_manifest, resolve_cycle_dependency, resolve_dependency,
 )
 from Api.m5_battery_contract import load_scenario
 from Api.m5_battery_preparation import prepare_next
@@ -150,7 +150,7 @@ def v04(product_db, specialist):
 def install_v04(connection):
     return publish_diagnostic_battery(
         connection, published_by=99, organization_id=10, catalog_id="specialist-battery-diagnostic",
-        catalog_version="0.8-qa.2", idempotency_key="m5-v04-synthetic-182", decision_basis="SYNTHETIC QA", battery_v04=True,
+        catalog_version="0.8-qa.3", idempotency_key="m5-v04-synthetic-183", decision_basis="SYNTHETIC QA", battery_v04=True,
         scenario_ref=battery_scenario_ref(BATTERY_V04_SCENARIO_CURRENT),
     )
 
@@ -404,14 +404,14 @@ def test_install_v04_during_legacy_cycle(product_db, specialist):
     assert saved["snapshot"]["case_ref"]["id"] == "CASE.SPEC.02"
     assert saved["execution_payload"]["runtime_rules"]["battery_scenario"]["ref"]["version"] == "1.6.0"
     assert resolve_cycle_dependency(cycle, "m5_functional_as").name == "v4"
-    export("legacy-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": "0.8-qa.2",
+    export("legacy-resume.json", {"old_catalog": cycle["catalog_ref_json"], "new_catalog": "0.8-qa.3",
            "old_snapshot_equal": resumed["snapshot_json"] == previous["snapshot"], "next_case": saved["snapshot"]["case_ref"]})
 
 
-@pytest.mark.parametrize("prior", [BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH])
+@pytest.mark.parametrize("prior", [BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH, BATTERY_V04_SCENARIO_182])
 def test_v04_catalog_keeps_original_scenario(product_db, specialist, prior):
     original_version = prior.rsplit("/", 1)[-1]
-    prior_ref = battery_scenario_ref(prior) if prior == BATTERY_V04_SCENARIO_PATCH else None
+    prior_ref = battery_scenario_ref(prior) if prior != BATTERY_V04_SCENARIO_PACKAGE else None
     with product_db() as connection:
         published = publish_diagnostic_battery(
             connection, published_by=99, organization_id=10, catalog_id="specialist-battery-diagnostic",
@@ -463,7 +463,7 @@ def test_future_catalog_readback_and_m7_rank(product_db, v04, monkeypatch, tmp_p
     def publish(path):
         return publish_admitted_catalog(
             source, published_by=99, decision_basis="SYNTHETIC isolated import contract", catalog_id="synthetic-specialist-pilot",
-            catalog_version="1.4.2", idempotency_key="synthetic-v04-pilot-182", organization_id=10,
+            catalog_version="1.4.3", idempotency_key="synthetic-v04-pilot-183", organization_id=10,
             package_dir=BATTERY_V04_PACKAGE, runtime_dir=BATTERY_V04_RUNTIME, evidence_path=path,
         )
 

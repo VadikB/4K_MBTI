@@ -83,6 +83,7 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
     if material_source is not None:
         material_id, heading = material_source["material_id"], material_source["section"]
         readers = material_source["reader_ids"]
+        opening_evidence = material_source.get("opening_reply_evidence")
         if (material_id not in start["Последовательность предъявления"]
                 or heading not in material_sections.get(material_id, ())
                 or material_source["link_section"] not in set(material_sections[material_id]) - {heading}
@@ -95,6 +96,10 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
                        or heading in roles.get(reader, {}).get("known_material_sections", {}).get(material_id, ())
                        for reader in readers)):
             raise missing(case_id, version, f"17.2/{material_id}/material_source")
+        if "opening_reply_evidence" in material_source and (
+                not isinstance(opening_evidence, str) or not opening_evidence.strip()
+                or not material_source.get("opening_follow_up")):
+            raise missing(case_id, version, "17.3/E01_RECEIPT/opening_reply_evidence")
         if identifier := material_source.get("version_identifier"):
             examples = ", ".join(identifier["examples"])
             generation_addendum += (f"\n{identifier['instruction']} Формат: {identifier['pattern']}. "

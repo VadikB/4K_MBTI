@@ -1110,6 +1110,7 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
     audiences = state.setdefault("battery_audiences", {})
     material_source = design.get("material_source", {})
     follow_up = material_source.get("opening_follow_up")
+    opening_evidence = material_source.get("opening_reply_evidence")
     events = []
     def record_transfer(rule_id, transfer):
         binding = next(rule for rule in design["events"] if rule["id"] == rule_id)
@@ -1146,6 +1147,11 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
     for reply in plan.replies:
         rule_id = reply.rule_ids[0]
         opened = reply.opened_material
+        receipt_id = material_source.get("event_id")
+        scenario_event_id = rule_id
+        if ((opened and follow_up and not opening_evidence)
+                or (opening_evidence and rule_id == f"{receipt_id}:follow_up:{reply.speaker}")):
+            scenario_event_id = receipt_id
         pending = state.get("battery_pending_materials", [])
         delivery = next((item for item in pending if opened and item["recipient_id"] == opened["recipient_id"]
                          and item["source"] == opened["source"] and item["delivery_turn_id"] == opened["delivery_turn_id"]),
@@ -1154,8 +1160,7 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
             connection, row=row, saved=saved, state=state,
             material={"material_id": f"CHARACTER.{reply.speaker}", "speaker_id": reply.speaker},
             decision_row=decisions[rule_id], trigger_turn=turn, reply=reply.response,
-            scenario_event_id=material_source["event_id"] if opened and follow_up else rule_id,
-            scenario_event_ids=reply.occurred_rule_ids, recipient_ids=reply.recipients,
+            scenario_event_id=scenario_event_id, scenario_event_ids=reply.occurred_rule_ids, recipient_ids=reply.recipients,
             opened_source=({"source": opened["source"], "delivery_event_id": delivery["delivery_event_id"],
                             "recipient_id": opened["recipient_id"]} if delivery else None),
         )

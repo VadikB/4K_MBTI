@@ -28,7 +28,11 @@ BATTERY_V04_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functio
 BATTERY_V04_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.7.0"
 BATTERY_V04_SCENARIO_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.0"
 BATTERY_V04_SCENARIO_PATCH = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.1"
-BATTERY_V04_SCENARIO_CURRENT = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.2"
+BATTERY_V04_SCENARIO_182 = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.2"
+BATTERY_V04_SCENARIO_CURRENT = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.8.3"
+BATTERY_V04_SCENARIO_REFS = {
+    "1.8.1": BATTERY_V04_SCENARIO_PATCH, "1.8.2": BATTERY_V04_SCENARIO_182, "1.8.3": BATTERY_V04_SCENARIO_CURRENT,
+}
 
 # Logical names are part of the persisted contract. Paths always identify an
 # immutable, versioned publication; callers must never replace them with latest/current.
@@ -132,8 +136,7 @@ def battery_scenario_path(package_version: str, ref: Mapping[str, Any] | None = 
     if source_version not in paths:
         raise ValueError("M5_BATTERY_PACKAGE_VERSION_INVALID")
     if ref is not None:
-        versions = {"1.8.1": BATTERY_V04_SCENARIO_PATCH, "1.8.2": BATTERY_V04_SCENARIO_CURRENT}
-        path = versions.get(str(ref.get("version"))) if isinstance(ref, Mapping) else None
+        path = BATTERY_V04_SCENARIO_REFS.get(str(ref.get("version"))) if isinstance(ref, Mapping) else None
         if source_version != "0.8" or not path or ref != battery_scenario_ref(path, root=root):
             raise ValueError("M5_BATTERY_SCENARIO_REF_INVALID")
         return path
@@ -155,7 +158,7 @@ def build_manifest(
         pilot = catalog_ref.get("battery_pilot") is True
         package_version = catalog_ref["package_version"]
         scenario_path = battery_scenario_path(package_version, catalog_ref.get("scenario_ref"), root=root)
-        v04 = scenario_path in {BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V04_SCENARIO_PATCH, BATTERY_V04_SCENARIO_CURRENT}
+        v04 = scenario_path == BATTERY_V04_SCENARIO_PACKAGE or scenario_path in BATTERY_V04_SCENARIO_REFS.values()
         dependencies = {
             **dependencies,
             "m5_functional_package": BATTERY_V04_CASE_PACKAGE if v04 else BATTERY_CASE_PACKAGE,

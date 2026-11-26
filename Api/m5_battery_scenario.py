@@ -67,6 +67,21 @@ def _restrict_quote(fragments: list[dict], text: str, quote: str, recipients: li
     return None
 
 
+def _opening_quote_matches(reply: str, quote: str | None, link: str, question: str) -> bool:
+    if not quote:
+        return False
+    start = _unique_start(reply, quote)
+    if start < 0:
+        return False
+    links = material_links(reply)
+    if links:
+        end = start + len(quote)
+        quoted_links = [(offset, token) for offset, token in links if offset < end and offset + len(token) > start]
+        return bool(quoted_links) and all(token == link and start <= offset and offset + len(token) <= end
+                                          for offset, token in quoted_links)
+    return all(token == link for _, token in material_links(question))
+
+
 def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, character) -> BatteryTurn:
     design = scenario_contract(payload)
     plan = BatteryTurn()
@@ -79,7 +94,9 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
     public_documents = {key: documents[key] for key in disclosed if key in documents}
     material_source = design.get("material_source") or {}
     linked_material = design.get("linked_material")
+    receipt_id = material_source.get("event_id")
     follow_up = material_source.get("opening_follow_up")
+    opening_evidence = material_source.get("opening_reply_evidence")
     context = {
         "material_ids_already_available": sorted(disclosed),
         "prior_turns": [item for item in state["dialogue_history"] if item["turn_id"] != turn_id],
@@ -135,7 +152,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
                      "instruction": "Для реакции выбери затронутых говорящих. Для фактов выбери только затронутые ID."
                                     " Для передачи укажи точную переданную цитату и её фактических получателей."
                                     " Для пересылки укажи адресатов конкретной просьбы и точную разрешённую цитату из уже предъявленного материала."}
-        if rule_id == material_source.get("event_id"):
+        if rule_id == receipt_id:
             condition["instruction"] += " Для ссылки укажи её точный адрес без окружающего текста."
         if kind == "delivery":
             shape = {"MATCH": {"required": ["speaker_ids"]}} if event.get("requires_prior_replies") else {}
@@ -157,7 +174,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
             recipients, quote = details.get("recipient_ids"), details.get("text")
             if not _ids(recipients, selected) or not isinstance(quote, str) or not quote.strip():
                 continue
-            link_submission = rule_id == material_source.get("event_id") and re.search(
+            link_submission = rule_id == receipt_id and re.search(
                 r"[a-z][a-z0-9+.-]*://|\bwww\.", quote, re.I,
             )
             if link_submission and follow_up:
@@ -199,15 +216,25 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
 
     pending_openings = {}
     if follow_up and linked_material:
-        receipt_rule = next(event for event in design["events"] if event["id"] == material_source["event_id"])
+        receipt_rule = next(event for event in design["events"] if event["id"] == receipt_id)
         for delivery in state.get("battery_pending_materials", []):
             speaker = delivery["recipient_id"]
-            if (delivery["source"] != linked_material["source"] or not mapping.get(speaker)
-                    or any(link != delivery["source"]["link"] for _, link in material_links(mapping[speaker]))
-                    or any(event["id"] == receipt_rule["id"] for event, _ in pending_replies.get(speaker, ()))):
+            if delivery["source"] != linked_material["source"] or not mapping.get(speaker):
                 continue
-            key = f"{receipt_rule['id']}:follow_up:{speaker}"
-            result = decide(key, {"follow_up": follow_up, "event_id": receipt_rule["id"], "speaker": speaker,
+            selected_rules = pending_replies.get(speaker, ())
+            addresses = {link for _, link in material_links(mapping[speaker])}
+            delivered_link = delivery["source"]["link"]
+            if opening_evidence:
+                if selected_rules:
+                    if receipt_id not in plan.link_deliveries:
+                        pending_openings[speaker] = {**linked_material, **delivery}
+                    continue
+                if addresses and delivered_link not in addresses:
+                    continue
+            elif addresses - {delivered_link} or any(event["id"] == receipt_id for event, _ in selected_rules):
+                continue
+            key = f"{receipt_id}:follow_up:{speaker}"
+            result = decide(key, {"follow_up": follow_up, "event_id": receipt_id, "speaker": speaker,
                                   "addressed_readable_link": delivery["source"],
                                   "delivery_turn_id": delivery["delivery_turn_id"]}, input_text=mapping[speaker])
             if (result.code, result.outcome) == ("MATCH", RuleOutcome.TRUE):
@@ -233,13 +260,15 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
             "authority": design["instructions"]["authority"], "rules": rules,
         }}
         speaker_context = {"dialogue_history": _private_history(state, speaker, turn_id)}
+        sent_links = [plan.link_deliveries[event["id"]] for event, _ in selected_rules
+                      if event["id"] in plan.link_deliveries]
+        prior_link = pending_openings.get(speaker)
         if material_source:
             speaker_context["opened_materials"] = [item for item in state.get("battery_opened_materials", [])
                                                    if item["recipient_id"] == speaker]
-            openable = [plan.link_deliveries[event["id"]]["source"] for event, _ in selected_rules
-                        if event["id"] in plan.link_deliveries]
-            if speaker in pending_openings:
-                openable.append(pending_openings[speaker]["source"])
+            openable = [binding["source"] for binding in sent_links]
+            if prior_link:
+                openable.append(prior_link["source"])
             if openable:
                 speaker_context["addressed_readable_links"] = openable
         reply = character.respond(material=reaction, character=role_card, text=mapping[speaker], turn_id=turn_id,
@@ -262,8 +291,10 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
             if not event.get("reply_confirmation"):
                 occurred.append(event["id"])
                 continue
-            pending = pending_openings.get(speaker) if "decision_key" in event else None
+            pending = prior_link if "decision_key" in event else None
             link = pending or plan.link_deliveries.get(event["id"])
+            if link and opening_evidence:
+                continue
             if link and follow_up and any(token != link["source"]["link"] for _, token in material_links(reply.content)):
                 continue
             confirmation = decide(f"{event['id']}:confirmed:{speaker}", {
@@ -279,6 +310,21 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
                                                   for item in speaker_context["opened_materials"])):
                     opened_material = {"source": link["source"], "text": link["text"], "recipient_id": speaker,
                                        "delivery_turn_id": pending["delivery_turn_id"] if pending else turn_id}
+        if opening_evidence and (link := sent_links[0] if sent_links else prior_link):
+            source = link["source"]
+            if not any(item["source"] == source for item in speaker_context["opened_materials"]):
+                confirmation = decide(f"{receipt_id}:opened:{speaker}", {
+                    "effect": material_source["opening_confirmation"], "reply_evidence": opening_evidence,
+                    "event_id": receipt_id, "speaker": speaker, "participant_message": mapping[speaker],
+                    "addressed_readable_link": source, "delivery_turn_id": link.get("delivery_turn_id", turn_id),
+                }, input_text=reply.content, shape={"MATCH": {"required": ["text"]}})
+                if ((confirmation.code, confirmation.outcome) == ("MATCH", RuleOutcome.TRUE)
+                        and _opening_quote_matches(reply.content, (confirmation.details or {}).get("text"),
+                                                   source["link"], mapping[speaker])):
+                    if receipt_id not in occurred:
+                        occurred.append(receipt_id)
+                    opened_material = {"source": source, "text": link["text"], "recipient_id": speaker,
+                                       "delivery_turn_id": link.get("delivery_turn_id", turn_id)}
         plan.replies.append(Reply(speaker, tuple(sorted(recipients - {speaker})), rule_ids, reply, tuple(occurred),
                                   opened_material))
         for event, _ in selected_rules:

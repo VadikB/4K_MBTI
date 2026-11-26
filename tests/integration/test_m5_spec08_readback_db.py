@@ -93,6 +93,7 @@ def test_spec08_uses_the_complete_address_in_the_addressed_turn(product_db, v04,
     text = f"Получатель, направляю «{sent}», посмотрите."
     events, delivered_to = submit(product_db, as_id, text, {
         "E01_RECEIPT": matched(recipient_ids=[RECIPIENT], text=selected), "@confirmed:E01_RECEIPT": matched(),
+        "@opened:E01_RECEIPT": matched(text=OPENING),
     }, recipients=(RECIPIENT,), responses={RECIPIENT: OPENING if sent != FRAGMENT else "Получил этот текст."}, replay=True)
     after = recipient_turn(product_db, as_id, "Что получено?")
     with product_db() as connection:
@@ -133,6 +134,7 @@ def test_spec08_late_opening_is_tied_to_delivered_source(product_db, v04, mode):
         "E04_CLARIFY": matched(speaker_ids=[speaker]),
         "@follow_up:E01_RECEIPT": matched() if mode != "unknown" else {"code": "UNKNOWN"},
         "@confirmed:E01_RECEIPT": matched() if mode not in {"unknown", "promise"} else {"code": "NO_MATCH"},
+        "@opened:E01_RECEIPT": matched(text=opening) if mode not in {"unknown", "promise"} else {"code": "NO_MATCH"},
     }, recipients=(speaker,), responses={speaker: opening}, replay=True)
     after = recipient_turn(product_db, as_id, "Какие рабочие сведения вы получили?")
     with product_db() as connection:
@@ -165,7 +167,7 @@ def test_spec08_opening_after_a_resend_uses_one_delivery(product_db, v04):
     rules = {"E01_RECEIPT": matched(recipient_ids=[RECIPIENT], text=SPEC08_LINK)}
     first, initial_calls = submit(product_db, as_id, first_text, rules, recipients=(RECIPIENT,),
                                   responses={RECIPIENT: "Ссылку вижу. Открою позже."}, replay=True)
-    resent, resent_calls = submit(product_db, as_id, resent_text, {**rules, "@confirmed:E01_RECEIPT": matched()},
+    resent, resent_calls = submit(product_db, as_id, resent_text, {**rules, "@opened:E01_RECEIPT": matched(text=OPENING)},
                                   recipients=(RECIPIENT,), responses={RECIPIENT: OPENING}, replay=True)
     delivery, confirmation = resent
     after = recipient_turn(product_db, as_id, "Какие рабочие сведения вы получили?")
