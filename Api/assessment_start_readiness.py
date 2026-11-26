@@ -175,7 +175,7 @@ def read(connection, *, cycle_id: str, user_id: int) -> dict:
                          "SCOPED_TIMING_REQUIRED")
             result["pilot_admission"] = {"snapshot_checksum": snapshot["snapshot_checksum"],
                 "proposal_checksum": snapshot["review"]["proposal_payload_checksum"],
-                "human_decision_id": snapshot["owner_decision"]["decision_id"],
+                "human_decision_id": (snapshot.get("owner_decision") or {}).get("decision_id"),
                 "binding_checksum": binding["binding_checksum"], "program_ref": binding["program_ref"]}
         selected = connection.execute("""SELECT s.assessment_situation_id,d.plan_revision_id,d.selected_case_id,
                 d.selected_case_version,d.session_db_id,s.cycle_db_id,s.session_db_id AS as_session_db_id

@@ -1,0 +1,2173 @@
+{
+  "proposal_id": "M7-05-CATALOG-1.4.4",
+  "proposal_version": "0.4.4",
+  "proposal_status": "PENDING_HUMAN_REVIEW",
+  "release_sha": "1e395615d299a7b6eaf0de21947d7943f5c3bb1c",
+  "application_candidate": "2.1.81",
+  "previous_proposal_content_sha": "f36f0892a0ae611a14586f6fc8206100e32d849baed4c0e678c5c6f18790884c",
+  "source_refs": {
+    "bank_source_version": "0.8",
+    "bank_release": {
+      "id": "m5-functional-personalization-cases",
+      "version": "0.8-pilot.1",
+      "checksum": "221d5bb76ee9831d09d5e970f5c70b3f78ded9ef6b25a839b5da88765d5d574f"
+    },
+    "runtime_release": {
+      "artifact_id": "m5-functional-personalization-runtime",
+      "rules_checksum": "71308bdf17e4b649d830af5785c4096e45054b4add34d117959cd469f292b4be",
+      "artifact_version": "1.7.1",
+      "manifest_checksum": "a4c200ada5c31aabe62deba00514c2d59681988ab3d684de68952564005524ff"
+    },
+    "scenario_ref": {
+      "id": "m5-battery-scenario",
+      "version": "1.8.4",
+      "checksum": "f7f1b0918b38785d48e2b1fdcc2cb7fa3c1110339d3cfb7a916df7f4139aafce"
+    },
+    "review_package": {
+      "id": "m5-functional-passport",
+      "version": "7.0.0",
+      "checksum": "36d025d22b0773981e461337fe91c98d9926ce07af5ae157d2e933cc1a9a593a",
+      "path": "assessment_definitions/prompts/m5_functional_passport/v7"
+    },
+    "m2_checksum": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "planning_rules_sha256": "ada1deb83dba3a3c544f2fe87f64d902977e22c9f665ffdd302ecf1fd689fe85",
+    "planner_sha256": "72f2d44c363235b4eb899195948f1a4008c9c5e3e693bbde62f1c5a268991b39",
+    "isolated_catalog_version": "1.4.4",
+    "isolated_catalog_manifest_sha256": "54c93b09a2048453516373d0b2e47cdb3d3f83c0cd9da582671dea9fc546bb68"
+  },
+  "authority_scope": {
+    "base_role": "specialist_expert",
+    "scope": "SYNTHETIC_ISOLATED_QA",
+    "target_scope": "TEST, новые назначения после решения этапа 05",
+    "test_configuration": null
+  },
+  "proposed_limits_carried_from_0_3": {
+    "active_seconds": 7200,
+    "calendar_seconds": 259200,
+    "approval": null
+  },
+  "participant_notice_proposal": "Это ограниченная оценка специалиста. План включает 39 из 61 индикатора. В отчёте отражаются собранные наблюдения и границы покрытия. Активное время ограничено 120 минутами, календарное окно составляет 72 часа.",
+  "full_m2_count": 61,
+  "planned_target_count": 39,
+  "planned_target_ids": [
+    "K1.I01",
+    "K1.I06",
+    "K1.I09",
+    "K1.I11",
+    "K1.I13",
+    "K1.I14",
+    "K1.I15",
+    "K1.I16",
+    "K1.I17",
+    "K2.I01",
+    "K2.I02",
+    "K2.I06",
+    "K2.I07",
+    "K2.I08",
+    "K2.I10",
+    "K2.I13",
+    "K2.I14",
+    "K3.I01",
+    "K3.I02",
+    "K3.I03",
+    "K3.I06",
+    "K3.I07",
+    "K3.I09",
+    "K3.I10",
+    "K3.I11",
+    "K4.I02",
+    "K4.I03",
+    "K4.I05",
+    "K4.I06",
+    "K4.I07",
+    "K4.I08",
+    "K4.I10",
+    "K4.I12",
+    "K4.I13",
+    "K4.I14",
+    "K4.I15",
+    "K4.I16",
+    "K4.I17",
+    "K4.I18"
+  ],
+  "outside_plan_target_ids": [
+    "K1.I02",
+    "K1.I03",
+    "K1.I04",
+    "K1.I05",
+    "K1.I07",
+    "K1.I08",
+    "K1.I10",
+    "K1.I12",
+    "K2.I03",
+    "K2.I04",
+    "K2.I05",
+    "K2.I09",
+    "K2.I11",
+    "K2.I12",
+    "K3.I04",
+    "K3.I05",
+    "K3.I08",
+    "K3.I12",
+    "K4.I01",
+    "K4.I04",
+    "K4.I09",
+    "K4.I11"
+  ],
+  "observation_occurrences": 55,
+  "actual_opportunity": "NOT_RUN",
+  "cases": [
+    {
+      "case_id": "CASE.SPEC.01",
+      "passport_version": "v0.7",
+      "case_version": "v0.7-pilot.1",
+      "passport_sha256": "ff1d20f719141de06d2635d165d57d94b0f1feb4696d7011f040072eca2b4685",
+      "case_checksum": "c679cebfd3c811fc30b02b79cbc9eb7957812b354e1d1b127ae54ce158ff9b0c",
+      "title": "Неоднозначный запрос заказчика",
+      "planned_min_minutes": 8,
+      "planned_max_minutes": 8,
+      "target_ids": [
+        "K1.I01",
+        "K1.I13",
+        "K1.I14",
+        "K4.I06"
+      ],
+      "review_as_sha256": "336fa51074457532db62579b172791e289a7cfd1fff731aa10cf3b25408aa4cc"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "passport_version": "v0.7",
+      "case_version": "v0.7-pilot.1",
+      "passport_sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a",
+      "case_checksum": "d027415dc179b83be19d438c836bed95a60c909ebcd7cee28be8c55e8c2bfee7",
+      "title": "Выбор профессионального предложения при расхождении сведений",
+      "planned_min_minutes": 15,
+      "planned_max_minutes": 18,
+      "target_ids": [
+        "K4.I03",
+        "K4.I05",
+        "K4.I12",
+        "K4.I13",
+        "K4.I14",
+        "K4.I16",
+        "K4.I17",
+        "K1.I06",
+        "K1.I09"
+      ],
+      "review_as_sha256": "83c5c11b32d720d958b07a4732923b76b46879344d3c4bcde85c7a09546d8e64"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "passport_version": "v0.5",
+      "case_version": "v0.5-pilot.1",
+      "passport_sha256": "0ff7e2c0893badbabe5443d1bc9cc366adef3abcac5ae9795fd079e70dc0d0c1",
+      "case_checksum": "f340010dba79080eddef6f8382a3c86453f77522e8ea4c7b14a686a00364c8e0",
+      "title": "Разногласие коллег при подготовке общего предложения",
+      "planned_min_minutes": 18,
+      "planned_max_minutes": 25,
+      "target_ids": [
+        "K2.I01",
+        "K2.I06",
+        "K2.I07",
+        "K2.I08",
+        "K2.I10",
+        "K2.I13",
+        "K2.I14",
+        "K1.I15",
+        "K1.I17"
+      ],
+      "review_as_sha256": "74aa862421836cfe4f9ddb7bc3e4ed5d84e4c98c19398c6f0d4ce239c10ad21d"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "passport_version": "v0.7",
+      "case_version": "v0.7-pilot.1",
+      "passport_sha256": "4ca89df32ea68e0bdaa8df2b710088a054a223548eb00da039d07d89ec6cb411",
+      "case_checksum": "d4aa947029ff36c2f0d09496741613a2c10f12476e6e76ece54a0f1d7653c6f0",
+      "title": "Ошибка исправлена, но последствия и сомнения остались",
+      "planned_min_minutes": 15,
+      "planned_max_minutes": 20,
+      "target_ids": [
+        "K3.I03",
+        "K3.I06",
+        "K3.I09",
+        "K3.I10",
+        "K3.I11",
+        "K1.I16",
+        "K4.I18"
+      ],
+      "review_as_sha256": "1a49535e5bfb5e4a9e8d21d7eb2a98d5d6401e4a6c9475852e26bef79ba166c8"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "passport_version": "v0.6",
+      "case_version": "v0.6-pilot.1",
+      "passport_sha256": "2833de56142e89dcd5a4d77f9bac62946fb7f054b1838dba39f46c5012389af6",
+      "case_checksum": "597fe7545fdb587733ca9da8b7eaa1ca6f9333a9cba5e2f78ccfb15fcbb73ef3",
+      "title": "Стандартный способ отклонён, а рабочая цель сохраняется",
+      "planned_min_minutes": 12,
+      "planned_max_minutes": 15,
+      "target_ids": [
+        "K3.I01",
+        "K3.I03",
+        "K3.I06",
+        "K3.I07",
+        "K4.I07",
+        "K4.I08"
+      ],
+      "review_as_sha256": "fc1817dd93c48caa5eea5631dc1cdbb3f5853c0f26ae4c5ca20b2f0693406b6f"
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "passport_version": "v0.5",
+      "case_version": "v0.5-pilot.1",
+      "passport_sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf",
+      "case_checksum": "a653bfda94eb19b59771da51b0282e6387a78f99bbb008daf496aafb799cdda9",
+      "title": "Согласование ожиданий от одного общего пилота",
+      "planned_min_minutes": 15,
+      "planned_max_minutes": 20,
+      "target_ids": [
+        "K2.I02",
+        "K2.I06",
+        "K2.I14",
+        "K3.I09",
+        "K4.I15"
+      ],
+      "review_as_sha256": "9b3e26013288dc0b43726181c749bbb934bd866a3f1198be8c545844907b7420"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "passport_version": "v0.6",
+      "case_version": "v0.6-pilot.1",
+      "passport_sha256": "b657f72583bcfff182edc47b5e5354b542c21759ac5aa9acad2d1b1d8312e49f",
+      "case_checksum": "92077833cf71378e2b98d3717a4769bf33e579381cd99ec5fe30198bf25e4a78",
+      "title": "Рабочее использование после ограниченной проверки средства",
+      "planned_min_minutes": 12,
+      "planned_max_minutes": 16,
+      "target_ids": [
+        "K4.I02",
+        "K4.I06",
+        "K4.I07",
+        "K4.I10",
+        "K3.I02",
+        "K3.I06"
+      ],
+      "review_as_sha256": "3489a6d5616fee4731fad01a97792bbd1859a74af35a6486368968ad00366c1c"
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "passport_version": "v0.6",
+      "case_version": "v0.6-pilot.1",
+      "passport_sha256": "9e17c33cbad8d2aa83b89425289ae2d246fd1a194bd7c794b72d7f6dfc2c15cb",
+      "case_checksum": "d2d8989b7d212f6485503dea834cd62d77618c2e91b094b79b1daf131291b753",
+      "title": "Потери информации при передаче работы между специалистами",
+      "planned_min_minutes": 12,
+      "planned_max_minutes": 15,
+      "target_ids": [
+        "K2.I07",
+        "K2.I08",
+        "K2.I14",
+        "K1.I11"
+      ],
+      "review_as_sha256": "e9a42dd1c8b9aee069fb89070bb82c2d1041da5317230632111bc11097bc4db7"
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "passport_version": "v0.6",
+      "case_version": "v0.6-pilot.1",
+      "passport_sha256": "60f065faf31b8b97779c894d7b1e93f229942109babe4b070bb1f5c4c42526ec",
+      "case_checksum": "6c300cedfe30a9ebee88b5adac4b7287a2aa82ddcaa55bbb5eca2095741cd809",
+      "title": "Разные рекомендации специалиста и руководителя по кандидату",
+      "planned_min_minutes": 15,
+      "planned_max_minutes": 18,
+      "target_ids": [
+        "K1.I01",
+        "K1.I16",
+        "K1.I17",
+        "K4.I12",
+        "K4.I16"
+      ],
+      "review_as_sha256": "a6fb5a1c169eae1c262aee5f140b7a0531b6aaf5b2b0937d08be0d214a41a2bb"
+    }
+  ],
+  "case_observation_conditions": [
+    {
+      "case_id": "CASE.SPEC.01",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K1.I01",
+      "m2_version": "v1.1",
+      "condition": "С начала есть инициатор запроса, а его интерес можно прояснить через F04. Различение двух сторон становится доступно, когда зафиксированная позиция автора раскрыта по F04 или представлена в фактически доступном M02.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/F04",
+        "17.2/M02",
+        "17.3/E02_REPLY",
+        "17.3/E04_DOCUMENT_REPLY"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.01",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K1.I13",
+      "m2_version": "v1.1",
+      "condition": "M01 допускает разные правдоподобные прочтения. Реплики Заказчика по F01, F03 и F04 позволяют восстановить смысл срока, сложности или желаемого эффекта. При доступном M02 становятся сопоставимы исходное намерение и искажённая запись.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/F01",
+        "17.2/F03",
+        "17.2/M02",
+        "17.3/E02_REPLY",
+        "17.3/E04_DOCUMENT_REPLY"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.01",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K1.I14",
+      "m2_version": "v1.1",
+      "condition": "В продолжающемся разговоре участник может предложить Заказчику собственное прочтение и получить подтверждение или адресное уточнение. Если открыт M02, доступна самостоятельная проверка конкретной записи черновика. Желаемый эффект и признак его достижения можно проверить у Заказчика по F04 до выдачи M02.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/F01",
+        "17.2/F04",
+        "17.2/M02",
+        "17.3/E02_REPLY",
+        "17.3/E04_DOCUMENT_REPLY",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.01",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I06",
+      "m2_version": "v1.0",
+      "condition": "M01 оставляет существенные пробелы по смыслу срока, ресурсу, участию и критерию желаемого эффекта. Часть сведений доступна через Заказчика, причина затруднения остаётся непроверенной и отличима от статуса будущих данных.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/F01",
+        "17.2/F02",
+        "17.2/F03",
+        "17.2/F05",
+        "17.3/E02_REPLY",
+        "17.3/E03_CAUSE_LIMIT"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I03",
+      "m2_version": "v1.0",
+      "condition": "Со старта доступны исходное и уточнённое сведения об A, заявленные условия B и ограниченная независимая проверка B с явным авторством и статусами.",
+      "scenario_locations": [
+        "17.1",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I05",
+      "m2_version": "v1.0",
+      "condition": "Со старта доступны сравнимые сведения и существенное изменение условия A. Требования M01 и пределы подтверждения B можно сопоставить с ними по общим параметрам.",
+      "scenario_locations": [
+        "17.1",
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I12",
+      "m2_version": "v1.0",
+      "condition": "Со старта дано проверяемое преимущество A и вывод коллеги об общей пригодности. Запрос предъявляет независимые требования, которые нельзя автоматически вывести из этого признака.",
+      "scenario_locations": [
+        "17.1",
+        "M01",
+        "M02",
+        "M04",
+        "M06",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I13",
+      "m2_version": "v1.0",
+      "condition": "Со старта доступны посылка и вывод M06, независимые требования и источники для проверки связи между утверждениями.",
+      "scenario_locations": [
+        "17.1",
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I14",
+      "m2_version": "v1.0",
+      "condition": "Со старта задача требует своей рекомендации. Видны независимые требования, обновлённые условия A, остаточное ограничение B и границы профильной проверки.",
+      "scenario_locations": [
+        "17.1",
+        "P00",
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "M06",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I16",
+      "m2_version": "v1.0",
+      "condition": "Со старта есть два возможных варианта с общим объектом и сопоставимыми данными по существенным условиям. Каждый вариант включает разный компромисс.",
+      "scenario_locations": [
+        "17.1",
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I17",
+      "m2_version": "v1.0",
+      "condition": "Со старта доступны изменённое существенное условие A, отдельный открытый вопрос B и ограничения доступной проверки относительно рабочего срока.",
+      "scenario_locations": [
+        "17.1",
+        "M01",
+        "M03",
+        "M04",
+        "M05",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K1.I06",
+      "m2_version": "v1.1",
+      "condition": "Со старта доступны сведения разной уместности и надёжности. P00 ставит две задачи сообщения для разных адресатов с разной информационной потребностью.",
+      "scenario_locations": [
+        "17.1",
+        "P00",
+        "M01",
+        "M03",
+        "M05",
+        "M06",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.02",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K1.I09",
+      "m2_version": "v1.1",
+      "condition": "Со старта заданы адресат, рабочий срок и существенные условия с различающимися статусами. Участник имеет возможность оформить их ясным текстом без расширения мандата.",
+      "scenario_locations": [
+        "17.1",
+        "P00",
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "M05",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I01",
+      "m2_version": "v1.0",
+      "condition": "С начала обсуждения. Запрос заказчика один, а три локальных вклада и статусы расходятся. Задание сообщает предмет разговора, конкретный совместный результат и его допустимый статус формулирует участник.",
+      "scenario_locations": [
+        "17.1",
+        "17.2 M01",
+        "17.2 M02",
+        "17.2 M03"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I06",
+      "m2_version": "v1.0",
+      "condition": "С начала обсуждения. Профессиональные зоны различимы, а ответственность и ожидания по конкретному новому способу работы ещё согласуются. Каждый коллега может ответить за себя.",
+      "scenario_locations": [
+        "17.2 M02",
+        "17.2 M03",
+        "17.3 E03_REPLY",
+        "17.3 E04_BOUNDARY"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I07",
+      "m2_version": "v1.0",
+      "condition": "С начала обсуждения. Известны последовательная зависимость итоговой работы, допустимый срок и неодинаковые ресурсные окна. Если M04 предъявлен, появляется возможность перестроить затронутую стыковку по актуальным входам.",
+      "scenario_locations": [
+        "17.2 M03",
+        "17.3 E03_REPLY",
+        "17.3 E04_BOUNDARY",
+        "17.2 M04",
+        "17.3 E02_TRANSFER"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I08",
+      "m2_version": "v1.0",
+      "condition": "Условно. После фактической адресной выдачи M04 участнику и осведомлённости C2 зависимый коллега всё ещё не знает значимую часть уточнения. Эта часть может быть передана в текущем чате.",
+      "scenario_locations": [
+        "17.2 M04",
+        "17.3 E01_UPDATE",
+        "17.3 E02_TRANSFER",
+        "17.3 E02_FORWARD"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I10",
+      "m2_version": "v1.0",
+      "condition": "С начала обсуждения. C3 присутствует в чате и заявил свою позицию, но ранее был исключён из подготовки и его необходимый вклад в будущий план ещё не согласован.",
+      "scenario_locations": [
+        "11 C3",
+        "17.2 M02",
+        "17.2 M03",
+        "17.3 E03_REPLY"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I13",
+      "m2_version": "v1.0",
+      "condition": "С начала обсуждения. Различимы конкретные рабочие позиции о статусе свода, сроке ответа и чужом обещании. Основания можно уточнять у разных коллег.",
+      "scenario_locations": [
+        "17.2 M02",
+        "17.2 M03",
+        "17.3 E03_REPLY",
+        "17.3 E04_BOUNDARY"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I14",
+      "m2_version": "v1.0",
+      "condition": "С начала рабочего обсуждения. Есть предметное расхождение, доступный для согласования предварительный статус и возможность услышать принятие или ограничение от владельца каждого вклада.",
+      "scenario_locations": [
+        "17.2 M01",
+        "17.2 M03",
+        "17.3 E03_REPLY",
+        "17.3 E04_BOUNDARY",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K1.I15",
+      "m2_version": "v1.1",
+      "condition": "С начала обсуждения. Под «можно ответить» коллеги могут понимать предварительный статус, текущий свод или подтверждённый результат. После фактической передачи существенного уточнения появляется дополнительная возможность сверить понимание обновлённого входа.",
+      "scenario_locations": [
+        "17.2 M01",
+        "17.2 M02",
+        "17.2 M03",
+        "17.3 E03_REPLY",
+        "17.3 E04_BOUNDARY",
+        "17.3 E02_TRANSFER"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.03",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K1.I17",
+      "m2_version": "v1.1",
+      "condition": "Когда в разговоре уже есть что точно зафиксировать — прямо подтверждённое, остающееся открытым либо возникшее разногласие. Возможность есть и при раннем финале без M04.",
+      "scenario_locations": [
+        "17.3 E03_REPLY",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K3.I03",
+      "m2_version": "v1.1",
+      "condition": "Со старта участник видит установленное исправление, отдельное рабочее последствие и недостаточность привычного способа. В открытой задаче допустимо самостоятельно изменить предмет дальнейшего обсуждения.",
+      "scenario_locations": [
+        "17.1",
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M05",
+        "17.3/E01_REVIEW"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K3.I06",
+      "m2_version": "v1.1",
+      "condition": "Со старта одна потребность остаётся открытой, привычный способ недостаточен, а границы ресурсов и мандата позволяют предложить содержательно разные подходы.",
+      "scenario_locations": [
+        "17.2/M03",
+        "17.2/M04",
+        "17.2/M05",
+        "17.3/E01_REVIEW"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K3.I09",
+      "m2_version": "v1.1",
+      "condition": "Известны рабочая потребность заказчика, основные ограничения и возможность предметно обсудить собственный замысел, когда участник его сформулирует.",
+      "scenario_locations": [
+        "17.1",
+        "17.2/M04",
+        "17.2/M05",
+        "17.3/E01_REVIEW"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K3.I10",
+      "m2_version": "v1.1",
+      "condition": "Участник вынес на обсуждение собственный замысел с существенным предположением. Сцена открыта, заказчик находится в роли релевантного адресата и может ответить по известному ему условию. Для интерпретации отклик должен фактически поступить.",
+      "scenario_locations": [
+        "17.2/M04",
+        "17.2/M05",
+        "17.3/E01_REVIEW",
+        "17.3/E03_FACT",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K3.I11",
+      "m2_version": "v1.1",
+      "condition": "Получен содержательный отклик E01_REVIEW, который выявил конкретное ограничение собственного замысла. До сценарного конца участник может доработать его в пределах мандата. Получение отклика само по себе оставляет изменение открытым.",
+      "scenario_locations": [
+        "17.3/E01_REVIEW",
+        "17.3/E01_STATE_LIMIT",
+        "17.3/E02_REVISION",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K1.I16",
+      "m2_version": "v1.1",
+      "condition": "Стартовая претензия делает доступным реальное расхождение между достаточностью исправления и готовностью заказчика продолжать работу. Заказчик доступен для прояснения собственной позиции и значимых оснований.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M05",
+        "17.3/E01_REVIEW",
+        "17.3/E03_FACT",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.04",
+      "case_version": "v0.7-pilot.1",
+      "indicator_id": "K4.I18",
+      "m2_version": "v1.0",
+      "condition": "С исходных материалов доступны реальное последствие, ограниченность подтверждения и ресурсные границы. Возможны собственный шаг, условное продолжение или аргументированная остановка. При обсуждении сохраняется возможность определить решение с учётом фактического отклика.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M04",
+        "17.2/F04",
+        "17.3/E01_REVIEW",
+        "17.3/E01_CONSENT_STEP",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K3.I01",
+      "m2_version": "v1.1",
+      "condition": "Со старта коллега предлагает закрытие, хотя потребность сохраняется, а эпизоды не дают основания зафиксировать одну трактовку. Допускается оставить открытыми предметы, которые требуют проработки.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M05",
+        "17.3/E01_COLLEAGUE"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K3.I03",
+      "m2_version": "v1.1",
+      "condition": "Отказ заказчика ограничивает стандартный способ, а привязка закрытия запроса к способу исходит от C1. Материалы позволяют рассмотреть ту же цель в другой рамке.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M05",
+        "17.3/E01_COLLEAGUE"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K3.I06",
+      "m2_version": "v1.1",
+      "condition": "До старта известны ресурсы разных функций и общие ограничения. В обсуждении можно построить способы, которые достигают цели по различающимся механизмам.",
+      "scenario_locations": [
+        "17.2/P00",
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M04",
+        "17.3/E01_COLLEAGUE"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K3.I07",
+      "m2_version": "v1.1",
+      "condition": "M03 содержит самостоятельные разнородные элементы без готового состава работ. Участник вправе связать элементы, функции которых дополняют друг друга в заданных пределах.",
+      "scenario_locations": [
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M04",
+        "17.3/E01_COLLEAGUE"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I07",
+      "m2_version": "v1.0",
+      "condition": "В материалах есть ожидаемый результат и два наблюдаемых отклонения. Из них можно выделить существенный разрыв без готового причинного объяснения.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M05",
+        "17.3/E01_COLLEAGUE"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.05",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I08",
+      "m2_version": "v1.0",
+      "condition": "Цель, масштаб, сроки, сопоставимые ресурсные условия и полномочия позволяют очертить пределы постановки до дальнейших действий.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M03",
+        "17.2/M04",
+        "17.3/E02_PROMISE",
+        "17.3/E04_RESERVATION"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I02",
+      "m2_version": "v1.0",
+      "condition": "В исходных позициях расходится понимание результата одной общей пробы. Стороны доступны в общем чате, и специалист может адресно соотнести их ожидания.",
+      "scenario_locations": [
+        "17.2/M02",
+        "17.3/E01_DISCUSS",
+        "17.3/E01_ACCEPT",
+        "17.3/E01_HOLD"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I06",
+      "m2_version": "v1.0",
+      "condition": "Для ограниченной пробы нужны разные вклады. Даны ресурсные окна и мандаты, а согласование ответственности по своему предложению доступно у держателей соответствующих ресурсов.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.3/E01_DISCUSS",
+        "17.3/E01_ACCEPT",
+        "17.3/E01_HOLD"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K2.I14",
+      "m2_version": "v1.0",
+      "condition": "Стороны открыто расходятся в критериях рабочего итога. Оцениваемый может предложить совместимый шаг по одному предмету и получить предметный отклик затронутых сторон.",
+      "scenario_locations": [
+        "17.2/M02",
+        "17.3/E01_DISCUSS",
+        "17.3/E01_ACCEPT",
+        "17.3/E01_HOLD",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K3.I09",
+      "m2_version": "v1.1",
+      "condition": "Даны ограниченные ресурсы, рабочие примеры и доступный след будущего наблюдения. Форму пробы и связь наблюдения с замыслом участник задаёт сам.",
+      "scenario_locations": [
+        "17.2/P00",
+        "17.2/M01",
+        "17.2/M03",
+        "17.3/E01_DISCUSS"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.06",
+      "case_version": "v0.5-pilot.1",
+      "indicator_id": "K4.I15",
+      "m2_version": "v1.0",
+      "condition": "Одно исходное наблюдение и раздельные ожидания сторон оставляют неопределённость. Доступны фактические ресурсные ограничения, но общий критерий решения и достаточность исходных данных не установлены.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.3/E02_LIMIT",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I02",
+      "m2_version": "v1.0",
+      "condition": "Со старта доступны подтверждение ограниченной проверки, наблюдаемые величины, отдельные свидетельства и причинное утверждение с известным автором. Классификацию утверждений участник делает сам.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M04"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I06",
+      "m2_version": "v1.0",
+      "condition": "Объём доступа и зарегистрированное использование даны. Действительная рабочая потребность и полный охват параллельных действий неизвестны. Отдельные эпизоды позволяют заметить, чего не хватает для вывода.",
+      "scenario_locations": [
+        "17.2/M02",
+        "17.2/M03"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I07",
+      "m2_version": "v1.0",
+      "condition": "Известны ожидаемый рабочий результат, успешная ограниченная проверка и расхождение в наблюдаемом использовании. Запрос M04 открывает работу с проблемой и содержит исходное объяснение владельца.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M04"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I10",
+      "m2_version": "v1.0",
+      "condition": "Утверждение M04 связывает наблюдаемое расхождение с определённой причиной. Границы протокола и отдельные рабочие эпизоды позволяют проверить, согласуется ли причинная связь с имеющимися данными.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M04"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K3.I02",
+      "m2_version": "v1.1",
+      "condition": "Зафиксированные эпизоды поддерживают несколько содержательно разных трактовок, в том числе отличающихся от объяснения владельца. Данные неполны, готового перечня альтернатив нет.",
+      "scenario_locations": [
+        "17.2/M02",
+        "17.2/M03",
+        "17.2/M04"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.07",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K3.I06",
+      "m2_version": "v1.1",
+      "condition": "Задача просит возможные подходы к дальнейшей работе. Даны рабочая цель, ограничения и исходная мера владельца. В пределах мандата специалиста есть пространство для других реалистичных действий.",
+      "scenario_locations": [
+        "17.1",
+        "17.2/P00",
+        "17.2/M01",
+        "17.2/M03",
+        "17.2/M04",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K2.I07",
+      "m2_version": "v1.0",
+      "condition": "Автор сохраняет актуальность профильного входа, участник ведёт карточку и внешний статус, получатель опирается на них при подготовке. В M02 обязанности, порядок зависимости и реалистичные окна позволяют предложить согласуемую последовательность.",
+      "scenario_locations": [
+        "17.2 M02",
+        "17.2 M03",
+        "17.3 E01_HANDOVER",
+        "17.3 E01_RECEIPT",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K2.I08",
+      "m2_version": "v1.0",
+      "condition": "Зависимому получателю нужно доступное основание для конкретной подготовки. История утрат и текущий фрагмент позволяют отличить изменившееся условие, актуальную версию и открытый внешний статус от прежнего снимка.",
+      "scenario_locations": [
+        "17.2 M01",
+        "17.2 M02",
+        "17.3 E01_RECEIPT",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K2.I14",
+      "m2_version": "v1.0",
+      "condition": "Расхождение коллег по способу передачи открыто, обосновано и связано с одним рабочим объектом. Их реальные права допускают временный или частичный порядок без обязательного полного компромисса.",
+      "scenario_locations": [
+        "17.2 M03",
+        "17.3 E01_HANDOVER",
+        "17.3 E01_RECEIPT",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.08",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K1.I11",
+      "m2_version": "v1.1",
+      "condition": "Прошлые потери условия, смысла и версии дают реальные ориентиры риска. Во время нынешней передачи доступен материал, по которому участник может предотвратить риск. Ветка восстановления возникает только при фактически замеченном искажении.",
+      "scenario_locations": [
+        "17.2 M01",
+        "17.2 M02",
+        "17.3 E01_RECEIPT",
+        "17.3 E02_CORRECT",
+        "17.3 E03_PENDING"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K1.I01",
+      "m2_version": "v1.1",
+      "condition": "До финала доступны потребность команды, срок и исходная позиция руководителя. По содержательному обращению в E01_MANAGER можно уточнить, какое из предъявленных условий работы важно руководителю и почему, и сопоставить его интерес с заявленной позицией и общей целью найма.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M03",
+        "17.3/E01_MANAGER"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K1.I16",
+      "m2_version": "v1.1",
+      "condition": "Исходное расхождение касается достаточности оснований для найма и самостоятельной работы будущего коллеги. Сценарий даёт возможность обсудить это с руководителем или прямо очертить границу согласия в собственной финальной реплике.",
+      "scenario_locations": [
+        "17.2/M02",
+        "17.2/M03",
+        "17.3/E01_MANAGER",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K1.I17",
+      "m2_version": "v1.1",
+      "condition": "В разговоре есть исходная позиция руководителя и пространство для оформления профессиональной рекомендации. После существенной реакции участник вправе зафиксировать её фактический статус. При ранней подаче доступны исходная позиция и собственный результат участника.",
+      "scenario_locations": [
+        "17.2/P00",
+        "17.2/M03",
+        "17.3/E01_MANAGER",
+        "17.4"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I12",
+      "m2_version": "v1.0",
+      "condition": "Материалы различают исправление после замечания и отсутствующую независимую проверку. Руководитель связывает исправление с ожидаемой самостоятельностью, а ресурс поддержки ограничен.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.3/E01_MANAGER"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    },
+    {
+      "case_id": "CASE.SPEC.09",
+      "case_version": "v0.6-pilot.1",
+      "indicator_id": "K4.I16",
+      "m2_version": "v1.0",
+      "condition": "До сегодняшнего срока возможны различимые действия, последствия которых зависят от нагрузки, ожиданий самостоятельности, ограниченной поддержки и срока потенциальной проверки. Данные позволяют участнику самому сформулировать критерии.",
+      "scenario_locations": [
+        "17.2/M01",
+        "17.2/M02",
+        "17.2/M03",
+        "17.3/E02_BOUNDARY"
+      ],
+      "actual_opportunity": "NOT_RUN"
+    }
+  ],
+  "routes": {
+    "mandate_confirmed": {
+      "catalog": [
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "eligible": true,
+          "reasons": []
+        }
+      ],
+      "route": [
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I02",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I01",
+            "K3.I07",
+            "K4.I08"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K2.I02",
+            "K4.I15"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I11"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        }
+      ]
+    },
+    "mandate_missing": {
+      "catalog": [
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "case_id": "CASE.SPEC.09",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I16",
+            "K1.I17",
+            "K4.I12",
+            "K4.I16"
+          ],
+          "eligible": false,
+          "reasons": [
+            "M5_BATTERY_PROFILE_CLARIFICATION_REQUIRED:18/professional_recommendation"
+          ]
+        }
+      ],
+      "route": [
+        {
+          "case_id": "CASE.SPEC.02",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 18,
+          "target_ids": [
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17",
+            "K1.I06",
+            "K1.I09"
+          ],
+          "contribution_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I06",
+            "K1.I09",
+            "K4.I03",
+            "K4.I05",
+            "K4.I12",
+            "K4.I13",
+            "K4.I14",
+            "K4.I16",
+            "K4.I17"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.03",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 18,
+          "planned_max_minutes": 25,
+          "target_ids": [
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14",
+            "K1.I15",
+            "K1.I17"
+          ],
+          "contribution_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I15",
+            "K1.I17",
+            "K2.I01",
+            "K2.I06",
+            "K2.I07",
+            "K2.I08",
+            "K2.I10",
+            "K2.I13",
+            "K2.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.04",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K1.I16",
+            "K4.I18"
+          ],
+          "contribution_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I16",
+            "K3.I03",
+            "K3.I06",
+            "K3.I09",
+            "K3.I10",
+            "K3.I11",
+            "K4.I18"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.07",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 16,
+          "target_ids": [
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10",
+            "K3.I02",
+            "K3.I06"
+          ],
+          "contribution_target_ids": [
+            "K3.I02",
+            "K3.I06",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I02",
+            "K4.I02",
+            "K4.I06",
+            "K4.I07",
+            "K4.I10"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.05",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "contribution_target_ids": [
+            "K3.I01",
+            "K3.I03",
+            "K3.I06",
+            "K3.I07",
+            "K4.I07",
+            "K4.I08"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K3.I01",
+            "K3.I07",
+            "K4.I08"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.01",
+          "case_version": "v0.7-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 8,
+          "planned_max_minutes": 8,
+          "target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "contribution_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14",
+            "K4.I06"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I01",
+            "K1.I13",
+            "K1.I14"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.06",
+          "case_version": "v0.5-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 15,
+          "planned_max_minutes": 20,
+          "target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "contribution_target_ids": [
+            "K2.I02",
+            "K2.I06",
+            "K2.I14",
+            "K3.I09",
+            "K4.I15"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K2.I02",
+            "K4.I15"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        },
+        {
+          "case_id": "CASE.SPEC.08",
+          "case_version": "v0.6-pilot.1",
+          "base_role": "specialist_expert",
+          "planned_min_minutes": 12,
+          "planned_max_minutes": 15,
+          "target_ids": [
+            "K2.I07",
+            "K2.I08",
+            "K2.I14",
+            "K1.I11"
+          ],
+          "contribution_target_ids": [
+            "K1.I11",
+            "K2.I07",
+            "K2.I08",
+            "K2.I14"
+          ],
+          "eligible": true,
+          "reasons": [],
+          "purpose_target_ids": [
+            "K1.I11"
+          ],
+          "duration_source": "M5 CaseVersion planned range",
+          "conditional": true,
+          "reserve_for": []
+        }
+      ]
+    }
+  },
+  "next_case_policy": "При планировании исключаются неприменимые версии. На равном числе новых индикаторов действующий алгоритм предпочитает больше разных компетенций по префиксу SkillID до точки, затем меньшее верхнее паспортное время, CaseID и версию. В Cycle берётся первая ещё не использованная позиция маршрута с целями без финальной IA. Открытая ситуация ожидает завершения. При истечении любого лимита сбор закрывается.",
+  "rank_tie_break": {
+    "rule_label": "skill_spread_desc",
+    "released_unit": "competency_root_of_skill_id"
+  },
+  "test_binding_fields_after_readback": [
+    "assessment_configuration_id",
+    "catalog_db_id",
+    "catalog_manifest_sha",
+    "case_db_ids",
+    "qa_checksums",
+    "new_program_definition_id",
+    "new_program_connection_id"
+  ],
+  "proposal_content_sha": "d8119f80183e24f916168314c90e1d231f4ec918fe75e5d260517a193d921599",
+  "decisions": {
+    "product_owner": null,
+    "methodologist": null,
+    "rank_unit_preference": null
+  }
+}

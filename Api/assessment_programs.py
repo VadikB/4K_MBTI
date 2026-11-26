@@ -184,6 +184,35 @@ def definition_checksum(*, code: str, version: str, name: str, assignment_ref: s
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+def publish_definition(connection, *, program: dict, role_ids: list[int], publisher_user_id: int) -> dict:
+    """Publish the definition and its allowed roles in the caller's transaction."""
+    definition = definition_checksum(
+        code=program['code'], version=program['version'], name=program['name'],
+        assignment_ref=program['assignment_ref'], mode=program['mode'],
+        configuration_id=program['assessment_configuration_id'], role_version_ids=role_ids,
+        catalog_version_id=program['catalog_version_id'], source_refs=program['source_refs_json'],
+    )
+    existing = connection.execute("""SELECT * FROM assessment_program_definitions
+        WHERE code=%s AND version=%s FOR UPDATE""", (program['code'], program['version'])).fetchone()
+    if existing is not None:
+        if existing['status'] != 'published' or existing['definition_checksum'] != definition:
+            raise ValueError('PROGRAM_VERSION_CONFLICT')
+        return dict(existing)
+    row = connection.execute("""INSERT INTO assessment_program_definitions
+        (code,version,name,assignment_ref,mode,status,assessment_configuration_id,
+         catalog_version_id,source_refs_json,definition_checksum,published_by_user_id)
+        VALUES(%s,%s,%s,%s,%s,'draft',%s,%s,%s::jsonb,%s,%s) RETURNING id""",
+        (program['code'], program['version'], program['name'], program['assignment_ref'], program['mode'],
+         program['assessment_configuration_id'], program['catalog_version_id'],
+         json.dumps(program['source_refs_json']), definition, publisher_user_id)).fetchone()
+    for order, role_id in enumerate(role_ids):
+        connection.execute("""INSERT INTO assessment_program_allowed_roles
+            (program_definition_id,role_profile_version_id,display_order) VALUES(%s,%s,%s)""",
+            (row['id'], role_id, order))
+    return dict(connection.execute("""UPDATE assessment_program_definitions
+        SET status='published',published_at=NOW() WHERE id=%s RETURNING *""", (row['id'],)).fetchone())
+
+
 def list_published(connection) -> list[dict]:
     rows = connection.execute("""SELECT p.id,p.code,p.version,p.name,p.assignment_ref,p.mode,
             p.assessment_configuration_id,p.catalog_version_id,p.source_refs_json,p.definition_checksum,p.published_at,

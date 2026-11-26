@@ -104,7 +104,7 @@ class AdmissionConnection:
         if "FROM m5_case_versions WHERE id=" in sql:
             return Result(one=CASE)
         if "FROM m5_catalog_case_versions" in sql:
-            return Result(one={"present": True})
+            return Result(one={"manifest_json": {}})
         if "FROM m5_qa_evidence" in sql:
             return Result(many=self.rows)
         raise AssertionError(sql)
