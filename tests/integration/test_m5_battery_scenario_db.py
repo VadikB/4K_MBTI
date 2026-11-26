@@ -117,6 +117,10 @@ class TurnGateway:
             result = {"code": "MATCH", "details": details}
         elif "finish" in condition:
             result = {"code": self.control}
+        elif "follow_up" in condition:
+            result = self.rules.get("@follow_up:" + condition["event_id"], {"code": "NO_MATCH"})
+        elif "reply_evidence" in condition:
+            result = self.rules.get("@opened:" + condition["event_id"], {"code": "NO_MATCH"})
         elif "effect" in condition:
             result = self.rules.get("@confirmed:" + condition["event_id"], {"code": "NO_MATCH"})
         elif "passport_rule" not in condition:

@@ -1,0 +1,33 @@
+{
+  "archive": "M5_Battery_v04.zip",
+  "battery_archive_sha256": "13210c5be34e8fa7f784ee30c21156607a1bc94233a06828bd72be0caf07a74e",
+  "battery_manifest_sha256": "794a28482ea05efd47117c82daee64e686f0c41830c740e011c2568619f55663",
+  "source_basis": {
+    "passport_template": {
+      "version": "v1.2",
+      "status": "WORKING",
+      "current": false,
+      "library_file_id": "libfile_fde3_f-1a61093c228c81919c856b2eeaa0af01_d45b765f9f6c8191a5c71b065febd7de",
+      "library_version": "2"
+    },
+    "previous_battery": {
+      "version": "v0.3",
+      "library_file_id": "libfile_fde3_f-d150073a0b288191abd8031bbabd1f17_d45b765f9f6c8191a5c71b065febd7de"
+    },
+    "task": {
+      "name": "M5_Case_2_0_Specialist_TZ_WORKING.md",
+      "sha256": "b97e99705e004e8e5994596efbf2d7710ac6f97567d22f170147222015988587"
+    },
+    "case_type_catalog": {
+      "version": "v1.0",
+      "library_file_id": "libfile_d5dc30641fd48191ad69bf1245094259"
+    },
+    "m2_versions": {
+      "K1": "v1.1",
+      "K2": "v1.0",
+      "K3": "v1.1",
+      "K4": "v1.0"
+    }
+  },
+  "methodology": "M5.Methodology v1.2 FROZEN §§6.7–6.9; M5.CasePassport v1.2 FROZEN, поля 16–18, 21–22; Product 4K v1.0 Change 01 И-3/И-4/И-6"
+}

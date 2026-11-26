@@ -19,7 +19,7 @@ from Api.m5_addressed_contract import validate_scenario_contract
 from Api.m5_passport import allowed_profile, missing
 from Api.m5_functional_personalization import extract_candidate_as
 from Api.m5_functional_tester import (
-    EXPLICIT_REVIEW_BATCH_PROTOCOL, SERVER_BOUND_REVIEW_PACKAGES,
+    BATTERY_REVIEW_SCOPES, BATTERY_V04_REVIEW_PROTOCOL, EXPLICIT_REVIEW_BATCH_PROTOCOLS, SERVER_BOUND_REVIEW_PACKAGES,
     aggregate, build_applicability_plan, load_protocol, normalize_results,
 )
 from Api.m5_case_runtime import checksum as runtime_checksum
@@ -250,9 +250,11 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     try:
         if "tester_protocol" in refs:
             protocol = load_protocol(_frozen_file(snapshot, "tester_protocol"))
-            if battery_pilot and SERVER_BOUND_REVIEW_PACKAGES.get(protocol["version"]) != refs["protocol_package"]["version"]:
+            if protocol["version"] in SERVER_BOUND_REVIEW_PACKAGES and (
+                SERVER_BOUND_REVIEW_PACKAGES[protocol["version"]] != refs["protocol_package"]["version"]
+            ):
                 raise ValueError("M5_FUNCTIONAL_REVIEW_PROTOCOL_MISMATCH")
-            if protocol.get("scope") == "battery_v0.3_qa":
+            if protocol.get("scope") in BATTERY_REVIEW_SCOPES:
                 from Api.m5_battery_review import build_plan
 
                 if not battery:
@@ -293,7 +295,7 @@ def _frozen_file(snapshot: dict[str, Any], ref_name: str) -> Path:
 def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     errors = []
-    battery_review = snapshot.get("applicability_plan", {}).get("protocol", {}).get("scope") == "battery_v0.3_qa"
+    battery_review = snapshot.get("applicability_plan", {}).get("protocol", {}).get("scope") in BATTERY_REVIEW_SCOPES
 
     def check(code: str, passed: bool, actual: Any = None, *, path: str = "candidate_as", **diagnostic: Any) -> None:
         row = {"code": code, "result": "PASS" if passed else "FAIL", "actual": actual}
@@ -564,7 +566,7 @@ def _trace(response: Any, *, operation_id: str, kind: str, input_checksum: str) 
 
 
 def _review_message(payload: dict, batch_checks: list[dict], *, passport: bool) -> dict[str, str]:
-    if payload.get("protocol", {}).get("version") == EXPLICIT_REVIEW_BATCH_PROTOCOL:
+    if payload.get("protocol", {}).get("version") in EXPLICIT_REVIEW_BATCH_PROTOCOLS:
         required_output = deepcopy(payload["required_output"])
         required_output["checks"][0]["check_id"] = "Copy each id from review_dispatch.check_ids exactly once"
         dispatch = {**payload["review_dispatch"], "check_ids": [item["check_id"] for item in batch_checks]}
@@ -676,7 +678,10 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
 def _generation_instructions(snapshot: dict) -> tuple[str, str]:
     design = snapshot.get("scenario_contract")
     if "battery_scenario" in snapshot:
-        instruction = snapshot["battery_scenario"]["instructions"]["generation"]
+        battery = snapshot["battery_scenario"]
+        instruction = battery["instructions"]["generation"]
+        if addendum := battery.get("generation_addendum"):
+            instruction = f"{instruction}\n\n{addendum}"
         contract = json.dumps(snapshot["as_contract"], ensure_ascii=False)
     elif design:
         instruction = design["candidate_contract"]["instruction"]
@@ -780,7 +785,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                    review_round: int = 1) -> dict[str, Any]:
     plan = snapshot.get("applicability_plan") or build_applicability_plan(snapshot["case"])
     batch_size = 8
-    battery_review = plan["protocol"].get("scope") == "battery_v0.3_qa"
+    battery_review = plan["protocol"].get("scope") in BATTERY_REVIEW_SCOPES
     server_bound = plan["protocol"].get("version") in SERVER_BOUND_REVIEW_PACKAGES
     concrete_candidate = (generation["candidate_as"] if battery_review
                           else concrete_adapted_candidate(generation["candidate_as"]))
@@ -917,7 +922,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         })
     checks = [{**item, "reviewer": "tester", "candidate_checksum": generation["candidate_checksum"]}
               for item in normalize_results(plan, tester_raw_checks, **review_basis)]
-    protected = [item for item in plan["required_checks"] if item.get("protected")]
+    challenge_definitions = (required_checks if plan["protocol"].get("version") == BATTERY_V04_REVIEW_PROTOCOL
+                             else [item for item in required_checks if item.get("protected")])
     challenge_payload = {
         **(passport_basis if passport_basis is not None else {
             "case": snapshot["case"], "author_as_example": snapshot["author_as_example"],
@@ -926,7 +932,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         **({"candidate_checksum": candidate_checksum} if echo_checksum else {}),
         "author_indicator_layer": layers.get("author"),
         "adapted_indicator_layer": layers.get("adapted"),
-        "protected_checks": protected,
+        "protected_checks": challenge_definitions,
         "required_output": payload_base["required_output"],
         "rules": {
             "purpose": "Ищи опровержение PASS, не подтверждение.",
@@ -953,14 +959,14 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         challenge_payload = {
             **passport_basis, "candidate_as": concrete_candidate,
             **({"candidate_checksum": candidate_checksum} if echo_checksum else {}),
-            "protected_checks": protected, "required_output": payload_base["required_output"],
+            "protected_checks": challenge_definitions, "required_output": payload_base["required_output"],
         }
     if battery_review:
-        challenge_payload = {**payload_base, "protected_checks": protected}
+        challenge_payload = {**payload_base, "protected_checks": challenge_definitions}
     challenger_operations = []
     challenger_raw_checks = []
-    for batch_no, offset in enumerate(range(0, len(protected), batch_size), start=1):
-        batch_checks = protected[offset:offset + batch_size]
+    for batch_no, offset in enumerate(range(0, len(challenge_definitions), batch_size), start=1):
+        batch_checks = challenge_definitions[offset:offset + batch_size]
         batch_payload = {**challenge_payload, "protected_checks": batch_checks}
         context = review_context("challenger", batch_no, batch_checks)
         if context is not None:
@@ -997,7 +1003,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             "parse_failures": challenge_failures, "calls": calls,
             **({**review_ref, "reviewer": "challenger"} if battery_review else {}),
         })
-    challenge_plan = {**plan, "required_checks": protected, "not_applicable_checks": []}
+    challenge_plan = {**plan, "required_checks": challenge_definitions, "not_applicable_checks": []}
     challenge_checks = [{**item, "reviewer": "challenger", "candidate_checksum": generation["candidate_checksum"]}
                         for item in normalize_results(challenge_plan, challenger_raw_checks, reviewer="challenger", **review_basis)]
     if battery_review:

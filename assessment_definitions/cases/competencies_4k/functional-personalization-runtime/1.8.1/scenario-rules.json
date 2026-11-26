@@ -1,0 +1,660 @@
+{
+  "schema_version": 1,
+  "id": "m5-battery-scenario",
+  "version": "1.8.1",
+  "scope": "isolated_qa",
+  "source_case_package": "0.7",
+  "control": {
+    "question": "Оценивай смысл целого хода по закреплённому завершению. Явная финальная подача или остановка имеют приоритет над вложенным вопросом, даже если работа неполная. При ясном продолжении верни CONTINUE. При существенной неясности верни UNKNOWN.",
+    "clarification": "Вы хотите продолжить обсуждение или завершить ситуацию?"
+  },
+  "instructions": {
+    "generation": "Подготовь профессиональную конкретику и тексты для закрытых идентификаторов. Сервер связывает старт, правила, полномочия, аудиторию и события после генерации. Не включай скрытые сведения или отложенный документ в стартовые тексты. Условия наблюдения — проектные возможности, до хода участника они не являются действиями или свидетельствами.",
+    "audience": "Назови только тех, кому по фактической реплике и паспорту доступно это обращение. Для адресного фрагмента используй точную цитату. Не выводи пересылку из обещания, намерения, разрешения или обещанного действия. Для общего хода перечисли только его фактическую аудиторию.",
+    "accept_forward": "Подтверди MATCH только если C2 явно принимает конкретную просьбу о пересылке данной информации тем же адресатам. Возможность, общая поддержка и обещание на будущее недостаточны.",
+    "authority": "Ответь только в границах известного материала и собственного мандата. Не превращай намерение, доступность, подготовку или условие в фактический результат; не достраивай неизвестное. Не повторяй выданный материал. Если правило допускает несколько ответов, объедини применимые смыслы в одну реплику.",
+    "confirm_reply": "Проверь фактическую реплику. MATCH только для явно состоявшегося подтверждения в собственном мандате. Условное предложение, обещание, отсутствие ответа и обсуждение не равны подтверждению."
+  },
+  "cases": {
+    "CASE.SPEC.01": {
+      "case_version": "v0.7",
+      "passport_sha256": "ff1d20f719141de06d2635d165d57d94b0f1feb4696d7011f040072eca2b4685",
+      "roles": {
+        "CUSTOMER": {
+          "known_material_ids": [
+            "M01"
+          ],
+          "participant_index": 1
+        }
+      },
+      "opening": null,
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E02_REPLY",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [
+            "F01",
+            "F02",
+            "F03",
+            "F04"
+          ],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E03_CAUSE_LIMIT",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [
+            "F05"
+          ],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E04_DOCUMENT_REPLY",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": "M02",
+          "audience": "assessee"
+        },
+        {
+          "id": "E05_NEXT_STEP",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E01_DOCUMENT",
+          "kind": "delivery",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [],
+          "delivery_id": "M02",
+          "requires_material_id": null,
+          "audience": "assessee",
+          "author_id": "DRAFT_AUTHOR"
+        }
+      ]
+    },
+    "CASE.SPEC.02": {
+      "case_version": "v0.7",
+      "passport_sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a",
+      "roles": {},
+      "opening": null,
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E01_FACT",
+          "kind": "reply",
+          "speaker_ids": [
+            "FACILITATOR"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E03_UNKNOWN",
+          "kind": "reply",
+          "speaker_ids": [
+            "FACILITATOR"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        }
+      ]
+    },
+    "CASE.SPEC.03": {
+      "case_version": "v0.5",
+      "passport_sha256": "0ff7e2c0893badbabe5443d1bc9cc366adef3abcac5ae9795fd079e70dc0d0c1",
+      "roles": {
+        "C1": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 0
+        },
+        "C2": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 1
+        },
+        "C3": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 2
+        }
+      },
+      "opening": null,
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E02_TRANSFER",
+          "kind": "transfer",
+          "speaker_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": "M04",
+          "audience": "addressed"
+        },
+        {
+          "id": "E02_FORWARD",
+          "kind": "forward",
+          "speaker_ids": [
+            "C2"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": "M04",
+          "audience": "addressed",
+          "record_as": "E02_TRANSFER"
+        },
+        {
+          "id": "E04_BOUNDARY",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        },
+        {
+          "id": "E03_REPLY",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        },
+        {
+          "id": "E01_UPDATE",
+          "kind": "delivery",
+          "speaker_ids": [
+            "C2"
+          ],
+          "fact_ids": [],
+          "delivery_id": "M04",
+          "requires_material_id": null,
+          "audience": "assessee",
+          "requires_prior_replies": [
+            "E03_REPLY",
+            "E04_BOUNDARY"
+          ],
+          "author_id": "CUSTOMER"
+        }
+      ]
+    },
+    "CASE.SPEC.04": {
+      "case_version": "v0.7",
+      "passport_sha256": "4ca89df32ea68e0bdaa8df2b710088a054a223548eb00da039d07d89ec6cb411",
+      "roles": {
+        "CUSTOMER": {
+          "known_material_ids": [
+            "M01",
+            "M03",
+            "M04",
+            "M05"
+          ],
+          "participant_index": 0,
+          "partial_material_ids": [
+            "M02"
+          ]
+        }
+      },
+      "opening": {
+        "material_id": "M05",
+        "speaker_id": "CUSTOMER"
+      },
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E03_FACT",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [
+            "F01",
+            "F02",
+            "F03",
+            "F04",
+            "F05"
+          ],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E01_REVIEW",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E01_STATE_LIMIT",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E01_CONSENT_STEP",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee",
+          "reply_confirmation": "Заказчик явно подтвердил собственное согласие с конкретным шагом и его границами."
+        },
+        {
+          "id": "E02_REVISION",
+          "kind": "reply",
+          "speaker_ids": [
+            "CUSTOMER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        }
+      ]
+    },
+    "CASE.SPEC.05": {
+      "case_version": "v0.6",
+      "passport_sha256": "2833de56142e89dcd5a4d77f9bac62946fb7f054b1838dba39f46c5012389af6",
+      "roles": {
+        "C1": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03",
+            "M04",
+            "M05"
+          ],
+          "participant_index": 0
+        }
+      },
+      "opening": {
+        "material_id": "M05",
+        "speaker_id": "C1"
+      },
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E02_PROMISE",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E04_RESERVATION",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E01_COLLEAGUE",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E03_SUPPORT",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee",
+          "reply_confirmation": "Коллега явно подтвердил собственную поддержку конкретной части предложения."
+        }
+      ]
+    },
+    "CASE.SPEC.06": {
+      "case_version": "v0.5",
+      "passport_sha256": "00324a92690cb82eaced7d2cc9524f80843d32a5d9b3d20113a33baa20bad1bf",
+      "roles": {
+        "C1": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 0
+        },
+        "C2": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 1
+        },
+        "C3": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 2
+        }
+      },
+      "opening": null,
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E02_LIMIT",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        },
+        {
+          "id": "E01_DISCUSS",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        },
+        {
+          "id": "E01_ACCEPT",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed",
+          "reply_confirmation": "Сторона явно приняла определённую часть предложения в пределах собственного мандата."
+        },
+        {
+          "id": "E01_HOLD",
+          "kind": "reply",
+          "speaker_ids": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        }
+      ]
+    },
+    "CASE.SPEC.07": {
+      "case_version": "v0.6",
+      "passport_sha256": "b657f72583bcfff182edc47b5e5354b542c21759ac5aa9acad2d1b1d8312e49f",
+      "roles": {},
+      "opening": null,
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E01_EXPLAIN",
+          "kind": "reply",
+          "speaker_ids": [
+            "FACILITATOR"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E03_UNAVAILABLE",
+          "kind": "reply",
+          "speaker_ids": [
+            "FACILITATOR"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        }
+      ]
+    },
+    "CASE.SPEC.08": {
+      "case_version": "v0.6",
+      "passport_sha256": "9e17c33cbad8d2aa83b89425289ae2d246fd1a194bd7c794b72d7f6dfc2c15cb",
+      "roles": {
+        "R_AUTHOR": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 1
+        },
+        "R_RECIPIENT": {
+          "known_material_ids": [
+            "M01",
+            "M03"
+          ],
+          "participant_index": 2,
+          "partial_material_ids": [
+            "M02"
+          ],
+          "known_material_sections": {
+            "M02": [
+              "[Исходная карточка]",
+              "[Окно и подготовка получателя]"
+            ]
+          }
+        }
+      },
+      "opening": null,
+      "profile_capability": null,
+      "events": [
+        {
+          "id": "E01_RECEIPT",
+          "kind": "transfer_reply",
+          "speaker_ids": [
+            "R_AUTHOR",
+            "R_RECIPIENT"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed",
+          "reply_confirmation": "Получатель явно подтвердил получение конкретного переданного содержания или открытие доступной ему ссылки. Доступность, доставка и пригодность для подготовки имеют самостоятельные основания."
+        },
+        {
+          "id": "E02_CORRECT",
+          "kind": "reply",
+          "speaker_ids": [
+            "R_AUTHOR",
+            "R_RECIPIENT"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        },
+        {
+          "id": "E03_PENDING",
+          "kind": "reply",
+          "speaker_ids": [
+            "R_AUTHOR",
+            "R_RECIPIENT"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        },
+        {
+          "id": "E01_HANDOVER",
+          "kind": "reply",
+          "speaker_ids": [
+            "R_AUTHOR",
+            "R_RECIPIENT"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed",
+          "reply_confirmation": "Коллега явно подтвердил свой конкретный выполнимый шаг подготовки и назвал его границу. Готовность обсудить, право открыть источник и факт доставки сами по себе этого не подтверждают."
+        },
+        {
+          "id": "E04_CLARIFY",
+          "kind": "reply",
+          "speaker_ids": [
+            "R_AUTHOR",
+            "R_RECIPIENT"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "addressed"
+        }
+      ],
+      "material_sections": {
+        "M02": [
+          "[Актуальный профильный фрагмент]",
+          "[Исходная карточка]",
+          "[Окно и подготовка получателя]",
+          "[Остальные условия]"
+        ]
+      },
+      "material_source": {
+        "material_id": "M02",
+        "section": "[Актуальный профильный фрагмент]",
+        "link_section": "[Остальные условия]",
+        "version_label": "Версия:",
+        "event_id": "E01_RECEIPT",
+        "reader_ids": [
+          "R_RECIPIENT"
+        ],
+        "opening_confirmation": "Адресат явно подтвердил, что открыл именно эту доступную ему ссылку и прочитал связанный фрагмент. Обещание открыть, получение адреса и готовность к подготовке не подтверждают открытие."
+      },
+      "generation_addendum": "Для M02 напечатай четыре непустых раздела с точными заголовками в том же порядке, каждый заголовок на отдельной строке.\n[Актуальный профильный фрагмент]\nПервая строка «Версия: <идентификатор>». Далее актуальный профильный фрагмент, что реально проверено и предел проверки. Полный текст этого фрагмента помещается только сюда.\n[Исходная карточка]\nИсходное состояние карточки, её собственная версия и зафиксированные для получателя сведения. Не копируй актуальный фрагмент.\n[Окно и подготовка получателя]\nТолько собственное окно получателя, требования к его подготовительному шагу и открытый статус допуска. Актуальный фрагмент понятен адресату лишь после передачи текста или подтверждённого открытия доступной ему ссылки.\n[Остальные условия]\nДругие окна и ограничения, права ролей, внешнее условие и общий отсчёт. Покажи право R_RECIPIENT открыть адресную ссылку; отдельной строкой укажи m5-material://M02/<идентификатор> из раздела актуального фрагмента. В M03 допустимо обозначение актуальной версии. Во всех разделах и материалах согласуй окна и один сюжетный отсчёт."
+    },
+    "CASE.SPEC.09": {
+      "case_version": "v0.6",
+      "passport_sha256": "60f065faf31b8b97779c894d7b1e93f229942109babe4b070bb1f5c4c42526ec",
+      "roles": {
+        "R_MANAGER": {
+          "known_material_ids": [
+            "M01",
+            "M02",
+            "M03"
+          ],
+          "participant_index": 0
+        }
+      },
+      "opening": null,
+      "profile_capability": "professional_recommendation",
+      "events": [
+        {
+          "id": "E02_BOUNDARY",
+          "kind": "reply",
+          "speaker_ids": [
+            "R_MANAGER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        },
+        {
+          "id": "E01_MANAGER",
+          "kind": "reply",
+          "speaker_ids": [
+            "R_MANAGER"
+          ],
+          "fact_ids": [],
+          "delivery_id": null,
+          "requires_material_id": null,
+          "audience": "assessee"
+        }
+      ]
+    }
+  }
+}

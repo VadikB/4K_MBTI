@@ -13,7 +13,9 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from Api.assessment_case_contracts import CaseVersionV4
-from Api.cycle_execution_manifest import BATTERY_CASE_PACKAGE, BATTERY_RULE_PACKAGE
+from Api.cycle_execution_manifest import (
+    BATTERY_CASE_PACKAGE, BATTERY_RULE_PACKAGE, BATTERY_V04_CASE_PACKAGE, BATTERY_V04_RULE_PACKAGE,
+)
 from Api.m5_case_runtime import checksum
 from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_passport import compile_passport, load_m2, missing, project_passport
@@ -24,6 +26,13 @@ RUNTIME_PACKAGE = ROOT / "assessment_definitions/cases/competencies_4k/functiona
 BATTERY_PACKAGE = ROOT / BATTERY_CASE_PACKAGE
 BATTERY_RUNTIME = ROOT / BATTERY_RULE_PACKAGE
 BATTERY_PROVENANCE = ROOT / "docs/evc/tasks/m5-battery-bank/sources.json"
+BATTERY_V04_PACKAGE = ROOT / BATTERY_V04_CASE_PACKAGE
+BATTERY_V04_RUNTIME = ROOT / BATTERY_V04_RULE_PACKAGE
+BATTERY_V04_PROVENANCE = ROOT / "docs/evc/tasks/m5-battery-v04/sources.json"
+BATTERY_RELEASES = {
+    "v0.3": (BATTERY_PACKAGE, BATTERY_RUNTIME, BATTERY_PROVENANCE),
+    "v0.4": (BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, BATTERY_V04_PROVENANCE),
+}
 
 
 def _selected(source_root: Path):
@@ -40,12 +49,18 @@ def _selected(source_root: Path):
 
 
 def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
-               runtime_destination: Path = RUNTIME_PACKAGE, *, battery: bool = False) -> dict:
+               runtime_destination: Path = RUNTIME_PACKAGE, *, battery: bool = False,
+               battery_version: str = "v0.3") -> dict:
+    if battery:
+        bank, runtime_dir, provenance_path = BATTERY_RELEASES[battery_version]
+        provenance = json.loads(provenance_path.read_bytes())
     if battery and source_root.is_file():
+        if battery_version == "v0.4" and digest(source_root.read_bytes()) != provenance["battery_archive_sha256"]:
+            raise ValueError("M5_BATTERY_ARCHIVE_CHECKSUM_MISMATCH")
         with ZipFile(source_root) as archive, TemporaryDirectory(prefix="m5-battery-") as temporary:
             source = Path(temporary)
             manifest = archive.read("manifest.json")
-            entries = _battery_entries(manifest)
+            entries = _battery_entries(manifest, battery_version, provenance)
             (source / "manifest.json").write_bytes(manifest)
             for entry in entries:
                 for kind, ref in entry["file_refs"].items():
@@ -59,7 +74,7 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
                         file = source / ref["path"]
                         file.parent.mkdir(exist_ok=True)
                         file.write_bytes(data)
-            return build_bank(source, destination, runtime_destination, battery=True)
+            return build_bank(source, destination, runtime_destination, battery=True, battery_version=battery_version)
     m2, m2_ref = load_m2(M2, SOURCE_MANIFEST)
     m3_raw = M3.read_bytes()
     m3 = json.loads(m3_raw)
@@ -72,7 +87,7 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
         files["sources/manifest.json"] = manifest_raw
         entries = [
             {**item, **item["file_refs"]["json"], "base_role": "specialist_expert"}
-            for item in _battery_entries(manifest_raw)
+            for item in _battery_entries(manifest_raw, battery_version, provenance)
         ]
     else:
         entries = _selected(source_root)
@@ -126,13 +141,13 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
         raise ValueError("M5_PASSPORT_BANK_CASE_SET_INVALID")
     package = {
         "schema_version": 4, "kind": "m5_case_package", "methodology_version": "1.1",
-        "version": BATTERY_PACKAGE.name if battery else "0.6", "status": "draft",
+        "version": bank.name if battery else "0.6", "status": "draft",
         "source_status": "WORKING", "runtime_enabled": False,
         "cases": cases, "as_contract_ref": as_contract_ref,
     }
     runtime = {
         "schema_version": 2, "id": "m5-functional-personalization-runtime",
-        "version": BATTERY_RUNTIME.name if battery else "1.3.0", "status": "draft", "owner": "PM-04",
+        "version": runtime_dir.name if battery else "1.3.0", "status": "draft", "owner": "PM-04",
     }
     bindings = {
         **runtime, "case_bindings": {
@@ -176,7 +191,7 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
         manifest.update(
             diagnostic_only=True,
             battery_source={"file": "sources/manifest.json", "sha256": digest(manifest_raw),
-                            "provenance": json.loads(BATTERY_PROVENANCE.read_bytes())},
+                            "provenance": provenance},
             compiler={**manifest["compiler"], "version": "0.7.0", "source_schema_profile": "functional-passport-v1.2"},
             runtime_rule_version=runtime["version"],
         )
@@ -215,13 +230,12 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
     return verification
 
 
-def _battery_entries(raw: bytes) -> list[dict]:
-    manifest = json.loads(raw)
-    provenance = json.loads(BATTERY_PROVENANCE.read_bytes())
+def _battery_entries(raw: bytes, battery_version: str, provenance: dict) -> list[dict]:
     if digest(raw) != provenance["battery_manifest_sha256"]:
         raise ValueError("M5_BATTERY_MANIFEST_CHECKSUM_MISMATCH")
+    manifest = json.loads(raw)
     if (manifest["version"], manifest["status"], manifest["current"], manifest["base_role"]["code"]) != (
-        "v0.3", "WORKING", False, "specialist_expert",
+        battery_version, "WORKING", False, "specialist_expert",
     ) or manifest["basis"]["passport_template"]["version"] != "v1.2":
         raise ValueError("M5_BATTERY_MANIFEST_IDENTITY_MISMATCH")
     cases = manifest["cases"]
@@ -233,12 +247,16 @@ def _battery_entries(raw: bytes) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_root", type=Path)
-    parser.add_argument("--battery-v0.3", dest="battery", action="store_true", help="Compile the diagnostic v1.2 passport bank.")
+    batteries = parser.add_mutually_exclusive_group()
+    for version in BATTERY_RELEASES:
+        batteries.add_argument(f"--battery-{version}", dest="battery", action="store_const", const=version,
+                               help=f"Compile the diagnostic {version} passport bank.")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--runtime-output", type=Path)
     args = parser.parse_args()
-    bank, runtime = (BATTERY_PACKAGE, BATTERY_RUNTIME) if args.battery else (BANK_PACKAGE, RUNTIME_PACKAGE)
-    result = build_bank(args.source_root, args.output or bank, args.runtime_output or runtime, battery=args.battery)
+    bank, runtime = BATTERY_RELEASES[args.battery][:2] if args.battery else (BANK_PACKAGE, RUNTIME_PACKAGE)
+    result = build_bank(args.source_root, args.output or bank, args.runtime_output or runtime,
+                        battery=bool(args.battery), battery_version=args.battery or "v0.3")
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

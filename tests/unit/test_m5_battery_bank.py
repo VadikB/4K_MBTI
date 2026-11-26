@@ -6,15 +6,26 @@ import pytest
 
 from Api.m5_passport import compile_passport, load_m2
 from Api.m5_passport_generation import M2, M3, SOURCE_MANIFEST
-from scripts.build_m5_passport_bank import BATTERY_PACKAGE, build_bank
+from scripts.build_m5_passport_bank import BATTERY_PACKAGE, BATTERY_RELEASES, BATTERY_V04_PACKAGE, build_bank
 
 
-def test_battery_build_is_reproducible(tmp_path):
-    report = build_bank(BATTERY_PACKAGE / "sources", tmp_path / "cases", tmp_path / "rules", battery=True)
-    assert report == json.loads((BATTERY_PACKAGE / "verification-report.json").read_bytes())
-    for path in (tmp_path / "cases").rglob("*"):
-        if path.is_file():
-            assert path.read_bytes() == (BATTERY_PACKAGE / path.relative_to(tmp_path / "cases")).read_bytes()
+@pytest.mark.parametrize("version", BATTERY_RELEASES)
+def test_battery_build_is_reproducible(tmp_path, version):
+    bank, rules, _ = BATTERY_RELEASES[version]
+    report = build_bank(bank / "sources", tmp_path / "cases", tmp_path / "rules", battery=True, battery_version=version)
+    assert report == json.loads((bank / "verification-report.json").read_bytes())
+    for output, artifact in ((tmp_path / "cases", bank), (tmp_path / "rules", rules)):
+        for path in output.rglob("*"):
+            if path.is_file():
+                assert path.read_bytes() == (artifact / path.relative_to(output)).read_bytes()
+
+
+def test_v04_rejects_the_previous_manifest(tmp_path):
+    with pytest.raises(ValueError, match="M5_BATTERY_MANIFEST_CHECKSUM_MISMATCH"):
+        build_bank(BATTERY_PACKAGE / "sources", tmp_path / "cases", tmp_path / "rules",
+                   battery=True, battery_version="v0.4")
+    old = (BATTERY_PACKAGE / "sources/manifest.json").read_bytes()
+    assert old != (BATTERY_V04_PACKAGE / "sources/manifest.json").read_bytes()
 
 
 @pytest.mark.parametrize(("damage", "field"), [

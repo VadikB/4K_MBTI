@@ -1,0 +1,972 @@
+{
+  "case_id": "CASE.SPEC.02",
+  "passport_version": "v0.7",
+  "passport_sha256": "2f8778a97a3078d5cc3d26b6f492669d98dee79878274c921e4db4ae86a0e17a",
+  "case_version_checksum": "98cd3e1b3749ed86b7a5132ee15bc0db1962feed42c5a055808b44d4b3519c7f",
+  "as_checksum": "4ceebf4fc13f0ab31a15e8fa81225d346900355f7a6ec4eff8125b260401adeb",
+  "cycle_manifest_checksum": "47b7a1c47fd198edeb40e62529dc0b7a6246d9563bea2a5b73cb5349236b9ee8",
+  "scenario_ref": {
+    "id": "m5-battery-scenario",
+    "version": "1.8.0",
+    "checksum": "3bacb1ee55c21bcc88784ceb8d13f7275067d338b590da21edbc97f8c5597631"
+  },
+  "review_package": {
+    "id": "m5-functional-passport",
+    "version": "7.0.0",
+    "checksum": "36d025d22b0773981e461337fe91c98d9926ce07af5ae157d2e933cc1a9a593a",
+    "path": "assessment_definitions/prompts/m5_functional_passport/v7"
+  },
+  "prepared_as_contract_ref": {
+    "id": "m5-functional-as",
+    "version": "2.1.0",
+    "checksum": "6ed271ae23ab2afbf0cb580ccb2ca0778df100d1d83fd61477ee67d5e3dc813c"
+  },
+  "synthetic_gateway": true,
+  "live_model": "NOT_RUN",
+  "control": "Письменный ведущий ответил на вопрос о пределе проверки B. Явная сдача породила E02_SUBMISSION до C-45. Вопрос о числе 112 оставлен методологу.",
+  "opening_material_ids": [
+    "P00",
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "M05",
+    "M06"
+  ],
+  "materials": [
+    {
+      "MaterialID": "P00",
+      "Название": "Вводная и письменное задание",
+      "Текст": "Вы — специалист учебного бюро «Учебное бюро 02» (все имена, организации, числа и события вымышлены). Ваша рабочая задача — сопоставление способов проверки кредитных заявок малого бизнеса и подготовка профессиональной рекомендации.\n\nКонтекст. Заказчик — учебный отдел кредитных продуктов — запросил рекомендацию по выбору способа проверки кредитных заявок малого бизнеса. Рассматриваются два варианта: A — потоковая скоринговая проверка с выборочной ручной валидацией; B — расширенная ручная проверка с частичной автоматизацией. Заказчик ожидает рабочий результат к 30 сентября 2025 года и просит ответ о статусе к 14 мая 2025 года. Сегодня — 12 мая 2025 года.\n\nВаш мандат. Вы вправе анализировать предъявленные источники, формулировать допущения, рекомендовать дальнейшее действие, обозначать предварительные условия, предлагать дополнительную проверку или обосновывать отсрочку окончательного обязательства. Вы не утверждаете единолично чужие сроки, объём проверки и внешние обязательства.\n\nЗадание. Изучите материалы M01–M06. Напишите коллеге, что вы рекомендуете сделать сегодня и на каких основаниях. Подготовьте отдельный короткий черновик сообщения заказчику. Если непонятна формулировка в материалах, задайте вопрос здесь.\n\nДве части ответа имеют разных адресатов и разное назначение: рекомендация коллеге — внутренняя, с обоснованием; черновик заказчику — краткое рабочее сообщение о статусе и следующем шаге. Порядок рассуждения, критерии сравнения, проверяемое расхождение и готовые доводы определите самостоятельно."
+    },
+    {
+      "MaterialID": "M01",
+      "Название": "Запрос заказчика",
+      "Текст": "От: учебный отдел кредитных продуктов (заказчик). Дата: 12 мая 2025. Версия: 1.0. Статус: действующие требования.\n\nТема: выбор способа проверки кредитных заявок малого бизнеса.\n\nПросим подготовить рекомендацию по выбору одного из двух способов проверки кредитных заявок малого бизнеса: A — потоковая скоринговая проверка с выборочной ручной валидацией; B — расширенная ручная проверка с частичной автоматизацией.\n\nОжидаемый рабочий результат: действующий способ проверки, пригодный для применения к потоку заявок малого бизнеса с 1 октября 2025 года. Требуемый результат должен быть достигнут к 30 сентября 2025 года.\n\nСущественные условия пригодности (независимые):\n1. Срок: способ должен быть готов к применению к 30 сентября 2025 года.\n2. Полнота проверки документов: способ должен обеспечивать проверку полного комплекта документов по каждой заявке в объёме, установленном внутренним стандартом (проверка всех обязательных документов комплекта).\n3. Стоимость: стоимость проверки одной заявки не должна превышать 480 рублей.\n4. Пропускная способность: способ должен обрабатывать не менее 100 заявок в рабочий день.\n\nСрок ответа о статусе: 14 мая 2025 года. Просим сообщить, какой способ вы рекомендуете и что будет сделано дальше.\n\nЗапрос не содержит готовой оценки A или B."
+    },
+    {
+      "MaterialID": "M02",
+      "Название": "Исходное предложение A",
+      "Текст": "От: владелец варианта A. Дата: 5 мая 2025. Версия: 1.0. Статус: исходные условия предложения (до уточнения).\n\nВариант A — потоковая скоринговая проверка с выборочной ручной валидацией.\n\nИсходные условия:\n- Срок промежуточного этапа (пилот на потоке): конец июня 2025 года.\n- Готовность к применению: 15 сентября 2025 года (плановый статус).\n- Стоимость проверки одной заявки: 410 рублей (расчётная величина).\n- Пропускная способность: 140 заявок в рабочий день (расчётная величина).\n- Доля заявок, требующих ручной валидации: 15% (исходное значение, подлежит уточнению).\n- Среднее время обработки 100 заявок до промежуточного решения: 6,0 рабочих часов (расчётная величина за пилотный квартал, единица — рабочие часы на 100 заявок).\n\nОснование преимущества: по расчётной величине A обрабатывает 100 заявок до промежуточного решения за 6,0 рабочих часов — это меньше, чем у B (см. M04), на сопоставимой шкале и за тот же период.\n\nГраницы подтверждения: приведённые величины расчётные, не подтверждены независимой проверкой. Исходное значение доли ручной валидации (15%) может быть пересмотрено; уточнение ожидается отдельным сообщением."
+    },
+    {
+      "MaterialID": "M03",
+      "Название": "Уточнение по варианту A",
+      "Текст": "От: владелец варианта A. Дата: 11 мая 2025. Версия: 1.1. Статус: уточнение к предложению A (заменяет отдельное условие M02).\n\nПолномочие: владелец варианта A сообщает изменение условий своего предложения.\n\nЧто меняется: доля заявок, требующих ручной валидации, пересмотрена с 15% до 35%. Причина — уточнённые данные пилота: больше заявок, чем предполагалось, требуют ручной проверки документов.\n\nЧто это означает по сути: ручная валидация 35% заявок увеличивает трудоёмкость и создаёт риск сдвига промежуточного этапа (конец июня 2025 года) и готовности к применению (15 сентября 2025 года). Расчётная стоимость проверки одной заявки (410 рублей) и расчётная пропускная способность (140 заявок в рабочий день) в M02 не пересматривались и сохраняют силу как расчётные величины, но не учитывают рост ручной валидации.\n\nЧто сохраняет силу: расчётное среднее время обработки 100 заявок до промежуточного решения — 6,0 рабочих часов (плановый статус, не подтверждено независимой проверкой). Преимущество A по этому признаку сохраняется как плановое и подлежит проверке.\n\nИзменение влияет на выполнение существенного требования M01 о сроке (30 сентября 2025 года) и имеет значение для вывода на сегодня."
+    },
+    {
+      "MaterialID": "M04",
+      "Название": "Предложение B",
+      "Текст": "От: владелец варианта B. Дата: 6 мая 2025. Версия: 1.0. Статус: заявленные условия предложения.\n\nВариант B — расширенная ручная проверка с частичной автоматизацией.\n\nЗаявленные условия:\n- Готовность к применению: 20 сентября 2025 года (плановый статус).\n- Стоимость проверки одной заявки: 455 рублей (расчётная величина).\n- Пропускная способность: 110 заявок в рабочий день (расчётная величина).\n- Среднее время обработки 100 заявок до промежуточного решения: 9,5 рабочих часов (расчётная величина за пилотный квартал, единица — рабочие часы на 100 заявок; та же шкала и период, что в M02).\n- Полнота проверки документов: заявлено соответствие внутреннему стандарту (проверка полного комплекта документов по каждой заявке), но независимо не подтверждено.\n\nОтличающийся выигрыш B: расширенная ручная проверка ориентирована на полноту проверки документов; это отличает B от A.\n\nОстаточное ограничение: соответствие требованию полноты проверки документов (условие 2 M01) остаётся неполностью подтверждённым. Заявленные параметры отделены от проверенных: независимая проверка зафиксирована отдельно в M05 и касается только одного аспекта."
+    },
+    {
+      "MaterialID": "M05",
+      "Название": "Записка о профильной проверке",
+      "Текст": "От: профильный проверяющий. Дата: 10 мая 2025. Версия: 1.0. Статус: результаты фактической проверки в указанных границах.\n\nПредмет проверки: пропускная способность варианта B на тестовом потоке.\nСпособ проверки: прогон 500 синтетических заявок малого бизнеса на тестовом стенде B в течение пяти рабочих дней.\nПолученный результат: пропускная способность B на тестовом потоке — 112 заявок в рабочий день (в границах данной проверки).\n\nЧего проверка не касалась: полнота проверки документов по каждой заявке не проверялась; стоимость проверки одной заявки не проверялась; срок готовности к применению не проверялся. Подтверждение пропускной способности не распространяется на остаточный вопрос M04 (полнота проверки документов) и не подтверждает пригодность B в целом.\n\nДоступность будущей проверки: проверку полноты проверки документов по B может провести профильный проверяющий; предмет — соответствие полного комплекта документов внутреннему стандарту; ближайший доступный момент — 26 мая 2025 года. Результат и реакция согласующего остаются неизвестными."
+    },
+    {
+      "MaterialID": "M06",
+      "Название": "Письменное сообщение коллеги",
+      "Текст": "От: коллега. Дата: 12 мая 2025. Версия: 1.0. Статус: авторское мнение (предложение коллеги).\n\nПривет! Посмотрел материалы. Предлагаю сегодня рекомендовать заказчику вариант A и дать ответ заказчику сегодня же.\n\nПочему: у A среднее время обработки 100 заявок до промежуточного решения — 6,0 рабочих часов, у B — 9,5 рабочих часов на той же шкале и за тот же период. A быстрее, значит, A лучше подходит. Этого, на мой взгляд, достаточно, чтобы выбрать A в целом и не тянуть с ответом.\n\nУточнение по A (доля ручной валидации 35%) я видел, но считаю, что преимущество по времени обработки перевешивает. По B проверка показала 112 заявок в день — тоже нормально, но A всё равно быстрее.\n\nМоё мнение — рекомендовать A сегодня. Если считаешь иначе, напиши, что предлагаешь."
+    }
+  ],
+  "turns": [
+    {
+      "input": "Где в предъявленном пакете зафиксирован предел проверки B?",
+      "events": [
+        {
+          "type": "character_response",
+          "model": "deepseek-flash",
+          "adapter": "deepseek",
+          "response": "Предел описан в M05. За него наблюдение не распространяется.",
+          "prompt_ref": {
+            "id": "m5_character_response",
+            "path": "assessment_definitions/prompts/m5_character_response/v2",
+            "version": "v2",
+            "checksum": "177675ea4bb921c61da9dd97c67b776d372ab7ffd1c19eedc75d214d9c088384"
+          },
+          "speaker_id": "FACILITATOR",
+          "recipient_ids": [
+            "assessee"
+          ],
+          "controlled_test": false,
+          "scenario_event_id": "E01_FACT",
+          "scenario_event_ids": [
+            "E01_FACT"
+          ]
+        }
+      ]
+    },
+    {
+      "input": "Сдаю текущий результат. На этом заканчиваю. Уточнения потом?",
+      "events": [
+        {
+          "type": "scenario_completed",
+          "status": "scenario_ended",
+          "scenario_event_id": "E02_SUBMISSION"
+        }
+      ]
+    }
+  ],
+  "review": {
+    "tester": [
+      {
+        "check_id": "common.professional_consistency",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "common.authority",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "common.confidentiality",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "common.independent_observation",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "quality.clarity",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I01",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I02",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:01:b3a4f0eb899a"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I03",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I04",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I05",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I07",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "indicator:K4.I03",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/0"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I03"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "indicator:K4.I05",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/1"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I05"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "indicator:K4.I12",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/2"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I12"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:02:77fdab4ff851"
+      },
+      {
+        "check_id": "indicator:K4.I13",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/3"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I13"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:03:69dcbcbf0b24"
+      },
+      {
+        "check_id": "indicator:K4.I14",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/4"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I14"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:03:69dcbcbf0b24"
+      },
+      {
+        "check_id": "indicator:K4.I16",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/5"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I16"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:03:69dcbcbf0b24"
+      },
+      {
+        "check_id": "indicator:K4.I17",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/6"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I17"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:03:69dcbcbf0b24"
+      },
+      {
+        "check_id": "indicator:K1.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/7"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K1.I06"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:03:69dcbcbf0b24"
+      },
+      {
+        "check_id": "indicator:K1.I09",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/8"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K1.I09"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:tester:03:69dcbcbf0b24"
+      }
+    ],
+    "challenger": [
+      {
+        "check_id": "common.professional_consistency",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "common.authority",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "common.confidentiality",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "common.scenario_executability",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "common.independent_observation",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "quality.clarity",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I01",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I02",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 1,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:01:7b26cd8ed71f"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I03",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I04",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I05",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "invariant:CASE.SPEC.02.I07",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/Материалы"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/Материалы"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "indicator:K4.I03",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/0"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I03"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "indicator:K4.I05",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/1"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I05"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "indicator:K4.I12",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/2"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I12"
+        },
+        "batch_no": 2,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:02:8cb7e312f6b7"
+      },
+      {
+        "check_id": "indicator:K4.I13",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/3"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I13"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:03:eca174428ca4"
+      },
+      {
+        "check_id": "indicator:K4.I14",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/4"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I14"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:03:eca174428ca4"
+      },
+      {
+        "check_id": "indicator:K4.I16",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/5"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I16"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:03:eca174428ca4"
+      },
+      {
+        "check_id": "indicator:K4.I17",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/6"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K4.I17"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:03:eca174428ca4"
+      },
+      {
+        "check_id": "indicator:K1.I06",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/7"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K1.I06"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:03:eca174428ca4"
+      },
+      {
+        "check_id": "indicator:K1.I09",
+        "status": "PASS",
+        "reason": "Ответ тестового шлюза",
+        "evidence_paths": [
+          "/candidate_as/IndicatorObservability/8"
+        ],
+        "findings": [],
+        "adversarial_review": {
+          "candidate_conflicts": [],
+          "resolution": "Проверено candidate_as/IndicatorObservability/K1.I09"
+        },
+        "batch_no": 3,
+        "operation_id": "0e7356c7-d6ae-4b85-982c-5a20ca55240c:challenger:03:eca174428ca4"
+      }
+    ]
+  },
+  "server": {
+    "status": "PASS",
+    "admitted_for_participant": true,
+    "deterministic_failures": [],
+    "deterministic_protocol_errors": [],
+    "blocking_failures": [],
+    "incomplete_checks": [],
+    "verification_errors": [],
+    "review_required": [],
+    "warnings": []
+  },
+  "c45": {
+    "contract": "C-45",
+    "boundary": {
+      "turn_ids": [
+        "0c66cbfc-a82d-4431-8681-8e0d3cf37b55",
+        "825d8ad1-1e06-4273-b6af-e9f652aeedeb",
+        "e1d8b821-0845-4dd6-8add-3fb31bb44827"
+      ],
+      "event_ids": [
+        "1f2fa010-d449-4722-9827-a7010b6a1e99",
+        "9c5cc8ac-928e-40a3-9d6b-81ff9884731b",
+        "debce14c-d400-484f-a328-6bdb3d9ab837",
+        "a68af930-be32-4439-bde3-7003cab8416f",
+        "6383bd7e-2657-46ea-813c-aa35968781c5",
+        "288050a1-5324-4fc2-be02-09bfa188b43b",
+        "0df9fcbc-74f5-4c33-9cba-2c3cdadd001b",
+        "91b084bd-5c60-4bae-8dd3-b003a0dc6139",
+        "5f14c637-dea7-4885-b816-3524381c26a4",
+        "f03e8f93-1e2f-45c4-af11-8310c814bb02",
+        "df7fabf9-77b3-42c4-99e1-6721b5ae81f5"
+      ],
+      "inclusive_sequence": 14
+    },
+    "case_ref": {
+      "id": "CASE.SPEC.02",
+      "version": "v0.7",
+      "checksum": "c332d9cea90edfe1877fcb87d02b276caf19b32d97092b8dbb195aa6e36e3a4d"
+    },
+    "conditional_opportunities": [
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K4.I03",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "M02",
+          "M03",
+          "M04",
+          "M05"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K4.I05",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "M01",
+          "M02",
+          "M03",
+          "M04",
+          "M05"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K4.I12",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "M01",
+          "M02",
+          "M04",
+          "M06"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K4.I13",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "M01",
+          "M02",
+          "M03",
+          "M04",
+          "M05",
+          "M06"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K4.I14",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "P00",
+          "M01",
+          "M03",
+          "M04",
+          "M05",
+          "M06"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K4.I16",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "M01",
+          "M02",
+          "M03",
+          "M04",
+          "M05"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K4.I17",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "M01",
+          "M03",
+          "M04",
+          "M05"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K1.I06",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "P00",
+          "M01",
+          "M03",
+          "M05",
+          "M06"
+        ]
+      },
+      {
+        "status": "DELIVERED",
+        "event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "indicator_id": "K1.I09",
+        "occurred_event_refs": [
+          "E02_SUBMISSION"
+        ],
+        "occurred_material_refs": [
+          "P00",
+          "M01",
+          "M02",
+          "M03",
+          "M04",
+          "M05"
+        ]
+      }
+    ]
+  }
+}

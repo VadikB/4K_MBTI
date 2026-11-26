@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from copy import deepcopy
 from pathlib import Path
 
@@ -15,6 +16,12 @@ from scripts.build_m5_sales_package import _participant_presentation, _ref
 RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.6.0"
 FACILITATOR = "FACILITATOR"
 PILOT_CASE_SUFFIX = "-pilot.1"
+_MATERIAL_LINK = re.compile(r"(?<![\w+/=:@.%-])m5-material://[^\s<>\"'`«»“”‘’(){}\[\]]+")
+
+
+def material_links(text: str) -> list[tuple[int, str]]:
+    """Read complete internal link tokens, keeping suffixes inside the address."""
+    return [(match.start(), match.group().rstrip(".,;:!?")) for match in _MATERIAL_LINK.finditer(text)]
 
 
 def source_case_version(version: str, *, pilot: bool) -> str:
@@ -57,9 +64,49 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
                 or row["kind"] not in {"reply", "delivery", "transfer", "forward", "transfer_reply"}):
             raise missing(case_id, version, f"17.3/{row['id']}→scenario rule")
     material_by_id = {row["ID"]: row for row in materials}
+    material_sections = overlay.get("material_sections", {})
+    for material_id, headings in material_sections.items():
+        if (material_id not in material_ids - fact_ids or not isinstance(headings, list) or not headings
+                or any(not isinstance(heading, str) or not heading.strip() or "\n" in heading for heading in headings)
+                or len(set(headings)) != len(headings)):
+            raise missing(case_id, version, f"17.2/{material_id}/sections")
     for key, role in roles.items():
         if not set(role["known_material_ids"] + role.get("partial_material_ids", [])) <= material_ids - fact_ids:
             raise missing(case_id, version, f"17.2/{key}/Кому известно до начала")
+        for material_id, allowed in role.get("known_material_sections", {}).items():
+            if (material_id not in role.get("partial_material_ids", ()) or material_id in role["known_material_ids"]
+                    or not isinstance(allowed, list) or not allowed or len(allowed) != len(set(allowed))
+                    or not set(allowed) < set(material_sections.get(material_id, ()))):
+                raise missing(case_id, version, f"17.2/{material_id}/{key}/sections")
+    material_source = overlay.get("material_source")
+    generation_addendum = overlay.get("generation_addendum")
+    if material_source is not None:
+        material_id, heading = material_source["material_id"], material_source["section"]
+        readers = material_source["reader_ids"]
+        opening_evidence = material_source.get("opening_reply_evidence")
+        if (material_id not in start["Последовательность предъявления"]
+                or heading not in material_sections.get(material_id, ())
+                or material_source["link_section"] not in set(material_sections[material_id]) - {heading}
+                or not material_source["version_label"].strip() or not material_source["opening_confirmation"].strip()
+                or not isinstance(generation_addendum, str)
+                or not generation_addendum.strip() or not readers or len(readers) != len(set(readers))
+                or not any(row["id"] == material_source["event_id"] and row["kind"] == "transfer_reply"
+                           and row.get("reply_confirmation") and set(readers) <= set(row["speaker_ids"]) for row in settings)
+                or any(material_id in roles.get(reader, {}).get("known_material_ids", ())
+                       or heading in roles.get(reader, {}).get("known_material_sections", {}).get(material_id, ())
+                       for reader in readers)):
+            raise missing(case_id, version, f"17.2/{material_id}/material_source")
+        if "opening_reply_evidence" in material_source and (
+                not isinstance(opening_evidence, str) or not opening_evidence.strip()
+                or not material_source.get("opening_follow_up")):
+            raise missing(case_id, version, "17.3/E01_RECEIPT/opening_reply_evidence")
+        if "opening_plain_confirmation" in material_source and (
+                material_source["opening_plain_confirmation"] is not True or not opening_evidence):
+            raise missing(case_id, version, "17.3/E01_RECEIPT/opening_plain_confirmation")
+        if identifier := material_source.get("version_identifier"):
+            examples = ", ".join(identifier["examples"])
+            generation_addendum += (f"\n{identifier['instruction']} Формат: {identifier['pattern']}. "
+                                    f"Примеры идентификаторов: {examples}.")
     opening = overlay["opening"]
     if opening and (opening["speaker_id"] not in roles or opening["material_id"] not in start["Последовательность предъявления"]):
         raise missing(case_id, version, "17.1/Первая реплика")
@@ -96,12 +143,55 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
         "instructions": package["instructions"],
         "observability_references": locations,
         "roles": role_sources,
+        **({"material_sections": material_sections} if material_sections else {}),
+        **({"material_source": material_source, "generation_addendum": generation_addendum} if material_source else {}),
         "events": [
             {**row, "passport": event_by_id[row["id"]],
              "source": case["passport_sources"][f"17.3/{row['id']}"]}
             for row in settings
         ],
     }
+
+
+def _material_sections(text: str, headings: list[str]) -> dict[str, str]:
+    sections: dict[str, list[str]] = {}
+    heading = None
+    for line in text.splitlines():
+        if line.strip() in headings:
+            heading = line.strip()
+            if heading in sections:
+                return {}
+            sections[heading] = []
+        elif heading is not None:
+            sections[heading].append(line)
+        elif line.strip():
+            return {}
+    result = {key: "\n".join(lines).strip() for key, lines in sections.items()}
+    return result if list(result) == headings and all(result.values()) else {}
+
+
+def _source_fragment(binding: dict, sections: dict[str, str]) -> dict | None:
+    first, _, text = sections[binding["section"]].partition("\n")
+    label = binding["version_label"]
+    version = first[len(label):].strip() if first.startswith(label) else ""
+    identifier = binding.get("version_identifier")
+    version_pattern = identifier["pattern"] if identifier else r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}"
+    if not text.strip() or not re.fullmatch(version_pattern, version):
+        return None
+    material_id = binding["material_id"]
+    link = f"m5-material://{material_id}/{version}"
+    link_text = sections[binding["link_section"]]
+    available_links = ([token for _, token in material_links(link_text)] if identifier
+                       else re.findall(r"m5-material://[A-Za-z0-9._/-]+", link_text))
+    if link not in available_links:
+        return None
+    text = text.strip()
+    return {"source": {"material_id": material_id, "section": binding["section"], "version": version,
+                       "link": link, "fragment_sha256": digest(text.encode())}, "text": text}
+
+
+def _normalized_text(value: str) -> str:
+    return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
 
 def validate_profile(profile: dict, design: dict) -> None:
@@ -237,6 +327,55 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
                      {"fields": sorted(expected_fields), "non_empty_text_fields": list(required_text)},
                      "Запись должна содержать поля контракта и непустой текст.")
             record_missing(row_path, expected_fields, row)
+    documents = indexed["Материалы"]
+    for material_id, headings in design.get("material_sections", {}).items():
+        text = documents.get(material_id, {}).get("Текст")
+        sections = _material_sections(text, headings) if isinstance(text, str) else {}
+        binding = design.get("material_source")
+        protected = binding and binding["material_id"] == material_id
+        actual = None
+        if protected:
+            found = re.findall(r"(?m)^\s*(\[[^\[\]\r\n]+\])[^\S\r\n]*$", text) if isinstance(text, str) else []
+            actual = {"headings": found, "missing": [heading for heading in headings if heading not in found],
+                      "unexpected": [heading for heading in found if heading not in headings],
+                      "text_type": type(text).__name__}
+        path = f"candidate_as/Материалы/{material_id}/Текст"
+        validate("battery_material_sections", bool(sections), path, actual, headings,
+                 "Разделы с разными правами знания должны иметь точные заголовки, порядок и непустой текст.")
+        if not protected or not sections:
+            continue
+        source = _source_fragment(binding, sections)
+        identifier = binding.get("version_identifier")
+        validate("battery_material_source", source is not None, path,
+                 {"first_line": sections[binding["section"]].splitlines()[0], "link_section": binding["link_section"]},
+                 {"version_label": binding["version_label"], "link_template": f"m5-material://{material_id}/<версия>",
+                  **({"pattern": identifier["pattern"], "examples": identifier["examples"],
+                      "link_example": f"m5-material://{material_id}/{identifier['examples'][0]}"} if identifier else {})},
+                 "Укажите точную версию исходного фрагмента и соответствующую ей адресную ссылку.")
+        if source is None:
+            continue
+        protected_text = _normalized_text(source["text"])
+        for speaker, role in design["roles"].items():
+            if material_id in role["known_material_ids"]:
+                continue
+            visible = {heading: sections[heading] for heading in role.get("known_material_sections", {}).get(material_id, ())}
+            visible.update({key: documents.get(key, {}).get("Текст") for key in role["known_material_ids"]})
+            for location, content in visible.items():
+                if isinstance(content, str) and protected_text in _normalized_text(content):
+                    target_path = path if location in sections else f"candidate_as/Материалы/{location}/Текст"
+                    validate("battery_material_knowledge_leak", False, target_path,
+                             {"role": speaker, "visible_section": location, "source": source["source"]},
+                             {"protected_section": binding["section"]},
+                             "Полная копия закрытого фрагмента попала в начальное знание адресата. Удалите её из видимого текста.")
+            if identifier:
+                visible_ids = set(role["known_material_ids"]) | role.get("known_material_sections", {}).keys()
+                for visible_id in sorted(visible_ids):
+                    title = documents.get(visible_id, {}).get("Название")
+                    if isinstance(title, str) and protected_text in _normalized_text(title):
+                        validate("battery_material_knowledge_leak", False, f"candidate_as/Материалы/{visible_id}/Название",
+                                 {"role": speaker, "visible_material": visible_id, "source": source["source"]},
+                                 {"protected_section": binding["section"]},
+                                 "Полная копия закрытого фрагмента попала в видимое название. Оставьте только обычный заголовок.")
     if not detailed:  # Preserve the substring check for the frozen 02 protocol.
         documents = indexed["Материалы"]
         closed = [row for key, row in documents.items() if key not in design["start_ids"]]
@@ -288,6 +427,19 @@ def compile_candidate(snapshot: dict, candidate: dict, checksum: str) -> tuple[d
     opening = design["opening"]
     visible_docs = [key for key in design["start_ids"] if not opening or key != opening["material_id"]]
     materials = {row["MaterialID"]: (index, row) for index, row in enumerate(candidate["Материалы"])}
+    source = None
+    if binding := design.get("material_source"):
+        material_id = binding["material_id"]
+        sections = _material_sections(materials[material_id][1]["Текст"], design["material_sections"][material_id])
+        source = _source_fragment(binding, sections)
+    scoped_materials = {}
+    for speaker, role in design["roles"].items():
+        for material_id, headings in role.get("known_material_sections", {}).items():
+            document = materials[material_id][1]
+            sections = _material_sections(document["Текст"], design["material_sections"][material_id])
+            scoped_materials.setdefault(speaker, []).append({
+                **document, "Текст": "\n\n".join(f"{heading}\n{sections[heading]}" for heading in headings),
+            })
     case["materials"] = [
         {"material_id": key, "order": order, "content": materials[key][1],
          "participant_visible_initially": key in visible_docs,
@@ -316,6 +468,8 @@ def compile_candidate(snapshot: dict, candidate: dict, checksum: str) -> tuple[d
     runtime = {
         "case_version": case["version"], "characters": case["characters"], "materials": [], "scenario": [],
         "battery_scenario": {**design, "concrete_materials": {key: row for key, (_, row) in materials.items()},
+                             **({"scoped_materials": scoped_materials} if scoped_materials else {}),
+                             **({"linked_material": source} if source else {}),
                              "concrete_facts": {row["FactID"]: row["Текст"] for row in candidate["Закрытые фиксированные факты"]}},
     }
     return prepared, {"schema_version": 2, "cases": {case["case_id"]: runtime}}

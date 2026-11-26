@@ -206,6 +206,10 @@ def resolve_configuration_catalog(connection, *, configuration_id: int, usage_sc
                    runtime_rule_ref=row["catalog_manifest"]["runtime_rule_ref"])
         if "review_package" in row["catalog_manifest"]:
             ref["review_package"] = row["catalog_manifest"]["review_package"]
+    if "scenario_ref" in row["catalog_manifest"] and (ref.get("diagnostic_only") or ref.get("battery_pilot")):
+        if checksum(row["catalog_manifest"]) != row["manifest_checksum"]:
+            raise ValueError("M5_BATTERY_SCENARIO_REF_INVALID")
+        ref["scenario_ref"] = row["catalog_manifest"]["scenario_ref"]
     return ref
 
 
@@ -285,19 +289,34 @@ def publish_catalog(
     case_version_ids: list[int], usage_scope: str, published_by: int, decision_basis: str,
     idempotency_key: str, organization_id: int | None = None, dry_run: bool = False,
     runtime_rule_version_id: int | None = None, review_package: dict[str, Any] | None = None,
+    scenario_ref: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not str(decision_basis or "").strip():
         raise ValueError("M5_CATALOG_DECISION_BASIS_REQUIRED")
     plan = publication_plan(connection, package_db_id=package_db_id, case_version_ids=case_version_ids,
                             usage_scope=usage_scope, organization_id=organization_id,
                             runtime_rule_version_id=runtime_rule_version_id)
-    if review_package is not None:
-        from Api.cycle_execution_manifest import battery_pilot_review_path
+    if plan.get("battery_pilot"):
+        from Api.cycle_execution_manifest import (
+            BATTERY_V04_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES, battery_pilot_review_path,
+            battery_scenario_path,
+        )
 
-        if not plan.get("battery_pilot"):
+        v04 = battery_scenario_path(plan["package_version"]) == BATTERY_V04_SCENARIO_PACKAGE
+        path = battery_pilot_review_path(review_package) if review_package is not None else None
+        if v04 != (path == M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]):
             raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
-        battery_pilot_review_path(review_package)
-        plan["review_package"] = review_package
+        if review_package is not None:
+            plan["review_package"] = review_package
+    elif review_package is not None:
+        raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
+    if scenario_ref is not None:
+        from Api.cycle_execution_manifest import battery_scenario_path
+
+        if not (plan.get("diagnostic_only") or plan.get("battery_pilot")):
+            raise ValueError("M5_BATTERY_SCENARIO_REF_INVALID")
+        battery_scenario_path(plan["package_version"], scenario_ref)
+        plan["scenario_ref"] = scenario_ref
     request = {**plan, "catalog_id": catalog_id, "catalog_version": catalog_version,
                "published_by": published_by, "decision_basis": decision_basis.strip()}
     request_hash = checksum(request)
@@ -326,6 +345,8 @@ def publish_catalog(
                 "usage_scope": usage_scope, "case_version_ids": plan["case_version_ids"]}
     if plan.get("diagnostic_only"):
         manifest["diagnostic_only"] = True
+    if scenario_ref is not None:
+        manifest["scenario_ref"] = scenario_ref
     if plan.get("battery_pilot"):
         manifest["battery_pilot"] = True
         if review_package is not None:

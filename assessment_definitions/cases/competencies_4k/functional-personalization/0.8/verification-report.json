@@ -1,0 +1,12 @@
+{
+  "case_count": 9,
+  "distinct_indicators": 39,
+  "distinct_skills": 14,
+  "methodology_admission": "NOT_RUN",
+  "package_checksum": "d7419a73a59564628ffc3306ae4ce551e45f5e34ad925ec7cac3ff3c2750663c",
+  "result": "PASS",
+  "runtime_admission": "DISABLED",
+  "schema_version": 1,
+  "scope": "static_functional_passport_bank",
+  "target_count": 55
+}
