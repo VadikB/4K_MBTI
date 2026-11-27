@@ -14,6 +14,7 @@ const reportTitle = 'Не удалось сформировать итоговы
 const reportDetail = 'Сбор ответов завершён. Ошибка возникла при подготовке отчёта';
 const unknown = 'Произошла ошибка обработки. Подробности пока недоступны';
 const readError = 'Не удалось обновить состояние';
+const progress = 'Завершено 0 из 8 ситуаций.';
 
 test.setTimeout(35000);
 test.skip(!inputDir, 'Requires the synthetic HTTP snapshots exported by test_task6_processing_status_db.py');
@@ -35,7 +36,7 @@ async function replay(page, fixture, { admin = false, closed = false } = {}) {
   if (closed) selected.assessment_program.assignment_ref = fixture.secondAssessment;
   const cycle = fixture.runtime.cycle_id;
   const asId = fixture.runtime.current_situation.assessment_situation_id;
-  const flow = { runtime: fixture.runtime, status: fixture.report, failedRead: false, requests: [] };
+  const flow = { runtime: fixture.runtime, status: fixture.report, registry, failedRead: false, requests: [] };
   await page.route('**/users/**', async (route) => {
     const request = route.request();
     const pathname = new URL(request.url()).pathname;
@@ -56,7 +57,7 @@ async function replay(page, fixture, { admin = false, closed = false } = {}) {
     if (pathname.endsWith('/presence')) return json({ heartbeat_interval_seconds: 10 });
     if (pathname.endsWith('/draft')) return json({ owner_id: String(id), cycle_id: cycle,
       assessment_situation_id: asId, version: 0, revision: '', text: '' });
-    if (pathname === '/users/admin/organizations') return json(registry);
+    if (pathname === '/users/admin/organizations') return json(flow.registry);
     if (pathname.endsWith('/assessment-program')) return json({ connection: selected.assessment_program });
     if (pathname.endsWith('/questionnaire') || pathname.endsWith('/issues')) return json({ items: [] });
     if (pathname === '/users/admin/dashboard') return json({ is_superadmin: false });
@@ -73,31 +74,61 @@ async function memberSurface(browser, preview, fixture, label, detail, name, { c
     const flow = await replay(page, fixture, { admin: true, closed });
     await page.goto(baseOf(preview) + '/?screen=admin-organizations');
     const row = page.locator(`[data-organization-id="${fixture.org}"] [data-member-user-id="${fixture.participant}"]`);
-    await expect(row.locator('.admin-organization-current-stage')).toHaveText(label);
-    if (!closed && !baseline) await expect(row).toContainText('Завершено 0 из 8 ситуаций');
+    const stage = row.locator('.admin-organization-current-stage');
+    const stageDetail = row.locator('.admin-organization-member-stage > span').last();
+    const openDetails = row.getByRole('button', { name: 'Подробнее об обработке' });
+    await expect(stage).toHaveText(label);
+    if (!baseline) {
+      await expect(openDetails).toHaveAttribute('data-assignment-id', String(closed ? fixture.reportAssignmentId : 33));
+      if (!closed) await expect(stageDetail).toHaveText(progress);
+    }
+    const rendered = { stage: await stage.innerText(), progress: await stageDetail.innerText() };
     await capture(row, name + '-row');
-    await row.getByRole('button', { name: 'Подробнее об обработке' }).click();
+    await openDetails.click();
     const dialog = page.getByRole('dialog', { name: baseline ? 'Ошибка обработки результата' : label });
-    await expect(dialog.locator('[data-processing-description]')).toHaveText(detail);
+    const heading = dialog.getByRole('heading');
+    const description = dialog.locator('[data-processing-description]');
+    await expect(description).toHaveText(detail);
+    rendered.title = await heading.innerText();
+    rendered.detail = await description.innerText();
+    const check = dialog.getByRole('button', { name: 'Проверить состояние', exact: true });
+    const registryReads = () => flow.requests.filter(([, url]) => url === '/users/admin/organizations');
     if (baseline) {
       await expect(dialog).toContainText('Отчёт можно открыть только после готовности и при наличии права просмотра.');
     } else {
       await expect(dialog).not.toContainText(/прав[оае] просмотра|Номер обращения|Номер случая/);
       await expect(dialog.getByRole('button', { name: /Повторить|Восстановить/ })).toHaveCount(0);
-      await dialog.getByRole('button', { name: 'Проверить состояние' }).click();
+      const readsBefore = registryReads().length;
+      await check.click();
       await expect(dialog.getByRole('status')).toHaveText('Состояние обновлено.');
-      expect(flow.requests.filter(([, url]) => url === '/users/admin/organizations')).toHaveLength(2);
+      expect(registryReads().slice(readsBefore)).toEqual([['GET', '/users/admin/organizations']]);
+      await expect(stage).toHaveText(label);
+      if (!closed) await expect(stageDetail).toHaveText(progress);
     }
     await capture(dialog, name + '-details');
+    if (!baseline && !closed) {
+      flow.registry = fixture.recoveredRegistry;
+      const readsBefore = registryReads().length;
+      await check.click();
+      await expect(stage).toHaveText('Оценка выполняется');
+      await expect(stageDetail).toHaveText(progress);
+      await expect(dialog).toHaveCount(0);
+      await expect(openDetails).toHaveCount(0);
+      expect(registryReads().slice(readsBefore)).toEqual([['GET', '/users/admin/organizations']]);
+      rendered.recovered = { stage: await stage.innerText(), progress: await stageDetail.innerText() };
+      await capture(row, name + '-recovered-row');
+    }
     expect(flow.requests.filter(([method]) => method !== 'GET')).toEqual([]);
+    return rendered;
   } finally {
     await page.close();
   }
 }
 
 for (const broken of ['evidence', 'assessment']) {
-  test(`Задание 6 · обе роли и оба этапа после M6 ${broken}`, async ({ browser }) => {
+  test(`Задание 6 · назначение №33, восстановление и сбой отчёта · M6 ${broken}`, async ({ browser }, info) => {
     const fixture = JSON.parse(await fs.readFile(path.join(inputDir, broken + '.json'), 'utf8'));
+    expect(fixture.assignmentId).toBe(33);
     const preview = await startAdminProgramPreview({ port: 0, adapter: async ({ url, response }) => {
       if (url.pathname !== '/') return false;
       response.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -111,11 +142,28 @@ for (const broken of ['evidence', 'assessment']) {
       const interview = page.locator('#interview-error');
       const input = page.locator('#interview-textarea');
       const check = interview.getByRole('button', { name: 'Проверить состояние', exact: true });
+      const runtimePath = '/users/assessment/cycles/' + fixture.runtime.cycle_id + '/runtime';
+      const checkRuntime = async () => {
+        const read = page.waitForResponse(response => new URL(response.url()).pathname === runtimePath);
+        await check.click();
+        const response = await read;
+        expect(response.status()).toBe(200);
+        expect(response.request().method()).toBe('GET');
+      };
+      const savedTurn = page.locator(`#interview-messages [data-turn-id="${fixture.turnId}"]`);
       await expect(interview).toContainText(answerMessage);
+      const renderedAnswer = await interview.evaluate(node => node.firstChild.textContent.trim());
+      expect(renderedAnswer).toBe(answerMessage);
+      await expect(savedTurn).toHaveCount(1);
+      const savedAnswer = fixture.runtime.trace.turns.find(turn => turn.turn_id === fixture.turnId).content_text;
+      await expect(savedTurn).toHaveAttribute('data-message-text', savedAnswer);
       await expect(input).toBeDisabled();
       await expect(input).toHaveAttribute('placeholder', '');
       await capture(page.locator('#interview-panel'), broken + '-after-participant-answer');
       await expect(interview.getByRole('button', { name: /Повторить|Восстановить/ })).toHaveCount(0);
+      await checkRuntime();
+      await expect(interview).toContainText(answerMessage);
+      await expect(savedTurn).toHaveCount(1);
       flow.failedRead = true;
       await check.click();
       await expect(interview).toContainText(readError);
@@ -127,16 +175,30 @@ for (const broken of ['evidence', 'assessment']) {
       flow.runtime = fixture.waiting;
       await check.click();
       await expect(interview).toContainText('Ответ сохранён. Идёт обработка');
+      // Return to the confirmed failure before showing the real post-worker response.
+      flow.runtime = fixture.runtime;
+      await checkRuntime();
+      await expect(interview).toContainText(answerMessage);
       flow.runtime = fixture.success;
-      await check.click();
-      await expect(page.locator('#interview-finish-button')).toBeEnabled();
+      await checkRuntime();
+      const finish = page.getByRole('button', { name: 'Завершить ситуацию', exact: true });
+      await expect(finish).toBeVisible();
+      await expect(finish).toBeEnabled();
+      await expect(interview).not.toContainText(answerMessage);
       await expect(interview).not.toContainText(unknown);
+      await expect(savedTurn).toHaveCount(1);
+      await expect(savedTurn).toHaveAttribute('data-message-text', savedAnswer);
+      await expect(savedTurn.getByRole('button', { name: 'Повторить', exact: true })).toHaveCount(0);
+      const renderedFinish = await finish.innerText();
+      const renderedTurnCount = await savedTurn.count();
+      await capture(page.locator('#interview-panel'), broken + '-participant-answer-recovered');
 
       await page.goto(baseOf(preview) + '/?screen=processing&cycle_id=' + fixture.report.cycle_id);
       const outcome = page.locator('#processing-outcome-card');
       const title = outcome.getByRole('heading');
       const outcomeCheck = outcome.getByRole('button', { name: 'Проверить состояние', exact: true });
       await expect(title).toHaveText(reportMessage);
+      const renderedReport = await title.innerText();
       await capture(outcome, broken + '-after-participant-report');
       await expect(outcome.getByRole('button', { name: /Посмотреть результат|Повторить|Восстановить/ })).toHaveCount(0);
       flow.status = fixture.calculation;
@@ -150,8 +212,18 @@ for (const broken of ['evidence', 'assessment']) {
       expect(flow.requests.filter(([method, url]) => method !== 'GET' && !url.endsWith('/presence'))).toEqual([]);
       await page.close();
 
-      await memberSurface(browser, preview, fixture, answerTitle, answerDetail, broken + '-after-admin-answer');
-      await memberSurface(browser, preview, fixture, reportTitle, reportDetail, broken + '-after-admin-report', { closed: true });
+      const { recovered: adminAfterRecovery, ...adminAnswer } =
+        await memberSurface(browser, preview, fixture, answerTitle, answerDetail, broken + '-after-admin-answer');
+      const adminReport = await memberSurface(browser, preview, fixture, reportTitle, reportDetail, broken + '-after-admin-report', { closed: true });
+      const rendered = {
+        assignment: fixture.assignmentId,
+        answer: { participant: renderedAnswer, admin: adminAnswer },
+        afterRecovery: { participantAction: renderedFinish, savedTurnCount: renderedTurnCount, admin: adminAfterRecovery },
+        report: { assignment: fixture.reportAssignmentId, participant: renderedReport, admin: adminReport },
+      };
+      const json = JSON.stringify(rendered, null, 2) + '\n';
+      await info.attach('rendered-texts', { body: json, contentType: 'application/json' });
+      if (artifactDir) await fs.writeFile(path.join(artifactDir, broken + '-rendered-texts.json'), json);
     } finally {
       await preview.close();
     }
