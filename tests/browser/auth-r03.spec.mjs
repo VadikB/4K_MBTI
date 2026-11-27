@@ -2747,7 +2747,7 @@ test('AC18-ADM-1C shows factual invitation lifetime and read-only processing det
         { assignment_id: 41, assignment_ref: 'specialist-pilot', assignment_status: 'revoked',
           assignment_created_at: '2026-11-08T08:00:00Z', assignment_revoked_at: '2026-11-08T12:00:00Z' },
       ],
-      assessment_stages: { 'specialist-pilot': { code: 'processing', action: 'open_processing',
+      assessment_stages: { 'specialist-pilot': { assignment_id: 42, code: 'processing', action: 'open_processing',
         description: 'Прохождение завершено; формируется отчёт.' } } }] };
   await openAdminOrganizations(page, (route) => fulfillJson(route, { items: [] }), organization);
   await expect(page.locator('.admin-organization-member')).not.toContainText('72 часа');
@@ -2761,8 +2761,13 @@ test('AC18-ADM-1C shows factual invitation lifetime and read-only processing det
   await expect(page.locator('[data-card-assignment-history]')).toContainText('Назначение #41: отменено');
   await page.locator('.admin-member-card-dialog').getByRole('button', { name: 'Закрыть', exact: true }).click();
   await page.getByRole('button', { name: 'Подробнее об обработке' }).click();
-  await expect(page.getByRole('heading', { name: 'Обработка результата' })).toBeVisible();
-  await expect(page.locator('.admin-member-card-dialog')).toContainText('Отчёт можно открыть только после готовности');
+  const processing = page.getByRole('dialog', { name: 'Обработка результата' });
+  await expect(processing).toContainText('Прохождение завершено. Готовится отчёт.');
+  await expect(processing).not.toContainText('Отчёт можно открыть только после готовности');
+  const read = page.waitForResponse(response => new URL(response.url()).pathname === '/users/admin/organizations');
+  await processing.getByRole('button', { name: 'Проверить состояние' }).click();
+  expect((await read).request().method()).toBe('GET');
+  await expect(processing.getByRole('status')).toHaveText('Состояние обновлено.');
 });
 
 test('QA19-02 resolves palette tokens in visible auth and admin states', async ({ page }) => {

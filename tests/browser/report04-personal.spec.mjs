@@ -257,15 +257,15 @@ for (const failure of [403, 404, 'network', 'timeout', 'admin503']) {
 }
 
 test('FIX-01 preparing and failed states use public copy', async ({ page }) => {
-  let results_status = 'ready', report_status = 'pending';
-  await page.route('**/users/assessment/m8/cycles/c1/status', (route) => route.fulfill({ json: { results_status, report_status } }));
+  const status = { collection_status: 'calculated', results_status: 'ready', report_status: 'pending' };
+  await page.route('**/users/assessment/m8/cycles/c1/status', route => route.fulfill({ json: status }));
   await sourceReportApp(page);
   await page.evaluate(() => window.__report04Open({ m8CycleId: 'c1' }));
   await expect(page.locator('#m8-report-state')).toHaveText('Оценка завершена. Готовим ваш отчёт');
-  report_status = 'failed';
+  status.report_status = 'failed';
   await page.evaluate(() => window.__report04Open({ m8CycleId: 'c1' }));
-  await expect(page.locator('#m8-report-state')).toContainText('Ответы сохранены');
-  results_status = 'failed';
+  await expect(page.locator('#m8-report-state')).toHaveText('Произошла ошибка обработки. Подробности пока недоступны');
+  Object.assign(status, { results_status: 'failed', report_status: 'not_created', failure_stage: 'report' });
   await page.evaluate(() => window.__report04Open({ m8CycleId: 'c1' }));
-  await expect(page.locator('#m8-report-state')).toContainText('Ответы сохранены');
+  await expect(page.locator('#m8-report-state')).toHaveText('Прохождение завершено. Не удалось сформировать итоговый отчёт.');
 });
