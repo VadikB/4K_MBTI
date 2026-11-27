@@ -1,6 +1,7 @@
 import json
 import shutil
 from contextlib import contextmanager
+from types import SimpleNamespace
 from uuid import uuid4
 
 import psycopg
@@ -145,8 +146,8 @@ def test_authorized_release_without_human_forms_is_idempotent_and_preserves_star
         assert read_cycle(connection, cycle_id) == previous_cycle
 
 
-@pytest.mark.integration
-def test_synthetic_assignment_opens_the_prepared_v7_card_and_keeps_start_time(release_db, monkeypatch):
+@pytest.fixture
+def opened_specialist_pilot(release_db, monkeypatch):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
@@ -264,14 +265,23 @@ def test_synthetic_assignment_opens_the_prepared_v7_card_and_keeps_start_time(re
         with release_db() as connection:
             started_at = read_cycle(connection, cycle_id)["started_at"]
             assert started_at is not None
-        assert client.post("/users/assessment/cycles/start", json=request).status_code == 201
-        returned = client.get(f"/users/assessment/cycles/{cycle_id}/runtime")
-        assert returned.status_code == 200, returned.text
-        assert returned.json()["current_situation"] == first
-        with release_db() as connection:
-            assert read_cycle(connection, cycle_id)["started_at"] == started_at
-            assert connection.execute("""SELECT count(*) AS n FROM m5_cycles WHERE assignment_id=%s""",
-                                      (assignment_id,)).fetchone()["n"] == 1
-            assert connection.execute("""SELECT count(*) AS n FROM m5_cycle_time_intervals
-                WHERE cycle_db_id=%s AND interval_type='collecting'""", (before["id"],)).fetchone()["n"] == 1
-        assert {call[0].split(":")[1] for call in gateway.calls} == roles
+        yield SimpleNamespace(
+            client=client, worker=worker, assignment_id=assignment_id, cycle_id=cycle_id, cycle_db_id=before["id"],
+            first=first, started_at=started_at, participant_id=participant, start_request=request, gateway=gateway,
+        )
+
+
+@pytest.mark.integration
+def test_synthetic_assignment_opens_the_prepared_v7_card_and_keeps_start_time(release_db, opened_specialist_pilot):
+    pilot = opened_specialist_pilot
+    assert pilot.client.post("/users/assessment/cycles/start", json=pilot.start_request).status_code == 201
+    returned = pilot.client.get(f"/users/assessment/cycles/{pilot.cycle_id}/runtime")
+    assert returned.status_code == 200, returned.text
+    assert returned.json()["current_situation"] == pilot.first
+    with release_db() as connection:
+        assert read_cycle(connection, pilot.cycle_id)["started_at"] == pilot.started_at
+        assert connection.execute("""SELECT count(*) AS n FROM m5_cycles WHERE assignment_id=%s""",
+                                  (pilot.assignment_id,)).fetchone()["n"] == 1
+        assert connection.execute("""SELECT count(*) AS n FROM m5_cycle_time_intervals
+            WHERE cycle_db_id=%s AND interval_type='collecting'""", (pilot.cycle_db_id,)).fetchone()["n"] == 1
+    assert {call[0].split(":")[1] for call in pilot.gateway.calls} == {"generation", "tester", "challenger"}
