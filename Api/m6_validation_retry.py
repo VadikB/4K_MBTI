@@ -174,9 +174,7 @@ def _bundle_feedback(missing_ids: list[str]) -> str:
     return (" Недостающие indicator_id в bundles: " + ", ".join(missing_ids) + ". "
             "Добавь ровно одну запись на каждый недостающий индикатор. "
             "Для индикатора без подтверждённого свидетельства укажи evidence_ids=[] и конкретное "
-            "opportunity_basis по исходному ходу и условиям ситуации. "
-            "Сохрани корректные bundles, fragments, signals, evidence, их ID и связи. "
-            "Исправь только ошибочные записи и затронутые зависимости.")
+            "opportunity_basis по исходному ходу и условиям ситуации.")
 
 
 def _quote_issue_indices(issues: list[dict]) -> set[int]:
@@ -269,6 +267,11 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
             attribution_hints = _attribution_hints(messages)
             context_hints = (_context_reference_hints(messages)
                              if any(issue["code"] == "M6_CONTEXT_REFERENCE" for issue in issues) else "")
+            preservation_hints = (
+                " Сохрани корректные bundles, fragments, signals, evidence, их ID и связи. "
+                "Исправь только ошибочные записи и затронутые зависимости."
+                if evidence_material is not None and isinstance(candidate, dict) else ""
+            )
             current_messages = [
                 *messages,
                 {"role": "assistant", "content": raw},
@@ -286,6 +289,7 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
                     + quote_turns
                     + (" " + _quote_feedback(issues) if quote_contract or quote_indices else "")
                     + _bundle_feedback(missing_ids)
+                    + preservation_hints
                     + context_hints
                     + attribution_hints
                 )},

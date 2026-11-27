@@ -159,21 +159,26 @@ def candidate_records(candidate: object, field: str):
             yield index, record
 
 
+def assemble_fragment(fragment: FragmentQuote, turns: dict, path: str, issues: ValidationIssues) -> dict | None:
+    turn = fragment_turn(turns, fragment.turn_id, path, issues)
+    if turn is None:
+        return None
+    start, reason = quote_position(turn["content"], fragment.quote)
+    if reason:
+        issues.add(reason, f"{path}.quote")
+        return None
+    return {**fragment.model_dump(), "start": start, "end": start + len(fragment.quote)}
+
+
 def assemble_analysis(value: dict, material: dict) -> dict:
     candidate = EvidenceCandidate.model_validate(value)
     turns = {item["turn_id"]: item for item in material["turns"]}
     issues = ValidationIssues()
     fragments = []
     for index, fragment in enumerate(candidate.fragments):
-        path = f"fragments.{index}"
-        turn = fragment_turn(turns, fragment.turn_id, path, issues)
-        if turn is None:
-            continue
-        start, reason = quote_position(turn["content"], fragment.quote)
-        if reason:
-            issues.add(reason, f"{path}.quote")
-            continue
-        fragments.append({**fragment.model_dump(), "start": start, "end": start + len(fragment.quote)})
+        assembled = assemble_fragment(fragment, turns, f"fragments.{index}", issues)
+        if assembled is not None:
+            fragments.append(assembled)
     issues.raise_if_any()
     return {**candidate.model_dump(), "schema_version": 1, "fragments": fragments}
 

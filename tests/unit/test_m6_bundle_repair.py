@@ -65,3 +65,89 @@ def test_retry_uses_full_response_path_when_bundle_ids_cannot_be_read(mechanism,
     assert rejected["error_code"] == ("M6_INVALID_JSON" if invalid_json else "M6_SCHEMA_VALIDATION")
     assert "missing_indicator_ids" not in rejected
     assert accepted["status"] == "accepted"
+
+
+@pytest.mark.parametrize("change,path", [
+    ("quote", "fragments.0.quote"),
+    ("observation", "signals.0.observation"),
+    ("indicator", "evidence.0.indicator_id"),
+    ("removal", "fragments.0.id"),
+])
+def test_repair_rejects_changes_to_verified_basis_at_the_field(mechanism, change, path):
+    def changed_reply(material):
+        result = complete_reply(material)
+        fragment, price = result["fragments"]
+        if change == "quote":
+            fragment.update({key: price[key] for key in ("quote", "start", "end") if key in price})
+        elif change == "observation":
+            result["signals"][0]["observation"] = "Запросил цену."
+        elif change == "indicator":
+            criterion = material["criteria"][2]
+            evidence = result["evidence"][0]
+            evidence["indicator_id"] = criterion["id"]
+            evidence["attribution"]["function"] = criterion["function"]
+            result["bundles"][0]["evidence_ids"] = []
+            result["bundles"][2]["evidence_ids"] = [evidence["id"]]
+        else:
+            for field in ("fragments", "signals", "evidence"):
+                result[field].pop(0)
+            result["bundles"][0]["evidence_ids"] = []
+        return result
+
+    def other_record_error(material):
+        result = complete_reply(material)
+        result["evidence"][1]["m2_version"] = "invalid-version"
+        return result
+
+    gateway = RecordedEvidenceGateway(other_record_error, changed_reply)
+    with pytest.raises(ValueError, match="M6_REPAIR_BASIS_") as failure:
+        evaluate(synthetic_material(TARGETS[:3]), mechanism, definition_checksum(mechanism), gateway=gateway)
+
+    assert len(gateway.calls) == 2
+    rejected, final = failure.value.ai_trace["validation_attempts"]
+    assert rejected["validation_errors"] == [{"code": "TARGET_SET_MISMATCH", "path": "evidence.1.m2_version"}]
+    assert final["status"] == "rejected"
+    code = "M6_REPAIR_BASIS_MISSING" if change == "removal" else "M6_REPAIR_BASIS_CHANGED"
+    assert {"code": code, "path": path} in final["validation_errors"]
+
+
+@pytest.mark.parametrize("reason,correct_turn,keep_observation", [
+    ("irrelevant", True, False),
+    ("unclear", True, True),
+    ("irrelevant", False, False),
+    ("unclear", True, False),
+], ids=["irrelevant-with-source", "unclear-with-observation", "wrong-source", "unclear-without-observation"])
+def test_repair_allows_only_grounded_reassessment(mechanism, reason, correct_turn, keep_observation):
+    def reassess(material):
+        result = complete_reply(material)
+        turn_id = result["fragments"][0]["turn_id"]
+        result["evidence"].pop(0)
+        result["bundles"][0]["evidence_ids"] = []
+        if not keep_observation:
+            result["fragments"].pop(0)
+            result["signals"].pop(0)
+        result["attribution_notes"] = [{
+            "indicator_id": "K1.I06", "reason": reason,
+            "explanation": "Намерение сверить сроки не показывает, какие сведения были отобраны для сообщения.",
+            "context_refs": [{"kind": "turn", "id": turn_id if correct_turn else "other-turn",
+                              "meaning": "Ход с намерением сверить сроки"}],
+        }]
+        return result
+
+    material = synthetic_material(TARGETS[:3])
+    material["turns"].append({"turn_id": "other-turn", "speaker_type": "system", "sequence_no": 2,
+                              "content": "Следующий вопрос ведущего."})
+    gateway = RecordedEvidenceGateway(partial_reply, reassess)
+    if correct_turn and (keep_observation or reason == "irrelevant"):
+        analysis, trace = evaluate(material, mechanism, definition_checksum(mechanism), gateway=gateway)
+        assert analysis["bundles"][0]["evidence_ids"] == []
+        assert analysis["attribution_notes"][0]["context_refs"][0]["id"] == "synthetic-turn"
+        assert trace["validation_attempts"][-1]["status"] == "accepted"
+        assert any(signal["id"] == "signal-schedule" for signal in analysis["signals"]) == keep_observation
+    else:
+        with pytest.raises(ValueError, match="M6_REPAIR_BASIS_MISSING") as failure:
+            evaluate(material, mechanism, definition_checksum(mechanism), gateway=gateway)
+        assert {"code": "M6_REPAIR_BASIS_MISSING", "path": "fragments.0.id"} in (
+            failure.value.ai_trace["validation_attempts"][-1]["validation_errors"]
+        )
+    assert len(gateway.calls) == 2

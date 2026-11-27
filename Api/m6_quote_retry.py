@@ -1,9 +1,13 @@
 """Continuity of the candidate's evidence basis across one provider retry."""
+from collections import Counter
 from dataclasses import dataclass
 
 from pydantic import ValidationError
 
-from Api.m6_contracts import ValidationIssues, candidate_records, fragment_turn, quote_position
+from Api.m6_contracts import (
+    Evidence, Fragment, FragmentQuote, Signal, ValidationIssues, assemble_fragment, candidate_records, fragment_turn,
+    quote_position, validate_analysis,
+)
 
 
 @dataclass(frozen=True)
@@ -12,6 +16,76 @@ class PriorFragment:
     ambiguous_quote: str | None
     has_signal: bool
     indicators: frozenset[str]
+
+
+@dataclass(frozen=True)
+class IndexedRecord:
+    index: int
+    value: dict
+
+
+@dataclass(frozen=True)
+class VerifiedEvidence:
+    evidence: IndexedRecord
+    sources: tuple[tuple[IndexedRecord, IndexedRecord], ...]
+
+
+def _typed_rows(value: object, field: str, model, turns: dict) -> list[IndexedRecord]:
+    records = [(index, record) for index, record in candidate_records(value, field)
+               if isinstance(record.get("id"), str)]
+    counts = Counter(record["id"] for _, record in records)
+    rows = []
+    for index, record in records:
+        if counts[record["id"]] != 1:
+            continue
+        try:
+            typed = model.model_validate(record)
+        except ValidationError:
+            continue
+        if isinstance(typed, FragmentQuote):
+            data = assemble_fragment(typed, turns, f"{field}.{index}", ValidationIssues())
+        else:
+            data = typed.model_dump()
+        if data is not None:
+            rows.append(IndexedRecord(index, data))
+    return rows
+
+
+def verified_basis(value: object, material: dict, *, quote_contract: bool) -> list[VerifiedEvidence]:
+    """Identify sound chains in a rejected answer using the usual contract checks."""
+    turns = {turn["turn_id"]: turn for turn in material["turns"]}
+    rows = {
+        "fragments": _typed_rows(value, "fragments", FragmentQuote if quote_contract else Fragment, turns),
+        "signals": _typed_rows(value, "signals", Signal, turns),
+        "evidence": _typed_rows(value, "evidence", Evidence, turns),
+    }
+    if not rows["evidence"]:
+        return []
+    # Bundle completeness is checked on the full retry. It does not determine whether an existing source is valid.
+    projection = {"schema_version": 1, "bundles": [], "attribution_notes": [],
+                  **{field: [record.value for record in records] for field, records in rows.items()}}
+    try:
+        validate_analysis(projection, material, enforce_simple_basis=True)
+    except ValueError as error:
+        failures = getattr(error, "validation_issues", [])
+        if not failures or any(issue["path"] == "criteria" for issue in failures):
+            return []
+    else:
+        failures = []
+    invalid = {tuple(issue["path"].split(".")[:2]) for issue in failures if issue["code"] != "M6_BUNDLE_REFERENCE"}
+    valid = {
+        field: {record.value["id"]: record for index, record in enumerate(records) if (field, str(index)) not in invalid}
+        for field, records in rows.items()
+    }
+    verified = []
+    for evidence in valid["evidence"].values():
+        try:
+            signals = [valid["signals"][identifier] for identifier in evidence.value["bs_ids"]]
+            sources = tuple((signal, valid["fragments"][signal.value["fragment_id"]]) for signal in signals)
+        except KeyError:
+            continue
+        verified.append(VerifiedEvidence(evidence, sources))
+    return verified
 
 
 def _links(value: dict, indicators: set[str]) -> tuple[set[str], dict[str, set[str]]]:
@@ -70,20 +144,56 @@ def rejected_basis(value: object, material: dict, error: ValueError) -> dict[str
     return prior
 
 
-def validate_repaired_basis(value: dict, prior: dict[str, PriorFragment]) -> None:
-    issues = ValidationIssues()
-    fragments = {item["id"]: (index, item) for index, item in enumerate(value["fragments"])}
-    indicators = {indicator for basis in prior.values() for indicator in basis.indicators}
-    with_signal, links = _links(value, indicators)
+def _reassessment_reasons(value: dict) -> set[tuple[str, str, str]]:
     empty_indicators = {bundle["indicator_id"] for bundle in value["bundles"] if not bundle["evidence_ids"]}
     empty_indicators.difference_update(item["indicator_id"] for item in value["evidence"])
-    reasons = {
+    return {
         (note["indicator_id"], ref["id"], note["reason"])
         for note in value["attribution_notes"]
         if note["indicator_id"] in empty_indicators and note["explanation"].strip()
         for ref in note["context_refs"]
         if ref["kind"] == "turn" and ref["meaning"].strip()
     }
+
+
+def validate_verified_basis(value: dict, prior: list[VerifiedEvidence]) -> None:
+    reasons = _reassessment_reasons(value)
+    required: dict[str, dict[str, IndexedRecord]] = {"fragments": {}, "signals": {}, "evidence": {}}
+    for basis in prior:
+        evidence = basis.evidence
+        indicator = evidence.value["indicator_id"]
+        evidence_required = False
+        for signal, fragment in basis.sources:
+            turn_id = fragment.value["turn_id"]
+            if (indicator, turn_id, "irrelevant") in reasons:
+                continue
+            required["fragments"][fragment.value["id"]] = fragment
+            required["signals"][signal.value["id"]] = signal
+            if (indicator, turn_id, "unclear") not in reasons:
+                evidence_required = True
+        if evidence_required:
+            required["evidence"][evidence.value["id"]] = evidence
+
+    issues = ValidationIssues()
+    for field, records in required.items():
+        current = {record["id"]: (index, record) for index, record in enumerate(value[field])}
+        for identifier, original in records.items():
+            if identifier not in current:
+                issues.add("M6_REPAIR_BASIS_MISSING", f"{field}.{original.index}.id")
+                continue
+            index, record = current[identifier]
+            for key, previous in original.value.items():
+                if record[key] != previous:
+                    issues.add("M6_REPAIR_BASIS_CHANGED", f"{field}.{index}.{key}")
+    issues.raise_if_any()
+
+
+def validate_repaired_basis(value: dict, prior: dict[str, PriorFragment]) -> None:
+    issues = ValidationIssues()
+    fragments = {item["id"]: (index, item) for index, item in enumerate(value["fragments"])}
+    indicators = {indicator for basis in prior.values() for indicator in basis.indicators}
+    with_signal, links = _links(value, indicators)
+    reasons = _reassessment_reasons(value)
     for identifier, basis in prior.items():
         turn_id = basis.participant_turn_id
         irrelevant = {indicator for indicator in basis.indicators if (indicator, turn_id, "irrelevant") in reasons}
