@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from Api.assessment_processing_status import read_processing_status
 from Api import m7_cycle_planner, participant_profile
 from Api import m5_scenario_runtime, m7_completion
 from Api import qa_orchestration
@@ -478,10 +479,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
             }
     from Api.m7_completion import finish_availability
     availability = finish_availability(connection, current) if current and current['status']=='scenario_ended' else None
-    pipeline = connection.execute(
-        "SELECT status,stage,error_code,latest_report_id FROM m10_pipeline_runs WHERE cycle_db_id=%s",
-        (cycle["id"],),
-    ).fetchone()
+    pipeline, failure, failed_turn_id = read_processing_status(connection, cycle_id)
     continuation = connection.execute(
         "SELECT id,status FROM m7_continuation_intents WHERE cycle_db_id=%s ORDER BY created_at DESC LIMIT 1",
         (cycle["id"],),
@@ -493,9 +491,10 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
                     for item in position["history"]}
     visible_situations = [x for x in situations
                           if not route["positions"] or str(x["assessment_situation_id"]) in attached_ids]
-    report_preparation = observation.report_status(connection, cycle_id) if status['collection_status'] in {
+    report_preparation = observation.report_status(connection, cycle_id) if not failure and status['collection_status'] in {
         'collection_closed', 'calculation_pending', 'calculated', 'failed'} else None
     return {
+        "failure_stage": failure, "failed_answer_turn_id": failed_turn_id,
         "report_preparation": report_preparation,
         "runtime_kind": "cycle", "cycle_id": cycle_id, "plan": participant_plan(plan), "status": status,
         "between_situations": between_situations, "participant_progress": participant_progress,
@@ -519,7 +518,7 @@ def read_runtime(connection, *, cycle_id: str) -> dict:
         "answer_processing": answer_processing,
         "continuation": ({"intent_id": str(continuation["id"]), "status": continuation["status"]}
                          if continuation else None),
-        "pipeline": dict(pipeline) if pipeline else None,
+        "pipeline": pipeline,
         **({
             "preparation_operation": _next_operation(connection, cycle_id),
             "next_presentation": next_presentation,

@@ -3,4 +3,4 @@
 // read errors, failed processing and unknown receipts never satisfy this check.
 export const settledAnswerStatus = page => page.locator('#interview-error[hidden]').or(
   page.locator('#interview-error.processing-notice[data-tone="neutral"]')
-    .filter({ hasText: /^Ответ сохранён\.(?:$| (?:Ожидайте завершения обработки\.|Состояние обработки уточняется\.|Обработка занимает больше времени\.))/ }));
+    .filter({ hasText: /^Ответ сохранён\.(?:$| (?:Идёт обработка|Состояние обработки уточняется\.|Обработка занимает больше времени\.))/ }));

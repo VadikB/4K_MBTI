@@ -40,7 +40,7 @@ test('C2 background trace update preserves reading position and the exact draft'
 
 test('C3/C6 current receipt is above composer; fresh/delayed/failed/read failure use server facts', () => {
   const h = setup(), s = waiting(h); h.subject.renderProductRuntime(s);
-  assert.match(notice(h), /Ответ сохранён\. Ожидайте завершения обработки\./);
+  assert.match(notice(h), /Ответ сохранён\. Идёт обработка/);
   assert.match(notice(h), /Время на ответы сейчас не расходуется/);
   assert.equal(h.context.interviewSubmitLabel.textContent, 'Отправить');
   // Existing wait budget; elapsed time alone never declares a failed pipeline.
@@ -49,13 +49,13 @@ test('C3/C6 current receipt is above composer; fresh/delayed/failed/read failure
   delayed.subject.renderProductRuntime(s); assert.match(notice(delayed), /Обработка занимает больше времени/);
   assert.doesNotMatch(notice(delayed), /завис|завершилась ошибкой/);
   s.pipeline.status = 'failed'; h.subject.renderProductRuntime(s);
-  assert.match(notice(h), /Ответ сохранён\. Не удалось завершить обработку\./);
+  assert.match(notice(h), /Произошла ошибка обработки\. Подробности пока недоступны/);
   s.pipeline.status = 'running'; h.subject.renderProductRuntime(s);
   h.subject.showInterviewRuntimeError(new Error('offline'));
-  assert.match(notice(h), /Ответ сохранён\. Не удалось обновить состояние\./);
+  assert.match(notice(h), /Не удалось обновить состояние/);
   assert.doesNotMatch(notice(h), /Ожидайте завершения|Обработка продолжается|сейчас не расходуется/);
   h.subject.restoreInterviewActionControls(); assert.match(notice(h), /Не удалось обновить состояние/);
-  h.subject.renderProductRuntime(s); assert.match(notice(h), /Ожидайте завершения/);
+  h.subject.renderProductRuntime(s); assert.match(notice(h), /Идёт обработка/);
 });
 
 test('C6 historical user Turn followed by a character is not a current answer receipt', () => {
@@ -117,7 +117,7 @@ test('C6 conclusive receipt read survives retirement of the pending operation an
   h.context.loadProductRuntime = async () => { throw new Error('runtime unavailable'); };
   const result = await h.subject.sendProductInterviewAnswer(op.text);
   assert.equal(result.accepted, true); assert.equal(h.subject.readProductInterviewAnswer(), null);
-  assert.match(notice(h), /Ответ сохранён\. Не удалось обновить состояние\./);
+  assert.match(notice(h), /Не удалось обновить состояние/);
   assert.doesNotMatch(notice(h), /продолжается|Ожидайте завершения|сейчас не расходуется/);
 });
 

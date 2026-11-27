@@ -68,7 +68,10 @@ test('REPORT-06 one card per Cycle, pages, exact report and return context', asy
   rows = [{ ...history[0], report_id: null, status: 'failed' }];
   await page.locator('.cycle-report button').click();
   await expect(page.locator('.cycle-report')).toHaveCount(1);
-  await expect(page.locator('.cycle-report')).toContainText('Не удалось подготовить отчёт');
+  await expect(page.locator('.cycle-report')).toContainText('Произошла ошибка обработки. Подробности пока недоступны');
+  rows = [{ ...history[0], report_id: null, status: 'failed', failure_stage: 'report' }];
+  await page.locator('.cycle-report button').click();
+  await expect(page.locator('.cycle-report')).toContainText('Прохождение завершено. Не удалось сформировать итоговый отчёт.');
   rows = [{ ...history[0], status: 'report_ready' }];
   await page.locator('.cycle-report button').click();
   await expect(page.locator('.cycle-report')).toHaveCount(1);

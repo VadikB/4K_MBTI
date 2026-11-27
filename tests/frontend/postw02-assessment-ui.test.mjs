@@ -62,12 +62,12 @@ test('failed, WAIT_TECHNICAL and unreadable state have distinct feedback; ASK is
   h.subject.renderProductRuntime(saved);
   h.setFetch(async () => { throw new TypeError('offline'); });
   await h.context.interviewError.children.at(-1).listeners.get('click')();
-  assert.equal(h.errors.at(-1), 'Не удалось обновить состояние.');
-  assert.equal(h.context.interviewError.dataset.tone, 'neutral');
+  assert.equal(h.errors.at(-1), 'Не удалось обновить состояние');
+  assert.equal(h.context.interviewError.dataset.tone, 'failed');
   saved.pipeline.status = 'failed';
   h.subject.renderProductRuntime(saved);
   assert.equal(h.context.interviewError.dataset.tone, 'failed');
-  assert.match(h.errors.at(-1), /Не удалось завершить обработку/);
+  assert.match(h.errors.at(-1), /Произошла ошибка обработки/);
   saved.pipeline.status = 'running'; saved.finish_availability.reason = 'WAIT_TECHNICAL';
   h.subject.renderProductRuntime(saved);
   assert.equal(h.context.interviewError.dataset.tone, 'neutral');

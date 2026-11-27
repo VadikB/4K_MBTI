@@ -1,3 +1,4 @@
+import { participantFailureMessage } from '../assessment-processing-status.js';
 import { downloadReportPdf, resetReportDownload, withReportDeadline } from '../utils/report-download.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import {
@@ -1517,13 +1518,17 @@ export const openReport = (options = {}) => {
         () => refocus(document.getElementById('m8-report-title')), (error) => {
           if (!isCurrent()) return;
           if ([401, 403].includes(error.status)) {
-            stateNode.textContent = 'Нет доступа к этой редакции отчёта.';
+            stateNode.textContent = selectedReportId ? 'Нет доступа к этой редакции отчёта.' : 'Нет доступа к этой оценке.';
           } else if (error.status === 404) {
-            stateNode.textContent = 'Сохранённая редакция отчёта не найдена.';
+            stateNode.textContent = selectedReportId ? 'Сохранённая редакция отчёта не найдена.' : 'Оценка не найдена.';
           } else {
-            stateNode.innerHTML = 'Не удалось открыть результат. <button class="ghost-button compact-ghost" type="button">Повторить</button>';
-            const retry = stateNode.querySelector('button');
+            stateNode.textContent = selectedReportId ? 'Не удалось открыть результат. ' : 'Не удалось обновить состояние ';
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.className = 'ghost-button compact-ghost';
+            retry.textContent = selectedReportId ? 'Повторить' : 'Проверить состояние';
             retry.addEventListener('click', load, { once: true });
+            stateNode.append(retry);
             refocus(retry);
             return;
           }
@@ -2044,13 +2049,14 @@ const loadM8Report = async (cycleId, reportId, isCurrent, ownerId, customerAcces
   if (!reportId) {
     const status = await withReportDeadline(async (signal) => readApiResponse(
       await fetch(`/users/assessment/m8/cycles/${encodeURIComponent(cycleId)}/status`, { cache: 'no-store', signal }),
-      'Не удалось загрузить состояние отчёта.'));
+      'Не удалось обновить состояние'));
     if (!isCurrent()) return;
     if (status.cycle_id && String(status.cycle_id) !== String(cycleId)) throw new Error('Получен статус другой оценки.');
-    if (status.results_status !== 'ready'
-      || !['ready', 'limited', 'no_result'].includes(status.report_status) || !status.report_id) {
+    if (!['ready', 'limited', 'no_result'].includes(status.report_status) || !status.report_id) {
+      const collectionOpen = ['active', 'paused', 'interrupted'].includes(status.collection_status);
       stateNode.textContent = status.results_status === 'failed' || status.report_status === 'failed'
-        ? 'Не удалось подготовить отчёт. Ответы сохранены.' : 'Оценка завершена. Готовим ваш отчёт';
+        ? participantFailureMessage(status.failure_stage)
+        : collectionOpen ? 'Сбор ответов ещё открыт' : 'Оценка завершена. Готовим ваш отчёт';
       document.getElementById('m8-report-skills').replaceChildren();
       return;
     }

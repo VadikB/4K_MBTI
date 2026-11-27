@@ -36,6 +36,13 @@ def runtime(monkeypatch):
         def execute(self, sql, params=()):
             queries.append(sql)
             assert sql.strip().startswith('SELECT') and 'FOR UPDATE' not in sql
+            if 'pipeline.error_code AS pipeline_error_code' in sql:
+                assert params == (cycle_id,)
+                return Result([{
+                    'cycle_id': cycle_id, 'cycle_status': cycle['status'], 'collection_closed_at': None,
+                    'pipeline_status': None, 'pipeline_stage': None,
+                    'pipeline_error_code': None, 'latest_report_id': None,
+                }])
             if 'profile_ref_json FROM m5_cycles' in sql: return Result([cycle])
             if 'FROM m5_assessment_situations WHERE cycle_db_id' in sql: return Result([situation])
             if 'p.state IN(' in sql: return Result([situation])
@@ -78,6 +85,7 @@ def test_runtime_and_return_use_same_validated_plan_not_materialized_count(runti
         assert value['participant_progress']['current_position_no'] == 3
         if suffix.endswith('/runtime'):
             assert value['blocking_system_wait'] is True
+            assert value['failure_stage'] is None and value['pipeline'] is None
             assert value['route']['progress']['total_positions'] == 8
         else:
             assert value['allowed_action'] == 'continue_current'

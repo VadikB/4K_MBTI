@@ -110,7 +110,7 @@ for (const width of [1440, 390, 320]) {
       openProcessing({ cycleId: cycle });
     }, { cycle });
     const outcome = page.locator('#processing-outcome-card');
-    await expect(outcome.getByRole('heading', { name: 'Не удалось подготовить результат' })).toBeVisible();
+    await expect(outcome.getByRole('heading', { name: 'Произошла ошибка обработки. Подробности пока недоступны' })).toBeVisible();
     const participantCheck = outcome.getByRole('button', { name: 'Проверить состояние' });
     await participantCheck.focus();
     await expect(participantCheck).toBeFocused();
