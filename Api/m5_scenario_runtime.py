@@ -169,6 +169,16 @@ def _next_sequence(connection, as_db_id: int) -> int:
     return int(row["n"])
 
 
+def latest_material_sequence(connection, as_db_id: int) -> int:
+    """The M7 question can be presented without extending the assessed material."""
+    row = connection.execute("""SELECT MAX(sequence_no) AS boundary FROM (
+        SELECT sequence_no FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s
+          AND NOT (speaker_type='assessment' AND speaker_id='m7-clarification')
+        UNION ALL SELECT sequence_no FROM m5_scenario_events WHERE assessment_situation_db_id=%s
+        ) material""", (as_db_id, as_db_id)).fetchone()
+    return row["boundary"] or 0
+
+
 def build_execution_envelope(connection, row: dict) -> dict:
     snapshot = row["snapshot_json"]
     if checksum(snapshot) != row["snapshot_checksum"]:
