@@ -2150,14 +2150,40 @@ if (adminOrganizationsList) {
       dialog.setAttribute('aria-labelledby', 'admin-member-processing-title');
       dialog.innerHTML = '<form method="dialog"><div><h3 id="admin-member-processing-title"></h3>' +
         '<button type="submit" class="dialog-close" aria-label="Закрыть пояснение">×</button></div>' +
-        '<p data-processing-description></p><p>Отчёт можно открыть только после готовности и при наличии права просмотра.</p>' +
+        '<p data-processing-description></p><p role="status"></p>' +
+        '<button type="button" class="text-button" data-processing-check>Проверить состояние</button>' +
         '<button type="submit" class="primary-button">Закрыть</button></form>';
-      dialog.querySelector('h3').textContent = button.hasAttribute('data-processing-failed')
-        ? 'Ошибка обработки результата' : 'Обработка результата';
-      dialog.querySelector('[data-processing-description]').textContent = button.dataset.stageDescription ||
-        'Текущий этап подтверждён сервером.';
+      const render = (entry) => {
+        dialog.querySelector('h3').textContent = entry.dataset.processingTitle;
+        dialog.querySelector('[data-processing-description]').textContent = entry.dataset.stageDescription;
+      };
+      render(button);
+      const epoch = state.identityEpoch;
+      const check = dialog.querySelector('[data-processing-check]');
+      let trigger = button;
+      check.addEventListener('click', () => {
+        const isCurrent = () => dialog.open && epoch === state.identityEpoch && state.currentScreen === 'admin-organizations';
+        check.disabled = true;
+        withScreen(loadAdminOrganizations, async (module) => {
+          const refreshed = await module.refreshAdminOrganizationsSafely({ isCurrent, announce: false });
+          if (!isCurrent()) return;
+          check.disabled = false;
+          if (!refreshed) {
+            dialog.querySelector('[role="status"]').textContent = 'Не удалось обновить состояние';
+            return;
+          }
+          trigger = adminOrganizationsList.querySelector('[data-action="open-member-processing"][data-assignment-id="' +
+            CSS.escape(button.dataset.assignmentId) + '"]');
+          if (!trigger) {
+            dialog.close();
+            return;
+          }
+          render(trigger);
+          dialog.querySelector('[role="status"]').textContent = 'Состояние обновлено.';
+        });
+      });
       document.body.append(dialog);
-      dialog.addEventListener('close', () => { dialog.remove(); button.focus(); }, { once: true });
+      dialog.addEventListener('close', () => { dialog.remove(); trigger?.focus(); }, { once: true });
       dialog.showModal();
       dialog.querySelector('.dialog-close')?.focus();
       return;

@@ -4,6 +4,7 @@ import json
 from collections import defaultdict
 from uuid import UUID, uuid4
 
+from Api.assessment_processing_status import PARTICIPANT_MESSAGES, failure_stage
 from Api.assessment_configuration import definition_checksum
 from Api.m5_case_runtime import checksum
 from Api import m7_completion
@@ -639,8 +640,9 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             'collection_closed_at':row['collection_closed_at'],
             'processing_status':row['processing_status'], 'processing_stage':row['processing_stage'],
             'processing_error':row['processing_error'],
-            'processing_message':('Не удалось завершить техническую обработку. Сохранённые ответы не потеряны.'
-                                  if row['processing_status']=='failed' else None),
+            'failure_stage':failure_stage(collection_closed_at=row['collection_closed_at'],
+                cycle_status=row['cycle_status'], pipeline_status=row['processing_status'],
+                pipeline_stage=row['processing_stage']),
             'allowed_actions':[],
             'results_revision_id':str(row['results_revision_id']) if row['results_revision_id'] else None,
             'results_revision_no':row['results_revision_no'],
@@ -667,8 +669,9 @@ def list_owned_cycles(connection, user_id: int) -> list[dict]:
             'failed' if item['processing_status']=='failed' or item['cycle_status']=='failed' else
             'results_ready' if item['results_revision_id'] else
             'processing' if item['cycle_status'] in {'collection_closed','calculation_pending','calculated'} else 'collecting')
-        if item['status'] == 'report_ready':
-            item['processing_message'] = None
+        if item['status'] == 'report_ready' and item['failure_stage'] == 'unknown':
+            item['failure_stage'] = None
+        item['processing_message'] = PARTICIPANT_MESSAGES.get(item['failure_stage'])
     return list(cycles.values())
 
 

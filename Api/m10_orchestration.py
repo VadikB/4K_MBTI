@@ -20,7 +20,7 @@ from Api.cycle_execution_manifest import resolve_cycle_dependency
 logger = logging.getLogger(__name__)
 PROCESSING_CONTRACT_VERSION = "m10-processing-recovery/1.0.0"
 RECOVERABLE_STAGES = frozenset({
-    "admission_processing_failed", "report_failed", "processing_failed", "recovery_failed",
+    "admission_processing_failed", "report_failed", "calculation_failed", "processing_failed", "recovery_failed",
 })
 _stop = threading.Event()
 _thread = None
@@ -318,6 +318,7 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
     heartbeat = threading.Thread(target=renew_claim, name="m10-report-claim", daemon=True)
     heartbeat.start()
     cycle_id = str(row["cycle_id"])
+    failure_stage = 'processing_failed'
     try:
         try:
             saved_report = m8_results.read_latest_report(connection, cycle_id, "assessee")
@@ -339,12 +340,14 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
         c46 = m7_completion.read_c46(connection, cycle_id)
         connection.commit()
         observation.record(observer, 'results', heartbeat=True)
+        failure_stage = 'calculation_failed'
         calculation = m6_cycle_aggregation_repository.create_substantive_detached(
             cycle_id=cycle_id,
             key=f"product-calculation:{c46['composition_checksum']}:{ADMISSION_VERSION}",
             expected_composition_checksum=c46["composition_checksum"],
             created_by=int(row["created_by"]), gateway=gateway, connection_factory=factory,
         )
+        failure_stage = 'processing_failed'
         results = m8_results.create_results(connection, cycle_id=cycle_id, calculation_id=calculation["id"],
             key=f"product-results:{calculation['id']}", target_profile=None, created_by=int(row["created_by"]))
         connection.commit()
@@ -369,7 +372,7 @@ def _finalize_cycle(connection, gateway=None, connection_factory=None) -> bool:
         return True
     except Exception as exc:
         connection.rollback()
-        _set_state(connection, int(row["id"]), status="failed", stage="processing_failed",
+        _set_state(connection, int(row["id"]), status="failed", stage=failure_stage,
                    error=type(exc).__name__, created_by=int(row["created_by"]))
         return True
     finally:
@@ -455,6 +458,7 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
         raise ValueError("M10_RECOVERY_FROZEN_INPUT_MISMATCH")
     connection.execute("UPDATE m10_processing_recoveries SET status='running',started_at=NOW() WHERE id=%s", (row["id"],))
     observer_heartbeat = None
+    failure_stage = 'recovery_failed'
     try:
         c46 = m7_completion.read_c46(connection, str(row["cycle_id"]))
         connection.commit()
@@ -475,19 +479,23 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
                 connection, saved_results["results"]["c56_ref"]["calculation_id"])
         else:
             observation.record(observer, 'results', heartbeat=True)
+            failure_stage = 'calculation_failed'
             calculation = m6_cycle_aggregation_repository.create_substantive_detached(
                 cycle_id=str(row["cycle_id"]),
                 key=f"processing-recovery:{row['id']}:{ADMISSION_VERSION}",
                 expected_composition_checksum=c46["composition_checksum"], created_by=int(row["created_by"]), gateway=gateway,
                 connection_factory=factory)
+            failure_stage = 'recovery_failed'
             results = m8_results.create_results(connection, cycle_id=str(row["cycle_id"]), calculation_id=calculation["id"],
                 key=f"processing-recovery-results:{row['id']}", target_profile=None, created_by=int(row["created_by"]))
             connection.commit()
         observation.record(observer, 'report', heartbeat=True)
+        failure_stage = 'report_failed'
         report = m8_results.create_report_detached(results_revision_id=results["revision_id"], audience="assessee",
             key="product-report:assessee" if saved_results else f"processing-recovery-report:{row['id']}",
             target_profile=None, created_by=int(row["created_by"]), gateway=gateway, connection_factory=factory,
             service_recovery=True)
+        failure_stage = 'recovery_failed'
         failure = _processing_failure(calculation)
         status = "failed" if failure else "succeeded"
         connection.execute("""UPDATE m10_processing_recoveries SET status=%s,finished_at=NOW(),calculation_id=%s,
@@ -502,7 +510,7 @@ def _process_recovery(connection, gateway=None, connection_factory=None) -> bool
     except Exception as exc:
         connection.execute("""UPDATE m10_processing_recoveries SET status='failed',finished_at=NOW(),error_code=%s
             WHERE id=%s""", (type(exc).__name__, row["id"]))
-        _set_state(connection, int(row["cycle_db_id"]), status="failed", stage="recovery_failed",
+        _set_state(connection, int(row["cycle_db_id"]), status="failed", stage=failure_stage,
                    error="M10_PROCESSING_RECOVERY_FAILED", origin="authorized_recovery",
                    created_by=int(row["created_by"]))
     finally:

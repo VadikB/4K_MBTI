@@ -1,3 +1,4 @@
+import { participantFailureMessage } from '../assessment-processing-status.js';
 import { reportHeader } from '../components/report-header.js';
 import { bindReportPdf } from '../utils/report-download.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
@@ -13,12 +14,11 @@ let historyRequestEpoch = 0;
 const statusLabels = {
   processing: 'Отчёт готовится',
   results_ready: 'Результат готов, отчёт готовится',
-  failed: 'Не удалось подготовить отчёт. Ответы сохранены.',
   report_ready: 'Отчёт доступен',
 };
 
 export const renderReportsPage = () => {
-  const closedStatuses = new Set(['processing', 'results_ready', 'failed', 'report_ready']);
+  const closedStatuses = new Set(['processing', 'results_ready', 'report_ready']);
   const cycles = (state.reportHistoryCycles || []).filter((item) =>
     item.collection_closed_at || closedStatuses.has(item.status));
   profileHistoryList.replaceChildren();
@@ -34,8 +34,8 @@ export const renderReportsPage = () => {
     const card = document.createElement('article');
     card.className = 'profile-history-accordion cycle-report';
     card.dataset.cycleId = item.cycle_id;
-    const label = item.status === 'report_ready' && item.report_id
-      ? statusLabels.report_ready : statusLabels[item.status] || statusLabels.processing;
+    const label = item.status === 'failed' || item.failure_stage ? participantFailureMessage(item.failure_stage)
+      : statusLabels[item.status] || statusLabels.processing;
     card.innerHTML = `<h3>${escapeHtml(item.program_name || 'Программа оценки не указана')}</h3>` +
       `<p class="cycle-report-date">${escapeHtml(formatProfileDate(item.collection_closed_at))}</p>` +
       `<p class="cycle-report-status">${escapeHtml(label)}</p>`;

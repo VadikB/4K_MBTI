@@ -1,4 +1,5 @@
 import { createAnswerDrafts, draftSlot } from '../answer-drafts.js';
+import { participantFailureMessage } from '../assessment-processing-status.js';
 import { renderPreparation } from '../preparation-status.js';
 import {
   state,
@@ -136,6 +137,7 @@ export const showInterviewRuntimeError = (error) => {
   const pending = readProductInterviewAnswer()
     || productInterviewRequests.get(productInterviewRequestKey(productInterviewAnswerScope()));
   if (confirmedProductInterviewSnapshot && (productProcessingPending(confirmedProductInterviewSnapshot)
+      || productProcessingFailed(confirmedProductInterviewSnapshot)
       || confirmedProductInterviewSnapshot.blocking_system_wait === true || pending?.accepted || pending?.status === 'saved'
       || ['unknown', 'rejected'].includes(pending?.status) || currentProductInterviewReceipt(confirmedProductInterviewSnapshot, pending))) {
     productInterviewReadFailure = productInterviewNoticeKey();
@@ -397,7 +399,7 @@ const currentProductInterviewReceipt = (snapshot, operation) => {
   const last = turns.reduce((a, b) => !a || b.sequence_no > a.sequence_no ? b : a, null);
   const turn = answerId ? turns.find(item => item.turn_id === answerId) : last;
   // On reload only the current last answer or the exact M7 answer is conclusive.
-  return turn?.speaker_type === 'assessee' && (turn.request_id || answerId)
+  return turn?.speaker_type === 'assessee' && turn.turn_id
     ? { turnId: turn.turn_id, requestId: turn.request_id, clarificationId: answerId ? snapshot.clarification.id : null } : null;
 };
 const clearProductInterviewNotice = () => {
@@ -486,8 +488,7 @@ const renderProductInterviewNotice = (snapshot) => {
     return true;
   }
   if (unread && (waiting || receipt || failed)) {
-    showProductCommandRecovery(scope, receipt ? 'Ответ сохранён. Не удалось обновить состояние.'
-      : 'Не удалось обновить состояние.', { ...statusOptions, failed: Boolean(receipt) });
+    showProductCommandRecovery(scope, 'Не удалось обновить состояние', { ...statusOptions, failed: true });
     return true;
   }
   if (receipt && operation && !receiptInTrace) {
@@ -496,15 +497,16 @@ const renderProductInterviewNotice = (snapshot) => {
   }
   if ((waiting || failed) && !question) {
     const saved = receipt ? 'Ответ сохранён. ' : '';
-    const delayed = Date.now() >= productProcessingBudget(snapshot);
-    const message = failed ? saved + (processing ? 'Сбой обработки.' : 'Не удалось завершить обработку.')
+    const savedFailure = snapshot.failure_stage === 'answer' && snapshot.failed_answer_turn_id
+      && (!operation || receipt?.turnId === snapshot.failed_answer_turn_id);
+    const message = failed ? participantFailureMessage(savedFailure ? 'answer' : 'unknown')
       : receipt && !receiptInTrace ? saved + 'Состояние обработки уточняется.'
       : snapshot.finish_availability?.reason === 'WAIT_TECHNICAL' ? saved + 'Состояние обработки требует проверки.'
-      : delayed ? saved + 'Обработка занимает больше времени.'
-      : saved + 'Ожидайте завершения обработки.';
+      : Date.now() >= productProcessingBudget(snapshot) ? saved + 'Обработка занимает больше времени.'
+      : receipt ? 'Ответ сохранён. Идёт обработка' : 'Ожидайте завершения обработки.';
     const detail = !failed && receiptInTrace && snapshot.blocking_system_wait === true
       ? 'Время на ответы сейчас не расходуется.' : '';
-    showProductCommandRecovery(scope, message, { ...statusOptions, failed, detail });
+    showProductCommandRecovery(scope, message, { ...(failed ? options : statusOptions), failed, detail });
     return true;
   }
   const last = (snapshot.trace?.turns || []).reduce((a, b) => !a || b.sequence_no > a.sequence_no ? b : a, null);
@@ -541,8 +543,10 @@ const productProcessingBudget = (snapshot) => {
   return deadline;
 };
 
-const productProcessingFailed = (snapshot) => snapshot?.pipeline?.status === 'failed'
-  || snapshot?.finish_availability?.reason === 'ANALYSIS_FAILED';
+const productProcessingFailed = (snapshot) => snapshot?.finish_availability?.allowed !== true
+  && (Boolean(snapshot?.failure_stage) || snapshot?.pipeline?.status === 'failed'
+    || snapshot?.finish_availability?.reason === 'ANALYSIS_FAILED'
+    || ['failed', 'rejected_late'].includes(snapshot?.answer_processing?.status));
 
 const productRuntimePollAllowed = () => confirmedProductInterviewSnapshot?.between_situations
   || !(productProcessingPending(confirmedProductInterviewSnapshot)
@@ -1338,15 +1342,17 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
     renderPreparation(preparationPanel, snapshot.report_preparation);
   } else preparationPanel?.remove();
   const sourceReady = productInterviewSourceReady(snapshot);
+  const processingFailed = !waitingQuestion && productProcessingFailed(snapshot);
   const answerProcessing = snapshot.answer_processing?.status;
-  confirmedProductInterviewCanSend = !interviewSubmitButton.disabled && sourceReady && snapshot.blocking_system_wait !== true
+  confirmedProductInterviewCanSend = !interviewSubmitButton.disabled && sourceReady && !processingFailed && snapshot.blocking_system_wait !== true
     && answerProcessing !== 'pending' && answerProcessing !== 'failed';
-  interviewTextarea.disabled ||= !sourceReady;
+  interviewTextarea.disabled ||= !sourceReady || processingFailed;
   interviewSubmitButton.disabled = !confirmedProductInterviewCanSend;
   if (interviewTextarea.labels?.[0]) interviewTextarea.labels[0].textContent = waitingQuestion
     ? 'Ваш ответ на уточнение' : 'Ваше сообщение';
   interviewTextarea.placeholder = closed ? 'Сбор ответов завершён.'
     : suspended ? 'Отправка недоступна до продолжения оценки.'
+    : processingFailed ? ''
     : current?.status === 'scenario_ended' && !waitingQuestion
       ? snapshot.finish_availability?.allowed === true ? 'Ответы приняты. Можно завершить ситуацию.' : 'Дождитесь завершения обработки'
       : waitingQuestion ? 'Ответьте на уточнение…'
@@ -1354,7 +1360,7 @@ const renderProductRuntime = (snapshot, { fresh = true } = {}) => {
           : 'Напишите свой ответ…';
   interviewTextarea.readOnly = false;
   renderProductInterviewAnswerDelivery(snapshot, pendingAnswer);
-  if (interviewTextarea.disabled && sourceReady && !closed && !suspended) {
+  if (interviewTextarea.disabled && sourceReady && !closed && !suspended && !processingFailed) {
     interviewTextarea.placeholder = 'Дождитесь обновления состояния';
   }
   const sendingAnswer = productInterviewRequests.get(productInterviewRequestKey(commandScope));

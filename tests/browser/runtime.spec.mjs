@@ -388,14 +388,14 @@ test('S10-A and T11-10 positive, clarification and saved Report/PDF',async({page
  await page.route(detailPattern,route=>route.fulfill({json:{collection_status:'collection_closed',
   results_status:'failed',report_status:'not_created',processing:{status:'failed',allowed_actions:[]}}}));
  await page.reload();
- await expect(page.locator('#processing-outcome-title')).toHaveText('Не удалось подготовить результат');
+ await expect(page.locator('#processing-outcome-title')).toHaveText('Произошла ошибка обработки. Подробности пока недоступны');
  await page.screenshot({path:path.join(stand.dir,'outcome-failed-1440.png'),fullPage:true});
  await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:path.join(stand.dir,'outcome-failed-390.png'),fullPage:true});
  await page.unroute(detailPattern);
  await page.route(detailPattern,route=>route.abort());
- await page.locator('#processing-panel').getByRole('button',{name:'Проверить ещё раз',exact:true}).click();
- await expect(page.locator('#processing-outcome-notice')).toContainText('Не удалось проверить готовность');
+ await page.locator('#processing-panel').getByRole('button',{name:'Проверить состояние',exact:true}).click();
+ await expect(page.locator('#processing-outcome-notice')).toContainText('Не удалось обновить состояние');
  await page.screenshot({path:path.join(stand.dir,'outcome-offline-390.png'),fullPage:true});
  await page.setViewportSize({width:1440,height:1000});
  await page.screenshot({path:path.join(stand.dir,'outcome-offline-1440.png'),fullPage:true});

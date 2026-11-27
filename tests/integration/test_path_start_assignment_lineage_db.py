@@ -41,7 +41,7 @@ def lineage_db(test_database_url):
             'm7_plan_revisions': 'plan_id bigint,revision_no int,content_json jsonb',
             'm5_assessment_situations': 'id bigint,cycle_db_id bigint,status text',
             'm7_route_position_as_history': 'assessment_situation_db_id bigint,disposition text',
-            'm10_pipeline_runs': 'cycle_db_id bigint,status text,updated_at timestamp',
+            'm10_pipeline_runs': 'cycle_db_id bigint,status text,stage text,error_code text,updated_at timestamp',
             'participant_acquaintance_states': 'user_id bigint,organization_id bigint,assignment_ref text,status text',
         }
         for name, columns in tables.items():

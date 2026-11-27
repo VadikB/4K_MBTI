@@ -1,3 +1,4 @@
+import { participantFailureMessage } from '../assessment-processing-status.js';
 import { renderPreparation } from '../preparation-status.js';
 import { state, persistAssessmentContext, setCurrentScreen } from '../state.js';
 import {
@@ -235,7 +236,7 @@ const outcomeCopy = {
   noResult: ['Отчёт готов', 'В отчёте указано, почему для результата оценки недостаточно данных.'],
   ready: ['Ваш результат готов', 'Вы можете открыть отчёт и радар.'],
   limited: ['Ваш результат готов', 'В отчёте указано, какие навыки удалось оценить.'],
-  failed: ['Не удалось подготовить результат', 'Ваши ответы сохранены.'],
+  failed: [participantFailureMessage(), ''],
   accessDenied: ['Нет доступа к этой оценке', 'Доступ к результату ограничен.'],
   unavailable: ['Оценка не найдена', 'Не удалось найти запрошенное прохождение.'],
 };
@@ -246,7 +247,7 @@ const retryLabels = {
   waiting: 'Проверить готовность',
   offline: 'Повторить проверку',
   expired: 'Проверить готовность',
-  failed: 'Проверить ещё раз',
+  failed: 'Проверить состояние',
 };
 
 const hasConfirmedClosure = (snapshot) => COLLECTION_CLOSED.has(snapshot?.collection_status);
@@ -291,24 +292,24 @@ const renderCycleOutcome = (view, kind, { readError = false } = {}) => {
   const [title, description] = outcomeCopy[kind];
   const showSnapshot = !['confirming', 'accessDenied', 'unavailable'].includes(kind);
   const reportId = showSnapshot && !readError ? availableReport(snapshot) : null;
-  const failedWithReport = kind === 'failed' && availableReport(snapshot);
+  const failedWithReport = kind === 'failed' && availableReport(snapshot) && !snapshot?.failure_stage;
   const ready = ['ready', 'limited', 'noResult'].includes(kind);
-  processingOutcomeTitle.textContent = title;
+  processingOutcomeTitle.textContent = kind === 'failed' ? participantFailureMessage(snapshot?.failure_stage) : title;
   processingOutcomeDescription.textContent = readError && ready
     ? 'Последняя проверка подтвердила готовность результата.' : description;
   processingOutcomeProgress.textContent = showSnapshot ? confirmedProgress(snapshot) : '';
   processingOutcomeProgress.classList.toggle('hidden', !processingOutcomeProgress.textContent);
-  processingOutcomeNotice.textContent = readError && hasConfirmedClosure(snapshot)
-    ? 'Не удалось проверить готовность. Проверьте подключение или повторите проверку.'
+  processingOutcomeNotice.textContent = readError ? 'Не удалось обновить состояние'
     : failedWithReport ? 'Доступен отчёт с ограничениями из-за сбоя обработки.'
-      : kind === 'failed' ? snapshot?.processing?.message || '' : '';
+      : ready && snapshot?.failure_stage
+        ? participantFailureMessage(snapshot.failure_stage) + ' Доступна сохранённая версия отчёта.' : '';
   processingOutcomeNotice.classList.toggle('hidden', !processingOutcomeNotice.textContent);
 
   const error = ['confirmationError', 'failed', 'offline'].includes(kind) || readError;
   processingOutcomeIndicator.classList.toggle('is-error', error);
   processingOutcomeIndicator.textContent = error ? '!' : ready ? '✓' : '◷';
 
-  const preparation = showSnapshot && !ready ? snapshot?.preparation : null;
+  const preparation = showSnapshot && !ready && kind !== 'failed' ? snapshot?.preparation : null;
   let preparationPanel = processingOutcomeCard.querySelector('.processing-preparation');
   if (preparation) {
     if (!preparationPanel) {

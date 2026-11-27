@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const html = fs.readFileSync('web/index.html', 'utf8');
 const processing = fs.readFileSync('web/js/screens/processing.js', 'utf8');
+const failureCopy = fs.readFileSync('web/js/assessment-processing-status.js', 'utf8');
 const main = fs.readFileSync('web/js/main.js', 'utf8');
 const report = fs.readFileSync('web/js/screens/report.js', 'utf8');
 const styles = fs.readFileSync('web/styles/screens/processing.css', 'utf8');
@@ -14,8 +15,8 @@ test('E02 exposes the accepted completion, waiting, ready and failure copy', () 
   assert.match(processing, /Спасибо за ваши ответы/);
   assert.match(processing, /Время оценки закончилось/);
   assert.match(processing, /Ваш результат готов/);
-  assert.match(processing, /Не удалось подготовить результат/);
-  assert.match(processing, /Не удалось проверить готовность/);
+  assert.match(failureCopy, /Прохождение завершено\. Не удалось сформировать итоговый отчёт\./);
+  assert.match(processing, /Не удалось обновить состояние/);
 });
 
 test('E02 does not expose pipeline stages, invented percentages or participant recovery', () => {
