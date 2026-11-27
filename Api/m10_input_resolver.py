@@ -1,11 +1,10 @@
-"""Product adapter for the frozen QA-only M6 C-45 resolver."""
+"""Product scope and Cycle binding for the saved M6 C-45 input."""
 from __future__ import annotations
 
 from uuid import UUID
 
 from Api.assessment_configuration import definition_checksum
-from Api.m6_input_resolver import normalize
-from Api.m6_input_resolver_v2 import load_criteria
+from Api.m6_input_resolver_v2 import load_criteria, normalize
 from Api import qa_orchestration
 from Api.cycle_execution_manifest import resolve_cycle_dependency
 

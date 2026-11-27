@@ -396,6 +396,16 @@ def test_all_five_cases_run_through_qa_runtime_and_case04_has_both_branch_outcom
                 assert any(x["event_type"] == "character_response" for x in saved["events"])
             handoff = build_c45(connection, prepared["assessment_situation_id"], mode="interim")
             assert handoff["envelope_json"]["boundary_sequence"] > 0
+            if case["case_id"] == "CASE-TDISC-04":
+                from Api.m6_input_resolver_v2 import resolve as resolve_m6_handoff
+
+                _, material = resolve_m6_handoff(connection, str(handoff["handoff_id"]))
+                reaction = next(item for item in material["events"] if item["event_type"] == "character_response")
+                document = next(item for item in material["materials"] if item["event_id"] == reaction["event_id"])
+                source = next(item for item in prepared["execution_payload"]["materials"]
+                              if item["material_id"] == "CASE-TDISC-04-D3")
+                assert document == {"material_id": source["material_id"], "content": source["participant_payload"],
+                                    "available_sequence": reaction["sequence_no"], "event_id": reaction["event_id"]}
             evidence = record_technical_qa_evidence(
                 connection, assessment_situation_id=prepared["assessment_situation_id"], trajectory="content_progress",
                 expected={"runtime": "trace_saved"}, actual={"events": len(saved["events"])}, defects=[], performed_by=99)

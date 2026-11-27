@@ -1198,9 +1198,7 @@ def _apply_battery_plan(connection, row, saved, state, turn, plan, decisions):
                       "disclosure_condition": {"type": "mandatory"}},
             decision_row=decisions[rule["id"]], turn_id=turn_id, event_type="mandatory_update",
             delivery={"scenario_event_id": rule["id"], "speaker_id": speaker_id, "author_id": rule["author_id"],
-                      "recipient_ids": ["assessee"], "content": {
-                          "material_id": material_id, "title": content["Название"], "text": content["Текст"],
-                      }},
+                      "recipient_ids": ["assessee"], "content": m5_battery_scenario.delivery_content(material_id, content)},
         )
         if event:
             events.append(event)
@@ -1306,12 +1304,20 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
     ).fetchone()
     if not profile_row or profile_row["checksum"] != snapshot["profile_ref"]["checksum"]:
         raise SnapshotIntegrityError(SNAPSHOT_DEPENDENCY_UNAVAILABLE, "Frozen PersonalizedProfile is unavailable.")
+    execution = row["execution_payload_json"]
+    battery = m5_battery_scenario.scenario_contract(execution)
+    material_ids = {material["material_id"] for material in execution["materials"]}
+    # A battery reply label stays in the dialogue event. Keep older replies
+    # with a material binding, and pass unresolved actual references to PM-05.
     presented_materials = [
         {"material_id": x["material_id"], "event_id": str(x["event_id"]),
          "sequence_no": x["sequence_no"], "available_at": x["created_at"].isoformat(),
          "event_type": x["event_type"]}
         for x in saved["events"]
         if x["material_id"] and x["event_type"] in {"material_disclosed", "mandatory_update", "character_response"}
+        and not (x["event_type"] == "character_response" and x["material_id"] not in material_ids
+                 and m5_battery_scenario.is_character_response_label(
+                     battery, x["material_id"], x["payload_json"].get("speaker_id")))
     ]
     envelope = {
         "schema_version": 1, "contract": "C-45", "mode": mode,
@@ -1347,7 +1353,7 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
             "reason": "PM-05 evaluator is outside the implemented M5 runtime",
         },
     }
-    design = m5_addressed_scenario.scenario_contract(row["execution_payload_json"])
+    design = m5_addressed_scenario.scenario_contract(execution)
     if design:
         happened = {event["payload_json"].get("scenario_event_id") for event in saved["events"]}
         envelope["conditional_opportunities"] = [
@@ -1356,7 +1362,7 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
              "occurred_event_refs": [event_id for event_id in refs["event_refs"] if event_id in happened]}
             for indicator_id, refs in design["required_observability"].items()
         ]
-    elif m5_battery_scenario.scenario_contract(row["execution_payload_json"]):
+    elif battery:
         happened = {event_id for event in saved["events"] for event_id in (
             event["payload_json"].get("scenario_event_ids", [event["payload_json"].get("scenario_event_id")])
         ) if event_id}
@@ -1369,7 +1375,7 @@ def build_c45(connection, assessment_situation_id: str, *, mode: str = "final") 
              "status": "DELIVERED" if (happened.intersection(target["event_refs"]) or (
                  not target["event_refs"] and target["material_refs"] and set(target["material_refs"]) <= disclosed
              )) else "NOT_ARISEN"}
-            for target in row["execution_payload_json"]["indicator_targets"]
+            for target in execution["indicator_targets"]
         ]
     digest = checksum(envelope)
     return dict(connection.execute("""

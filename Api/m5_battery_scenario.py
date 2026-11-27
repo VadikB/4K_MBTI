@@ -17,6 +17,15 @@ def scenario_contract(payload: dict) -> dict | None:
     return (payload.get("runtime_rules") or {}).get("battery_scenario")
 
 
+def is_character_response_label(design: dict | None, material_id: str | None, speaker_id: str | None) -> bool:
+    return bool(design and isinstance(speaker_id, str) and material_id == f"CHARACTER.{speaker_id}"
+                and (speaker_id == FACILITATOR or speaker_id in design["roles"]))
+
+
+def delivery_content(material_id: str, material: dict) -> dict:
+    return {"material_id": material_id, "title": material["Название"], "text": material["Текст"]}
+
+
 @dataclass(frozen=True)
 class Reply:
     speaker: str
