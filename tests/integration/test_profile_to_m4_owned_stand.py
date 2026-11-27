@@ -98,7 +98,7 @@ def internal(destination):
         from Api.assessment_authoring_service import assessment_authoring_service
         from Api.m7_completion import complete
         from Api import m10_orchestration
-        from Api.m6_worker import run_request as run_evidence
+        from Api.m6_worker_v2 import run_request as run_evidence
         from Api.m6_assessment_worker import run_request as run_assessment
         from test_m10_product_path_db import EvidenceGateway, AssessmentGateway
         def finish_pipeline(cycle_id):

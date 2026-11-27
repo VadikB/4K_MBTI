@@ -5,21 +5,42 @@ import json
 from pathlib import Path
 
 from Api.llm.provider_contract import load_provider_contract
-from Api.m6_contracts import EvidenceAnalysis
+from Api.m6_contracts import EvidenceAnalysis, EvidenceCandidate
 
+PREVIOUS_REF = "m6_evidence/1.0.1"
+QUOTE_REF = "m6_evidence/1.0.2"
+QUOTE_HANDLER = "m6-evidence/2"
+QUOTE_INPUT_CONTRACT = "M6.EvidenceInput/2"
+QUOTE_OUTPUT_CONTRACT = "M6.EvidenceCandidate/2"
 PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/prompts/m6_evidence/v1.0.1"
+PACKAGES = {PREVIOUS_REF: PACKAGE, QUOTE_REF: PACKAGE.with_name("v1.0.2")}
 
 
-def load_mechanism(ref: str = "m6_evidence/1.0.1", directory: Path = PACKAGE,
+def load_mechanism(ref: str | None = None, directory: Path | None = None,
                    source_set: Path | None = None, provider_contract: Path | None = None) -> dict:
-    if ref != "m6_evidence/1.0.1":
+    if ref is not None and ref not in PACKAGES:
         raise ValueError("M6_MECHANISM_UNSUPPORTED")
+    if directory is None:
+        directory = PACKAGES[ref or PREVIOUS_REF]
     manifest = json.loads((directory / "manifest.json").read_bytes())
-    prompt = (directory / "prompt.md").read_bytes()
-    expected = (1, "m6_evidence", "1.0.1", "draft", "m6_evidence_qa", "PM-05")
-    actual = tuple(manifest.get(key) for key in ("schema_version", "id", "version", "status", "scope", "owner"))
-    if actual != expected or manifest.get("supersedes") != "m6_evidence/1.0.0":
+    manifest_ref = f"{manifest.get('id')}/{manifest.get('version')}"
+    if ref is None:
+        ref = manifest_ref
+    if ref not in PACKAGES:
+        raise ValueError("M6_MECHANISM_UNSUPPORTED")
+    quote_candidate = ref == QUOTE_REF
+    expected = (1, ref, "draft", "m6_evidence_qa", "PM-05")
+    actual = (manifest.get("schema_version"), manifest_ref, manifest.get("status"),
+              manifest.get("scope"), manifest.get("owner"))
+    supersedes = PREVIOUS_REF if quote_candidate else "m6_evidence/1.0.0"
+    if actual != expected or manifest.get("supersedes") != supersedes:
         raise ValueError("M6_PACKAGE_INVALID")
+    if quote_candidate and (manifest.get("input_contract"), manifest.get("output_contract"),
+                            manifest.get("analysis_contract")) != (
+        QUOTE_INPUT_CONTRACT, QUOTE_OUTPUT_CONTRACT, "M6.EvidenceAnalysis/1",
+    ):
+        raise ValueError("M6_PACKAGE_INVALID")
+    prompt = (directory / "prompt.md").read_bytes()
     if manifest.get("artifacts") != [{"name": "prompt.md", "sha256": hashlib.sha256(prompt).hexdigest()}]:
         raise ValueError("CHECKSUM_MISMATCH")
     root = Path(__file__).resolve().parents[1]
@@ -37,7 +58,8 @@ def load_mechanism(ref: str = "m6_evidence/1.0.1", directory: Path = PACKAGE,
         raise ValueError("M6_PACKAGE_INVALID")
     return {
         "ref": ref, "manifest": manifest, "prompt": prompt.decode(),
-        "schema": EvidenceAnalysis.model_json_schema(), "handler": "m6-evidence/1",
+        "schema": (EvidenceCandidate if quote_candidate else EvidenceAnalysis).model_json_schema(),
+        "handler": QUOTE_HANDLER if quote_candidate else "m6-evidence/1",
         "operation": {"provider": provider["provider"], "endpoint": provider["endpoint"],
             "model": provider["model"],
             "parameters": {key: config[key] for key in ("temperature", "timeout_seconds", "max_tokens")},

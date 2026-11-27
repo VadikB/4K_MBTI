@@ -4,6 +4,7 @@ import json
 from Api.assessment_configuration import definition_checksum
 from Api.m6_contracts import validate_analysis
 from Api.m6_package import verify_mechanism
+from Api.m6_validation_retry import validation_failure
 from Api.m5_rule_engine import _gateway_for, _call_with_trace
 
 
@@ -22,6 +23,9 @@ def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
         if trace['identity_status']!='sent_matches_snapshot': raise ValueError('M6_AI_IDENTITY_MISMATCH')
         output=validate_analysis(json.loads(raw),material)
     except Exception as exc:
-        exc.ai_trace=trace
+        code, issues = validation_failure(exc)
+        exc.ai_trace = {**trace, "validation_attempts": [{
+            "attempt_no": 1, "status": "rejected", "error_code": code, "validation_errors": issues,
+        }]}
         raise
     return output,trace

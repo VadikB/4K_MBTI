@@ -324,3 +324,270 @@ def test_context_limit_never_truncates_or_calls_provider():
         def chat(self,*args,**kwargs):raise AssertionError('provider must not be called')
     with pytest.raises(ValueError,match='CONTEXT_LIMIT'):
         evaluate(material(),mechanism,definition_checksum(mechanism),gateway=Gateway())
+
+
+def quote_mechanism():
+    from Api.m6_package_v2 import QUOTE_REF, load_mechanism
+
+    return load_mechanism(QUOTE_REF)
+
+
+def quote_candidate(quote, *, turn_id='t1'):
+    return {
+        **output(), 'schema_version': 2,
+        'fragments': [{'id': 'f1', 'turn_id': turn_id, 'quote': quote}],
+    }
+
+
+class RecordedQuotes:
+    enabled = True
+
+    def __init__(self, *responses):
+        self.responses = iter(responses)
+        self.calls = []
+
+    def chat(self, messages, **kwargs):
+        self.calls.append(messages)
+        return json.dumps(next(self.responses), ensure_ascii=False)
+
+
+def run_quote_extraction(source, gateway, mechanism=None):
+    from Api.m6_evidence_service_v2 import evaluate
+
+    mechanism = mechanism or quote_mechanism()
+    return evaluate(source, mechanism, definition_checksum(mechanism), gateway=gateway)
+
+
+@pytest.mark.parametrize(('text', 'quote', 'span'), [
+    ('Сначала сверю сроки. Затем напишу заказчику.', 'сверю сроки', (8, 19)),
+    ('🧪 е\u0301 сверю сроки', 'е\u0301 сверю', (2, 10)),
+])
+def test_server_span_uses_code_points_and_exact_bytes(text, quote, span):
+    source = material()
+    source['turns'][0]['content'] = text
+    candidate = quote_candidate(quote)
+    gateway = RecordedQuotes(candidate)
+    analysis, trace = run_quote_extraction(source, gateway)
+    fragment, = analysis['fragments']
+    assert (fragment['start'], fragment['end']) == span
+    assert text[slice(*span)].encode() == fragment['quote'].encode() == quote.encode()
+    assert analysis['signals'][0]['fragment_id'] == fragment['id']
+    assert analysis['evidence'][0]['bs_ids'] == [analysis['signals'][0]['id']]
+    assert analysis['schema_version'] == 1
+    assert len(gateway.calls) == 1
+    payload = json.loads(gateway.calls[0][1]['content'])
+    assert payload['schema_version'] == 2
+    assert payload['turns'][0]['content'].encode() == text.encode()
+    assert json.loads(trace['response']['content']) == candidate
+    assert trace['assembled_analysis'] == {'contract': 'M6.EvidenceAnalysis/1', 'checksum': definition_checksum(analysis)}
+
+
+def test_same_quote_rejected_twice_with_wrong_legacy_offsets():
+    from Api.m6_package_v2 import load_mechanism
+
+    source = material()
+    text = 'Сначала сверю сроки. Затем напишу заказчику.'
+    source['turns'][0]['content'] = text
+    legacy = output()
+    legacy['fragments'][0].update(quote='сверю сроки', start=7, end=18)
+    gateway = RecordedQuotes(legacy, legacy)
+    with pytest.raises(ValueError, match='^M6_FRAGMENT_SPAN$') as failure:
+        run_quote_extraction(source, gateway, load_mechanism())
+    attempts = failure.value.ai_trace['validation_attempts']
+    assert len(gateway.calls) == 2
+    assert text[7:18] == ' сверю срок'
+    assert [attempt['validation_errors'] for attempt in attempts] == [
+        [{'code': 'M6_FRAGMENT_RANGE_MISMATCH', 'path': 'fragments.0.quote'}],
+    ] * 2
+
+
+@pytest.mark.parametrize(('text', 'short', 'long', 'span'), [
+    ('уточню цену, уточню срок', 'уточню', 'уточню срок', (13, 24)),
+    ('ааа', 'аа', 'ааа', (0, 3)),
+])
+def test_repeated_quote_is_never_selected_arbitrarily(text, short, long, span):
+    source = material()
+    source['turns'][0]['content'] = text
+    ambiguous = quote_candidate(short)
+    gateway = RecordedQuotes(ambiguous, quote_candidate(long))
+    analysis, trace = run_quote_extraction(source, gateway)
+    fragment, = analysis['fragments']
+    assert (fragment['start'], fragment['end']) == span
+    assert [attempt['status'] for attempt in trace['validation_attempts']] == ['rejected', 'accepted']
+    assert len(gateway.calls) == 2
+    assert 'из того же хода' in gateway.calls[1][-1]['content']
+    gateway = RecordedQuotes(ambiguous, ambiguous)
+    with pytest.raises(ValueError, match='^M6_FRAGMENT_QUOTE_AMBIGUOUS$') as failure:
+        run_quote_extraction(source, gateway)
+    assert [attempt['error_code'] for attempt in failure.value.ai_trace['validation_attempts']] == [
+        'M6_FRAGMENT_QUOTE_AMBIGUOUS', 'M6_FRAGMENT_QUOTE_AMBIGUOUS',
+    ]
+    assert len(gateway.calls) == 2
+
+
+@pytest.mark.parametrize(('turn_id', 'quote', 'code', 'path'), [
+    ('t1', 'сопоставлю дедлайны', 'M6_FRAGMENT_QUOTE_NOT_FOUND', 'quote'),
+    ('t1', 'из другого ответа', 'M6_FRAGMENT_QUOTE_NOT_FOUND', 'quote'),
+    ('t1', 'é', 'M6_FRAGMENT_QUOTE_NOT_FOUND', 'quote'),
+    ('presenter', 'реплика ведущего', 'M6_FRAGMENT_AUTHOR', 'turn_id'),
+    ('unknown', 'сверю сроки', 'M6_FRAGMENT_TURN_UNKNOWN', 'turn_id'),
+])
+def test_quote_rejection_is_local_to_the_frozen_turn(turn_id, quote, code, path):
+    source = material()
+    source['turns'][0]['content'] = 'e\u0301 Сначала сверю сроки.'
+    source['turns'].extend([
+        {'turn_id': 't2', 'speaker_type': 'assessee', 'sequence_no': 2, 'content': 'из другого ответа, сверю сроки'},
+        {'turn_id': 'presenter', 'speaker_type': 'system', 'sequence_no': 3, 'content': 'реплика ведущего'},
+    ])
+    candidate = quote_candidate(quote, turn_id=turn_id)
+    gateway = RecordedQuotes(candidate, candidate)
+    with pytest.raises(ValueError, match=code) as failure:
+        run_quote_extraction(source, gateway)
+    attempts = failure.value.ai_trace['validation_attempts']
+    assert [item['attempt_no'] for item in attempts] == [1, 2]
+    assert all(item['validation_errors'] == [{'code': code, 'path': f'fragments.0.{path}'}] for item in attempts)
+    # The same exact phrase in an adjacent turn has no effect on the selected turn.
+    gateway = RecordedQuotes(quote_candidate('сверю сроки'))
+    accepted, _ = run_quote_extraction(source, gateway)
+    assert accepted['fragments'][0]['start'] == 11
+    assert len(gateway.calls) == 1
+
+
+def test_full_analysis_validation_reports_all_established_violations():
+    source = material()
+    source['turns'].append({'turn_id': 'later', 'speaker_type': 'assessee', 'sequence_no': 2, 'content': 'later'})
+    candidate = quote_candidate('🙂')
+    candidate['evidence'][0]['bs_ids'] = ['broken']
+    candidate['evidence'][0]['attribution']['product'] = 'invented'
+    candidate['evidence'][0]['context_refs'] = [{'kind': 'turn', 'id': 'later', 'meaning': 'future'}]
+    gateway = RecordedQuotes(candidate, candidate)
+    with pytest.raises(ValueError, match='M6_ATTRIBUTION_MISMATCH') as failure:
+        run_quote_extraction(source, gateway)
+    assert failure.value.ai_trace['validation_attempts'][0]['validation_errors'] == [
+        {'code': 'M6_ATTRIBUTION_MISMATCH', 'path': 'evidence.0.attribution.product'},
+        {'code': 'M6_EVIDENCE_REFERENCE', 'path': 'evidence.0.bs_ids.0'},
+        {'code': 'M6_CONTEXT_FUTURE', 'path': 'evidence.0.context_refs.0.id'},
+    ]
+
+
+def test_schema_diagnostics_exclude_provider_controlled_values_and_field_names():
+    source = material()
+    candidate = quote_candidate('')
+    candidate['fragments'][0]['private participant text'] = 'private participant text'
+    candidate['fragments'][0]['start'] = 3
+    gateway = RecordedQuotes(candidate, quote_candidate('🙂'))
+    analysis, trace = run_quote_extraction(source, gateway)
+    assert analysis['fragments'][0]['start'] == 3
+    assert trace['validation_attempts'][0]['validation_errors'] == [
+        {'code': 'string_too_short', 'path': 'fragments.0.quote'},
+        {'code': 'extra_forbidden', 'path': 'fragments.0.<extra>'},
+        {'code': 'extra_forbidden', 'path': 'fragments.0.start'},
+    ]
+    assert 'private participant text' not in gateway.calls[1][-1]['content']
+    assert 'private participant text' not in json.dumps(trace['validation_attempts'])
+    first, _ = trace['provider_attempts']
+    assert json.loads(first['trace']['response']['content']) == candidate
+
+
+def test_valid_empty_evidence_uses_one_call():
+    gateway = RecordedQuotes({**output(True), 'schema_version': 2})
+    analysis, _ = run_quote_extraction(material(), gateway)
+    assert analysis == output(True)
+    assert len(gateway.calls) == 1
+
+
+@pytest.mark.parametrize(('repair', 'reason'), [
+    ({**output(True), 'schema_version': 2}, 'M6_FRAGMENT_REPAIR_MISSING'),
+    (quote_candidate('уточню срок', turn_id='t2'), 'M6_FRAGMENT_REPAIR_TURN'),
+    (quote_candidate('проверю заказ'), 'M6_FRAGMENT_REPAIR_QUOTE'),
+])
+def test_disambiguation_preserves_the_fragment_and_its_turn(repair, reason):
+    source = material()
+    source['turns'][0]['content'] = 'уточню цену, уточню срок, проверю заказ'
+    source['turns'].append({'turn_id': 't2', 'speaker_type': 'assessee', 'sequence_no': 2, 'content': 'уточню срок'})
+    gateway = RecordedQuotes(quote_candidate('уточню'), repair)
+    with pytest.raises(ValueError, match=reason):
+        run_quote_extraction(source, gateway)
+    assert len(gateway.calls) == 2
+
+
+def test_absent_quote_can_be_repaired_verbatim_within_budget():
+    source = material()
+    source['turns'][0]['content'] = 'Сначала сверю сроки. Затем напишу заказчику.'
+    gateway = RecordedQuotes(quote_candidate('сопоставлю дедлайны'), quote_candidate('сверю сроки'))
+    result, trace = run_quote_extraction(source, gateway)
+    assert result['fragments'][0]['start'] == 8
+    assert trace['validation_attempts'][0]['error_code'] == 'M6_FRAGMENT_QUOTE_NOT_FOUND'
+    assert len(gateway.calls) == 2
+
+
+@pytest.mark.parametrize(('quote', 'reason'), [
+    ('🙂', None), ('не было', 'M6_FRAGMENT_QUOTE_NOT_FOUND'), ('аа', 'M6_FRAGMENT_QUOTE_AMBIGUOUS'),
+])
+def test_legacy_range_diagnostic_distinguishes_missing_and_ambiguous_quotes(quote, reason):
+    from Api.m6_package_v2 import load_mechanism
+
+    source = material()
+    source['turns'][0]['content'] = 'Да 🙂 ааа'
+    legacy = output()
+    legacy['fragments'][0].update(quote=quote, end=99)
+    gateway = RecordedQuotes(legacy, legacy)
+    with pytest.raises(ValueError, match='^M6_FRAGMENT_SPAN$') as failure:
+        run_quote_extraction(source, gateway, load_mechanism())
+    expected = [{'code': 'M6_FRAGMENT_RANGE_INVALID', 'path': 'fragments.0.end'}]
+    if reason:
+        expected.append({'code': reason, 'path': 'fragments.0.quote'})
+    assert failure.value.ai_trace['validation_attempts'][0]['validation_errors'] == expected
+
+
+def test_legacy_schema_diagnostic_lists_each_rejected_field():
+    from Api.m6_package_v2 import load_mechanism
+
+    legacy = output()
+    legacy['fragments'][0]['end'] = 0
+    legacy['signals'][0]['observation'] = ''
+    legacy['evidence'][0]['type'] = 'Unknown'
+    gateway = RecordedQuotes(legacy, output())
+    _, trace = run_quote_extraction(material(), gateway, load_mechanism())
+    assert trace['validation_attempts'][0]['validation_errors'] == [
+        {'code': 'greater_than', 'path': 'fragments.0.end'},
+        {'code': 'string_too_short', 'path': 'signals.0.observation'},
+        {'code': 'literal_error', 'path': 'evidence.0.type'},
+    ]
+
+
+@pytest.mark.parametrize('note_shape', ['wrong-turn', 'blank', 'unclear-without-signal'])
+def test_retry_rejects_unsubstantiated_attribution_note(note_shape):
+    source = material()
+    source['turns'][0]['content'] = 'уточню цену, уточню срок'
+    source['turns'].append({'turn_id': 't2', 'speaker_type': 'assessee', 'sequence_no': 2, 'content': 'другой ответ'})
+    repair = quote_candidate('уточню срок')
+    empty = output(True)
+    repair.update(signals=[], evidence=[], bundles=empty['bundles'])
+    repair['attribution_notes'] = [{
+        'indicator_id': 'K1.I01', 'reason': 'unclear' if note_shape == 'unclear-without-signal' else 'irrelevant',
+        'explanation': ' ' if note_shape == 'blank' else 'Отсутствует проверка данных',
+        'context_refs': [{'kind': 'turn', 'id': 't2' if note_shape == 'wrong-turn' else 't1', 'meaning': 'Основание'}],
+    }]
+    gateway = RecordedQuotes(quote_candidate('уточню'), repair)
+    with pytest.raises(ValueError, match='M6_FRAGMENT_REPAIR_SIGNAL_MISSING') as failure:
+        run_quote_extraction(source, gateway)
+    assert failure.value.ai_trace['validation_attempts'][1]['validation_errors'] == [
+        {'code': 'M6_FRAGMENT_REPAIR_SIGNAL_MISSING', 'path': 'signals'},
+        {'code': 'M6_FRAGMENT_REPAIR_EVIDENCE_MISSING', 'path': 'evidence'},
+    ]
+
+
+def test_retry_requires_the_same_indicator_even_with_a_valid_chain():
+    source = material()
+    source['turns'][0]['content'] = 'уточню цену, уточню срок'
+    source['indicator_targets'].append({'indicator_id': 'K1.I02', 'm2_version': 'v1.1'})
+    source['criteria'].append({**source['criteria'][0], 'id': 'K1.I02'})
+    first = quote_candidate('уточню')
+    first['bundles'].append({**first['bundles'][0], 'indicator_id': 'K1.I02', 'evidence_ids': []})
+    repair = quote_candidate('уточню срок')
+    repair['bundles'][0]['evidence_ids'] = []
+    repair['bundles'].append({**first['bundles'][1], 'evidence_ids': ['e1']})
+    repair['evidence'][0]['indicator_id'] = 'K1.I02'
+    with pytest.raises(ValueError, match='M6_FRAGMENT_REPAIR_EVIDENCE_MISSING'):
+        run_quote_extraction(source, RecordedQuotes(first, repair))

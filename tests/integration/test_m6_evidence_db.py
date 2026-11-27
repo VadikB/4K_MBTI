@@ -186,7 +186,7 @@ def database(test_database_url, request):
 
 
 def empty_output(material):
-    return {'schema_version':1,'fragments':[],'signals':[],'evidence':[], 'attribution_notes':[],
+    return {'schema_version':material.get('schema_version',1),'fragments':[],'signals':[],'evidence':[], 'attribution_notes':[],
         'bundles':[{'indicator_id':x['indicator_id'],'evidence_ids':[], 'opportunity_basis':'synthetic test; not GC',
                     'context_refs':[],'limitations':[],'contradictions':[]} for x in material['indicator_targets']]}
 

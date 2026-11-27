@@ -12,7 +12,9 @@ from Api.m5_rule_engine import ControlledSemanticAdapter
 from Api.m6_interim_retry import RetryRefused, RetryTarget, retry
 from scripts.retry_m6_interim_evidence import main
 from tests.integration.test_m10_product_path_db import AssessmentGateway, EvidenceGateway
-from tests.integration.test_specialist_pilot_release_db import opened_specialist_pilot, release_db
+from tests.integration.test_specialist_pilot_release_db import (
+    opened_specialist_pilot, pin_original_evidence_mechanism, release_db,
+)
 
 pytestmark = pytest.mark.integration
 ANSWER = "🧪 Сверил сроки и записал порядок действий."
@@ -81,6 +83,7 @@ def _submit_to_interim(client, as_id, monkeypatch):
     assert readback.status_code == 200 and readback.json()["status"] == "accepted"
 
 
+@pytest.mark.usefixtures("pin_original_evidence_mechanism")
 @pytest.mark.parametrize("retry_succeeds", [True, False], ids=["succeeded", "failed"])
 def test_operator_retries_current_interim_without_replaying_participant_turn(
         release_db, opened_specialist_pilot, retry_succeeds, monkeypatch, capsys):

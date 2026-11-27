@@ -51,7 +51,7 @@ def process_claimed_request(job, *, connection_factory, gateway=None, claim_trac
         connection.commit()
 
 
-def recover_pending(connection_factory=None):
+def recover_pending(connection_factory=None, *, gateway=None):
     if connection_factory is None:
         from Api.database import get_connection
         connection_factory = get_connection
@@ -63,18 +63,18 @@ def recover_pending(connection_factory=None):
             FROM m6_assessment_requests WHERE status='queued' OR
             (status='running' AND lease_expires_at<=NOW()) ORDER BY created_at LIMIT 1""").fetchone()
     if evidence:
-        if evidence["mechanism_ref"] == "m6_evidence/1.0.1":
-            run_request(evidence["id"], connection_factory=connection_factory)
+        if evidence["mechanism_ref"] == "m6_evidence/1.0.0":
+            from Api.m6_worker import run_request as run_evidence
         else:
-            from Api.m6_worker import run_request as run_legacy
-            run_legacy(evidence["id"], connection_factory=connection_factory)
+            run_evidence = run_request
+        run_evidence(evidence["id"], connection_factory=connection_factory, gateway=gateway)
         return True
     if assessment:
         if assessment["mechanism_ref"] == "m6_indicator_assessment/1.0.1":
             from Api.m6_assessment_worker_v2 import run_request as run_assessment
         else:
             from Api.m6_assessment_worker import run_request as run_assessment
-        run_assessment(assessment["id"], connection_factory=connection_factory)
+        run_assessment(assessment["id"], connection_factory=connection_factory, gateway=gateway)
         return True
     return False
 

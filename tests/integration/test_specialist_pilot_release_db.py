@@ -10,7 +10,7 @@ from psycopg import sql
 from psycopg.conninfo import make_conninfo
 from psycopg.rows import dict_row
 
-from Api import assessment_contexts, assessment_programs, database, pilot_plan_binding
+from Api import assessment_contexts, assessment_programs, cycle_execution_manifest, database, m5_cycle_runtime, pilot_plan_binding
 from Api.assessment_methodology_publication import publish_m2_qa_configuration
 from Api.assessment_role_profiles import publish_base_roles
 from Api.m5_catalog_integrity import case_admission, publish_catalog, resolve_configuration_catalog, resolve_profile_base_role
@@ -144,6 +144,18 @@ def test_authorized_release_without_human_forms_is_idempotent_and_preserves_star
         rows = assessment_programs.list_published(connection)
         assert [(row["id"], row["version"]) for row in rows] == [(baseline["id"], "1.2"), (first["program_id"], "2.0")]
         assert read_cycle(connection, cycle_id) == previous_cycle
+
+
+@pytest.fixture
+def pin_original_evidence_mechanism(monkeypatch):
+    """The operator recovery targets a Cycle created on TEST 2.1.85."""
+    dependencies = {**cycle_execution_manifest.DEFAULT_DEPENDENCIES,
+                    "m6_evidence": "assessment_definitions/prompts/m6_evidence/v1.0.1"}
+
+    def build_frozen_manifest(**kwargs):
+        return cycle_execution_manifest.build_manifest(**kwargs, dependencies=dependencies)
+
+    monkeypatch.setattr(m5_cycle_runtime, "build_manifest", build_frozen_manifest)
 
 
 @pytest.fixture

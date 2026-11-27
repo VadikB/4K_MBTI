@@ -4,7 +4,7 @@ import json
 import pytest
 
 from Api import m10_orchestration as orchestration, m7_clarification, m7_completion
-from Api.m6_worker import run_request as run_evidence
+from Api.m6_worker_v2 import run_request as run_evidence
 from Api.m6_assessment_worker import run_request as run_assessment
 from tests.integration.test_exec_fix01_clarification_db import current, database, http, RecordedEvidence, RecordedAssessment
 from tests.integration.test_exec_fix01_waits_db import _queue, _open
