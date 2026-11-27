@@ -83,7 +83,7 @@ def _battery_delivery(design: dict, event: dict, turns: dict, path: str) -> dict
     return content
 
 
-def _battery_reply(event: dict, turns: dict, design: dict, path: str) -> None:
+def _battery_reply(event: dict, turns: dict, design: dict, runtime_state: dict, path: str) -> None:
     payload, cause = event['payload'], event['cause']
     character = turns.get(cause.get('character_turn_id'))
     trigger = turns.get(cause.get('trigger_turn_id'))
@@ -99,6 +99,12 @@ def _battery_reply(event: dict, turns: dict, design: dict, path: str) -> None:
             or any(not isinstance(item, str) or item not in allowed for item in recipients)
             or len(recipients) != len(set(recipients))):
         raise _unresolved(f'{path}.payload.recipient_ids')
+    if 'battery_audiences' in runtime_state:
+        by_turn = runtime_state['battery_audiences']
+        recorded = by_turn.get(character['turn_id']) if isinstance(by_turn, dict) else None
+        if (not isinstance(recorded, list) or len(recorded) != len(recipients)
+                or any(recipient not in recorded for recipient in recipients)):
+            raise _unresolved(f'{path}.payload.recipient_ids')
 
 
 def _presented_materials(envelope: dict, execution: dict, battery: dict) -> list[dict]:
@@ -112,7 +118,7 @@ def _presented_materials(envelope: dict, execution: dict, battery: dict) -> list
             if not m5_battery_scenario.is_character_response_label(
                     battery, event['material_id'], event['payload'].get('speaker_id')):
                 raise _unresolved(f'{path}.material_id')
-            _battery_reply(event, turns, battery, path)
+            _battery_reply(event, turns, battery, envelope.get('runtime_state') or {}, path)
             reply_labels.add(event_id)
 
     materials = []

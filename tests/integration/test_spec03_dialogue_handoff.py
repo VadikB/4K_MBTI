@@ -122,6 +122,7 @@ def check_document_references(db, as_id, criteria):
         "wrong_scenario_rule": "payload.scenario_event_id",
         "wrong_content": "payload.content",
         "wrong_recipient": "payload.recipient_ids",
+        "wrong_reply_recipient": "payload.recipient_ids",
         "missing_delivery": "presented_materials.event_id",
     }
     for changed, field in changes.items():
@@ -144,6 +145,13 @@ def check_document_references(db, as_id, criteria):
             event["payload"]["content"]["text"] = "Иное содержание"
         elif changed == "wrong_recipient":
             event["payload"]["recipient_ids"] = ["assessee", "C1"]
+        elif changed == "wrong_reply_recipient":
+            reply = next(entry for entry in envelope["dialogue"]["events"]
+                         if entry["event_type"] == "character_response" and entry["payload"]["speaker_id"] == "C1")
+            turn_id = reply["cause"]["character_turn_id"]
+            assert envelope["runtime_state"]["battery_audiences"][turn_id] == ["assessee"]
+            assert reply["payload"]["recipient_ids"] == ["assessee"]
+            reply["payload"]["recipient_ids"] = ["assessee", "C2"]
         else:
             envelope["presented_materials"].remove(item)
         # Изолируем проверку источника от более ранней проверки контрольной суммы.
