@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from Api import invitation_outcomes
 from Api import assessment_assignment_operations
 from Api.admin_assignment_projection import ADMIN_ASSIGNMENT_STAGES_SQL
+from Api.assessment_processing_status import PARTICIPANT_MESSAGES, failure_stage, read_processing_status
 from Api.invitation_outcomes import InvitationRefusal
 from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
@@ -1121,6 +1122,9 @@ def _project_admin_assessment_stage(row: dict) -> dict:
     completed = int(row.get("completed_positions") or 0)
     progress = {"completed": completed, "planned": planned} if planned else None
     blocker = None
+    failure = failure_stage(collection_closed_at=row.get("collection_closed_at"), cycle_status=cycle_status,
+                            pipeline_status=row.get("pipeline_status"), pipeline_stage=row.get("pipeline_stage"),
+                            failed_turn_id=row.get("failed_turn_id"))
 
     if row.get("assignment_status") == "revoked" or row.get("revoked_at") is not None:
         code, label, action = "cancelled", "Назначение отменено", None
@@ -1203,6 +1207,7 @@ def _project_admin_assessment_stage(row: dict) -> dict:
             description_parts.append("Есть отдельное техническое ограничение обработки.")
     return {
         "preparation": row.get("preparation"),
+        "failure_stage": failure if code in {"failed", "report_ready"} else None,
         "code": code, "label": label, "action": action,
         "cycle_id": str(row["cycle_id"]) if row.get("cycle_id") else None,
         "operation_id": row.get("preparation_operation_id"),
@@ -9106,10 +9111,11 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
     _m8_owned_cycle(request, str(cycle_id))
     with get_connection() as connection:
         cycle = m7_completion.read_status(connection, str(cycle_id))
-        pipeline = connection.execute("""SELECT p.status,p.stage,p.error_code FROM m10_pipeline_runs p
-            JOIN m5_cycles c ON c.id=p.cycle_db_id WHERE c.cycle_id=%s""", (cycle_id,)).fetchone()
-        cycle = {**cycle, 'preparation': preparation_observation.report_status(connection, str(cycle_id)) if pipeline else None}
-        if pipeline and pipeline['status']=='failed':
+        pipeline, failure, _ = read_processing_status(connection, str(cycle_id))
+        cycle = {**cycle, 'failure_stage': failure,
+                 'preparation': preparation_observation.report_status(connection, str(cycle_id))
+                 if pipeline and not failure else None}
+        if failure:
             try:
                 report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')
             except ValueError:
@@ -9118,10 +9124,10 @@ def read_owned_m8_status(cycle_id: UUID, request: Request):
                 return {**cycle,'results_status':'failed',
                     'report_status':'limited' if report else 'not_created',
                     'report_id':report['id'] if report else None,
-                    'pipeline_stage':pipeline['stage'],
-                    'processing_error':pipeline['error_code'],
+                    'pipeline_stage':pipeline['stage'] if pipeline else None,
+                    'processing_error':pipeline['error_code'] if pipeline else None,
                     'processing':{'contract_version':'m10-processing-recovery/1.0.0','status':'failed',
-                        'message':'Не удалось завершить техническую обработку. Сохранённые ответы не потеряны.',
+                        'message':PARTICIPANT_MESSAGES[failure],
                         'allowed_actions':[]}}
         try:
             report = m8_results.read_latest_report(connection, str(cycle_id), 'assessee')

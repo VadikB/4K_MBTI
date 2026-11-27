@@ -240,7 +240,7 @@ test('05.3 closing a Cycle, lost read, expiry, processing failure and access den
   expect(run.calls).not.toContain('GET ' + statusPath(B));
   closure.release();
   await expect(outcomeTitle(page)).toHaveText('Готовим результат');
-  await expect(notice(page)).toContainText('Не удалось проверить готовность');
+  await expect(notice(page)).toContainText('Не удалось обновить состояние');
   expect(run.calls).toContain('GET ' + statusPath(B));
   run.status[B] = { ...waiting, close_reason: 'calendar_deadline', route_progress: { completed: 2, total: 8 } };
   await outcomeButton(page, 'Повторить проверку').click();
@@ -254,7 +254,7 @@ test('05.3 closing a Cycle, lost read, expiry, processing failure and access den
   const partial = { plan_completed: false, is_incomplete: true, progress: { completed: 1, planned: 3 } };
   saveReport(run, B, 'report-b', partial);
   await outcomeButton(page, 'Проверить готовность').click();
-  await expect(outcomeTitle(page)).toHaveText('Не удалось подготовить результат');
+  await expect(outcomeTitle(page)).toHaveText('Произошла ошибка обработки. Подробности пока недоступны');
   await expect(notice(page)).toContainText('Доступен отчёт с ограничениями');
   const response = page.waitForResponse((value) => new URL(value.url()).pathname === reportPath('report-b'));
   await outcomeButton(page, 'Открыть отчёт с ограничениями').click();
@@ -292,7 +292,7 @@ test('05.3 closing a Cycle, lost read, expiry, processing failure and access den
     await cardAction(page, B).click();
     await expect(outcomeTitle(page)).toHaveText('Готовим результат', { timeout: 2000 });
     await expect(progress(page)).toHaveText('Завершено ситуаций: 2 из 8.');
-    await expect(notice(page)).toContainText('Не удалось проверить готовность');
+    await expect(notice(page)).toContainText('Не удалось обновить состояние');
     await expect(outcomeButton(page, 'Посмотреть результат')).toBeHidden();
     await expect(outcomeButton(page, 'Открыть отчёт с ограничениями')).toBeHidden();
     expect(run.calls.slice(visitStart).filter((call) => call.endsWith('/status'))).toEqual([
@@ -334,7 +334,7 @@ test('05.3 closing a Cycle, lost read, expiry, processing failure and access den
     await page.locator('#report-back-button').click();
     run.status[B] = (route) => route.abort('failed');
     await cardAction(page, B).click();
-    await expect(notice(page)).toContainText('Не удалось проверить готовность');
+    await expect(notice(page)).toContainText('Не удалось обновить состояние');
     await expect(progress(page)).toHaveText('Завершено ситуаций: 2 из 8.');
     await expect(outcomeButton(page, 'Посмотреть результат')).toBeHidden();
   });
@@ -403,8 +403,8 @@ test('05.5 outcome cards fit the desktop and mobile viewports', async ({ page, c
     if (evidenceDir) await card.screenshot({ path: path.join(evidenceDir, 'product-offline-' + width + '.png') });
     run.status[B] = { ...waiting, results_status: 'failed' };
     await outcomeButton(page, 'Повторить проверку').click();
-    await expect(outcomeTitle(page)).toHaveText('Не удалось подготовить результат');
-    await expect(page.locator('#processing-outcome-description')).toBeInViewport();
+    await expect(outcomeTitle(page)).toHaveText('Произошла ошибка обработки. Подробности пока недоступны');
+    await expect(outcomeTitle(page)).toBeInViewport();
     if (evidenceDir) await card.screenshot({ path: path.join(evidenceDir, 'product-failed-' + width + '.png') });
   }
   await recordRequests(run, info);

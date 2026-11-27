@@ -10,7 +10,7 @@ const statuses = {
   first_failed: 'Не удалось подготовить оценку',
   unknown_failure: 'Не удалось подготовить оценку',
   failed: 'Не удалось завершить подготовку следующей ситуации',
-  processing_failed: 'Не удалось обработать результат',
+  processing_failed: 'Произошла ошибка обработки. Подробности пока недоступны',
   running: 'Проверяем материалы ситуации',
   stale: 'Последний известный этап: Проверяем материалы ситуации',
   sent: 'Письмо отправлено',
@@ -173,8 +173,8 @@ test('ADM-VIS-02 · Состояние, карточка и точная отм�
       await page.setViewportSize({ width: 1440, height: 1000 });
       await expect(action('processing_failed')).toHaveCount(0);
       await row('processing_failed').getByRole('button', { name: 'Подробнее об обработке' }).click();
-      const processing = page.getByRole('dialog', { name: 'Ошибка обработки результата' });
-      await expect(processing).toContainText('Результат пока недоступен.');
+      const processing = page.getByRole('dialog', { name: 'Произошла ошибка обработки. Подробности пока недоступны' });
+      await expect(processing.getByRole('button', { name: 'Проверить состояние' })).toBeVisible();
       await expect(processing).not.toContainText(/Готовится отчёт|Сведения о подготовке/);
       await page.keyboard.press('Escape');
       await expect(processing).toHaveCount(0);

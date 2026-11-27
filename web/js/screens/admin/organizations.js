@@ -1,3 +1,4 @@
+import { adminFailureCopy } from '../../assessment-processing-status.js';
 import { mountInvitationDetails } from './invitation-details.js';
 import { mountPreparationProblems } from './support-preparation.js';
 import { invitationMessage, invitationFacts, invitationSummary, invitationCommonMessage, exactInvitationItems, invitationLinkMessage, safeInvitationItem } from './invitation-presentation.js';
@@ -2679,6 +2680,12 @@ const assessmentStageView = (stage, hasAssignment) => {
   const progress = planned > 0 ? `Завершено ${stage.progress.completed} из ${planned} ${
     situationCount.select(planned) === 'one' ? 'ситуации' : 'ситуаций'}.` : '';
   const continuation = [code === 'paused' && 'Оценка приостановлена.', progress].filter(Boolean).join(' ');
+  if (code === 'failed' || (code === 'report_ready' && stage?.failure_stage)) {
+    const failure = adminFailureCopy(stage?.failure_stage);
+    const description = [progress, code === 'report_ready' && 'Доступна сохранённая версия отчёта.']
+      .filter(Boolean).join(' ');
+    return { label: failure.title, description: description || failure.detail, critical: true };
+  }
   if (preparationFailed(stage)) {
     if (model?.kind === 'next') {
       return { label: 'Не удалось завершить подготовку следующей ситуации',
@@ -2690,7 +2697,6 @@ const assessmentStageView = (stage, hasAssignment) => {
     return { label: 'Не удалось подготовить оценку',
       description: firstFailure || 'Требуется проверка подготовки оценки.', critical: true };
   }
-  if (code === 'failed') return { label: 'Не удалось обработать результат', description: 'Результат пока недоступен.', critical };
   if (code === 'processing') return { label, description: 'Прохождение завершено. Готовится отчёт.', critical };
   if (preparation) {
     const detail = (model.kind === 'next' && continuation) || (!preparation.uncertain && preparation.explanation);
@@ -2795,10 +2801,13 @@ const renderMemberList = (items, {
         const reportButton = renderMemberReportButton(scopedStage, false);
         const checkPreparationButton = canCheckPreparation(scopedStage)
           ? '<button type="button" data-action="check-member-preparation" aria-haspopup="dialog">Проверить состояние</button>' : '';
-        const processingButton = scopedStage?.action === 'open_processing'
-          ? '<button type="button" data-action="open-member-processing" aria-haspopup="dialog"' +
-            (preparationStatus === 'failed' ? ' data-processing-failed' : '') + ' data-stage-description="' +
-            escapeHtml(stageDescription) + '">Подробнее об обработке</button>' : '';
+        const failure = preparationStatus === 'failed' || scopedStage?.failure_stage
+          ? adminFailureCopy(scopedStage?.failure_stage) : null;
+        const processingButton = scopedStage?.action === 'open_processing' || failure
+          ? '<button type="button" data-action="open-member-processing" aria-haspopup="dialog" data-assignment-id="' +
+            escapeHtml(scopedStage.assignment_id || '') + '" data-processing-title="' +
+            escapeHtml(failure?.title || 'Обработка результата') + '" data-stage-description="' +
+            escapeHtml(failure?.detail || stageDescription) + '">Подробнее об обработке</button>' : '';
         const link = ['used', 'revoked', 'expired'].includes(item.invitation_link_status)
           ? item.invitation_link_status : invitation.link_status || item.invitation_link_status;
         const registered = link === 'used' || item.registration_status === 'registered' || item.has_password === true;

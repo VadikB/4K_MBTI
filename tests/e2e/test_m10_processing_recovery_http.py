@@ -80,9 +80,10 @@ def test_owner_status_has_stable_failure_projection_without_retry_button(monkeyp
             if "SELECT owner_user_id,usage_scope FROM m5_cycles" in sql:
                 return Result({"owner_user_id":17,"usage_scope":"assessment"})
             if "SELECT p.*,c.cycle_id" in sql: return Result(None)
-            if "FROM m10_pipeline_runs" in sql:
-                return Result({"status":"failed","stage":"admission_processing_failed",
-                               "error_code":"M6_ADMISSION_PROCESSING_FAILED"})
+            if "FROM m5_cycles cycle" in sql:
+                return Result({"cycle_status":"calculated","collection_closed_at":"2026-11-27T12:00:00Z",
+                    "status":"failed","stage":"admission_processing_failed",
+                    "error_code":"M6_ADMISSION_PROCESSING_FAILED","latest_report_id":"report-1","failed_turn_id":None})
             raise AssertionError(sql)
     @contextmanager
     def connection(): yield StatusConnection()
@@ -109,8 +110,10 @@ def test_owner_status_exposes_progress_and_explicit_new_cycle_action_without_cre
     class StatusConnection:
         def execute(self, sql, _params):
             if "SELECT p.*,c.cycle_id" in sql: return Result(None)
-            if "FROM m10_pipeline_runs" in sql:
-                return Result({"status":"ready","stage":"report_ready","error_code":None})
+            if "FROM m5_cycles cycle" in sql:
+                return Result({"cycle_status":"calculated","collection_closed_at":"2026-11-27T12:00:00Z",
+                    "status":"ready","stage":"report_ready","error_code":None,
+                    "latest_report_id":"report-2","failed_turn_id":None})
             raise AssertionError(sql)
     @contextmanager
     def connection(): yield StatusConnection()

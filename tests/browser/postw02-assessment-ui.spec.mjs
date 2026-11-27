@@ -157,7 +157,7 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   await screenshot(page, 'long', width);
   await page.locator('#interview-textarea').fill('');
   await page.locator('#interview-finish-button').click();
-  await expect(page.locator('#interview-error')).toContainText('Ожидайте завершения обработки');
+  await expect(page.locator('#interview-error')).toContainText('Идёт обработка');
   await page.clock.fastForward(46000);
   await expect(page.locator('#interview-error')).toHaveAttribute('data-tone', 'neutral');
   await expect(page.locator('#interview-finish-button')).toBeDisabled();

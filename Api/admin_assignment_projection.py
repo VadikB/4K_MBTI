@@ -1,6 +1,7 @@
 """Shared read-only assignment lineage for admin rows and questionnaire summaries."""
 
 from Api.assessment_assignment_cancellation import UNBOUND_ASSIGNMENT_CYCLE_SQL
+from Api.assessment_processing_status import INTERIM_FAILURE_FOR_CYCLE_SQL
 from Api.assessment_assignment_sources import CONFIRMATION_ASSIGNMENT_SCOPE_SQL
 from Api.m8_report_access import CUSTOMER_REPORT_FOR_CYCLE_SQL
 
@@ -109,7 +110,8 @@ SELECT assignment.organization_id, assignment.recipient_user_id,
        COALESCE(plan_progress.completed_positions, 0) AS completed_positions,
        CASE WHEN ready_report.can_open AND cycle.collection_closed_at IS NOT NULL
             THEN ready_report.payload_json END AS results_payload,
-       pipeline.status AS pipeline_status,
+       cycle.collection_closed_at, pipeline.status AS pipeline_status, pipeline.stage AS pipeline_stage,
+       interim.turn_id AS failed_turn_id,
        CASE WHEN ready_report.can_open AND cycle.collection_closed_at IS NOT NULL
             THEN ready_report.id END AS report_id,
        CASE WHEN ready_report.can_open AND cycle.collection_closed_at IS NOT NULL
@@ -144,13 +146,8 @@ LEFT JOIN LATERAL (
     ORDER BY revision.revision_no DESC
     LIMIT 1
 ) plan_progress ON TRUE
-LEFT JOIN LATERAL (
-    SELECT run.status
-    FROM m10_pipeline_runs run
-    WHERE run.cycle_db_id=cycle.id
-    ORDER BY run.updated_at DESC
-    LIMIT 1
-) pipeline ON TRUE
+LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=cycle.id
+LEFT JOIN LATERAL ({INTERIM_FAILURE_FOR_CYCLE_SQL}) interim ON TRUE
 LEFT JOIN participant_acquaintance_states acquaintance
   ON acquaintance.user_id=assignment.recipient_user_id
  AND acquaintance.organization_id=assignment.organization_id

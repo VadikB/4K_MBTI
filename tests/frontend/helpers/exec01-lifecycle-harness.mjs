@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { participantFailureMessage } from '../../../web/js/assessment-processing-status.js';
 import { assessmentRuntimeErrorMessage } from '../../../web/js/assessment-errors.js';
 
 const source = fs.readFileSync(new URL('../../../web/js/screens/interview.js', import.meta.url), 'utf8');
@@ -82,6 +83,7 @@ export const createInterviewHarness = ({ animationFrame = true, storage = new Ma
     pendingUser: { id: 8 }, identityEpoch: 1, assessmentRuntimeKind: 'cycle' };
   let leaveCleanup;
   const context = vm.createContext({
+    participantFailureMessage,
     assessmentRuntimeErrorMessage,
     getAssessmentViewGeneration: () => viewGeneration,
     advanceAssessmentViewGeneration: () => { viewGeneration += 1; },

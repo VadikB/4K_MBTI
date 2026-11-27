@@ -3711,8 +3711,8 @@ test('R03 direct interview URL uses journey and keeps Cycle failure visible', as
 
   await page.goto(`${base}/?screen=interview&cycle_id=stale-cycle`);
   await expect(page.locator('#processing-panel')).toBeVisible();
-  await expect(page.locator('#processing-outcome-title')).toContainText('Не удалось подготовить результат');
-  await expect(page.locator('#processing-panel').getByRole('button', { name: 'Проверить ещё раз', exact: true })).toBeVisible();
+  await expect(page.locator('#processing-outcome-title')).toContainText('Произошла ошибка обработки. Подробности пока недоступны');
+  await expect(page.locator('#processing-panel').getByRole('button', { name: 'Проверить состояние', exact: true })).toBeVisible();
   expect(journeyRead).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem('agent4k.productCycleId'))).toBe('current-cycle');
 });
