@@ -131,31 +131,19 @@ def fragment_turn(turns: dict, turn_id: str, path: str, issues: ValidationIssues
     return turn
 
 
-def assemble_analysis(value: dict, material: dict, *, repairs: dict[str, FragmentQuote | None]) -> dict:
+def assemble_analysis(value: dict, material: dict) -> dict:
     candidate = EvidenceCandidate.model_validate(value)
     turns = {item["turn_id"]: item for item in material["turns"]}
     issues = ValidationIssues()
     fragments = []
-    expected_repairs = repairs.copy()
-    candidates = _index_unique(candidate.fragments, "fragments", issues)
-    for identifier in expected_repairs.keys() - candidates.keys():
-        issues.add("M6_FRAGMENT_REPAIR_MISSING", "fragments")
     for index, fragment in enumerate(candidate.fragments):
         path = f"fragments.{index}"
-        ambiguous = expected_repairs.get(fragment.id)
-        if ambiguous is not None:
-            if fragment.turn_id != ambiguous.turn_id:
-                issues.add("M6_FRAGMENT_REPAIR_TURN", f"{path}.turn_id")
-            if ambiguous.quote not in fragment.quote:
-                issues.add("M6_FRAGMENT_REPAIR_QUOTE", f"{path}.quote")
         turn = fragment_turn(turns, fragment.turn_id, path, issues)
         if turn is None:
-            repairs.setdefault(fragment.id, None)
             continue
         start, reason = quote_position(turn["content"], fragment.quote)
         if reason:
             issues.add(reason, f"{path}.quote")
-            repairs.setdefault(fragment.id, fragment if reason == "M6_FRAGMENT_QUOTE_AMBIGUOUS" else None)
             continue
         fragments.append({**fragment.model_dump(), "start": start, "end": start + len(fragment.quote)})
     issues.raise_if_any()

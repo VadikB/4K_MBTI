@@ -130,7 +130,7 @@
     },
     {
       "path": "Api/m6_contracts.py",
-      "sha256": "842b311ed9596c12063a1f7b4327cfb39f08d347798b35fed48b07515a86b3ca"
+      "sha256": "e7d23176617edf62217bc305d7ae99315f056763d8e973e2ceead5bcc44440ca"
     },
     {
       "path": "Api/m6_worker.py",

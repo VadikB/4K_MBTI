@@ -4,9 +4,10 @@ import json
 
 from Api.assessment_configuration import definition_checksum
 from Api.m5_rule_engine import _gateway_for
-from Api.m6_contracts import EvidenceCandidate, FragmentQuote, assemble_analysis, validate_analysis
+from Api.m6_contracts import EvidenceCandidate, assemble_analysis, validate_analysis
 from Api.m6_package import verify_mechanism
 from Api.m6_package_v2 import PREVIOUS_REF, QUOTE_HANDLER, QUOTE_INPUT_CONTRACT, QUOTE_OUTPUT_CONTRACT, QUOTE_REF
+from Api.m6_quote_retry import PriorFragment, rejected_basis, validate_repaired_basis
 from Api.m6_validation_retry import call_and_validate
 
 
@@ -36,12 +37,21 @@ def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
         {"role": "system", "content": mechanism["prompt"] + "\nJSON Schema:\n" + json.dumps(mechanism["schema"], ensure_ascii=False)},
         {"role": "user", "content": encoded},
     ]
-    repairs: dict[str, FragmentQuote | None] = {}
+    prior: dict[str, PriorFragment] | None = None
 
     def validate(value):
-        if ref == QUOTE_REF:
-            value = assemble_analysis(value, material, repairs=repairs)
-        return validate_current_analysis(value, material)
+        nonlocal prior
+        if ref != QUOTE_REF:
+            return validate_current_analysis(value, material)
+        try:
+            assembled = assemble_analysis(value, material)
+            if prior:
+                validate_repaired_basis(assembled, prior)
+            return validate_current_analysis(assembled, material)
+        except ValueError as error:
+            if prior is None:
+                prior = rejected_basis(value, material, error)
+            raise
 
     output, trace = call_and_validate(
         gateway=resolved, messages=messages, operation=mechanism["operation"],

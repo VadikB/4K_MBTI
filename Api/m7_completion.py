@@ -66,11 +66,7 @@ def finish_availability(connection, situation: dict) -> dict:
     def result(allowed,reason):return {'allowed':allowed,'reason':reason}
     if situation['status']!='scenario_ended':return result(False,'SCENARIO_NOT_COMPLETED')
     as_db=situation['id']
-    material=connection.execute("""SELECT MAX(sequence_no) AS boundary FROM (
-        SELECT sequence_no FROM m5_dialogue_turns WHERE assessment_situation_db_id=%s
-          AND NOT (speaker_type='assessment' AND speaker_id='m7-clarification')
-        UNION ALL SELECT sequence_no FROM m5_scenario_events WHERE assessment_situation_db_id=%s
-        ) material""",(as_db,as_db)).fetchone()['boundary'] or 0
+    material=m5_scenario_runtime.latest_material_sequence(connection,as_db)
     handoff=connection.execute("""SELECT * FROM m5_c45_handoffs
         WHERE assessment_situation_db_id=%s AND mode='interim'
         ORDER BY boundary_sequence DESC,created_at DESC LIMIT 1""",(as_db,)).fetchone()
