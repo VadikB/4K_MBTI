@@ -123,19 +123,24 @@ def test_operator_retries_current_interim_without_replaying_participant_turn(
     with pytest.raises(RetryRefused, match="M6_RETRY_EXPECTED_FAILED_ATTEMPT_NOT_FOUND"):
         retry(replace(target, failed_attempt=2), connection_factory=release_db)
 
+    blocked_gateway = SpanGateway()
     with release_db() as db:
         db.execute("""UPDATE m5_cycles SET started_at=clock_timestamp()-interval '1 day' * 4
             WHERE cycle_id=%s""", (target.cycle_id,))
         with pytest.raises(RetryRefused, match="M6_RETRY_CYCLE_NOT_OPEN"):
-            retry(target, connection_factory=lambda: nullcontext(db), apply=True, operator="synthetic")
+            retry(target, connection_factory=lambda: nullcontext(db), apply=True, operator="synthetic",
+                  gateway=blocked_gateway)
         db.rollback()
+    assert blocked_gateway.calls == 0
 
     with release_db() as db:
         m5_scenario_runtime.append_event(db, as_db_id=as_db_id, event_type="clarification_answered",
                                          event_key="synthetic-stale-boundary", cause={}, payload={})
         with pytest.raises(RetryRefused, match="M6_RETRY_STALE_C45"):
-            retry(target, connection_factory=lambda: nullcontext(db), apply=True, operator="synthetic")
+            retry(target, connection_factory=lambda: nullcontext(db), apply=True, operator="synthetic",
+                  gateway=blocked_gateway)
         db.rollback()
+    assert blocked_gateway.calls == 0
 
     def read_concurrent_attempt():
         observed = retry(target, connection_factory=release_db, apply=True, operator="concurrent")
@@ -155,9 +160,10 @@ def test_operator_retries_current_interim_without_replaying_participant_turn(
     with release_db() as db:
         assert _request(db, as_id) == request
         assert _answer(db, as_db_id) == [original]
-        first, second = db.execute("""SELECT status,error_code,trace_json->'validation_attempts' AS checks,
+        first, second = db.execute("""SELECT attempt_no,status,error_code,trace_json->'validation_attempts' AS checks,
             trace_json->'operator_retry' AS audit FROM m6_processing_attempts WHERE request_id=%s ORDER BY attempt_no""",
             (target.request_id,)).fetchall()
+        assert (first["attempt_no"], second["attempt_no"]) == (1, 2)
         assert first["status"] == "failed" and first["error_code"] == "M6_FRAGMENT_SPAN"
         assert first["checks"][0]["issues"] == [{"path": ["fragments", 0, "end"], "rule": "greater_than"}]
         assert first["checks"][1]["issues"] == [{"path": ["fragments", 0, "end"], "rule": "span_end_exceeds_turn"}]
