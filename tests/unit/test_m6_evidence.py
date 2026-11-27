@@ -183,13 +183,74 @@ def test_fragment_span_retry_explains_exact_unicode_invariant():
     assert 'end-start' in feedback and 'content[start:end]' in feedback and 'Unicode' in feedback
 
 
-def test_fragment_span_retry_supplies_only_unambiguous_deterministic_offsets():
+@pytest.mark.parametrize(("quote", "speaker", "offsets"), [
+    ("🙂", "assessee", "start=3, end=4"),
+    ("после", "assessee", "start=5, end=10"),
+    ("До", "assessee", None),
+    ("После", "assessee", None),
+    ("🙂", "character", None),
+])
+def test_fragment_span_retry_supplies_only_unambiguous_deterministic_offsets(quote, speaker, offsets):
     from Api.m6_validation_retry import _fragment_span_hints
-    original = {'turns': [{'turn_id': 't1', 'content': 'До 🙂 после'}]}
-    candidate = {'fragments': [{'id': 'f1', 'turn_id': 't1', 'start': 0, 'end': 99, 'quote': '🙂'}]}
-    hints = _fragment_span_hints(json.dumps(candidate, ensure_ascii=False),
-                                 [{'role': 'user', 'content': json.dumps(original, ensure_ascii=False)}])
-    assert hints == ' Проверенные подсказки для однозначно найденных дословных цитат: f1: start=3, end=4.'
+    original = {'turns': [{'turn_id': 't1', 'speaker_type': speaker, 'content': 'До 🙂 после и До'}]}
+    candidate = {'fragments': [None, {'id': 'f1', 'turn_id': 't1', 'start': 0, 'end': 99, 'quote': quote}]}
+    hints = _fragment_span_hints(candidate, [{'role': 'user', 'content': json.dumps(original, ensure_ascii=False)}])
+    if offsets is None:
+        assert hints == ""
+    else:
+        assert hints.endswith(f"fragments[1]: {offsets}.")
+
+
+@pytest.mark.parametrize(("mutation", "path", "rule"), [
+    ({"start": 4}, "end", "span_end_not_after_start"),
+    ({"end": 99}, "end", "span_end_exceeds_turn"),
+    ({"quote": "иное"}, "quote", "span_quote_mismatch"),
+])
+def test_current_mechanism_records_a_safe_specific_span_failure(mutation, path, rule):
+    from Api.m6_evidence_service_v2 import evaluate as evaluate_current
+    from Api.m6_package_v2 import load_mechanism as load_current
+
+    mechanism = load_current()
+    invalid = output()
+    invalid['fragments'][0].update(mutation)
+
+    class Gateway:
+        enabled = True
+
+        def chat(self, messages, **kwargs):
+            return json.dumps(invalid)
+
+    with pytest.raises(ValueError, match="M6_FRAGMENT_SPAN") as failure:
+        evaluate_current(material(), mechanism, definition_checksum(mechanism), gateway=Gateway())
+    first, second = failure.value.ai_trace["validation_attempts"]
+    for check in (first, second):
+        assert check["error_code"] == "M6_FRAGMENT_SPAN"
+        assert check["stage"] == "contract"
+        assert check["issues"] == [{"path": ["fragments", 0, path], "rule": rule}]
+
+
+def test_schema_failure_does_not_copy_extra_field_or_input_into_diagnostic():
+    from Api.m6_evidence_service_v2 import evaluate as evaluate_current
+    from Api.m6_package_v2 import load_mechanism as load_current
+
+    mechanism = load_current()
+    invalid = output()
+    invalid["fragments"][0]["private-field"] = "private-value"
+
+    class Gateway:
+        enabled = True
+
+        def chat(self, messages, **kwargs):
+            if len(messages) > 2:
+                assert "private-field" not in messages[-1]["content"]
+                assert "private-value" not in messages[-1]["content"]
+            return json.dumps(invalid)
+
+    with pytest.raises(ValidationError) as failure:
+        evaluate_current(material(), mechanism, definition_checksum(mechanism), gateway=Gateway())
+    for check in failure.value.ai_trace["validation_attempts"]:
+        assert check["error_code"] == "M6_SCHEMA_VALIDATION"
+        assert check["issues"] == [{"path": ["fragments", 0, "<extra>"], "rule": "extra_forbidden"}]
 
 
 def test_retry_repeats_exact_attribution_mapping_without_interpretation():

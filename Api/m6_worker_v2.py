@@ -27,8 +27,12 @@ def run_request(request_id, *, connection_factory=None, gateway=None):
     with connection_factory() as connection:
         job = claim(connection, request_id)
         connection.commit()
-    if job is None:
-        return
+    if job is not None:
+        process_claimed_request(job, connection_factory=connection_factory, gateway=gateway)
+
+
+def process_claimed_request(job, *, connection_factory, gateway=None, claim_trace=None):
+    """Evaluate an already committed claim and publish under its lease."""
     trace = {}
     try:
         if definition_checksum(job["input_json"]) != job["input_hash"]:
@@ -40,6 +44,8 @@ def run_request(request_id, *, connection_factory=None, gateway=None):
         error = _error_code(exc)
     else:
         error = None
+    if claim_trace:
+        trace = {**trace, **claim_trace}
     with connection_factory() as connection:
         finish(connection, job, output, trace, error)
         connection.commit()
