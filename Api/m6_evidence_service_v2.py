@@ -7,7 +7,9 @@ from Api.m5_rule_engine import _gateway_for
 from Api.m6_contracts import EvidenceCandidate, assemble_analysis, validate_analysis
 from Api.m6_package import verify_mechanism
 from Api.m6_package_v2 import PREVIOUS_REF, QUOTE_HANDLER, QUOTE_INPUT_CONTRACT, QUOTE_OUTPUT_CONTRACT, QUOTE_REF
-from Api.m6_quote_retry import rejected_basis, validate_repaired_basis, validate_verified_basis, verified_basis
+from Api.m6_quote_retry import (
+    rejected_basis, validate_repaired_basis, validate_verified_basis, validate_verified_bundles, verified_basis,
+)
 from Api.m6_validation_retry import call_and_validate
 
 
@@ -38,18 +40,22 @@ def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
         {"role": "user", "content": encoded},
     ]
     prior = None
-    verified = []
+    verified = None
 
     def validate(value):
         nonlocal prior, verified
         try:
             analysis = (assemble_analysis(value, material) if ref == QUOTE_REF
                         else validate_current_analysis(value, material))
-            if verified:
-                validate_verified_basis(analysis, verified)
+            if verified is not None:
+                validate_verified_basis(analysis, verified.evidence)
             if prior:
                 validate_repaired_basis(analysis, prior)
-            return validate_current_analysis(analysis, material) if ref == QUOTE_REF else analysis
+            if ref == QUOTE_REF:
+                analysis = validate_current_analysis(analysis, material)
+            if verified is not None:
+                validate_verified_bundles(analysis, verified, material)
+            return analysis
         except ValueError as error:
             if prior is None:
                 prior = rejected_basis(value, material, error) if ref == QUOTE_REF else {}

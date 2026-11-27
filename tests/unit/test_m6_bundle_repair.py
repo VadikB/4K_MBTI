@@ -123,6 +123,7 @@ def test_repair_allows_only_grounded_reassessment(mechanism, reason, correct_tur
         turn_id = result["fragments"][0]["turn_id"]
         result["evidence"].pop(0)
         result["bundles"][0]["evidence_ids"] = []
+        result["bundles"][0]["opportunity_basis"] = "Ход показывает намерение, но не обосновывает свидетельство."
         if not keep_observation:
             result["fragments"].pop(0)
             result["signals"].pop(0)
@@ -141,6 +142,7 @@ def test_repair_allows_only_grounded_reassessment(mechanism, reason, correct_tur
     if correct_turn and (keep_observation or reason == "irrelevant"):
         analysis, trace = evaluate(material, mechanism, definition_checksum(mechanism), gateway=gateway)
         assert analysis["bundles"][0]["evidence_ids"] == []
+        assert analysis["bundles"][0]["opportunity_basis"] == gateway.responses[1]["bundles"][0]["opportunity_basis"]
         assert analysis["attribution_notes"][0]["context_refs"][0]["id"] == "synthetic-turn"
         assert trace["validation_attempts"][-1]["status"] == "accepted"
         assert any(signal["id"] == "signal-schedule" for signal in analysis["signals"]) == keep_observation

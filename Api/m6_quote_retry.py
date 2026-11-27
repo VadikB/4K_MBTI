@@ -1,11 +1,11 @@
 """Continuity of the candidate's evidence basis across one provider retry."""
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 
 from pydantic import ValidationError
 
 from Api.m6_contracts import (
-    Evidence, Fragment, FragmentQuote, Signal, ValidationIssues, assemble_fragment, candidate_records, fragment_turn,
+    Bundle, Evidence, Fragment, FragmentQuote, Signal, ValidationIssues, assemble_fragment, candidate_records, fragment_turn,
     quote_position, validate_analysis,
 )
 
@@ -30,13 +30,19 @@ class VerifiedEvidence:
     sources: tuple[tuple[IndexedRecord, IndexedRecord], ...]
 
 
-def _typed_rows(value: object, field: str, model, turns: dict) -> list[IndexedRecord]:
+@dataclass(frozen=True)
+class VerifiedReply:
+    evidence: list[VerifiedEvidence]
+    bundles: list[IndexedRecord]
+
+
+def _typed_rows(value: object, field: str, model, turns: dict, *, key: str = "id") -> list[IndexedRecord]:
     records = [(index, record) for index, record in candidate_records(value, field)
-               if isinstance(record.get("id"), str)]
-    counts = Counter(record["id"] for _, record in records)
+               if isinstance(record.get(key), str)]
+    counts = Counter(record[key] for _, record in records)
     rows = []
     for index, record in records:
-        if counts[record["id"]] != 1:
+        if counts[record[key]] != 1:
             continue
         try:
             typed = model.model_validate(record)
@@ -51,31 +57,40 @@ def _typed_rows(value: object, field: str, model, turns: dict) -> list[IndexedRe
     return rows
 
 
-def verified_basis(value: object, material: dict, *, quote_contract: bool) -> list[VerifiedEvidence]:
-    """Identify sound chains in a rejected answer using the usual contract checks."""
+def verified_basis(value: object, material: dict, *, quote_contract: bool) -> VerifiedReply:
+    """Identify separately valid evidence chains and indicator summaries in a rejected reply."""
     turns = {turn["turn_id"]: turn for turn in material["turns"]}
     rows = {
         "fragments": _typed_rows(value, "fragments", FragmentQuote if quote_contract else Fragment, turns),
         "signals": _typed_rows(value, "signals", Signal, turns),
         "evidence": _typed_rows(value, "evidence", Evidence, turns),
     }
-    if not rows["evidence"]:
-        return []
-    # Bundle completeness is checked on the full retry. It does not determine whether an existing source is valid.
-    projection = {"schema_version": 1, "bundles": [], "attribution_notes": [],
+    targets = {target["indicator_id"] for target in material["indicator_targets"]}
+    owners = {row.value["id"]: row.value["indicator_id"] for row in rows["evidence"]}
+    # A bundle with a foreign reference must not invalidate its rightful owner's bundle.
+    rows["bundles"] = [
+        row for row in _typed_rows(value, "bundles", Bundle, turns, key="indicator_id")
+        if row.value["indicator_id"] in targets
+        and all(owners.get(eid) == row.value["indicator_id"] for eid in row.value["evidence_ids"])
+    ]
+    projection = {"schema_version": 1, "attribution_notes": [],
                   **{field: [record.value for record in records] for field, records in rows.items()}}
     try:
         validate_analysis(projection, material, enforce_simple_basis=True)
     except ValueError as error:
         failures = getattr(error, "validation_issues", [])
         if not failures or any(issue["path"] == "criteria" for issue in failures):
-            return []
+            return VerifiedReply([], [])
     else:
         failures = []
-    invalid = {tuple(issue["path"].split(".")[:2]) for issue in failures if issue["code"] != "M6_BUNDLE_REFERENCE"}
+    # Evidence can be sound even if the first reply did not assign it to a bundle.
+    invalid = {
+        tuple(issue["path"].split(".")[:2]) for issue in failures
+        if not (issue["code"] == "M6_BUNDLE_REFERENCE" and issue["path"].startswith("evidence."))
+    }
     valid = {
         field: {record.value["id"]: record for index, record in enumerate(records) if (field, str(index)) not in invalid}
-        for field, records in rows.items()
+        for field, records in rows.items() if field != "bundles"
     }
     verified = []
     for evidence in valid["evidence"].values():
@@ -85,7 +100,16 @@ def verified_basis(value: object, material: dict, *, quote_contract: bool) -> li
         except KeyError:
             continue
         verified.append(VerifiedEvidence(evidence, sources))
-    return verified
+    verified_ids = defaultdict(set)
+    for basis in verified:
+        item = basis.evidence.value
+        verified_ids[item["indicator_id"]].add(item["id"])
+    bundles = [
+        row for index, row in enumerate(rows["bundles"])
+        if ("bundles", str(index)) not in invalid
+        and set(row.value["evidence_ids"]) == verified_ids[row.value["indicator_id"]]
+    ]
+    return VerifiedReply(verified, bundles)
 
 
 def _links(value: dict, indicators: set[str]) -> tuple[set[str], dict[str, set[str]]]:
@@ -185,6 +209,44 @@ def validate_verified_basis(value: dict, prior: list[VerifiedEvidence]) -> None:
             for key, previous in original.value.items():
                 if record[key] != previous:
                     issues.add("M6_REPAIR_BASIS_CHANGED", f"{field}.{index}.{key}")
+    issues.raise_if_any()
+
+
+def validate_verified_bundles(value: dict, prior: VerifiedReply, material: dict) -> None:
+    """Protect a sound summary unless the validated retry has grounds to update it."""
+    current = {row["indicator_id"]: (index, row) for index, row in enumerate(value["bundles"])}
+    evidence = {item["id"]: item for item in value["evidence"]}
+    reasons = {(indicator, turn_id) for indicator, turn_id, _ in _reassessment_reasons(value)}
+    participant_turns = {turn["turn_id"] for turn in material["turns"] if turn["speaker_type"] == "assessee"}
+    prior_evidence = {basis.evidence.value["id"]: basis for basis in prior.evidence}
+    issues = ValidationIssues()
+    for original in prior.bundles:
+        previous = original.value
+        indicator = previous["indicator_id"]
+        index, row = current[indicator]
+        previous_ids = set(previous["evidence_ids"])
+        old_payloads = [
+            {key: field for key, field in prior_evidence[eid].evidence.value.items() if key != "id"}
+            for eid in previous_ids
+        ]
+        if any(
+            {key: field for key, field in evidence[eid].items() if key != "id"} not in old_payloads
+            for eid in set(row["evidence_ids"]) - previous_ids
+        ):
+            continue
+        if previous_ids:
+            source_turns = {
+                fragment.value["turn_id"] for eid in previous_ids for _, fragment in prior_evidence[eid].sources
+            }
+        else:
+            source_turns = {
+                ref["id"] for ref in previous["context_refs"] if ref["kind"] == "turn" and ref["id"] in participant_turns
+            }
+        if any((indicator, turn_id) in reasons for turn_id in source_turns):
+            continue
+        for field, old_value in previous.items():
+            if row[field] != old_value:
+                issues.add("M6_REPAIR_BUNDLE_CHANGED", f"bundles.{index}.{field}")
     issues.raise_if_any()
 
 
