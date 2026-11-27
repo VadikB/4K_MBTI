@@ -25,7 +25,9 @@ from pydantic import BaseModel, Field
 from Api import invitation_outcomes
 from Api import assessment_assignment_operations
 from Api.admin_assignment_projection import ADMIN_ASSIGNMENT_STAGES_SQL
-from Api.assessment_processing_status import PARTICIPANT_MESSAGES, failure_stage, read_processing_status
+from Api.assessment_processing_status import (
+    PARTICIPANT_MESSAGES, failure_stage, read_interim_failed_turn_id, read_processing_status,
+)
 from Api.invitation_outcomes import InvitationRefusal
 from Api.app_version import get_app_version
 from Api.auth_service import AuthAccessDeniedError, AuthRateLimitError, auth_service, normalize_email
@@ -1327,6 +1329,7 @@ def _build_admin_organizations(connection, scope: AdminScope | None = None, *, a
         ).fetchall()
         for row in stage_rows:
             row = dict(row)
+            row['failed_turn_id'] = read_interim_failed_turn_id(connection, row)
             member_key = (int(row["organization_id"]), int(row["recipient_user_id"]))
             assessment_history.setdefault(member_key, []).append({
                 "assignment_id": int(row["assignment_id"]),

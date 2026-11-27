@@ -3,9 +3,11 @@
 # Select only the current route position. Legacy Cycles without a route use their
 # last situation, as in the participant runtime. C-45 records the exact Turn IDs
 # accepted as input, including when the boundary ends at an event.
-INTERIM_FAILURE_FOR_CYCLE_SQL = """
-    SELECT answer.turn_id
-    FROM m5_assessment_situations situation
+_INTERIM_FAILURE_FOR_CYCLE_SQL = """
+    SELECT answer.turn_id::text AS failed_turn_id
+    FROM m5_cycles cycle
+    JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=cycle.id
+    JOIN m5_assessment_situations situation ON situation.cycle_db_id=cycle.id
     JOIN LATERAL (
         SELECT turn_id, sequence_no FROM m5_dialogue_turns
         WHERE assessment_situation_db_id=situation.id AND speaker_type='assessee'
@@ -28,7 +30,7 @@ INTERIM_FAILURE_FOR_CYCLE_SQL = """
         WHERE revision.request_id=evidence.id AND request.as_db_id=situation.id AND request.mode='interim'
         ORDER BY request.created_at DESC, request.id DESC LIMIT 1
     ) assessment ON TRUE
-    WHERE situation.cycle_db_id=cycle.id
+    WHERE cycle.cycle_id=%s
       AND cycle.collection_closed_at IS NULL
       AND cycle.status IN ('active','paused','interrupted')
       AND situation.status IN ('active','scenario_ended')
@@ -46,6 +48,21 @@ INTERIM_FAILURE_FOR_CYCLE_SQL = """
       AND ((pipeline.error_code='M6_EVIDENCE_FAILED' AND evidence.status='failed')
         OR (pipeline.error_code='M6_ASSESSMENT_FAILED' AND assessment.status='failed'))
 """
+
+
+def read_interim_failed_turn_id(connection, cycle: dict) -> str | None:
+    # Only a failed interim pipeline needs to look up the saved C-45 and M6 requests.
+    if (
+        not cycle.get("cycle_id")
+        or cycle.get("collection_closed_at") is not None
+        or cycle.get("cycle_status") not in {"active", "paused", "interrupted"}
+        or cycle.get("pipeline_status") != "failed"
+        or cycle.get("pipeline_stage") != "processing_failed"
+        or cycle.get("pipeline_error_code") not in {"M6_EVIDENCE_FAILED", "M6_ASSESSMENT_FAILED"}
+    ):
+        return None
+    answer = connection.execute(_INTERIM_FAILURE_FOR_CYCLE_SQL, (cycle["cycle_id"],)).fetchone()
+    return answer["failed_turn_id"] if answer else None
 
 
 def failure_stage(*, collection_closed_at, cycle_status, pipeline_status, pipeline_stage, failed_turn_id=None):
@@ -70,19 +87,22 @@ PARTICIPANT_MESSAGES = {
 
 
 def read_processing_status(connection, cycle_id: str) -> tuple[dict | None, str | None, str | None]:
-    row = connection.execute(f"""
-        SELECT cycle.status AS cycle_status, cycle.collection_closed_at,
-               pipeline.status, pipeline.stage, pipeline.error_code, pipeline.latest_report_id,
-               interim.turn_id::text AS failed_turn_id
+    row = connection.execute("""
+        SELECT cycle.cycle_id, cycle.status AS cycle_status, cycle.collection_closed_at,
+               pipeline.status AS pipeline_status, pipeline.stage AS pipeline_stage,
+               pipeline.error_code AS pipeline_error_code, pipeline.latest_report_id
         FROM m5_cycles cycle
         LEFT JOIN m10_pipeline_runs pipeline ON pipeline.cycle_db_id=cycle.id
-        LEFT JOIN LATERAL ({INTERIM_FAILURE_FOR_CYCLE_SQL}) interim ON TRUE
         WHERE cycle.cycle_id=%s
     """, (cycle_id,)).fetchone()
     if not row:
         return None, None, None
-    pipeline = {key: row[key] for key in ("status", "stage", "error_code", "latest_report_id")} if row["status"] else None
+    failed_turn_id = read_interim_failed_turn_id(connection, row)
+    pipeline = {
+        "status": row["pipeline_status"], "stage": row["pipeline_stage"],
+        "error_code": row["pipeline_error_code"], "latest_report_id": row["latest_report_id"],
+    } if row["pipeline_status"] else None
     failure = failure_stage(collection_closed_at=row["collection_closed_at"], cycle_status=row["cycle_status"],
-                            pipeline_status=row["status"], pipeline_stage=row["stage"],
-                            failed_turn_id=row["failed_turn_id"])
-    return pipeline, failure, row["failed_turn_id"]
+                            pipeline_status=row["pipeline_status"], pipeline_stage=row["pipeline_stage"],
+                            failed_turn_id=failed_turn_id)
+    return pipeline, failure, failed_turn_id

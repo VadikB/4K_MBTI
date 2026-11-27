@@ -36,12 +36,12 @@ def runtime(monkeypatch):
         def execute(self, sql, params=()):
             queries.append(sql)
             assert sql.strip().startswith('SELECT') and 'FOR UPDATE' not in sql
-            if 'AS failed_turn_id' in sql:
+            if 'pipeline.error_code AS pipeline_error_code' in sql:
                 assert params == (cycle_id,)
                 return Result([{
-                    'cycle_status': cycle['status'], 'collection_closed_at': None,
-                    'status': None, 'stage': None, 'error_code': None,
-                    'latest_report_id': None, 'failed_turn_id': None,
+                    'cycle_id': cycle_id, 'cycle_status': cycle['status'], 'collection_closed_at': None,
+                    'pipeline_status': None, 'pipeline_stage': None,
+                    'pipeline_error_code': None, 'latest_report_id': None,
                 }])
             if 'profile_ref_json FROM m5_cycles' in sql: return Result([cycle])
             if 'FROM m5_assessment_situations WHERE cycle_db_id' in sql: return Result([situation])
