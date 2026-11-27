@@ -34,7 +34,7 @@ from tests.m6_admission_fixture import RecordedAdmissionGateway as AdmissionOnly
 from Api.m10_test_gateway import BrowserAcceptanceGateway
 from Api import m10_orchestration
 from Api import m6_repository
-from Api.m6_worker import run_request as run_evidence
+from Api.m6_worker_v2 import run_request as run_evidence
 from Api.m6_assessment_worker import run_request as run_assessment
 from Api.m8_results import read_latest_report, render_pdf
 from Api import m6_cycle_aggregation_repository
@@ -160,7 +160,7 @@ class EvidenceGateway:
     enabled=True
     def chat(self,messages,**_kwargs):
         material=json.loads(messages[1]["content"])
-        return json.dumps({"schema_version":1,"fragments":[],"signals":[],"evidence":[],"attribution_notes":[],
+        return json.dumps({"schema_version":material.get("schema_version",1),"fragments":[],"signals":[],"evidence":[],"attribution_notes":[],
             "bundles":[{"indicator_id":x["indicator_id"],"evidence_ids":[],"opportunity_basis":"whole closed dialogue",
                 "context_refs":[],"limitations":[],"contradictions":[]} for x in material["indicator_targets"]]})
 
@@ -1798,3 +1798,136 @@ def test_browser_turn_close_lock_order_and_late_turn(product_db):
     with factory() as c:
         assert c.execute('SELECT count(*) AS n FROM m5_dialogue_turns').fetchone()['n']==0
         assert c.execute("SELECT count(*) AS n FROM m5_c45_handoffs WHERE mode='final'").fetchone()['n']==1
+
+
+@pytest.mark.parametrize('version', ['1.0.2', '1.0.1'])
+def test_cycle_pins_evidence_contract_through_worker_and_m7(product_db, monkeypatch, version):
+    from Api import cycle_execution_manifest, m5_cycle_runtime, m6_worker_v2
+    from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
+    from Api.m5_scenario_runtime import build_c45
+    from Api.m6_package_v2 import load_mechanism
+
+    text = 'Сначала сверю сроки. Затем напишу заказчику.'
+    quote = 'сверю сроки'
+    turn_id = str(uuid4())
+    package = f'assessment_definitions/prompts/m6_evidence/v{version}'
+    with product_db() as connection:
+        with monkeypatch.context() as cycle_creation:
+            if version == '1.0.1':
+                defaults = {**cycle_execution_manifest.DEFAULT_DEPENDENCIES, 'm6_evidence': package}
+
+                def old_build_manifest(**kwargs):
+                    return cycle_execution_manifest.build_manifest(**kwargs, dependencies=defaults)
+
+                cycle_creation.setattr(m5_cycle_runtime, 'build_manifest', old_build_manifest)
+            started = start_or_resume(connection, user_id=99, key='quote-cycle-start')
+        cycle_id = str(started['plan']['cycle_id'])
+        as_id = str(started['decision']['assessment_situation_id'])
+        cycle = connection.execute('SELECT * FROM m5_cycles WHERE cycle_id=%s', (cycle_id,)).fetchone()
+        assert cycle['execution_manifest_json']['dependencies']['m6_evidence']['path'] == package
+        submit_turn(connection, assessment_situation_id=as_id, request_id='quote-turn', turn_id=turn_id,
+                    content=text, semantic_adapter=ControlledSemanticAdapter({}),
+                    character_adapter=ControlledCharacterAdapter({}))
+        transition(connection, assessment_situation_id=as_id, action='scenario_end',
+                   reason='participant_completed', request_id='quote-end')
+        interim = build_c45(connection, as_id, mode='interim')
+        interim_handoff = str(interim['handoff_id'])
+        request = m10_orchestration.enqueue_handoff(connection, handoff_id=interim_handoff, created_by=99)
+        assert request['status'] == 'queued'
+        assert request['mechanism_json']['ref'] == f'm6_evidence/{version}'
+        assert request['mechanism_json'] == load_mechanism(directory=cycle_execution_manifest.ROOT / package)
+        connection.commit()
+
+    class QuotingGateway(EvidenceGateway):
+        def __init__(self, *, invalid_span=False):
+            self.calls = []
+            self.invalid_span = invalid_span
+
+        def chat(self, messages, **kwargs):
+            self.calls.append(kwargs['routing_key'])
+            value = json.loads(messages[1]['content'])
+            assert value.get('schema_version') == (2 if version == '1.0.2' else None)
+            turn = next(item for item in value['turns'] if item['turn_id'] == turn_id)
+            assert turn['content'].encode() == text.encode()
+            result = json.loads(super().chat(messages))
+            fragment = {'id': 'fragment', 'turn_id': turn_id, 'quote': quote}
+            if version == '1.0.1':
+                start, end = (7, 18) if self.invalid_span else (8, 19)
+                fragment.update(start=start, end=end)
+            result['fragments'] = [fragment]
+            result['signals'] = [{'id': 'signal', 'fragment_id': 'fragment', 'observation': 'Назвал действие',
+                                  'form_description': 'намерение', 'context_refs': []}]
+            criterion = value['criteria'][0]
+            result['evidence'] = [{
+                'id': 'evidence', 'indicator_id': criterion['id'], 'm2_version': criterion['m2_version'],
+                'type': 'Simple', 'interpretation': 'Сверка сроков', 'bs_ids': ['signal'], 'fragment_ids': ['fragment'],
+                'attribution': {'function': criterion['function'], 'product': criterion['product'],
+                                'evidence_pattern': criterion['evidence_pattern'], 'boundaries': criterion['boundary']},
+                'ordered_turn_ids': [turn_id], 'context_refs': [], 'limitations': [],
+            }]
+            next(bundle for bundle in result['bundles'] if bundle['indicator_id'] == criterion['id'])['evidence_ids'] = ['evidence']
+            return json.dumps(result, ensure_ascii=False)
+
+    gateway = QuotingGateway()
+    if version == '1.0.1':
+        rejected = QuotingGateway(invalid_span=True)
+        assert m6_worker_v2.recover_pending(product_db, gateway=rejected)
+        assert len(rejected.calls) == 2
+        with product_db() as connection:
+            assert m6_repository.read_request(connection, request['id'])['status'] == 'failed'
+            retry = m10_orchestration.enqueue_handoff(connection, handoff_id=interim_handoff, created_by=99)
+            assert retry['id'] == request['id'] and retry['mechanism_hash'] == request['mechanism_hash']
+        m6_worker_v2.run_request(request['id'], connection_factory=product_db, gateway=gateway)
+    else:
+        assert m6_worker_v2.recover_pending(product_db, gateway=gateway)
+    assert len(gateway.calls) == 1
+
+    def read_saved(connection, request_id):
+        saved = m6_repository.read_request(connection, request_id)
+        assert saved['status'] == 'succeeded'
+        stored = m6_repository.read_analysis(connection, saved['analysis_revision_id'])
+        fragment, = stored['analysis']['fragments']
+        assert fragment == {'id': 'fragment', 'turn_id': turn_id, 'quote': quote, 'start': 8, 'end': 19}
+        assert stored['analysis']['signals'][0]['fragment_id'] == fragment['id']
+        assert stored['analysis']['evidence'][0]['bs_ids'] == ['signal']
+        assert any(bundle['content_json']['evidence_ids'] == ['evidence'] for bundle in stored['bundles'])
+        return saved['analysis_revision_id']
+
+    with product_db() as connection:
+        interim_revision = read_saved(connection, request['id'])
+        replay = m10_orchestration.enqueue_handoff(connection, handoff_id=interim_handoff, created_by=99)
+        assert replay['id'] == request['id']
+    m6_worker_v2.run_request(replay['id'], connection_factory=product_db, gateway=gateway)
+    assert len(gateway.calls) == 1
+
+    class InterimGateway(AssessmentGateway):
+        def chat(self, messages, **kwargs):
+            value = json.loads(messages[1]['content'])
+            assert value['evidence_analysis']['fragments'][0]['quote'] == quote
+            result = json.loads(super().chat(messages, **kwargs))
+            result['mode'] = 'interim'
+            for target in result['targets']:
+                target.update(status='INTERIM', outcome=None, descriptor_basis=None)
+            return json.dumps(result, ensure_ascii=False)
+
+    assert m10_orchestration.advance_once(connection_factory=product_db)
+    assert m6_worker_v2.recover_pending(product_db, gateway=InterimGateway())
+    assert m10_orchestration.advance_once(connection_factory=product_db)
+    with product_db() as connection:
+        decision = connection.execute('''SELECT d.status,c.payload_json FROM m7_clarification_decisions d
+            JOIN m6_c54_revisions c ON c.id=d.c54_revision_id''').fetchone()
+        assert decision['status'] == 'NO_QUESTION'
+        assert decision['payload_json']['evidence_revision_id'] == str(interim_revision)
+        complete(connection, cycle_id=cycle_id, key='quote-close', action='complete', reason='plan_finished', initiated_by=99)
+        connection.commit()
+    assert m10_orchestration.advance_once(connection_factory=product_db)
+    with product_db() as connection:
+        final = connection.execute('''SELECT q.id,q.mode,q.mechanism_hash FROM m7_finalization_outbox o
+            JOIN m6_processing_requests q ON q.id=o.m6_request_id''').fetchone()
+        assert final['mode'] == 'final_as'
+        assert final['mechanism_hash'] == request['mechanism_hash']
+    assert m6_worker_v2.recover_pending(product_db, gateway=gateway)
+    assert len(gateway.calls) == 2
+    with product_db() as connection:
+        assert read_saved(connection, final['id']) != interim_revision
+        assert read_saved(connection, request['id']) == interim_revision

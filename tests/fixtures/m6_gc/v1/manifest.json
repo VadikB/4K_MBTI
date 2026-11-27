@@ -5,7 +5,7 @@
   "base_commit": "dd3d2cadd90a31e3b7b3141ed6a0984afbd11ef6",
   "branch": "codex/m6-task01-contracts",
   "runtime_commit": null,
-  "runtime_binding": "local uncommitted M6-A, file hashes below; not approved baseline",
+  "runtime_binding": "M6-A technical regression dependencies at Task 7; no approval of GC candidates",
   "sources": [
     {
       "id": "ProductArchitecture.Change01",
@@ -122,15 +122,15 @@
     },
     {
       "path": "Api/m6_evidence_service.py",
-      "sha256": "3e55cde846f27d42f4ae3fc77a98bcb3227175d94d5c682e7fdeff5cb486c5ff"
+      "sha256": "ad84d9f22e15c02b47f0499430c5c82b90145df0779cec7dd136771624e99523"
     },
     {
       "path": "Api/m6_package.py",
-      "sha256": "1f084986d8aa4fb79be6f792ad07421cafd1239b0e7b83481359a59555cbe193"
+      "sha256": "6dd4d0cc8ab3e7ecd7a3bea0ca45f7e64d2743aecf5495f8694032d56e4f9291"
     },
     {
       "path": "Api/m6_contracts.py",
-      "sha256": "3aeca36dff10b75a8f21f5b86964e5764fd84690e34eecb9e0c604972380d185"
+      "sha256": "842b311ed9596c12063a1f7b4327cfb39f08d347798b35fed48b07515a86b3ca"
     },
     {
       "path": "Api/m6_worker.py",

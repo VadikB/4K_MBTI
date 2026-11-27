@@ -148,10 +148,9 @@ def enqueue_handoff(connection, *, handoff_id: str, created_by: int) -> dict:
     request = enqueue_evidence(
         connection, as_db_id=as_db_id, handoff_id=handoff_id, key=f"product-evidence:{handoff_id}",
         material=material, mechanism=load_evidence_mechanism(
-            "m6_evidence/1.0.1",
-            resolve_cycle_dependency(cycle, "m6_evidence"),
-            resolve_cycle_dependency(cycle, "source_set") / "manifest.json",
-            resolve_cycle_dependency(cycle, "provider_contract"),
+            directory=resolve_cycle_dependency(cycle, "m6_evidence"),
+            source_set=resolve_cycle_dependency(cycle, "source_set") / "manifest.json",
+            provider_contract=resolve_cycle_dependency(cycle, "provider_contract"),
         ), created_by=created_by,
     )
     if prior:return dict(request)
@@ -547,19 +546,8 @@ def _run_browser_test_gateway_once() -> bool:
     from Api.m10_test_gateway import BrowserAcceptanceGateway, enabled
     if not enabled():
         return False
-    with get_connection() as connection:
-        evidence = connection.execute("SELECT id FROM m6_processing_requests WHERE status='queued' ORDER BY created_at LIMIT 1").fetchone()
-        assessment = connection.execute("SELECT id FROM m6_assessment_requests WHERE status='queued' ORDER BY created_at LIMIT 1").fetchone()
-    gateway = BrowserAcceptanceGateway()
-    if evidence:
-        from Api.m6_worker import run_request
-        run_request(evidence["id"], gateway=gateway)
-        return True
-    if assessment:
-        from Api.m6_assessment_worker import run_request
-        run_request(assessment["id"], gateway=gateway)
-        return True
-    return False
+    from Api.m6_worker_v2 import recover_pending
+    return recover_pending(get_connection, gateway=BrowserAcceptanceGateway())
 
 
 def _loop() -> None:

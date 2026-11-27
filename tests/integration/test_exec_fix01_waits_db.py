@@ -10,7 +10,7 @@ from Api import m10_orchestration as orchestration
 from Api import m6_repository, m7_clarification, m7_completion
 from Api import m7_return_integration as presence
 from Api.m5_cycle_runtime import read_cycle
-from Api.m6_worker import run_request as run_evidence
+from Api.m6_worker_v2 import run_request as run_evidence
 from Api.m6_assessment_worker import run_request as run_assessment
 from tests.integration.test_exec_fix01_clarification_db import current, database, http
 from tests.integration.test_exec_fix01_clarification_db import RecordedEvidence, RecordedAssessment, _request

@@ -59,13 +59,16 @@ def _acceptance_output(value, fixture):
     turn=next((x for x in turns if contract and x['content'] in contract['accepted_inputs']),None)
     actions=contract['actions'] if turn else {}
     if 'evidence_analysis' not in value:
-        result={'schema_version':1,'fragments':[],'signals':[],'evidence':[],'attribution_notes':[],
+        result={'schema_version':value.get('schema_version',1),'fragments':[],'signals':[],'evidence':[],'attribution_notes':[],
                 'bundles':[]}
         for criterion in material['criteria']:
             indicator=criterion['id'];eid='e-'+indicator;fid='f-'+indicator;sid='s-'+indicator
             action=actions.get(indicator)
             if action:
-                result['fragments'].append({'id':fid,'turn_id':turn['turn_id'],'start':0,'end':len(turn['content']),'quote':turn['content']})
+                fragment = {'id':fid,'turn_id':turn['turn_id'],'quote':turn['content']}
+                if result['schema_version'] == 1:
+                    fragment.update(start=0, end=len(turn['content']))
+                result['fragments'].append(fragment)
                 result['signals'].append({'id':sid,'fragment_id':fid,'observation':action,'form_description':'direct synthetic response','context_refs':[]})
                 result['evidence'].append({'id':eid,'indicator_id':indicator,'m2_version':criterion['m2_version'],'type':'Simple',
                     'interpretation':action,'bs_ids':[sid],'fragment_ids':[fid],
@@ -158,7 +161,7 @@ class BrowserAcceptanceGateway:
                 } for target in value["material"]["indicator_targets"]],
             }, ensure_ascii=False)
         return json.dumps({
-            "schema_version": 1, "fragments": [], "signals": [], "evidence": [], "attribution_notes": [],
+            "schema_version": value.get("schema_version", 1), "fragments": [], "signals": [], "evidence": [], "attribution_notes": [],
             "bundles": [{
                 "indicator_id": target["indicator_id"], "evidence_ids": [],
                 "opportunity_basis": "Persisted closed browser acceptance dialogue",

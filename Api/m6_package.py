@@ -46,10 +46,11 @@ def load_mechanism(ref: str, directory: Path = PACKAGE) -> dict:
             'max_input_bytes': config['max_input_bytes'], 'lease_seconds': config['lease_seconds']}
 
 
-def verify_mechanism(value: dict, expected_hash: str) -> None:
-    if definition_checksum(value) != expected_hash or value['handler'] != 'm6-evidence/1':
+def verify_mechanism(value: dict, expected_hash: str, *, handler: str = 'm6-evidence/1',
+                     output_model=EvidenceAnalysis) -> None:
+    if definition_checksum(value) != expected_hash or value['handler'] != handler:
         raise ValueError('CHECKSUM_MISMATCH')
     if hashlib.sha256(value['prompt'].encode()).hexdigest() != value['operation']['prompt_ref']['checksum']:
         raise ValueError('CHECKSUM_MISMATCH')
-    if value['schema'] != EvidenceAnalysis.model_json_schema():
+    if value['schema'] != output_model.model_json_schema():
         raise ValueError('M6_SCHEMA_UNSUPPORTED')

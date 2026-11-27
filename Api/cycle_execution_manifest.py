@@ -48,7 +48,7 @@ DEFAULT_DEPENDENCIES: dict[str, str] = {
     "m5_semantic_decision": "assessment_definitions/prompts/m5_semantic_decision/v2",
     "m5_character_response": "assessment_definitions/prompts/m5_character_response/v2",
     "m5_technical_c45": "assessment_definitions/prompts/m5_technical_c45/v1",
-    "m6_evidence": "assessment_definitions/prompts/m6_evidence/v1.0.1",
+    "m6_evidence": "assessment_definitions/prompts/m6_evidence/v1.0.2",
     "m6_indicator_assessment": "assessment_definitions/prompts/m6_indicator_assessment/v1.0.1",
     "m6_substantive_admission": "assessment_definitions/prompts/m6_substantive_admission/v2",
     "m6_cycle_aggregation": "assessment_definitions/aggregation/m6_cycle_aggregation/v1",
