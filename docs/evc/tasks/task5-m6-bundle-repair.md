@@ -59,4 +59,6 @@
 
 Кандидат прошёл `npm run test:backend` (1534 passed), `npm run test:backend:http` (253 passed) и 18 адресных интеграционных проверок на отдельной PostgreSQL. В обоих контрактах синтетический SPEC.02 дошёл до C‑54 и M7 `NO_QUESTION`. Первый валидный ответ принимается за один вызов, повтор ограничен двумя вызовами всего.
 
+На `211d3e83` полный локальный интеграционный набор завершился за 9 мин 49 с (660 passed, два прогона с реальным провайдером штатно пропущены). GitHub дважды прервал integration на 15‑минутном лимите. Пять браузерных проверок прошли. Лимит integration в `.github/workflows/full-verification.yml` увеличен до 20 минут для завершения полного набора. `full-verification` по-прежнему требует успеха integration и всех браузерных проверок. [Запуски GitHub на `211d3e83`](https://github.com/VadikB/4K_MBTI/actions/runs/46026891918)
+
 Владелец поручил обновить и перевести тот же [PR №308](https://github.com/VadikB/4K_MBTI/pull/308) в Ready и дождаться полного CI. Подготовлен непосредственный PATCH-кандидат `2.1.89` от `origin/main` `5d42abc2`. `npm run ready:prepare -- --candidate 2.1.89` прошёл. Полномочия этапа `branch_push/pr/version_bump=true`, `merge/deploy/artifact_publish=false`. На TEST допустимо чтение.
