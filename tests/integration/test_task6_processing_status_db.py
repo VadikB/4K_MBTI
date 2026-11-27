@@ -21,7 +21,9 @@ from Api.m7_cycle_planner import create_plan
 from scripts.release_specialist_pilot import RELEASE_DIR, ROOT, release
 from tests.integration.test_m5_battery_v04_db import V04Gateway
 from tests.integration.test_m10_product_path_db import AssessmentGateway, EvidenceGateway, RecordedAdmissionGateway
-from tests.integration.test_specialist_pilot_release_db import release_db, seed_baseline  # noqa: F401
+from tests.integration.test_specialist_pilot_release_db import (  # noqa: F401
+    pin_original_evidence_mechanism, release_db, seed_baseline,
+)
 
 pytestmark = pytest.mark.integration
 ASSIGNMENT = "specialist-pilot"
@@ -111,6 +113,7 @@ def add_second_assignment(db, assignment, cycle, participant):
     return new_id, closed_cycle
 
 
+@pytest.mark.usefixtures("pin_original_evidence_mechanism")
 @pytest.mark.parametrize("broken", ["evidence", "assessment"])
 def test_interim_and_report_failures_are_attributed_to_the_exact_assignment(release_db, monkeypatch, broken):
     with release_db() as db:
@@ -270,8 +273,10 @@ def test_interim_and_report_failures_are_attributed_to_the_exact_assignment(rele
 
         if broken == "evidence":
             with release_db() as db:
-                handoff = db.execute("SELECT handoff_id FROM m6_processing_requests WHERE id=%s",
-                                     (evidence_id,)).fetchone()["handoff_id"]
+                historical = db.execute("""SELECT handoff_id, mechanism_json->>'ref' AS mechanism_ref
+                    FROM m6_processing_requests WHERE id=%s""", (evidence_id,)).fetchone()
+                assert historical["mechanism_ref"] == "m6_evidence/1.0.1"
+                handoff = historical["handoff_id"]
             target = RetryTarget(assignment, UUID(cycle), UUID(situation), handoff, evidence_id, failed_attempt=1)
             recovery = retry(target, connection_factory=release_db, apply=True,
                              operator="task6-synthetic", gateway=EvidenceGateway())

@@ -6,29 +6,18 @@ from uuid import UUID, uuid4
 import pytest
 
 from Api import m10_orchestration, m5_scenario_runtime, m6_assessment_worker_v2, m6_worker_v2, routes, web_session_service
-from Api import cycle_execution_manifest, m5_cycle_runtime
 from Api.config import settings
 from Api.m5_cycle_runtime import read_cycle
 from Api.m5_rule_engine import ControlledSemanticAdapter
 from Api.m6_interim_retry import RetryRefused, RetryTarget, retry
 from scripts.retry_m6_interim_evidence import main
 from tests.integration.test_m10_product_path_db import AssessmentGateway, EvidenceGateway
-from tests.integration.test_specialist_pilot_release_db import opened_specialist_pilot, release_db
+from tests.integration.test_specialist_pilot_release_db import (
+    opened_specialist_pilot, pin_original_evidence_mechanism, release_db,
+)
 
 pytestmark = pytest.mark.integration
 ANSWER = "🧪 Сверил сроки и записал порядок действий."
-
-
-@pytest.fixture(autouse=True)
-def pin_original_evidence_mechanism(monkeypatch):
-    """The operator recovery targets a Cycle created on TEST 2.1.85."""
-    dependencies = {**cycle_execution_manifest.DEFAULT_DEPENDENCIES,
-                    "m6_evidence": "assessment_definitions/prompts/m6_evidence/v1.0.1"}
-
-    def build_frozen_manifest(**kwargs):
-        return cycle_execution_manifest.build_manifest(**kwargs, dependencies=dependencies)
-
-    monkeypatch.setattr(m5_cycle_runtime, "build_manifest", build_frozen_manifest)
 
 
 class SpanGateway(EvidenceGateway):
@@ -94,6 +83,7 @@ def _submit_to_interim(client, as_id, monkeypatch):
     assert readback.status_code == 200 and readback.json()["status"] == "accepted"
 
 
+@pytest.mark.usefixtures("pin_original_evidence_mechanism")
 @pytest.mark.parametrize("retry_succeeds", [True, False], ids=["succeeded", "failed"])
 def test_operator_retries_current_interim_without_replaying_participant_turn(
         release_db, opened_specialist_pilot, retry_succeeds, monkeypatch, capsys):
