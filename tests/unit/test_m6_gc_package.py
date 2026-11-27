@@ -63,6 +63,35 @@ def test_technical_inputs(path):
             run()
 
 
+def test_legacy_character_response_keeps_its_bound_document():
+    from Api.m5_case_runtime import checksum
+    from Api.m6_input_resolver_v2 import normalize as normalize_saved_handoff
+
+    value = read(PACKAGE / 'candidates/character.json')['resolver_input']
+    handoff = value['handoff']
+    envelope = handoff['envelope_json']
+    document_id = 'CASE-TDISC-01-D3'
+    delivery = next(item for item in envelope['dialogue']['events'] if item['material_id'] == document_id)
+    reference = next(item for item in envelope['presented_materials'] if item['event_id'] == delivery['event_id'])
+    reply = next(item for item in envelope['dialogue']['turns'] if item['sequence_no'] == 7)
+    trigger = next(item for item in envelope['dialogue']['turns'] if item['sequence_no'] == 4)
+    reply['sequence_no'], delivery['sequence_no'] = delivery['sequence_no'], reply['sequence_no']
+    reply['created_at'], delivery['created_at'] = delivery['created_at'], reply['created_at']
+    delivery.update(event_type='character_response',
+                    cause={'character_turn_id': reply['turn_id'], 'trigger_turn_id': trigger['turn_id']},
+                    payload={'speaker_id': reply['speaker_id'], 'response': reply['content']})
+    reference.update(event_type=delivery['event_type'], sequence_no=delivery['sequence_no'],
+                     available_at=delivery['created_at'])
+    handoff['envelope_checksum'] = checksum(envelope)
+
+    normalized = normalize_saved_handoff(**value)
+    source = next(item for item in value['row']['execution_payload_json']['materials'] if item['material_id'] == document_id)
+    assert source['participant_payload']
+    assert normalized == normalize(**value)
+    assert {'material_id': document_id, 'event_id': delivery['event_id'], 'available_sequence': delivery['sequence_no'],
+            'content': source['participant_payload']} in normalized['materials']
+
+
 @pytest.mark.parametrize('path', sorted((PACKAGE / 'candidates').glob('*.json')), ids=lambda p: p.stem)
 def test_candidate_references_not_semantics(path):
     candidate = read(path)

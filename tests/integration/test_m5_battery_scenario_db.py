@@ -13,6 +13,7 @@ from Api.m5_functional_generation_service import checksum
 from Api.m5_functional_tester import _locate_candidate_path
 from Api.m5_rule_engine import DeepSeekCharacterAdapter, DeepSeekSemanticAdapter
 from Api.m5_scenario_runtime import build_c45, start, submit_turn_detached, trace, transition
+from Api.m6_input_resolver_v2 import resolve as resolve_m6_handoff
 from Api.m10_product_flow import participant_trace
 from tests.integration.test_m5_battery_bank_db import install_battery
 from tests.integration.test_m10_product_path_db import product_db
@@ -372,7 +373,16 @@ def test_battery_case_matrix(product_db, specialist, number):
     with product_db() as connection:
         assert trace(connection, as_id)["status"] == "scenario_ended"
         transition(connection, assessment_situation_id=as_id, action="close", reason="qa", request_id="qa-close")
-        handoff = build_c45(connection, as_id)["envelope_json"]
+        saved_handoff = build_c45(connection, as_id)
+        handoff = saved_handoff["envelope_json"]
+        if number == 1:
+            _, material = resolve_m6_handoff(connection, str(saved_handoff["handoff_id"]))
+            document = next(item for item in material["materials"] if item["material_id"] == "M02")
+            delivery = next(item for item in material["events"] if item["event_id"] == document["event_id"])
+            assert delivery["payload"]["scenario_event_id"] == "E01_DOCUMENT"
+            assert delivery["payload"]["recipient_ids"] == ["assessee"]
+            assert document["content"] == design["concrete_materials"]["M02"]
+            assert document["available_sequence"] == delivery["sequence_no"]
     assert len(handoff["conditional_opportunities"]) == len(generation["accepted_as"]["IndicatorIDs"])
     if number in {2, 7}:
         assert any("E02_SUBMISSION" in item["occurred_event_refs"] for item in handoff["conditional_opportunities"])
