@@ -7,7 +7,9 @@ from Api.m5_rule_engine import _gateway_for
 from Api.m6_contracts import EvidenceCandidate, assemble_analysis, validate_analysis
 from Api.m6_package import verify_mechanism
 from Api.m6_package_v2 import PREVIOUS_REF, QUOTE_HANDLER, QUOTE_INPUT_CONTRACT, QUOTE_OUTPUT_CONTRACT, QUOTE_REF
-from Api.m6_quote_retry import PriorFragment, rejected_basis, validate_repaired_basis
+from Api.m6_quote_retry import (
+    rejected_basis, validate_repaired_basis, validate_verified_basis, validate_verified_bundles, verified_basis,
+)
 from Api.m6_validation_retry import call_and_validate
 
 
@@ -37,20 +39,27 @@ def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
         {"role": "system", "content": mechanism["prompt"] + "\nJSON Schema:\n" + json.dumps(mechanism["schema"], ensure_ascii=False)},
         {"role": "user", "content": encoded},
     ]
-    prior: dict[str, PriorFragment] | None = None
+    prior = None
+    verified = None
 
     def validate(value):
-        nonlocal prior
-        if ref != QUOTE_REF:
-            return validate_current_analysis(value, material)
+        nonlocal prior, verified
         try:
-            assembled = assemble_analysis(value, material)
+            analysis = (assemble_analysis(value, material) if ref == QUOTE_REF
+                        else validate_current_analysis(value, material))
+            if verified is not None:
+                validate_verified_basis(analysis, verified.evidence)
             if prior:
-                validate_repaired_basis(assembled, prior)
-            return validate_current_analysis(assembled, material)
+                validate_repaired_basis(analysis, prior)
+            if ref == QUOTE_REF:
+                analysis = validate_current_analysis(analysis, material)
+            if verified is not None:
+                validate_verified_bundles(analysis, verified, material)
+            return analysis
         except ValueError as error:
             if prior is None:
-                prior = rejected_basis(value, material, error)
+                prior = rejected_basis(value, material, error) if ref == QUOTE_REF else {}
+                verified = verified_basis(value, material, quote_contract=ref == QUOTE_REF)
             raise
 
     output, trace = call_and_validate(
@@ -58,6 +67,7 @@ def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
         routing_key="m6-v2:" + definition_checksum(material),
         validate=validate, response_contract=response_contract,
         max_attempts=int(mechanism["validation_attempts"]),
+        evidence_material=material,
     )
     if ref == QUOTE_REF:
         trace["assembled_analysis"] = {"contract": "M6.EvidenceAnalysis/1", "checksum": definition_checksum(output)}

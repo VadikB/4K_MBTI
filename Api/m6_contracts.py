@@ -131,21 +131,54 @@ def fragment_turn(turns: dict, turn_id: str, path: str, issues: ValidationIssues
     return turn
 
 
+def check_fragment_span(content: str, start: int | None, end: int | None, quote: str | None,
+                        path: str, issues: ValidationIssues) -> None:
+    """Check the v1 span, including readable citation fields in a rejected fragment."""
+    if start is not None and end is not None:
+        if start < end <= len(content):
+            if quote is not None:
+                if content[start:end] == quote:
+                    return
+                issues.add("M6_FRAGMENT_RANGE_MISMATCH", f"{path}.quote", legacy_code="M6_FRAGMENT_SPAN")
+        else:
+            if start >= len(content):
+                issues.add("M6_FRAGMENT_RANGE_INVALID", f"{path}.start", legacy_code="M6_FRAGMENT_SPAN")
+            if end <= start or end > len(content):
+                issues.add("M6_FRAGMENT_RANGE_INVALID", f"{path}.end", legacy_code="M6_FRAGMENT_SPAN")
+    if quote is not None:
+        _, reason = quote_position(content, quote)
+        if reason:
+            issues.add(reason, f"{path}.quote", legacy_code="M6_FRAGMENT_SPAN")
+
+
+def candidate_records(candidate: object, field: str):
+    if not isinstance(candidate, dict) or not isinstance(candidate.get(field), list):
+        return
+    for index, record in enumerate(candidate[field]):
+        if isinstance(record, dict):
+            yield index, record
+
+
+def assemble_fragment(fragment: FragmentQuote, turns: dict, path: str, issues: ValidationIssues) -> dict | None:
+    turn = fragment_turn(turns, fragment.turn_id, path, issues)
+    if turn is None:
+        return None
+    start, reason = quote_position(turn["content"], fragment.quote)
+    if reason:
+        issues.add(reason, f"{path}.quote")
+        return None
+    return {**fragment.model_dump(), "start": start, "end": start + len(fragment.quote)}
+
+
 def assemble_analysis(value: dict, material: dict) -> dict:
     candidate = EvidenceCandidate.model_validate(value)
     turns = {item["turn_id"]: item for item in material["turns"]}
     issues = ValidationIssues()
     fragments = []
     for index, fragment in enumerate(candidate.fragments):
-        path = f"fragments.{index}"
-        turn = fragment_turn(turns, fragment.turn_id, path, issues)
-        if turn is None:
-            continue
-        start, reason = quote_position(turn["content"], fragment.quote)
-        if reason:
-            issues.add(reason, f"{path}.quote")
-            continue
-        fragments.append({**fragment.model_dump(), "start": start, "end": start + len(fragment.quote)})
+        assembled = assemble_fragment(fragment, turns, f"fragments.{index}", issues)
+        if assembled is not None:
+            fragments.append(assembled)
     issues.raise_if_any()
     return {**candidate.model_dump(), "schema_version": 1, "fragments": fragments}
 
@@ -197,22 +230,8 @@ def validate_analysis(value: dict, material: dict, *, enforce_simple_basis: bool
     for index, fragment in enumerate(output.fragments):
         path = f"fragments.{index}"
         turn = fragment_turn(turns, fragment.turn_id, path, issues, legacy_code="M6_FRAGMENT_AUTHOR")
-        if turn is None:
-            continue
-        content = turn["content"]
-        valid_range = fragment.start < fragment.end <= len(content)
-        if valid_range and content[fragment.start:fragment.end] == fragment.quote:
-            continue
-        if valid_range:
-            issues.add("M6_FRAGMENT_RANGE_MISMATCH", f"{path}.quote", legacy_code="M6_FRAGMENT_SPAN")
-        else:
-            if fragment.start >= len(content):
-                issues.add("M6_FRAGMENT_RANGE_INVALID", f"{path}.start", legacy_code="M6_FRAGMENT_SPAN")
-            if fragment.end <= fragment.start or fragment.end > len(content):
-                issues.add("M6_FRAGMENT_RANGE_INVALID", f"{path}.end", legacy_code="M6_FRAGMENT_SPAN")
-        _, reason = quote_position(content, fragment.quote)
-        if reason:
-            issues.add(reason, f"{path}.quote", legacy_code="M6_FRAGMENT_SPAN")
+        if turn is not None:
+            check_fragment_span(turn["content"], fragment.start, fragment.end, fragment.quote, path, issues)
 
     def check_future(refs, path, boundary):
         for index, ref in enumerate(refs):
