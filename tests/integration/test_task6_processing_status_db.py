@@ -2,7 +2,7 @@
 import json
 import os
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -16,6 +16,7 @@ from Api import (
 )
 from Api.llm import deepseek_gateway
 from Api.m5_rule_engine import ControlledSemanticAdapter
+from Api.m6_interim_retry import RetryTarget, retry
 from Api.m7_cycle_planner import create_plan
 from scripts.release_specialist_pilot import RELEASE_DIR, ROOT, release
 from tests.integration.test_m5_battery_v04_db import V04Gateway
@@ -268,7 +269,14 @@ def test_interim_and_report_failures_are_attributed_to_the_exact_assignment(rele
         assert payload(client.get(runtime_url))["failure_stage"] == "answer"
 
         if broken == "evidence":
-            m6_worker_v2.run_request(evidence_id, connection_factory=release_db, gateway=EvidenceGateway())
+            with release_db() as db:
+                handoff = db.execute("SELECT handoff_id FROM m6_processing_requests WHERE id=%s",
+                                     (evidence_id,)).fetchone()["handoff_id"]
+            target = RetryTarget(assignment, UUID(cycle), UUID(situation), handoff, evidence_id, failed_attempt=1)
+            recovery = retry(target, connection_factory=release_db, apply=True,
+                             operator="task6-synthetic", gateway=EvidenceGateway())
+            assert recovery["started"] and recovery["request_status"] == "succeeded"
+            assert recovery["request_id"] == evidence_id and recovery["attempt_no"] == 2
             assert m10_orchestration.advance_once(connection_factory=release_db)
         m6_assessment_worker_v2.run_request(m6_request("m6_assessment_requests"),
             connection_factory=release_db, gateway=InterimAssessmentGateway())
