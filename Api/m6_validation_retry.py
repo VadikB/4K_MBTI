@@ -7,6 +7,7 @@ from collections.abc import Callable
 from pydantic import ValidationError
 
 from Api.m5_rule_engine import _call_with_trace
+from Api.m6_contracts import ValidationIssues, candidate_records, check_fragment_span, fragment_turn, quote_position
 
 
 def _validation_failure(exc: Exception, candidate: object, messages: list[dict]) -> dict:
@@ -50,9 +51,7 @@ def _referenced_fragments(candidate: object, messages: list[dict]):
         for turn in material.get("turns", [])
         if turn["speaker_type"] == "assessee"
     }
-    for index, fragment in enumerate(candidate["fragments"]):
-        if not isinstance(fragment, dict):
-            continue
+    for index, fragment in candidate_records(candidate, "fragments"):
         turn_id, quote = fragment.get("turn_id"), fragment.get("quote")
         if isinstance(turn_id, str) and isinstance(quote, str) and quote and turn_id in turns:
             yield index, fragment, turns[turn_id], quote
@@ -73,12 +72,14 @@ def _fragment_span_issue(candidate: object, messages: list[dict]) -> dict | None
     return None
 
 
-def _fragment_span_hints(candidate: object, messages: list[dict]) -> str:
+def _fragment_span_hints(candidate: object, messages: list[dict], indices: set[int] | None = None) -> str:
     """Find a unique exact quote in the referenced assessee turn."""
     hints = []
     for index, _, content, quote in _referenced_fragments(candidate, messages):
-        start = content.find(quote)
-        if start >= 0 and content.find(quote, start + 1) < 0:
+        if indices is not None and index not in indices:
+            continue
+        start, reason = quote_position(content, quote)
+        if reason is None:
             hints.append(f"fragments[{index}]: start={start}, end={start + len(quote)}")
     return (" Проверенные позиции однозначных дословных цитат: " + "; ".join(hints) + ".") if hints else ""
 
@@ -136,6 +137,63 @@ def validation_failure(exc: Exception) -> tuple[str, list[dict]]:
     return code, getattr(exc, "validation_issues", [{"code": code, "path": "$"}])
 
 
+def _legacy_quote_issues(candidate: object, material: dict) -> list[dict]:
+    """Recover citation issues hidden by schema errors elsewhere in the answer."""
+    turns = {turn["turn_id"]: turn for turn in material["turns"]}
+    issues = ValidationIssues()
+    for index, fragment in candidate_records(candidate, "fragments"):
+        turn_id = fragment.get("turn_id")
+        if not isinstance(turn_id, str):
+            continue
+        path = f"fragments.{index}"
+        turn = fragment_turn(turns, turn_id, path, issues)
+        if turn is not None:
+            start, end, quote = fragment.get("start"), fragment.get("end"), fragment.get("quote")
+            check_fragment_span(
+                turn["content"],
+                start if type(start) is int and start >= 0 else None,
+                end if type(end) is int and end > 0 else None,
+                quote if isinstance(quote, str) and quote else None,
+                path, issues,
+            )
+    return issues.items
+
+
+def _missing_indicator_ids(candidate: object, material: dict) -> list[str]:
+    if not isinstance(candidate, dict) or not isinstance(candidate.get("bundles"), list):
+        return []
+    returned_ids = {record["indicator_id"] for _, record in candidate_records(candidate, "bundles")
+                    if isinstance(record.get("indicator_id"), str)}
+    return [target["indicator_id"] for target in material["indicator_targets"]
+            if target["indicator_id"] not in returned_ids]
+
+
+def _bundle_feedback(missing_ids: list[str]) -> str:
+    if not missing_ids:
+        return ""
+    return (" Недостающие indicator_id в bundles: " + ", ".join(missing_ids) + ". "
+            "Добавь ровно одну запись на каждый недостающий индикатор. "
+            "Для индикатора без подтверждённого свидетельства укажи evidence_ids=[] и конкретное "
+            "opportunity_basis по исходному ходу и условиям ситуации. "
+            "Сохрани корректные bundles, fragments, signals, evidence, их ID и связи. "
+            "Исправь только ошибочные записи и затронутые зависимости.")
+
+
+def _quote_issue_indices(issues: list[dict]) -> set[int]:
+    return {int(match[1]) for issue in issues
+            if (match := re.fullmatch(r"fragments\.(\d+)\.(start|end|quote|turn_id)", issue["path"]))}
+
+
+def _quote_turn_feedback(candidate: object, material: dict, indices: set[int]) -> str:
+    turn_ids = {turn["turn_id"] for turn in material["turns"] if turn["speaker_type"] == "assessee"}
+    sources = {}
+    for index, fragment in candidate_records(candidate, "fragments"):
+        turn_id = fragment.get("turn_id")
+        if index in indices and isinstance(turn_id, str) and turn_id in turn_ids:
+            sources[f"fragments[{index}]"] = turn_id
+    return (" Исходные turn_id цитат участника: " + json.dumps(sources, ensure_ascii=False) + ".") if sources else ""
+
+
 def _quote_feedback(issues: list[dict]) -> str:
     codes = {issue["code"] for issue in issues}
     feedback = []
@@ -147,14 +205,18 @@ def _quote_feedback(issues: list[dict]) -> str:
                         "скопируй выбранный участок из этого хода без нормализации и пересказа. Сохрани id фрагмента.")
     if codes & {"M6_FRAGMENT_AUTHOR", "M6_FRAGMENT_TURN_UNKNOWN"}:
         feedback.append("Укажи точный turn_id хода участника из предоставленного ввода и сохрани id фрагмента.")
+    if any(issue["code"] == "string_too_short" and issue["path"].endswith(".quote") for issue in issues):
+        feedback.append("Для пустой цитаты выбери подтверждающий дословный фрагмент из исходного хода.")
     feedback.append("При правке сохрани наблюдение и основание для того же индикатора. "
-                    "Если пересмотрел атрибуцию, заполни attribution_notes по правилам исходного запроса.")
+                    "Если исходный ход не подтверждает наблюдение, пересмотри зависимые записи. "
+                    "При пересмотре атрибуции заполни attribution_notes по правилам исходного запроса.")
     return " ".join(feedback)
 
 
 def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing_key: str,
                       validate: Callable[[dict], dict], max_attempts: int,
-                      response_contract: dict | None = None) -> tuple[dict, dict]:
+                      response_contract: dict | None = None,
+                      evidence_material: dict | None = None) -> tuple[dict, dict]:
     """Retry only rejected provider output; never partially accept it."""
     attempts: list[dict] = []
     provider_attempts: list[dict] = []
@@ -184,13 +246,22 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
         except Exception as exc:
             validation_code, issues = validation_failure(exc)
             failure = {"error_code": validation_code} if quote_contract else _validation_failure(exc, candidate, messages)
+            missing_ids = []
+            if evidence_material is not None:
+                missing_ids = _missing_indicator_ids(candidate, evidence_material)
+                if missing_ids:
+                    failure["missing_indicator_ids"] = missing_ids
+                if not quote_contract and isinstance(exc, ValidationError):
+                    issues = issues + _legacy_quote_issues(candidate, evidence_material)
             attempts.append({"attempt_no": attempt_no, "status": "rejected", **failure,
                              "validation_errors": issues})
             if attempt_no == max_attempts:
                 exc.ai_trace = {**trace, "provider_attempts": provider_attempts, "validation_attempts": attempts}
                 raise
-            span_failure = not quote_contract and _is_fragment_span_failure(failure)
-            span_hints = _fragment_span_hints(candidate, messages) if span_failure else ""
+            quote_indices = _quote_issue_indices(issues) if evidence_material is not None else set()
+            span_failure = not quote_contract and (bool(quote_indices) or _is_fragment_span_failure(failure))
+            span_hints = _fragment_span_hints(candidate, messages, quote_indices or None) if span_failure else ""
+            quote_turns = _quote_turn_feedback(candidate, evidence_material, quote_indices) if quote_indices else ""
             schema_hints = (
                 " Ошибки схемы (путь и правило): " + json.dumps(failure["issues"], ensure_ascii=False) + "."
                 if failure.get("stage") == "schema" else ""
@@ -206,13 +277,15 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
                     f"({validation_code}). Нарушения по путям полей: "
                     + json.dumps(issues, ensure_ascii=False, separators=(",", ":"))
                     + ". Верни заново только полный JSON по исходной схеме и данным. "
-                    "Проверь все ссылки и поля. "
-                    + ("Для каждого fragment используй индексы Unicode code points с нуля: "
+                    "Проверь все ссылки и поля."
+                    + (" Для каждого fragment используй индексы Unicode code points с нуля: "
                        "end-start должен быть равен len(quote), а content[start:end] — в точности quote; "
                        "не включай в quote пропущенный текст и многоточия." + span_hints
                        if span_failure else "")
                     + schema_hints
-                    + (_quote_feedback(issues) if quote_contract else "")
+                    + quote_turns
+                    + (" " + _quote_feedback(issues) if quote_contract or quote_indices else "")
+                    + _bundle_feedback(missing_ids)
                     + context_hints
                     + attribution_hints
                 )},

@@ -58,6 +58,7 @@ def evaluate(material, mechanism, mechanism_hash, *, gateway=None):
         routing_key="m6-v2:" + definition_checksum(material),
         validate=validate, response_contract=response_contract,
         max_attempts=int(mechanism["validation_attempts"]),
+        evidence_material=material,
     )
     if ref == QUOTE_REF:
         trace["assembled_analysis"] = {"contract": "M6.EvidenceAnalysis/1", "checksum": definition_checksum(output)}

@@ -70,12 +70,12 @@ def _request(db, as_id):
     return value
 
 
-def _submit_to_interim(client, as_id, monkeypatch):
+def _submit_to_interim(client, as_id, monkeypatch, *, answer=ANSWER):
     monkeypatch.setattr(m5_scenario_runtime, "DeepSeekSemanticAdapter",
                         lambda **_: ControlledSemanticAdapter({"SCENARIO_CONTROL": "FINAL"}))
     turn_id = str(uuid4())
     receipt = client.post(f"/users/assessment/m5/situations/{as_id}/turns", json={
-        "request_id": "task5-turn", "turn_id": turn_id, "content": ANSWER,
+        "request_id": "task5-turn", "turn_id": turn_id, "content": answer,
     })
     assert receipt.status_code == 200, receipt.text
     readback = client.get(f"/users/assessment/m5/situations/{as_id}/answer-status",

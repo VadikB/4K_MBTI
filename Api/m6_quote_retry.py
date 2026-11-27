@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from pydantic import ValidationError
 
-from Api.m6_contracts import ValidationIssues, fragment_turn, quote_position
+from Api.m6_contracts import ValidationIssues, candidate_records, fragment_turn, quote_position
 
 
 @dataclass(frozen=True)
@@ -14,24 +14,16 @@ class PriorFragment:
     indicators: frozenset[str]
 
 
-def _records(value: dict, field: str):
-    records = value.get(field)
-    if isinstance(records, list):
-        for index, record in enumerate(records):
-            if isinstance(record, dict):
-                yield index, record
-
-
 def _links(value: dict, indicators: set[str]) -> tuple[set[str], dict[str, set[str]]]:
     signal_fragments = {}
-    for _, signal in _records(value, "signals"):
+    for _, signal in candidate_records(value, "signals"):
         signal_id, fragment_id = signal.get("id"), signal.get("fragment_id")
         if isinstance(signal_id, str) and signal_id and isinstance(fragment_id, str) and fragment_id:
             signal_fragments.setdefault(signal_id, set()).add(fragment_id)
     # A conflicting signal ID does not establish a fragment-to-indicator link.
     fragment_by_signal = {key: next(iter(ids)) for key, ids in signal_fragments.items() if len(ids) == 1}
     by_fragment: dict[str, set[str]] = {}
-    for _, record in _records(value, "evidence"):
+    for _, record in candidate_records(value, "evidence"):
         indicator = record.get("indicator_id")
         signal_ids, fragment_ids = record.get("bs_ids"), record.get("fragment_ids")
         if not isinstance(indicator, str) or indicator not in indicators:
@@ -54,7 +46,7 @@ def rejected_basis(value: object, material: dict, error: ValueError) -> dict[str
     with_signal, links = _links(value, indicators)
     issues = ValidationIssues()
     prior: dict[str, PriorFragment] = {}
-    for index, record in _records(value, "fragments"):
+    for index, record in candidate_records(value, "fragments"):
         identifier, turn_id, quote = record.get("id"), record.get("turn_id"), record.get("quote")
         if not isinstance(identifier, str) or not identifier:
             continue
