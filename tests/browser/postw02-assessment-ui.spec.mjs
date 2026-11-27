@@ -177,6 +177,7 @@ for (const width of [1440, 390]) test(`chat, clarification, bounded waiting, ret
   run.offline = false;
   run.model.pipeline.status = 'failed';
   await page.getByRole('button', { name: 'Проверить состояние', exact: true }).click();
+  await expect(page.locator('#interview-error')).toContainText('Произошла ошибка обработки. Подробности пока недоступны');
   await expect(page.locator('#interview-error')).toHaveAttribute('data-tone', 'failed');
   run.model.pipeline.status = 'running'; run.model.blocking_system_wait = false;
   run.model.clarification = { id: 'saved-clarification', status: 'ASK', question_turn_id: 'clarification-turn', question: { text: 'Почему вы выбрали такой порядок?' } };
