@@ -76,9 +76,9 @@ def present_next(pilot, current_id):
     return body["current_situation"]["assessment_situation_id"]
 
 
-def send_turn(http, monkeypatch, situation_id, text, rules, recipients, responses, *, control="CONTINUE"):
+def send_turn(http, monkeypatch, situation_id, text, rules, recipients, responses, *, control="CONTINUE", fragments=None):
     # Шлюз задаёт ответы модели. Все переходы, C-45 и очередь исполняет продукт.
-    gateway = TurnGateway(rules, control=control, recipients=recipients, responses=responses)
+    gateway = TurnGateway(rules, control=control, recipients=recipients, responses=responses, fragments=fragments)
     command = {"turn_id": str(uuid4()), "request_id": str(uuid4()), "content": text}
     with monkeypatch.context() as patch:
         patch.setattr(runtime, "DeepSeekSemanticAdapter", lambda **kw: DeepSeekSemanticAdapter(gateway, **kw))
@@ -199,12 +199,18 @@ def test_dialogue_can_be_closed_after_two_saved_messages(opened_specialist_pilot
     boundary = branch == "03_boundary_three_replies"
     recipients = ["C1", "C2", "C3"] if group or boundary else ["C1"]
     first = "C1, какая версия у вашей части?"
+    fragments = None
     rules = {}
     replies = {"C1":"Сверяю версию первой части.", "C2":"Ожидаю обе части.", "C3":"Уточняю свой вклад."}
     if branch == "03_one_reply":
         rules["E03_REPLY"] = matched(speaker_ids=recipients)
     if group or boundary:
-        first = "Коллеги, свод пока черновой. Подтвердите версию вашей части, срок и границу ответственности."
+        fragments = [
+            {"text": "C1, подтвердите версию критериев.", "recipient_ids": ["C1"]},
+            {"text": "C2, какие ограничения войдут в свод?", "recipient_ids": ["C2"]},
+            {"text": "C3, какой срок вы можете подтвердить?", "recipient_ids": ["C3"]},
+        ]
+        first = " ".join(fragment["text"] for fragment in fragments)
         rules = {"E04_BOUNDARY": matched(speaker_ids=recipients)}
     if group:
         rules["E01_UPDATE"] = matched(speaker_ids=recipients)
@@ -215,7 +221,8 @@ def test_dialogue_can_be_closed_after_two_saved_messages(opened_specialist_pilot
     with release_db() as db:
         snapshot_before = db.execute("""SELECT snapshot_json, snapshot_checksum, execution_payload_json
             FROM m5_assessment_situations WHERE assessment_situation_id=%s""", (situation_id,)).fetchone()
-    first_response, _, _ = send_turn(http, monkeypatch, situation_id, first, rules, recipients, replies)
+    first_response, _, _ = send_turn(http, monkeypatch, situation_id, first, rules, recipients, replies,
+                                    fragments=fragments)
     assert first_response.status_code == 200, first_response.text
     situation_path = f"/users/assessment/m5/situations/{situation_id}"
     record = {"branch":branch}
@@ -322,7 +329,9 @@ def test_dialogue_can_be_closed_after_two_saved_messages(opened_specialist_pilot
             record["rejected_document_changes"] = check_document_references(db, as_row["id"], value["criteria"])
         dialogue = {turn["turn_id"]: turn for turn in value["turns"]}
         reply_events = [event for event in value["events"] if event["event_type"]=="character_response"]
-        assert len(reply_events)==len(record["reply_events"])
+        stored_replies = {str(event["event_id"]): event for event in trace["events"]
+                          if event["event_type"] == "character_response"}
+        assert {event["event_id"] for event in reply_events} == stored_replies.keys()
         for event in reply_events:
             reply = dialogue[event["cause"]["character_turn_id"]]
             assert reply["speaker_type"]=="character"
@@ -331,7 +340,10 @@ def test_dialogue_can_be_closed_after_two_saved_messages(opened_specialist_pilot
             trigger = dialogue[event["cause"]["trigger_turn_id"]]
             assert trigger["speaker_type"] == "assessee"
             assert trigger["sequence_no"] < reply["sequence_no"] < event["sequence_no"]
-            assert "assessee" in event["payload"].get("recipient_ids",[])
+            stored = stored_replies[event["event_id"]]
+            assert event["payload"]["recipient_ids"] == stored["payload_json"]["recipient_ids"]
+            if boundary:
+                assert event["payload"]["recipient_ids"] == ["assessee"]
     record["m7_decision"] = advance_interim(release_db, situation_id)
     if boundary:
         url = f"/users/assessment/cycles/{pilot.cycle_id}/runtime"
