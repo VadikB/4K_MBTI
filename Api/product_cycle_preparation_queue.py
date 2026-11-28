@@ -670,6 +670,11 @@ class ProductCyclePreparationQueue:
                     raise ValueError(failure_code + ":" + outcome)
                 saving_started = perf_counter()
                 trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
+                if "review_response" in snapshot["refs"]:
+                    from Api.assessment_start_readiness import functional_gate
+
+                    functional_gate(trace, operation_id=str(job["operation_id"]), cycle=frozen_cycle,
+                                    case_version=frozen_case)
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job, lock=True)
                     self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))

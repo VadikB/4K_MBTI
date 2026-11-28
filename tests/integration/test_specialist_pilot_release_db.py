@@ -302,7 +302,7 @@ def test_synthetic_assignment_opens_the_prepared_v7_card_and_keeps_start_time(re
 
 @pytest.mark.integration
 @pytest.mark.parametrize("opened_specialist_pilot", [ClarifyingGateway], indirect=True)
-def test_first_and_next_on_published_program_replay_targeted_clarification(release_db, opened_specialist_pilot):
+def test_first_and_next_on_published_program_replay_targeted_clarification(release_db, opened_specialist_pilot, monkeypatch):
     from Api import assessment_start_readiness
     from tests.integration.test_m5_battery_scenario_db import submit
     from tests.integration.test_m10_product_path_db import _resolve_interim_for_finish
@@ -345,7 +345,16 @@ def test_first_and_next_on_published_program_replay_targeted_clarification(relea
     assert queued.status_code == 201, queued.text
     job = pilot.worker._claim()
     assert job["operation_id"] == next_id
+    gate_calls = []
+    replay = assessment_start_readiness.functional_gate
+
+    def record_gate(trace, **kwargs):
+        replay(trace, **kwargs)
+        gate_calls.append(kwargs["operation_id"])
+
+    monkeypatch.setattr(assessment_start_readiness, "functional_gate", record_gate)
     pilot.worker._process(job)
+    assert gate_calls == [next_id]
     operation = pilot.client.get(f"/users/assessment/cycles/preparation/{next_id}")
     assert operation.json()["status"] == "completed", operation.text
     ready = pilot.client.get(runtime_path).json()["next_presentation"]
