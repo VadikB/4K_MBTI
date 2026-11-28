@@ -6,7 +6,7 @@ from Api import m10_orchestration, m6_assessment_worker_v2, m6_repository, m6_wo
 from Api.assessment_configuration import definition_checksum
 from Api.m6_package_v2 import load_mechanism
 from tests.integration.test_specialist_pilot_release_db import (
-    opened_specialist_pilot, pin_original_evidence_mechanism, release_db,
+    opened_specialist_pilot, pin_evidence_mechanism, release_db,
 )
 from tests.integration.test_task5_m6_interim_retry_db import InterimAssessmentGateway, _answer, _request, _submit_to_interim
 from tests.m6_bundle_repair_fixture import (
@@ -17,10 +17,9 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(params=["1.0.1", "1.0.2"])
-def pinned_pilot(request):
+def pinned_pilot(request, pin_evidence_mechanism):
     version = request.param
-    if version == "1.0.1":
-        request.getfixturevalue("pin_original_evidence_mechanism")
+    pin_evidence_mechanism(version)
     return version, request.getfixturevalue("opened_specialist_pilot")
 
 

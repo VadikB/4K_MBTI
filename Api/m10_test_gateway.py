@@ -70,10 +70,13 @@ def _acceptance_output(value, fixture):
                     fragment.update(start=0, end=len(turn['content']))
                 result['fragments'].append(fragment)
                 result['signals'].append({'id':sid,'fragment_id':fid,'observation':action,'form_description':'direct synthetic response','context_refs':[]})
-                result['evidence'].append({'id':eid,'indicator_id':indicator,'m2_version':criterion['m2_version'],'type':'Simple',
+                evidence = {'id':eid,'indicator_id':indicator,'m2_version':criterion['m2_version'],'type':'Simple',
                     'interpretation':action,'bs_ids':[sid],'fragment_ids':[fid],
-                    'attribution':{k:criterion[v] for k,v in {'function':'function','product':'product','evidence_pattern':'evidence_pattern','boundaries':'boundary'}.items()},
-                    'context_refs':[],'limitations':[fixture['limitation']],'ordered_turn_ids':[turn['turn_id']]})
+                    'context_refs':[],'limitations':[fixture['limitation']],'ordered_turn_ids':[turn['turn_id']]}
+                if result['schema_version'] < 3:
+                    evidence['attribution'] = {k:criterion[v] for k,v in {'function':'function','product':'product',
+                        'evidence_pattern':'evidence_pattern','boundaries':'boundary'}.items()}
+                result['evidence'].append(evidence)
             result['bundles'].append({'indicator_id':indicator,'evidence_ids':[eid] if action else [],
                 'opportunity_basis':'Synthetic case and actual submitted material','context_refs':[],
                 'limitations':[fixture['limitation']],'contradictions':[]})

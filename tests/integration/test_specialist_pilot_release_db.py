@@ -147,16 +147,25 @@ def test_authorized_release_without_human_forms_is_idempotent_and_preserves_star
         assert read_cycle(connection, cycle_id) == previous_cycle
 
 
-@pytest.fixture
-def pin_original_evidence_mechanism(monkeypatch):
-    """The operator recovery targets a Cycle created on TEST 2.1.85."""
+def _pin_evidence_mechanism(monkeypatch, version):
     dependencies = {**cycle_execution_manifest.DEFAULT_DEPENDENCIES,
-                    "m6_evidence": "assessment_definitions/prompts/m6_evidence/v1.0.1"}
+                    "m6_evidence": f"assessment_definitions/prompts/m6_evidence/v{version}"}
 
     def build_frozen_manifest(**kwargs):
         return cycle_execution_manifest.build_manifest(**kwargs, dependencies=dependencies)
 
     monkeypatch.setattr(m5_cycle_runtime, "build_manifest", build_frozen_manifest)
+
+
+@pytest.fixture
+def pin_evidence_mechanism(monkeypatch):
+    return lambda version: _pin_evidence_mechanism(monkeypatch, version)
+
+
+@pytest.fixture
+def pin_original_evidence_mechanism(monkeypatch):
+    """The operator recovery targets a Cycle created on TEST 2.1.85."""
+    _pin_evidence_mechanism(monkeypatch, "1.0.1")
 
 
 @pytest.fixture
