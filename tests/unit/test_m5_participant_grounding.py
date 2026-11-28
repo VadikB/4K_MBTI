@@ -5,7 +5,9 @@ from uuid import NAMESPACE_URL, uuid5
 import pytest
 
 from Api.assessment_start_readiness import functional_gate
-from Api.cycle_execution_manifest import M5_PARTICIPANT_GROUNDING_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE
+from Api.cycle_execution_manifest import (
+    M5_PARTICIPANT_GROUNDING_PACKAGE, M5_PARTICIPANT_GROUNDING_PACKAGES, M5_REVIEW_RESPONSE_PACKAGE,
+)
 from Api.m5_battery_contract import FACILITATOR
 from Api.m5_battery_scenario import plan_turn
 from Api.m5_functional_generation_service import build_passport_snapshot, build_persistence_trace, prepare
@@ -19,6 +21,9 @@ from tests.unit.test_m5_v7_start_review import (
 DECKHOUSE = "варианты внедрения Deckhouse"
 ARCHIVE = "варианты перехода на электронный архив"
 FALSE_POSITION = "Вы — специалист по внедрению Deckhouse и DevOps-сопровождению."
+EXPERT_ADDRESS = "Вы — эксперт по внедрению."
+WORK_DIVISION = "Коллега отвечает за сроки. Вы — за сравнение цен."
+COLLEAGUE_LETTER = "Приложено письмо.\nКому: коллеге из команды внедрения.\n" + EXPERT_ADDRESS
 FUNCTION_SUBSTITUTION = "В вашей работе вы внедряете Deckhouse и сопровождаете DevOps самостоятельно."
 CONFIRMATION = "Вы сами подтверждаете техническую пригодность выбранного варианта."
 PROMISE = "Вы обязаны пообещать заказчику срок внедрения за инженерную команду."
@@ -26,6 +31,7 @@ OWN_TECHNICAL_DECISION = "Самостоятельно подтверждаю т
 WORK = "profile/user_context/regular_tasks"
 DECISION = "profile/user_context/decision_situations"
 LIMITS = "profile/user_context/constraints_and_interactions"
+POSITION = "profile/user_context/position_or_status"
 PROFESSIONAL = "common.professional_consistency"
 AUTHORITY = "common.authority"
 
@@ -87,6 +93,8 @@ class GroundingGateway(V04Gateway):
         own_tech = payload["profile"]["user_context"].get("decision_situations") == OWN_TECHNICAL_DECISION
         evidence = {
             FUNCTION_SUBSTITUTION: (PROFESSIONAL, WORK, "Опишите деятельность по сопоставлению предложений."),
+            **{phrase: (PROFESSIONAL, POSITION, "Укажите задачу продавца по подготовке рекомендации.")
+               for phrase in (FALSE_POSITION, EXPERT_ADDRESS)},
             CONFIRMATION: (AUTHORITY, LIMITS, "Попросите инженера подтвердить техническую пригодность."),
             PROMISE: (AUTHORITY, LIMITS, "Укажите предварительный срок и запросите подтверждение команды."),
         }
@@ -95,7 +103,8 @@ class GroundingGateway(V04Gateway):
             for material in payload["candidate_as"]["Материалы"]:
                 for phrase, (check_id, source, correction) in evidence.items():
                     if (row["check_id"] != check_id or phrase not in material["Текст"]
-                            or (phrase == CONFIRMATION and own_tech)):
+                            or (phrase == CONFIRMATION and own_tech)
+                            or (phrase == EXPERT_ADDRESS and COLLEAGUE_LETTER in material["Текст"])):
                         continue
                     findings.append({
                         "code": FINDING, "severity": "blocking", "requirement_ref": check_id,
@@ -110,13 +119,13 @@ class GroundingGateway(V04Gateway):
         return super().review_response(routing, payload, checks)
 
 
-def snapshot(pilot_cases, context, *, number=2, grounded=True):
+def snapshot(pilot_cases, context, *, number=2, grounded=True, grounding_package=M5_PARTICIPANT_GROUNDING_PACKAGE):
     cases, bank = pilot_cases
     return build_passport_snapshot(
         case_version=cases[number], operation_id="controlled-task11", synthetic=True, battery_pilot=True,
         as_package=ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"],
         review_response_package=ROOT / M5_REVIEW_RESPONSE_PACKAGE,
-        participant_grounding_package=(ROOT / M5_PARTICIPANT_GROUNDING_PACKAGE if grounded else None),
+        participant_grounding_package=(ROOT / grounding_package if grounded else None),
         battery_scenario_package=ROOT / BATTERY_V04_SCENARIO_CURRENT,
         package_ref={"id": bank["id"], "version": bank["version"]},
         profile_sources={"organization_context": 31, "role_profile": 32, "user_context": 33},
@@ -242,22 +251,70 @@ def test_optional_header_uses_frozen_value_and_does_not_mask_a_body_defect(pilot
     assert document(literal["candidate_as"], "P00").startswith("Должность — Инженер по качеству\n\n")
 
 
-def test_free_form_title_cannot_bypass_the_server_opening_even_when_accurate(pilot_cases):
-    inputs = snapshot(pilot_cases, {**SELLER, "position_or_status": "Менеджер по продажам"})
-    title_assertion = "Вы — менеджер по продажам."
-    gateway = GroundingGateway(defects=(("P00", title_assertion),))
+@pytest.mark.parametrize(("number", "material_id", "body"), [
+    (2, "P00", WORK_DIVISION),
+    (3, "P00", COLLEAGUE_LETTER),
+    (2, "M01", COLLEAGUE_LETTER),
+], ids=["division-of-work", "embedded-letter-to-colleague", "document-to-colleague"])
+def test_addressed_prose_is_presented_without_repair(pilot_cases, number, material_id, body):
+    title = "Менеджер B2B-продаж · Северо-Запад"
+    inputs = snapshot(pilot_cases, {**SELLER, "position_or_status": title}, number=number)
+    show_position = number == 3
+    gateway = GroundingGateway(defects=((material_id, body),), show_position=show_position)
     result = receipt(inputs, gateway)
-    blocked = result["repair"]["original_tester"]
-    assert blocked["review_skipped"] == "INVALID_CANDIDATE_STRUCTURE"
-    finding = next(row for row in blocked["aggregation"]["deterministic_failures"]
-                   if row["code"] == "participant_position_declaration")
-    assert finding["path"].endswith("/Текст") and finding["actual"] == [
-        {"phrase": title_assertion.rstrip("."), "subject": "participant"},
-    ]
-    assert finding["expected"]["basis_path"] == "profile/user_context/position_or_status"
-    assert result["admitted_for_participant"] and len(gateway.calls) == 8
+
+    assert result["admitted_for_participant"] and result["repair"] is None
+    assert len(gateway.calls) == 7
+    assert body in document(result["candidate_as"], material_id)
     opening = document(result["candidate_as"], "P00")
-    assert opening.startswith(task_start(inputs)) and title_assertion not in opening
+    assert opening.startswith(f"Должность — {title}\n\n" if show_position else task_start(inputs))
+    for role in ("tester", "challenger"):
+        messages = next(messages for route, messages, _ in gateway.calls if f":{role}:" in route)
+        assert any(item["role"] == "system" and "поле «Кому»" in item["content"] for item in messages)
+
+
+@pytest.mark.parametrize(("number", "title_assertion"), [(2, EXPERT_ADDRESS), (3, FALSE_POSITION)],
+                         ids=["spec02-task-opening", "after-exact-profile-signature"])
+def test_direct_title_substitution_is_addressed_in_semantic_repair(pilot_cases, number, title_assertion):
+    inputs = snapshot(pilot_cases, SELLER, number=number)
+    gateway = GroundingGateway(defects=(("P00", title_assertion),), show_position=number == 3)
+    result = receipt(inputs, gateway)
+
+    assert result["admitted_for_participant"] and len(gateway.calls) == 14
+    old_review = result["repair"]["original_tester"]
+    assert old_review["aggregation"]["deterministic_failures"] == []
+    for reviewer in ("tester", "challenger"):
+        rows = old_review["independent_checks"][reviewer]
+        finding, = next(row for row in rows if row["check_id"] == PROFESSIONAL)["findings"]
+        assert finding["actual"] == {"phrase": title_assertion, "subject": "participant"}
+        assert finding["expected"]["basis_path"] == POSITION
+        assert finding["paths"][0].endswith("/Текст")
+    opening = document(result["candidate_as"], "P00")
+    expected = task_start(inputs) if number == 2 else "Должность — sale\n\n"
+    assert opening.startswith(expected) and title_assertion not in opening
+
+
+def test_official_heading_is_checked_against_profile(pilot_cases):
+    inputs = snapshot(pilot_cases, SELLER, number=3)
+    invented_heading = "Должность — Инженер по внедрению"
+    gateway = GroundingGateway(defects=(("P00", invented_heading + "\n"),))
+    result = receipt(inputs, gateway)
+
+    assert result["admitted_for_participant"] and len(gateway.calls) == 8
+    blocked = result["repair"]["original_tester"]
+    finding, = blocked["aggregation"]["deterministic_failures"]
+    assert finding["code"] == "participant_position_label"
+    assert finding["actual"] == [(0, invented_heading)]
+    assert finding["expected"] == [(0, "Должность — sale")]
+
+
+def test_archived_v1_receipt_still_replays_with_its_frozen_package(pilot_cases):
+    inputs = snapshot(pilot_cases, SELLER, grounding_package=M5_PARTICIPANT_GROUNDING_PACKAGES["1.0.0"])
+    gateway = GroundingGateway(defects=(("P00", WORK_DIVISION),))
+    result = receipt(inputs, gateway)
+    assert result["admitted_for_participant"] and inputs["refs"]["participant_grounding"]["version"] == "1.0.0"
+    failures = result["repair"]["original_tester"]["aggregation"]["deterministic_failures"]
+    assert [row["code"] for row in failures] == ["participant_position_declaration"]
 
 
 def test_a_finding_with_an_inexact_quote_cannot_authorize_repair(pilot_cases):

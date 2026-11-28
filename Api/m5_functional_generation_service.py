@@ -1363,7 +1363,7 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
     """Rebuild applicability for pre-existing traces using only pinned server inputs."""
     from Api import m5_battery_contract, m5_battery_review
     from Api.cycle_execution_manifest import (
-        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, M5_PARTICIPANT_GROUNDING_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE,
+        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE,
         battery_pilot_review_path, battery_scenario_path, resolve_cycle_dependency, resolve_participant_grounding,
         resolve_review_response,
     )
@@ -1382,7 +1382,8 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
         m2_path = passport_generation.M2
         pilot = projected["version"].endswith(m5_battery_contract.PILOT_CASE_SUFFIX)
         response_path = ROOT / M5_REVIEW_RESPONSE_PACKAGE if "review_response" in refs else None
-        grounding_path = ROOT / M5_PARTICIPANT_GROUNDING_PACKAGE if "participant_grounding" in refs else None
+        grounding_ref = refs.get("participant_grounding")
+        grounding_path = participant_grounding.package_path(grounding_ref["version"]) if grounding_ref else None
     else:
         as_path = resolve_cycle_dependency(cycle, "m5_functional_as")
         scenario_path = resolve_cycle_dependency(cycle, "m5_battery_scenario")

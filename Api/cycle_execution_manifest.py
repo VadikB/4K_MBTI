@@ -23,7 +23,11 @@ M5_BATTERY_PILOT_REVIEW_PACKAGES = {
 M5_BATTERY_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v4"
 M5_REVIEW_RESPONSE_PACKAGE = "assessment_definitions/prompts/m5_review_response/v1"
 M5_REVIEW_RESPONSE_DEPENDENCY = "m5_review_response"
-M5_PARTICIPANT_GROUNDING_PACKAGE = "assessment_definitions/prompts/m5_participant_grounding/v1"
+M5_PARTICIPANT_GROUNDING_PACKAGE = "assessment_definitions/prompts/m5_participant_grounding/v2"
+M5_PARTICIPANT_GROUNDING_PACKAGES = {
+    "1.0.0": "assessment_definitions/prompts/m5_participant_grounding/v1",
+    "2.0.0": M5_PARTICIPANT_GROUNDING_PACKAGE,
+}
 M5_PARTICIPANT_GROUNDING_DEPENDENCY = "m5_participant_grounding"
 PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
 BATTERY_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.7"

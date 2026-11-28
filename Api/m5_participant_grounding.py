@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import re
 
-from Api.cycle_execution_manifest import ROOT
+from Api.cycle_execution_manifest import M5_PARTICIPANT_GROUNDING_PACKAGES, ROOT
 
 CHECK_IDS = frozenset({"common.professional_consistency", "common.authority"})
 FINDING = "PARTICIPANT_GROUNDING_MISMATCH"
@@ -31,6 +31,13 @@ SOURCES = {
 }
 
 
+def package_path(version: object) -> Path:
+    path = M5_PARTICIPANT_GROUNDING_PACKAGES.get(version) if isinstance(version, str) else None
+    if path is None:
+        raise ValueError("M5_PARTICIPANT_GROUNDING_PACKAGE_INVALID")
+    return ROOT / path
+
+
 def load_package(directory: Path) -> tuple[dict, dict]:
     raw = (directory / "manifest.json").read_bytes()
     manifest = json.loads(raw)
@@ -39,8 +46,9 @@ def load_package(directory: Path) -> tuple[dict, dict]:
     )
     contents = {key: (directory / name).read_bytes() for key, name in files}
     artifacts = [{"name": name, "sha256": sha256(contents[key]).hexdigest()} for key, name in files]
-    if (manifest.get("schema_version"), manifest.get("id"), manifest.get("version"), manifest.get("status"),
-            manifest.get("artifacts")) != (1, "m5-participant-grounding", "1.0.0", "draft", artifacts):
+    if (package_path(manifest.get("version")) != directory
+            or (manifest.get("schema_version"), manifest.get("id"), manifest.get("status"), manifest.get("artifacts"))
+            != (1, "m5-participant-grounding", "draft", artifacts)):
         raise ValueError("M5_PARTICIPANT_GROUNDING_PACKAGE_INVALID")
     return json.loads(contents["rules"]), {
         "id": manifest["id"], "version": manifest["version"], "checksum": sha256(raw).hexdigest(),
@@ -117,20 +125,24 @@ def check_position_label(candidate: dict, profile: dict, basis: dict, rules: dic
     if not isinstance(materials, list):
         return
     marker, prefix = rules["position_marker"], rules["position_prefix"]
+    # Only archived v1 inputs used wording as a deterministic rejection.
+    archived_pattern = rules.get("unbound_position_pattern")
     allowed = (prefix + _position(profile)
                if basis["p00"]["position_available"] else None)
     for index, material in enumerate(materials):
         if not isinstance(material, dict) or not isinstance(text := material.get("Текст"), str):
             continue
         p00 = material.get("MaterialID") == "P00"
-        headings = [(i, line) for i, line in enumerate(text.splitlines()) if line.startswith(prefix)] if p00 else []
+        lines = text.splitlines() if p00 else []
+        heading_lines = lines if archived_pattern else lines[:1]
+        headings = [(i, line) for i, line in enumerate(heading_lines) if line.startswith(prefix)]
         expected = [(0, allowed)] if p00 and allowed is not None else []
         path = f"candidate_as/Материалы/{index}/Текст"
         check("participant_position_label", marker not in text and (not headings or headings == expected),
               headings or (marker if marker in text else None), path=path,
               expected=expected, reason="Явная подпись берётся из закреплённого профиля в P00.")
-        if p00:
-            declarations = [match.group(1).strip() for match in re.finditer(rules["unbound_position_pattern"], text)]
+        if p00 and archived_pattern:
+            declarations = [match.group(1).strip() for match in re.finditer(archived_pattern, text)]
             check("participant_position_declaration", not declarations,
                   [{"phrase": phrase, "subject": "participant"} for phrase in declarations], path=path,
                   expected={"basis_path": "profile/user_context/position_or_status",
