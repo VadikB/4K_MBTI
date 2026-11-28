@@ -49,8 +49,9 @@ def test_battery_import_projection_reports_exact_bad_requirement(damage, field):
         )
 
 
-def test_v06_readback_binds_all_passports_and_review_conditions():
-    from Api.cycle_execution_manifest import BATTERY_V06_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES, ROOT
+@pytest.mark.parametrize(("scenario_version", "review_version"), [("1.10.0", "2.1.0"), ("1.10.1", "2.1.1")])
+def test_v06_readback_binds_all_passports_and_review_conditions(scenario_version, review_version):
+    from Api.cycle_execution_manifest import BATTERY_V06_SCENARIO_REFS, M5_BATTERY_PILOT_REVIEW_PACKAGES, ROOT
     from Api.m5_battery_contract import load_scenario
     from Api.m5_battery_review import build_plan
     from Api.m5_case_runtime import checksum
@@ -59,7 +60,7 @@ def test_v06_readback_binds_all_passports_and_review_conditions():
 
     bank, _, _ = BATTERY_RELEASES["v0.6"]
     cases = json.loads((bank / "case-package.json").read_bytes())["cases"]
-    scenario = ROOT / BATTERY_V06_SCENARIO_PACKAGE
+    scenario = ROOT / BATTERY_V06_SCENARIO_REFS[scenario_version]
     review_path = ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]
     protocol = load_protocol(review_path / "tester-protocol.json")
     m2, _ = load_m2(M2, SOURCE_MANIFEST)
@@ -81,7 +82,7 @@ def test_v06_readback_binds_all_passports_and_review_conditions():
              "refs": {"case": {"case_version_checksum": checksum(case)}}},
             protocol, review_path / "case-content-contract.json", m2,
         )
-        assert plan["content_contract"]["version"] == "2.1.0"
+        assert plan["content_contract"]["version"] == review_version
         observed = {check["check_id"]: check for check in plan["required_checks"]
                     if check["check_id"].startswith("indicator:")}
         conditions = passport["22 IndicatorIDs"]["Проектные условия"]
