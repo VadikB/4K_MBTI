@@ -1800,7 +1800,7 @@ def test_browser_turn_close_lock_order_and_late_turn(product_db):
         assert c.execute("SELECT count(*) AS n FROM m5_c45_handoffs WHERE mode='final'").fetchone()['n']==1
 
 
-@pytest.mark.parametrize('version', ['1.0.2', '1.0.1'])
+@pytest.mark.parametrize('version', ['1.0.3', '1.0.2', '1.0.1'])
 def test_cycle_pins_evidence_contract_through_worker_and_m7(product_db, monkeypatch, version):
     from Api import cycle_execution_manifest, m5_cycle_runtime, m6_worker_v2
     from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
@@ -1813,7 +1813,7 @@ def test_cycle_pins_evidence_contract_through_worker_and_m7(product_db, monkeypa
     package = f'assessment_definitions/prompts/m6_evidence/v{version}'
     with product_db() as connection:
         with monkeypatch.context() as cycle_creation:
-            if version == '1.0.1':
+            if version != '1.0.3':
                 defaults = {**cycle_execution_manifest.DEFAULT_DEPENDENCIES, 'm6_evidence': package}
 
                 def old_build_manifest(**kwargs):
@@ -1846,7 +1846,7 @@ def test_cycle_pins_evidence_contract_through_worker_and_m7(product_db, monkeypa
         def chat(self, messages, **kwargs):
             self.calls.append(kwargs['routing_key'])
             value = json.loads(messages[1]['content'])
-            assert value.get('schema_version') == (2 if version == '1.0.2' else None)
+            assert value.get('schema_version') == {'1.0.3': 3, '1.0.2': 2, '1.0.1': None}[version]
             turn = next(item for item in value['turns'] if item['turn_id'] == turn_id)
             assert turn['content'].encode() == text.encode()
             result = json.loads(super().chat(messages))
@@ -1865,6 +1865,8 @@ def test_cycle_pins_evidence_contract_through_worker_and_m7(product_db, monkeypa
                                 'evidence_pattern': criterion['evidence_pattern'], 'boundaries': criterion['boundary']},
                 'ordered_turn_ids': [turn_id], 'context_refs': [], 'limitations': [],
             }]
+            if version == '1.0.3':
+                result['evidence'][0].pop('attribution')
             next(bundle for bundle in result['bundles'] if bundle['indicator_id'] == criterion['id'])['evidence_ids'] = ['evidence']
             return json.dumps(result, ensure_ascii=False)
 

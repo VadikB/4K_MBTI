@@ -192,7 +192,7 @@ def _quote_turn_feedback(candidate: object, material: dict, indices: set[int]) -
     return (" Исходные turn_id цитат участника: " + json.dumps(sources, ensure_ascii=False) + ".") if sources else ""
 
 
-def _quote_feedback(issues: list[dict]) -> str:
+def _quote_feedback(issues: list[dict], *, addressed_repair: bool = False) -> str:
     codes = {issue["code"] for issue in issues}
     feedback = []
     if "M6_FRAGMENT_QUOTE_AMBIGUOUS" in codes:
@@ -205,16 +205,17 @@ def _quote_feedback(issues: list[dict]) -> str:
         feedback.append("Укажи точный turn_id хода участника из предоставленного ввода и сохрани id фрагмента.")
     if any(issue["code"] == "string_too_short" and issue["path"].endswith(".quote") for issue in issues):
         feedback.append("Для пустой цитаты выбери подтверждающий дословный фрагмент из исходного хода.")
-    feedback.append("При правке сохрани наблюдение и основание для того же индикатора. "
-                    "Если исходный ход не подтверждает наблюдение, пересмотри зависимые записи. "
-                    "При пересмотре атрибуции заполни attribution_notes по правилам исходного запроса.")
+    if not addressed_repair:
+        feedback.append("При правке сохрани наблюдение и основание для того же индикатора. "
+                        "Если исходный ход не подтверждает наблюдение, пересмотри зависимые записи. "
+                        "При пересмотре атрибуции заполни attribution_notes по правилам исходного запроса.")
     return " ".join(feedback)
 
 
 def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing_key: str,
                       validate: Callable[[dict], dict], max_attempts: int,
                       response_contract: dict | None = None,
-                      evidence_material: dict | None = None) -> tuple[dict, dict]:
+                      evidence_material: dict | None = None, addressed_repair: bool = False) -> tuple[dict, dict]:
     """Retry only rejected provider output; never partially accept it."""
     attempts: list[dict] = []
     provider_attempts: list[dict] = []
@@ -243,6 +244,7 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
             output = validate(candidate)
         except Exception as exc:
             validation_code, issues = validation_failure(exc)
+            issues = getattr(exc, "addressed_validation_issues", issues)
             failure = {"error_code": validation_code} if quote_contract else _validation_failure(exc, candidate, messages)
             missing_ids = []
             if evidence_material is not None:
@@ -264,14 +266,22 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
                 " Ошибки схемы (путь и правило): " + json.dumps(failure["issues"], ensure_ascii=False) + "."
                 if failure.get("stage") == "schema" else ""
             )
-            attribution_hints = _attribution_hints(messages)
+            attribution_hints = "" if addressed_repair else _attribution_hints(messages)
             context_hints = (_context_reference_hints(messages)
                              if any(issue["code"] == "M6_CONTEXT_REFERENCE" for issue in issues) else "")
             preservation_hints = (
                 " Сохрани корректные bundles, fragments, signals, evidence, их ID и связи. "
                 "Исправь только ошибочные записи и затронутые зависимости."
-                if evidence_material is not None and isinstance(candidate, dict) else ""
+                if not addressed_repair and evidence_material is not None and isinstance(candidate, dict) else ""
             )
+            repair_feedback = getattr(exc, "repair_feedback", None)
+            if repair_feedback is not None:
+                preservation_hints = (
+                    " Сохрани проверенные основания и сводки. Для прочитанной связи исправь нарушенную запись "
+                    "с сохранением обоснованного основания или укажи адресный пересмотр в repair_notes "
+                    "по исходному ходу. Адреса и нарушения: "
+                    + json.dumps(repair_feedback, ensure_ascii=False, separators=(",", ":")) + "."
+                )
             current_messages = [
                 *messages,
                 {"role": "assistant", "content": raw},
@@ -287,7 +297,8 @@ def call_and_validate(*, gateway, messages: list[dict], operation: dict, routing
                        if span_failure else "")
                     + schema_hints
                     + quote_turns
-                    + (" " + _quote_feedback(issues) if quote_contract or quote_indices else "")
+                    + (" " + _quote_feedback(issues, addressed_repair=addressed_repair)
+                       if quote_contract or quote_indices else "")
                     + _bundle_feedback(missing_ids)
                     + preservation_hints
                     + context_hints

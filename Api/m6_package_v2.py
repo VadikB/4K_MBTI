@@ -5,15 +5,21 @@ import json
 from pathlib import Path
 
 from Api.llm.provider_contract import load_provider_contract
+from Api.m6_candidate_v3 import EvidenceCandidateV3
 from Api.m6_contracts import EvidenceAnalysis, EvidenceCandidate
 
 PREVIOUS_REF = "m6_evidence/1.0.1"
 QUOTE_REF = "m6_evidence/1.0.2"
+REPAIR_REF = "m6_evidence/1.0.3"
 QUOTE_HANDLER = "m6-evidence/2"
 QUOTE_INPUT_CONTRACT = "M6.EvidenceInput/2"
 QUOTE_OUTPUT_CONTRACT = "M6.EvidenceCandidate/2"
+REPAIR_HANDLER = "m6-evidence/3"
+REPAIR_INPUT_CONTRACT = "M6.EvidenceInput/3"
+REPAIR_OUTPUT_CONTRACT = "M6.EvidenceCandidate/3"
 PACKAGE = Path(__file__).resolve().parents[1] / "assessment_definitions/prompts/m6_evidence/v1.0.1"
-PACKAGES = {PREVIOUS_REF: PACKAGE, QUOTE_REF: PACKAGE.with_name("v1.0.2")}
+PACKAGES = {PREVIOUS_REF: PACKAGE, QUOTE_REF: PACKAGE.with_name("v1.0.2"),
+            REPAIR_REF: PACKAGE.with_name("v1.0.3")}
 
 
 def load_mechanism(ref: str | None = None, directory: Path | None = None,
@@ -28,18 +34,20 @@ def load_mechanism(ref: str | None = None, directory: Path | None = None,
         ref = manifest_ref
     if ref not in PACKAGES:
         raise ValueError("M6_MECHANISM_UNSUPPORTED")
-    quote_candidate = ref == QUOTE_REF
     expected = (1, ref, "draft", "m6_evidence_qa", "PM-05")
     actual = (manifest.get("schema_version"), manifest_ref, manifest.get("status"),
               manifest.get("scope"), manifest.get("owner"))
-    supersedes = PREVIOUS_REF if quote_candidate else "m6_evidence/1.0.0"
+    supersedes = {PREVIOUS_REF: "m6_evidence/1.0.0", QUOTE_REF: PREVIOUS_REF, REPAIR_REF: QUOTE_REF}[ref]
     if actual != expected or manifest.get("supersedes") != supersedes:
         raise ValueError("M6_PACKAGE_INVALID")
-    if quote_candidate and (manifest.get("input_contract"), manifest.get("output_contract"),
-                            manifest.get("analysis_contract")) != (
-        QUOTE_INPUT_CONTRACT, QUOTE_OUTPUT_CONTRACT, "M6.EvidenceAnalysis/1",
-    ):
-        raise ValueError("M6_PACKAGE_INVALID")
+    contracts = {
+        QUOTE_REF: (QUOTE_INPUT_CONTRACT, QUOTE_OUTPUT_CONTRACT, "M6.EvidenceAnalysis/1"),
+        REPAIR_REF: (REPAIR_INPUT_CONTRACT, REPAIR_OUTPUT_CONTRACT, "M6.EvidenceAnalysis/1"),
+    }
+    if ref in contracts:
+        actual_contracts = tuple(manifest.get(key) for key in ("input_contract", "output_contract", "analysis_contract"))
+        if actual_contracts != contracts[ref]:
+            raise ValueError("M6_PACKAGE_INVALID")
     prompt = (directory / "prompt.md").read_bytes()
     if manifest.get("artifacts") != [{"name": "prompt.md", "sha256": hashlib.sha256(prompt).hexdigest()}]:
         raise ValueError("CHECKSUM_MISMATCH")
@@ -56,10 +64,15 @@ def load_mechanism(ref: str | None = None, directory: Path | None = None,
             raise ValueError("M6_PACKAGE_INVALID")
     if config["validation_attempts"] > 2 or config["lease_seconds"] <= config["timeout_seconds"]:
         raise ValueError("M6_PACKAGE_INVALID")
+    handler, model = {
+        PREVIOUS_REF: ("m6-evidence/1", EvidenceAnalysis),
+        QUOTE_REF: (QUOTE_HANDLER, EvidenceCandidate),
+        REPAIR_REF: (REPAIR_HANDLER, EvidenceCandidateV3),
+    }[ref]
     return {
         "ref": ref, "manifest": manifest, "prompt": prompt.decode(),
-        "schema": (EvidenceCandidate if quote_candidate else EvidenceAnalysis).model_json_schema(),
-        "handler": QUOTE_HANDLER if quote_candidate else "m6-evidence/1",
+        "schema": model.model_json_schema(),
+        "handler": handler,
         "operation": {"provider": provider["provider"], "endpoint": provider["endpoint"],
             "model": provider["model"],
             "parameters": {key: config[key] for key in ("temperature", "timeout_seconds", "max_tokens")},

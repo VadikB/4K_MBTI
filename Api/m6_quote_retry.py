@@ -1,6 +1,7 @@
 """Continuity of the candidate's evidence basis across one provider retry."""
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import NamedTuple
 
 from pydantic import ValidationError
 
@@ -24,6 +25,17 @@ class IndexedRecord:
     value: dict
 
 
+class LinkAddress(NamedTuple):
+    evidence_id: str
+    indicator_id: str
+    fragment_id: str
+    signal_id: str
+
+
+def link_address(evidence: dict, signal: dict) -> LinkAddress:
+    return LinkAddress(evidence["id"], evidence["indicator_id"], signal["fragment_id"], signal["id"])
+
+
 @dataclass(frozen=True)
 class VerifiedEvidence:
     evidence: IndexedRecord
@@ -34,16 +46,19 @@ class VerifiedEvidence:
 class VerifiedReply:
     evidence: list[VerifiedEvidence]
     bundles: list[IndexedRecord]
+    failures: list[dict] = field(default_factory=list)
+
+
+def indexed_rows(value: object, field: str, *, key: str = "id") -> list[IndexedRecord]:
+    records = [(index, record) for index, record in candidate_records(value, field)
+               if isinstance(record.get(key), str) and record[key]]
+    counts = Counter(record[key] for _, record in records)
+    return [IndexedRecord(index, record) for index, record in records if counts[record[key]] == 1]
 
 
 def _typed_rows(value: object, field: str, model, turns: dict, *, key: str = "id") -> list[IndexedRecord]:
-    records = [(index, record) for index, record in candidate_records(value, field)
-               if isinstance(record.get(key), str)]
-    counts = Counter(record[key] for _, record in records)
     rows = []
-    for index, record in records:
-        if counts[record[key]] != 1:
-            continue
+    for index, record in ((row.index, row.value) for row in indexed_rows(value, field, key=key)):
         try:
             typed = model.model_validate(record)
         except ValidationError:
@@ -57,7 +72,8 @@ def _typed_rows(value: object, field: str, model, turns: dict, *, key: str = "id
     return rows
 
 
-def verified_basis(value: object, material: dict, *, quote_contract: bool) -> VerifiedReply:
+def verified_basis(value: object, material: dict, *, quote_contract: bool,
+                   invalid_rows: frozenset[tuple[str, int]] = frozenset()) -> VerifiedReply:
     """Identify separately valid evidence chains and indicator summaries in a rejected reply."""
     turns = {turn["turn_id"]: turn for turn in material["turns"]}
     rows = {
@@ -73,6 +89,8 @@ def verified_basis(value: object, material: dict, *, quote_contract: bool) -> Ve
         if row.value["indicator_id"] in targets
         and all(owners.get(eid) == row.value["indicator_id"] for eid in row.value["evidence_ids"])
     ]
+    rows = {field: [record for record in records if (field, record.index) not in invalid_rows]
+            for field, records in rows.items()}
     projection = {"schema_version": 1, "attribution_notes": [],
                   **{field: [record.value for record in records] for field, records in rows.items()}}
     try:
@@ -109,7 +127,13 @@ def verified_basis(value: object, material: dict, *, quote_contract: bool) -> Ve
         if ("bundles", str(index)) not in invalid
         and set(row.value["evidence_ids"]) == verified_ids[row.value["indicator_id"]]
     ]
-    return VerifiedReply(verified, bundles)
+    raw_failures = []
+    for issue in failures:
+        parts = issue["path"].split(".")
+        if len(parts) > 1 and parts[0] in rows and parts[1].isdigit():
+            parts[1] = str(rows[parts[0]][int(parts[1])].index)
+        raw_failures.append({**issue, "path": ".".join(parts)})
+    return VerifiedReply(verified, bundles, raw_failures)
 
 
 def _links(value: dict, indicators: set[str]) -> tuple[set[str], dict[str, set[str]]]:
@@ -180,22 +204,26 @@ def _reassessment_reasons(value: dict) -> set[tuple[str, str, str]]:
     }
 
 
-def validate_verified_basis(value: dict, prior: list[VerifiedEvidence]) -> None:
-    reasons = _reassessment_reasons(value)
+def validate_verified_basis(value: dict, prior: list[VerifiedEvidence], *,
+                            reviewed: dict[LinkAddress, str] | None = None) -> None:
+    reasons = _reassessment_reasons(value) if reviewed is None else set()
     required: dict[str, dict[str, IndexedRecord]] = {"fragments": {}, "signals": {}, "evidence": {}}
     for basis in prior:
         evidence = basis.evidence
         indicator = evidence.value["indicator_id"]
         evidence_required = False
+        scoped_change = False
         for signal, fragment in basis.sources:
             turn_id = fragment.value["turn_id"]
-            if (indicator, turn_id, "irrelevant") in reasons:
+            scope = reviewed.get(link_address(evidence.value, signal.value)) if reviewed is not None else None
+            scoped_change |= scope is not None
+            if scope == "irrelevant" or (indicator, turn_id, "irrelevant") in reasons:
                 continue
             required["fragments"][fragment.value["id"]] = fragment
             required["signals"][signal.value["id"]] = signal
             if (indicator, turn_id, "unclear") not in reasons:
                 evidence_required = True
-        if evidence_required:
+        if evidence_required and not scoped_change:
             required["evidence"][evidence.value["id"]] = evidence
 
     issues = ValidationIssues()
@@ -212,11 +240,13 @@ def validate_verified_basis(value: dict, prior: list[VerifiedEvidence]) -> None:
     issues.raise_if_any()
 
 
-def validate_verified_bundles(value: dict, prior: VerifiedReply, material: dict) -> None:
+def validate_verified_bundles(value: dict, prior: VerifiedReply, material: dict, *,
+                              reviewed: dict[LinkAddress, str] | None = None) -> None:
     """Protect a sound summary unless the validated retry has grounds to update it."""
     current = {row["indicator_id"]: (index, row) for index, row in enumerate(value["bundles"])}
     evidence = {item["id"]: item for item in value["evidence"]}
-    reasons = {(indicator, turn_id) for indicator, turn_id, _ in _reassessment_reasons(value)}
+    reasons = {(indicator, turn_id) for indicator, turn_id, _ in _reassessment_reasons(value)} if reviewed is None else set()
+    reviewed_ids = {key.evidence_id for key in reviewed or {}}
     participant_turns = {turn["turn_id"] for turn in material["turns"] if turn["speaker_type"] == "assessee"}
     prior_evidence = {basis.evidence.value["id"]: basis for basis in prior.evidence}
     issues = ValidationIssues()
@@ -225,6 +255,8 @@ def validate_verified_bundles(value: dict, prior: VerifiedReply, material: dict)
         indicator = previous["indicator_id"]
         index, row = current[indicator]
         previous_ids = set(previous["evidence_ids"])
+        if previous_ids & reviewed_ids:
+            continue
         old_payloads = [
             {key: field for key, field in prior_evidence[eid].evidence.value.items() if key != "id"}
             for eid in previous_ids

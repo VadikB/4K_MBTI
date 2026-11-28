@@ -9,6 +9,7 @@ from Api.m10_product_flow import start_or_resume
 from Api.m5_rule_engine import ControlledCharacterAdapter, ControlledSemanticAdapter
 from Api.m5_scenario_runtime import build_c45, submit_turn, transition
 from tests.integration.test_m10_product_path_db import EvidenceGateway, product_db
+from tests.integration.test_specialist_pilot_release_db import pin_evidence_mechanism
 
 pytestmark = pytest.mark.integration
 
@@ -63,7 +64,9 @@ def candidate(value, base, shape):
     (('ambiguous', 'irrelevant'), 'succeeded', [], (0, 0, 0, 1)),
     (('ambiguous', 'unclear'), 'succeeded', [], (1, 1, 0, 1)),
 ], ids=['schema-then-empty', 'quote-then-fragment-only', 'unique', 'clarified', 'initial-empty', 'irrelevant', 'unclear'])
-def test_m6_quote_retry_worker(product_db, replies, expected_status, expected_codes, counts):
+def test_m6_quote_retry_worker(product_db, pin_evidence_mechanism, replies, expected_status, expected_codes, counts):
+    pin_evidence_mechanism("1.0.2")
+
     class Gateway(EvidenceGateway):
         def __init__(self):
             self.calls = []

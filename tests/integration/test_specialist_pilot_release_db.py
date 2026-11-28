@@ -148,15 +148,22 @@ def test_authorized_release_without_human_forms_is_idempotent_and_preserves_star
 
 
 @pytest.fixture
-def pin_original_evidence_mechanism(monkeypatch):
+def pin_evidence_mechanism(monkeypatch):
+    def pin(version):
+        dependencies = {**cycle_execution_manifest.DEFAULT_DEPENDENCIES,
+                        "m6_evidence": f"assessment_definitions/prompts/m6_evidence/v{version}"}
+
+        def build_frozen_manifest(**kwargs):
+            return cycle_execution_manifest.build_manifest(**kwargs, dependencies=dependencies)
+
+        monkeypatch.setattr(m5_cycle_runtime, "build_manifest", build_frozen_manifest)
+    return pin
+
+
+@pytest.fixture
+def pin_original_evidence_mechanism(pin_evidence_mechanism):
     """The operator recovery targets a Cycle created on TEST 2.1.85."""
-    dependencies = {**cycle_execution_manifest.DEFAULT_DEPENDENCIES,
-                    "m6_evidence": "assessment_definitions/prompts/m6_evidence/v1.0.1"}
-
-    def build_frozen_manifest(**kwargs):
-        return cycle_execution_manifest.build_manifest(**kwargs, dependencies=dependencies)
-
-    monkeypatch.setattr(m5_cycle_runtime, "build_manifest", build_frozen_manifest)
+    pin_evidence_mechanism("1.0.1")
 
 
 @pytest.fixture
