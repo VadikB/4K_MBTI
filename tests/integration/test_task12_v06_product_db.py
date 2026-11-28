@@ -43,9 +43,12 @@ class AttributionGateway(EvidenceGateway):
             "id": "evidence", "indicator_id": criterion["id"], "m2_version": criterion["m2_version"],
             "type": "Simple", "interpretation": "Различил трудозатраты и срок", "bs_ids": ["signal"],
             "fragment_ids": ["fragment"], "ordered_turn_ids": [turn["turn_id"]], "context_refs": [], "limitations": [],
-            "attribution": {"function": criterion["function"], "product": criterion["product"],
-                            "evidence_pattern": criterion["evidence_pattern"], "boundaries": criterion["boundary"]},
         }]
+        if material["schema_version"] < 3:
+            result["evidence"][0]["attribution"] = {
+                "function": criterion["function"], "product": criterion["product"],
+                "evidence_pattern": criterion["evidence_pattern"], "boundaries": criterion["boundary"],
+            }
         next(bundle for bundle in result["bundles"] if bundle["indicator_id"] == criterion["id"])["evidence_ids"] = ["evidence"]
         return json.dumps(result, ensure_ascii=False)
 
@@ -313,6 +316,10 @@ def test_v06_assignment_to_report_and_pdf_in_local_test(release_db, monkeypatch,
             path = Path(directory)
             path.mkdir(parents=True, exist_ok=True)
             (path / "report.pdf").write_bytes(pdf.content)
+            (path / "public-runtime.json").write_text(json.dumps({
+                "participant_card": current["participant_payload"],
+                "participant_opening": opened["runtime"]["trace"],
+            }, ensure_ascii=False, indent=2) + "\n")
             (path / "result.json").write_text(json.dumps({
                 "scope": "local isolated PostgreSQL with controlled gateways and explicit partial completion",
                 "application_version": selected["execution_manifest_json"]["application_version"],
