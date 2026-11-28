@@ -11,7 +11,7 @@ from Api.assessment_case_contracts import PreparedCaseV4
 from Api.m5_package import digest
 from Api.m5_passport import missing
 from Api.m5_passport_v12 import SCENARIO_FIELDS
-from Api.m5_source_calculations import division_findings
+from Api.m5_source_calculations import division_findings, window_duration_findings
 from scripts.build_m5_sales_package import _participant_presentation, _ref
 
 RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.6.0"
@@ -75,11 +75,14 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
                 or row["kind"] not in {"reply", "delivery", "transfer", "forward", "transfer_reply"}):
             raise missing(case_id, version, f"17.3/{row['id']}→scenario rule")
     material_by_id = {row["ID"]: row for row in materials}
-    calculation_materials = overlay.get("explicit_calculation_materials", [])
-    if (not isinstance(calculation_materials, list) or any(not isinstance(item, str) for item in calculation_materials)
-            or len(set(calculation_materials)) != len(calculation_materials)
-            or not set(calculation_materials) <= material_ids - fact_ids):
-        raise missing(case_id, version, "17.2→explicit calculation materials")
+    source_checks = {}
+    for key in ("explicit_calculation_materials", "explicit_window_duration_materials"):
+        checked = overlay.get(key, [])
+        if (not isinstance(checked, list) or any(not isinstance(item, str) for item in checked)
+                or len(set(checked)) != len(checked) or not set(checked) <= material_ids - fact_ids):
+            raise missing(case_id, version, f"17.2→{key}")
+        if checked:
+            source_checks[key] = checked
     material_sections = overlay.get("material_sections", {})
     for material_id, headings in material_sections.items():
         if (material_id not in material_ids - fact_ids or not isinstance(headings, list) or not headings
@@ -189,7 +192,7 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
         **({"material_source": material_source} if material_source else {}),
         **({"generation_addendum": generation_addendum} if generation_addendum else {}),
         **({"number_initial_materials": True} if numbered else {}),
-        **({"explicit_calculation_materials": calculation_materials} if calculation_materials else {}),
+        **source_checks,
         "events": [
             {**row, "passport": event_by_id[row["id"]],
              "source": case["passport_sources"][f"17.3/{row['id']}"]}
@@ -385,6 +388,14 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
                 validate(finding["code"], False, path, finding,
                          {"operands": "явно описаны отдельно от выражения", "result": "сверен в указанной точности"},
                          "Укажите основания числителя и знаменателя отдельно от формулы и сверьте результат деления.")
+    for material_id in design.get("explicit_window_duration_materials", ()):
+        text = documents.get(material_id, {}).get("Текст")
+        if isinstance(text, str):
+            path = f"candidate_as/Материалы/{material_id}/Текст"
+            for finding in window_duration_findings(text):
+                validate(finding["code"], False, path, finding,
+                         {"available_minutes": finding["available_minutes"]},
+                         "Длительность действия должна укладываться в рабочее окно той же роли.")
     for material_id, headings in design.get("material_sections", {}).items():
         text = documents.get(material_id, {}).get("Текст")
         sections = _material_sections(text, headings) if isinstance(text, str) else {}

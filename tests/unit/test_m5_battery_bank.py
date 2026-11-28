@@ -49,7 +49,9 @@ def test_battery_import_projection_reports_exact_bad_requirement(damage, field):
         )
 
 
-@pytest.mark.parametrize(("scenario_version", "review_version"), [("1.10.0", "2.1.0"), ("1.10.1", "2.1.1")])
+@pytest.mark.parametrize(("scenario_version", "review_version"), [
+    ("1.10.0", "2.1.0"), ("1.10.1", "2.1.1"), ("1.10.2", "2.1.2"),
+])
 def test_v06_readback_binds_all_passports_and_review_conditions(scenario_version, review_version):
     from Api.cycle_execution_manifest import BATTERY_V06_SCENARIO_REFS, M5_BATTERY_PILOT_REVIEW_PACKAGES, ROOT
     from Api.m5_battery_contract import load_scenario

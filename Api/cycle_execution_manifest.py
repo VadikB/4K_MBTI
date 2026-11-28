@@ -41,8 +41,13 @@ BATTERY_V04_SCENARIO_REFS = {
 BATTERY_V06_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.9"
 BATTERY_V06_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.9.0"
 BATTERY_V06_SCENARIO_INITIAL = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.10.0"
-BATTERY_V06_SCENARIO_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.10.1"
-BATTERY_V06_SCENARIO_REFS = {"1.10.0": BATTERY_V06_SCENARIO_INITIAL, "1.10.1": BATTERY_V06_SCENARIO_PACKAGE}
+BATTERY_V06_SCENARIO_ARITHMETIC = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.10.1"
+BATTERY_V06_SCENARIO_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.10.2"
+BATTERY_V06_SCENARIO_REFS = {
+    "1.10.0": BATTERY_V06_SCENARIO_INITIAL,
+    "1.10.1": BATTERY_V06_SCENARIO_ARITHMETIC,
+    "1.10.2": BATTERY_V06_SCENARIO_PACKAGE,
+}
 
 # Logical names are part of the persisted contract. Paths always identify an
 # immutable, versioned publication; callers must never replace them with latest/current.

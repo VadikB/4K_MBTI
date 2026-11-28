@@ -20,7 +20,9 @@ def build_plan(snapshot: dict, protocol: dict, contract_path: Path, m2: dict) ->
     if review_content := design.get("review_content"):
         contract = review_content["contract"]
         contract_checksum = review_content["checksum"]
-        expected_scope, expected_versions = "battery_v0.6", {"2.1.0", "2.1.1"}
+        expected_scope = "battery_v0.6"
+        expected_versions = {"1.10.0": {"2.1.0"}, "1.10.1": {"2.1.1"},
+                             "1.10.2": {"2.1.2"}}.get(design["ref"]["version"], ())
         if protocol.get("version") != "3.3.0":
             raise ValueError("M5_BATTERY_REVIEW_PROTOCOL_MISMATCH")
     else:

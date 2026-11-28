@@ -6,7 +6,7 @@ from Api.cycle_execution_manifest import M5_BATTERY_PILOT_REVIEW_PACKAGES, ROOT
 from Api.m5_battery_contract import load_scenario
 from Api.m5_battery_profile import review
 from Api.m5_passport_generation import provider_basis
-from Api.m5_source_calculations import division_findings
+from Api.m5_source_calculations import division_findings, window_duration_findings
 from tests.integration.test_m5_battery_scenario_db import synthetic_as
 from tests.unit.test_m5_battery_v06_profile_fit import (
     DECISIONS, LIMITS, PROFILE, RULES, SPEC02, WORK, FitGateway, cases, evidence,
@@ -20,6 +20,8 @@ M03_WORKING_PROVIDER = (
     "× 500 заявок = 325 человеко-дней суммарно; при доступных 15 человеко-днях (пять рабочих дней × три специалиста) "
     "средний срок закрытия заявки составляет 325 / 50 = 6,5 рабочих дней. Расчёт и последствия выполняет участник."
 )
+C3_WORKING_PROVIDER = ("Коллега 3: «Готов обсудить включение в конкретную проверку своей части: "
+                       "окно — среда 10:00–13:00, длительность 4 часа. Условия и срок проверки определяю я».")
 
 
 @pytest.mark.parametrize("document", [
@@ -46,7 +48,7 @@ def test_wrong_average_and_missing_basis_are_distinguished():
     ]
 
 
-@pytest.mark.parametrize("version,status", [("1.10.0", "PASS"), ("1.10.1", "FAIL")])
+@pytest.mark.parametrize("version,status", [("1.10.0", "PASS"), ("1.10.1", "FAIL"), ("1.10.2", "FAIL")])
 def test_provider_m03_repair_is_rejected_only_with_new_scenario(version, status):
     case = cases()[SPEC02]
     directory = RULES.with_name(version)
@@ -72,3 +74,30 @@ def test_provider_m03_repair_is_rejected_only_with_new_scenario(version, status)
                          if item["check_id"] == "common.professional_consistency")
         assert criterion["protected"] and "оба операнда" in criterion["requirement"]["case_content"]
         assert "candidate_as/Материалы/M04" in criterion["finding_evidence_sections"]
+
+
+@pytest.mark.parametrize("text", [
+    "Для сверки окно — в среду 10:00–13:00, длительность 180 минут.",
+    "Окно — среда 09:30–13:00, длительность 3,5 часа.",
+    "Первый специалист доступен в окно — в среду 10:00–13:00. Длительность сверки другого специалиста 4 часа.",
+    "Дежурство через смену: окно — 23:30–04:00, длительность 4 часа.",
+])
+def test_valid_intervals_and_unrelated_role_statements(text):
+    assert window_duration_findings(text) == []
+
+
+@pytest.mark.parametrize("version,status", [("1.10.1", "PASS"), ("1.10.2", "FAIL")])
+def test_provider_c3_window_requires_room_for_the_stated_duration(version, status):
+    snapshot = service.build_passport_snapshot(
+        case_version=cases()["CASE.SPEC.03"], profile=PROFILE, operation_id="window-regression", synthetic=True,
+        as_package=ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"], battery_scenario_package=RULES.with_name(version),
+    )
+    candidate = synthetic_as(provider_basis(snapshot))
+    next(row for row in candidate["Материалы"] if row["MaterialID"] == "M03")["Текст"] = C3_WORKING_PROVIDER
+    result = service._assemble_candidate(snapshot, candidate)["deterministic_validation"]
+    assert result["status"] == status
+    if status == "FAIL":
+        assert result["errors"] == [{"error_class": "candidate_validation", "check": "battery_window_duration_exceeds",
+                                     "path": "candidate_as/Материалы/M03/Текст"}]
+        failed, = [item for item in result["checks"] if item["result"] == "FAIL"]
+        assert failed["actual"]["duration_minutes"] == "240" and failed["actual"]["available_minutes"] == 180

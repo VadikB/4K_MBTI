@@ -11,6 +11,12 @@ _LEFT = r"(?<![\w.,/−–-])"
 _RIGHT = r"(?![\w/−–-]|[.,][0-9])"
 _DIVISION = re.compile(rf"{_LEFT}(?P<numerator>{_VALUE})\s*[/÷]\s*(?P<denominator>{_VALUE})\s*=\s*(?P<result>{_VALUE}){_RIGHT}")
 _NUMBER = re.compile(rf"{_LEFT}{_VALUE}{_RIGHT}")
+_CLOCK = r"(?:[01]?[0-9]|2[0-3]):[0-5][0-9]"
+_WINDOW_DURATION = re.compile(
+    rf"\bокно\s*(?:[:—–-]\s*)?(?:[а-яё]+[ \t]+){{0,3}}"
+    rf"(?P<start>{_CLOCK})\s*[—–-]\s*(?P<end>{_CLOCK}),\s*длительность\s*(?:[:—–-]\s*)?"
+    rf"(?P<duration>{_VALUE})\s+(?P<unit>час(?:а|ов)?|минут(?:а|ы)?)\b", re.IGNORECASE,
+)
 _SMALL_NUMBERS = {
     word: Decimal(number)
     for number, words in enumerate(("ноль нуля", "один одна одно одной одного одну", "два две двух",
@@ -52,4 +58,26 @@ def division_findings(document: str) -> list[dict]:
                              "expected_result": str(expected) if expected is not None else None})
         elif not missing:
             available.add(result)
+    return findings
+
+
+def _clock_minutes(clock: str) -> int:
+    hours, minutes = map(int, clock.split(":"))
+    return 60 * hours + minutes
+
+
+def window_duration_findings(document: str) -> list[dict]:
+    """Check one clock interval and duration explicitly paired in the same clause."""
+    findings = []
+    for claim in _WINDOW_DURATION.finditer(document):
+        available = _clock_minutes(claim["end"]) - _clock_minutes(claim["start"])
+        # Same-day intervals have an ordered start and end. Calendar transitions
+        # and timelines assembled from separate role statements are reviewed separately.
+        if available <= 0:
+            continue
+        duration = _decimal(claim["duration"])
+        minutes = duration * 60 if claim["unit"].lower().startswith("час") else duration
+        if minutes > available:
+            findings.append({"code": "battery_window_duration_exceeds", "claim": claim.group(),
+                             "available_minutes": available, "duration_minutes": str(minutes)})
     return findings
