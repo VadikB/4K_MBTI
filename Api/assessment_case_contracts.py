@@ -195,6 +195,7 @@ class ParticipantPresentationV3(Contract):
     assessee_task: Text
     conditions_and_constraints: Text
     initial_materials: list[ParticipantMaterialV3]
+    number_initial_materials: Literal[True] | None = None
     substitution_targets: list[SubstitutionTargetV3] = Field(default_factory=list)
 
 class PassportCase(Contract):

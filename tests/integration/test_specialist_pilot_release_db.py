@@ -364,3 +364,67 @@ def test_first_and_next_on_published_program_replay_targeted_clarification(relea
     presented = pilot.client.post(next_path + "/present-next", json=ready)
     assert presented.status_code == 201, presented.text
     assert presented.json()["runtime"]["current_situation"]["assessment_situation_id"] == next_as
+
+
+def publish_v06_fixture(publisher, tmp_path):
+    from Api.cycle_execution_manifest import BATTERY_V06_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES
+    from Api.m5_battery_contract import load_scenario
+    from Api.m5_case_runtime import checksum
+    from Api.m5_passport_generation import read_as_package
+    from scripts.plan_specialist_program_release import (
+        ADMISSION_EVIDENCE, BATTERY_V06_PACKAGE, BATTERY_V06_RUNTIME, build_trace, publish_admitted_catalog,
+    )
+
+    bank = json.loads((BATTERY_V06_PACKAGE / "case-package.json").read_bytes())
+    source = build_trace(BATTERY_V06_PACKAGE, BATTERY_V06_RUNTIME)
+    _, prepared_contract, review = read_as_package(ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"])
+    proof = tmp_path / "synthetic-v06-publication.json"
+    proof.write_text(json.dumps({
+        "human_review_ref": "SYNTHETIC isolated publication contract fixture",
+        "as_contract_ref": bank["as_contract_ref"],
+        "prepared_as_contract_ref": prepared_contract,
+        "review_package": review["protocol_package"],
+        "scenario_ref": load_scenario(bank["cases"][0], ROOT / BATTERY_V06_SCENARIO_PACKAGE)["ref"],
+        "runtime_rule_ref": {key: source["runtime"][key] for key in ("id", "version", "manifest_checksum")},
+        "scopes": dict.fromkeys(ADMISSION_EVIDENCE, "PASS"),
+        "cases": {case["case_id"]: checksum(case) for case in bank["cases"]},
+    }))
+    return publish_admitted_catalog(
+        source, published_by=publisher, decision_basis="SYNTHETIC isolated publication contract fixture",
+        catalog_id="specialist-pilot", catalog_version="1.4.5", idempotency_key="fixture-v06",
+        organization_id=None, package_dir=BATTERY_V06_PACKAGE, runtime_dir=BATTERY_V06_RUNTIME, evidence_path=proof,
+    )
+
+
+@pytest.mark.integration
+def test_v06_release_binds_an_admitted_catalog_without_switching_existing_cycle(release_db, tmp_path):
+    from scripts.release_specialist_pilot import publish_v06_program
+
+    with release_db() as connection:
+        publisher, _, org, _, cycle_id = seed_baseline(connection)
+        old_program = release(connection, directory=RELEASE_DIR, publisher=publisher, principal="fixture-deployer")
+        assessment_programs.connect(connection, organization_id=org, program_definition_id=old_program["program_id"],
+                                    actor_user_id=publisher, operation_id="v06-fixture-old-program")
+        old_cycle = read_cycle(connection, cycle_id)
+        with pytest.raises(ValueError, match="PILOT_PLAN_RELEASE_ADMITTED_CATALOG_REQUIRED"):
+            publish_v06_program(connection, publisher=publisher, principal="fixture-deployer")
+
+    admitted = publish_v06_fixture(publisher, tmp_path)
+    with release_db() as connection:
+        result = publish_v06_program(connection, publisher=publisher, principal="fixture-deployer")
+        assert result["catalog_db_id"] == admitted["catalog"]["catalog_db_id"]
+        assert result["catalog_version"] == "1.4.5" and result["program_version"] == "2.1"
+        assert publish_v06_program(connection, publisher=publisher, principal="fixture-deployer") == {
+            **result, "result": "existing",
+        }
+        assert read_cycle(connection, cycle_id) == old_cycle
+        row = connection.execute("""SELECT program_definition_id FROM organization_assessment_program_connections
+            WHERE organization_id=%s AND is_current""", (org,)).fetchone()
+        assert row["program_definition_id"] == old_program["program_id"]
+        program = connection.execute("SELECT * FROM assessment_program_definitions WHERE id=%s",
+                                     (result["program_id"],)).fetchone()
+        design = pilot_plan_binding.validate_published_program(connection, program)["review"]["payload"]
+        assert design["route_requirements"] == {
+            "minimum_target_count": 39, "required_target_ids": design["proposed_target_ids"],
+        }
+        assert len(design["cases"]) == 9 and design["catalog_ref"]["catalog_version"] == "1.4.5"

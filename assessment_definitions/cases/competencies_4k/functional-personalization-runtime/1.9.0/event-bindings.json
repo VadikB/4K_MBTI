@@ -1,0 +1,144 @@
+{
+  "case_bindings": {
+    "CASE.SPEC.01": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "8d33e53778411a15e19c3f77ff7521461642b809d717f280ded484a048da0f4a",
+      "case_version": "v0.8",
+      "event_ids": [
+        "E01_DOCUMENT",
+        "E02_REPLY",
+        "E03_CAUSE_LIMIT",
+        "E04_DOCUMENT_REPLY",
+        "E05_NEXT_STEP"
+      ]
+    },
+    "CASE.SPEC.02": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "9ef4b175116c651711bf7cff363cd20123a930e6e3d9aa143fd29d27a9d79e46",
+      "case_version": "v0.9",
+      "event_ids": [
+        "E01_FACT",
+        "E03_UNKNOWN",
+        "E02_SUBMISSION"
+      ]
+    },
+    "CASE.SPEC.03": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "e01f2eb63948a72edde3897e72b414909dc8baac9ed7e97e24e3a9bf3464c0bb",
+      "case_version": "v0.6",
+      "event_ids": [
+        "E01_UPDATE",
+        "E02_TRANSFER",
+        "E02_FORWARD",
+        "E03_REPLY",
+        "E04_BOUNDARY"
+      ]
+    },
+    "CASE.SPEC.04": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "5a9de256c988584888de1840daa7397d9bf3fd86c9aa199a298046f0f95a69be",
+      "case_version": "v0.8",
+      "event_ids": [
+        "E01_REVIEW",
+        "E01_STATE_LIMIT",
+        "E01_CONSENT_STEP",
+        "E02_REVISION",
+        "E03_FACT"
+      ]
+    },
+    "CASE.SPEC.05": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "00677de0850aa10043f962fa89166b63279686846c6da5e70f60db27736b015b",
+      "case_version": "v0.7",
+      "event_ids": [
+        "E01_COLLEAGUE",
+        "E02_PROMISE",
+        "E03_SUPPORT",
+        "E04_RESERVATION"
+      ]
+    },
+    "CASE.SPEC.06": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "875367c7b66515ad50c8c554aa5d8b54aea18dfdf16aeefc7e4031d7082075a0",
+      "case_version": "v0.6",
+      "event_ids": [
+        "E01_DISCUSS",
+        "E01_ACCEPT",
+        "E01_HOLD",
+        "E02_LIMIT"
+      ]
+    },
+    "CASE.SPEC.07": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "2a92438d1d9f78d83b83989ce23d0497d433cb5d6f173a8483692e5bf7d95b3d",
+      "case_version": "v0.7",
+      "event_ids": [
+        "E01_EXPLAIN",
+        "E03_UNAVAILABLE",
+        "E02_SUBMISSION"
+      ]
+    },
+    "CASE.SPEC.08": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "cf6dbad59cc91bb384f23678aebfdd9f2a06b78967c66a11762c7b5b3df8ad91",
+      "case_version": "v0.7",
+      "event_ids": [
+        "E01_HANDOVER",
+        "E01_RECEIPT",
+        "E02_CORRECT",
+        "E03_PENDING",
+        "E04_CLARIFY"
+      ]
+    },
+    "CASE.SPEC.09": {
+      "as_contract_ref": {
+        "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+        "id": "m5-functional-as",
+        "version": "2.0.0"
+      },
+      "case_checksum": "0b86dbb0a42d47116de45a0be192c59c06a0fc3aaa29edab23ba99cdcf3c80a8",
+      "case_version": "v0.7",
+      "event_ids": [
+        "E01_MANAGER",
+        "E02_BOUNDARY"
+      ]
+    }
+  },
+  "id": "m5-functional-personalization-runtime",
+  "owner": "PM-04",
+  "schema_version": 2,
+  "status": "draft",
+  "version": "1.9.0"
+}

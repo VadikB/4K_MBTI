@@ -28,7 +28,8 @@ def _profile_role(profile: dict) -> str:
 
 def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
              catalog_db_id: int | None, usage_scope: str, battery_profile: dict | None = None,
-             battery_scenario_package: Path | None = None) -> list[dict]:
+             battery_scenario_package: Path | None = None,
+             profile_fit: dict | None = None) -> list[dict]:
     if catalog_db_id is None:
         rows=connection.execute("""SELECT cv.id,cv.case_id,cv.case_version,cv.status,cv.base_role,cv.content_json,
             array_agg(t.indicator_id ORDER BY t.display_order) AS target_ids
@@ -48,6 +49,7 @@ def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
     result=[]
     for row in rows:
         content=row["content_json"];reasons=[]
+        fit = None
         if row["base_role"] != role:reasons.append("ROLE_NOT_ALLOWED")
         if battery_profile is not None:
             from Api.cycle_execution_manifest import ROOT
@@ -56,9 +58,13 @@ def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
             design = load_scenario(content, battery_scenario_package or ROOT / RULE_PACKAGE,
                                    pilot=usage_scope == "assessment")
             try:
-                validate_profile(battery_profile, design)
+                fit = validate_profile(battery_profile, design, (profile_fit or {}).get(row["case_id"]))
             except ValueError as exc:
+                if "profile_fit" in design:
+                    raise
                 reasons.append(str(exc))
+            if fit is not None and fit["status"] != "applicable":
+                reasons.append(f"M5_BATTERY_PROFILE_{fit['status'].upper()}:18/{fit['criterion']}")
         if catalog_db_id is None:
             evidence={item["scope"]:item["result"] for item in connection.execute(
                 "SELECT DISTINCT ON(scope) scope,result FROM m5_qa_evidence "
@@ -76,7 +82,7 @@ def _catalog(connection, *, role: str, rules: dict, planned_ids: set[str],
         result.append({"case_id":row["case_id"],"case_version":row["case_version"],"base_role":row["base_role"],
             "planned_min_minutes":content["planned_min_minutes"],"planned_max_minutes":content["planned_max_minutes"],
             "target_ids":list(row["target_ids"]),"contribution_target_ids":targets,
-            "eligible":not reasons,"reasons":reasons})
+            "eligible":not reasons,"reasons":reasons, **({"profile_fit": fit} if fit is not None else {})})
     return result
 
 
@@ -102,7 +108,7 @@ def ranked_route(catalog: list[dict], targets: list[dict]) -> tuple[list[dict], 
 
 def create_plan(connection, *, personalized_profile_id: int, selected_skills: list[str], created_by: int,
                 key: str, time_budget_seconds: int|None=None, calendar_window_seconds: int|None=None,
-                usage_scope: str = "qa") -> dict:
+                usage_scope: str = "qa", profile_fit: dict | None = None) -> dict:
     if usage_scope not in {"qa", "assessment"}:
         raise ValueError("M7_USAGE_SCOPE_INVALID")
     request={"personalized_profile_id":personalized_profile_id,"selected_skills":sorted(set(selected_skills)),
@@ -140,7 +146,7 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
     catalog=_catalog(connection,role=role,rules=rules,planned_ids=target_ids,
                      catalog_db_id=catalog_ref["db_id"],usage_scope=usage_scope,
                      battery_profile=profile["content_json"] if catalog_ref.get("battery_pilot") else None,
-                     battery_scenario_package=battery_scenario_package)
+                     battery_scenario_package=battery_scenario_package, profile_fit=profile_fit)
     route, uncovered = ranked_route(catalog, targets)
     overrides={name:value for name,value in {
         "time_budget_seconds":time_budget_seconds,"calendar_window_seconds":calendar_window_seconds}.items()
@@ -198,6 +204,8 @@ def create_plan(connection, *, personalized_profile_id: int, selected_skills: li
             connection, program=program, profile=profile, cycle=cycle, snapshot=admission, resolved=resolved),
             outside_plan_target_ids=projection["outside_plan_target_ids"],
             uncovered_planned_target_ids=sorted(uncovered & {row["indicator_id"] for row in planned_targets}))
+        if "route_coverage" in projection:
+            content["route_coverage"] = projection["route_coverage"]
     repo.save_plan(connection,cycle=cycle,profile_ref=profile_ref,full_targets=targets,planned_targets=planned_targets,
                    requirements=requirements,rules=rules,content=content,created_by=created_by,key=key,request_hash=request_hash)
     return read_plan(connection,str(cycle["cycle_id"]))
@@ -304,12 +312,23 @@ def attach_functional_generated_as(connection, *, decision_id: str, prepared_res
             or generation_trace.get("execution_rules_checksum") != runtime_checksum(prepared_result["execution_rules"])):
         raise ValueError("M5_FUNCTIONAL_HANDOFF_INTEGRITY_MISMATCH")
     cycle = connection.execute(
-        "SELECT cycle_id,personalized_profile_id,usage_scope,status "
+        "SELECT cycle_id,personalized_profile_id,usage_scope,status,catalog_ref_json "
         "FROM m5_cycles WHERE id=%s FOR UPDATE",
         (decision["cycle_db_id"],),
     ).fetchone()
     if cycle["status"] in {"collection_closed", "calculation_pending", "calculated", "failed"}:
         raise ValueError("M7_COLLECTION_CLOSED")
+    from Api.m5_battery_profile import PILOT_PACKAGE_VERSION
+
+    if (cycle.get("catalog_ref_json") or {}).get("package_version") == PILOT_PACKAGE_VERSION:
+        receipt_checksum = (generation_trace.get("source_snapshot") or {}).get("refs", {}).get("battery_profile_fit_checksum")
+        current_plan = repo.read_plan(connection, str(cycle["cycle_id"]))
+        selected = next(row for row in current_plan["content_json"]["route"]
+                        if (row["case_id"], row["case_version"]) ==
+                        (decision["selected_case_id"], decision["selected_case_version"]))
+        fit = selected.get("profile_fit")
+        if (checksum(fit) if fit is not None else None) != receipt_checksum:
+            raise ValueError("M5_BATTERY_PROFILE_REVIEW_SOURCE_MISMATCH")
     current_cycle = read_cycle(connection, str(cycle["cycle_id"]))
     if current_cycle["calendar_deadline"] is not None:
         if (current_cycle["remaining_seconds"] <= 0

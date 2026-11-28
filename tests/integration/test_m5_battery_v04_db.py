@@ -21,6 +21,8 @@ from Api.m5_cycle_runtime import create_cycle_session_for_case
 from Api.m5_functional_generation_service import checksum as review_checksum, review_dispatches_match
 from Api.m5_passport_generation import read_as_package
 from Api.m5_scenario_runtime import build_c45, trace, transition
+from Api.m10_product_flow import participant_trace
+from Api.m6_input_resolver_v2 import resolve as resolve_m6_handoff
 from Api.m7_cycle_planner import _catalog, ranked_route
 from Api.m7_planning_package import load_rules, methodology_targets
 from scripts.plan_specialist_program_release import (
@@ -171,11 +173,17 @@ def start_case(product_db, profile, number, *next_cases):
 @pytest.mark.parametrize("number", range(1, 10))
 def test_v04_case_matrix(product_db, v04, number):
     cycle, session = start_case(product_db, v04[0][0], number)
-    assert resolve_cycle_dependency(cycle, "m5_battery_scenario") == SCENARIO
-    assert resolve_cycle_dependency(cycle, "m5_functional_as") == REVIEW
     replacement = [{"Место": "17.2/M02", "Источник": "синтетический контекст M4",
                     "Что заменено": "рабочий пример", "Предел": "границы проверки сохранены"}]
     gateway = V04Gateway(initial="Абзац вместо массива", repaired=replacement) if number == 7 else V04Gateway()
+    exercise_case_matrix(product_db, cycle, session, number, gateway=gateway, scenario=SCENARIO,
+                         replacement=replacement, export_trace=export)
+
+
+def exercise_case_matrix(product_db, cycle, session, number, *, gateway, scenario, replacement=None, export_trace=export,
+                         spec02_answer=None):
+    assert resolve_cycle_dependency(cycle, "m5_battery_scenario") == scenario
+    assert resolve_cycle_dependency(cycle, "m5_functional_as") == REVIEW
     as_id, saved = prepare_and_start(product_db, cycle, session, gateway)
     payload = saved["execution_payload"]
     generation = payload["ai_operations"]["functional_personalization"]
@@ -195,9 +203,10 @@ def test_v04_case_matrix(product_db, v04, number):
     assert roles == {"tester": required, "challenger": required}
     assert review_checksum(accepted) == generation["candidate_checksum"]
     assert review_dispatches_match(tester, candidate_sha256=generation["candidate_checksum"],
-                                   review_round=2 if number == 7 else 1)
+                                   review_round=2 if number == 7 and replacement is not None else 1)
     with product_db() as connection:
         opening = trace(connection, as_id)
+    public = participant_trace(opening)
     assert opening["state"]["state_json"]["disclosed_materials"] == design["start_ids"]
     steps = []
 
@@ -224,17 +233,47 @@ def test_v04_case_matrix(product_db, v04, number):
         assert "Черновик" in effects[0]["payload_json"]["content"]["text"]
         assert not turn("Ещё раз обсудим ту же сверку?", {"E01_DOCUMENT": matched()})[0]
     elif number == 2:
+        if design.get("number_initial_materials"):
+            with product_db() as connection:
+                row = connection.execute("""SELECT snapshot_json FROM m5_assessment_situations
+                    WHERE assessment_situation_id=%s""", (as_id,)).fetchone()
+                restored = participant_trace(trace(connection, as_id))
+            presentation = row["snapshot_json"]["participant_payload"]
+            assert presentation["number_initial_materials"] is True
+            assert [row["material_id"] for row in presentation["initial_materials"]] == [f"M0{i}" for i in range(1, 7)]
+            assert all(row["title"] and row["text"] for row in presentation["initial_materials"])
+            assert "способы проверки заявок" in presentation["introduction"]
+            assert restored == public and not public["turns"]
+            assert [event["material_id"] for event in public["events"]] == [f"M0{i}" for i in range(1, 7)]
         effects, _ = turn("Где в предъявленном пакете зафиксирован предел проверки B?",
                           {"E01_FACT": matched(speaker_ids=["FACILITATOR"])},
                           responses={"FACILITATOR": "Предел описан в M05. За него наблюдение не распространяется."})
         assert ids(effects) == ["E01_FACT"]
+        if "E03_UNKNOWN" in {event["id"] for event in design["events"]}:
+            effects, _ = turn("А повторная проверка уже дала результат?", {"E03_UNKNOWN": matched(speaker_ids=["FACILITATOR"])},
+                              responses={"FACILITATOR": "Результата повторной проверки в материалах нет."}, replay=True)
+            assert ids(effects) == ["E03_UNKNOWN"]
     elif number == 3:
-        turn("Коллеги C1, C2 и C3, сверим обновлённые условия вместе?", {
+        initial_replies, _ = turn("Предлагаю свести три части в общей карточке. C1, C2 и C3, сможете обновить свои части сегодня?", {
             "E01_UPDATE": matched(speaker_ids=["C1", "C2", "C3"]),
             "E03_REPLY": matched(speaker_ids=["C1", "C2", "C3"]),
-        }, recipients=("C1", "C2", "C3"))
+        }, recipients=("C1", "C2", "C3"), responses={
+            "C1": "Могу пересчитать список до 12:00. Нужен актуальный состав.",
+            "C2": "Могу собрать подтверждённые части после отдельных сверок.",
+            "C3": "Пока не подтвердил сверку. Нужны актуальные условия.",
+        })
+        update, = [item for item in initial_replies if item["event_type"] == "mandatory_update"]
+        assert update["payload_json"]["recipient_ids"] == ["assessee"]
+        assert update["payload_json"]["speaker_id"] == "C2" and update["payload_json"]["author_id"] == "CUSTOMER"
         material = design["concrete_materials"]["M04"]["Текст"]
         quote = material.split("\n\n", 1)[-1].split(". ", 1)[0].lstrip("«")
+        with product_db() as connection:
+            public_before_pause = participant_trace(trace(connection, as_id))
+            transition(connection, assessment_situation_id=as_id, action="pause", reason="synthetic", request_id="case03-pause")
+            transition(connection, assessment_situation_id=as_id, action="resume", reason="synthetic", request_id="case03-resume")
+            public_after_resume = participant_trace(trace(connection, as_id))
+            connection.commit()
+        assert public_after_resume == public_before_pause
         _, calls = turn("C3, можно уточнить ваш вклад перед пересылкой?", {
             "E03_REPLY": matched(speaker_ids=["C3"]),
         }, recipients=("C3",))
@@ -269,20 +308,30 @@ def test_v04_case_matrix(product_db, v04, number):
     elif number == 6:
         effects, _ = turn("Что каждая сторона может подготовить для общей пробы?", {
             "E01_DISCUSS": matched(speaker_ids=["C1", "C2", "C3"]),
-        }, recipients=("C1", "C2", "C3"))
+        }, recipients=("C1", "C2", "C3"), responses={
+            "C1": "Подготовлю проверку открытия с обычными рабочими правами.",
+            "C2": "Рабочая группа сможет смотреть четыре карточки до 30 минут.",
+            "C3": "Для рассмотрения нужны время и записи о неоткрытых карточках.",
+        })
         assert {event["payload_json"]["speaker_id"] for event in effects} == {"C1", "C2", "C3"}
         effects, _ = turn("C1, возьмёте подготовку?", {
             "E01_ACCEPT": matched(speaker_ids=["C1"]), "@confirmed:E01_ACCEPT": matched(),
         }, recipients=("C1",), responses={"C1": "Подготовку беру. Пробу пока не проводили."})
         assert ids(effects) == ["E01_ACCEPT"]
     elif number == 7:
-        assert accepted["Применённые замены"] == replacement and generation["repair"]
+        if replacement is not None:
+            assert accepted["Применённые замены"] == replacement and generation["repair"]
         assert "обоснуйте" in design["concrete_materials"]["P00"]["Текст"]
         assert "доступ имели 9" in design["concrete_materials"]["M02"]["Текст"]
         effects, _ = turn("Что из предъявленного действительно проверено?", {
             "E01_EXPLAIN": matched(speaker_ids=["FACILITATOR"]),
         }, responses={"FACILITATOR": "В M01 проверялась пробная запись. В M03 зафиксировано использование двух результатов."})
         assert ids(effects) == ["E01_EXPLAIN"]
+        if "E03_UNAVAILABLE" in {event["id"] for event in design["events"]}:
+            effects, _ = turn("Сколько завершённых результатов не было зарегистрировано?", {
+                "E03_UNAVAILABLE": matched(speaker_ids=["FACILITATOR"]),
+            }, responses={"FACILITATOR": "В предъявленном пакете этого числа нет."})
+            assert ids(effects) == ["E03_UNAVAILABLE"]
     elif number == 8:
         recipient = "R_RECIPIENT"
         pending = {"E04_CLARIFY": matched(speaker_ids=[recipient])}
@@ -338,21 +387,27 @@ def test_v04_case_matrix(product_db, v04, number):
            "процесса после получения доступа либо другой состав рабочих задач. Проверю цепочку до результата на небольшой "
            "группе пользователей и сверю, какие результаты приняла принимающая сторона. До проверки причину считаю гипотезой.",
     }
+    if number == 2 and spec02_answer is not None:
+        written_answers[number] = spec02_answer
     final_text = (written_answers[number] + " Сдаю эту запись как итог." if number in written_answers
                   else "Сдаю текущий результат. На этом заканчиваю. Уточнения потом?")
     effects, calls = turn(final_text, {}, control="FINAL", replay=True)
     assert [event["event_type"] for event in effects] == ["scenario_completed"] and not calls
     with product_db() as connection:
         transition(connection, assessment_situation_id=as_id, action="close", reason="synthetic QA", request_id="qa-close")
-        handoff = build_c45(connection, as_id)["envelope_json"]
+        record = build_c45(connection, as_id)
+        handoff = record["envelope_json"]
+        _, m6 = resolve_m6_handoff(connection, str(record["handoff_id"]))
     if number in {2, 7}:
         assert any("E02_SUBMISSION" in row["occurred_event_refs"] for row in handoff["conditional_opportunities"])
         assert final_text in json.dumps(handoff["dialogue"], ensure_ascii=False)
-    export(f"CASE.SPEC.{number:02d}/trace.json", {
+    export_trace(f"CASE.SPEC.{number:02d}/trace.json", {
         "gateway": "SYNTHETIC CONTROLLED", "live_model": "NOT_RUN", "catalog": cycle["catalog_ref_json"],
         "execution_manifest_checksum": cycle["execution_manifest_checksum"], "source": generation["source_snapshot"]["refs"],
         "as": accepted, "review": tester, "repair": generation.get("repair"), "opening": opening,
-        "turns": steps, "c45": handoff,
+        "participant_opening": public,
+        **({"participant_card": presentation} if number == 2 and design.get("number_initial_materials") else {}),
+        "turns": steps, "c45": handoff, "m6_handoff": m6,
     })
 
 

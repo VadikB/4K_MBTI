@@ -64,7 +64,12 @@ def prepare_next(connection_factory, *, cycle_id: str, assessment_situation_id: 
             raise ValueError("M4_PROFILE_NOT_READY")
         dependencies = cycle["execution_manifest_json"]["dependencies"]
         project_role = cycle["execution_manifest_json"]["runtime_refs"].get("project_role")
-        snapshot = preparation.build_passport_snapshot(
+        from Api.m5_battery_contract import load_scenario
+        from Api.m5_battery_profile import review
+
+        scenario_package = resolve_cycle_dependency(cycle, "m5_battery_scenario")
+        design = load_scenario(case["content_json"], scenario_package)
+        snapshot_args = dict(
             case_version=case["content_json"], profile=profile["content_json"], operation_id=assessment_situation_id,
             synthetic=True, profile_checksum=profile["checksum"], case_version_checksum=case["content_checksum"],
             selected_base_role=resolve_cycle_base_role(connection, cycle, profile["content_json"]),
@@ -73,12 +78,17 @@ def prepare_next(connection_factory, *, cycle_id: str, assessment_situation_id: 
             m2_path=resolve_cycle_dependency(cycle, "m2_methodology") / "methodology.json",
             m3_path=resolve_cycle_dependency(cycle, "m3_role_profiles") / "base_roles.json",
             runtime_rule_ref=resolve_preparation_binding(connection, case),
-            battery_scenario_package=resolve_cycle_dependency(cycle, "m5_battery_scenario"),
+            battery_scenario_package=scenario_package,
             provider_contract=load_provider_contract(resolve_cycle_dependency(cycle, "provider_contract") / "manifest.json"),
             project_role=project_role,
             project_role_prompt=(resolve_cycle_dependency(cycle, "m5_educational_role_interactions")
                                  if "m5_educational_role_interactions" in dependencies else None),
         )
+    reviewed = review(profile["content_json"], [design] if "profile_fit" in design else [], gateway,
+                      operation_id=assessment_situation_id)
+    snapshot = preparation.build_passport_snapshot(
+        **snapshot_args, battery_profile_fit=reviewed.get(case["content_json"]["case_id"]),
+    )
     prepared = preparation.prepare(snapshot, gateway)
     if not prepared["admitted_for_participant"]:
         return {"status": "preparation_rejected", "candidate_checksum": prepared["candidate_checksum"],

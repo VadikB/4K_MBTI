@@ -98,7 +98,7 @@ def _prepare_next(connection, *, plan: dict, user_id: int, key: str, defer_as: b
 
 def prepare(connection, *, user_id: int, key: str,
             selected_skills: list[str] | None = None, profile_id: int | None = None,
-            defer_as: bool = False, exact_profile: bool = False) -> dict:
+            defer_as: bool = False, exact_profile: bool = False, profile_fit: dict | None = None) -> dict:
     """Create/reuse one prepared Cycle; never start its Session or calendar window."""
     connection.execute("SELECT pg_advisory_xact_lock(%s)", (int(user_id),))
     organization_id = participant_profile.active_organization(connection, user_id)
@@ -139,7 +139,7 @@ def prepare(connection, *, user_id: int, key: str,
     plan = m7_cycle_planner.create_plan(
         connection, personalized_profile_id=profile_id,
         selected_skills=selected_skills or ["K1", "K2", "K3", "K4"],
-        created_by=user_id, key=f"product-prepare:{key}", usage_scope=usage_scope,
+        created_by=user_id, key=f"product-prepare:{key}", usage_scope=usage_scope, profile_fit=profile_fit,
     )
     if plan["plan"]["status"] == "NO_ROUTE":
         raise ValueError('M7_NO_ADMISSIBLE_CASE: Профиль готов. Ответственный специалист должен подготовить допустимые кейсы для выбранной роли и конфигурации.')
@@ -565,6 +565,9 @@ def participant_plan(plan: dict) -> dict:
     """Do not disclose the accepted design's hidden observability/source material."""
     content = dict(plan.get('plan') or {})
     binding = content.pop('pilot_plan_binding', None)
+    for key in ('route', 'catalog'):
+        if any('profile_fit' in row for row in content.get(key, [])):
+            content[key] = [{k: v for k, v in row.items() if k != 'profile_fit'} for row in content[key]]
     if binding:
         snapshot = binding['admission_snapshot']
         content['pilot_plan_ref'] = {

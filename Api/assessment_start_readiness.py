@@ -34,12 +34,13 @@ def plan_gate(content: dict, cycle: dict) -> dict | None:
     snapshot = binding["admission_snapshot"]
     design = validate_snapshot(snapshot)
     _require(full == pairs(design["full_m2_matrix"]), "FULL_M2_MISMATCH")
-    _require({indicator for indicator, _ in planned} == set(design["proposed_target_ids"])
-             and set(content.get("outside_plan_target_ids", [])) == set(design["absent_target_ids"])
-             and content.get("uncovered_planned_target_ids") == [], "TARGET_SET_MISMATCH")
     projected = project_plan(snapshot, targets=content["full_target_set"], catalog=content["catalog"],
                              catalog_ref=content["catalog_ref"], role_ref=cycle["selected_role_ref_json"])
-    _require(content["route"] == projected["route"], "ROUTE_MISMATCH")
+    _require(planned == pairs(projected["planned_targets"])
+             and set(content.get("outside_plan_target_ids", [])) == set(projected["outside_plan_target_ids"])
+             and content.get("uncovered_planned_target_ids") == [], "TARGET_SET_MISMATCH")
+    _require(content["route"] == projected["route"] and content.get("route_coverage") == projected.get("route_coverage"),
+             "ROUTE_MISMATCH")
     for name in ("time_budget_seconds", "calendar_window_seconds"):
         _require(cycle[name] == projected["timing"][name], "TIMING_MISMATCH")
     _require(binding["profile_ref"] == {"id": cycle["personalized_profile_id"],
@@ -263,6 +264,9 @@ def read(connection, *, cycle_id: str, user_id: int) -> dict:
                      and str(trace["accepted_as"].get("CaseVersion")) == str(selected["selected_case_version"])
                      and (trace.get("source_snapshot") or {}).get("profile_checksum") == profile["checksum"],
                      "FINAL_CANDIDATE_SCOPE_MISMATCH")
+            if fit := plan["content_json"]["route"][0].get("profile_fit"):
+                _require(trace["source_snapshot"]["refs"].get("battery_profile_fit_checksum") == checksum(fit),
+                         "PROFILE_SCOPE_MISMATCH")
             design = validate_snapshot(binding["admission_snapshot"])
             expected_case = next(row for row in design["cases"] if row["case_id"] == selected["selected_case_id"])
             versions = {row["indicator_id"]: row["m2_version"] for row in design["full_m2_matrix"]}

@@ -11,7 +11,10 @@ from Api import assessment_programs, pilot_plan_binding
 from Api.assessment_authoring_service import assessment_authoring_service
 from Api.assessment_configuration import definition_checksum
 from Api.assessment_methodology_publication import load_verified_m2_package
-from Api.cycle_execution_manifest import BATTERY_V04_SCENARIO_CURRENT, battery_scenario_ref
+from Api.cycle_execution_manifest import (
+    BATTERY_V04_SCENARIO_CURRENT, BATTERY_V06_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES,
+    battery_scenario_ref,
+)
 from Api.m5_case_runtime import canonical_bytes, checksum
 from Api.m5_catalog_integrity import catalog_readback, publish_catalog, require_release_publisher
 from Api.m5_package import digest
@@ -22,13 +25,17 @@ from Api.m7_cycle_planner import _catalog
 from Api.m7_planning_package import PACKAGE as M7_PACKAGE, load_rules, methodology_targets
 from Api.pilot_plan_admission import PUBLISHER_CONTRACT, _require, project_plan, validate_program
 from scripts.plan_specialist_program_release import (
-    BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, ROOT, build_release_artifacts, build_trace,
+    BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, BATTERY_V06_PACKAGE, BATTERY_V06_RUNTIME,
+    ROOT, build_release_artifacts, build_trace,
 )
 
 
 RELEASE_DIR = ROOT / "assessment_definitions/planning/specialist_pilot_release/2.0"
 SOURCE_FIELDS = ("methodology_version_id", "scenario_version_id", "prompt_bundle_checksum")
 ROLE = "specialist_expert"
+# Api/m7_cycle_planner.py at 4b1154e5b8f6277bc19faaf34638d6ae0b59adbb.
+# The v2.0 proposal binds that file; build_plan also replays both approved routes.
+V20_PLANNER_SHA256 = "72f2d44c363235b4eb899195948f1a4008c9c5e3e693bbde62f1c5a268991b39"
 
 
 def load_release(directory: Path) -> tuple[dict, dict]:
@@ -134,6 +141,8 @@ def build_plan(connection, *, manifest: dict, proposal: dict, configuration: dic
         "timing_basis": {"time_budget_seconds": limits["active_seconds"],
                          "calendar_window_seconds": limits["calendar_seconds"]},
     }
+    if "route_requirements" in proposal:
+        design["route_requirements"] = proposal["route_requirements"]
     snapshot = {
         "contract": PUBLISHER_CONTRACT, "artifact_id": proposal["proposal_id"],
         "artifact_version": proposal["proposal_version"], "source_manifest_sha256": manifest["manifest_sha256"],
@@ -146,6 +155,9 @@ def build_plan(connection, *, manifest: dict, proposal: dict, configuration: dic
     role_ids = [role["id"]]
     validate_program(program, role_ids, snapshot)
     pilot_plan_binding.validate_case_sources(connection, snapshot, catalog["id"])
+
+    if "route_requirements" in proposal:
+        return program, role_ids
 
     rules = load_rules()
     projection_ref = {"id": catalog["catalog_id"], "version": catalog["catalog_version"],
@@ -199,7 +211,7 @@ def release(connection, *, directory: Path, publisher: int, principal: str) -> d
     _, _, review_refs = read_as_package(ROOT / review["path"])
     _require(scenario == proposal["source_refs"]["scenario_ref"] and review == review_refs["protocol_package"]
              and digest((M7_PACKAGE / "rules.json").read_bytes()) == proposal["source_refs"]["planning_rules_sha256"]
-             and digest((ROOT / "Api/m7_cycle_planner.py").read_bytes()) == proposal["source_refs"]["planner_sha256"],
+             and V20_PLANNER_SHA256 == proposal["source_refs"]["planner_sha256"],
              "RELEASE_EXECUTION_SOURCE_MISMATCH")
     imported = import_package(connection, package=package, manifest=bank_manifest, execution_rules=execution_rules)
     package_id = imported["package_db_id"]
@@ -258,6 +270,106 @@ def release(connection, *, directory: Path, publisher: int, principal: str) -> d
             "result": "existing" if existing is not None else "published"}
 
 
+def publish_v06_program(connection, *, publisher: int, principal: str) -> dict:
+    """Bind the already admitted 1.4.5 catalog to a separate program version."""
+    require_release_publisher(connection, publisher)
+    connection.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", ("specialist_pilot@2.1",))
+    baseline = connection.execute("""SELECT p.*, c.methodology_version_id, c.scenario_version_id
+        FROM assessment_program_definitions p JOIN assessment_configurations c ON c.id=p.assessment_configuration_id
+        WHERE p.code='specialist_pilot' AND p.version='2.0' AND p.status='published' AND c.status='published'""").fetchone()
+    _require(baseline is not None, "RELEASE_BASELINE_MISSING")
+    previous = pilot_plan_binding.validate_published_program(connection, baseline)
+    design = previous["review"]["payload"]
+    _require(len(design["role_refs"]) == 1 and len(design["proposed_target_ids"]) == 39,
+             "RELEASE_BASELINE_MISMATCH")
+
+    catalog_row = connection.execute("""SELECT id FROM m5_catalogs
+        WHERE catalog_id='specialist-pilot' AND catalog_version='1.4.5'""").fetchone()
+    _require(catalog_row is not None, "RELEASE_ADMITTED_CATALOG_REQUIRED")
+    catalog = catalog_readback(connection, catalog_row["id"])
+    catalog_manifest = catalog["manifest"]
+    package = json.loads((BATTERY_V06_PACKAGE / "case-package.json").read_bytes())
+    runtime = load_runtime_rule_package(
+        BATTERY_V06_RUNTIME, package["cases"], expected_case_package_version=package["version"],
+    )
+    for case in package["cases"]:
+        case["status"] = "FROZEN"
+    bank_manifest, rules = build_release_artifacts(
+        package, runtime, usage_scope="assessment", package_dir=BATTERY_V06_PACKAGE,
+    )
+    _, _, review_refs = read_as_package(ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"])
+    _require(catalog["status"] == "published" and catalog_manifest["usage_scope"] == "assessment"
+             and catalog_manifest["organization_id"] is None
+             and catalog_manifest.get("battery_pilot") is True
+             and catalog_manifest["package_ref"] == {
+                 "id": bank_manifest["id"], "version": bank_manifest["version"],
+                 "checksum": checksum({"package": package, "manifest": bank_manifest}),
+             }
+             and catalog_manifest["runtime_rule_ref"] == {
+                 "artifact_id": runtime["manifest"]["id"], "artifact_version": runtime["manifest"]["version"],
+                 "manifest_checksum": runtime["manifest_checksum"], "rules_checksum": checksum(rules),
+             }
+             and catalog_manifest["scenario_ref"] == battery_scenario_ref(BATTERY_V06_SCENARIO_PACKAGE)
+             and catalog_manifest["review_package"] == review_refs["protocol_package"],
+             "RELEASE_CATALOG_MISMATCH")
+    planned = design["proposed_target_ids"]
+    cases = [{
+        "case_id": case["case_id"], "case_version": case["version"], "case_checksum": checksum(case),
+        "target_ids": [target["indicator_id"] for target in case["indicator_targets"]],
+    } for case in package["cases"]]
+    observations = [{
+        "case_id": case["case_id"], "case_version": case["version"], "indicator_id": target["indicator_id"],
+        "m2_version": target["m2_version"], "condition": target["observation_condition"],
+        "actual_opportunity": "NOT_RUN",
+    } for case in package["cases"] for target in case["indicator_targets"]]
+    _require({row["indicator_id"] for row in observations} == set(planned), "TARGET_SET_MISMATCH")
+    proposal = {
+        "proposal_id": "specialist-pilot-m5-v0.6", "proposal_version": "2.1",
+        "source_refs": {"m2_checksum": design["m2_checksum"]},
+        "authority_scope": {"base_role": ROLE}, "cases": cases,
+        "planned_target_ids": planned, "planned_target_count": len(planned),
+        "outside_plan_target_ids": design["absent_target_ids"], "full_m2_count": design["full_m2_count"],
+        "routes": {"mandate_confirmed": {"route": design["proposed_primary_route"]}},
+        "route_requirements": {"minimum_target_count": len(planned), "required_target_ids": planned},
+        "case_observation_conditions": observations, "observation_occurrences": len(observations),
+        "participant_notice_proposal": previous["participant_notice"],
+        "proposed_limits_carried_from_0_3": {
+            "active_seconds": design["timing_basis"]["time_budget_seconds"],
+            "calendar_seconds": design["timing_basis"]["calendar_window_seconds"],
+        },
+    }
+    version = "2.1"
+    release_ref = {
+        "archive_sha256": bank_manifest["battery_source"]["provenance"]["battery_archive_sha256"],
+        "proposal_content_sha": checksum(proposal),
+    }
+    configuration = release_configuration(
+        connection, code="specialist_pilot_v2_1", baseline=baseline, catalog_id=catalog["id"], publisher=publisher,
+        reason="M5 v0.6 · назначаемая версия программы",
+    )
+    existing = connection.execute("""SELECT * FROM assessment_program_definitions
+        WHERE code='specialist_pilot' AND version=%s""", (version,)).fetchone()
+    actor = {"publisher_user_id": publisher, "principal": principal}
+    if existing is not None:
+        recorded = pilot_plan_binding.validate_published_program(connection, existing)["publisher_release"]
+        _require(all(recorded.get(key) == value for key, value in release_ref.items()), "RELEASE_PROGRAM_MISMATCH")
+        actor = {key: recorded[key] for key in actor}
+    manifest = {
+        "program": {**{key: baseline[key] for key in ("code", "name", "assignment_ref", "mode")}, "version": version},
+        "manifest_sha256": digest((BATTERY_V06_PACKAGE / "manifest.json").read_bytes()),
+    }
+    program, role_ids = build_plan(connection, manifest=manifest, proposal=proposal, configuration=configuration,
+                                   catalog=catalog, baseline=baseline, role=design["role_refs"][0],
+                                   publisher_release={**release_ref, **actor})
+    published = assessment_programs.publish_definition(
+        connection, program=program, role_ids=role_ids, publisher_user_id=publisher,
+    )
+    pilot_plan_binding.validate_published_program(connection, published)
+    return {"program_id": published["id"], "program_version": published["version"],
+            "catalog_db_id": catalog["id"], "catalog_version": catalog["catalog_version"],
+            "configuration_id": configuration["id"], "result": "existing" if existing else "published"}
+
+
 def main() -> int:
     from Api.database import get_connection
 
@@ -265,13 +377,18 @@ def main() -> int:
     parser.add_argument("--publisher-user-id", type=int, required=True)
     parser.add_argument("--release-dir", type=Path, default=RELEASE_DIR)
     parser.add_argument("--database", default="agent4k_test")
+    parser.add_argument("--bind-v0.6", dest="bind_v0_6", action="store_true",
+                        help="Publish program 2.1 from the already admitted specialist-pilot@1.4.5 catalog.")
     args = parser.parse_args()
     principal = pwd.getpwuid(os.geteuid()).pw_name
     with get_connection() as connection:
         current = connection.execute("SELECT current_database() AS name").fetchone()["name"]
         if current != args.database or "test" not in current.lower():
             raise SystemExit("Expected the explicitly named TEST database.")
-        result = release(connection, directory=args.release_dir, publisher=args.publisher_user_id, principal=principal)
+        if args.bind_v0_6:
+            result = publish_v06_program(connection, publisher=args.publisher_user_id, principal=principal)
+        else:
+            result = release(connection, directory=args.release_dir, publisher=args.publisher_user_id, principal=principal)
         connection.commit()
     print(json.dumps(result, ensure_ascii=False, default=str))
     return 0

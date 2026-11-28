@@ -20,9 +20,13 @@ from Api.m5_case_runtime import checksum
 from Api.m5_package import digest, json_bytes, verify_package_directory
 from Api.m5_runtime_rules import load_runtime_rule_package
 from Api.m5_passport_generation import ADDRESSED_RUNTIME, BANK_PACKAGE
-from scripts.build_m5_passport_bank import BATTERY_PACKAGE, BATTERY_RUNTIME, BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME
+from scripts.build_m5_passport_bank import (
+    BATTERY_PACKAGE, BATTERY_RUNTIME, BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, BATTERY_V06_PACKAGE,
+    BATTERY_V06_RUNTIME,
+)
 from Api.cycle_execution_manifest import (
-    BATTERY_V04_SCENARIO_CURRENT, M5_BATTERY_PILOT_REVIEW_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES,
+    BATTERY_V04_SCENARIO_CURRENT, BATTERY_V06_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGE,
+    M5_BATTERY_PILOT_REVIEW_PACKAGES,
     battery_pilot_review_path, battery_scenario_path, battery_scenario_ref,
 )
 from Api.m5_battery_contract import PILOT_CASE_SUFFIX
@@ -32,6 +36,11 @@ from scripts.build_m5_passport_bank import RUNTIME_PACKAGE as BANK_RUNTIME_DIR
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization/0.5"
 RUNTIME_DIR = ROOT / "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.2.0"
+PILOT_BANKS = {
+    BATTERY_PACKAGE: (BATTERY_RUNTIME, "1.5.1", "1.3", None),
+    BATTERY_V04_PACKAGE: (BATTERY_V04_RUNTIME, "1.7.1", "1.4.4", BATTERY_V04_SCENARIO_CURRENT),
+    BATTERY_V06_PACKAGE: (BATTERY_V06_RUNTIME, "1.9.1", "1.4.5", BATTERY_V06_SCENARIO_PACKAGE),
+}
 EXPECTED_CASE_IDS = [f"CASE.SPEC.{value:02d}" for value in range(1, 10)]
 ADMISSION_EVIDENCE = {
     "case_format": "assessment_definitions/cases/competencies_4k/functional-personalization/0.5/verification-report.json",
@@ -176,13 +185,18 @@ def build_admitted_materials(decision_basis: str) -> tuple[dict[str, Any], dict[
 def publish_diagnostic_battery(connection, *, published_by: int, organization_id: int,
                                catalog_id: str, catalog_version: str, idempotency_key: str,
                                decision_basis: str, battery_v04: bool = False,
-                               scenario_ref: dict | None = None) -> dict[str, Any]:
+                               battery_version: str | None = None, scenario_ref: dict | None = None) -> dict[str, Any]:
     """Import the exact WORKING battery and publish its organization-scoped QA catalog."""
     from Api.m5_catalog_integrity import catalog_readback, publish_catalog
     from Api.m5_runtime_rules import import_runtime_rule_version
     from Api.m5_storage import import_package_directory, package_readback
 
-    package_dir, runtime_dir = (BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME) if battery_v04 else (BATTERY_PACKAGE, BATTERY_RUNTIME)
+    package_dir = {"v0.3": BATTERY_PACKAGE, "v0.4": BATTERY_V04_PACKAGE, "v0.6": BATTERY_V06_PACKAGE}[
+        battery_version if battery_version is not None else ("v0.4" if battery_v04 else "v0.3")
+    ]
+    runtime_dir = PILOT_BANKS[package_dir][0]
+    if package_dir == BATTERY_V06_PACKAGE and scenario_ref is None:
+        scenario_ref = battery_scenario_ref(BATTERY_V06_SCENARIO_PACKAGE)
     build_trace(package_dir, runtime_dir)
     imported = import_package_directory(connection, package_dir)
     package_id = imported["package_db_id"]
@@ -216,7 +230,7 @@ def build_release_artifacts(
     passport_bank = package["schema_version"] == 4
     addressed_rules = runtime["manifest"]["schema_version"] == 3
     release_series = "passport.2" if addressed_rules else ("passport.1" if passport_bank else "admitted.1")
-    battery_pilot = package_dir in {BATTERY_PACKAGE, BATTERY_V04_PACKAGE}
+    battery_pilot = package_dir in PILOT_BANKS
     release_suffix = PILOT_CASE_SUFFIX if battery_pilot else f"-{release_series}{scope_suffix}"
     source_manifest = json.loads((package_dir / "manifest.json").read_text())
     source_package = json.loads((package_dir / "case-package.json").read_text())
@@ -256,7 +270,7 @@ def build_release_artifacts(
         "id": runtime_manifest["id"], "version": runtime_manifest["version"],
         "manifest_checksum": runtime["manifest_checksum"],
     }
-    runtime_series = ("1.7.1" if package_dir == BATTERY_V04_PACKAGE else "1.5.1" if battery_pilot else
+    runtime_series = (PILOT_BANKS[package_dir][1] if battery_pilot else
                       ("1.4.1" if addressed_rules else ("1.3.1" if passport_bank else "1.2.1")))
     runtime_version = f"{runtime_series}{scope_suffix}"
     bindings["version"] = runtime_version
@@ -278,7 +292,7 @@ def build_release_artifacts(
 
 def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scope: str,
                              evidence_path: Path | None) -> tuple[dict, dict, dict, dict | None, dict | None]:
-    battery_pilot = package_dir in {BATTERY_PACKAGE, BATTERY_V04_PACKAGE}
+    battery_pilot = package_dir in PILOT_BANKS
     if json.loads((package_dir / "manifest.json").read_bytes()).get("diagnostic_only") is True and (
         not battery_pilot or usage_scope != "assessment"
     ):
@@ -307,14 +321,15 @@ def build_passport_admission(package_dir: Path, runtime_dir: Path, *, usage_scop
                 review_path = battery_pilot_review_path(evidence.get("review_package"))
             except ValueError as exc:
                 raise ValueError("M5_BATTERY_PILOT_REVIEW_EVIDENCE_MISMATCH") from exc
-            if (package_dir == BATTERY_V04_PACKAGE) != (review_path == M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]):
+            scenario_path = PILOT_BANKS[package_dir][3]
+            if bool(scenario_path) != (review_path == M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]):
                 raise ValueError("M5_BATTERY_PILOT_REVIEW_EVIDENCE_MISMATCH")
             _, as_contract, review_refs = read_as_package(ROOT / review_path)
             # A pre-existing v5 publication used an implicit pin in its manifest.
             if review_path != M5_BATTERY_PILOT_REVIEW_PACKAGE:
                 review_package = review_refs["protocol_package"]
-            if package_dir == BATTERY_V04_PACKAGE:
-                scenario_ref = battery_scenario_ref(BATTERY_V04_SCENARIO_CURRENT)
+            if scenario_path:
+                scenario_ref = battery_scenario_ref(scenario_path)
             scenario_dir = ROOT / battery_scenario_path(package["version"], scenario_ref)
             scenario_refs = [load_scenario(case, scenario_dir)["ref"] for case in package["cases"]]
             if (not str(evidence.get("human_review_ref") or "").strip()
@@ -422,6 +437,10 @@ def main() -> int:
     sources.add_argument("--diagnostic-battery", action="store_true", help="Select WORKING battery v0.3 for QA.")
     sources.add_argument("--diagnostic-battery-v0.4", dest="diagnostic_battery_v04", action="store_true",
                          help="Select WORKING battery v0.4 for QA.")
+    sources.add_argument("--diagnostic-battery-v0.6", dest="diagnostic_battery_v06", action="store_true",
+                         help="Select WORKING battery v0.6 for QA.")
+    sources.add_argument("--pilot-battery-v0.6", dest="pilot_battery_v06", action="store_true",
+                         help="Select battery v0.6 for admission with case-specific human decisions.")
     sources.add_argument("--pilot-battery", action="store_true", help="Select the reviewed ordinary pilot release.")
     sources.add_argument("--pilot-battery-v0.4", dest="pilot_battery_v04", action="store_true",
                          help="Select battery v0.4 for admission with case-specific human decisions.")
@@ -436,11 +455,12 @@ def main() -> int:
     parser.add_argument("--usage-scope", choices=("assessment", "qa"), default="assessment",
                         help="Publication scope; qa uses synthetic evidence and separate artifact versions.")
     args = parser.parse_args()
-    if args.diagnostic_battery or args.diagnostic_battery_v04:
+    if args.diagnostic_battery or args.diagnostic_battery_v04 or args.diagnostic_battery_v06:
         if args.publish_admitted_catalog:
             parser.error("The diagnostic battery cannot be published as an admitted catalog.")
-        package_dir, runtime_dir = ((BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME) if args.diagnostic_battery_v04
-                                    else (BATTERY_PACKAGE, BATTERY_RUNTIME))
+        package_dir = (BATTERY_V06_PACKAGE if args.diagnostic_battery_v06 else
+                       BATTERY_V04_PACKAGE if args.diagnostic_battery_v04 else BATTERY_PACKAGE)
+        runtime_dir, _, _, scenario_path = PILOT_BANKS[package_dir]
         result = build_trace(package_dir, runtime_dir)
         if args.apply_import:
             if (args.usage_scope != "qa" or args.organization_id is None or args.published_by is None
@@ -456,8 +476,9 @@ def main() -> int:
                     catalog_id=catalog_id, catalog_version=args.catalog_version,
                     idempotency_key=args.idempotency_key or f"{catalog_id}-{args.catalog_version}",
                     decision_basis=args.decision_basis,
-                    battery_v04=args.diagnostic_battery_v04,
-                    scenario_ref=battery_scenario_ref(BATTERY_V04_SCENARIO_CURRENT) if args.diagnostic_battery_v04 else None,
+                    battery_version=("v0.6" if args.diagnostic_battery_v06 else
+                                     "v0.4" if args.diagnostic_battery_v04 else "v0.3"),
+                    scenario_ref=battery_scenario_ref(scenario_path) if scenario_path else None,
                 )
                 connection.commit()
         print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
@@ -465,13 +486,12 @@ def main() -> int:
     package_dir, runtime_dir = ((PACKAGE_DIR, RUNTIME_DIR) if args.historical_0_5
                                 else (BANK_PACKAGE, BANK_RUNTIME_DIR if args.passport_01 else ADDRESSED_RUNTIME))
     default_version = "1.0" if args.historical_0_5 else ("1.1" if args.passport_01 else "1.2")
-    if args.pilot_battery or args.pilot_battery_v04:
+    if args.pilot_battery or args.pilot_battery_v04 or args.pilot_battery_v06:
         if args.usage_scope != "assessment" or (args.apply_import and not args.publish_admitted_catalog):
             parser.error("The pilot release requires explicit assessment catalog publication.")
-        if args.pilot_battery_v04:
-            package_dir, runtime_dir, default_version = BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, "1.4.4"
-        else:
-            package_dir, runtime_dir, default_version = BATTERY_PACKAGE, BATTERY_RUNTIME, "1.3"
+        package_dir = (BATTERY_V06_PACKAGE if args.pilot_battery_v06 else
+                       BATTERY_V04_PACKAGE if args.pilot_battery_v04 else BATTERY_PACKAGE)
+        runtime_dir, _, default_version, _ = PILOT_BANKS[package_dir]
     if not args.historical_0_5 and args.usage_scope == "qa":
         default_version += "-qa"
     catalog_version = args.catalog_version or default_version

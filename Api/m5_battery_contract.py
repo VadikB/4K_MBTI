@@ -35,9 +35,19 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
     raw = (directory / "scenario-rules.json").read_bytes()
     checksum = digest(raw)
     package = json.loads(raw)
+    artifacts = [{"name": "scenario-rules.json", "sha256": checksum}]
+    revision = package.get("schema_version")
+    review_content = None
+    if revision == 2:
+        review_raw = (directory / "case-content-contract.json").read_bytes()
+        review_sha = digest(review_raw)
+        if package.get("review_content_sha256") != review_sha:
+            raise ValueError("M5_BATTERY_REVIEW_CONTENT_CHECKSUM_MISMATCH")
+        artifacts.append({"name": "case-content-contract.json", "sha256": review_sha})
+        review_content = {"contract": json.loads(review_raw), "checksum": review_sha}
     if (manifest["id"], manifest["version"], manifest["artifacts"]) != (
-        package["id"], package["version"], [{"name": "scenario-rules.json", "sha256": checksum}],
-    ) or package["schema_version"] != 1 or package["scope"] != "isolated_qa":
+        package["id"], package["version"], artifacts,
+    ) or revision not in {1, 2} or package["scope"] != "isolated_qa":
         raise ValueError("M5_BATTERY_SCENARIO_PACKAGE_INVALID")
     case_id, version = case["case_id"], case["version"]
     overlay = package["cases"].get(case_id)
@@ -80,6 +90,11 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
                 raise missing(case_id, version, f"17.2/{material_id}/{key}/sections")
     material_source = overlay.get("material_source")
     generation_addendum = overlay.get("generation_addendum")
+    numbered = overlay.get("number_initial_materials")
+    if "number_initial_materials" in overlay and (
+            numbered is not True or any(re.fullmatch(r"M\d{2}", item) is None
+                                        for item in start["Последовательность предъявления"] if item != "P00")):
+        raise missing(case_id, version, "17.1→participant material numbers")
     if material_source is not None:
         material_id, heading = material_source["material_id"], material_source["section"]
         readers = material_source["reader_ids"]
@@ -134,17 +149,40 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
             "knowledge_limits": {item: material_by_id[item]["Кому известно до начала"]
                                  for item in role.get("partial_material_ids", [])},
         }
+    applicability = passport["18 Правила персонализации и ролевой адаптации"]
+    if revision == 2 and (not isinstance(applicability, dict) or not applicability or any(
+        not isinstance(key, str) or not key.strip() or not value for key, value in applicability.items()
+    )):
+        raise missing(case_id, version, "18→adaptation sections")
+    fit_criteria = overlay.get("profile_fit")
+    if fit_criteria is not None:
+        from Api.m5_battery_profile import FIELDS
+
+        if (overlay["profile_capability"] is not None or not isinstance(fit_criteria, dict) or not fit_criteria
+                or not isinstance(package.get("profile_fit_instruction"), str) or not package["profile_fit_instruction"].strip()
+                or any(not isinstance(row, dict) or row.keys() != {
+                    "source", "fields", "requirement", "question", "incompatibility"
+                } or row["source"] not in applicability or not isinstance(row["fields"], list) or not row["fields"]
+                    or not set(row["fields"]) <= set(FIELDS)
+                    or not all(isinstance(row[key], str) and row[key].strip()
+                               for key in ("requirement", "question", "incompatibility")) for row in fit_criteria.values())):
+            raise missing(case_id, version, "18→profile fit")
     return {
         "ref": {"id": package["id"], "version": package["version"], "checksum": checksum},
         "start_ids": start["Последовательность предъявления"], "material_ids": sorted(material_ids - fact_ids),
         "fact_ids": sorted(fact_ids), "finish": finish, "opening": opening,
-        "applicability": passport["18 Правила персонализации и ролевой адаптации"],
+        "applicability": applicability,
+        **({"review_content": review_content} if review_content is not None else {}),
+        **({"profile_fit": {"case_id": case_id, "criteria": fit_criteria,
+                            "instruction": package["profile_fit_instruction"]}} if fit_criteria else {}),
         "profile_capability": overlay["profile_capability"], "control": package["control"],
         "instructions": package["instructions"],
         "observability_references": locations,
         "roles": role_sources,
         **({"material_sections": material_sections} if material_sections else {}),
-        **({"material_source": material_source, "generation_addendum": generation_addendum} if material_source else {}),
+        **({"material_source": material_source} if material_source else {}),
+        **({"generation_addendum": generation_addendum} if generation_addendum else {}),
+        **({"number_initial_materials": True} if numbered else {}),
         "events": [
             {**row, "passport": event_by_id[row["id"]],
              "source": case["passport_sources"][f"17.3/{row['id']}"]}
@@ -194,7 +232,11 @@ def _normalized_text(value: str) -> str:
     return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
 
-def validate_profile(profile: dict, design: dict) -> None:
+def validate_profile(profile: dict, design: dict, reviewed: dict | None = None) -> dict | None:
+    if "profile_fit" in design:
+        from Api.m5_battery_profile import verified_receipt
+
+        return verified_receipt(profile, design, reviewed)
     context = profile.get("user_context") or {}
     role = profile.get("role_profile") or {}
     if not context.get("regular_tasks") and not role.get("card", {}).get("regular_tasks"):
@@ -464,6 +506,8 @@ def compile_candidate(snapshot: dict, candidate: dict, checksum: str) -> tuple[d
                                              "Заголовок участнику": candidate["Название"]},
         {"path": Path(filename), "sha256": checksum}, case["materials"],
     )
+    if design.get("number_initial_materials"):
+        case["participant_presentation"]["number_initial_materials"] = True
     prepared = PreparedCaseV4.model_validate(case).model_dump(exclude_unset=True)
     runtime = {
         "case_version": case["version"], "characters": case["characters"], "materials": [], "scenario": [],

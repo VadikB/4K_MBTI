@@ -47,3 +47,49 @@ def test_battery_import_projection_reports_exact_bad_requirement(damage, field):
             source=case["passport_source"], m2=m2, m3=json.loads(M3.read_bytes()),
             as_contract_ref=case["as_contract_ref"], selected_base_role=case["base_role"], passport_version="1.2",
         )
+
+
+def test_v06_readback_binds_all_passports_and_review_conditions():
+    from Api.cycle_execution_manifest import BATTERY_V06_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES, ROOT
+    from Api.m5_battery_contract import load_scenario
+    from Api.m5_battery_review import build_plan
+    from Api.m5_case_runtime import checksum
+    from Api.m5_functional_tester import load_protocol
+    from Api.m5_passport_v12 import SCENARIO_FIELDS
+
+    bank, _, _ = BATTERY_RELEASES["v0.6"]
+    cases = json.loads((bank / "case-package.json").read_bytes())["cases"]
+    scenario = ROOT / BATTERY_V06_SCENARIO_PACKAGE
+    review_path = ROOT / M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]
+    protocol = load_protocol(review_path / "tester-protocol.json")
+    m2, _ = load_m2(M2, SOURCE_MANIFEST)
+    assert len(cases) == 9
+    for case in cases:
+        passport = json.loads((bank / case["passport_source"]["file"]).read_bytes())["Паспорт"]
+        design = load_scenario(case, scenario)
+        start, materials, events, finish = (passport["17 Сценарий Dialogue"][field] for field in SCENARIO_FIELDS)
+        assert design["applicability"] == passport["18 Правила персонализации и ролевой адаптации"]
+        assert design["start_ids"] == start["Последовательность предъявления"]
+        assert [row["content"] for row in case["materials"]][:len(design["start_ids"])] == [
+            next(row for row in materials if row["ID"] == item) for item in design["start_ids"]
+        ]
+        assert {row["id"]: row["passport"] for row in design["events"]} == {row["ID"]: row for row in events}
+        assert design["finish"] == finish
+
+        plan = build_plan(
+            {"case_version": case, "battery_scenario": design,
+             "refs": {"case": {"case_version_checksum": checksum(case)}}},
+            protocol, review_path / "case-content-contract.json", m2,
+        )
+        assert plan["content_contract"]["version"] == "2.1.0"
+        observed = {check["check_id"]: check for check in plan["required_checks"]
+                    if check["check_id"].startswith("indicator:")}
+        conditions = passport["22 IndicatorIDs"]["Проектные условия"]
+        assert set(observed) == {f"indicator:{row['IndicatorID']}" for row in conditions}
+        for condition in conditions:
+            check = observed[f"indicator:{condition['IndicatorID']}"]
+            requirement = check["requirement"].get("passport_or_protocol", check["requirement"])
+            assert requirement["opportunity"] == condition["Условие возникновения"]
+            assert requirement["observable_form"] == condition["Доступная форма проявления"]
+            assert requirement["validity_risk"] == condition["Риск потери"]
+            assert requirement["locations"] == condition["Место в сценарии"]

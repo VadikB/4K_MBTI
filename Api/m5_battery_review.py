@@ -16,23 +16,33 @@ def _source_field(label: str) -> str:
 
 
 def build_plan(snapshot: dict, protocol: dict, contract_path: Path, m2: dict) -> dict:
-    raw = contract_path.read_bytes()
-    contract = json.loads(raw)
     case, design = snapshot["case_version"], snapshot["battery_scenario"]
+    if review_content := design.get("review_content"):
+        contract = review_content["contract"]
+        contract_checksum = review_content["checksum"]
+        expected_scope, expected_versions = "battery_v0.6", {"2.1.0"}
+        if protocol.get("version") != "3.3.0":
+            raise ValueError("M5_BATTERY_REVIEW_PROTOCOL_MISMATCH")
+    else:
+        raw = contract_path.read_bytes()
+        contract, contract_checksum = json.loads(raw), checksum(raw)
+        expected_scope = protocol.get("scope")
+        expected_versions = {"battery_v0.3_qa": {"2.0.0", "2.0.1"}, "battery_v0.4_qa": {"2.0.2"}}.get(
+            expected_scope, set()
+        )
     passport, pointers = case["passport"], case["passport_sources"]
     case_id, version = case["case_id"], case["version"]
     source = case["passport_source"]
     overlay = contract.get("cases", {}).get(case_id, {})
-    versions = {"battery_v0.3_qa": {"2.0.0", "2.0.1"}, "battery_v0.4_qa": {"2.0.2"}}
-    if contract.get("version") not in versions.get(protocol.get("scope"), ()) or (
+    if contract.get("version") not in expected_versions or (
         contract.get("id"), contract.get("schema_version"), contract.get("scope"),
             overlay.get("case_version"), overlay.get("passport_sha256")) != (
-        "m5-functional-passport-content", 2, protocol["scope"],
+        "m5-functional-passport-content", 2, expected_scope,
         source_case_version(version, pilot=snapshot.get("battery_pilot", False)), source["sha256"],
     ):
         raise ValueError("M5_BATTERY_REVIEW_CASE_VERSION_MISMATCH")
     contract_ref = {key: contract[key] for key in ("id", "version", "sources")}
-    contract_ref["checksum"] = checksum(raw)
+    contract_ref["checksum"] = contract_checksum
     case_ref = {
         "case_id": case_id, "case_version": version,
         "checksum": snapshot["refs"]["case"]["case_version_checksum"],

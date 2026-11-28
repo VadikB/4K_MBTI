@@ -96,6 +96,7 @@ const preparationFailureCodes = new Set([
   'ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE',
   'ASSESSMENT_VERIFICATION_INCOMPLETE',
   'ASSESSMENT_CATALOG_NO_ADMISSIBLE_SPECIALIST_CASE',
+  'ASSESSMENT_PROGRAM_COVERAGE_UNAVAILABLE',
   'ASSESSMENT_AS_NOT_ADMITTED',
 ]);
 export const preparationFailureMessage = (error) => preparationFailureCodes.has(error?.code) ? error.message : '';

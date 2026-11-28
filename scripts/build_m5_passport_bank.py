@@ -15,6 +15,7 @@ if __package__ in (None, ""):
 from Api.assessment_case_contracts import CaseVersionV4
 from Api.cycle_execution_manifest import (
     BATTERY_CASE_PACKAGE, BATTERY_RULE_PACKAGE, BATTERY_V04_CASE_PACKAGE, BATTERY_V04_RULE_PACKAGE,
+    BATTERY_V06_CASE_PACKAGE, BATTERY_V06_RULE_PACKAGE,
 )
 from Api.m5_case_runtime import checksum
 from Api.m5_package import digest, json_bytes, verify_package_directory
@@ -29,9 +30,13 @@ BATTERY_PROVENANCE = ROOT / "docs/evc/tasks/m5-battery-bank/sources.json"
 BATTERY_V04_PACKAGE = ROOT / BATTERY_V04_CASE_PACKAGE
 BATTERY_V04_RUNTIME = ROOT / BATTERY_V04_RULE_PACKAGE
 BATTERY_V04_PROVENANCE = ROOT / "docs/evc/tasks/m5-battery-v04/sources.json"
+BATTERY_V06_PACKAGE = ROOT / BATTERY_V06_CASE_PACKAGE
+BATTERY_V06_RUNTIME = ROOT / BATTERY_V06_RULE_PACKAGE
+BATTERY_V06_PROVENANCE = ROOT / "docs/evc/tasks/m5-battery-v06/sources.json"
 BATTERY_RELEASES = {
     "v0.3": (BATTERY_PACKAGE, BATTERY_RUNTIME, BATTERY_PROVENANCE),
     "v0.4": (BATTERY_V04_PACKAGE, BATTERY_V04_RUNTIME, BATTERY_V04_PROVENANCE),
+    "v0.6": (BATTERY_V06_PACKAGE, BATTERY_V06_RUNTIME, BATTERY_V06_PROVENANCE),
 }
 
 
@@ -55,13 +60,19 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
         bank, runtime_dir, provenance_path = BATTERY_RELEASES[battery_version]
         provenance = json.loads(provenance_path.read_bytes())
     if battery and source_root.is_file():
-        if battery_version == "v0.4" and digest(source_root.read_bytes()) != provenance["battery_archive_sha256"]:
+        if "battery_archive_sha256" in provenance and digest(source_root.read_bytes()) != provenance["battery_archive_sha256"]:
             raise ValueError("M5_BATTERY_ARCHIVE_CHECKSUM_MISMATCH")
         with ZipFile(source_root) as archive, TemporaryDirectory(prefix="m5-battery-") as temporary:
             source = Path(temporary)
             manifest = archive.read("manifest.json")
             entries = _battery_entries(manifest, battery_version, provenance)
             (source / "manifest.json").write_bytes(manifest)
+            if battery_version == "v0.6":
+                expected_files = {"README.md", "manifest.json"}
+                expected_files.update(ref["path"] for entry in entries for ref in entry["file_refs"].values())
+                if len(archive.namelist()) != 20 or set(archive.namelist()) != expected_files:
+                    raise ValueError("M5_BATTERY_SOURCE_INVENTORY_MISMATCH")
+                (source / "README.md").write_bytes(archive.read("README.md"))
             for entry in entries:
                 for kind, ref in entry["file_refs"].items():
                     if not re.fullmatch(r"(?:JSON/Case_SPEC_\d{2}_v\d+\.\d+_WORKING\.json|"
@@ -70,7 +81,7 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
                     data = archive.read(ref["path"])
                     if digest(data) != ref["sha256"]:
                         raise missing(entry["case_id"], entry["version"], f"manifest/file_refs/{kind}/sha256")
-                    if kind == "json":
+                    if kind == "json" or battery_version == "v0.6":
                         file = source / ref["path"]
                         file.parent.mkdir(exist_ok=True)
                         file.write_bytes(data)
@@ -89,6 +100,20 @@ def build_bank(source_root: Path, destination: Path = BANK_PACKAGE,
             {**item, **item["file_refs"]["json"], "base_role": "specialist_expert"}
             for item in _battery_entries(manifest_raw, battery_version, provenance)
         ]
+        if battery_version == "v0.6":
+            readme = (source_root / "README.md").read_bytes()
+            if digest(readme) != provenance["battery_readme_sha256"]:
+                raise ValueError("M5_BATTERY_README_CHECKSUM_MISMATCH")
+            files["sources/README.md"] = readme
+            for entry in entries:
+                workbook = entry["file_refs"]["xlsx"]
+                workbook_path = source_root / workbook["path"]
+                if not workbook_path.resolve().is_relative_to(source_root.resolve()):
+                    raise missing(entry["case_id"], entry["version"], "manifest/file_refs/xlsx/path")
+                data = workbook_path.read_bytes()
+                if digest(data) != workbook["sha256"]:
+                    raise missing(entry["case_id"], entry["version"], "manifest/file_refs/xlsx/sha256")
+                files[f"sources/{workbook['path']}"] = data
     else:
         entries = _selected(source_root)
     for entry in entries:
@@ -239,6 +264,21 @@ def _battery_entries(raw: bytes, battery_version: str, provenance: dict) -> list
     ) or manifest["basis"]["passport_template"]["version"] != "v1.2":
         raise ValueError("M5_BATTERY_MANIFEST_IDENTITY_MISMATCH")
     cases = manifest["cases"]
+    if battery_version == "v0.6":
+        if (manifest["basis"]["passport_template"] != provenance["passport_template"]
+                or manifest["date"] != provenance["source_date"]):
+            raise ValueError("M5_BATTERY_TEMPLATE_IDENTITY_MISMATCH")
+        for case in cases:
+            if (set(case["file_refs"]) != {"json", "xlsx"} or case["status"] != "WORKING"
+                    or case["current"] is not False or not case["source_library_file_id"]
+                    or not case["source_library_version"] or not case["previous_version"]):
+                raise missing(case["case_id"], case["version"], "manifest/source identity")
+            number = case["case_id"].rsplit(".", 1)[-1]
+            stem = f"Case_SPEC_{number}_{case['version']}_WORKING"
+            if (case["file_refs"]["json"]["path"], case["file_refs"]["xlsx"]["path"]) != (
+                f"JSON/{stem}.json", f"Excel/{stem}.xlsx",
+            ):
+                raise missing(case["case_id"], case["version"], "manifest/file_refs/path")
     if [case["case_id"] for case in cases] != [f"CASE.SPEC.{n:02}" for n in range(1, 10)]:
         raise ValueError("M5_PASSPORT_BANK_CASE_SET_INVALID")
     return cases

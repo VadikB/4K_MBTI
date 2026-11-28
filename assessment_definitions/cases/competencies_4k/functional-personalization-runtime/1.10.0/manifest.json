@@ -1,0 +1,15 @@
+{
+  "schema_version": 2,
+  "id": "m5-battery-scenario",
+  "version": "1.10.0",
+  "artifacts": [
+    {
+      "name": "scenario-rules.json",
+      "sha256": "969843e54d2749b7bcb98389ee35776eca6b2ed76e074589255bee99123184f9"
+    },
+    {
+      "name": "case-content-contract.json",
+      "sha256": "ec2b8b86d468ee50f522d1b40ba0af7993580861ef6bdecc0b2b35316b398abc"
+    }
+  ]
+}

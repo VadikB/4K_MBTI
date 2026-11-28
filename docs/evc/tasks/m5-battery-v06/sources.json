@@ -1,0 +1,18 @@
+{
+  "battery_archive": "M5_Battery_v06.zip",
+  "battery_archive_sha256": "8ec1b83f6b4f69c1db8e8fa198115c99db3f2bc649cb2f5a2f331e2ebc04d8da",
+  "battery_manifest_sha256": "11a016e61d42455202e4495aa8359605c735077e47821ca37a1c1f7dae5c1969",
+  "battery_readme_sha256": "3f63041a004d09597980d789ee6d6b461784f1e1491849842b3a88242bf75c7d",
+  "source_date": "2026-11-28",
+  "passport_template": {
+    "version": "v1.2",
+    "status": "WORKING",
+    "current": false,
+    "library_file_id": "libfile_fde3_f-1a61093c228c81919c856b2eeaa0af01_d45b765f9f6c8191a5c71b065febd7de",
+    "library_version": "2"
+  },
+  "source_status": "WORKING",
+  "current": false,
+  "baseline_commit": "4b1154e5b8f6277bc19faaf34638d6ae0b59adbb",
+  "baseline_program": "specialist_pilot@2.0"
+}

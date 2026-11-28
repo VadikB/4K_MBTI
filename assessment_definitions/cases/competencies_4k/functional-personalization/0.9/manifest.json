@@ -1,0 +1,154 @@
+{
+  "artifacts": [
+    {
+      "name": "case-package.json",
+      "sha256": "f474ec79fa18973908669d708d79079f704415a799273c5d8ea5e6dc4311e020"
+    },
+    {
+      "name": "case.schema.json",
+      "sha256": "1d40767cc8cd2119057bcb6cdd576b8330f2df7f742e3ec5beeb4a08f3619fb4"
+    },
+    {
+      "name": "execution-rules.json",
+      "sha256": "2b0aa7b478747820cbc5d8aefb52d68284bb4faa31a0f66a058dd77bca5f31b2"
+    },
+    {
+      "name": "passport-index.json",
+      "sha256": "7422b6a59f6205212f2925d5250d35cc267301e1e525b2238018634b74aaaeb3"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_01_v0.8_WORKING.xlsx",
+      "sha256": "878ae69d9914fbed9041fae068787488768c4d6e942835a73f7837faa5b8a222"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_02_v0.9_WORKING.xlsx",
+      "sha256": "347f7fb63a24da0d4165f0449f080fa83a7a6abfba0479177b9f79a73a646a63"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_03_v0.6_WORKING.xlsx",
+      "sha256": "cb26549d0b7eaf9af2fdd58f3b53ba4b27b90802a8bec7696ae2b8493f98d8a6"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_04_v0.8_WORKING.xlsx",
+      "sha256": "b4ed84eb64c2e08256953b64f5bff652d86ac271ec2e9fd79402b11fbb64738a"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_05_v0.7_WORKING.xlsx",
+      "sha256": "79a5ba38d436af154139e4dc6196b1c94f411394a858aa7dfc09e3bc8b59dec8"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_06_v0.6_WORKING.xlsx",
+      "sha256": "75586fdab544d573cf30f7a8e65350711796a61b8e3534134ca25fbcb769e518"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_07_v0.7_WORKING.xlsx",
+      "sha256": "dba2911f91dfb9c95073a19dbe608df7652515f609d3c7d010f17203f531f2e4"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_08_v0.7_WORKING.xlsx",
+      "sha256": "5a97264798b1278ea4f730077eb20c8a37ea53681c0ee76031391a80a6557a1f"
+    },
+    {
+      "name": "sources/Excel/Case_SPEC_09_v0.7_WORKING.xlsx",
+      "sha256": "59de95e703c8e166070d8be3f7f7301f79661c79a38f38a37b2707dc6937f902"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_01_v0.8_WORKING.json",
+      "sha256": "9891c0a73410d5ab58a7db98fd986bde8894fd17c003e7a52218730daba17e00"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_02_v0.9_WORKING.json",
+      "sha256": "909dc824597c96ed4782a421e3f68322bcf259030a62cd851a5739992278fb9d"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_03_v0.6_WORKING.json",
+      "sha256": "41e67147bbd5179c5afaaf9bf1e186e12ed4999d811711af7fb1713c2fe447fa"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_04_v0.8_WORKING.json",
+      "sha256": "872db1c032956c9941f2860757aa2028c26e6349db0ca7bf066c5ec7b2c785a0"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_05_v0.7_WORKING.json",
+      "sha256": "046ae1aa51b33e2624621d6e0e7018bd2f52a3fa40034acdc70e3cbd1e63ba5d"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_06_v0.6_WORKING.json",
+      "sha256": "aa6689c57678701b9978166bb25679253839308343046720debdae9c967b6997"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_07_v0.7_WORKING.json",
+      "sha256": "c01e4eda002d1072f53d22b0ebe9ebf3eef0aa992f70ab73155736c8e67507fb"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_08_v0.7_WORKING.json",
+      "sha256": "a718af72ca4a59ef2afcc07953162b7bf7a6f79945800d6cef0a691ed992dce6"
+    },
+    {
+      "name": "sources/JSON/Case_SPEC_09_v0.7_WORKING.json",
+      "sha256": "cf0f9a0f0df016c967125d3126409086d82994b76139a204673b28360c5a2863"
+    },
+    {
+      "name": "sources/README.md",
+      "sha256": "3f63041a004d09597980d789ee6d6b461784f1e1491849842b3a88242bf75c7d"
+    },
+    {
+      "name": "sources/manifest.json",
+      "sha256": "11a016e61d42455202e4495aa8359605c735077e47821ca37a1c1f7dae5c1969"
+    },
+    {
+      "name": "verification-report.json",
+      "sha256": "8ffa2e059745a7ccff6e0b5c3af9c3eed0ce4d800210d019f68d7b4b6ac44372"
+    }
+  ],
+  "as_contract_ref": {
+    "checksum": "1d5e008ecf3171c033dd2f954a51a9a9d12c65931a9277731fd85c29f645b02d",
+    "id": "m5-functional-as",
+    "version": "2.0.0"
+  },
+  "battery_source": {
+    "file": "sources/manifest.json",
+    "provenance": {
+      "baseline_commit": "4b1154e5b8f6277bc19faaf34638d6ae0b59adbb",
+      "baseline_program": "specialist_pilot@2.0",
+      "battery_archive": "M5_Battery_v06.zip",
+      "battery_archive_sha256": "8ec1b83f6b4f69c1db8e8fa198115c99db3f2bc649cb2f5a2f331e2ebc04d8da",
+      "battery_manifest_sha256": "11a016e61d42455202e4495aa8359605c735077e47821ca37a1c1f7dae5c1969",
+      "battery_readme_sha256": "3f63041a004d09597980d789ee6d6b461784f1e1491849842b3a88242bf75c7d",
+      "current": false,
+      "passport_template": {
+        "current": false,
+        "library_file_id": "libfile_fde3_f-1a61093c228c81919c856b2eeaa0af01_d45b765f9f6c8191a5c71b065febd7de",
+        "library_version": "2",
+        "status": "WORKING",
+        "version": "v1.2"
+      },
+      "source_date": "2026-11-28",
+      "source_status": "WORKING"
+    },
+    "sha256": "11a016e61d42455202e4495aa8359605c735077e47821ca37a1c1f7dae5c1969"
+  },
+  "compiler": {
+    "id": "m5-functional-json-compiler",
+    "source_schema_profile": "functional-passport-v1.2",
+    "version": "0.7.0"
+  },
+  "dependencies": {
+    "m2": "ac2914422dbce427616d489821db98572b702a8e491879b6758d9387eebc511c",
+    "m3": "a3dbd62940b3c79baa123c5c2b4fff960b20c71e558304ba41007c2a205571d7"
+  },
+  "diagnostic_only": true,
+  "id": "m5-functional-personalization-cases",
+  "prompt_package": {
+    "checksum": "692c7704fe0cc028778c21d555dd262e8c31030bb0227f2f1016490cff54b273",
+    "id": "m5-functional-passport",
+    "path": "assessment_definitions/prompts/m5_functional_passport/v3",
+    "version": "3.0.0"
+  },
+  "runtime_enabled": false,
+  "runtime_rule_version": "1.9.0",
+  "schema_version": 5,
+  "source_status": "WORKING",
+  "status": "draft",
+  "version": "0.9"
+}

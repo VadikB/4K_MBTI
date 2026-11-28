@@ -849,15 +849,17 @@ const payloadText = (payload, keys) => keys
   .map((key) => typeof payload?.[key] === 'string' ? payload[key].trim() : '')
   .find(Boolean) || '';
 
-const payloadItems = (payload, keys) => {
+const payloadItems = (payload, keys, numberMaterials = false) => {
   const value = keys.map((key) => payload?.[key]).find(Array.isArray);
   if (!value) return [];
   return value.map((item) => {
     if (typeof item === 'string') return item.trim();
     if (!item || typeof item !== 'object') return '';
     const title = payloadText(item, ['title', 'name', 'label']);
+    const id = numberMaterials ? payloadText(item, ['material_id']) : '';
     const body = payloadText(item, ['content', 'description', 'text']);
-    return [title, body].filter(Boolean).join(': ');
+    const heading = id && title && title !== id && !title.startsWith(`${id} — `) ? `${id} — ${title}` : title || id;
+    return [heading, body].filter(Boolean).join(': ');
   }).filter(Boolean);
 };
 
@@ -882,7 +884,8 @@ const addProductSituationMessage = (payload, materialsOpen) => {
     ['Ваша задача', payloadText(source, ['assessee_task', 'task', 'question'])],
     ['Условия', payloadText(source, ['conditions_and_constraints', 'conditions', 'constraints'])],
   ].filter(([, body]) => body);
-  const materials = payloadItems(source, ['initial_materials', 'available_materials', 'materials', 'attachments']);
+  const numberMaterials = source?.number_initial_materials === true;
+  const materials = payloadItems(source, ['initial_materials', 'available_materials', 'materials', 'attachments'], numberMaterials);
 
   if (role) {
     const caption = document.createElement('p');
@@ -900,7 +903,7 @@ const addProductSituationMessage = (payload, materialsOpen) => {
   if (materials.length) {
     const disclosure = document.createElement('details');
     disclosure.className = 'product-situation-materials';
-    disclosure.open = Boolean(materialsOpen);
+    disclosure.open = materialsOpen ?? numberMaterials;
     const summary = document.createElement('summary');
     summary.textContent = 'Доступные сведения';
     disclosure.append(summary, renderInterviewStructuredBlock({ items: materials }));

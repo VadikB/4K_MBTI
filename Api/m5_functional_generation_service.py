@@ -182,7 +182,8 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
                             runtime_rule_ref: dict | None = None, package_ref: dict | None = None,
                             project_role: dict | None = None,
                             project_role_prompt: Path | None = None,
-                            battery_scenario_package: Path | None = None, battery_pilot: bool = False) -> dict:
+                            battery_scenario_package: Path | None = None, battery_pilot: bool = False,
+                            battery_profile_fit: dict | None = None) -> dict:
     from Api import m5_battery_contract
 
     contract, contract_ref, refs = passport_generation.read_as_package(as_package)
@@ -212,9 +213,14 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     case = {"CaseID": projected["case_id"], "Version": projected["version"], "Паспорт": projected["passport"]}
     design = (runtime_rule_ref or {}).get("scenario_contract")
     battery_design = None
+    fit = None
     if battery:
         battery_design = m5_battery_contract.load_scenario(projected, battery_scenario_package, pilot=battery_pilot)
-        m5_battery_contract.validate_profile(profile, battery_design)
+        fit = m5_battery_contract.validate_profile(profile, battery_design, battery_profile_fit)
+        if fit is not None:
+            if fit["status"] != "applicable":
+                raise ValueError(f"M5_BATTERY_PROFILE_{fit['status'].upper()}:18/{fit['criterion']}: {fit['message']}")
+            refs["battery_profile_fit_checksum"] = runtime_checksum(fit)
         contract = m5_battery_contract.candidate_contract(contract)
         refs["battery_scenario"] = battery_design["ref"]
         package_ref = {**(package_ref or {}), "compiler": {"source_schema_profile": "functional-passport-v1.2"}}
@@ -242,10 +248,16 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
             "sha256": checksum(project_role_prompt.read_bytes()),
         }
         refs["project_role"] = {key: project_role[key] for key in ("code", "version", "checksum", "snapshot_checksum")}
+    profile_input = allowed_profile(profile)
+    if fit is not None:
+        from Api.m5_battery_profile import FIELDS
+
+        profile_input["user_context"].update({key: profile["user_context"][key] for key in FIELDS
+                                              if key in profile["user_context"]})
     snapshot = {
         "schema_version": 2, "operation_id": operation_id, "synthetic": synthetic,
         "created_at": datetime.now(timezone.utc).isoformat(), "case": case, "case_version": projected,
-        "as_contract": contract, "profile": allowed_profile(profile), "refs": refs,
+        "as_contract": contract, "profile": profile_input, "refs": refs,
         **({"project_role": {**project_role, "interactions": list(project_role["interactions"])}}
            if project_role is not None else {}),
         **({"scenario_contract": design} if design is not None else {}),
@@ -1331,7 +1343,8 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
     """Rebuild applicability for pre-existing traces using only pinned server inputs."""
     from Api import m5_battery_contract, m5_battery_review
     from Api.cycle_execution_manifest import (
-        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE, battery_pilot_review_path,
+        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE,
+        battery_pilot_review_path,
         battery_scenario_path, resolve_cycle_dependency, resolve_review_response,
     )
 
@@ -1344,7 +1357,9 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
                           else battery_pilot_review_path(package))
         scenario_ref = refs["battery_scenario"]
         scenario_path = ROOT / battery_scenario_path(
-            refs["package"]["version"], scenario_ref if scenario_ref["version"] in BATTERY_V04_SCENARIO_REFS else None,
+            refs["package"]["version"],
+            scenario_ref if scenario_ref["version"] in BATTERY_V04_SCENARIO_REFS
+            or refs["package"]["version"].removesuffix(m5_battery_contract.PILOT_CASE_SUFFIX) == "0.9" else None,
         )
         m2_path = passport_generation.M2
         pilot = projected["version"].endswith(m5_battery_contract.PILOT_CASE_SUFFIX)

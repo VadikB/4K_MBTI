@@ -63,6 +63,7 @@ def _materialize_v3_presentation(
     *, source_schema_profile: str | None = None,
 ) -> dict:
     presentation = case.participant_presentation.model_dump()
+    numbered = presentation.pop("number_initial_materials")
     targets: dict[str, list] = {}
     for target in case.participant_presentation.substitution_targets:
         targets.setdefault(target.slot, []).append(target)
@@ -111,6 +112,8 @@ def _materialize_v3_presentation(
     presentation["case_id"] = case.case_id
     presentation["case_version"] = case.version
     presentation["substitutions"] = deepcopy(substitutions)
+    if numbered:
+        presentation["number_initial_materials"] = True
     return presentation
 
 

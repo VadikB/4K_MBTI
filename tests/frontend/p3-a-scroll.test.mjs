@@ -68,6 +68,31 @@ test('P3-A hides only the identical initial material mirror and retains later sa
   assert.equal(h.messages.children.length, 4, 'unchanged readback creates no extra event bubbles');
 });
 
+test('SPEC.02 opens its numbered material headings before the answer and after returning', () => {
+  const saved = harness().snapshot();
+  const titles = ['Запрос', 'Предложение A', 'Уточнение A', 'Предложение B', 'Проверка B', 'Письмо коллеги'];
+  const materials = titles.map((title, index) => ({ material_id: `M0${index + 1}`, title, text: `Документ ${index + 1}` }));
+  Object.assign(saved.current_situation.participant_payload, { number_initial_materials: true, initial_materials: materials });
+  saved.trace.events = materials.map((material, index) => ({
+    event_type: 'material_disclosed', sequence_no: index + 1, material_id: material.material_id,
+    payload_json: { content: material, recipient: 'assessee' },
+  }));
+  for (const view of [harness(), harness()]) {
+    view.subject.renderProductRuntime(saved);
+    const section = view.messages.querySelector('.product-situation-materials');
+    assert.equal(section.open, true);
+    const offsets = materials.map(({ material_id, title }) => section.textContent.indexOf(`${material_id} — ${title}`));
+    assert.ok(offsets[0] >= 0 && offsets.slice(1).every((offset, index) => offset > offsets[index]));
+    assert.equal(view.messages.children.length, 1, 'initial state and its event mirror render once');
+  }
+  delete saved.current_situation.participant_payload.number_initial_materials;
+  const historical = harness();
+  historical.subject.renderProductRuntime(saved);
+  const section = historical.messages.querySelector('.product-situation-materials');
+  assert.equal(section.open, false);
+  assert.doesNotMatch(section.textContent, /M01 —/);
+});
+
 test('P3-A new saved dialogue preserves the reader position and unchanged polls never reposition it', () => {
   const h = harness();
   h.subject.renderProductRuntime(h.snapshot(3)); h.flush();

@@ -110,7 +110,12 @@ PUBLIC_TECHNICAL_FAILURE = {
     "code": "ASSESSMENT_CYCLE_PREPARATION_TECHNICAL_FAILURE",
     "message": "Не удалось завершить подготовку. Можно повторить её.",
 }
+PROGRAM_COVERAGE_UNAVAILABLE = "PILOT_PLAN_PROGRAM_COVERAGE_UNAVAILABLE"
 PUBLIC_FAILURES_BY_PREFIX = {
+    PROGRAM_COVERAGE_UNAVAILABLE: {
+        "code": "ASSESSMENT_PROGRAM_COVERAGE_UNAVAILABLE",
+        "message": "Подтверждённый профиль не позволяет составить маршрут с охватом назначенной программы.",
+    },
     "M5_FUNCTIONAL_VERIFICATION_INCOMPLETE": {
         "code": "ASSESSMENT_VERIFICATION_INCOMPLETE",
         "message": "Не удалось завершить обязательную проверку материалов. Обратитесь к организатору оценки.",
@@ -150,6 +155,18 @@ def public_operation(operation: dict) -> dict:
         payload["error"] = dict(next((value for prefix, value in PUBLIC_FAILURES_BY_PREFIX.items()
                                       if internal_message.startswith(prefix)),
                                      PUBLIC_TECHNICAL_FAILURE if payload["retry_allowed"] else PUBLIC_FAILURE))
+        if internal_message.startswith(PROGRAM_COVERAGE_UNAVAILABLE + ":"):
+            try:
+                covered = json.loads(internal_message.split(":", 1)[1])
+                available, minimum = covered["available_target_count"], covered["minimum_target_count"]
+                payload["error"]["message"] += f" Доступно целей: {available}. Требуется не менее {minimum}."
+                if question := covered.get("clarification_question"):
+                    payload["error"]["message"] += " " + question
+                elif reasons := [reason["message"] for reason in covered.get("excluded_cases", [])
+                                 if reason.get("status") == "incompatible"]:
+                    payload["error"]["message"] += " " + " ".join(reasons)
+            except (ValueError, KeyError, TypeError, AttributeError):
+                pass
     if operation.get("decision_status"):
         payload["decision_status"] = operation["decision_status"]
     if operation.get('preparation'):
@@ -510,7 +527,7 @@ class ProductCyclePreparationQueue:
                     (type(exc).__name__,str(job['operation_id']),str(job['attempt_token'])))
 
     def _process_current_attempt(self, job: dict) -> None:
-        from Api import m10_product_flow, m7_cycle_planner
+        from Api import m10_product_flow, m7_cycle_planner, m5_battery_profile
         from Api.llm.deepseek_gateway import DeepSeekGateway
         from Api.llm.provider_contract import load_provider_contract
         from Api import m5_functional_generation_service
@@ -568,6 +585,25 @@ class ProductCyclePreparationQueue:
                         WHERE c.id=%s AND (cv.case_id LIKE 'CASE.SPEC.%%'
                             OR cv.content_json->>'schema_version'='4') LIMIT 1""",
                         (profile["assessment_configuration_id"],)).fetchone())
+                fit_review = {}
+                if functional and not existing_cycle and profile:
+                    designs = m5_battery_profile.configuration_designs(
+                        connection, configuration_id=profile["assessment_configuration_id"],
+                    )
+                    if designs:
+                        provider = load_provider_contract()
+                        connection.rollback()
+                        observation.progress("plan")
+                        fit_review = m5_battery_profile.review(
+                            profile["content_json"], designs, DeepSeekGateway(
+                                base_url=provider["endpoint"].removesuffix("/chat/completions"), model=provider["model"],
+                            ), operation_id=str(job["operation_id"]),
+                        )
+                        self._assert_current_attempt(connection, job, lock=True)
+                        self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))
+                        current_profile = _owned_profile_snapshot(connection, profile_id=profile_id, user_id=job["user_id"])
+                        if current_profile != profile:
+                            raise ValueError("PRODUCT_CYCLE_PREPARATION_PROFILE_SCOPE_CHANGED")
                 if next_cycle_id:
                     result = m10_product_flow.prepare_next_situation(
                         connection, cycle_id=str(next_cycle_id), user_id=int(job["user_id"]),
@@ -578,6 +614,7 @@ class ProductCyclePreparationQueue:
                         connection, user_id=int(job["user_id"]), key=preparation_key,
                         selected_skills=list(request["selected_skills"]), profile_id=profile_id,
                         defer_as=functional, exact_profile=bool(request.get('assignment_ref')),
+                        profile_fit=fit_review,
                     )
                 decision = result["decision"]
                 needs_generation = needs_functional_generation(
@@ -626,6 +663,8 @@ class ProductCyclePreparationQueue:
                     m3_path = resolve_cycle_dependency(dict(frozen_cycle), "m3_role_profiles") / "base_roles.json"
                     runtime_rule_ref = resolve_preparation_binding(connection, frozen_case_row)
                     provider_path = resolve_cycle_dependency(dict(frozen_cycle), "provider_contract") / "manifest.json"
+                    profile_fit = next((row["profile_fit"] for row in result["plan"]["plan"]["route"]
+                                        if row["case_id"] == decision["selected_case_id"] and "profile_fit" in row), None)
             saving_started = perf_counter()
             if needs_generation:
                 with get_connection() as connection:
@@ -640,7 +679,7 @@ class ProductCyclePreparationQueue:
                     selected_base_role=selected_base_role, as_package=as_package,
                     review_response_package=resolve_review_response(frozen_cycle),
                     m2_path=m2_path, m3_path=m3_path, runtime_rule_ref=runtime_rule_ref,
-                    package_ref=generation_package_ref,
+                    package_ref=generation_package_ref, battery_profile_fit=profile_fit,
                     provider_contract=load_provider_contract(provider_path),
                     project_role=project_role, project_role_prompt=project_role_prompt,
                     battery_pilot=(frozen_cycle.get("catalog_ref_json") or {}).get("battery_pilot") is True,

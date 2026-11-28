@@ -340,14 +340,17 @@ def publish_catalog(
         plan["publisher_release"] = publisher_release
     if plan.get("battery_pilot"):
         from Api.cycle_execution_manifest import (
-            BATTERY_V04_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES, battery_pilot_review_path,
-            battery_scenario_path,
+            BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V06_SCENARIO_PACKAGE, M5_BATTERY_PILOT_REVIEW_PACKAGES,
+            battery_pilot_review_path, battery_scenario_path,
         )
 
-        v04 = battery_scenario_path(plan["package_version"]) == BATTERY_V04_SCENARIO_PACKAGE
+        scenario = battery_scenario_path(plan["package_version"])
+        requires_v7_review = scenario in {BATTERY_V04_SCENARIO_PACKAGE, BATTERY_V06_SCENARIO_PACKAGE}
         path = battery_pilot_review_path(review_package) if review_package is not None else None
-        if v04 != (path == M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]):
+        if requires_v7_review != (path == M5_BATTERY_PILOT_REVIEW_PACKAGES["7.0.0"]):
             raise ValueError("M5_BATTERY_PILOT_REVIEW_PACKAGE_INVALID")
+        if scenario == BATTERY_V06_SCENARIO_PACKAGE and scenario_ref is None:
+            raise ValueError("M5_BATTERY_SCENARIO_REF_INVALID")
         if review_package is not None:
             plan["review_package"] = review_package
     elif review_package is not None:

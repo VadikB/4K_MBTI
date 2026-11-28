@@ -1,0 +1,77 @@
+{
+  "cases": [
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.01",
+      "path": "sources/JSON/Case_SPEC_01_v0.8_WORKING.json",
+      "sha256": "9891c0a73410d5ab58a7db98fd986bde8894fd17c003e7a52218730daba17e00",
+      "source_sha256": "9891c0a73410d5ab58a7db98fd986bde8894fd17c003e7a52218730daba17e00",
+      "version": "v0.8"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.02",
+      "path": "sources/JSON/Case_SPEC_02_v0.9_WORKING.json",
+      "sha256": "909dc824597c96ed4782a421e3f68322bcf259030a62cd851a5739992278fb9d",
+      "source_sha256": "909dc824597c96ed4782a421e3f68322bcf259030a62cd851a5739992278fb9d",
+      "version": "v0.9"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.03",
+      "path": "sources/JSON/Case_SPEC_03_v0.6_WORKING.json",
+      "sha256": "41e67147bbd5179c5afaaf9bf1e186e12ed4999d811711af7fb1713c2fe447fa",
+      "source_sha256": "41e67147bbd5179c5afaaf9bf1e186e12ed4999d811711af7fb1713c2fe447fa",
+      "version": "v0.6"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.04",
+      "path": "sources/JSON/Case_SPEC_04_v0.8_WORKING.json",
+      "sha256": "872db1c032956c9941f2860757aa2028c26e6349db0ca7bf066c5ec7b2c785a0",
+      "source_sha256": "872db1c032956c9941f2860757aa2028c26e6349db0ca7bf066c5ec7b2c785a0",
+      "version": "v0.8"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.05",
+      "path": "sources/JSON/Case_SPEC_05_v0.7_WORKING.json",
+      "sha256": "046ae1aa51b33e2624621d6e0e7018bd2f52a3fa40034acdc70e3cbd1e63ba5d",
+      "source_sha256": "046ae1aa51b33e2624621d6e0e7018bd2f52a3fa40034acdc70e3cbd1e63ba5d",
+      "version": "v0.7"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.06",
+      "path": "sources/JSON/Case_SPEC_06_v0.6_WORKING.json",
+      "sha256": "aa6689c57678701b9978166bb25679253839308343046720debdae9c967b6997",
+      "source_sha256": "aa6689c57678701b9978166bb25679253839308343046720debdae9c967b6997",
+      "version": "v0.6"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.07",
+      "path": "sources/JSON/Case_SPEC_07_v0.7_WORKING.json",
+      "sha256": "c01e4eda002d1072f53d22b0ebe9ebf3eef0aa992f70ab73155736c8e67507fb",
+      "source_sha256": "c01e4eda002d1072f53d22b0ebe9ebf3eef0aa992f70ab73155736c8e67507fb",
+      "version": "v0.7"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.08",
+      "path": "sources/JSON/Case_SPEC_08_v0.7_WORKING.json",
+      "sha256": "a718af72ca4a59ef2afcc07953162b7bf7a6f79945800d6cef0a691ed992dce6",
+      "source_sha256": "a718af72ca4a59ef2afcc07953162b7bf7a6f79945800d6cef0a691ed992dce6",
+      "version": "v0.7"
+    },
+    {
+      "base_role": "specialist_expert",
+      "case_id": "CASE.SPEC.09",
+      "path": "sources/JSON/Case_SPEC_09_v0.7_WORKING.json",
+      "sha256": "cf0f9a0f0df016c967125d3126409086d82994b76139a204673b28360c5a2863",
+      "source_sha256": "cf0f9a0f0df016c967125d3126409086d82994b76139a204673b28360c5a2863",
+      "version": "v0.7"
+    }
+  ],
+  "schema_version": 1
+}

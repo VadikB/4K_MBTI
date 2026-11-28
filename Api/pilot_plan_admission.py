@@ -102,6 +102,15 @@ def validate_snapshot(snapshot: dict) -> dict:
         full_ids = {indicator for indicator, _ in full}
         planned = design["proposed_target_ids"]
         outside = design["absent_target_ids"]
+        if "route_requirements" in design:
+            requirements = design["route_requirements"]
+            _require("release_program" in design and isinstance(requirements, dict)
+                     and requirements.keys() == {"minimum_target_count", "required_target_ids"}
+                     and type(requirements["minimum_target_count"]) is int
+                     and 0 < requirements["minimum_target_count"] <= len(planned)
+                     and isinstance(requirements["required_target_ids"], list)
+                     and len(set(requirements["required_target_ids"])) == len(requirements["required_target_ids"])
+                     and set(requirements["required_target_ids"]) <= set(planned), "ROUTE_REQUIREMENTS_INVALID")
         _require(len(full) == design["full_m2_count"]
                  and len(planned) == len(set(planned))
                  and len(outside) == len(set(outside))
@@ -192,6 +201,32 @@ def validate_program(program: dict, role_ids: list[int], snapshot: dict) -> dict
     return design
 
 
+def project_eligible_route(catalog: list[dict], targets: list[dict], requirements: dict) -> dict:
+    """Recompute the whole route and retain the reasons for the advertised coverage gap."""
+    from Api.m7_cycle_planner import ranked_route
+
+    route, missing = ranked_route(catalog, targets)
+    covered = {row["indicator_id"] for row in targets} - missing
+    required_missing = set(requirements["required_target_ids"]) - covered
+    excluded = [{"case_id": row["case_id"], "case_version": row["case_version"],
+                 "reasons": row["reasons"], **({key: row["profile_fit"][key] for key in ("status", "message")}
+                                               if row.get("profile_fit", {}).get("status") in {
+                                                   "incompatible", "clarification_required"} else {})}
+                for row in catalog if not row["eligible"] and (set(row["target_ids"]) & missing)]
+    coverage = {"available_target_count": len(covered), "minimum_target_count": requirements["minimum_target_count"],
+                "missing_target_ids": sorted(missing), "missing_required_target_ids": sorted(required_missing),
+                "excluded_cases": excluded}
+    for row in catalog:
+        fit = row.get("profile_fit", {})
+        if (missing and fit.get("status") == "clarification_required" and len(row["reasons"]) == 1
+                and len(covered | set(row["contribution_target_ids"])) >= requirements["minimum_target_count"]
+                and required_missing <= set(row["contribution_target_ids"])):
+            coverage["clarification_question"] = fit["message"]
+            break
+    return {"route": route, "covered": covered, "coverage": coverage,
+            "admissible": bool(route) and len(covered) >= requirements["minimum_target_count"] and not required_missing}
+
+
 def project_plan(snapshot: dict, *, targets: list[dict], catalog: list[dict],
                  catalog_ref: dict, role_ref: dict) -> dict:
     """Validate accepted sources and select the exact initial route, not their union."""
@@ -208,14 +243,25 @@ def project_plan(snapshot: dict, *, targets: list[dict], catalog: list[dict],
     _require(set(available) == {(row["case_id"], row["version"]) for row in design["cases"]},
              "CATALOG_CASE_SET_MISMATCH")
     planned_targets = [row for row in targets if row["indicator_id"] in design["proposed_target_ids"]]
+    outside = design["absent_target_ids"]
+    coverage = None
     if "release_program" in design:
         from Api.m7_cycle_planner import ranked_route
 
         for expected in design["cases"]:
             actual = available[(expected["case_id"], expected["version"])]
             _require(set(actual["target_ids"]) == set(expected["target_ids"]), "CASE_TARGET_SET_MISMATCH")
-        route, uncovered = ranked_route(catalog, planned_targets)
-        _require(bool(route) and not uncovered, "PLANNED_TARGET_GAP")
+        if "route_requirements" in design:
+            projection = project_eligible_route(catalog, planned_targets, design["route_requirements"])
+            coverage = projection["coverage"]
+            if not projection["admissible"]:
+                raise ValueError("PILOT_PLAN_PROGRAM_COVERAGE_UNAVAILABLE:" + json.dumps(coverage, ensure_ascii=False))
+            route = projection["route"]
+            planned_targets = [row for row in planned_targets if row["indicator_id"] in projection["covered"]]
+            outside = sorted({row["indicator_id"] for row in targets} - projection["covered"])
+        else:
+            route, uncovered = ranked_route(catalog, planned_targets)
+            _require(bool(route) and not uncovered, "PLANNED_TARGET_GAP")
     else:
         route = []
         for wanted in design["proposed_primary_route"]:
@@ -225,6 +271,7 @@ def project_plan(snapshot: dict, *, targets: list[dict], catalog: list[dict],
             route.append({**actual, "purpose_target_ids": wanted["new_purpose_target_ids"],
                           "duration_source": "M5 CaseVersion planned range", "conditional": True, "reserve_for": []})
     return {"planned_targets": planned_targets,
-            "outside_plan_target_ids": design["absent_target_ids"], "route": route,
+            "outside_plan_target_ids": outside, "route": route,
+            **({"route_coverage": coverage} if coverage is not None else {}),
             "timing": {name: design["timing_basis"][name]
                        for name in ("time_budget_seconds", "calendar_window_seconds")}}
