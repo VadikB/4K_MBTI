@@ -261,12 +261,13 @@ def compile_passport(*, raw: dict, case_id: str, version: str, status: str, sour
     }).model_dump(exclude_unset=True)
 
 
-def allowed_profile(profile: dict) -> dict:
+def allowed_profile(profile: dict, *, include_confirmed_work: bool = False) -> dict:
     organization = profile.get("organization_context") or {}
     role = profile.get("role_profile") or {}
     allowed_organization = _project(organization, ORGANIZATION_FIELDS)
     if allowed_organization.get("organization_name_usage_rules") == "Можно использовать настоящее название":
         allowed_organization.update(_project(organization, ("name",)))
+    user_fields = (*USER_FIELDS, "decision_situations", "constraints_and_interactions") if include_confirmed_work else USER_FIELDS
     return {
         "organization_context": allowed_organization,
         "role_profile": {
@@ -274,5 +275,5 @@ def allowed_profile(profile: dict) -> dict:
             "description": _project(role.get("description"), tuple(key for _, key in DESCRIPTION_FIELDS if key != "examples")),
             "card": _project(role.get("card"), tuple(key for _, key in CARD_FIELDS)),
         },
-        "user_context": _project(profile.get("user_context"), USER_FIELDS),
+        "user_context": _project(profile.get("user_context"), user_fields),
     }

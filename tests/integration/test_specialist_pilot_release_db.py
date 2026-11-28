@@ -21,6 +21,7 @@ from Api.org_access import LOCAL_SUPERADMIN_EMAIL
 from Api.schema_bootstrap import bootstrap_base
 from scripts.plan_specialist_program_release import PACKAGE_DIR, build_admitted_materials
 from scripts.release_specialist_pilot import RELEASE_DIR, ROOT, load_release, release, release_configuration
+from tests.unit.test_m5_participant_grounding import FUNCTION_SUBSTITUTION, GroundingGateway
 from tests.unit.test_m5_review_clarification import CLARITY, ClarifyingGateway
 
 
@@ -428,3 +429,109 @@ def test_v06_release_binds_an_admitted_catalog_without_switching_existing_cycle(
             "minimum_target_count": 39, "required_target_ids": design["proposed_target_ids"],
         }
         assert len(design["cases"]) == 9 and design["catalog_ref"]["catalog_version"] == "1.4.5"
+
+
+def _role_repair_gateway():
+    return GroundingGateway(defects=(("P00", FUNCTION_SUBSTITUTION),))
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("opened_specialist_pilot", [_role_repair_gateway], indirect=True)
+def test_first_and_next_preserve_confirmed_m4_after_profile_edit(release_db, opened_specialist_pilot):
+    from Api import assessment_start_readiness
+    from Api.m5_battery_contract import FACILITATOR
+    from tests.integration.test_m5_battery_scenario_db import matched, submit
+    from tests.integration.test_m10_product_path_db import _resolve_interim_for_finish
+
+    pilot = opened_specialist_pilot
+    first_id = pilot.first["assessment_situation_id"]
+    runtime_path = f"/users/assessment/cycles/{pilot.cycle_id}/runtime"
+    next_path = f"/users/assessment/m7/cycles/{pilot.cycle_id}"
+
+    def trace(connection, as_id):
+        row = connection.execute(
+            """SELECT personalized_profile_id,
+                      execution_payload_json #>'{ai_operations,functional_personalization}' AS trace
+               FROM m5_assessment_situations WHERE assessment_situation_id=%s AND cycle_db_id=%s""",
+            (as_id, pilot.cycle_db_id),
+        ).fetchone()
+        return row["personalized_profile_id"], row["trace"]
+
+    assert len(pilot.gateway.calls) == 14
+    pilot.gateway.defects = ()
+    with release_db() as connection:
+        cycle = read_cycle(connection, pilot.cycle_id)
+        frozen_profile_id, saved_first = trace(connection, first_id)
+        assert saved_first["repair"]["outcome"] == "PASS"
+        assert any(FUNCTION_SUBSTITUTION in row["Текст"] for row in saved_first["repair"]["original_candidate_as"]["Материалы"])
+        expected_start = saved_first["source_snapshot"]["participant_grounding"]["p00"]["task_opening"]
+        assert pilot.first["participant_payload"]["introduction"].startswith(expected_start)
+        assert cycle_execution_manifest.resolve_participant_grounding(cycle) == (
+            ROOT / cycle_execution_manifest.M5_PARTICIPANT_GROUNDING_PACKAGE
+        )
+        before = saved_first["source_snapshot"]["grounded_profile"]
+        user = before["user_context"]
+        assert user["position_or_status"] == ""
+        assert user["decision_situations"] == "Готовлю рекомендации, решение согласовывает руководитель."
+        assert user["constraints_and_interactions"] == "Использую карточки задач и материалы проверок."
+        source_ids = saved_first["source_snapshot"]["refs"]["profile"]["sources"]
+        context_id = assessment_contexts.create_user_context_draft(
+            connection, user_id=pilot.participant_id, identity={"full_name": "Синтетический участник"},
+            professional={**user, "position_or_status": "Эксперт по складской логистике",
+                          "decision_situations": "Утверждаю график только собственной смены."},
+        )
+        assessment_contexts.confirm_user_context(connection, version_id=context_id, user_id=pilot.participant_id)
+        configuration = connection.execute(
+            "SELECT assessment_configuration_id FROM assessment_personalized_profiles WHERE id=%s",
+            (frozen_profile_id,),
+        ).fetchone()
+        new_profile = assessment_contexts.create_personalized_profile(
+            connection, user_id=pilot.participant_id, assessment_configuration_id=configuration["assessment_configuration_id"],
+            organization_context_version_id=source_ids["organization_context"], role_profile_version_id=source_ids["role_profile"],
+            user_context_version_id=context_id,
+        )
+        assert new_profile["id"] != frozen_profile_id and len(pilot.gateway.calls) == 14
+
+    returned = pilot.client.get(runtime_path)
+    assert returned.status_code == 200, returned.text
+    assert returned.json()["current_situation"] == pilot.first
+
+    inappropriate_reply = "Как инженер внедрения, вы сами утверждаете срок за обе команды."
+    events, character_calls = submit(
+        release_db, first_id, "Что означает оговорка в M05?", {
+            "E01_FACT": matched(speaker_ids=[FACILITATOR]),
+            "@accepted": {"code": "NO_MATCH", "details": {"text": inappropriate_reply}},
+        }, responses={FACILITATOR: inappropriate_reply}, replay=True,
+    )
+    assert character_calls[0]["reaction_constraint"]["profile"] == before
+    reply = next(item["payload_json"] for item in events if item["event_type"] == "character_response")
+    assert reply["scenario_event_ids"] == []
+    assert inappropriate_reply not in reply["response"]
+
+    submit(release_db, first_id, "Сопоставляю варианты и сдаю рекомендацию.", {}, control="FINAL")
+    with release_db() as connection:
+        _resolve_interim_for_finish(connection, release_db, first_id, user_id=pilot.participant_id)
+    closed = pilot.client.post(next_path + "/finish-situation", json={"idempotency_key": "task11-close"})
+    assert closed.status_code == 200, closed.text
+    operation_id = "next:" + first_id
+    queued = pilot.client.post(next_path + "/next", json={
+        "idempotency_key": operation_id, "after_assessment_situation_id": first_id,
+    })
+    assert queued.status_code == 201, queued.text
+    pilot.worker._process(pilot.worker._claim())
+    assert len(pilot.gateway.calls) == 21
+    ready = pilot.client.get(runtime_path).json()["next_presentation"]
+    presented = pilot.client.post(next_path + "/present-next", json=ready)
+    assert presented.status_code == 201, presented.text
+
+    with release_db() as connection:
+        current_cycle = read_cycle(connection, pilot.cycle_id)
+        old_profile, saved_next = trace(connection, ready["assessment_situation_id"])
+        assert old_profile == frozen_profile_id
+        assert trace(connection, first_id)[1] == saved_first
+        assert current_cycle["profile_ref_json"] == cycle["profile_ref_json"]
+        source = saved_next["source_snapshot"]
+        assert source["case_version"]["case_id"] == "CASE.SPEC.03"
+        assert source["grounded_profile"] == before and source["refs"]["profile"]["sources"] == source_ids
+        assessment_start_readiness.functional_gate(saved_next, operation_id=operation_id,
+                                                   cycle=current_cycle, case_version=source["case_version"])

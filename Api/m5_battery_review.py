@@ -8,6 +8,7 @@ from pathlib import Path
 
 from Api.m5_battery_contract import source_case_version
 from Api.m5_functional_tester import checksum
+from Api.m5_participant_grounding import CASE_AUTHORITY, CHECK_IDS
 from Api.m5_passport_v12 import INVARIANT_LINKS, REFERENCE_ID
 
 
@@ -134,6 +135,15 @@ def build_plan(snapshot: dict, protocol: dict, contract_path: Path, m2: dict) ->
         item["finding_evidence_sections"] = list(dict.fromkeys(
             [*item["finding_evidence_sections"], *extra["finding_evidence_sections"]]
         ))
+
+    if basis := snapshot.get("participant_grounding"):
+        source_paths = sorted({CASE_AUTHORITY, *(path for paths in basis["sources"].values() for path in paths)})
+        for check_id in CHECK_IDS:
+            item = by_id[check_id]
+            item["participant_basis_paths"] = source_paths
+            item["finding_evidence_sections"] = list(dict.fromkeys(
+                [*item["finding_evidence_sections"], "candidate_as/RuntimeBindings", "candidate_as/Название"],
+            ))
 
     return {
         "protocol": {key: protocol[key] for key in ("id", "version", "checksum", "scope")},
