@@ -980,14 +980,24 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         )
     if instruction is not None:
         payload_base["required_output"] = review_clarification.response_forms(payload_base["required_output"])
-    if server_bound and generation["deterministic_validation"]["status"] != "PASS":
-        return {
-            "protocol": plan["protocol"], "checks": [], "review_skipped": "INVALID_CANDIDATE_STRUCTURE",
-            "aggregation": aggregate(generation["deterministic_validation"], [], scoped_findings=True),
-            "candidate_checksum": generation["candidate_checksum"], "reviewed_candidate_checksum": None,
-            "review_source": review_ref, "independent_checks": {"tester": [], "challenger": []},
-            "provider_operation": {"batches": []}, "challenger_operation": {"batches": []},
-        }
+    deterministic = generation["deterministic_validation"]
+    if server_bound and deterministic["status"] != "PASS":
+        failures = {row["check"] for row in deterministic["errors"]}
+        source_calculation_only = (
+            snapshot.get("battery_scenario", {}).get("quantity_basis_calculation_materials")
+            and failures
+            and failures <= {"battery_division_basis", "battery_division_result"}
+        )
+        # A readable AS can contain another material defect alongside bad arithmetic.
+        # Collect both sets of findings before the single repair attempt.
+        if not source_calculation_only:
+            return {
+                "protocol": plan["protocol"], "checks": [], "review_skipped": "INVALID_CANDIDATE_STRUCTURE",
+                "aggregation": aggregate(deterministic, [], scoped_findings=True),
+                "candidate_checksum": generation["candidate_checksum"], "reviewed_candidate_checksum": None,
+                "review_source": review_ref, "independent_checks": {"tester": [], "challenger": []},
+                "provider_operation": {"batches": []}, "challenger_operation": {"batches": []},
+            }
 
     def review_context(reviewer, batch_no, batch_checks):
         if not server_bound:

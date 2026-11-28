@@ -194,7 +194,19 @@ def opened_specialist_pilot(release_db, monkeypatch, request):
     monkeypatch.setattr(sessions, "get_connection", release_db)
     monkeypatch.setattr(auth_service, "get_connection", release_db)
     auth_service.auth_service.ensure_schema()
-    gateway = getattr(request, "param", V04Gateway)()
+    controls = getattr(request, "param", V04Gateway)
+    if isinstance(controls, tuple):
+        gateway_factory, legacy_cycle = controls
+    else:
+        gateway_factory, legacy_cycle = controls, False
+    gateway = gateway_factory()
+    if legacy_cycle:
+        def build_legacy_manifest(**kwargs):
+            manifest, _ = cycle_execution_manifest.build_manifest(**kwargs)
+            del manifest["dependencies"][cycle_execution_manifest.M5_PARTICIPANT_GROUNDING_DEPENDENCY]
+            return manifest, cycle_execution_manifest.checksum(manifest)
+
+        monkeypatch.setattr(m5_cycle_runtime, "build_manifest", build_legacy_manifest)
     monkeypatch.setattr(deepseek_gateway, "DeepSeekGateway", lambda **_: gateway)
     sessions.web_session_service.ensure_schema()
     app = FastAPI()
@@ -282,6 +294,7 @@ def opened_specialist_pilot(release_db, monkeypatch, request):
         yield SimpleNamespace(
             client=client, worker=worker, assignment_id=assignment_id, cycle_id=cycle_id, cycle_db_id=before["id"],
             first=first, started_at=started_at, participant_id=participant, start_request=request, gateway=gateway,
+            publisher=publisher, legacy_cycle=legacy_cycle,
         )
 
 
@@ -302,8 +315,13 @@ def test_synthetic_assignment_opens_the_prepared_v7_card_and_keeps_start_time(re
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("opened_specialist_pilot", [ClarifyingGateway], indirect=True)
-def test_first_and_next_on_published_program_replay_targeted_clarification(release_db, opened_specialist_pilot, monkeypatch):
+@pytest.mark.parametrize("opened_specialist_pilot", [
+    pytest.param(ClarifyingGateway, id="current-manifest"),
+    pytest.param((ClarifyingGateway, True), id="persisted-2.0-manifest"),
+], indirect=True)
+def test_first_and_next_on_published_program_replay_targeted_clarification(
+    release_db, opened_specialist_pilot, monkeypatch, tmp_path,
+):
     from Api import assessment_start_readiness
     from tests.integration.test_m5_battery_scenario_db import submit
     from tests.integration.test_m10_product_path_db import _resolve_interim_for_finish
@@ -336,6 +354,19 @@ def test_first_and_next_on_published_program_replay_targeted_clarification(relea
             )
 
     verify_saved(as_id, "v7-start-preparation", "CASE.SPEC.02")
+    if pilot.legacy_cycle:
+        from scripts.release_specialist_pilot import publish_v06_program
+
+        publish_v06_fixture(pilot.publisher, tmp_path)
+        with release_db() as connection:
+            candidate = publish_v06_program(connection, publisher=pilot.publisher, principal="fixture-deployer")
+            assert candidate["program_version"] == "2.1" and candidate["catalog_version"] == "1.4.5"
+            old_cycle = read_cycle(connection, pilot.cycle_id)
+            assert old_cycle["catalog_ref_json"]["version"] == "1.4.4"
+            assert cycle_execution_manifest.resolve_participant_grounding(old_cycle) is None
+        returned = pilot.client.get(runtime_path)
+        assert returned.status_code == 200
+        assert returned.json()["current_situation"] == pilot.first
     submit(release_db, as_id, "Сопоставляю подтверждённые сроки и сообщаю предел проверки.", {}, control="FINAL")
     with release_db() as connection:
         _resolve_interim_for_finish(connection, release_db, as_id, user_id=pilot.participant_id)
@@ -365,6 +396,11 @@ def test_first_and_next_on_published_program_replay_targeted_clarification(relea
     presented = pilot.client.post(next_path + "/present-next", json=ready)
     assert presented.status_code == 201, presented.text
     assert presented.json()["runtime"]["current_situation"]["assessment_situation_id"] == next_as
+    if pilot.legacy_cycle:
+        with release_db() as connection:
+            continued = read_cycle(connection, pilot.cycle_id)
+        assert continued["execution_manifest_checksum"] == old_cycle["execution_manifest_checksum"]
+        assert continued["catalog_ref_json"] == old_cycle["catalog_ref_json"]
 
 
 def publish_v06_fixture(publisher, tmp_path):

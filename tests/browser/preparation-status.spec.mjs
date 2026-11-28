@@ -100,6 +100,38 @@ const details = async (page, root, name, width) => {
   expect(copied).not.toMatch(/operation_id|attempt_token|JSON|SQL|prompt|Cycle/);
   await snap(page,`${name}-details`,width);
 };
+
+test('profile clarification on stopped preparation points to W02 of a new assignment', async ({page}) => {
+  const run = await fixture(page);
+  await page.route('**/users/8/acquaintance/issues', route => route.fulfill({json:{items:[]}}));
+  Object.assign(run.card, {status:'prepared', journey_state:'preparing', action:'open_readiness',
+    button_label:'Посмотреть состояние'});
+  run.model.prepared_plan = null;
+  run.model.preparation_operation = {
+    operation_id:saved.operation_id, status:'failed', retry_allowed:false,
+    preparation:{...saved, status:'failed', allowed_actions:[]},
+    error:{code:'ASSESSMENT_PROGRAM_COVERAGE_UNAVAILABLE', message:
+      'Подтверждённый профиль не позволяет составить маршрут с охватом назначенной программы. ' +
+      'Доступно целей: 30. Требуется не менее 39. Вопрос для уточнения профиля. ' +
+      'Какие рабочие варианты вы сравнивали и какую рекомендацию дали? ' +
+      'В этом назначении подтверждённые ответы доступны только для просмотра. ' +
+      'Чтобы учесть уточнение, организатору нужно выдать новое назначение. ' +
+      'В новом назначении выберите «Изменить мои ответы» до подтверждения знакомства.'},
+  };
+  await page.goto(base);
+  await page.locator('#assessment-action-button').click();
+  const panel = page.locator('#onboarding-panel');
+  await expect(panel.locator('[data-preparation-status]')).toContainText(run.model.preparation_operation.error.message);
+  await expect(panel.getByRole('button', {name:'Проверить состояние', exact:true})).toBeVisible();
+  await expect(panel.getByRole('button', {name:'Повторить подготовку', exact:true})).toHaveCount(0);
+  await expect(panel.getByRole('button', {name:'Изменить мои ответы', exact:true})).toHaveCount(0);
+  await expect(panel.locator('.onboarding-answer')).toBeDisabled();
+  await panel.getByRole('button', {name:'Посмотреть знакомство', exact:true}).click();
+  await expect(panel.getByRole('button', {name:'Изменить мои ответы', exact:true})).toHaveCount(0);
+  expect(run.calls.filter(({method}) => method !== 'GET')).toEqual([]);
+  expect(run.unexpected).toEqual([]);
+});
+
 for (const width of [1440,390,320]) test(`04 review real screens ${width} CSS px`, async ({page,context}) => {
   await context.grantPermissions(['clipboard-read','clipboard-write']);
   await page.setViewportSize({width,height:width===1440?1000:844});

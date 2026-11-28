@@ -6,6 +6,7 @@ import pytest
 from Api.m10_product_flow import participant_plan
 from Api.m5_battery_contract import load_scenario
 from Api.m5_battery_profile import review, verified_receipt
+from Api.m5_case_runtime import checksum
 from Api.m7_planning_package import methodology_targets
 from Api.pilot_plan_admission import project_eligible_route
 from Api.product_cycle_preparation_queue import public_operation
@@ -58,6 +59,45 @@ def test_fit_uses_three_distinct_profile_answers_and_keeps_exact_evidence_privat
         "plan": {"route": [{"case_id": SPEC02}], "catalog": [{"case_id": SPEC02}]}}
 
 
+def test_a_confirmed_task_list_preserves_exact_item_provenance():
+    design = load_scenario(cases()[SPEC02], RULES.parent / "1.10.4")
+    first_task = "Веду журнал заявок."
+    context = {**PROFILE["user_context"], "regular_tasks": [first_task, WORK]}
+    profile = {"user_context": context}
+    rows = {"work": evidence("regular_tasks", WORK),
+            "decision": evidence("decision_situations", DECISIONS),
+            "authority": evidence("constraints_and_interactions", LIMITS)}
+    gateway = FitGateway({SPEC02: rows})
+    result = review(profile, [design], gateway, operation_id="test-list-fit")[SPEC02]
+    assert gateway.calls[0]["profile"] == context
+    assert result["status"] == "applicable"
+    assert result["evidence"]["work"]["quote"] == WORK
+    assert result["evidence_source_paths"] == {"work": ["user_context/regular_tasks/1"]}
+    assert verified_receipt(profile, design, result) == result
+
+    reordered = {"user_context": {**context, "regular_tasks": [WORK, first_task]}}
+    with pytest.raises(ValueError, match="REVIEW_SOURCE_MISMATCH"):
+        verified_receipt(reordered, design, result)
+    gateway = FitGateway({SPEC02: {**rows, "work": evidence("regular_tasks", f"{first_task} {WORK}")}})
+    with pytest.raises(ValueError, match="REVIEW_EVIDENCE_INVALID"):
+        review(profile, [design], gateway, operation_id="test-list-fit")
+
+
+def test_saved_scalar_projection_for_an_earlier_rule_keeps_its_receipt():
+    design = load_scenario(cases()[SPEC02], RULES)
+    profile = {"user_context": {**PROFILE["user_context"], "regular_tasks": [WORK]}}
+    old_sources = {"decision_situations": DECISIONS, "constraints_and_interactions": LIMITS}
+    rows = {"work": evidence(status="unspecified"),
+            "decision": evidence("decision_situations", DECISIONS),
+            "authority": evidence("constraints_and_interactions", LIMITS)}
+    gateway = FitGateway({SPEC02: rows})
+    result = review(profile, [design], gateway, operation_id="test-old-fit")[SPEC02]
+    assert gateway.calls[0]["profile"] == old_sources
+    assert result["profile_sources_checksum"] == checksum(old_sources)
+    assert "evidence_source_paths" not in result
+    assert verified_receipt(profile, design, result) == result
+
+
 def test_missing_decision_and_explicit_incompatibility_are_distinct_before_generation():
     case = cases()[SPEC02]
     design = load_scenario(case, RULES)
@@ -96,11 +136,20 @@ def test_whole_route_coverage_meets_or_explains_versioned_program_requirements(e
     assert projection["coverage"]["missing_required_target_ids"] == projection["coverage"]["missing_target_ids"]
     if expected < 39:
         assert projection["coverage"]["clarification_question"] == "Уточнение CASE.SPEC.02?"
-        operation = public_operation({"operation_id": "test", "status": "failed", "error_message":
-            "PILOT_PLAN_PROGRAM_COVERAGE_UNAVAILABLE:" + json.dumps(projection["coverage"], ensure_ascii=False)})
+        assert any(row["case_id"] == SPEC02 and row["reasons"] == ["missing_profile_data"]
+                   for row in projection["coverage"]["excluded_cases"])
+        operation = public_operation({
+            "operation_id": "test", "status": "failed", "preparation": {"attempt_no": 1},
+            "error_message": "PILOT_PLAN_PROGRAM_COVERAGE_UNAVAILABLE:"
+                             + json.dumps(projection["coverage"], ensure_ascii=False),
+        })
         assert operation["error"]["code"] == "ASSESSMENT_PROGRAM_COVERAGE_UNAVAILABLE"
+        assert operation["retry_allowed"] is False
+        assert operation["preparation"]["allowed_actions"] == []
         assert f"Доступно целей: {expected}." in operation["error"]["message"]
-        assert "Уточнение CASE.SPEC.02?" in operation["error"]["message"]
+        assert "Вопрос для уточнения профиля. Уточнение CASE.SPEC.02?" in operation["error"]["message"]
+        assert "В этом назначении подтверждённые ответы доступны только для просмотра." in operation["error"]["message"]
+        assert "организатору нужно выдать новое назначение" in operation["error"]["message"]
 
 
 def test_eligible_alternate_may_admit_only_under_its_own_program_requirements():

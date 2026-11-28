@@ -161,7 +161,12 @@ def public_operation(operation: dict) -> dict:
                 available, minimum = covered["available_target_count"], covered["minimum_target_count"]
                 payload["error"]["message"] += f" Доступно целей: {available}. Требуется не менее {minimum}."
                 if question := covered.get("clarification_question"):
-                    payload["error"]["message"] += " " + question
+                    payload["error"]["message"] += (
+                        f" Вопрос для уточнения профиля. {question}"
+                        " В этом назначении подтверждённые ответы доступны только для просмотра."
+                        " Чтобы учесть уточнение, организатору нужно выдать новое назначение."
+                        " В новом назначении выберите «Изменить мои ответы» до подтверждения знакомства."
+                    )
                 elif reasons := [reason["message"] for reason in covered.get("excluded_cases", [])
                                  if reason.get("status") == "incompatible"]:
                     payload["error"]["message"] += " " + " ".join(reasons)

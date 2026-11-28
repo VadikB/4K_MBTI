@@ -9,12 +9,21 @@ from Api.m5_case_runtime import checksum
 FIELDS = ("regular_tasks", "decision_situations", "constraints_and_interactions")
 STATES = {"supported", "contradicted", "unspecified"}
 PILOT_PACKAGE_VERSION = "0.9-pilot.1"
+# These pinned rules used only scalar answers when computing the source checksum.
+STRING_ONLY_RULES = frozenset({"1.10.0", "1.10.1", "1.10.2", "1.10.3"})
 
 
-def _sources(profile: dict) -> dict[str, str]:
+def _sources(profile: dict, *, allow_lists: bool) -> dict[str, str | list[str]]:
     context = profile.get("user_context") or {}
-    return {field: value for field in FIELDS
-            if isinstance(value := context.get(field), str) and value.strip()}
+    sources = {}
+    for field in FIELDS:
+        value = context.get(field)
+        if isinstance(value, str) and value.strip():
+            sources[field] = value
+        elif (allow_lists and isinstance(value, list) and all(isinstance(item, str) for item in value)
+              and any(item.strip() for item in value)):
+            sources[field] = value
+    return sources
 
 
 def _subject(design: dict) -> dict:
@@ -26,6 +35,7 @@ def _receipt(subject: dict, source: dict, rows: dict) -> dict:
     criteria = subject["criteria"]
     if not isinstance(rows, dict) or rows.keys() != criteria.keys():
         raise ValueError("M5_BATTERY_PROFILE_REVIEW_INVALID")
+    source_paths = {}
     for key, item in rows.items():
         if (not isinstance(item, dict) or item.keys() != {"status", "field", "quote"}
                 or not isinstance(item["status"], str) or item["status"] not in STATES):
@@ -35,21 +45,32 @@ def _receipt(subject: dict, source: dict, rows: dict) -> dict:
             valid = field is None and quote is None
         else:
             valid = (isinstance(field, str) and field in criteria[key]["fields"] and field in source
-                     and isinstance(quote, str) and bool(quote.strip()) and quote in source[field])
+                     and isinstance(quote, str) and bool(quote.strip()))
+            if valid:
+                value = source[field]
+                if isinstance(value, list):
+                    paths = [f"user_context/{field}/{index}" for index, text in enumerate(value) if quote in text]
+                    if paths:
+                        source_paths[key] = paths
+                    valid = bool(paths)
+                else:
+                    valid = quote in value
         if not valid:
             raise ValueError(f"M5_BATTERY_PROFILE_REVIEW_EVIDENCE_INVALID:{subject['case_id']}:{key}")
+    receipt = {"subject_checksum": checksum(subject), "profile_sources_checksum": checksum(source), "evidence": rows}
+    if source_paths:
+        receipt["evidence_source_paths"] = source_paths
     for state, status, reason_key in (("contradicted", "incompatible", "incompatibility"),
                                       ("unspecified", "clarification_required", "question")):
         for key, criterion in criteria.items():
             if rows[key]["status"] == state:
-                return {"subject_checksum": checksum(subject), "profile_sources_checksum": checksum(source),
-                        "status": status, "criterion": key, "message": criterion[reason_key], "evidence": rows}
-    return {"subject_checksum": checksum(subject), "profile_sources_checksum": checksum(source),
-            "status": "applicable", "evidence": rows}
+                return {**receipt, "status": status, "criterion": key, "message": criterion[reason_key]}
+    return {**receipt, "status": "applicable"}
 
 
 def verified_receipt(profile: dict, design: dict, reviewed: dict | None) -> dict:
-    subject, sources = _subject(design), _sources(profile)
+    subject = _subject(design)
+    sources = _sources(profile, allow_lists=design["ref"]["version"] not in STRING_ONLY_RULES)
     if reviewed is None:
         rows = {key: {"status": "unspecified", "field": None, "quote": None} for key in subject["criteria"]}
         return _receipt(subject, sources, rows)
@@ -64,7 +85,10 @@ def verified_receipt(profile: dict, design: dict, reviewed: dict | None) -> dict
 def review(profile: dict, designs: list[dict], gateway, *, operation_id: str) -> dict:
     if not designs:
         return {}
-    sources = _sources(profile)
+    source_modes = {design["ref"]["version"] not in STRING_ONLY_RULES for design in designs}
+    if len(source_modes) != 1:
+        raise ValueError("M5_BATTERY_PROFILE_REVIEW_INVALID")
+    sources = _sources(profile, allow_lists=source_modes.pop())
     if not sources:
         return {design["profile_fit"]["case_id"]: verified_receipt(profile, design, None) for design in designs}
     subjects = {_subject(design)["case_id"]: _subject(design) for design in designs}

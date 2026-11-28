@@ -11,7 +11,8 @@ from Api.assessment_case_contracts import PreparedCaseV4
 from Api.m5_package import digest
 from Api.m5_passport import missing
 from Api.m5_passport_v12 import SCENARIO_FIELDS
-from Api.m5_source_calculations import division_findings, window_duration_findings
+from Api.m5_source_calculations import division_findings, quantity_basis_division_checks, window_duration_findings
+from Api.m5_schedule_dependencies import handoff_finding
 from scripts.build_m5_sales_package import _participant_presentation, _ref
 
 RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.6.0"
@@ -76,13 +77,20 @@ def load_scenario(case: dict, directory: Path, *, pilot: bool = False) -> dict:
             raise missing(case_id, version, f"17.3/{row['id']}→scenario rule")
     material_by_id = {row["ID"]: row for row in materials}
     source_checks = {}
-    for key in ("explicit_calculation_materials", "explicit_window_duration_materials"):
+    for key in ("explicit_calculation_materials", "quantity_basis_calculation_materials", "explicit_window_duration_materials"):
         checked = overlay.get(key, [])
         if (not isinstance(checked, list) or any(not isinstance(item, str) for item in checked)
                 or len(set(checked)) != len(checked) or not set(checked) <= material_ids - fact_ids):
             raise missing(case_id, version, f"17.2→{key}")
         if checked:
             source_checks[key] = checked
+    handoff_materials = overlay.get("explicit_handoff_materials", {})
+    if (not isinstance(handoff_materials, dict)
+            or not handoff_materials.keys() <= material_ids.intersection(start["Последовательность предъявления"]) - fact_ids
+            or any(not isinstance(role, str) or role not in roles for role in handoff_materials.values())):
+        raise missing(case_id, version, "17.2→explicit_handoff_materials")
+    if handoff_materials:
+        source_checks["explicit_handoff_materials"] = handoff_materials
     material_sections = overlay.get("material_sections", {})
     for material_id, headings in material_sections.items():
         if (material_id not in material_ids - fact_ids or not isinstance(headings, list) or not headings
@@ -389,6 +397,17 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
                 validate(finding["code"], False, path, finding,
                          {"operands": "явно описаны отдельно от выражения", "result": "сверен в указанной точности"},
                          "Укажите основания числителя и знаменателя отдельно от формулы и сверьте результат деления.")
+    quantity_basis_materials = design.get("quantity_basis_calculation_materials", ())
+    if quantity_basis_materials:
+        visible_texts = {key: documents[key]["Текст"] for key in design["start_ids"]
+                         if isinstance(documents.get(key, {}).get("Текст"), str)}
+        for material_id in quantity_basis_materials:
+            path = f"candidate_as/Материалы/{material_id}/Текст"
+            for finding in quantity_basis_division_checks(material_id, visible_texts):
+                validate(finding["code"], finding["status"] != "FAIL", path, finding,
+                         {"basis": "доступные источники сопоставимых величин",
+                          "result": "вычислен в заявленной единице и точности"},
+                         "Сверьте единицы и основания деления. Неясные основания проверяются по смыслу материалов.")
     for material_id in design.get("explicit_window_duration_materials", ()):
         text = documents.get(material_id, {}).get("Текст")
         if isinstance(text, str):
@@ -397,6 +416,15 @@ def validate_candidate(snapshot: dict, value: dict, check, *, detailed: bool = F
                 validate(finding["code"], False, path, finding,
                          {"available_minutes": finding["available_minutes"]},
                          "Длительность действия должна укладываться в рабочее окно той же роли.")
+    for material_id, role in design.get("explicit_handoff_materials", {}).items():
+        text = documents.get(material_id, {}).get("Текст")
+        finding = handoff_finding(text, role) if isinstance(text, str) else None
+        if finding:
+            validate(finding["code"], False, f"candidate_as/Материалы/{material_id}/Текст", finding,
+                     {"latest_handoff": finding["latest_handoff"], "required_minutes": finding["duration_minutes"]},
+                     "Согласуйте окно, оба входа и длительность итоговой работы. "
+                     "Если передача позднее, отделите предложение согласовать перенос или допустимый "
+                     "предварительный статус от обещания итоговой работы к прежнему сроку.")
     for material_id, headings in design.get("material_sections", {}).items():
         text = documents.get(material_id, {}).get("Текст")
         sections = _material_sections(text, headings) if isinstance(text, str) else {}
