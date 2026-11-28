@@ -1,0 +1,12 @@
+{
+  "artifacts": [
+    {
+      "name": "prompt.md",
+      "sha256": "e2ac077bf2c1b65064705cf659f7b0d7b27d8bc44a1993690655c6f8cd4d6872"
+    }
+  ],
+  "id": "m5-review-response",
+  "schema_version": 1,
+  "status": "draft",
+  "version": "1.0.0"
+}

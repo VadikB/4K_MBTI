@@ -4,7 +4,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from Api import m5_functional_generation_service as preparation
-from Api.cycle_execution_manifest import resolve_cycle_dependency
+from Api.cycle_execution_manifest import resolve_cycle_dependency, resolve_review_response
 from Api.llm.provider_contract import load_provider_contract
 from Api.m5_runtime_rules import resolve_preparation_binding
 from Api.m5_storage import prepare_assessment_situation, resolve_cycle_base_role
@@ -69,6 +69,7 @@ def prepare_next(connection_factory, *, cycle_id: str, assessment_situation_id: 
             synthetic=True, profile_checksum=profile["checksum"], case_version_checksum=case["content_checksum"],
             selected_base_role=resolve_cycle_base_role(connection, cycle, profile["content_json"]),
             as_package=resolve_cycle_dependency(cycle, "m5_functional_as"),
+            review_response_package=resolve_review_response(cycle),
             m2_path=resolve_cycle_dependency(cycle, "m2_methodology") / "methodology.json",
             m3_path=resolve_cycle_dependency(cycle, "m3_role_profiles") / "base_roles.json",
             runtime_rule_ref=resolve_preparation_binding(connection, case),

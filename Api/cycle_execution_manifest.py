@@ -21,6 +21,8 @@ M5_BATTERY_PILOT_REVIEW_PACKAGES = {
     "7.0.0": "assessment_definitions/prompts/m5_functional_passport/v7",
 }
 M5_BATTERY_REVIEW_PACKAGE = "assessment_definitions/prompts/m5_functional_passport/v4"
+M5_REVIEW_RESPONSE_PACKAGE = "assessment_definitions/prompts/m5_review_response/v1"
+M5_REVIEW_RESPONSE_DEPENDENCY = "m5_review_response"
 PROJECT_ROLE_PROMPT = "assessment_definitions/prompts/m5_educational_role_interactions/v1/prompt.md"
 BATTERY_CASE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization/0.7"
 BATTERY_RULE_PACKAGE = "assessment_definitions/cases/competencies_4k/functional-personalization-runtime/1.5.0"
@@ -176,6 +178,8 @@ def build_manifest(
             else:
                 review_path = review_v04 if v04 else M5_BATTERY_REVIEW_PACKAGE
             dependencies.update(m5_battery_scenario=scenario_path, m5_functional_as=review_path)
+            if review_path == review_v04:
+                dependencies[M5_REVIEW_RESPONSE_DEPENDENCY] = M5_REVIEW_RESPONSE_PACKAGE
     if project_role is not None:
         dependencies = {**dependencies, "m5_educational_role_interactions": PROJECT_ROLE_PROMPT}
     snapshot = deepcopy(_dependency_snapshot(root, tuple(sorted(dependencies.items()))))
@@ -195,6 +199,13 @@ def build_manifest(
         },
     }
     return manifest, checksum(manifest)
+
+
+def resolve_review_response(cycle: Mapping[str, Any]) -> Path | None:
+    manifest = cycle.get("execution_manifest_json") or {}
+    if M5_REVIEW_RESPONSE_DEPENDENCY not in manifest.get("dependencies", {}):
+        return None
+    return resolve_cycle_dependency(cycle, M5_REVIEW_RESPONSE_DEPENDENCY)
 
 
 def validate_manifest(manifest: Mapping[str, Any], expected_checksum: str) -> None:

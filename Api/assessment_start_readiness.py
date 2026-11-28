@@ -108,6 +108,7 @@ def functional_gate(trace: dict, *, operation_id: str | None = None,
         _require(protocol == plan["protocol"], "REVIEW_PROTOCOL_MISMATCH")
         _require(tester.get("review_source") == {
             "source_ref": plan["case_ref"], "protocol": plan["protocol"], "review_package": package,
+            **({"response_contract": refs["review_response"]} if "review_response" in refs else {}),
             "scenario_source": refs["battery_scenario"], "m2_source": refs["m2"],
             "candidate_checksum": trace["candidate_checksum"],
             "assessment_situation_id": candidate["AssessmentSituationID"], "as_version": candidate["Version"],
