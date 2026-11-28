@@ -21,6 +21,7 @@ from Api.org_access import LOCAL_SUPERADMIN_EMAIL
 from Api.schema_bootstrap import bootstrap_base
 from scripts.plan_specialist_program_release import PACKAGE_DIR, build_admitted_materials
 from scripts.release_specialist_pilot import RELEASE_DIR, ROOT, load_release, release, release_configuration
+from tests.unit.test_m5_review_clarification import CLARITY, ClarifyingGateway
 
 
 @pytest.fixture
@@ -159,7 +160,7 @@ def pin_original_evidence_mechanism(monkeypatch):
 
 
 @pytest.fixture
-def opened_specialist_pilot(release_db, monkeypatch):
+def opened_specialist_pilot(release_db, monkeypatch, request):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
@@ -192,7 +193,7 @@ def opened_specialist_pilot(release_db, monkeypatch):
     monkeypatch.setattr(sessions, "get_connection", release_db)
     monkeypatch.setattr(auth_service, "get_connection", release_db)
     auth_service.auth_service.ensure_schema()
-    gateway = V04Gateway()
+    gateway = getattr(request, "param", V04Gateway)()
     monkeypatch.setattr(deepseek_gateway, "DeepSeekGateway", lambda **_: gateway)
     sessions.web_session_service.ensure_schema()
     app = FastAPI()
@@ -297,3 +298,69 @@ def test_synthetic_assignment_opens_the_prepared_v7_card_and_keeps_start_time(re
         assert connection.execute("""SELECT count(*) AS n FROM m5_cycle_time_intervals
             WHERE cycle_db_id=%s AND interval_type='collecting'""", (pilot.cycle_db_id,)).fetchone()["n"] == 1
     assert {call[0].split(":")[1] for call in pilot.gateway.calls} == {"generation", "tester", "challenger"}
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("opened_specialist_pilot", [ClarifyingGateway], indirect=True)
+def test_first_and_next_on_published_program_replay_targeted_clarification(release_db, opened_specialist_pilot, monkeypatch):
+    from Api import assessment_start_readiness
+    from tests.integration.test_m5_battery_scenario_db import submit
+    from tests.integration.test_m10_product_path_db import _resolve_interim_for_finish
+
+    pilot = opened_specialist_pilot
+    as_id = pilot.first["assessment_situation_id"]
+    runtime_path = f"/users/assessment/cycles/{pilot.cycle_id}/runtime"
+    next_path = f"/users/assessment/m7/cycles/{pilot.cycle_id}"
+
+    def verify_saved(situation_id, operation_id, expected_case):
+        with release_db() as connection:
+            cycle = read_cycle(connection, pilot.cycle_id)
+            assert cycle_execution_manifest.resolve_review_response(cycle) == (
+                ROOT / cycle_execution_manifest.M5_REVIEW_RESPONSE_PACKAGE
+            )
+            saved = connection.execute(
+                """SELECT execution_payload_json #>'{ai_operations,functional_personalization}' AS trace
+                   FROM m5_assessment_situations WHERE assessment_situation_id=%s AND cycle_db_id=%s""",
+                (situation_id, pilot.cycle_db_id),
+            ).fetchone()["trace"]
+        assert saved["source_snapshot"]["case_version"]["case_id"] == expected_case
+        assert saved["source_snapshot"]["refs"]["protocol_package"]["version"] == "7.0.0"
+        assert saved["source_snapshot"]["refs"]["review_response"]["version"] == "1.0.0"
+        batch = saved["tester"]["provider_operation"]["batches"][0]
+        assert batch["clarification"]["accepted_check_ids"] == [CLARITY]
+        assert saved["repair"] is None
+        for _ in range(2):
+            assessment_start_readiness.functional_gate(
+                saved, operation_id=operation_id, cycle=cycle, case_version=saved["source_snapshot"]["case_version"],
+            )
+
+    verify_saved(as_id, "v7-start-preparation", "CASE.SPEC.02")
+    submit(release_db, as_id, "Сопоставляю подтверждённые сроки и сообщаю предел проверки.", {}, control="FINAL")
+    with release_db() as connection:
+        _resolve_interim_for_finish(connection, release_db, as_id, user_id=pilot.participant_id)
+    closed = pilot.client.post(next_path + "/finish-situation", json={"idempotency_key": "task10-finish-first"})
+    assert closed.status_code == 200, closed.text
+    next_id = "next:" + as_id
+    queued = pilot.client.post(next_path + "/next", json={"idempotency_key": next_id, "after_assessment_situation_id": as_id})
+    assert queued.status_code == 201, queued.text
+    job = pilot.worker._claim()
+    assert job["operation_id"] == next_id
+    gate_calls = []
+    replay = assessment_start_readiness.functional_gate
+
+    def record_gate(trace, **kwargs):
+        replay(trace, **kwargs)
+        gate_calls.append(kwargs["operation_id"])
+
+    monkeypatch.setattr(assessment_start_readiness, "functional_gate", record_gate)
+    pilot.worker._process(job)
+    assert gate_calls == [next_id]
+    operation = pilot.client.get(f"/users/assessment/cycles/preparation/{next_id}")
+    assert operation.json()["status"] == "completed", operation.text
+    ready = pilot.client.get(runtime_path).json()["next_presentation"]
+    next_as = ready["assessment_situation_id"]
+    assert next_as != as_id
+    verify_saved(next_as, next_id, "CASE.SPEC.03")
+    presented = pilot.client.post(next_path + "/present-next", json=ready)
+    assert presented.status_code == 201, presented.text
+    assert presented.json()["runtime"]["current_situation"]["assessment_situation_id"] == next_as

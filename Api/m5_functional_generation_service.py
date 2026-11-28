@@ -15,6 +15,8 @@ from time import perf_counter
 from typing import Any
 
 from Api import m5_passport_generation as passport_generation
+from Api import m5_review_clarification as review_clarification
+from Api.llm.contracts import LlmGatewayError
 from Api.m5_addressed_contract import validate_scenario_contract
 from Api.m5_passport import allowed_profile, missing
 from Api.m5_functional_personalization import extract_candidate_as
@@ -172,6 +174,7 @@ def build_historical_input_snapshot(*, case_id: str, profile: dict[str, Any], op
 def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: str, synthetic: bool = False,
                             profile_checksum: str | None = None, case_version_checksum: str | None = None,
                             as_package: Path = passport_generation.CURRENT_AS_PACKAGE,
+                            review_response_package: Path | None = None,
                             m2_path: Path = passport_generation.M2, m3_path: Path = passport_generation.M3,
                             provider_contract: dict[str, Any] | None = None,
                             profile_sources: dict | None = None,
@@ -183,6 +186,10 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     from Api import m5_battery_contract
 
     contract, contract_ref, refs = passport_generation.read_as_package(as_package)
+    if review_response_package is not None:
+        if refs["protocol_package"]["version"] != "7.0.0":
+            raise ValueError("M5_REVIEW_RESPONSE_CONTRACT_PROTOCOL_MISMATCH")
+        refs["review_response"] = review_clarification.load_response_contract(review_response_package)
     case_contract_ref = contract.pop("case_as_contract_ref", contract_ref)
     event_material_rules = contract.pop("event_material_rules", None)
     actual = runtime_checksum(case_version)
@@ -591,14 +598,16 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
                       initial_fingerprint: tuple[str, int] | None = None,
                       record_response: bool = False, allow_invalid_repair: bool = False,
                       review_context: dict[str, Any] | None = None,
+                      budget: dict[str, Any] | None = None, clarification: bool = False,
                       ) -> tuple[Any, Any, list[dict[str, Any]]]:
-    """Retry one malformed provider envelope; never salvage or merge partial JSON."""
+    """Retry one malformed envelope, or use the remaining attempt for a scoped clarification."""
     failures: list[dict[str, Any]] = []
     current = list(messages)
-    budget = ({"operation_budget": gateway.operation_budget(operation_id)}
-              if hasattr(gateway, "operation_budget") else {})
-    for attempt in (1, 2):
-        routing_key = operation_id if attempt == 1 else f"{operation_id}:json-retry"
+    if budget is None:
+        budget = _operation_budget(gateway, operation_id)
+    suffix = review_clarification.CLARIFICATION_SUFFIX if clarification else ":json-retry"
+    for attempt in ((2,) if clarification else (1, 2)):
+        routing_key = operation_id if attempt == 1 else operation_id + suffix
         fingerprint = (initial_fingerprint if attempt == 1 and initial_fingerprint is not None
                        else _message_fingerprint(current))
         input_checksum, messages_size = fingerprint
@@ -656,6 +665,11 @@ def _strict_json_call(gateway: Any, messages: list[dict[str, str]], *, operation
     raise AssertionError("unreachable")
 
 
+def _operation_budget(gateway: Any, operation_id: str) -> dict:
+    return ({"operation_budget": gateway.operation_budget(operation_id)}
+            if hasattr(gateway, "operation_budget") else {})
+
+
 def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
                         expected_candidate_checksum: str | None = None, *, reviewer: str = "Tester") -> list[dict[str, Any]]:
     """Only check IDs requested in this batch may satisfy it."""
@@ -673,6 +687,63 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
     return [item for item in checks if isinstance(item, dict)
             and isinstance(item.get("check_id"), str) and item["check_id"] in ids] \
         if isinstance(checks, list) else []
+
+
+def _review_batch(gateway: Any, messages: list[dict], *, plan: dict, review_basis: dict,
+                  snapshot: dict, reviewer: str, batch_no: int, context: dict | None,
+                  review_ref: dict, candidate_checksum: str | None, echo_checksum: bool,
+                  instruction: str | None) -> tuple[list[dict], dict]:
+    definitions = plan["required_checks"]
+    fingerprint = _message_fingerprint(messages)
+    operation_id = f"{snapshot['operation_id']}:{reviewer}:{batch_no:02d}:{fingerprint[0][:12]}"
+    budget = _operation_budget(gateway, operation_id)
+    retry_instruction = _frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8")
+    calls = []
+    raw, response, parse_failures = _strict_json_call(
+        gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
+        retry_instruction=retry_instruction, review_checks=definitions, candidate_checksum=candidate_checksum,
+        calls=calls, initial_fingerprint=fingerprint, record_response=bool(review_ref),
+        review_context=context, budget=budget,
+    )
+    checks = _bound_batch_checks(
+        raw, definitions, candidate_checksum if echo_checksum else None, reviewer=reviewer.capitalize(),
+    )
+    batch = {
+        **_trace(response, operation_id=operation_id, input_checksum=fingerprint[0],
+                 kind="independent_tester_v2_batch" if reviewer == "tester" else "independent_tester_v2_challenger_batch"),
+        "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in definitions],
+        "parse_failures": parse_failures, "calls": calls,
+        **({**review_ref, "reviewer": reviewer} if review_ref else {}),
+    }
+    if instruction is None or len(calls) != 1 or calls[0]["review_binding_matches"] is not True:
+        return checks, batch
+    scoped_messages, scope = review_clarification.clarification_messages(
+        plan, checks, call=calls[0], initial_messages=messages, review_basis=review_basis, instruction=instruction,
+    )
+    if not scope:
+        return checks, batch
+    scoped_context = {**context, "check_ids": [item["check_id"] for item in scope]}
+    started = perf_counter()
+    try:
+        corrected, correction_response, failures = _strict_json_call(
+            gateway, scoped_messages, operation_id=operation_id, max_tokens=16384, temperature=0,
+            retry_instruction=retry_instruction, review_checks=scope, calls=calls, record_response=True,
+            review_context=scoped_context, budget=budget, clarification=True,
+        )
+    except (LlmGatewayError, ValueError) as exc:
+        if isinstance(exc, ValueError) and str(exc) not in {"OPERATION_DEADLINE_EXCEEDED", "OPERATION_ATTEMPT_LIMIT"}:
+            raise
+        batch["clarification"] = {
+            "sent": getattr(exc, "sent", {}), "accepted_check_ids": [], "error": "REVIEW_CLARIFICATION_UNAVAILABLE",
+            "elapsed_ms": round((perf_counter() - started) * 1000, 3),
+        }
+        return checks, batch
+    checks, accepted = review_clarification.apply_clarification(
+        checks, corrected, scoped_messages, plan, scope, review_basis=review_basis, reviewer=reviewer,
+    )
+    batch["parse_failures"].extend(failures)
+    batch["clarification"] = {"sent": correction_response.sent, "accepted_check_ids": accepted}
+    return checks, batch
 
 
 def _generation_instructions(snapshot: dict) -> tuple[str, str]:
@@ -795,6 +866,10 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         "missing_required_paths": generation["deterministic_validation"].get("missing_required_paths", ()),
     }
     protocol_ref = (snapshot.get("refs") or {}).get("protocol_package") or {}
+    response_contract = (snapshot.get("refs") or {}).get("review_response")
+    instruction = None
+    if response_contract is not None:
+        instruction = _frozen_file({"refs": response_contract}, "instruction").read_text(encoding="utf-8")
     passport_basis = passport_generation.provider_basis(snapshot) if "as_contract" in snapshot else None
     candidate_binding = passport_basis is not None or protocol_ref.get("version") == "2.0.0"
     candidate_checksum = checksum(concrete_candidate) if candidate_binding else None
@@ -843,6 +918,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
         review_ref = {
             "source_ref": plan["case_ref"], "protocol": plan["protocol"],
             "review_package": snapshot["refs"]["protocol_package"],
+            **({"response_contract": response_contract} if response_contract is not None else {}),
             "scenario_source": snapshot["refs"]["battery_scenario"], "m2_source": snapshot["refs"]["m2"],
             "candidate_checksum": candidate_checksum,
             "assessment_situation_id": concrete_candidate.get("AssessmentSituationID") if isinstance(concrete_candidate, dict) else None,
@@ -863,6 +939,8 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             requirement_ref="exact check_id", expected="known requirement, if available",
             actual="observed value, if available",
         )
+    if instruction is not None:
+        payload_base["required_output"] = review_clarification.response_forms(payload_base["required_output"])
     if server_bound and generation["deterministic_validation"]["status"] != "PASS":
         return {
             "protocol": plan["protocol"], "checks": [], "review_skipped": "INVALID_CANDIDATE_STRUCTURE",
@@ -883,6 +961,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
 
     adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
+    response_instructions = [{"role": "system", "content": instruction}] if instruction is not None else []
     tester_operations = []
     tester_raw_checks = []
     required_checks = reviewer_checks(plan, "tester")
@@ -900,26 +979,15 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
                     {"role": "system", "content": _frozen_file(snapshot, "protocol_tester_addendum").read_text(encoding="utf-8")},
                     *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
                       if adaptation_contract else []),
+                    *response_instructions,
                     _review_message(payload, batch_checks, passport=passport_basis is not None)]
-        fingerprint = _message_fingerprint(messages)
-        input_checksum = fingerprint[0]
-        operation_id = f"{snapshot['operation_id']}:tester:{batch_no:02d}:{input_checksum[:12]}"
-        calls = []
-        raw, response, parse_failures = _strict_json_call(
-            gateway, messages, operation_id=operation_id, max_tokens=16384, temperature=0,
-            retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-            review_checks=batch_checks, candidate_checksum=candidate_checksum,
-            calls=calls, initial_fingerprint=fingerprint, record_response=battery_review,
-            review_context=context,
+        rows, batch = _review_batch(
+            gateway, messages, plan=batch_plan, review_basis=review_basis, snapshot=snapshot,
+            reviewer="tester", batch_no=batch_no, context=context, review_ref=review_ref,
+            candidate_checksum=candidate_checksum, echo_checksum=echo_checksum, instruction=instruction,
         )
-        tester_raw_checks.extend(_bound_batch_checks(raw, batch_checks, candidate_checksum if echo_checksum else None))
-        tester_operations.append({
-            **_trace(response, operation_id=operation_id, kind="independent_tester_v2_batch",
-                     input_checksum=input_checksum),
-            "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
-            "parse_failures": parse_failures, "calls": calls,
-            **({**review_ref, "reviewer": "tester"} if battery_review else {}),
-        })
+        tester_raw_checks.extend(rows)
+        tester_operations.append(batch)
     checks = [{**item, "reviewer": "tester", "candidate_checksum": generation["candidate_checksum"]}
               for item in normalize_results(plan, tester_raw_checks, **review_basis)]
     challenge_definitions = reviewer_checks(plan, "challenger")
@@ -978,30 +1046,17 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
               if battery_review else []),
             *([{"role": "system", "content": "Контракт двух слоёв IndicatorTarget:\n" + adaptation_contract}]
               if adaptation_contract else []),
+            *response_instructions,
             _review_message(batch_payload, batch_checks, passport=passport_basis is not None),
         ]
-        fingerprint = _message_fingerprint(challenge_messages)
-        challenge_checksum = fingerprint[0]
-        challenge_operation_id = f"{snapshot['operation_id']}:challenger:{batch_no:02d}:{challenge_checksum[:12]}"
-        calls = []
-        challenge_raw, challenge_response, challenge_failures = _strict_json_call(
-            gateway, challenge_messages, operation_id=challenge_operation_id, max_tokens=16384, temperature=0,
-            retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-            review_checks=batch_checks, candidate_checksum=candidate_checksum,
-            calls=calls, initial_fingerprint=fingerprint, record_response=battery_review,
-            review_context=context,
+        rows, batch = _review_batch(
+            gateway, challenge_messages, plan={**plan, "required_checks": batch_checks, "not_applicable_checks": []},
+            review_basis=review_basis, snapshot=snapshot, reviewer="challenger", batch_no=batch_no,
+            context=context, review_ref=review_ref, candidate_checksum=candidate_checksum,
+            echo_checksum=echo_checksum, instruction=instruction,
         )
-        challenger_raw_checks.extend(_bound_batch_checks(
-            challenge_raw, batch_checks, candidate_checksum if echo_checksum else None, reviewer="Challenger",
-        ))
-        challenger_operations.append({
-            **_trace(challenge_response, operation_id=challenge_operation_id,
-                     kind="independent_tester_v2_challenger_batch",
-                     input_checksum=challenge_checksum),
-            "batch_no": batch_no, "required_check_ids": [item["check_id"] for item in batch_checks],
-            "parse_failures": challenge_failures, "calls": calls,
-            **({**review_ref, "reviewer": "challenger"} if battery_review else {}),
-        })
+        challenger_raw_checks.extend(rows)
+        challenger_operations.append(batch)
     challenge_plan = {**plan, "required_checks": challenge_definitions, "not_applicable_checks": []}
     challenge_checks = [{**item, "reviewer": "challenger", "candidate_checksum": generation["candidate_checksum"]}
                         for item in normalize_results(challenge_plan, challenger_raw_checks, reviewer="challenger", **review_basis)]
@@ -1218,28 +1273,47 @@ def review_dispatches_match(tester: dict, *, candidate_sha256: str, review_round
             return False
         for batch in batches:
             calls = batch.get("calls") or []
-            if not calls:
+            if len(calls) not in {1, 2}:
                 return False
-            call = calls[-1]
-            dispatch = call.get("review_dispatch") or {}
+            dispatch = {
+                "operation_id": operation_id or batch["operation_id"].split(":" + reviewer + ":", 1)[0],
+                "reviewer": reviewer, "round": review_round, "batch_no": batch["batch_no"],
+                "candidate_sha256": candidate_sha256, "package": package,
+            }
+            check_ids = batch["required_check_ids"]
             request_id = batch["operation_id"]
-            attempt = len(calls)
-            if attempt == 2:
-                request_id += ":json-retry"
+            clarification = batch.get("clarification")
             sent = batch.get("sent", {}).get("messages")
-            response = call.get("response_content")
-            if (attempt not in {1, 2} or not isinstance(sent, list) or not isinstance(response, str)
-                    or call.get("review_binding_matches") is not True
-                    or call.get("response_sha256") != checksum(response.encode("utf-8"))
-                    or _message_fingerprint(sent)[0] != call["input_checksum"]
-                    or dispatch != {
-                        "operation_id": operation_id or batch["operation_id"].split(":" + reviewer + ":", 1)[0],
-                        "reviewer": reviewer, "round": review_round, "batch_no": batch["batch_no"],
-                        "candidate_sha256": candidate_sha256, "package": package, "check_ids": batch["required_check_ids"],
-                        "request_id": request_id, "attempt": attempt, "request_sha256": call["input_checksum"],
-                    }):
+            if clarification is not None:
+                if (len(calls) != 2 or not tester["review_source"].get("response_contract")
+                        or batch["input_checksum"] != calls[0].get("input_checksum")
+                        or not _review_call_matches(calls[0], sent, dispatch, check_ids, request_id, 1)):
+                    return False
+                scoped_ids = (calls[1].get("review_dispatch") or {}).get("check_ids")
+                if (not isinstance(scoped_ids, list) or not scoped_ids
+                        or scoped_ids != [key for key in check_ids if key in scoped_ids]
+                        or not _review_call_matches(
+                            calls[1], clarification.get("sent", {}).get("messages"), dispatch, scoped_ids,
+                            request_id + review_clarification.CLARIFICATION_SUFFIX, 2,
+                        )):
+                    return False
+            elif not _review_call_matches(calls[-1], sent, dispatch, check_ids,
+                                          request_id + (":json-retry" if len(calls) == 2 else ""), len(calls)):
                 return False
     return True
+
+
+def _review_call_matches(call: dict, sent: list | None, dispatch: dict, check_ids: list[str],
+                         request_id: str, attempt: int) -> bool:
+    response = call.get("response_content")
+    return (isinstance(sent, list) and isinstance(response, str)
+            and call.get("review_binding_matches") is True
+            and call.get("response_sha256") == checksum(response.encode("utf-8"))
+            and _message_fingerprint(sent)[0] == call.get("input_checksum")
+            and call.get("review_dispatch") == {
+                **dispatch, "check_ids": check_ids, "request_id": request_id,
+                "attempt": attempt, "request_sha256": call["input_checksum"],
+            })
 
 
 def archived_diagnostic_review_matches(refs: dict, protocol: dict) -> bool:
@@ -1257,8 +1331,8 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
     """Rebuild applicability for pre-existing traces using only pinned server inputs."""
     from Api import m5_battery_contract, m5_battery_review
     from Api.cycle_execution_manifest import (
-        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, battery_pilot_review_path,
-        battery_scenario_path, resolve_cycle_dependency,
+        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE, battery_pilot_review_path,
+        battery_scenario_path, resolve_cycle_dependency, resolve_review_response,
     )
 
     refs = source["refs"]
@@ -1274,10 +1348,12 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
         )
         m2_path = passport_generation.M2
         pilot = projected["version"].endswith(m5_battery_contract.PILOT_CASE_SUFFIX)
+        response_path = ROOT / M5_REVIEW_RESPONSE_PACKAGE if "review_response" in refs else None
     else:
         as_path = resolve_cycle_dependency(cycle, "m5_functional_as")
         scenario_path = resolve_cycle_dependency(cycle, "m5_battery_scenario")
         m2_path = resolve_cycle_dependency(cycle, "m2_methodology") / "methodology.json"
+        response_path = resolve_review_response(cycle)
         pilot = cycle["catalog_ref_json"].get("battery_pilot") is True
         if case_version != projected or runtime_checksum(case_version) != refs["case"]["case_version_checksum"]:
             raise ValueError("PILOT_PLAN_REVIEW_CASE_MISMATCH")
@@ -1293,10 +1369,16 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
     m2, m2_ref = passport_generation.load_m2(m2_path, passport_generation.SOURCE_MANIFEST)
     if scenario["ref"] != refs["battery_scenario"] or m2_ref != refs["m2"]:
         raise ValueError("PILOT_PLAN_REVIEW_SOURCE_MISMATCH")
-    return m5_battery_review.build_plan(
+    response_contract = review_clarification.load_response_contract(response_path) if response_path else None
+    if refs.get("review_response") != response_contract or (response_contract and package["version"] != "7.0.0"):
+        raise ValueError("PILOT_PLAN_REVIEW_RESPONSE_CONTRACT_MISMATCH")
+    plan = m5_battery_review.build_plan(
         {**source, "battery_scenario": scenario, "battery_pilot": pilot},
         protocol, as_path / "case-content-contract.json", m2,
     )
+    if response_contract:
+        plan["review_instruction"] = _frozen_file({"refs": response_contract}, "instruction").read_text(encoding="utf-8")
+    return plan
 
 
 def bound_review_results_match(plan: dict, definitions: list[dict], records: list[dict],
@@ -1307,6 +1389,7 @@ def bound_review_results_match(plan: dict, definitions: list[dict], records: lis
     record_by_id = {item["check_id"]: item for item in records}
     if len(records) != len(by_id) or record_by_id.keys() != by_id.keys():
         return False
+    review_basis = {"candidate_as": candidate, "missing_required_paths": deterministic.get("missing_required_paths", ())}
     raw_checks = []
     for batch in batches:
         for check_id in batch["required_check_ids"]:
@@ -1320,14 +1403,41 @@ def bound_review_results_match(plan: dict, definitions: list[dict], records: lis
                     }.items())):
                 return False
         if plan["protocol"]["version"] in SERVER_BOUND_REVIEW_PACKAGES:
-            raw = json.loads(batch["calls"][-1]["response_content"])
-            raw_checks.extend(_bound_batch_checks(raw, [by_id[key] for key in batch["required_check_ids"]]))
+            batch_definitions = [by_id[key] for key in batch["required_check_ids"]]
+            calls = batch["calls"]
+            clarification = batch.get("clarification")
+            try:
+                instruction = plan.get("review_instruction")
+                initial_messages = batch["sent"]["messages"]
+                if instruction is not None and {"role": "system", "content": instruction} not in initial_messages:
+                    return False
+                raw = json.loads(calls[0 if clarification else -1]["response_content"])
+                rows = _bound_batch_checks(raw, batch_definitions)
+                if clarification:
+                    batch_plan = {**plan, "required_checks": batch_definitions, "not_applicable_checks": []}
+                    messages, scope = review_clarification.clarification_messages(
+                        batch_plan, rows, call=calls[0], initial_messages=initial_messages,
+                        review_basis=review_basis, instruction=plan["review_instruction"],
+                    )
+                    scope_ids = [item["check_id"] for item in scope]
+                    if (not scope_ids or scope_ids != calls[1]["review_dispatch"]["check_ids"]
+                            or messages != clarification["sent"]["messages"]):
+                        return False
+                    rows, accepted = review_clarification.apply_clarification(
+                        rows, json.loads(calls[1]["response_content"]), messages, batch_plan, scope,
+                        review_basis=review_basis, reviewer=reviewer,
+                    )
+                    if accepted != scope_ids or accepted != clarification.get("accepted_check_ids"):
+                        return False
+            except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+                return False
+            raw_checks.extend(rows)
 
     if plan["protocol"]["version"] not in SERVER_BOUND_REVIEW_PACKAGES:
         return True
     normalized = normalize_results(
         {**plan, "required_checks": definitions, "not_applicable_checks": []}, raw_checks,
-        candidate_as=candidate, missing_required_paths=deterministic.get("missing_required_paths", ()), reviewer=reviewer,
+        **review_basis, reviewer=reviewer,
     )
     receipt_fields = {"reviewer", "candidate_checksum", "as_version", "review_package", "operation_id", "batch_no"}
     return all(item == {key: value for key, value in record_by_id[item["check_id"]].items() if key not in receipt_fields}

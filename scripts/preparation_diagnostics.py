@@ -27,6 +27,9 @@ def _review_receipts(tested):
         result[reviewer] = [
             {**_provider_receipt(batch), 'batch_no': batch['batch_no'],
              'required_check_ids': batch['required_check_ids'],
+             **({'clarification': {key: batch['clarification'][key] for key in
+                 ('accepted_check_ids', 'error', 'elapsed_ms') if key in batch['clarification']}}
+                if batch.get('clarification') else {}),
              'protocol_errors': [
                  {**error, 'check_id': check_id, 'reviewer': reviewer, 'batch_no': batch['batch_no']}
                  for check_id in batch['required_check_ids']
@@ -60,7 +63,7 @@ def _functional_preparation(connection, operation, failure):
         'operation_id': operation_id,
         'candidate_checksum': prepared['candidate_checksum'],
         'input_snapshot_checksum': prepared.get('input_snapshot_checksum'),
-        'package': refs.get('protocol_package'),
+        'package': refs.get('protocol_package') or (tested.get('review_source') or {}).get('review_package'),
         'tester_protocol': tested['protocol'],
         'admission_status': tested['aggregation']['status'],
         'admitted_for_participant': prepared['admitted_for_participant'],

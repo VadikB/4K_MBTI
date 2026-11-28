@@ -180,12 +180,12 @@ class AssessmentGateway:
             for x in value["material"]["indicator_targets"]]})
 
 
-def _resolve_interim_for_finish(connection, factory, as_id):
+def _resolve_interim_for_finish(connection, factory, as_id, *, user_id=99):
     """Inter-case tests now require the same actual M6/M7 authorization as HTTP."""
     from Api import m7_clarification, m6_assessment_repository
     from Api.m5_scenario_runtime import build_c45
     interim=build_c45(connection,as_id,mode='interim')
-    evidence=m10_orchestration.enqueue_handoff(connection,handoff_id=str(interim['handoff_id']),created_by=99)
+    evidence=m10_orchestration.enqueue_handoff(connection,handoff_id=str(interim['handoff_id']),created_by=user_id)
     connection.commit()
     run_evidence(evidence['id'],connection_factory=factory,gateway=EvidenceGateway())
     m10_orchestration._queue_assessment(connection)
@@ -202,7 +202,7 @@ def _resolve_interim_for_finish(connection, factory, as_id):
     assert saved['status']=='succeeded'
     connection.commit()
     decision=m7_clarification.decide_detached(c54_revision_id=str(saved['c54_revision_id']),
-        key='inter-case-resolution:'+str(interim['handoff_id']),created_by=99,connection_factory=factory)
+        key='inter-case-resolution:'+str(interim['handoff_id']),created_by=user_id,connection_factory=factory)
     assert decision['status']=='NO_QUESTION'
 
 

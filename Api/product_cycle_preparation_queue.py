@@ -517,7 +517,7 @@ class ProductCyclePreparationQueue:
         from Api.m5_passport_generation import AS_PACKAGE
         from Api.m5_runtime_rules import resolve_preparation_binding
         from Api.m5_storage import resolve_cycle_base_role
-        from Api.cycle_execution_manifest import resolve_cycle_dependency
+        from Api.cycle_execution_manifest import resolve_cycle_dependency, resolve_review_response
 
         failure_result = None
         try:
@@ -638,6 +638,7 @@ class ProductCyclePreparationQueue:
                         "organization_context", "role_profile", "user_context",
                     )},
                     selected_base_role=selected_base_role, as_package=as_package,
+                    review_response_package=resolve_review_response(frozen_cycle),
                     m2_path=m2_path, m3_path=m3_path, runtime_rule_ref=runtime_rule_ref,
                     package_ref=generation_package_ref,
                     provider_contract=load_provider_contract(provider_path),
@@ -669,6 +670,11 @@ class ProductCyclePreparationQueue:
                     raise ValueError(failure_code + ":" + outcome)
                 saving_started = perf_counter()
                 trace = m5_functional_generation_service.build_persistence_trace(snapshot, generated)
+                if "review_response" in snapshot["refs"]:
+                    from Api.assessment_start_readiness import functional_gate
+
+                    functional_gate(trace, operation_id=str(job["operation_id"]), cycle=frozen_cycle,
+                                    case_version=frozen_case)
                 with get_connection() as connection:
                     self._assert_current_attempt(connection, job, lock=True)
                     self._guard_request(connection, request, user_id=int(job["user_id"]), created_at=job.get("created_at"))
