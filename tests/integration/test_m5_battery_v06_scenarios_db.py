@@ -222,14 +222,14 @@ def test_v06_spec02_rejects_the_wrong_derived_average_when_reviewers_find_it(pro
     assert saved["status"] == "preparation_rejected"
     prepared = saved["preparation_trace"]
     assert prepared["tester"]["aggregation"]["status"] == "FAIL"
-    assert prepared["repair"]["outcome"] == "UNCHANGED_CANDIDATE"
+    assert prepared["repair"]["outcome"] == "FAIL"
     for reviewer in ("tester", "challenger"):
         row = next(item for item in prepared["tester"]["independent_checks"][reviewer] if item["check_id"] == M05_CHECK)
         assert row["status"] == "FAIL" and row["findings"][0]["code"] == "NUMERIC_BASIS_CONTRADICTION"
     definitions = [item for _, _, payload in gateway.calls
                    for item in ((payload.get("applicability_plan") or {}).get("required_checks")
                                 or payload.get("protected_checks", ())) if item["check_id"] == M05_CHECK]
-    assert len(definitions) == 2
+    assert len(definitions) == 4
     assert all("500 / 5 = 100" in item["requirement"]["case_content"] for item in definitions)
     with product_db() as connection:
         assert connection.execute("SELECT 1 FROM m5_assessment_situations WHERE assessment_situation_id=%s", (as_id,)).fetchone() is None
