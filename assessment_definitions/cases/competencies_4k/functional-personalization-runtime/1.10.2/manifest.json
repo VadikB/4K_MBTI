@@ -5,11 +5,11 @@
   "artifacts": [
     {
       "name": "scenario-rules.json",
-      "sha256": "954af2bd66ad6d14d8580400324e3cb9d1086a2f2d2491ab91bf4bfbeb192e70"
+      "sha256": "e7ffb91730cf54656ef8aaad72ad960623e4ddaf14da25deabe98339e77f21d4"
     },
     {
       "name": "case-content-contract.json",
-      "sha256": "892bfb7392a27ca77d9c9165caceda405775b3bb2e9b73e54e5114c9114f27d3"
+      "sha256": "7ddc4917f5d11e74ebac4fcb80e7f4f78b9a1ddcb3e0ccfba33f7ade71465cf8"
     }
   ]
 }
