@@ -14,6 +14,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
+from Api import m5_participant_grounding as participant_grounding
 from Api import m5_passport_generation as passport_generation
 from Api import m5_review_clarification as review_clarification
 from Api.llm.contracts import LlmGatewayError
@@ -175,6 +176,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
                             profile_checksum: str | None = None, case_version_checksum: str | None = None,
                             as_package: Path = passport_generation.CURRENT_AS_PACKAGE,
                             review_response_package: Path | None = None,
+                            participant_grounding_package: Path | None = None,
                             m2_path: Path = passport_generation.M2, m3_path: Path = passport_generation.M3,
                             provider_contract: dict[str, Any] | None = None,
                             profile_sources: dict | None = None,
@@ -212,9 +214,22 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     case = {"CaseID": projected["case_id"], "Version": projected["version"], "Паспорт": projected["passport"]}
     design = (runtime_rule_ref or {}).get("scenario_contract")
     battery_design = None
+    profile_view = allowed_profile(profile, include_confirmed_work=participant_grounding_package is not None)
+    profile_ref = {"sha256": profile_checksum or checksum(profile), "sources": profile_sources or {}}
+    grounding = {}
+    if participant_grounding_package is not None:
+        if not battery or refs["protocol_package"]["version"] != "7.0.0":
+            raise ValueError("M5_PARTICIPANT_GROUNDING_PROTOCOL_MISMATCH")
+        rules, refs["participant_grounding"] = participant_grounding.load_package(participant_grounding_package)
+        grounding = {
+            "participant_grounding": participant_grounding.build(profile_view, case["CaseID"], rules),
+            "participant_grounding_rules": rules,
+        }
     if battery:
         battery_design = m5_battery_contract.load_scenario(projected, battery_scenario_package, pilot=battery_pilot)
-        m5_battery_contract.validate_profile(profile, battery_design)
+        m5_battery_contract.validate_profile(
+            profile, battery_design, has_work_evidence=bool(grounding) and participant_grounding.has_work_evidence(profile_view),
+        )
         contract = m5_battery_contract.candidate_contract(contract)
         refs["battery_scenario"] = battery_design["ref"]
         package_ref = {**(package_ref or {}), "compiler": {"source_schema_profile": "functional-passport-v1.2"}}
@@ -228,7 +243,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
         "case": {"passport": projected["passport_source"], "case_version_checksum": actual},
         "m2": m2_ref, "as_contract": contract_ref,
         "runtime_rule": runtime_rule_ref,
-        "profile": {"sha256": profile_checksum or checksum(profile), "sources": profile_sources or {}},
+        "profile": profile_ref,
     })
     if provider_contract is not None:
         refs["provider_contract"] = {key: provider_contract[key] for key in (
@@ -245,7 +260,7 @@ def build_passport_snapshot(*, case_version: dict, profile: dict, operation_id: 
     snapshot = {
         "schema_version": 2, "operation_id": operation_id, "synthetic": synthetic,
         "created_at": datetime.now(timezone.utc).isoformat(), "case": case, "case_version": projected,
-        "as_contract": contract, "profile": allowed_profile(profile), "refs": refs,
+        "as_contract": contract, "profile": profile_view, "refs": refs, **grounding,
         **({"project_role": {**project_role, "interactions": list(project_role["interactions"])}}
            if project_role is not None else {}),
         **({"scenario_contract": design} if design is not None else {}),
@@ -341,6 +356,10 @@ def deterministic_checks(snapshot: dict[str, Any], candidate: Any) -> dict[str, 
             from Api.m5_battery_contract import validate_candidate
 
             missing_paths = validate_candidate(snapshot, candidate, check, detailed=battery_review)
+            if "participant_grounding" in snapshot:
+                participant_grounding.check_position_label(
+                    candidate, snapshot["profile"], snapshot["participant_grounding"], snapshot["participant_grounding_rules"], check,
+                )
         else:
             missing_paths = passport_generation.validate_candidate(snapshot, candidate, check)
         return {"status": "FAIL" if errors else "PASS", "checks": checks, "errors": errors,
@@ -692,7 +711,7 @@ def _bound_batch_checks(raw: Any, batch_checks: list[dict[str, Any]],
 def _review_batch(gateway: Any, messages: list[dict], *, plan: dict, review_basis: dict,
                   snapshot: dict, reviewer: str, batch_no: int, context: dict | None,
                   review_ref: dict, candidate_checksum: str | None, echo_checksum: bool,
-                  instruction: str | None) -> tuple[list[dict], dict]:
+                  instruction: str | None, grounding_review: str | None) -> tuple[list[dict], dict]:
     definitions = plan["required_checks"]
     fingerprint = _message_fingerprint(messages)
     operation_id = f"{snapshot['operation_id']}:{reviewer}:{batch_no:02d}:{fingerprint[0][:12]}"
@@ -719,6 +738,7 @@ def _review_batch(gateway: Any, messages: list[dict], *, plan: dict, review_basi
         return checks, batch
     scoped_messages, scope = review_clarification.clarification_messages(
         plan, checks, call=calls[0], initial_messages=messages, review_basis=review_basis, instruction=instruction,
+        grounding_review=grounding_review,
     )
     if not scope:
         return checks, batch
@@ -762,6 +782,9 @@ def _generation_instructions(snapshot: dict) -> tuple[str, str]:
         contract = _frozen_file(snapshot, "generation_contract").read_text(encoding="utf-8")
         if "event_material_delivery" in snapshot:
             contract = json.dumps(snapshot["as_contract"], ensure_ascii=False)
+    if grounding_ref := snapshot["refs"].get("participant_grounding"):
+        addendum = _frozen_file({"refs": grounding_ref}, "generation").read_text(encoding="utf-8")
+        instruction = f"{instruction}\n\n{addendum}"
     if "project_role" in snapshot:
         addendum = _frozen_file(snapshot, "project_role_prompt").read_text(encoding="utf-8")
         instruction = f"{instruction}\n\n{addendum}"
@@ -783,6 +806,10 @@ def _assemble_candidate(snapshot: dict, raw: Any) -> dict:
     else:
         candidate, changes = bind_indicator_target_layers(snapshot, proposed), []
         source = "frozen_input_snapshot.author_as_example"
+    if "participant_grounding" in snapshot and isinstance(candidate, dict):
+        candidate = participant_grounding.bind_p00(
+            candidate, snapshot["profile"], snapshot["participant_grounding"], snapshot["participant_grounding_rules"],
+        )
     provider_checksum, candidate_checksum = checksum(proposed), checksum(candidate)
     return {
         "candidate_as": candidate,
@@ -845,7 +872,7 @@ def generate(snapshot: dict[str, Any], gateway: Any) -> dict[str, Any]:
     raw, response, parse_failures = _strict_json_call(
         gateway, messages, operation_id=operation_id, max_tokens=32768, temperature=0.2,
         retry_instruction=_frozen_file(snapshot, "protocol_json_retry").read_text(encoding="utf-8"),
-        calls=calls, initial_fingerprint=fingerprint,
+        calls=calls, initial_fingerprint=fingerprint, record_response="participant_grounding" in snapshot,
     )
     return {**_assemble_candidate(snapshot, raw),
             "provider_operation": {**_trace(response, operation_id=operation_id, kind="generation", input_checksum=input_checksum),
@@ -962,6 +989,10 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
     adaptation_contract = (_frozen_file(snapshot, "indicator_adaptation_contract").read_text(encoding="utf-8")
                            if "indicator_adaptation_contract" in snapshot["refs"] else None)
     response_instructions = [{"role": "system", "content": instruction}] if instruction is not None else []
+    grounding_review = None
+    if grounding_ref := snapshot["refs"].get("participant_grounding"):
+        grounding_review = _frozen_file({"refs": grounding_ref}, "review").read_text(encoding="utf-8")
+        response_instructions.append({"role": "system", "content": grounding_review})
     tester_operations = []
     tester_raw_checks = []
     required_checks = reviewer_checks(plan, "tester")
@@ -985,6 +1016,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, messages, plan=batch_plan, review_basis=review_basis, snapshot=snapshot,
             reviewer="tester", batch_no=batch_no, context=context, review_ref=review_ref,
             candidate_checksum=candidate_checksum, echo_checksum=echo_checksum, instruction=instruction,
+            grounding_review=grounding_review,
         )
         tester_raw_checks.extend(rows)
         tester_operations.append(batch)
@@ -1053,7 +1085,7 @@ def test_candidate(snapshot: dict[str, Any], generation: dict[str, Any], gateway
             gateway, challenge_messages, plan={**plan, "required_checks": batch_checks, "not_applicable_checks": []},
             review_basis=review_basis, snapshot=snapshot, reviewer="challenger", batch_no=batch_no,
             context=context, review_ref=review_ref, candidate_checksum=candidate_checksum,
-            echo_checksum=echo_checksum, instruction=instruction,
+            echo_checksum=echo_checksum, instruction=instruction, grounding_review=grounding_review,
         )
         challenger_raw_checks.extend(rows)
         challenger_operations.append(batch)
@@ -1331,8 +1363,9 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
     """Rebuild applicability for pre-existing traces using only pinned server inputs."""
     from Api import m5_battery_contract, m5_battery_review
     from Api.cycle_execution_manifest import (
-        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE, battery_pilot_review_path,
-        battery_scenario_path, resolve_cycle_dependency, resolve_review_response,
+        BATTERY_V04_SCENARIO_REFS, M5_BATTERY_REVIEW_PACKAGE, M5_PARTICIPANT_GROUNDING_PACKAGE, M5_REVIEW_RESPONSE_PACKAGE,
+        battery_pilot_review_path, battery_scenario_path, resolve_cycle_dependency, resolve_participant_grounding,
+        resolve_review_response,
     )
 
     refs = source["refs"]
@@ -1349,11 +1382,13 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
         m2_path = passport_generation.M2
         pilot = projected["version"].endswith(m5_battery_contract.PILOT_CASE_SUFFIX)
         response_path = ROOT / M5_REVIEW_RESPONSE_PACKAGE if "review_response" in refs else None
+        grounding_path = ROOT / M5_PARTICIPANT_GROUNDING_PACKAGE if "participant_grounding" in refs else None
     else:
         as_path = resolve_cycle_dependency(cycle, "m5_functional_as")
         scenario_path = resolve_cycle_dependency(cycle, "m5_battery_scenario")
         m2_path = resolve_cycle_dependency(cycle, "m2_methodology") / "methodology.json"
         response_path = resolve_review_response(cycle)
+        grounding_path = resolve_participant_grounding(cycle)
         pilot = cycle["catalog_ref_json"].get("battery_pilot") is True
         if case_version != projected or runtime_checksum(case_version) != refs["case"]["case_version_checksum"]:
             raise ValueError("PILOT_PLAN_REVIEW_CASE_MISMATCH")
@@ -1372,12 +1407,26 @@ def frozen_battery_review_plan(source: dict, *, cycle: dict | None = None,
     response_contract = review_clarification.load_response_contract(response_path) if response_path else None
     if refs.get("review_response") != response_contract or (response_contract and package["version"] != "7.0.0"):
         raise ValueError("PILOT_PLAN_REVIEW_RESPONSE_CONTRACT_MISMATCH")
+    grounded_profile = source.get("grounded_profile")
+    basis = source.get("participant_grounding")
+    if grounding_path is not None:
+        rules, grounding_ref = participant_grounding.load_package(grounding_path)
+        if (refs.get("participant_grounding") != grounding_ref or not isinstance(grounded_profile, dict)
+                or not isinstance(basis, dict) or package["version"] != "7.0.0"
+                or (cycle is not None and refs["profile"]["sha256"] != cycle["profile_ref_json"]["checksum"])
+                or participant_grounding.build(grounded_profile, projected["case_id"], rules) != basis):
+            raise ValueError("PILOT_PLAN_PARTICIPANT_GROUNDING_MISMATCH")
+    elif any(value is not None for value in (refs.get("participant_grounding"), grounded_profile, basis)):
+        raise ValueError("PILOT_PLAN_PARTICIPANT_GROUNDING_MISMATCH")
     plan = m5_battery_review.build_plan(
         {**source, "battery_scenario": scenario, "battery_pilot": pilot},
         protocol, as_path / "case-content-contract.json", m2,
     )
     if response_contract:
         plan["review_instruction"] = _frozen_file({"refs": response_contract}, "instruction").read_text(encoding="utf-8")
+    if grounding_path is not None:
+        plan["participant_grounding_review"] = _frozen_file({"refs": grounding_ref}, "review").read_text(encoding="utf-8")
+        plan["participant_grounding_payload"] = {"profile": grounded_profile, "participant_grounding": basis}
     return plan
 
 
@@ -1409,6 +1458,12 @@ def bound_review_results_match(plan: dict, definitions: list[dict], records: lis
             try:
                 instruction = plan.get("review_instruction")
                 initial_messages = batch["sent"]["messages"]
+                grounding_review = plan.get("participant_grounding_review")
+                if grounding_review is not None and (
+                    {"role": "system", "content": grounding_review} not in initial_messages
+                    or not participant_grounding.sent_with_basis(initial_messages, plan["participant_grounding_payload"])
+                ):
+                    return False
                 if instruction is not None and {"role": "system", "content": instruction} not in initial_messages:
                     return False
                 raw = json.loads(calls[0 if clarification else -1]["response_content"])
@@ -1417,7 +1472,7 @@ def bound_review_results_match(plan: dict, definitions: list[dict], records: lis
                     batch_plan = {**plan, "required_checks": batch_definitions, "not_applicable_checks": []}
                     messages, scope = review_clarification.clarification_messages(
                         batch_plan, rows, call=calls[0], initial_messages=initial_messages,
-                        review_basis=review_basis, instruction=plan["review_instruction"],
+                        review_basis=review_basis, instruction=plan["review_instruction"], grounding_review=grounding_review,
                     )
                     scope_ids = [item["check_id"] for item in scope]
                     if (not scope_ids or scope_ids != calls[1]["review_dispatch"]["check_ids"]
@@ -1478,6 +1533,8 @@ def build_persistence_trace(snapshot: dict[str, Any], prepared: dict[str, Any]) 
                if "event_material_delivery" in snapshot else {}),
             "refs": snapshot["refs"],
             "profile_checksum": snapshot["refs"]["profile"]["sha256"],
+            **({"participant_grounding": snapshot["participant_grounding"], "grounded_profile": snapshot["profile"]}
+               if "participant_grounding" in snapshot else {}),
         },
         "accepted_as": candidate,
         "candidate_checksum": prepared["candidate_checksum"],

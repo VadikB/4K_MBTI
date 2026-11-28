@@ -123,13 +123,14 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
                   for key, role in design["roles"].items()},
     }
 
-    def decide(key, condition, *, input_text=text, codes=("MATCH", "NO_MATCH", "UNKNOWN"), true=("MATCH",), shape=None):
+    def decide(key, condition, *, input_text=text, codes=("MATCH", "NO_MATCH", "UNKNOWN"),
+               true=("MATCH",), shape=None, allow_error=False):
         rule = {"rule_id": key, "version": design["ref"]["version"], "type": "semantic_decision",
                 "condition": condition, "allowed_codes": list(codes), "true_codes": list(true), "details_by_code": shape or {}}
         value = evaluate_rule(rule, state=context, data={"public_materials": public_documents},
                               text=input_text, turn_id=turn_id, semantic_adapter=semantic)
         plan.decisions[key] = rule, value
-        if value.outcome == RuleOutcome.ERROR:
+        if value.outcome == RuleOutcome.ERROR and not allow_error:
             raise SemanticTurnError(value.code, plan.decisions)
         return value
 
@@ -260,6 +261,7 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
 
     materials_with_author = {event["delivery_id"]: event["speaker_ids"][0] for event in design["events"] if event["delivery_id"]}
     for speaker, selected_rules in pending_replies.items():
+        grounding = design.get("facilitator_grounding") if speaker == FACILITATOR else None
         known_ids = set(design["roles"].get(speaker, {}).get("known_material_ids", ()))
         known_ids |= {key for key, owner in materials_with_author.items() if key in disclosed and speaker == owner}
         if speaker == FACILITATOR:
@@ -276,6 +278,9 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
         reaction = {"material_id": f"CHARACTER.{speaker}", "reaction_rule": {
             "authority": design["instructions"]["authority"], "rules": rules,
         }}
+        if grounding is not None:
+            basis = {key: grounding[key] for key in ("profile", "participant_grounding")}
+            reaction["reaction_rule"].update(basis, participant_instruction=grounding["response"])
         speaker_context = {"dialogue_history": _private_history(state, speaker, turn_id)}
         sent_links = [plan.link_deliveries[event["id"]] for event, _ in selected_rules
                       if event["id"] in plan.link_deliveries]
@@ -296,6 +301,17 @@ def plan_turn(payload: dict, state: dict, *, text: str, turn_id: str, semantic, 
         restricted += [documents[key]["Текст"] for key in materials_with_author if key not in known_ids or key not in disclosed]
         if any(value.casefold() in reply.content.casefold() for value in restricted):
             continue
+        if grounding is not None:
+            grounding_rule = "FACILITATOR_PARTICIPANT_GROUNDING"
+            verdict = decide(grounding_rule, {
+                **basis, "instruction": grounding["review"],
+            }, input_text=reply.content, shape={"NO_MATCH": {"required": ["text"]}}, allow_error=True)
+            if verdict.outcome != RuleOutcome.TRUE:
+                plan.replies.append(Reply(
+                    speaker, ("assessee",), (grounding_rule,),
+                    CharacterReply("COMPLETED", grounding["fallback"], "scenario_contract"), (),
+                ))
+                continue
         recipients = {"assessee"}
         if any(event["audience"] == "addressed" for event, _ in selected_rules):
             for fragment in plan.fragments:

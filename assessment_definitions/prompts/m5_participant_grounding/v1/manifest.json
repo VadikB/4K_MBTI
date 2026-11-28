@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "m5-participant-grounding",
+  "version": "1.0.0",
+  "status": "draft",
+  "artifacts": [
+    {
+      "name": "rules.json",
+      "sha256": "c8a7a249be0e007764f25ee799e5b487896e79ea5bb997588450dae96e907bfe"
+    },
+    {
+      "name": "generation.md",
+      "sha256": "b6b6c7307bf1ae777afdcfab5e5259f3a287d5239cd187dfb565dfca5d6c9339"
+    },
+    {
+      "name": "review.md",
+      "sha256": "6a19badff766cc5203b77c298ef7a6e1312610d65e7dbb223544add1097a75c2"
+    }
+  ]
+}

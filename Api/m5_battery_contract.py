@@ -194,10 +194,10 @@ def _normalized_text(value: str) -> str:
     return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
 
-def validate_profile(profile: dict, design: dict) -> None:
+def validate_profile(profile: dict, design: dict, *, has_work_evidence: bool = False) -> None:
     context = profile.get("user_context") or {}
     role = profile.get("role_profile") or {}
-    if not context.get("regular_tasks") and not role.get("card", {}).get("regular_tasks"):
+    if not (has_work_evidence or context.get("regular_tasks") or role.get("card", {}).get("regular_tasks")):
         raise ValueError("M5_BATTERY_PROFILE_CLARIFICATION_REQUIRED:18/рабочая функция")
     if capability := design["profile_capability"]:
         confirmation = (context.get("additional_information") or {}).get(capability)
@@ -468,6 +468,11 @@ def compile_candidate(snapshot: dict, candidate: dict, checksum: str) -> tuple[d
     runtime = {
         "case_version": case["version"], "characters": case["characters"], "materials": [], "scenario": [],
         "battery_scenario": {**design, "concrete_materials": {key: row for key, (_, row) in materials.items()},
+                             **({"facilitator_grounding": {
+                                 "profile": snapshot["profile"],
+                                 "participant_grounding": snapshot["participant_grounding"],
+                                 **snapshot["participant_grounding_rules"]["facilitator"],
+                             }} if "participant_grounding" in snapshot else {}),
                              **({"scoped_materials": scoped_materials} if scoped_materials else {}),
                              **({"linked_material": source} if source else {}),
                              "concrete_facts": {row["FactID"]: row["Текст"] for row in candidate["Закрытые фиксированные факты"]}},
