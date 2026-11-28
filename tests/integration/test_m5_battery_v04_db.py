@@ -253,6 +253,9 @@ def exercise_case_matrix(product_db, cycle, session, number, *, gateway, scenari
             effects, _ = turn("А повторная проверка уже дала результат?", {"E03_UNKNOWN": matched(speaker_ids=["FACILITATOR"])},
                               responses={"FACILITATOR": "Результата повторной проверки в материалах нет."}, replay=True)
             assert ids(effects) == ["E03_UNKNOWN"]
+        if spec02_answer is not None:
+            effects, calls = turn("Пока это рабочий фрагмент, итог ещё не сдаю. Продолжу сверку.", {}, control="CONTINUE")
+            assert not effects and not calls
     elif number == 3:
         initial_replies, _ = turn("Предлагаю свести три части в общей карточке. C1, C2 и C3, сможете обновить свои части сегодня?", {
             "E01_UPDATE": matched(speaker_ids=["C1", "C2", "C3"]),
@@ -391,7 +394,11 @@ def exercise_case_matrix(product_db, cycle, session, number, *, gateway, scenari
         written_answers[number] = spec02_answer
     final_text = (written_answers[number] + " Сдаю эту запись как итог." if number in written_answers
                   else "Сдаю текущий результат. На этом заканчиваю. Уточнения потом?")
-    effects, calls = turn(final_text, {}, control="FINAL", replay=True)
+    competing = {}
+    if number == 2 and spec02_answer is not None:
+        final_text += " Можно уточнить результат повторной проверки?"
+        competing["E03_UNKNOWN"] = matched(speaker_ids=["FACILITATOR"])
+    effects, calls = turn(final_text, competing, control="FINAL", replay=True)
     assert [event["event_type"] for event in effects] == ["scenario_completed"] and not calls
     with product_db() as connection:
         transition(connection, assessment_situation_id=as_id, action="close", reason="synthetic QA", request_id="qa-close")
