@@ -66,6 +66,7 @@ def plan_gate(content: dict, cycle: dict) -> dict | None:
 def functional_gate(trace: dict, *, operation_id: str | None = None,
                     cycle: dict | None = None, case_version: dict | None = None) -> None:
     """Check mandatory stages and the terminal candidate; never alter admission."""
+    from Api.m5_participant_grounding import sent_with_basis
     from Api.m5_functional_generation_service import (
         archived_diagnostic_review_matches, bound_review_results_match, checksum as candidate_checksum,
         frozen_battery_review_plan, review_dispatches_match,
@@ -106,6 +107,10 @@ def functional_gate(trace: dict, *, operation_id: str | None = None,
         _require(package and refs.get("battery_scenario"), "REVIEW_SOURCE_MISMATCH")
         plan = frozen_battery_review_plan(source, cycle=cycle, case_version=case_version)
         _require(protocol == plan["protocol"], "REVIEW_PROTOCOL_MISMATCH")
+        if grounding := plan.get("participant_grounding_payload"):
+            original = repair.get("original_generation_operation") if repair else generation
+            _require(all(sent_with_basis(((item or {}).get("sent") or {}).get("messages") or [], grounding)
+                         for item in (original, generation)), "PARTICIPANT_GROUNDING_MISMATCH")
         _require(tester.get("review_source") == {
             "source_ref": plan["case_ref"], "protocol": plan["protocol"], "review_package": package,
             **({"response_contract": refs["review_response"]} if "review_response" in refs else {}),

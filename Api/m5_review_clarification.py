@@ -6,7 +6,7 @@ from collections import Counter
 from pathlib import Path
 
 from Api.cycle_execution_manifest import ROOT
-from Api.m5_functional_tester import _locate_candidate_path, checksum, normalize_results
+from Api.m5_functional_tester import _locate_candidate_path, candidate_path_value, checksum, normalize_results
 
 CLARIFICATION_SUFFIX = ":status-clarification"
 
@@ -57,9 +57,7 @@ def _review_materials(candidate: dict, paths: list[str]) -> dict:
         located = _locate_candidate_path(candidate, path, mixed_paths=True)
         if not located or not located[0] or not located[1]:
             continue
-        value = candidate
-        for token in located[0]:
-            value = value[int(token)] if isinstance(value, list) else value[token]
+        value = candidate_path_value(candidate, located[0])
         pointer = "/candidate_as" + "".join(
             "/" + token.replace("~", "~0").replace("/", "~1") for token in located[0]
         )
@@ -68,7 +66,8 @@ def _review_materials(candidate: dict, paths: list[str]) -> dict:
 
 
 def clarification_messages(plan: dict, checks: list[dict], *, review_basis: dict, call: dict,
-                           initial_messages: list[dict], instruction: str) -> tuple[list[dict], list[dict]]:
+                           initial_messages: list[dict], instruction: str,
+                           grounding_review: str | None = None) -> tuple[list[dict], list[dict]]:
     """Build the same scoped second request during preparation and receipt replay."""
     dispatch = call["review_dispatch"]
     normalized = normalize_results(plan, checks, reviewer=dispatch["reviewer"], **review_basis)
@@ -97,7 +96,8 @@ def clarification_messages(plan: dict, checks: list[dict], *, review_basis: dict
 
     check_ids = [row["check_id"] for row in definitions]
     clarification_id = checksum({"dispatch": dispatch, "response_sha256": call["response_sha256"], "check_ids": check_ids})
-    required_output = json.loads(initial_messages[-1]["content"])["required_output"]
+    initial_payload = json.loads(initial_messages[-1]["content"])
+    required_output = initial_payload["required_output"]
     payload = {
         "review_dispatch": {
             **{key: dispatch[key] for key in ("operation_id", "round", "reviewer", "batch_no", "candidate_sha256", "package")},
@@ -108,8 +108,11 @@ def clarification_messages(plan: dict, checks: list[dict], *, review_basis: dict
         "applicability_plan": {"required_checks": definitions},
         "required_output": {**required_output, "clarification_id": clarification_id},
     }
-    return [{"role": "system", "content": instruction},
-            {"role": "user", "content": json.dumps(
+    system_messages = [{"role": "system", "content": instruction}]
+    if grounding_review and any(row.get("participant_basis_paths") for row in definitions):
+        payload.update({key: initial_payload[key] for key in ("profile", "participant_grounding")})
+        system_messages.append({"role": "system", "content": grounding_review})
+    return [*system_messages, {"role": "user", "content": json.dumps(
                 payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
             )}], definitions
 

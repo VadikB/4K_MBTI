@@ -10,6 +10,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from Api.m5_participant_grounding import FINDING as PARTICIPANT_GROUNDING_FINDING
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL_PATH = ROOT / "docs/evc/protocols/m5-functional-personalization-tester-v2.json"
@@ -243,6 +245,13 @@ def _locate_candidate_path(candidate: dict, path: str, *,
     return tuple(address), True
 
 
+def candidate_path_value(candidate: dict, address: Iterable[str]) -> object:
+    value = candidate
+    for token in address:
+        value = value[int(token)] if isinstance(value, list) else value[token]
+    return value
+
+
 def _supports_finding(locations: list[tuple[str, ...]], sections: set[tuple[str, ...]],
                       missing_containers: set[tuple[str, ...]]) -> bool:
     for address in locations:
@@ -259,7 +268,8 @@ def _supports_finding(locations: list[tuple[str, ...]], sections: set[tuple[str,
 def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
                    missing_paths: Collection[tuple[str, ...]] = (),
                    evidence_sections: Collection[str] = (), mixed_paths: bool = False,
-                   fact_id_field: str = "FactID") -> list[dict[str, Any]]:
+                   fact_id_field: str = "FactID",
+                   participant_basis_paths: Collection[str] = ()) -> list[dict[str, Any]]:
     """Validate evidence before it can be interpreted as a candidate defect."""
     findings = item.get("findings", [])
     errors = []
@@ -298,6 +308,19 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
                   actual=requirement_ref, expected=item["check_id"])
         if not isinstance(finding.get("severity"), str) or finding["severity"] not in {"blocking", "non_blocking"}:
             error("UNKNOWN_FINDING_SEVERITY", f"{path}/severity")
+        grounding = bool(participant_basis_paths) and finding.get("code") == PARTICIPANT_GROUNDING_FINDING
+        if grounding:
+            actual, expected = finding.get("actual"), finding.get("expected")
+            phrase = actual.get("phrase") if isinstance(actual, dict) and actual.get("subject") == "participant" else None
+            basis = expected.get("basis_path") if isinstance(expected, dict) else None
+            correction = expected.get("correction") if isinstance(expected, dict) else None
+            if not isinstance(phrase, str) or not phrase.strip():
+                error("PARTICIPANT_FINDING_QUOTE_REQUIRED", f"{path}/actual")
+                phrase = None
+            if not isinstance(basis, str) or basis not in participant_basis_paths:
+                error("PARTICIPANT_FINDING_SOURCE_UNRESOLVABLE", f"{path}/expected/basis_path")
+            if not isinstance(correction, str) or not correction.strip() or finding.get("severity") != "blocking":
+                error("PARTICIPANT_FINDING_CORRECTION_REQUIRED", f"{path}/expected/correction")
         paths = finding.get("paths")
         if not isinstance(paths, list) or not paths or any(
                 not isinstance(value, str) or not value.strip() for value in paths):
@@ -312,6 +335,11 @@ def finding_errors(item: dict[str, Any], *, candidate_as: dict | None = None,
                         locations.append(address)
                         continue
                 error("FINDING_PATH_UNRESOLVABLE", f"{path}/paths/{path_index}", actual=value)
+            if grounding and phrase is not None and not any(
+                isinstance(value := candidate_path_value(candidate_as, address), str) and phrase in value
+                for address in locations if address not in missing_paths
+            ):
+                error("PARTICIPANT_FINDING_QUOTE_MISMATCH", f"{path}/actual/phrase")
             if (evidence_sections and len(locations) == len(paths)
                     and not _supports_finding(locations, sections, missing_containers)):
                 error("FINDING_EVIDENCE_UNRELATED", f"{path}/paths", actual=paths, expected=list(evidence_sections))
@@ -363,7 +391,7 @@ def normalize_results(plan: dict[str, Any], raw_checks: Any, *, candidate_as: di
             sections = requirement.get("finding_evidence_sections", ())
         protocol_errors = finding_errors(
             item, candidate_as=candidate_as if localized else None, missing_paths=missing_paths,
-            evidence_sections=sections, **address_options,
+            evidence_sections=sections, participant_basis_paths=definition.get("participant_basis_paths", ()), **address_options,
         )
         if battery_review and status == "PASS":
             paths = item.get("evidence_paths")
